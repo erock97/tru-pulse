@@ -476,8 +476,12 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
         {shown.length === 0 ? (
           <div className="muted small" style={{ padding: '10px 2px' }}>No leads match this filter in the current window.</div>
         ) : shown.map((l, i) => {
+          // Deep-link to the person in FUB; the generic app host redirects to the
+          // team's own subdomain for a logged-in user, so the link always exists.
           const sub = drill.subs.get(l.team_id);
-          const fubHref = sub && l.fub_person_id ? `https://${sub}.followupboss.com/2/people/view/${l.fub_person_id}` : null;
+          const fubHref = l.fub_person_id
+            ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}`
+            : null;
           const pill = l.flag === 'worked' ? 'pill-ok' : l.flag === 'stuck' ? 'pill-warn' : 'pill-bad';
           return (
             <div className="leadline" key={i}>
