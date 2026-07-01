@@ -27,6 +27,15 @@ export default function Login() {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   }
 
+  async function forgot() {
+    if (!email) { setError('Enter your email first, then tap Forgot password.'); return; }
+    setBusy(true); setError(''); setNotice('');
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    setBusy(false);
+    if (err) setError(err.message);
+    else setNotice('Check your email for a link to reset your password.');
+  }
+
   return (
     <div className="split">
       <div className="split-brand">
@@ -57,6 +66,9 @@ export default function Login() {
               required
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             />
+            {mode === 'signin' && (
+              <a className="muted small" style={{ display: 'block', marginTop: 8, cursor: 'pointer' }} onClick={forgot}>Forgot password?</a>
+            )}
             {error && <div className="err">{error}</div>}
             {notice && <div className="ok">{notice}</div>}
             <button className="btn full" style={{ marginTop: 16 }} disabled={busy} type="submit">

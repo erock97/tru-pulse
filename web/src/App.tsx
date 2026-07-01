@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import SetPassword from './pages/SetPassword';
 
 type Org = { id: string; name: string; plan?: string };
 
@@ -27,11 +28,18 @@ export default function App() {
   const route = useHashRoute();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [org, setOrg] = useState<Org | null | undefined>(undefined);
+  // Invite / password-reset links land with a recovery|invite token in the URL hash.
+  const [recovery, setRecovery] = useState<boolean>(
+    () => typeof window !== 'undefined' && /type=(recovery|invite)/.test(window.location.hash),
+  );
 
   useEffect(() => {
     if (isDemo) return;
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -52,6 +60,16 @@ export default function App() {
       : <Home org={o} onOpenPulse={() => go('/pulse')} />;
 
   if (isDemo) return shell({ id: 'demo', name: 'Sample Realty' });
+  if (recovery) {
+    return (
+      <SetPassword
+        onDone={() => {
+          setRecovery(false);
+          if (typeof window !== 'undefined') history.replaceState(null, '', window.location.pathname);
+        }}
+      />
+    );
+  }
   if (session === undefined || (session && org === undefined)) {
     return <div className="center-wrap"><div className="spinner" /></div>;
   }
