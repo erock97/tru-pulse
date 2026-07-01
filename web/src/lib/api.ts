@@ -41,6 +41,18 @@ export async function triggerSync(): Promise<unknown> {
   return res.json();
 }
 
+/** Update the org's thresholds / audit math. Writes go through the Worker (RLS
+ *  keeps the browser read-only), which patches org_settings with the service role. */
+export async function saveSettings(patch: Partial<Settings>): Promise<void> {
+  if (isDemo) return;
+  const res = await fetch(WORKER_URL + '/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error('Save failed');
+}
+
 export interface LeadRow {
   team_id: string;
   assigned_to: string | null;

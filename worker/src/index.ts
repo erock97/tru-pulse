@@ -8,9 +8,18 @@ import { provision, type ProvisionInput } from './provision.js';
 import { syncTeam, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
+import { importEncKey, decryptKey } from './crypto.js';
+import { registerWebhooks } from './fub.js';
 
+// CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
+const CORS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token',
+  'Access-Control-Max-Age': '86400',
+};
 function json(obj: unknown, status = 200): Response {
-  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 }
 function isAdmin(req: Request, env: Env): boolean {
   return req.headers.get('x-admin-token') === env.ADMIN_TOKEN;
@@ -21,6 +30,7 @@ export default {
     const url = new URL(req.url);
     const database = db(env);
 
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.
@@ -71,6 +81,63 @@ export default {
           }
         }
         return json(results);
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Update org thresholds / audit math. Signed-in user → patches their own org's
+    // settings (browser is RLS-read-only, so writes come through the Worker).
+    if (url.pathname === '/settings' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const orgIds = await userOrgIds(database, userId);
+      if (!orgIds.length) return json({ error: 'no org' }, 403);
+      const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!body) return json({ error: 'bad body' }, 422);
+      const patch: Record<string, number | string> = {};
+      for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity']) {
+        const v = Number(body[k]);
+        if (body[k] != null && Number.isFinite(v)) patch[k] = v;
+      }
+      if (!Object.keys(patch).length) return json({ error: 'nothing to update' }, 422);
+      patch.updated_at = new Date().toISOString();
+      try {
+        await database.update('org_settings', `org_id=eq.${orgIds[0]}`, patch);
+        return json({ ok: true });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Live FUB webhook: FUB POSTs here on person/call/text changes; we re-sync that
+    // one team so its flags update without waiting on the cron. Guarded by ?key=.
+    if (url.pathname === '/webhook/fub' && req.method === 'POST') {
+      const teamId = url.searchParams.get('team');
+      if (!teamId) return json({ error: 'team required' }, 400);
+      if (env.WEBHOOK_SECRET && url.searchParams.get('key') !== env.WEBHOOK_SECRET) {
+        return json({ error: 'forbidden' }, 403);
+      }
+      const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
+      if (!rows.length) return json({ error: 'team not found' }, 404);
+      try {
+        return json({ ok: true, synced: await syncTeam(env, database, rows[0] as TeamRow, 30) });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Admin: point a team's FUB account at our webhook so updates arrive live.
+    if (url.pathname === '/webhook/register' && req.method === 'POST') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      const teamId = url.searchParams.get('teamId');
+      if (!teamId) return json({ error: 'teamId required' }, 400);
+      const secret = await database.select('team_secrets', `team_id=eq.${teamId}&select=fub_key_enc`);
+      if (!secret.length) return json({ error: 'no FUB key for team' }, 404);
+      try {
+        const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
+        const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+        return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb) });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }

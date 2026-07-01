@@ -6,4 +6,5 @@ export interface Env {
   ADMIN_TOKEN: string;                // guards ops routes (manual provision / sync-all)
   RESEND_API_KEY?: string;            // weekly Leadership Brief email (optional until set)
   BRIEF_FROM?: string;                // e.g. "TRU Pulse <pulse@trucoaching.co>"
+  WEBHOOK_SECRET?: string;            // shared secret in the FUB webhook callback URL (?key=)
 }

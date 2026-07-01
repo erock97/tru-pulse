@@ -88,6 +88,48 @@ export async function countCalls(key: string, personId: number): Promise<number>
   return typeof total === 'number' ? total : 0;
 }
 
+export async function fubPost(key: string, path: string, body: unknown): Promise<FubResult> {
+  const auth = btoa(key.trim() + ':');
+  let res: Response | null = null;
+  try {
+    res = await fetch(BASE + path, {
+      method: 'POST',
+      headers: { Authorization: 'Basic ' + auth, Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { status: 0, body: null };
+  }
+  const b = res.status === 204 ? null : await res.json().catch(() => null);
+  return { status: res.status, body: b };
+}
+
+// The FUB events that can change a lead's flag — new lead, stage/tag edits, and the
+// contact activity (calls/texts) the "worked" rule counts. Registering these makes
+// Pulse update live instead of waiting on the cron.
+export const FUB_WEBHOOK_EVENTS = [
+  'peopleCreated', 'peopleUpdated', 'peopleStageUpdated', 'callsCreated', 'textMessagesCreated',
+];
+
+/** Idempotently register the flag-affecting webhooks for this account → callbackUrl. */
+export async function registerWebhooks(
+  key: string,
+  callbackUrl: string,
+): Promise<Array<{ event: string; status: number; id?: number; error?: string }>> {
+  const existing = await fubGet(key, '/webhooks', { limit: 100 });
+  const have = new Set<string>();
+  if (existing.status === 200 && existing.body) {
+    for (const w of existing.body.webhooks ?? []) have.add(`${w.event}|${w.url}`);
+  }
+  const out: Array<{ event: string; status: number; id?: number; error?: string }> = [];
+  for (const event of FUB_WEBHOOK_EVENTS) {
+    if (have.has(`${event}|${callbackUrl}`)) { out.push({ event, status: 200 }); continue; }
+    const r = await fubPost(key, '/webhooks', { event, url: callbackUrl });
+    out.push({ event, status: r.status, id: r.body?.id, error: r.status >= 300 ? JSON.stringify(r.body) : undefined });
+  }
+  return out;
+}
+
 /** Scan /identity for the team's *.followupboss.com subdomain. */
 export async function detectSubdomain(key: string): Promise<string | null> {
   const { status, body } = await fubGet(key, '/identity');

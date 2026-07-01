@@ -117,7 +117,7 @@ export function Donut({ sources }: { sources: Array<{ name: string; n: number; c
       <text x="70" y="66" textAnchor="middle" fontSize="24" fontWeight="800" fill="#33281a" fontFamily="Georgia">
         <CountUp value={total} />
       </text>
-      <text x="70" y="84" textAnchor="middle" fontSize="9.5" fill="#8a7a63" letterSpacing="1.2">PAID LEADS</text>
+      <text x="70" y="84" textAnchor="middle" fontSize="9.5" fill="#8a7a63" letterSpacing="1.2">LEADS</text>
     </svg>
   );
 }

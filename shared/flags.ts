@@ -36,6 +36,30 @@ export function isTargetSource(source: string | null | undefined): boolean {
   return sourceFamily(source) !== null;
 }
 
+// Payment model per source family — surfaced in the UI so pay-at-close leads aren't
+// mislabeled as out-of-pocket "paid" spend. Realtor.com / Homes.com / Facebook /
+// Google are paid up front (subscription or ad spend); Zillow (Flex) and referral
+// networks pay a fee at close. "Wasted spend" framing applies ONLY to paid-up-front
+// sources; an un-worked pay-at-close lead is untapped GCI, not out-of-pocket loss.
+// NOTE (Eric): confirm per-source if a specific team's contracts differ.
+export type PayModel = 'upfront' | 'atclose';
+export const PAY_MODEL: Record<string, PayModel> = {
+  'Zillow': 'atclose',
+  'Realtor.com': 'upfront',
+  'Homes.com': 'upfront',
+  'Facebook': 'upfront',
+  'Google': 'upfront',
+  'Referrals': 'atclose',
+  'Other': 'upfront',
+};
+export function payModel(family: string | null | undefined): PayModel {
+  return PAY_MODEL[family ?? ''] ?? 'upfront';
+}
+export const PAY_LABEL: Record<PayModel, string> = {
+  upfront: 'Paid up front',
+  atclose: 'Pay at close',
+};
+
 export interface EventLite {
   type: string | null;
   incoming: boolean | null;
