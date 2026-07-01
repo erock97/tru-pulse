@@ -8,7 +8,7 @@ import { provision, type ProvisionInput } from './provision.js';
 import { syncTeam, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
-import { importEncKey, decryptKey } from './crypto.js';
+import { importEncKey, decryptKey, encryptKey } from './crypto.js';
 import { registerWebhooks } from './fub.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
@@ -138,6 +138,31 @@ export default {
         const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
         const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
         return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb) });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Add a team (a FUB account) to an EXISTING org: encrypt its key, store the
+    // secret, and sync it now. Admin token OR a member of that org.
+    if (url.pathname === '/add-team' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as any;
+      const orgId = body?.orgId as string | undefined;
+      const name = body?.name as string | undefined;
+      const fubKey = body?.fubKey as string | undefined;
+      if (!orgId || !name || !fubKey) return json({ error: 'orgId, name, fubKey required' }, 422);
+      let ok = isAdmin(req, env);
+      if (!ok) {
+        const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+        if (userId) ok = (await userOrgIds(database, userId)).includes(orgId);
+      }
+      if (!ok) return json({ error: 'unauthorized' }, 401);
+      try {
+        const team = await database.insert('teams', { org_id: orgId, name });
+        const enc = await encryptKey(await importEncKey(env.FUB_ENC_KEY), fubKey);
+        await database.upsert('team_secrets', [{ team_id: team.id, org_id: orgId, fub_key_enc: enc }], 'team_id');
+        const sync = await syncTeam(env, database, { id: team.id, org_id: orgId, fub_subdomain: null }, 30);
+        return json({ teamId: team.id, sync });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
