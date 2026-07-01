@@ -1,0 +1,88 @@
+// Per-tenant FUB sync. Pull people in the window, keep tracked paid sources, classify
+// each with the audit's exact rule (per-person calls/texts), and upsert org-scoped
+// lead rows with their flag. This is the audit's read-only pull, made persistent.
+import type { Env } from './env.js';
+import type { Db } from './db.js';
+import { importEncKey, decryptKey } from './crypto.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain } from './fub.js';
+import { sourceFamily, classifyLead, isStuckStage } from '../../shared/flags.js';
+
+export interface TeamRow {
+  id: string;
+  org_id: string;
+  fub_subdomain: string | null;
+}
+
+export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays = 30) {
+  // 1. Decrypt this tenant's FUB key (only the Worker can read team_secrets).
+  const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
+  if (!secret.length) throw new Error(`no FUB key for team ${team.id}`);
+  const encKey = await importEncKey(env.FUB_ENC_KEY);
+  const fubKey = await decryptKey(encKey, secret[0].fub_key_enc);
+
+  // 2. Backfill the subdomain if we don't have it (for per-record FUB links).
+  if (!team.fub_subdomain) {
+    const sub = await detectSubdomain(fubKey);
+    if (sub) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });
+  }
+
+  // 3. Pull people in window; keep only tracked paid sources.
+  const people = await pullPeople(fubKey, windowDays);
+  const inScope = people.filter((p) => sourceFamily(p.source) !== null);
+
+  // 4. Classify each and upsert. Stuck leads short-circuit (skip the API calls).
+  const rows: any[] = [];
+  const nowIso = new Date().toISOString();
+  for (const p of inScope) {
+    const stage = String(p.stage ?? '');
+    const tags: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => String(t)) : [];
+    let outgoingTexts = 0;
+    let calls = 0;
+    if (!isStuckStage(stage)) {
+      outgoingTexts = await countOutgoingTexts(fubKey, p.id);
+      calls = await countCalls(fubKey, p.id);
+    }
+    const flag = classifyLead({ stage, tags, outgoingTexts, calls });
+    rows.push({
+      org_id: team.org_id,
+      team_id: team.id,
+      fub_person_id: p.id,
+      name: p.name || `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() || 'Unknown',
+      source: p.source ?? null,
+      source_family: sourceFamily(p.source),
+      stage: p.stage ?? null,
+      assigned_to: p.assignedTo ?? null,
+      tags,
+      fub_created: p.created ?? null,
+      fub_updated: p.updated ?? null,
+      flag,
+      outgoing_texts: outgoingTexts,
+      calls,
+      synced_at: nowIso,
+    });
+  }
+  await database.upsert('leads', rows, 'team_id,fub_person_id');
+
+  await database.upsert('sync_state', [{ team_id: team.id, org_id: team.org_id, last_sync_at: nowIso }], 'team_id');
+
+  return {
+    pulled: people.length,
+    inScope: inScope.length,
+    zeroContact: rows.filter((r) => r.flag === 'zero_contact').length,
+    stuck: rows.filter((r) => r.flag === 'stuck').length,
+    worked: rows.filter((r) => r.flag === 'worked').length,
+  };
+}
+
+export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 30) {
+  const teams: TeamRow[] = await database.select('teams', 'is_active=eq.true&select=id,org_id,fub_subdomain');
+  const results: Record<string, unknown> = {};
+  for (const t of teams) {
+    try {
+      results[t.id] = await syncTeam(env, database, t, windowDays);
+    } catch (e) {
+      results[t.id] = { error: String(e) };
+    }
+  }
+  return results;
+}

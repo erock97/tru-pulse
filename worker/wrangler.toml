@@ -1,0 +1,15 @@
+name = "tru-pulse-sync"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Incremental sync every 30 min; daily 3-strike reconcile at 07:05;
+# weekly Leadership Brief Monday 13:00 UTC (~8-9am ET).
+[triggers]
+crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1"]
+
+# Secrets (set with `wrangler secret put <NAME>`), never committed:
+#   SUPABASE_URL                 https://<project>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY    service-role key (bypasses RLS — server-side only)
+#   FUB_ENC_KEY                  base64 of a 32-byte AES-GCM key (encrypts tenant FUB keys)
+#   ADMIN_TOKEN                  guards /provision + manual /sync
