@@ -147,22 +147,35 @@ export default {
     // secret, and sync it now. Admin token OR a member of that org.
     if (url.pathname === '/add-team' && req.method === 'POST') {
       const body = (await req.json().catch(() => null)) as any;
+      const existingId = body?.teamId as string | undefined;
       const orgId = body?.orgId as string | undefined;
       const name = body?.name as string | undefined;
       const fubKey = body?.fubKey as string | undefined;
-      if (!orgId || !name || !fubKey) return json({ error: 'orgId, name, fubKey required' }, 422);
+      if (!fubKey || (!existingId && (!orgId || !name))) {
+        return json({ error: 'fubKey and (teamId OR orgId+name) required' }, 422);
+      }
+      let teamId = existingId;
+      let teamOrg = orgId;
+      if (existingId) {
+        const rows = await database.select('teams', `id=eq.${existingId}&select=id,org_id`);
+        if (!rows.length) return json({ error: 'team not found' }, 404);
+        teamOrg = rows[0].org_id as string;
+      }
       let ok = isAdmin(req, env);
-      if (!ok) {
+      if (!ok && teamOrg) {
         const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
-        if (userId) ok = (await userOrgIds(database, userId)).includes(orgId);
+        if (userId) ok = (await userOrgIds(database, userId)).includes(teamOrg);
       }
       if (!ok) return json({ error: 'unauthorized' }, 401);
       try {
-        const team = await database.insert('teams', { org_id: orgId, name });
+        if (!teamId) {
+          const team = await database.insert('teams', { org_id: teamOrg, name });
+          teamId = team.id as string;
+        }
         const enc = await encryptKey(await importEncKey(env.FUB_ENC_KEY), fubKey);
-        await database.upsert('team_secrets', [{ team_id: team.id, org_id: orgId, fub_key_enc: enc }], 'team_id');
-        const sync = await syncTeam(env, database, { id: team.id, org_id: orgId, fub_subdomain: null }, 30);
-        return json({ teamId: team.id, sync });
+        await database.upsert('team_secrets', [{ team_id: teamId, org_id: teamOrg, fub_key_enc: enc }], 'team_id');
+        const sync = await syncTeam(env, database, { id: teamId, org_id: teamOrg as string, fub_subdomain: null }, 30);
+        return json({ teamId, sync });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
