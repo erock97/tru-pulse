@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { gciAtRisk, payModel, PAY_LABEL } from '../../../shared/flags';
+import { gciAtRisk, payModel, PAY_LABEL, isClosing, isOfferPlus, type StageClass } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
@@ -17,6 +17,7 @@ interface Drill {
   leads: LeadRow[];
   contacts: Map<string, { email: string | null; phone: string | null }>;
   subs: Map<string, string | null>;
+  closings: Map<string, number>;
 }
 
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
@@ -75,7 +76,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   for (const a of data.agents) contacts.set(norm(a.name), { email: a.email, phone: a.phone });
   const subs = new Map<string, string | null>();
   for (const t of data.teams) subs.set(t.id, t.fub_subdomain);
-  const drill: Drill = { leads, contacts, subs };
 
   // Source mix + pay-model split.
   const bySource = new Map<string, number>();
@@ -100,6 +100,26 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const openCases = data.cases.filter((c) => c.status === 'open').length;
   const activeAgents = [...byAgent.keys()].filter((a) => a !== 'Unassigned').length;
   const headroom = Math.max(0, activeAgents * capacity - total);
+
+  // Closings metrics — UC and Closed count the SAME (Eric's rule). Windowing is
+  // forward-inclusive: a UC deal's projected close naturally sits in the future,
+  // so "last 30 days" means closes since the cutoff, including pending ones.
+  const dealsWin = data.deals.filter((d) => {
+    if (cutoff === null) return true;
+    const t = d.projected_close ? Date.parse(d.projected_close) : d.fub_created ? Date.parse(d.fub_created) : NaN;
+    return Number.isNaN(t) || t >= cutoff;
+  });
+  const closings = dealsWin.filter((d) => isClosing((d.stage_class ?? 'other') as StageClass));
+  const offersPlus = dealsWin.filter((d) => isOfferPlus((d.stage_class ?? 'other') as StageClass));
+  const offerRate = total ? Math.round((offersPlus.length / total) * 100) : 0;
+  const perClosing = closings.length ? Math.max(1, Math.round(total / closings.length)) : null;
+  const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
+  const closingsByAgent = new Map<string, number>();
+  for (const d of closings) {
+    const a = norm(d.agent_name);
+    if (a) closingsByAgent.set(a, (closingsByAgent.get(a) ?? 0) + 1);
+  }
+  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent };
 
   const nav = (v: View, icon: ReactNode, label: string) => (
     <div className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>{icon}{label}</div>
@@ -158,6 +178,23 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               <KPI color="#c0492f" icon={ICON.zero} value={zero} label="Zero contact" />
               <KPI color="#8f6416" icon={ICON.clock} value={stuck} label="Stuck in Lead" />
               <KPI color="#2e8b57" icon={ICON.check} value={workedPct} suffix="%" label="Worked" />
+            </div>
+
+            <div className="grid4" style={{ marginTop: 16 }}>
+              <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Closings (UC + Closed)" />
+              <KPI color="#a9791f" icon={ICON.offer} value={offerRate} suffix="%" label="Offer rate" />
+              <div className="card kpi fu">
+                <span className="accent" style={{ background: '#2f6bb0' }} />
+                <div className="ico" style={{ background: '#2f6bb022', color: '#2f6bb0' }}>{ICON.ratio}</div>
+                <div className="big">{perClosing ? `1 : ${perClosing}` : '—'}</div>
+                <div className="lbl">Leads per closing</div>
+              </div>
+              <div className="card kpi fu">
+                <span className="accent" style={{ background: '#8f6416' }} />
+                <div className="ico" style={{ background: '#8f641622', color: '#8f6416' }}>{ICON.gci}</div>
+                <div className="big"><CountUp value={gciInPlay} fmt={money} /></div>
+                <div className="lbl">GCI in play (closings)</div>
+              </div>
             </div>
 
             <div className="grid2">
@@ -466,6 +503,7 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
           {chips.map(([k, l, n]) => (
             <span key={k} className={`chip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
           ))}
+          <span className="chip stat">Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b></span>
         </div>
         <div className="drill-acts">
           {emailHref ? <a className="abtn" href={emailHref}>✉ Email {agent.split(' ')[0]}</a> : <span className="abtn off" title="No email on file — add it in Coach">✉ No email on file</span>}
@@ -522,4 +560,7 @@ const ICON = {
   zero: svg(<><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></>),
   clock: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   check: svg(<path d="M4 12l5 5L20 6" />),
+  offer: svg(<><path d="M12 3v18" /><path d="M17 7c0-1.7-2.2-3-5-3S7 5.3 7 7s1.6 2.6 5 3c3.4.4 5 1.3 5 3s-2.2 3-5 3-5-1.3-5-3" /></>),
+  ratio: svg(<><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M19 5L5 19" /></>),
+  gci: svg(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a4 4 0 0 1 8 0v2" /></>),
 };

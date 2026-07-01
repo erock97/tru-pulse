@@ -60,6 +60,26 @@ export const PAY_LABEL: Record<PayModel, string> = {
   atclose: 'Pay at close',
 };
 
+// Deal-stage classification (pipeline stage names vary per FUB account, so match
+// by substring). Eric's rule: Under Contract and Closed are treated as the SAME —
+// both count as closings (pay-at-close program requirements + untapped GCI).
+export type StageClass = 'offer' | 'uc' | 'closed' | 'other';
+export function stageClass(stage: string | null | undefined): StageClass {
+  const s = (stage ?? '').toLowerCase();
+  if (s.includes('close')) return 'closed';
+  if (s.includes('contract') || s.includes('pending') || s.includes('escrow')) return 'uc';
+  if (s.includes('offer')) return 'offer';
+  return 'other';
+}
+/** Reached offer-or-beyond — the numerator for Offer Rate. */
+export function isOfferPlus(c: StageClass): boolean {
+  return c === 'offer' || c === 'uc' || c === 'closed';
+}
+/** A closing under Eric's rule (UC = Closed). */
+export function isClosing(c: StageClass): boolean {
+  return c === 'uc' || c === 'closed';
+}
+
 export interface EventLite {
   type: string | null;
   incoming: boolean | null;

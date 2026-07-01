@@ -4,8 +4,8 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers } from './fub.js';
-import { sourceFamily, classifyLead, isStuckStage } from '../../shared/flags.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals } from './fub.js';
+import { sourceFamily, classifyLead, isStuckStage, stageClass } from '../../shared/flags.js';
 
 export interface TeamRow {
   id: string;
@@ -72,6 +72,14 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
     // contacts are enrichment — never fail the lead sync over them
   }
 
+  // Deals → closings metrics (Offer Rate, leads-per-closing). Degrades silently
+  // until the deals table exists; never fails the lead sync.
+  try {
+    await syncDeals(database, team, fubKey);
+  } catch (e) {
+    // metrics enrichment only
+  }
+
   await database.upsert('sync_state', [{ team_id: team.id, org_id: team.org_id, last_sync_at: nowIso }], 'team_id');
 
   return {
@@ -110,6 +118,29 @@ async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
       await database.insert('agents', { org_id: team.org_id, team_id: team.id, fub_user_id: u.id, name, email, phone });
     }
   }
+}
+
+async function syncDeals(database: Db, team: TeamRow, fubKey: string) {
+  const deals = await pullDeals(fubKey);
+  if (!deals.length) return;
+  const nowIso = new Date().toISOString();
+  const rows = deals.map((d) => ({
+    org_id: team.org_id,
+    team_id: team.id,
+    fub_deal_id: d.id,
+    name: d.name ?? null,
+    stage: d.stageName ?? null,
+    stage_class: stageClass(d.stageName),
+    status: d.status ?? null,
+    price: d.price ?? null,
+    commission: d.commissionValue ?? null,
+    agent_name: d.users?.[0]?.name ?? null,
+    fub_person_id: d.people?.[0]?.id ?? null,
+    projected_close: d.projectedCloseDate ?? null,
+    fub_created: d.createdAt ?? null,
+    synced_at: nowIso,
+  }));
+  await database.upsert('deals', rows, 'team_id,fub_deal_id');
 }
 
 export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 30) {

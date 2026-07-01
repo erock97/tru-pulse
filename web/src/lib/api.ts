@@ -68,6 +68,16 @@ export interface AgentRow {
   email: string | null;
   phone: string | null;
 }
+export interface DealRow {
+  team_id: string;
+  stage: string | null;
+  stage_class: string | null;   // offer | uc | closed | other
+  price: number | null;
+  commission: number | null;
+  agent_name: string | null;
+  projected_close: string | null;
+  fub_created: string | null;
+}
 export interface CaseRow {
   assigned_to: string | null;
   status: string;
@@ -86,17 +96,20 @@ export interface DashboardData {
   leads: LeadRow[];
   cases: CaseRow[];
   agents: AgentRow[];
+  deals: DealRow[];
 }
 
 export async function loadDashboard(): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [teams, settings, leads, cases, agents] = await Promise.all([
+  const [teams, settings, leads, cases, agents, deals] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
     supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity').limit(1),
     supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created'),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),
+    // Degrades to [] until the deals table exists (supabase-js returns an error, not a throw).
+    supabase.from('deals').select('team_id,stage,stage_class,price,commission,agent_name,projected_close,fub_created'),
   ]);
   return {
     teams: (teams.data as DashboardData['teams']) ?? [],
@@ -104,6 +117,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     leads: (leads.data as LeadRow[]) ?? [],
     cases: (cases.data as CaseRow[]) ?? [],
     agents: (agents.data as AgentRow[]) ?? [],
+    deals: (deals.data as DealRow[]) ?? [],
   };
 }
 
@@ -143,11 +157,31 @@ function demoDashboard(): DashboardData {
       cases.push({ assigned_to: name, status: 'open', opened_at: new Date(Date.now() - (s + 1) * 3 * 86400_000).toISOString() });
     }
   }
+  // Demo deals: 27 closings (16 closed + 11 UC) off 543 leads ≈ 1:20, and
+  // 54 offer-or-beyond ≈ 10% offer rate — the numbers the pitch tells.
+  const dayMs = 86400_000;
+  const deals: DealRow[] = [];
+  const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Priya Nair', 'Marcus Delgado', 'Maria Lopez'];
+  const mk = (n: number, cls: string, stage: string, closeInDays: number) => {
+    for (let i = 0; i < n; i++) {
+      deals.push({
+        team_id: 'demo', stage, stage_class: cls,
+        price: 380_000 + (i % 7) * 45_000, commission: 9_000 + (i % 5) * 1_800,
+        agent_name: dealAgents[i % dealAgents.length],
+        projected_close: new Date(Date.now() + closeInDays * dayMs - (i % 20) * dayMs).toISOString(),
+        fub_created: new Date(Date.now() - (5 + (i % 22)) * dayMs).toISOString(),
+      });
+    }
+  };
+  mk(16, 'closed', 'Closed', -2);
+  mk(11, 'uc', 'Pending', 18);
+  mk(27, 'offer', 'Offer', 30);
   return {
     teams: [{ id: 'demo', name: 'Main office', fub_subdomain: null }],
     settings: { avg_gci: 10000, close_rate: 2, window_hours: 48, strike_limit: 3, per_agent_capacity: 20 },
     leads,
     cases,
     agents: [],
+    deals,
   };
 }

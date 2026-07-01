@@ -96,6 +96,21 @@ export async function pullUsers(key: string): Promise<any[]> {
   return body.users ?? [];
 }
 
+/** All deals (paginated) — stage, price, projected close, assigned users. */
+export async function pullDeals(key: string): Promise<any[]> {
+  const deals: any[] = [];
+  let offset = 0;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const { status, body } = await fubGet(key, '/deals', { limit: 100, offset });
+    if (status !== 200 || !body) break;
+    const batch: any[] = body.deals ?? [];
+    deals.push(...batch);
+    if (batch.length < 100) break;
+    offset += 100;
+  }
+  return deals;
+}
+
 export async function fubPost(key: string, path: string, body: unknown, extra: Record<string, string> = {}): Promise<FubResult> {
   const auth = btoa(key.trim() + ':');
   let res: Response | null = null;
