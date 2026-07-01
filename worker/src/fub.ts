@@ -96,6 +96,16 @@ export async function pullUsers(key: string): Promise<any[]> {
   return body.users ?? [];
 }
 
+/** Pond id → name, for labeling pond-assigned leads. */
+export async function pullPonds(key: string): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  const { status, body } = await fubGet(key, '/ponds', { limit: 100 });
+  if (status === 200 && body) {
+    for (const p of body.ponds ?? []) map.set(Number(p.id), String(p.name ?? 'Pond'));
+  }
+  return map;
+}
+
 /** All deals (paginated) — stage, price, projected close, assigned users. */
 export async function pullDeals(key: string): Promise<any[]> {
   const deals: any[] = [];

@@ -8,6 +8,10 @@ const money = (n: number) => '$' + Math.round(n).toLocaleString();
 const initials = (name: string) =>
   name.split(' ').map((w) => w[0] ?? '').slice(0, 2).join('').toUpperCase();
 const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+// A lead's accountable owner: the agent, else its pond (ponds get their own rows —
+// that's where unowned leads hide), else Unassigned.
+const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` : 'Unassigned');
+const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
 type View = 'overview' | 'accountability' | 'agents' | 'sources' | 'settings';
 type Win = '30' | '60' | '90' | 'all';
@@ -60,7 +64,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // Per-agent rollup.
   const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number }>();
   for (const l of leads) {
-    const a = l.assigned_to || 'Unassigned';
+    const a = ownerOf(l);
     const r = byAgent.get(a) ?? { zero: 0, stuck: 0, worked: 0, total: 0 };
     r.total++;
     if (l.flag === 'zero_contact') r.zero++;
@@ -98,7 +102,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const pauseCount = [...strikesByAgent.values()].filter((n) => n >= strikeLimit).length;
   const newStrikes7d = data.cases.filter((c) => Date.parse(c.opened_at) >= Date.now() - 7 * 86400_000).length;
   const openCases = data.cases.filter((c) => c.status === 'open').length;
-  const activeAgents = [...byAgent.keys()].filter((a) => a !== 'Unassigned').length;
+  const activeAgents = [...byAgent.keys()].filter((a) => isPerson(a)).length;
   const headroom = Math.max(0, activeAgents * capacity - total);
 
   // Closings metrics — UC and Closed count the SAME (Eric's rule). Windowing is
@@ -482,7 +486,7 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
   counts: { zero: number; stuck: number; worked: number; total: number };
   drill: Drill; flagF: string; setFlagF: (f: string) => void;
 }) {
-  const mine = drill.leads.filter((l) => (l.assigned_to || 'Unassigned') === agent);
+  const mine = drill.leads.filter((l) => ownerOf(l) === agent);
   const shown = flagF === 'all' ? mine : mine.filter((l) => l.flag === flagF);
   const c = drill.contacts.get(norm(agent));
   const chips: Array<[string, string, number]> = [
@@ -505,10 +509,12 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
           ))}
           <span className="chip stat">Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b></span>
         </div>
-        <div className="drill-acts">
-          {emailHref ? <a className="abtn" href={emailHref}>✉ Email {agent.split(' ')[0]}</a> : <span className="abtn off" title="No email on file — add it in Coach">✉ No email on file</span>}
-          {smsHref ? <a className="abtn" href={smsHref}>💬 Text {agent.split(' ')[0]}</a> : <span className="abtn off" title="No mobile on file — add it in Coach">💬 No mobile on file</span>}
-        </div>
+        {isPerson(agent) && (
+          <div className="drill-acts">
+            {emailHref ? <a className="abtn" href={emailHref}>✉ Email {agent.split(' ')[0]}</a> : <span className="abtn off" title="No email on file — add it in FUB">✉ No email on file</span>}
+            {smsHref ? <a className="abtn" href={smsHref}>💬 Text {agent.split(' ')[0]}</a> : <span className="abtn off" title="No mobile on file — add it in FUB">💬 No mobile on file</span>}
+          </div>
+        )}
       </div>
       <div className="drill-list">
         {shown.length === 0 ? (
@@ -525,7 +531,7 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
             <div className="leadline" key={i}>
               <span className="dot" style={{ background: SOURCE_COLORS[l.source_family ?? 'Other'] ?? SOURCE_COLORS.Other }} />
               <span className="ln">{l.name || 'Lead'}</span>
-              <span className="muted small">{l.source_family ?? 'Other'}{l.stage ? ` · ${l.stage}` : ''}</span>
+              <span className="muted small">{l.source_family ?? 'Other'}{l.stage ? ` · ${l.stage}` : ''}{l.pond && l.assigned_to ? ` · Pond: ${l.pond}` : ''}</span>
               <span className={`pill ${pill}`} style={{ marginLeft: 'auto' }}>{FLAG_LABEL[l.flag ?? ''] ?? l.flag}</span>
               {fubHref && <a className="abtn sm" href={fubHref} target="_blank" rel="noreferrer">FUB ↗</a>}
             </div>

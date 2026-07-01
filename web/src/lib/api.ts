@@ -62,6 +62,7 @@ export interface LeadRow {
   stage?: string | null;
   fub_person_id?: number | null;
   fub_created?: string | null;
+  pond?: string | null;
 }
 export interface AgentRow {
   name: string;
@@ -105,7 +106,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const [teams, settings, leads, cases, agents, deals] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
     supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity').limit(1),
-    supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created'),
+    supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond'),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),
     // Degrades to [] until the deals table exists (supabase-js returns an error, not a throw).
@@ -151,7 +152,14 @@ function demoDashboard(): DashboardData {
   for (const [name, paid, zero, stuck, , strikes] of agentSpec) {
     for (let i = 0; i < paid; i++) {
       const flag = i < zero ? 'zero_contact' : i < zero + stuck ? 'stuck' : 'worked';
-      leads.push({ team_id: 'demo', assigned_to: name, flag, source_family: srcPool[si++ % srcPool.length] });
+      const ponded = name === 'Unassigned';
+      leads.push({
+        team_id: 'demo',
+        assigned_to: ponded ? null : name,
+        flag,
+        source_family: srcPool[si++ % srcPool.length],
+        pond: ponded ? 'New Buyer Pond' : null,
+      });
     }
     for (let s = 0; s < strikes; s++) {
       cases.push({ assigned_to: name, status: 'open', opened_at: new Date(Date.now() - (s + 1) * 3 * 86400_000).toISOString() });

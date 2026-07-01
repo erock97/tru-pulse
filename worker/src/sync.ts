@@ -4,7 +4,7 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals } from './fub.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage, stageClass } from '../../shared/flags.js';
 
 export interface TeamRow {
@@ -29,6 +29,7 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
   // 3. Pull people in window; keep only tracked paid sources.
   const people = await pullPeople(fubKey, windowDays);
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
+  const ponds = await pullPonds(fubKey);
 
   // 4. Classify each and upsert. Stuck leads short-circuit (skip the API calls).
   const rows: any[] = [];
@@ -52,6 +53,7 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
       source_family: sourceFamily(p.source),
       stage: p.stage ?? null,
       assigned_to: p.assignedTo ?? null,
+      pond: p.assignedPondId ? (ponds.get(Number(p.assignedPondId)) ?? 'Pond') : null,
       tags,
       fub_created: p.created ?? null,
       fub_updated: p.updated ?? null,
@@ -61,7 +63,17 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
       synced_at: nowIso,
     });
   }
-  await database.upsert('leads', rows, 'team_id,fub_person_id');
+  // Upsert; if the pond column hasn't been added yet, retry without it so the
+  // lead sync never breaks on a schema that's one migration behind.
+  try {
+    await database.upsert('leads', rows, 'team_id,fub_person_id');
+  } catch (e) {
+    if (String(e).toLowerCase().includes('pond')) {
+      await database.upsert('leads', rows.map(({ pond: _p, ...r }) => r), 'team_id,fub_person_id');
+    } else {
+      throw e;
+    }
+  }
 
   // Keep the shared agents rows stocked with FUB's contact info (email/phone) so
   // the dashboard's email/text actions always have someone to reach. Existing rows
