@@ -39,6 +39,25 @@ const PRODUCTS: Product[] = [
 ];
 
 export default function Home({ org, onOpenPulse }: { org: { id: string; name: string }; onOpenPulse: () => void }) {
+  // One-login bridge: hand the signed-in HQ session across to Coach so there's no
+  // second login. Falls back to Coach's own login if the bridge can't mint a session.
+  async function openCoach() {
+    const fallback = 'https://trucoaching.co';
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) { window.location.href = fallback; return; }
+      const res = await fetch('https://trucoaching.co/api/sso', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { link?: string };
+      window.location.href = res.ok && j.link ? j.link : fallback;
+    } catch {
+      window.location.href = fallback;
+    }
+  }
   return (
     <div className="hq">
       <header className="topbar">
@@ -51,7 +70,7 @@ export default function Home({ org, onOpenPulse }: { org: { id: string; name: st
       <main className="hq-main">
         <div className="hq-hero fu">
           <div className="eyebrow">Welcome back</div>
-          <h1>{org.name}'s HQ</h1>
+          <h1>Your TRU HQ</h1>
           <p>Unlock the best version of your team — and yourself. Your TRU products, one place.</p>
         </div>
         <div className="hq-cards">
@@ -64,7 +83,7 @@ export default function Home({ org, onOpenPulse }: { org: { id: string; name: st
               {p.status === 'active' ? (
                 <button
                   className="btn"
-                  onClick={() => (p.key === 'pulse' ? onOpenPulse() : p.href && (window.location.href = p.href))}
+                  onClick={() => (p.key === 'pulse' ? onOpenPulse() : p.key === 'coach' ? openCoach() : p.href && (window.location.href = p.href))}
                 >
                   Open {p.name.replace('TRU ', '')} →
                 </button>

@@ -58,6 +58,15 @@ export interface LeadRow {
   assigned_to: string | null;
   flag: string | null;
   source_family: string | null;
+  name?: string | null;
+  stage?: string | null;
+  fub_person_id?: number | null;
+  fub_created?: string | null;
+}
+export interface AgentRow {
+  name: string;
+  email: string | null;
+  phone: string | null;
 }
 export interface CaseRow {
   assigned_to: string | null;
@@ -76,22 +85,25 @@ export interface DashboardData {
   settings: Settings | null;
   leads: LeadRow[];
   cases: CaseRow[];
+  agents: AgentRow[];
 }
 
 export async function loadDashboard(): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [teams, settings, leads, cases] = await Promise.all([
+  const [teams, settings, leads, cases, agents] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
     supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity').limit(1),
-    supabase.from('leads').select('team_id,assigned_to,flag,source_family'),
+    supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created'),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
+    supabase.from('agents').select('name,email,phone'),
   ]);
   return {
     teams: (teams.data as DashboardData['teams']) ?? [],
     settings: (settings.data?.[0] as Settings) ?? null,
     leads: (leads.data as LeadRow[]) ?? [],
     cases: (cases.data as CaseRow[]) ?? [],
+    agents: (agents.data as AgentRow[]) ?? [],
   };
 }
 
@@ -136,5 +148,6 @@ function demoDashboard(): DashboardData {
     settings: { avg_gci: 10000, close_rate: 2, window_hours: 48, strike_limit: 3, per_agent_capacity: 20 },
     leads,
     cases,
+    agents: [],
   };
 }

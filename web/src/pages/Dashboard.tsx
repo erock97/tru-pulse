@@ -1,19 +1,28 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
-import { loadDashboard, saveSettings, type DashboardData, type Settings } from '../lib/api';
+import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { gciAtRisk, payModel, PAY_LABEL } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
-import { TruLogo } from '../components/TruLogo';
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
 const initials = (name: string) =>
   name.split(' ').map((w) => w[0] ?? '').slice(0, 2).join('').toUpperCase();
+const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 
 type View = 'overview' | 'accountability' | 'agents' | 'sources' | 'settings';
+type Win = '30' | '60' | '90' | 'all';
+const WINDOWS: Array<[Win, string]> = [['30', '30d'], ['60', '60d'], ['90', '90d'], ['all', 'All']];
+
+interface Drill {
+  leads: LeadRow[];
+  contacts: Map<string, { email: string | null; phone: string | null }>;
+  subs: Map<string, string | null>;
+}
 
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [view, setView] = useState<View>('overview');
+  const [win, setWin] = useState<Win>('30');
 
   async function load() {
     setData(await loadDashboard());
@@ -28,7 +37,12 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
 
   if (!data) return <div className="center-wrap"><div className="spinner" /></div>;
 
-  const leads = data.leads;
+  // Date window — leads without a created date stay visible in every window.
+  const cutoff = win === 'all' ? null : Date.now() - Number(win) * 86400_000;
+  const leads = cutoff === null
+    ? data.leads
+    : data.leads.filter((l) => !l.fub_created || Date.parse(l.fub_created) >= cutoff);
+
   const total = leads.length;
   const zero = leads.filter((l) => l.flag === 'zero_contact').length;
   const stuck = leads.filter((l) => l.flag === 'stuck').length;
@@ -39,7 +53,8 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const closeRate = Number(data.settings?.close_rate ?? 2);
   const capacity = Number(data.settings?.per_agent_capacity ?? 20);
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
-  const risk = gciAtRisk({ zeroContact: zero, avgGci, closeRatePct: closeRate, windowDays: 30 });
+  const winDays = win === 'all' ? 365 : Number(win);
+  const risk = gciAtRisk({ zeroContact: zero, avgGci, closeRatePct: closeRate, windowDays: winDays });
 
   // Per-agent rollup.
   const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number }>();
@@ -54,6 +69,14 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const agents = [...byAgent.entries()].sort((a, b) => b[1].zero + b[1].stuck - (a[1].zero + a[1].stuck));
 
+  // Drill-down context: contact info per agent (from the shared agents rows) +
+  // FUB subdomain per team (for per-lead links).
+  const contacts = new Map<string, { email: string | null; phone: string | null }>();
+  for (const a of data.agents) contacts.set(norm(a.name), { email: a.email, phone: a.phone });
+  const subs = new Map<string, string | null>();
+  for (const t of data.teams) subs.set(t.id, t.fub_subdomain);
+  const drill: Drill = { leads, contacts, subs };
+
   // Source mix + pay-model split.
   const bySource = new Map<string, number>();
   for (const l of leads) {
@@ -66,7 +89,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const upfront = sources.filter((s) => s.pay === 'upfront').reduce((s, x) => s + x.n, 0);
   const atClose = sources.filter((s) => s.pay === 'atclose').reduce((s, x) => s + x.n, 0);
 
-  // Accountability rollup.
+  // Accountability rollup (strike cases are already a 30-day window server-side).
   const strikesByAgent = new Map<string, number>();
   for (const c of data.cases) {
     const a = c.assigned_to || 'Unassigned';
@@ -82,11 +105,12 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     <div className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>{icon}{label}</div>
   );
 
+  const winLabel = win === 'all' ? 'all time' : `last ${win} days`;
   const HEAD: Record<View, { title: string; sub: string }> = {
-    overview: { title: 'Overview', sub: `${org.name} · last 30 days` },
+    overview: { title: 'Overview', sub: `${org.name} · ${winLabel}` },
     accountability: { title: 'Accountability', sub: 'The 3-strike ledger · last 30 days' },
-    agents: { title: 'Agents', sub: `${activeAgents} active · sorted by leads needing attention` },
-    sources: { title: 'Sources', sub: 'Where your tracked leads come from' },
+    agents: { title: 'Agents', sub: `${activeAgents} active · ${winLabel} · click an agent to drill in` },
+    sources: { title: 'Sources', sub: `Where your tracked leads come from · ${winLabel}` },
     settings: { title: 'Settings', sub: 'Flag windows, strike rules & the $-at-risk math' },
   };
 
@@ -94,7 +118,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     <div className="shell">
       <aside className="side">
         {onHome && <div className="side-back" onClick={onHome}>‹ TRU HQ</div>}
-        <div className="side-logo"><TruLogo size={28} wordSize={19} sub="Pulse" /></div>
+        <div className="side-logo">T<span className="t">RU</span> Pulse</div>
         {nav('overview', ICON.grid, 'Overview')}
         {nav('accountability', ICON.shield, 'Accountability')}
         {nav('agents', ICON.users, 'Agents')}
@@ -115,16 +139,87 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             <h2>{HEAD[view].title}</h2>
             <span className="muted small">{HEAD[view].sub}</span>
           </div>
-          <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            {view !== 'settings' && (
+              <div className="winpills">
+                {WINDOWS.map(([k, l]) => (
+                  <span key={k} className={`winpill${win === k ? ' on' : ''}`} onClick={() => setWin(k)}>{l}</span>
+                ))}
+              </div>
+            )}
+            <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          </div>
         </div>
 
         {view === 'overview' && (
-          <Overview
-            total={total} zero={zero} stuck={stuck} workedPct={workedPct} risk={risk}
-            closeRate={closeRate} avgGci={avgGci} sources={sources} upfront={upfront} atClose={atClose}
-            agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
-            pauseCount={pauseCount} newStrikes7d={newStrikes7d} headroom={headroom}
-          />
+          <>
+            <div className="grid4">
+              <KPI color="#a9791f" icon={ICON.leads} value={total} label="Tracked leads" />
+              <KPI color="#c0492f" icon={ICON.zero} value={zero} label="Zero contact" />
+              <KPI color="#8f6416" icon={ICON.clock} value={stuck} label="Stuck in Lead" />
+              <KPI color="#2e8b57" icon={ICON.check} value={workedPct} suffix="%" label="Worked" />
+            </div>
+
+            <div className="grid2">
+              <div className="card risk fu">
+                <div className="ey">Commission at risk</div>
+                <div className="big"><CountUp value={risk.annual} fmt={money} /> / yr</div>
+                <div className="sub">
+                  from tracked leads nobody personally worked — paid-up-front spend plus untapped
+                  pay-at-close GCI ({closeRate}% close × {money(avgGci)} avg).
+                </div>
+              </div>
+              <div className="card ringwrap fu">
+                <Ring pct={workedPct} />
+                <div className="cap">of tracked leads actually worked</div>
+              </div>
+            </div>
+
+            <div className="grid2b">
+              <div className="card fu">
+                <h3 className="ch">Where the leads come from</h3>
+                {sources.length === 0 ? (
+                  <p className="muted small">No leads in this window.</p>
+                ) : (
+                  <>
+                    <div className="donutwrap">
+                      <Donut sources={sources} />
+                      <div className="legend">
+                        {sources.map((s) => (
+                          <div className="leg" key={s.name}>
+                            <span className="dot" style={{ background: s.c }} />
+                            {s.name}
+                            <b>{s.n}</b>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="paysplit">
+                      <span><b>{upfront}</b> paid up front</span>
+                      <span><b>{atClose}</b> pay at close</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="card accsum fu">
+                <h3 className="ch">Accountability this week</h3>
+                <div className="row">
+                  <span className="tag" style={{ background: '#fbe9e5', color: 'var(--terra)' }}>{pauseCount}</span>
+                  <div className="t"><b>Pause recommended</b><br /><span className="muted">agents at {strikeLimit}+ strikes / 30 days</span></div>
+                </div>
+                <div className="row">
+                  <span className="tag" style={{ background: '#f7eede', color: 'var(--gold-dk)' }}>{newStrikes7d}</span>
+                  <div className="t"><b>New strikes</b><br /><span className="muted">opened in the last 7 days</span></div>
+                </div>
+                <div className="row">
+                  <span className="tag" style={{ background: '#eef4ef', color: 'var(--green)' }}>{headroom}</span>
+                  <div className="t"><b>Coverage headroom</b><br /><span className="muted">capacity vs. tracked intake</span></div>
+                </div>
+              </div>
+            </div>
+
+            <AgentTable agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} caption="By agent · click a row to drill in" drill={drill} />
+          </>
         )}
         {view === 'accountability' && (
           <Accountability
@@ -132,95 +227,15 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             pauseCount={pauseCount} newStrikes7d={newStrikes7d} openCases={openCases}
           />
         )}
-        {view === 'agents' && <Agents agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} />}
+        {view === 'agents' && (
+          <AgentTable agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} caption="Every agent · click a row to drill in" drill={drill} />
+        )}
         {view === 'sources' && <Sources sources={sources} total={total} upfront={upfront} atClose={atClose} />}
         {view === 'settings' && data.settings && (
           <SettingsView initial={data.settings} onSaved={() => void load()} />
         )}
       </main>
     </div>
-  );
-}
-
-// ── Overview ────────────────────────────────────────────────────────────────
-function Overview(p: {
-  total: number; zero: number; stuck: number; workedPct: number;
-  risk: { annual: number }; closeRate: number; avgGci: number;
-  sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose' }>;
-  upfront: number; atClose: number;
-  agents: Array<[string, { zero: number; stuck: number; worked: number; total: number }]>;
-  strikesByAgent: Map<string, number>; strikeLimit: number;
-  pauseCount: number; newStrikes7d: number; headroom: number;
-}) {
-  return (
-    <>
-      <div className="grid4">
-        <KPI color="#a9791f" icon={ICON.leads} value={p.total} label="Tracked leads" />
-        <KPI color="#c0492f" icon={ICON.zero} value={p.zero} label="Zero contact" />
-        <KPI color="#8f6416" icon={ICON.clock} value={p.stuck} label="Stuck in Lead" />
-        <KPI color="#2e8b57" icon={ICON.check} value={p.workedPct} suffix="%" label="Worked" />
-      </div>
-
-      <div className="grid2">
-        <div className="card risk fu">
-          <div className="ey">Commission at risk</div>
-          <div className="big"><CountUp value={p.risk.annual} fmt={money} /> / yr</div>
-          <div className="sub">
-            from tracked leads nobody personally worked — paid-up-front spend plus untapped
-            pay-at-close GCI ({p.closeRate}% close × {money(p.avgGci)} avg).
-          </div>
-        </div>
-        <div className="card ringwrap fu">
-          <Ring pct={p.workedPct} />
-          <div className="cap">of tracked leads actually worked</div>
-        </div>
-      </div>
-
-      <div className="grid2b">
-        <div className="card fu">
-          <h3 className="ch">Where the leads come from</h3>
-          {p.sources.length === 0 ? (
-            <p className="muted small">No leads synced yet.</p>
-          ) : (
-            <>
-              <div className="donutwrap">
-                <Donut sources={p.sources} />
-                <div className="legend">
-                  {p.sources.map((s) => (
-                    <div className="leg" key={s.name}>
-                      <span className="dot" style={{ background: s.c }} />
-                      {s.name}
-                      <b>{s.n}</b>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="paysplit">
-                <span><b>{p.upfront}</b> paid up front</span>
-                <span><b>{p.atClose}</b> pay at close</span>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="card accsum fu">
-          <h3 className="ch">Accountability this week</h3>
-          <div className="row">
-            <span className="tag" style={{ background: '#fbe9e5', color: 'var(--terra)' }}>{p.pauseCount}</span>
-            <div className="t"><b>Pause recommended</b><br /><span className="muted">agents at {p.strikeLimit}+ strikes / 30 days</span></div>
-          </div>
-          <div className="row">
-            <span className="tag" style={{ background: '#f7eede', color: 'var(--gold-dk)' }}>{p.newStrikes7d}</span>
-            <div className="t"><b>New strikes</b><br /><span className="muted">opened in the last 7 days</span></div>
-          </div>
-          <div className="row">
-            <span className="tag" style={{ background: '#eef4ef', color: 'var(--green)' }}>{p.headroom}</span>
-            <div className="t"><b>Coverage headroom</b><br /><span className="muted">capacity vs. tracked intake</span></div>
-          </div>
-        </div>
-      </div>
-
-      <AgentTable agents={p.agents} strikesByAgent={p.strikesByAgent} strikeLimit={p.strikeLimit} caption="By agent" />
-    </>
   );
 }
 
@@ -277,42 +292,6 @@ function Accountability(p: {
   );
 }
 
-// ── Agents ──────────────────────────────────────────────────────────────────
-function Agents(p: {
-  agents: Array<[string, { zero: number; stuck: number; worked: number; total: number }]>;
-  strikesByAgent: Map<string, number>; strikeLimit: number;
-}) {
-  return (
-    <div className="card tcard fu" style={{ marginTop: 0 }}>
-      <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Every agent · this window</h3></div>
-      <table className="tbl">
-        <thead>
-          <tr><th>Agent</th><th>Leads</th><th>Zero contact</th><th>Stuck</th><th>Worked</th><th>Worked %</th><th>Strikes (30d)</th></tr>
-        </thead>
-        <tbody>
-          {p.agents.map(([a, r]) => {
-            const s = p.strikesByAgent.get(a) ?? 0;
-            const pause = s >= p.strikeLimit;
-            const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
-            const wp = r.total ? Math.round((r.worked / r.total) * 100) : 0;
-            return (
-              <tr key={a}>
-                <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pause && <span className="badge">Pause rec</span>}</span></td>
-                <td>{r.total}</td>
-                <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
-                <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
-                <td>{r.worked}</td>
-                <td>{wp}%</td>
-                <td><span className={`pill ${pill}`}>{s}</span></td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 // ── Sources ─────────────────────────────────────────────────────────────────
 function Sources(p: {
   sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose' }>;
@@ -323,7 +302,7 @@ function Sources(p: {
       <div className="grid2b">
         <div className="card fu">
           <h3 className="ch">Source mix</h3>
-          {p.sources.length === 0 ? <p className="muted small">No leads synced yet.</p> : (
+          {p.sources.length === 0 ? <p className="muted small">No leads in this window.</p> : (
             <div className="donutwrap"><Donut sources={p.sources} /><div className="legend">
               {p.sources.map((s) => (
                 <div className="leg" key={s.name}><span className="dot" style={{ background: s.c }} />{s.name}<b>{s.n}</b></div>
@@ -404,36 +383,113 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   );
 }
 
-// ── shared table + KPI ──────────────────────────────────────────────────────
+// ── Agent table with drill-down ─────────────────────────────────────────────
+const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
+
 function AgentTable(p: {
   agents: Array<[string, { zero: number; stuck: number; worked: number; total: number }]>;
-  strikesByAgent: Map<string, number>; strikeLimit: number; caption: string;
+  strikesByAgent: Map<string, number>; strikeLimit: number; caption: string; drill: Drill;
 }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [flagF, setFlagF] = useState<string>('all');
+  const toggle = (a: string) => { setOpen(open === a ? null : a); setFlagF('all'); };
+
   return (
     <div className="card tcard fu">
       <div className="thead"><h3 className="ch" style={{ margin: 0 }}>{p.caption}</h3></div>
       <table className="tbl">
         <thead>
-          <tr><th>Agent</th><th>Leads</th><th>Zero contact</th><th>Stuck</th><th>Worked</th><th>Strikes (30d)</th></tr>
+          <tr><th>Agent</th><th>Leads</th><th>Zero contact</th><th>Stuck</th><th>Worked</th><th>Worked %</th><th>Strikes (30d)</th></tr>
         </thead>
         <tbody>
           {p.agents.map(([a, r]) => {
             const s = p.strikesByAgent.get(a) ?? 0;
             const pause = s >= p.strikeLimit;
             const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
+            const wp = r.total ? Math.round((r.worked / r.total) * 100) : 0;
+            const isOpen = open === a;
             return (
-              <tr key={a}>
-                <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pause && <span className="badge">Pause rec</span>}</span></td>
-                <td>{r.total}</td>
-                <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
-                <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
-                <td>{r.worked}</td>
-                <td><span className={`pill ${pill}`}>{s}</span></td>
-              </tr>
+              <FragmentRow key={a}>
+                <tr className={isOpen ? 'row-open' : ''} onClick={() => toggle(a)} style={{ cursor: 'pointer' }}>
+                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
+                  <td>{r.total}</td>
+                  <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
+                  <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
+                  <td>{r.worked}</td>
+                  <td>{wp}%</td>
+                  <td><span className={`pill ${pill}`}>{s}</span></td>
+                </tr>
+                {isOpen && (
+                  <tr className="drillrow">
+                    <td colSpan={7}>
+                      <AgentDrill agent={a} counts={r} drill={p.drill} flagF={flagF} setFlagF={setFlagF} />
+                    </td>
+                  </tr>
+                )}
+              </FragmentRow>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// React fragments can't take a key directly in .map without importing Fragment; tiny helper.
+function FragmentRow({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
+
+function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
+  agent: string;
+  counts: { zero: number; stuck: number; worked: number; total: number };
+  drill: Drill; flagF: string; setFlagF: (f: string) => void;
+}) {
+  const mine = drill.leads.filter((l) => (l.assigned_to || 'Unassigned') === agent);
+  const shown = flagF === 'all' ? mine : mine.filter((l) => l.flag === flagF);
+  const c = drill.contacts.get(norm(agent));
+  const chips: Array<[string, string, number]> = [
+    ['all', 'All', counts.total],
+    ['zero_contact', 'Zero contact', counts.zero],
+    ['stuck', 'In Lead', counts.stuck],
+    ['worked', 'Worked', counts.worked],
+  ];
+  const emailHref = c?.email
+    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(`Hey ${agent.split(' ')[0]} — a few of your leads need attention. Can you give me an update today?`)}`
+    : null;
+  const smsHref = c?.phone ? `sms:${c.phone.replace(/[^+\d]/g, '')}` : null;
+
+  return (
+    <div className="drill">
+      <div className="drill-head">
+        <div className="drill-chips">
+          {chips.map(([k, l, n]) => (
+            <span key={k} className={`chip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
+          ))}
+        </div>
+        <div className="drill-acts">
+          {emailHref ? <a className="abtn" href={emailHref}>✉ Email {agent.split(' ')[0]}</a> : <span className="abtn off" title="No email on file — add it in Coach">✉ No email on file</span>}
+          {smsHref ? <a className="abtn" href={smsHref}>💬 Text {agent.split(' ')[0]}</a> : <span className="abtn off" title="No mobile on file — add it in Coach">💬 No mobile on file</span>}
+        </div>
+      </div>
+      <div className="drill-list">
+        {shown.length === 0 ? (
+          <div className="muted small" style={{ padding: '10px 2px' }}>No leads match this filter in the current window.</div>
+        ) : shown.map((l, i) => {
+          const sub = drill.subs.get(l.team_id);
+          const fubHref = sub && l.fub_person_id ? `https://${sub}.followupboss.com/2/people/view/${l.fub_person_id}` : null;
+          const pill = l.flag === 'worked' ? 'pill-ok' : l.flag === 'stuck' ? 'pill-warn' : 'pill-bad';
+          return (
+            <div className="leadline" key={i}>
+              <span className="dot" style={{ background: SOURCE_COLORS[l.source_family ?? 'Other'] ?? SOURCE_COLORS.Other }} />
+              <span className="ln">{l.name || 'Lead'}</span>
+              <span className="muted small">{l.source_family ?? 'Other'}{l.stage ? ` · ${l.stage}` : ''}</span>
+              <span className={`pill ${pill}`} style={{ marginLeft: 'auto' }}>{FLAG_LABEL[l.flag ?? ''] ?? l.flag}</span>
+              {fubHref && <a className="abtn sm" href={fubHref} target="_blank" rel="noreferrer">FUB ↗</a>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

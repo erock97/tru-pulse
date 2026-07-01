@@ -39,11 +39,11 @@ export default function Login() {
   return (
     <div className="split">
       <div className="split-brand">
-        <div className="brand-logo">T<span className="t">RU</span> Pulse</div>
-        <h1>Know who's not working your paid leads — before it costs you a deal.</h1>
+        <div className="brand-logo">T<span className="t">RU</span> HQ</div>
+        <h1>Your team, one login — Pulse and Coach in one place.</h1>
         <p>
-          The accountability layer for real estate team leaders. Every paid lead, every source, every agent —
-          watched, flagged, and turned into your move for the week.
+          See who's not working your paid leads, coach each agent the way they're wired, and make
+          your move for the week — all from one TRU HQ.
         </p>
         <div className="brand-badges">
           <div className="bb"><div className="n">$51K/yr</div><div className="l">caught in one audit</div></div>
@@ -54,7 +54,7 @@ export default function Login() {
       <div className="split-form">
         <div className="form-card">
           <h2>{mode === 'signin' ? 'Welcome back.' : 'Create your account.'}</h2>
-          <p className="muted small">Sign in to your accountability dashboard.</p>
+          <p className="muted small">Sign in to your TRU HQ.</p>
           <form onSubmit={submit}>
             <label>Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
