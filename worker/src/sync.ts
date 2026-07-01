@@ -4,7 +4,7 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain } from './fub.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage } from '../../shared/flags.js';
 
 export interface TeamRow {
@@ -63,6 +63,15 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
   }
   await database.upsert('leads', rows, 'team_id,fub_person_id');
 
+  // Keep the shared agents rows stocked with FUB's contact info (email/phone) so
+  // the dashboard's email/text actions always have someone to reach. Existing rows
+  // (e.g. migrated from Coach) are matched by fub_user_id, then by name — never duplicated.
+  try {
+    await syncAgents(database, team, fubKey);
+  } catch (e) {
+    // contacts are enrichment — never fail the lead sync over them
+  }
+
   await database.upsert('sync_state', [{ team_id: team.id, org_id: team.org_id, last_sync_at: nowIso }], 'team_id');
 
   return {
@@ -72,6 +81,35 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
     stuck: rows.filter((r) => r.flag === 'stuck').length,
     worked: rows.filter((r) => r.flag === 'worked').length,
   };
+}
+
+const normName = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
+  const users = await pullUsers(fubKey);
+  if (!users.length) return;
+  const existing = (await database.select(
+    'agents',
+    `team_id=eq.${team.id}&select=id,name,email,phone,fub_user_id`,
+  )) as Array<{ id: string; name: string; email: string | null; phone: string | null; fub_user_id: number | null }>;
+  const byFub = new Map(existing.filter((a) => a.fub_user_id != null).map((a) => [String(a.fub_user_id), a]));
+  const byName = new Map(existing.map((a) => [normName(a.name), a]));
+  for (const u of users) {
+    const name = String(u.name ?? '').trim();
+    if (!name) continue;
+    const email = u.email ?? null;
+    const phone = u.phone ?? u.phoneNumber ?? null;
+    const hit = byFub.get(String(u.id)) ?? byName.get(normName(name));
+    if (hit) {
+      const patch: Record<string, unknown> = {};
+      if (hit.fub_user_id == null) patch.fub_user_id = u.id;
+      if (!hit.email && email) patch.email = email;
+      if (!hit.phone && phone) patch.phone = phone;
+      if (Object.keys(patch).length) await database.update('agents', `id=eq.${hit.id}`, patch);
+    } else {
+      await database.insert('agents', { org_id: team.org_id, team_id: team.id, fub_user_id: u.id, name, email, phone });
+    }
+  }
 }
 
 export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 30) {

@@ -89,6 +89,13 @@ export async function countCalls(key: string, personId: number): Promise<number>
   return typeof total === 'number' ? total : 0;
 }
 
+/** Team members with their contact info — FUB is the source of truth for these. */
+export async function pullUsers(key: string): Promise<any[]> {
+  const { status, body } = await fubGet(key, '/users', { limit: 100 });
+  if (status !== 200 || !body) return [];
+  return body.users ?? [];
+}
+
 export async function fubPost(key: string, path: string, body: unknown, extra: Record<string, string> = {}): Promise<FubResult> {
   const auth = btoa(key.trim() + ':');
   let res: Response | null = null;
