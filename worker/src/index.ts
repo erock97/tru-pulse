@@ -137,7 +137,7 @@ export default {
       try {
         const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
         const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
-        return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb) });
+        return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY) });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }

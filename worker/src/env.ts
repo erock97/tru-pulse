@@ -7,4 +7,5 @@ export interface Env {
   RESEND_API_KEY?: string;            // weekly Leadership Brief email (optional until set)
   BRIEF_FROM?: string;                // e.g. "TRU Pulse <pulse@trucoaching.co>"
   WEBHOOK_SECRET?: string;            // shared secret in the FUB webhook callback URL (?key=)
+  FUB_SYSTEM_KEY?: string;            // FUB system key (X-System-Key) — required to create webhooks
 }

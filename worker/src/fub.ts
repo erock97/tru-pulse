@@ -16,11 +16,12 @@ export async function fubGet(
   key: string,
   path: string,
   params?: Record<string, string | number>,
+  extra: Record<string, string> = {},
 ): Promise<FubResult> {
   const url = new URL(BASE + path);
   if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
   const auth = btoa(key.trim() + ':');
-  const headers = { Authorization: 'Basic ' + auth, Accept: 'application/json' };
+  const headers = { Authorization: 'Basic ' + auth, Accept: 'application/json', ...extra };
 
   for (let attempt = 0; attempt < 4; attempt++) {
     let res: Response;
@@ -88,13 +89,13 @@ export async function countCalls(key: string, personId: number): Promise<number>
   return typeof total === 'number' ? total : 0;
 }
 
-export async function fubPost(key: string, path: string, body: unknown): Promise<FubResult> {
+export async function fubPost(key: string, path: string, body: unknown, extra: Record<string, string> = {}): Promise<FubResult> {
   const auth = btoa(key.trim() + ':');
   let res: Response | null = null;
   try {
     res = await fetch(BASE + path, {
       method: 'POST',
-      headers: { Authorization: 'Basic ' + auth, Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: { Authorization: 'Basic ' + auth, Accept: 'application/json', 'Content-Type': 'application/json', ...extra },
       body: JSON.stringify(body),
     });
   } catch {
@@ -111,12 +112,18 @@ export const FUB_WEBHOOK_EVENTS = [
   'peopleCreated', 'peopleUpdated', 'peopleStageUpdated', 'callsCreated', 'textMessagesCreated',
 ];
 
+// FUB requires webhook creation to identify a registered integration via these
+// headers. We reuse Eric's existing FUB system (same key as the Terrason dashboard).
+const X_SYSTEM = 'TerrasonFUBDashboard';
+
 /** Idempotently register the flag-affecting webhooks for this account → callbackUrl. */
 export async function registerWebhooks(
   key: string,
   callbackUrl: string,
+  systemKey?: string,
 ): Promise<Array<{ event: string; status: number; id?: number; error?: string }>> {
-  const existing = await fubGet(key, '/webhooks', { limit: 100 });
+  const sys: Record<string, string> = systemKey ? { 'X-System': X_SYSTEM, 'X-System-Key': systemKey } : {};
+  const existing = await fubGet(key, '/webhooks', { limit: 100 }, sys);
   const have = new Set<string>();
   if (existing.status === 200 && existing.body) {
     for (const w of existing.body.webhooks ?? []) have.add(`${w.event}|${w.url}`);
@@ -124,7 +131,7 @@ export async function registerWebhooks(
   const out: Array<{ event: string; status: number; id?: number; error?: string }> = [];
   for (const event of FUB_WEBHOOK_EVENTS) {
     if (have.has(`${event}|${callbackUrl}`)) { out.push({ event, status: 200 }); continue; }
-    const r = await fubPost(key, '/webhooks', { event, url: callbackUrl });
+    const r = await fubPost(key, '/webhooks', { event, url: callbackUrl }, sys);
     out.push({ event, status: r.status, id: r.body?.id, error: r.status >= 300 ? JSON.stringify(r.body) : undefined });
   }
   return out;
