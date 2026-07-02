@@ -155,7 +155,7 @@ export default function Home({ org, onOpenPulse, onOpenRep, onOpenProspect, onOp
         <div className="hq-cards">
           {PRODUCTS.map((p, i) => (
             <div key={p.key} className={`hq-card fu${p.status === 'soon' ? ' soon' : ''}`} style={{ animationDelay: `${0.08 * i}s` }}>
-              <div className="hq-ico" style={{ background: p.color + '1a', color: p.color }}>{p.icon}</div>
+              <div className="hq-ico" style={{ ['--pc' as string]: p.color }}>{p.icon}</div>
               <div className="hq-tag" style={{ color: p.color }}>{p.tag}</div>
               <h3>{p.name}</h3>
               <p>{p.desc}</p>

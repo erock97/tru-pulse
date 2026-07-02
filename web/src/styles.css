@@ -227,8 +227,14 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 @media(max-width:820px){ .hq-card{ flex-basis:100%; } }
 .hq-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-lg); }
 .hq-card.soon{ opacity:.72; }
-.hq-ico{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
-.hq-ico svg{ width:22px; height:22px; }
+/* dimensional icon medallion (gradient + glow + gloss), not a flat tinted square —
+   each card sets --pc to its own brand color via inline style */
+.hq-ico{ width:56px; height:56px; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; position:relative; overflow:hidden;
+  background:radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--pc) 55%, #fff) 0%, var(--pc) 55%, color-mix(in srgb, var(--pc) 72%, #000) 100%);
+  box-shadow:0 1px 2px rgba(51,40,26,.08), 0 8px 18px color-mix(in srgb, var(--pc) 40%, transparent); }
+.hq-ico::after{ content:""; position:absolute; top:-32%; left:-8%; width:75%; height:75%; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.6), rgba(255,255,255,0) 70%); pointer-events:none; }
+.hq-ico svg{ width:26px; height:26px; color:#fff; position:relative; z-index:1; filter:drop-shadow(0 1px 1px rgba(0,0,0,.22)); }
 .hq-tag{ font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
 .hq-card h3{ font-size:20px; margin:4px 0 8px; }
 .hq-card p{ color:#5c513e; font-size:14px; flex:1; margin:0 0 18px; }
