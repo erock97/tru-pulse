@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { TruLogo } from '../components/TruLogo';
 
@@ -39,9 +39,13 @@ const PRODUCTS: Product[] = [
 ];
 
 export default function Home({ org, onOpenPulse }: { org: { id: string; name: string }; onOpenPulse: () => void }) {
+  // Crossing to Coach = session handoff + a full page load. Show an instant
+  // branded beat on click so the button always responds immediately.
+  const [leaving, setLeaving] = useState(false);
   // One-login bridge: hand the signed-in HQ session across to Coach so there's no
   // second login. Falls back to Coach's own login if the bridge can't mint a session.
   async function openCoach() {
+    setLeaving(true);
     const fallback = 'https://trucoaching.co';
     try {
       const { data } = await supabase.auth.getSession();
@@ -57,6 +61,21 @@ export default function Home({ org, onOpenPulse }: { org: { id: string; name: st
     } catch {
       window.location.href = fallback;
     }
+  }
+  if (leaving) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', gap: 18, color: '#f2e8d5',
+        background: 'radial-gradient(900px 450px at 80% -10%, #4a3a24 0%, rgba(74,58,36,0) 60%), linear-gradient(160deg,#33281a 0%,#211a10 100%)',
+      }}>
+        <TruLogo size={44} wordSize={30} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 800, letterSpacing: '1.8px', color: '#c9baa0' }}>
+          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, margin: 0 }} />
+          OPENING COACH
+        </div>
+      </div>
+    );
   }
   return (
     <div className="hq">
