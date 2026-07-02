@@ -118,16 +118,22 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const subs = new Map<string, string | null>();
   for (const t of data.teams) subs.set(t.id, t.fub_subdomain);
 
-  // Source mix + pay-model split.
-  const bySource = new Map<string, number>();
+  // Source mix + per-source flag breakdown + pay-model split.
+  const bySource = new Map<string, { total: number; zero: number; stuck: number; worked: number }>();
   for (const l of leads) {
     const s = l.source_family || 'Other';
-    bySource.set(s, (bySource.get(s) ?? 0) + 1);
+    const r = bySource.get(s) ?? { total: 0, zero: 0, stuck: 0, worked: 0 };
+    r.total++;
+    if (l.flag === 'zero_contact') r.zero++;
+    else if (l.flag === 'stuck') r.stuck++;
+    else if (l.flag === 'worked') r.worked++;
+    bySource.set(s, r);
   }
   const sources = [...bySource.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, n]) => ({
-      name, n,
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([name, r]) => ({
+      name, n: r.total, zero: r.zero, stuck: r.stuck, worked: r.worked,
+      workedPct: r.total ? Math.round((r.worked / r.total) * 100) : 0,
       c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
       pay: payModel(name),
       closed: closingsBySrc.get(name) ?? 0,
@@ -262,6 +268,25 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               <KPI color="#8f6416" icon={ICON.clock} value={stuck} label="Stuck in Lead" />
               <KPI color="#2e8b57" icon={ICON.check} value={workedPct} suffix="%" label="Worked" />
             </div>
+
+            {sources.length > 0 && (
+              <div className="card fu srcbreak">
+                <h3 className="ch">Leads by source · {winLabel}</h3>
+                <div className="srcgrid">
+                  {sources.map((s) => (
+                    <div className="srccard" key={s.name}>
+                      <span className="srccard-bar" style={{ background: s.c }} />
+                      <div className="srccard-name"><span className="dot" style={{ background: s.c }} />{s.name}</div>
+                      <div className="srccard-n"><CountUp value={s.n} /></div>
+                      <div className="srccard-sub">
+                        {s.zero ? <span className="bad">{s.zero} no contact</span> : <span className="ok">all touched</span>}
+                        <span className="muted"> · {s.workedPct}% worked</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid4" style={{ marginTop: 16 }}>
               <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Closings (UC + Closed)" />
@@ -647,12 +672,18 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
     ['stuck', 'In Lead', counts.stuck],
     ['worked', 'Worked', counts.worked],
   ];
-  const emailHref = c?.email
-    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(`Hey ${agent.split(' ')[0]} — a few of your leads need attention. Can you give me an update today?`)}`
-    : null;
-  const smsHref = c?.phone ? `sms:${c.phone.replace(/[^+\d]/g, '')}` : null;
-
   const paused = drill.paused.get(agent);
+  const first = agent.split(' ')[0];
+  const needN = counts.zero + counts.stuck;
+  // Pre-written texts. Pause = WARM (a capacity pause is a compliment, not a
+  // correction — they did nothing wrong). Reminder = a nudge on un-worked leads.
+  const pauseMsg = `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
+  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Can you get a call or text out to them today? Happy to help game-plan any of them.`;
+  const digits = c?.phone ? c.phone.replace(/[^+\d]/g, '') : null;
+  const sms = (body: string) => (digits ? `sms:${digits}?&body=${encodeURIComponent(body)}` : null);
+  const emailHref = c?.email
+    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(needN > 0 ? remindMsg : `Hey ${first} — quick check-in on your pipeline. Anything I can help with this week?`)}`
+    : null;
 
   return (
     <div className="drill">
@@ -671,8 +702,10 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
         </div>
         {isPerson(agent) && (
           <div className="drill-acts">
-            {emailHref ? <a className="abtn" href={emailHref}>✉ Email {agent.split(' ')[0]}</a> : <span className="abtn off" title="No email on file — add it in FUB">✉ No email on file</span>}
-            {smsHref ? <a className="abtn" href={smsHref}>💬 Text {agent.split(' ')[0]}</a> : <span className="abtn off" title="No mobile on file — add it in FUB">💬 No mobile on file</span>}
+            {paused && sms(pauseMsg) && <a className="abtn warm" href={sms(pauseMsg)!} title="Warm, pre-written: you're at capacity — nothing wrong, keep going">💬 Pause text</a>}
+            {needN > 0 && sms(remindMsg) && <a className="abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${needN} un-worked leads`}>💬 Reminder{needN > 0 ? ` (${needN})` : ''}</a>}
+            {emailHref ? <a className="abtn" href={emailHref}>✉ Email</a> : <span className="abtn off" title="No email on file — add it in FUB">✉ No email</span>}
+            {digits ? <a className="abtn" href={`sms:${digits}`}>💬 Text</a> : <span className="abtn off" title="No mobile on file — add it in FUB">💬 No mobile</span>}
           </div>
         )}
       </div>
