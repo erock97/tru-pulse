@@ -122,6 +122,10 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .cell-agent{ display:flex; align-items:center; gap:10px; font-weight:600; }
 .av-sm{ width:28px; height:28px; border-radius:50%; background:var(--cream2); color:var(--gold-dk); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; border:1px solid var(--line); }
 .badge{ background:var(--terra); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px; }
+.badge.cap{ background:#8a6e20; }
+.pausebar{ display:flex; align-items:center; gap:11px; background:linear-gradient(90deg,#f7efd9,#f3e8cc); border:1px solid #e6d3a6; border-radius:11px; padding:10px 13px; margin-bottom:12px; font-size:12.5px; color:#5c4a1e; line-height:1.45; }
+.pausebar-tag{ flex-shrink:0; background:#8a6e20; color:#fff; font-size:10px; font-weight:800; letter-spacing:.5px; padding:4px 9px; border-radius:7px; }
+.pausebar b{ color:#3f3115; }
 .pill{ display:inline-block; min-width:24px; text-align:center; font-weight:700; font-size:12px; padding:2px 9px; border-radius:20px; }
 .pill-ok{ background:#eef4ef; color:var(--green); }
 .pill-warn{ background:#f7eede; color:var(--gold-dk); }

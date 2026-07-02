@@ -22,6 +22,7 @@ interface Drill {
   contacts: Map<string, { email: string | null; phone: string | null }>;
   subs: Map<string, string | null>;
   closings: Map<string, number>;
+  paused: Map<string, { count: number; cap: number }>;
 }
 
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
@@ -149,6 +150,21 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const activeAgents = [...byAgent.keys()].filter((a) => isPerson(a)).length;
   const headroom = Math.max(0, activeAgents * capacity - total);
 
+  // Capacity pause — an agent who has taken their monthly lead capacity is PAUSED
+  // from new assignments (they already have a full plate to work). Counted
+  // month-to-date, independent of the window filter, so it always reflects "this
+  // month." Threshold = the per-agent capacity setting (default 20).
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+  const monthByAgent = new Map<string, number>();
+  for (const l of data.leads) {
+    if (!l.assigned_to) continue;
+    if (l.fub_created && Date.parse(l.fub_created) < monthStart) continue;
+    monthByAgent.set(l.assigned_to, (monthByAgent.get(l.assigned_to) ?? 0) + 1);
+  }
+  const pausedByAgent = new Map<string, { count: number; cap: number }>();
+  for (const [a, n] of monthByAgent) if (n >= capacity) pausedByAgent.set(a, { count: n, cap: capacity });
+  const pausedCount = pausedByAgent.size;
+
   // Closings metrics — UC and Closed count the SAME (Eric's rule). Windowing is
   // forward-inclusive: a UC deal's projected close naturally sits in the future,
   // so "last 30 days" means closes since the cutoff, including pending ones.
@@ -166,7 +182,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     const a = norm(d.agent_name);
     if (a) closingsByAgent.set(a, (closingsByAgent.get(a) ?? 0) + 1);
   }
-  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent };
+  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent };
 
   const nav = (v: View, icon: ReactNode, label: string) => (
     <div className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>{icon}{label}</div>
@@ -293,6 +309,10 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 <div className="row">
                   <span className="tag" style={{ background: '#f7eede', color: 'var(--gold-dk)' }}>{newStrikes7d}</span>
                   <div className="t"><b>New strikes</b><br /><span className="muted">opened in the last 7 days</span></div>
+                </div>
+                <div className="row">
+                  <span className="tag" style={{ background: '#f4ece0', color: '#8a6e20' }}>{pausedCount}</span>
+                  <div className="t"><b>Paused · at capacity</b><br /><span className="muted">hit {capacity} leads this month — route elsewhere</span></div>
                 </div>
                 <div className="row">
                   <span className="tag" style={{ background: '#eef4ef', color: 'var(--green)' }}>{headroom}</span>
@@ -524,7 +544,7 @@ function AgentTable(p: {
             return (
               <FragmentRow key={a}>
                 <tr className={isOpen ? 'row-open' : ''} onClick={() => toggle(a)} style={{ cursor: 'pointer' }}>
-                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
+                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{p.drill.paused.get(a) && <span className="badge cap" title={`At capacity — ${p.drill.paused.get(a)!.count} of ${p.drill.paused.get(a)!.cap} leads this month`}>⏸ Paused</span>}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
                   <td>{r.total}</td>
                   <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
                   <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
@@ -572,8 +592,16 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
     : null;
   const smsHref = c?.phone ? `sms:${c.phone.replace(/[^+\d]/g, '')}` : null;
 
+  const paused = drill.paused.get(agent);
+
   return (
     <div className="drill">
+      {paused && (
+        <div className="pausebar">
+          <span className="pausebar-tag">⏸ PAUSED</span>
+          <span><b>At capacity</b> — {paused.count} of {paused.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
+        </div>
+      )}
       <div className="drill-head">
         <div className="drill-chips">
           {chips.map(([k, l, n]) => (
