@@ -188,22 +188,31 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const trailingLeads = data.leads.filter((l) => !enabledSources || enabledSources.includes(l.source_family ?? 'Other'));
   const trailBase = trailingLeads.length || 1;
+  // PAID-LEAD CONVERSION — only deals whose person is a tracked paid lead. This is
+  // the honest ROI: a team can close a book of sphere/past-client business (great
+  // production!) while their paid leads barely convert — those are different stories
+  // and must not be conflated (crediting paid leads with non-paid closings gave a
+  // falsely rosy leads-per-closing).
   let leadsReachedOffer = 0;
+  let leadsReachedClose = 0;
   for (const l of trailingLeads) {
     if (!l.fub_person_id) continue;
     const st = bestStage.get(`${l.team_id}:${l.fub_person_id}`);
     if (st && isOfferPlus(st)) leadsReachedOffer++;
+    if (st && isClosing(st)) leadsReachedClose++;
   }
-  // Production: every UC/closed deal (real dollars), filtered by its lead's source
-  // when known (a deal whose lead predates the sync window stays visible).
+  const offerRate = Math.round((leadsReachedOffer / trailBase) * 100);
+  const perClosing = leadsReachedClose ? Math.max(1, Math.round(trailBase / leadsReachedClose)) : null;
+
+  // TOTAL PRODUCTION — every UC/closed deal (real dollars closed), regardless of
+  // whether it came from a paid lead. Source filter narrows only when the deal's
+  // lead source is known.
   const closings = data.deals.filter((d) => {
     if (!isClosing((d.stage_class ?? 'other') as StageClass)) return false;
     if (!enabledSources) return true;
     const s = d.fub_person_id ? srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`) : null;
     return !s || enabledSources.includes(s);
   });
-  const offerRate = Math.round((leadsReachedOffer / trailBase) * 100);
-  const perClosing = closings.length ? Math.max(1, Math.round(trailBase / closings.length)) : null;
   const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
   const closingsByAgent = new Map<string, number>();
   for (const d of closings) {
@@ -289,23 +298,24 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             )}
 
             <div className="grid4" style={{ marginTop: 16 }}>
-              <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Closings (UC + Closed)" />
-              <KPI color="#a9791f" icon={ICON.offer} value={offerRate} suffix="%" label="Offer rate" />
+              <KPI color="#a9791f" icon={ICON.offer} value={offerRate} suffix="%" label="Offer rate · paid leads" />
               <div className="card kpi fu">
                 <span className="accent" style={{ background: '#2f6bb0' }} />
                 <div className="ico" style={{ background: '#2f6bb022', color: '#2f6bb0' }}>{ICON.ratio}</div>
                 <div className="big">{perClosing ? `1 : ${perClosing}` : '—'}</div>
-                <div className="lbl">Leads per closing</div>
+                <div className="lbl">Leads per paid closing</div>
               </div>
+              <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Total closings (all sources)" />
               <div className="card kpi fu">
                 <span className="accent" style={{ background: '#8f6416' }} />
                 <div className="ico" style={{ background: '#8f641622', color: '#8f6416' }}>{ICON.gci}</div>
                 <div className="big"><CountUp value={gciInPlay} fmt={money} /></div>
-                <div className="lbl">GCI in play (closings)</div>
+                <div className="lbl">GCI closed (all sources)</div>
               </div>
             </div>
             <div className="muted small" style={{ margin: '8px 2px 0' }}>
-              Conversion &amp; production are <b>trailing</b> across all tracked leads — a close rate needs settled leads, so it doesn't swing with the date window above (which drives intake &amp; accountability).
+              <b>Paid-lead conversion</b> (offer rate, leads-per-paid-closing) counts only deals that trace to a tracked paid lead — <b>{leadsReachedClose}</b> of your closings do.
+              <b> Total closings &amp; GCI</b> are all production, paid-lead or sphere/referral. Both are <b>trailing</b> (a close rate needs settled leads), so they don't swing with the date window — that drives intake &amp; accountability.
             </div>
 
             <div className="grid2">
@@ -678,7 +688,17 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
   // Pre-written texts. Pause = WARM (a capacity pause is a compliment, not a
   // correction — they did nothing wrong). Reminder = a nudge on un-worked leads.
   const pauseMsg = `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
-  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Can you get a call or text out to them today? Happy to help game-plan any of them.`;
+  // The reminder lists the actual un-worked leads with a tap-through FUB link each,
+  // so the agent goes straight to the person. Capped so the text stays sendable.
+  const fubLink = (l: LeadRow) => {
+    const sub = drill.subs.get(l.team_id);
+    return l.fub_person_id ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}` : null;
+  };
+  const needLeads = mine.filter((l) => l.flag === 'zero_contact' || l.flag === 'stuck');
+  const CAP = 5;
+  const leadLines = needLeads.slice(0, CAP).map((l) => { const link = fubLink(l); return `• ${l.name || 'Lead'}${link ? `: ${link}` : ''}`; }).join('\n');
+  const moreLine = needLeads.length > CAP ? `\n…plus ${needLeads.length - CAP} more in Pulse.` : '';
+  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Please reach out today:\n${leadLines}${moreLine}`;
   const digits = c?.phone ? c.phone.replace(/[^+\d]/g, '') : null;
   const sms = (body: string) => (digits ? `sms:${digits}?&body=${encodeURIComponent(body)}` : null);
   const emailHref = c?.email
