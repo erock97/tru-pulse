@@ -13,7 +13,7 @@ const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase().re
 const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` : 'Unassigned');
 const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
-type View = 'overview' | 'accountability' | 'agents' | 'sources' | 'settings';
+type View = 'overview' | 'accountability' | 'sources' | 'settings';
 type Win = '30' | '60' | '90' | 'all';
 const WINDOWS: Array<[Win, string]> = [['30', '30d'], ['60', '60d'], ['90', '90d'], ['all', 'All']];
 
@@ -133,7 +133,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const HEAD: Record<View, { title: string; sub: string }> = {
     overview: { title: 'Overview', sub: `${org.name} · ${winLabel}` },
     accountability: { title: 'Accountability', sub: 'The 3-strike ledger · last 30 days' },
-    agents: { title: 'Agents', sub: `${activeAgents} active · ${winLabel} · click an agent to drill in` },
     sources: { title: 'Sources', sub: `Where your tracked leads come from · ${winLabel}` },
     settings: { title: 'Settings', sub: 'Flag windows, strike rules & the $-at-risk math' },
   };
@@ -145,7 +144,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
         <div className="side-logo">T<span className="t">RU</span> Pulse</div>
         {nav('overview', ICON.grid, 'Overview')}
         {nav('accountability', ICON.shield, 'Accountability')}
-        {nav('agents', ICON.users, 'Agents')}
         {nav('sources', ICON.sources, 'Sources')}
         {nav('settings', ICON.gear, 'Settings')}
         <div className="side-foot">
@@ -267,9 +265,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
             pauseCount={pauseCount} newStrikes7d={newStrikes7d} openCases={openCases}
           />
-        )}
-        {view === 'agents' && (
-          <AgentTable agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} caption="Every agent · click a row to drill in" drill={drill} />
         )}
         {view === 'sources' && <Sources sources={sources} total={total} upfront={upfront} atClose={atClose} />}
         {view === 'settings' && data.settings && (
@@ -401,8 +396,10 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
     }
   }
 
-  const F = ({ k, label, hint, suffix }: { k: keyof Settings; label: string; hint: string; suffix?: string }) => (
-    <div className="setrow">
+  // Plain function returning JSX (NOT a component): a component defined inside
+  // render remounts on every keystroke and drops input focus after one digit.
+  const F = (k: keyof Settings, label: string, hint: string, suffix?: string) => (
+    <div className="setrow" key={k}>
       <div><div className="setlabel">{label}</div><div className="muted small">{hint}</div></div>
       <div className="setinput">
         <input type="number" value={String(form[k] ?? '')} onChange={set(k)} />
@@ -414,11 +411,11 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   return (
     <div className="card fu" style={{ maxWidth: 640 }}>
       {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
-      <F k="avg_gci" label="Average GCI per deal" hint="Drives the commission-at-risk math." suffix="$" />
-      <F k="close_rate" label="Worked-lead close rate" hint="% of properly worked leads that close." suffix="%" />
-      <F k="window_hours" label="Contact window" hint="Hours a new lead can sit before it's flagged." suffix="hrs" />
-      <F k="strike_limit" label="Strike limit" hint="Strikes in 30 days that trigger a pause recommendation." />
-      <F k="per_agent_capacity" label="Per-agent capacity" hint="Leads one agent can work well — sets coverage headroom." />
+      {F('avg_gci', 'Average GCI per deal', 'Drives the commission-at-risk math.', '$')}
+      {F('close_rate', 'Worked-lead close rate', '% of properly worked leads that close.', '%')}
+      {F('window_hours', 'Contact window', "Hours a new lead can sit before it's flagged.", 'hrs')}
+      {F('strike_limit', 'Strike limit', 'Strikes in 30 days that trigger a pause recommendation.')}
+      {F('per_agent_capacity', 'Per-agent capacity', 'Leads one agent can work well — sets coverage headroom.')}
       <button className="btn" onClick={save} disabled={busy} style={{ marginTop: 18 }}>{busy ? 'Saving…' : 'Save settings'}</button>
     </div>
   );

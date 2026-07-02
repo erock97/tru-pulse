@@ -41,6 +41,38 @@ export async function triggerSync(): Promise<unknown> {
   return res.json();
 }
 
+// ── Platform-owner console (the HQ "act as a team" tile) ────────────────────
+export interface AdminLeader { id: string; name: string; email: string; team_name: string; org_name: string }
+
+/** List every team leader — 403/null unless the caller is a platform admin. */
+export async function adminLeaders(): Promise<AdminLeader[] | null> {
+  if (isDemo) return null;
+  try {
+    const res = await fetch(WORKER_URL + '/admin/leaders', {
+      headers: { Authorization: 'Bearer ' + (await token()) },
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { leaders?: AdminLeader[] };
+    return j.leaders ?? [];
+  } catch {
+    return null;
+  }
+}
+
+/** Become a team leader: the Worker mints a one-time token, we verify it here —
+ *  the session in THIS browser becomes theirs (their RLS applies everywhere). */
+export async function adminActAs(email: string): Promise<void> {
+  const res = await fetch(WORKER_URL + '/admin/impersonate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify({ email }),
+  });
+  const j = (await res.json().catch(() => ({}))) as { token_hash?: string; type?: string; error?: string };
+  if (!res.ok || !j.token_hash) throw new Error(j.error ?? 'Could not start the session');
+  const { error } = await supabase.auth.verifyOtp({ type: 'magiclink', token_hash: j.token_hash });
+  if (error) throw error;
+}
+
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
  *  keeps the browser read-only), which patches org_settings with the service role. */
 export async function saveSettings(patch: Partial<Settings>): Promise<void> {

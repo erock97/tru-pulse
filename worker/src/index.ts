@@ -201,6 +201,52 @@ export default {
       }
     }
 
+    // Platform-owner console (drives the HQ "act as a team" tile). Caller must be
+    // a signed-in user listed in the admins table — verified server-side.
+    if (url.pathname.startsWith('/admin/')) {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const adminRows = await database.select('admins', `id=eq.${userId}&select=id`);
+      if (!adminRows.length) return json({ error: 'forbidden' }, 403);
+
+      if (url.pathname === '/admin/leaders' && req.method === 'GET') {
+        const [leaders, teams, orgs] = await Promise.all([
+          database.select('leaders', 'select=id,name,email,team_id'),
+          database.select('teams', 'select=id,name,org_id'),
+          database.select('orgs', 'select=id,name'),
+        ]);
+        const teamById = new Map(teams.map((t: any) => [t.id, t]));
+        const orgById = new Map(orgs.map((o: any) => [o.id, o]));
+        const out = (leaders as any[])
+          .filter((l) => l.id !== userId) // don't list the admin themself
+          .map((l) => {
+            const t = teamById.get(l.team_id) as any;
+            const o = t ? (orgById.get(t.org_id) as any) : null;
+            return { id: l.id, name: l.name, email: l.email, team_name: t?.name ?? '—', org_name: o?.name ?? '—' };
+          });
+        return json({ leaders: out });
+      }
+
+      if (url.pathname === '/admin/impersonate' && req.method === 'POST') {
+        const body = (await req.json().catch(() => null)) as any;
+        const email = String(body?.email ?? '').trim();
+        if (!email) return json({ error: 'email required' }, 422);
+        const res = await fetch(env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/admin/generate_link', {
+          method: 'POST',
+          headers: {
+            apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ type: 'magiclink', email }),
+        });
+        const gl = (await res.json().catch(() => null)) as any;
+        const props = gl?.properties ?? gl;
+        if (!res.ok || !props?.hashed_token) return json({ error: 'could not mint session' }, 502);
+        return json({ token_hash: props.hashed_token, type: props.verification_type || 'magiclink' });
+      }
+    }
+
     return json({ error: 'not found' }, 404);
   },
 

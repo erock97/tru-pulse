@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { myOrg, isDemo } from './lib/api';
+import { myOrg, isDemo, adminLeaders, type AdminLeader } from './lib/api';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
@@ -53,6 +53,15 @@ export default function App() {
     myOrg().then((o) => setOrg(o));
   }, [session]);
 
+  // Signed in but org-less → platform owner? (The worker verifies against the
+  // admins table server-side; everyone else gets null → onboarding as before.)
+  const [admin, setAdmin] = useState<AdminLeader[] | null | undefined>(undefined);
+  useEffect(() => {
+    if (isDemo || !session || org !== null) return;
+    setAdmin(undefined);
+    adminLeaders().then(setAdmin);
+  }, [session, org]);
+
   // The HQ shell: home (product cards) ↔ a product module (Pulse), by hash route.
   const shell = (o: { id: string; name: string }) =>
     route === '/pulse'
@@ -74,6 +83,10 @@ export default function App() {
     return <div className="center-wrap"><div className="spinner" /></div>;
   }
   if (!session) return <Login />;
-  if (!org) return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
+  if (!org) {
+    if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
+    if (admin) return <Home org={{ id: 'hq', name: 'TRU HQ' }} onOpenPulse={() => go('/pulse')} adminLeaders={admin} />;
+    return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
+  }
   return shell(org);
 }

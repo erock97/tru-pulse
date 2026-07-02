@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminActAs, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 
 const svg = (c: ReactNode) => (
@@ -38,7 +39,22 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-export default function Home({ org, onOpenPulse }: { org: { id: string; name: string }; onOpenPulse: () => void }) {
+export default function Home({ org, onOpenPulse, adminLeaders }: { org: { id: string; name: string }; onOpenPulse: () => void; adminLeaders?: AdminLeader[] }) {
+  // Platform-owner tile: pick a team, become its leader, land back here as them.
+  const [pick, setPick] = useState('');
+  const [acting, setActing] = useState(false);
+  const [actErr, setActErr] = useState('');
+  async function actAs() {
+    if (!pick || acting) return;
+    setActing(true); setActErr('');
+    try {
+      await adminActAs(pick);
+      window.location.hash = '/'; // land on their HQ home; open Pulse or Coach from there
+    } catch (e) {
+      setActErr(e instanceof Error ? e.message : 'Could not start the session.');
+      setActing(false);
+    }
+  }
   // Crossing to Coach = session handoff + a full page load. Show an instant
   // branded beat on click so the button always responds immediately.
   const [leaving, setLeaving] = useState(false);
@@ -92,6 +108,27 @@ export default function Home({ org, onOpenPulse }: { org: { id: string; name: st
           <h1>Your TRU HQ</h1>
           <p>Unlock the best version of your team — and yourself. Your TRU products, one place.</p>
         </div>
+        {adminLeaders && (
+          <div className="hq-card fu" style={{ marginBottom: 18, borderColor: '#e0a340', boxShadow: '0 2px 4px rgba(51,40,26,.06), 0 16px 40px rgba(169,121,31,.14)' }}>
+            <div className="hq-tag" style={{ color: '#a9791f' }}>Platform owner</div>
+            <h3>Act as a team</h3>
+            <p>Open any team's HQ exactly as their leader sees it — Pulse, Coach, all of it. Sign out to come back to yourself.</p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <select
+                value={pick}
+                onChange={(e) => setPick(e.target.value)}
+                style={{ flex: 1, minWidth: 220, padding: '11px 12px', border: '1px solid var(--line)', borderRadius: 10, fontSize: 14, background: '#fff', color: 'var(--ink)' }}
+              >
+                <option value="">Select a team…</option>
+                {adminLeaders.map((l) => (
+                  <option key={l.id} value={l.email}>{l.team_name} · {l.name}</option>
+                ))}
+              </select>
+              <button className="btn" onClick={actAs} disabled={!pick || acting}>{acting ? 'Switching…' : 'Enter their HQ →'}</button>
+            </div>
+            {actErr && <div className="err" style={{ marginTop: 10 }}>{actErr}</div>}
+          </div>
+        )}
         <div className="hq-cards">
           {PRODUCTS.map((p, i) => (
             <div key={p.key} className={`hq-card fu${p.status === 'soon' ? ' soon' : ''}`} style={{ animationDelay: `${0.08 * i}s` }}>
