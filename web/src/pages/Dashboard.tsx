@@ -165,17 +165,39 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   for (const [a, n] of monthByAgent) if (n >= capacity) pausedByAgent.set(a, { count: n, cap: capacity });
   const pausedCount = pausedByAgent.size;
 
-  // Closings metrics — UC and Closed count the SAME (Eric's rule). Windowing is
-  // forward-inclusive: a UC deal's projected close naturally sits in the future,
-  // so "last 30 days" means closes since the cutoff, including pending ones.
-  const dealsWin = data.deals.filter((d) => {
-    const t = d.projected_close ? Date.parse(d.projected_close) : d.fub_created ? Date.parse(d.fub_created) : NaN;
-    return Number.isNaN(t) || t >= cutoff;
+  // Deal conversion + production. UC and Closed count the SAME (Eric's rule).
+  // CONVERSION IS TRAILING, not windowed: a rate needs a settled cohort — dividing
+  // deals-by-close-date against this-window's just-arrived leads produced >100%
+  // nonsense (a UC deal closing now from a lead created months ago). So offer rate
+  // and leads-per-closing run over the whole tracked-lead base (source-filtered),
+  // joining each deal to its lead's person. Production (closings count + GCI) is
+  // the real dollar activity across all deals.
+  const bestStage = new Map<string, StageClass>();
+  const RANK: Record<StageClass, number> = { other: 0, offer: 1, uc: 2, closed: 3 };
+  for (const d of data.deals) {
+    if (!d.fub_person_id) continue;
+    const k = `${d.team_id}:${d.fub_person_id}`;
+    const c = (d.stage_class ?? 'other') as StageClass;
+    if (RANK[c] > RANK[bestStage.get(k) ?? 'other']) bestStage.set(k, c);
+  }
+  const trailingLeads = data.leads.filter((l) => !enabledSources || enabledSources.includes(l.source_family ?? 'Other'));
+  const trailBase = trailingLeads.length || 1;
+  let leadsReachedOffer = 0;
+  for (const l of trailingLeads) {
+    if (!l.fub_person_id) continue;
+    const st = bestStage.get(`${l.team_id}:${l.fub_person_id}`);
+    if (st && isOfferPlus(st)) leadsReachedOffer++;
+  }
+  // Production: every UC/closed deal (real dollars), filtered by its lead's source
+  // when known (a deal whose lead predates the sync window stays visible).
+  const closings = data.deals.filter((d) => {
+    if (!isClosing((d.stage_class ?? 'other') as StageClass)) return false;
+    if (!enabledSources) return true;
+    const s = d.fub_person_id ? srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`) : null;
+    return !s || enabledSources.includes(s);
   });
-  const closings = dealsWin.filter((d) => isClosing((d.stage_class ?? 'other') as StageClass));
-  const offersPlus = dealsWin.filter((d) => isOfferPlus((d.stage_class ?? 'other') as StageClass));
-  const offerRate = total ? Math.round((offersPlus.length / total) * 100) : 0;
-  const perClosing = closings.length ? Math.max(1, Math.round(total / closings.length)) : null;
+  const offerRate = Math.round((leadsReachedOffer / trailBase) * 100);
+  const perClosing = closings.length ? Math.max(1, Math.round(trailBase / closings.length)) : null;
   const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
   const closingsByAgent = new Map<string, number>();
   for (const d of closings) {
@@ -256,6 +278,9 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 <div className="big"><CountUp value={gciInPlay} fmt={money} /></div>
                 <div className="lbl">GCI in play (closings)</div>
               </div>
+            </div>
+            <div className="muted small" style={{ margin: '8px 2px 0' }}>
+              Conversion &amp; production are <b>trailing</b> across all tracked leads — a close rate needs settled leads, so it doesn't swing with the date window above (which drives intake &amp; accountability).
             </div>
 
             <div className="grid2">
