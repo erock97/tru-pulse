@@ -186,37 +186,34 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     const c = (d.stage_class ?? 'other') as StageClass;
     if (RANK[c] > RANK[bestStage.get(k) ?? 'other']) bestStage.set(k, c);
   }
-  const trailingLeads = data.leads.filter((l) => !enabledSources || enabledSources.includes(l.source_family ?? 'Other'));
-  const trailBase = trailingLeads.length || 1;
-  // PAID-LEAD CONVERSION — only deals whose person is a tracked paid lead. This is
-  // the honest ROI: a team can close a book of sphere/past-client business (great
-  // production!) while their paid leads barely convert — those are different stories
-  // and must not be conflated (crediting paid leads with non-paid closings gave a
-  // falsely rosy leads-per-closing).
+  // OFFER RATE — of THIS WINDOW's paid leads, the share whose person reached offer+
+  // (person-join, ≤100%). A trackable trend that matures as the window widens; only
+  // deals that trace to a tracked paid lead count (honest paid-lead ROI).
   let leadsReachedOffer = 0;
   let leadsReachedClose = 0;
-  for (const l of trailingLeads) {
+  for (const l of leads) {
     if (!l.fub_person_id) continue;
     const st = bestStage.get(`${l.team_id}:${l.fub_person_id}`);
     if (st && isOfferPlus(st)) leadsReachedOffer++;
     if (st && isClosing(st)) leadsReachedClose++;
   }
-  const offerRate = Math.round((leadsReachedOffer / trailBase) * 100);
+  const offerRate = total ? Math.round((leadsReachedOffer / total) * 100) : 0;
 
-  // TOTAL PRODUCTION — every UC/closed deal (real dollars closed), regardless of
-  // whether it came from a paid lead. Source filter narrows only when the deal's
-  // lead source is known.
+  // CLOSINGS + GCI — WINDOWED by close date (UC counts as closed; NEVER all-time).
+  // A month-over-month trend, not a static lifetime tally. Signature's 221 lifetime
+  // closings become "closed in this window," so leads-per-closing reads true.
   const closings = data.deals.filter((d) => {
     if (!isClosing((d.stage_class ?? 'other') as StageClass)) return false;
+    const t = d.projected_close ? Date.parse(d.projected_close) : d.fub_created ? Date.parse(d.fub_created) : NaN;
+    if (!Number.isNaN(t) && t < cutoff) return false;
     if (!enabledSources) return true;
     const s = d.fub_person_id ? srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`) : null;
     return !s || enabledSources.includes(s);
   });
   const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
-  // Leads per closing = the intuitive ratio (tracked leads ÷ all closings). Always
-  // a number, so team leads always have their "1:N". leadsReachedClose (paid-only)
-  // feeds the caption so the paid-vs-total distinction stays visible.
-  const perClosing = closings.length ? Math.max(1, Math.round(trailBase / closings.length)) : null;
+  // Leads per closing = leads in window ÷ closings in window — the intuitive,
+  // trackable ratio. Widen the window for a stable read.
+  const perClosing = closings.length ? Math.max(1, Math.round(total / closings.length)) : null;
   const closingsByAgent = new Map<string, number>();
   for (const d of closings) {
     const a = norm(d.agent_name);
@@ -317,7 +314,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               </div>
             </div>
             <div className="muted small" style={{ margin: '8px 2px 0' }}>
-              <b>Offer rate</b> is paid-lead conversion — only deals that trace to a tracked paid lead (<b>{leadsReachedClose}</b> of your {closings.length} closings do). <b>Leads per closing</b> &amp; <b>totals</b> are all production, paid or sphere/referral. All <b>trailing</b> (a close rate needs settled leads), so they don't swing with the date window — that drives intake &amp; accountability.
+              All four <b>track with the date window</b> above — close it in on a month or open it to 6 for the trend. <b>Offer rate</b> counts only paid leads whose person reached offer+ (the honest paid-lead ROI); <b>closings</b> are UC + Closed with a close date in the window. Widen the window for a stable leads-per-closing read.
             </div>
 
             <div className="grid2">
@@ -677,6 +674,10 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
 }) {
   const mine = drill.leads.filter((l) => ownerOf(l) === agent);
   const shown = flagF === 'all' ? mine : mine.filter((l) => l.flag === flagF);
+  // This agent's leads broken out by source (the "total per agent" split by source).
+  const bySrc = new Map<string, number>();
+  for (const l of mine) { const s = l.source_family || 'Other'; bySrc.set(s, (bySrc.get(s) ?? 0) + 1); }
+  const srcRows = [...bySrc.entries()].sort((a, b) => b[1] - a[1]);
   const c = drill.contacts.get(norm(agent));
   const chips: Array<[string, string, number]> = [
     ['all', 'All', counts.total],
@@ -731,6 +732,17 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
           </div>
         )}
       </div>
+      {srcRows.length > 0 && (
+        <div className="drill-src">
+          <span className="drill-src-lbl">BY SOURCE</span>
+          {srcRows.map(([name, n]) => (
+            <span className="drill-src-chip" key={name}>
+              <span className="dot" style={{ background: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other }} />
+              {name} <b>{n}</b>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="drill-list">
         {shown.length === 0 ? (
           <div className="muted small" style={{ padding: '10px 2px' }}>No leads match this filter in the current window.</div>
