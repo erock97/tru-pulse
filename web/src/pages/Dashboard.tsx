@@ -14,8 +14,8 @@ const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` :
 const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
 type View = 'overview' | 'accountability' | 'sources' | 'settings';
-type Win = '30' | '60' | '90' | 'all';
-const WINDOWS: Array<[Win, string]> = [['30', '30d'], ['60', '60d'], ['90', '90d'], ['all', 'All']];
+type Win = '7' | '14' | 'mtd' | '90' | '180';
+const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo']];
 
 interface Drill {
   leads: LeadRow[];
@@ -27,7 +27,7 @@ interface Drill {
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [view, setView] = useState<View>('overview');
-  const [win, setWin] = useState<Win>('30');
+  const [win, setWin] = useState<Win>('mtd');
 
   async function load() {
     setData(await loadDashboard());
@@ -43,10 +43,11 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   if (!data) return <div className="center-wrap"><div className="spinner" /></div>;
 
   // Date window — leads without a created date stay visible in every window.
-  const cutoff = win === 'all' ? null : Date.now() - Number(win) * 86400_000;
-  const leads = cutoff === null
-    ? data.leads
-    : data.leads.filter((l) => !l.fub_created || Date.parse(l.fub_created) >= cutoff);
+  const today = new Date();
+  const cutoff = win === 'mtd'
+    ? new Date(today.getFullYear(), today.getMonth(), 1).getTime()
+    : Date.now() - Number(win) * 86400_000;
+  const leads = data.leads.filter((l) => !l.fub_created || Date.parse(l.fub_created) >= cutoff);
 
   const total = leads.length;
   const zero = leads.filter((l) => l.flag === 'zero_contact').length;
@@ -58,7 +59,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const closeRate = Number(data.settings?.close_rate ?? 2);
   const capacity = Number(data.settings?.per_agent_capacity ?? 20);
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
-  const winDays = win === 'all' ? 365 : Number(win);
+  const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
   const risk = gciAtRisk({ zeroContact: zero, avgGci, closeRatePct: closeRate, windowDays: winDays });
 
   // Per-agent rollup.
@@ -109,7 +110,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // forward-inclusive: a UC deal's projected close naturally sits in the future,
   // so "last 30 days" means closes since the cutoff, including pending ones.
   const dealsWin = data.deals.filter((d) => {
-    if (cutoff === null) return true;
     const t = d.projected_close ? Date.parse(d.projected_close) : d.fub_created ? Date.parse(d.fub_created) : NaN;
     return Number.isNaN(t) || t >= cutoff;
   });
@@ -129,7 +129,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     <div className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>{icon}{label}</div>
   );
 
-  const winLabel = win === 'all' ? 'all time' : `last ${win} days`;
+  const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : `last ${win} days`;
   const HEAD: Record<View, { title: string; sub: string }> = {
     overview: { title: 'Overview', sub: `${org.name} · ${winLabel}` },
     accountability: { title: 'Accountability', sub: 'The 3-strike ledger · last 30 days' },

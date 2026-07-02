@@ -13,7 +13,8 @@ export interface TeamRow {
   fub_subdomain: string | null;
 }
 
-export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays = 30) {
+// 180-day default window so the dashboard's 6-month view has real coverage.
+export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays = 180) {
   // 1. Decrypt this tenant's FUB key (only the Worker can read team_secrets).
   const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
   if (!secret.length) throw new Error(`no FUB key for team ${team.id}`);
@@ -155,7 +156,7 @@ async function syncDeals(database: Db, team: TeamRow, fubKey: string) {
   await database.upsert('deals', rows, 'team_id,fub_deal_id');
 }
 
-export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 30) {
+export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 180) {
   const teams: TeamRow[] = await database.select('teams', 'is_active=eq.true&select=id,org_id,fub_subdomain');
   const results: Record<string, unknown> = {};
   for (const t of teams) {

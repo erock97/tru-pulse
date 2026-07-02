@@ -3,7 +3,7 @@
 // so Pulse's flags match the audit exactly. Retries 429/503 with Retry-After.
 
 const BASE = 'https://api.followupboss.com/v1';
-const MAX_PAGES = 40;
+const MAX_PAGES = 100;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

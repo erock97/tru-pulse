@@ -53,7 +53,7 @@ export default {
 
     // Sync. Admin → one team (?teamId=) or all. Else → the caller's own org(s).
     if (url.pathname === '/sync' && req.method === 'POST') {
-      const windowDays = Number(url.searchParams.get('window') ?? 30);
+      const windowDays = Number(url.searchParams.get('window') ?? 180);
       try {
         if (isAdmin(req, env)) {
           const teamId = url.searchParams.get('teamId');
@@ -252,7 +252,7 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const database = db(env);
-    await syncAllActiveTeams(env, database, 30);
+    await syncAllActiveTeams(env, database, 180);
     // The daily 07:05 trigger also runs the 3-strike reconcile (after a fresh sync).
     if (controller.cron === '5 7 * * *') {
       await reconcileAllTeams(database);
