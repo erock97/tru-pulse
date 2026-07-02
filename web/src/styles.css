@@ -115,6 +115,11 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .tcard .thead{ padding:16px 20px 12px; }
 .tbl{ width:100%; border-collapse:collapse; font-size:14px; }
 .tbl th{ text-align:left; background:var(--cream2); color:var(--taupe); font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:10px 20px; }
+.tbl th.sortable{ cursor:pointer; user-select:none; white-space:nowrap; }
+.tbl th.sortable:hover{ color:var(--gold-dk); }
+.tbl th.sortable.on{ color:var(--gold-dk); }
+.sortcaret{ font-size:9px; margin-left:5px; opacity:.55; }
+.tbl th.on .sortcaret{ opacity:1; }
 .tbl td{ padding:11px 20px; border-top:1px solid var(--line); }
 .tbl tr:hover td{ background:#fdfaf4; }
 .tbl td.bad{ color:var(--terra); font-weight:700; }

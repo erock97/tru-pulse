@@ -519,23 +519,58 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
 // ── Agent table with drill-down ─────────────────────────────────────────────
 const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
 
+type SortKey = 'agent' | 'total' | 'zero' | 'stuck' | 'worked' | 'workedpct' | 'strikes';
+
 function AgentTable(p: {
   agents: Array<[string, { zero: number; stuck: number; worked: number; total: number }]>;
   strikesByAgent: Map<string, number>; strikeLimit: number; caption: string; drill: Drill;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [flagF, setFlagF] = useState<string>('all');
+  // Default: leads needing attention float up (zero + stuck, desc).
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'zero', dir: -1 });
   const toggle = (a: string) => { setOpen(open === a ? null : a); setFlagF('all'); };
+  const clickSort = (key: SortKey) => setSort((s) =>
+    s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) } : { key, dir: key === 'agent' ? 1 : -1 });
+
+  const val = (a: string, r: { zero: number; stuck: number; worked: number; total: number }, key: SortKey): number | string => {
+    switch (key) {
+      case 'agent': return a.toLowerCase();
+      case 'total': return r.total;
+      case 'zero': return r.zero + r.stuck; // "needs attention" — the default lens
+      case 'stuck': return r.stuck;
+      case 'worked': return r.worked;
+      case 'workedpct': return r.total ? r.worked / r.total : 0;
+      case 'strikes': return p.strikesByAgent.get(a) ?? 0;
+    }
+  };
+  const rows = [...p.agents].sort(([an, ar], [bn, br]) => {
+    const av = val(an, ar, sort.key); const bv = val(bn, br, sort.key);
+    if (av < bv) return -1 * sort.dir;
+    if (av > bv) return 1 * sort.dir;
+    return an.localeCompare(bn);
+  });
+
+  const HEADERS: Array<[SortKey, string]> = [
+    ['agent', 'Agent'], ['total', 'Leads'], ['zero', 'Zero contact'],
+    ['stuck', 'Stuck'], ['worked', 'Worked'], ['workedpct', 'Worked %'], ['strikes', 'Strikes (30d)'],
+  ];
 
   return (
     <div className="card tcard fu">
       <div className="thead"><h3 className="ch" style={{ margin: 0 }}>{p.caption}</h3></div>
       <table className="tbl">
         <thead>
-          <tr><th>Agent</th><th>Leads</th><th>Zero contact</th><th>Stuck</th><th>Worked</th><th>Worked %</th><th>Strikes (30d)</th></tr>
+          <tr>
+            {HEADERS.map(([key, label]) => (
+              <th key={key} className={`sortable${sort.key === key ? ' on' : ''}`} onClick={() => clickSort(key)}>
+                {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : '↕'}</span>
+              </th>
+            ))}
+          </tr>
         </thead>
         <tbody>
-          {p.agents.map(([a, r]) => {
+          {rows.map(([a, r]) => {
             const s = p.strikesByAgent.get(a) ?? 0;
             const pause = s >= p.strikeLimit;
             const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
