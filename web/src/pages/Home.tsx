@@ -10,6 +10,8 @@ const ICON = {
   pulse: svg(<path d="M3 12h4l2 6 4-15 2.5 9H21" />),
   coach: svg(<><circle cx="12" cy="8" r="3.2" /><path d="M5 21c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2" /></>),
   rep: svg(<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" /></>),
+  prospect: svg(<path d="M5 4h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />),
+  studio: svg(<><rect x="3" y="5" width="18" height="13" rx="2" /><path d="M8 21h8M12 18v3" /><circle cx="12" cy="11.5" r="3" /></>),
 };
 
 interface Product {
@@ -34,12 +36,20 @@ const PRODUCTS: Product[] = [
     desc: 'Profiles how each agent is wired and preps the 1:1 that actually lands — for the agent and the leader.',
   },
   {
-    key: 'rep', name: 'TRU Rep', tag: 'Make it stick', color: '#2f6bb0', icon: ICON.rep, status: 'soon',
-    desc: 'Agents rehearse the call against an AI buyer, and their real calls get graded on ALMS. Coming soon.',
+    key: 'rep', name: 'TRU Rep', tag: 'Make it stick', color: '#2f6bb0', icon: ICON.rep, status: 'active',
+    desc: 'Certify every agent on the program — Preferred standards, real scripts, practice drills, and a graded quiz on every module.',
+  },
+  {
+    key: 'prospect', name: 'TRU Prospect', tag: 'Fill it', color: '#c0492f', icon: ICON.prospect, status: 'active',
+    desc: 'Circle, expireds, FSBOs — one compliance-cleared call list. Skip-traced, DNC-scrubbed, prioritized, with an AI opener per lead. Your agents dial; TRU keeps it legal and logged.',
+  },
+  {
+    key: 'studio', name: 'TRU Studio', tag: 'Coming soon', color: '#8a5ca8', icon: ICON.studio, status: 'soon',
+    desc: 'A month of social content in one sitting, in your own voice, screened for fair-housing language and your disclosure — then published straight to Instagram and Facebook. Publishing connection in progress.',
   },
 ];
 
-export default function Home({ org, onOpenPulse, adminLeaders }: { org: { id: string; name: string }; onOpenPulse: () => void; adminLeaders?: AdminLeader[] }) {
+export default function Home({ org, onOpenPulse, onOpenRep, onOpenProspect, onOpenStudio, adminLeaders }: { org: { id: string; name: string }; onOpenPulse: () => void; onOpenRep?: () => void; onOpenProspect?: () => void; onOpenStudio?: () => void; adminLeaders?: AdminLeader[] }) {
   // Platform-owner tile: pick a team, become its leader, land back here as them.
   const [pick, setPick] = useState('');
   const [acting, setActing] = useState(false);
@@ -139,7 +149,7 @@ export default function Home({ org, onOpenPulse, adminLeaders }: { org: { id: st
               {p.status === 'active' ? (
                 <button
                   className="btn"
-                  onClick={() => (p.key === 'pulse' ? onOpenPulse() : p.key === 'coach' ? openCoach() : p.href && (window.location.href = p.href))}
+                  onClick={() => (p.key === 'pulse' ? onOpenPulse() : p.key === 'coach' ? openCoach() : p.key === 'rep' ? onOpenRep?.() : p.key === 'prospect' ? onOpenProspect?.() : p.key === 'studio' ? onOpenStudio?.() : p.href && (window.location.href = p.href))}
                 >
                   Open {p.name.replace('TRU ', '')} →
                 </button>

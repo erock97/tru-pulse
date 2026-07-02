@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import { myOrg, isDemo, adminLeaders, hasAdminReturn, adminReturn, type AdminLeader } from './lib/api';
+import { myOrg, isDemo, adminLeaders, hasAdminReturn, adminReturn, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import Rep from './pages/Rep';
+import Prospect from './pages/Prospect';
+import Studio from './pages/Studio';
+import AgentCourse from './pages/AgentCourse';
 import SetPassword from './pages/SetPassword';
 
 type Org = { id: string; name: string; plan?: string };
@@ -62,12 +66,33 @@ export default function App() {
     adminLeaders().then(setAdmin);
   }, [session, org]);
 
+  // Not an org leader and not an admin? They may be an AGENT. Link this login to
+  // their agent row (by verified email) and resolve it → the take-the-course view.
+  const [agent, setAgent] = useState<AgentIdentity | null | undefined>(undefined);
+  useEffect(() => {
+    if (isDemo || !session || org !== null || admin !== null) return;
+    setAgent(undefined);
+    (async () => {
+      await claimAgent();
+      setAgent(await myAgent());
+    })();
+  }, [session, org, admin]);
+
   // The HQ shell: home (product cards) ↔ a product module (Pulse), by hash route.
-  const shell = (o: { id: string; name: string }) =>
+  const shell = (o: { id: string; name: string }, adminLeaders?: AdminLeader[]) =>
     route === '/pulse'
       ? <Dashboard org={o} onHome={() => go('/')} />
-      : <Home org={o} onOpenPulse={() => go('/pulse')} />;
+      : route === '/rep'
+        ? <Rep org={o} onHome={() => go('/')} />
+        : route === '/prospect'
+          ? <Prospect org={o} onHome={() => go('/')} />
+          : route === '/studio'
+            ? <Studio org={o} onHome={() => go('/')} />
+            : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} onOpenProspect={() => go('/prospect')} onOpenStudio={() => go('/studio')} adminLeaders={adminLeaders} />;
 
+  if (isDemo && route === '/learn') {
+    return <AgentCourse agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
+  }
   if (isDemo) return shell({ id: 'demo', name: 'Sample Realty' });
   if (recovery) {
     return (
@@ -85,7 +110,9 @@ export default function App() {
   if (!session) return <Login />;
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
-    if (admin) return <Home org={{ id: 'hq', name: 'TRU HQ' }} onOpenPulse={() => go('/pulse')} adminLeaders={admin} />;
+    if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
+    if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
+    if (agent) return <AgentCourse agent={agent} />;
     return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
   }
   // Impersonated session → a standing banner with one-click exit back to the

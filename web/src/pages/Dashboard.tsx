@@ -269,7 +269,18 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
           </div>
         </div>
 
-        {view === 'overview' && (
+        {view === 'overview' && (total === 0 ? (
+          <div className="card fu emptyview">
+            <div className="emptyview-ico">{ICON.leads}</div>
+            <h3>No leads tracked yet</h3>
+            <p>
+              Leads sync in automatically from Follow Up Boss for every source you've enabled.
+              Once your first lead comes in this window, tracked count, contact status, and the
+              strike ledger all fill in here — nothing to configure.
+            </p>
+            <button className="btn ghost" onClick={() => setView('settings')}>Check your sources →</button>
+          </div>
+        ) : (
           <>
             <div className="grid4">
               <KPI color="#a9791f" icon={ICON.leads} value={total} label="Tracked leads" />
@@ -288,7 +299,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                       <div className="srccard-name"><span className="dot" style={{ background: s.c }} />{s.name}</div>
                       <div className="srccard-n"><CountUp value={s.n} /></div>
                       <div className="srccard-sub">
-                        {s.zero ? <span className="bad">{s.zero} no contact</span> : <span className="ok">all touched</span>}
+                        {s.zero ? <span className="bad">{s.zero} no contact</span> : <span className="touched">all touched</span>}
                         <span className="muted"> · {s.workedPct}% worked</span>
                       </div>
                     </div>
@@ -382,7 +393,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
 
             <AgentTable agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} caption="By agent · click a row to drill in" drill={drill} />
           </>
-        )}
+        ))}
         {view === 'accountability' && (
           <Accountability
             strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
@@ -406,6 +417,7 @@ function Accountability(p: {
   const rows = [...p.strikesByAgent.entries()]
     .filter(([a]) => a !== 'Unassigned')
     .sort((a, b) => b[1] - a[1]);
+  const clean = rows.length === 0 && p.pauseCount === 0 && p.newStrikes7d === 0;
   return (
     <>
       <div className="grid4">
@@ -414,6 +426,17 @@ function Accountability(p: {
         <KPI color="#a9791f" icon={ICON.leads} value={p.openCases} label="Open cases" />
         <KPI color="#2e8b57" icon={ICON.check} value={p.strikeLimit} label="Strike limit" />
       </div>
+
+      {clean && (
+        <div className="card risk fu" style={{ marginTop: 16 }}>
+          <div className="ey">Clean board</div>
+          <div className="big">0 strikes</div>
+          <div className="sub">
+            No agent has crossed the {p.strikeLimit}-strike threshold in the last 30 days, and no new
+            strikes opened this week. The pipeline discipline is holding — nothing to act on right now.
+          </div>
+        </div>
+      )}
 
       <div className="card fu" style={{ marginTop: 16 }}>
         <h3 className="ch">How the ledger works</h3>
