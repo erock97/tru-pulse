@@ -122,6 +122,7 @@ export interface Settings {
   window_hours: number;
   strike_limit: number;
   per_agent_capacity: number;
+  sources?: string[] | null;   // enabled source families; null/absent = all
 }
 export interface DashboardData {
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
@@ -137,7 +138,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
-    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity').limit(1),
+    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources').limit(1),
     supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond'),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),

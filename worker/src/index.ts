@@ -95,10 +95,16 @@ export default {
       if (!orgIds.length) return json({ error: 'no org' }, 403);
       const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
       if (!body) return json({ error: 'bad body' }, 422);
-      const patch: Record<string, number | string> = {};
+      const patch: Record<string, unknown> = {};
       for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity']) {
         const v = Number(body[k]);
         if (body[k] != null && Number.isFinite(v)) patch[k] = v;
+      }
+      // Which paid-source families this org actually uses (drives every board filter).
+      if (Array.isArray(body.sources)) {
+        const KNOWN = ['Zillow', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
+        const picked = (body.sources as unknown[]).map(String).filter((s) => KNOWN.includes(s));
+        if (picked.length) patch.sources = picked;
       }
       if (!Object.keys(patch).length) return json({ error: 'nothing to update' }, 422);
       patch.updated_at = new Date().toISOString();

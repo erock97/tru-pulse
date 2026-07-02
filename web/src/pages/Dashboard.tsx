@@ -47,7 +47,11 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const cutoff = win === 'mtd'
     ? new Date(today.getFullYear(), today.getMonth(), 1).getTime()
     : Date.now() - Number(win) * 86400_000;
-  const leads = data.leads.filter((l) => !l.fub_created || Date.parse(l.fub_created) >= cutoff);
+  // Source filter — Settings lets a leader check only the sources they pay for.
+  const enabledSources = data.settings?.sources && data.settings.sources.length ? data.settings.sources : null;
+  const leads = data.leads.filter((l) =>
+    (!l.fub_created || Date.parse(l.fub_created) >= cutoff) &&
+    (!enabledSources || enabledSources.includes(l.source_family ?? 'Other')));
 
   const total = leads.length;
   const zero = leads.filter((l) => l.flag === 'zero_contact').length;
@@ -408,9 +412,37 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
     </div>
   );
 
+  const SOURCE_OPTS: Array<[string, string]> = [
+    ['Zillow', 'Zillow Preferred / Flex'],
+    ['Realtor.com', 'Realtor.com · MVIP'],
+    ['Homes.com', 'Homes.com'],
+    ['Facebook', 'Facebook / Instagram'],
+    ['Google', 'Google / LSA'],
+    ['Referrals', 'Referral networks'],
+  ];
+  const allSourceKeys = SOURCE_OPTS.map(([k]) => k);
+  const checkedSources = form.sources && form.sources.length ? form.sources : allSourceKeys;
+  const toggleSource = (k: string) => {
+    const next = checkedSources.includes(k) ? checkedSources.filter((x) => x !== k) : [...checkedSources, k];
+    if (!next.length) return; // at least one source stays on
+    setForm({ ...form, sources: next });
+  };
+
   return (
     <div className="card fu" style={{ maxWidth: 640 }}>
       {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
+      <div className="setrow" style={{ display: 'block' }}>
+        <div className="setlabel">Lead sources you pay for</div>
+        <div className="muted small" style={{ marginBottom: 10 }}>Only checked sources count on the board — every KPI, chart, and per-agent number follows.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {SOURCE_OPTS.map(([k, label]) => (
+            <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: 0, cursor: 'pointer' }}>
+              <input type="checkbox" checked={checkedSources.includes(k)} onChange={() => toggleSource(k)} style={{ width: 16, height: 16, margin: 0 }} />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
       {F('avg_gci', 'Average GCI per deal', 'Drives the commission-at-risk math.', '$')}
       {F('close_rate', 'Worked-lead close rate', '% of properly worked leads that close.', '%')}
       {F('window_hours', 'Contact window', "Hours a new lead can sit before it's flagged.", 'hrs')}
