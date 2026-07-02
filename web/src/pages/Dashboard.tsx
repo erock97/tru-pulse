@@ -202,7 +202,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     if (st && isClosing(st)) leadsReachedClose++;
   }
   const offerRate = Math.round((leadsReachedOffer / trailBase) * 100);
-  const perClosing = leadsReachedClose ? Math.max(1, Math.round(trailBase / leadsReachedClose)) : null;
 
   // TOTAL PRODUCTION — every UC/closed deal (real dollars closed), regardless of
   // whether it came from a paid lead. Source filter narrows only when the deal's
@@ -214,6 +213,10 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     return !s || enabledSources.includes(s);
   });
   const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
+  // Leads per closing = the intuitive ratio (tracked leads ÷ all closings). Always
+  // a number, so team leads always have their "1:N". leadsReachedClose (paid-only)
+  // feeds the caption so the paid-vs-total distinction stays visible.
+  const perClosing = closings.length ? Math.max(1, Math.round(trailBase / closings.length)) : null;
   const closingsByAgent = new Map<string, number>();
   for (const d of closings) {
     const a = norm(d.agent_name);
@@ -303,7 +306,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 <span className="accent" style={{ background: '#2f6bb0' }} />
                 <div className="ico" style={{ background: '#2f6bb022', color: '#2f6bb0' }}>{ICON.ratio}</div>
                 <div className="big">{perClosing ? `1 : ${perClosing}` : '—'}</div>
-                <div className="lbl">Leads per paid closing</div>
+                <div className="lbl">Leads per closing</div>
               </div>
               <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Total closings (all sources)" />
               <div className="card kpi fu">
@@ -314,8 +317,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               </div>
             </div>
             <div className="muted small" style={{ margin: '8px 2px 0' }}>
-              <b>Paid-lead conversion</b> (offer rate, leads-per-paid-closing) counts only deals that trace to a tracked paid lead — <b>{leadsReachedClose}</b> of your closings do.
-              <b> Total closings &amp; GCI</b> are all production, paid-lead or sphere/referral. Both are <b>trailing</b> (a close rate needs settled leads), so they don't swing with the date window — that drives intake &amp; accountability.
+              <b>Offer rate</b> is paid-lead conversion — only deals that trace to a tracked paid lead (<b>{leadsReachedClose}</b> of your {closings.length} closings do). <b>Leads per closing</b> &amp; <b>totals</b> are all production, paid or sphere/referral. All <b>trailing</b> (a close rate needs settled leads), so they don't swing with the date window — that drives intake &amp; accountability.
             </div>
 
             <div className="grid2">
