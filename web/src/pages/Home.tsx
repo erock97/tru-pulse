@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase';
 import { adminActAs, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 
+const initials = (name: string) =>
+  name.split(' ').map((w) => w[0] ?? '').slice(0, 2).join('').toUpperCase();
+
 const svg = (c: ReactNode) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>{c}</svg>
 );
@@ -104,22 +107,32 @@ export default function Home({ org, onOpenPulse, onOpenRep, onOpenProspect, onOp
     );
   }
   return (
-    <div className="hq">
-      <header className="topbar">
-        <TruLogo size={30} wordSize={22} sub="HQ" />
-        <div className="topbar-right">
-          <span className="muted small">{org.name}</span>
+    <div className="shell">
+      <aside className="side">
+        <div className="side-logo"><TruLogo size={26} wordSize={19} sub="HQ" /></div>
+        <div className="side-foot">
+          <span className="av">{initials(org.name)}</span>
+          <div style={{ lineHeight: 1.3 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#f2e8d5' }}>{org.name}</div>
+            <div style={{ fontSize: 11, color: '#a99a80' }}>Admin</div>
+          </div>
+        </div>
+      </aside>
+      <main className="main">
+        <div className="main-head">
+          <div>
+            <h2>Your TRU HQ</h2>
+            <span className="muted small">Welcome back</span>
+          </div>
           <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
-      </header>
-      <main className="hq-main">
-        <div className="hq-hero fu">
-          <div className="eyebrow">Welcome back</div>
-          <h1>Your TRU HQ</h1>
-          <p>Unlock the best version of your team — and yourself. Your TRU products, one place.</p>
+        <div className="card hqhero fu">
+          <div className="ey">Welcome back</div>
+          <h1>Unlock the best version of your team — and yourself.</h1>
+          <p>Your TRU products, one place.</p>
         </div>
         {adminLeaders && (
-          <div className="hq-card fu" style={{ marginBottom: 18, borderColor: '#e0a340', boxShadow: '0 2px 4px rgba(51,40,26,.06), 0 16px 40px rgba(169,121,31,.14)' }}>
+          <div className="hq-card hq-card-admin fu">
             <div className="hq-tag" style={{ color: '#a9791f' }}>Platform owner</div>
             <h3>Act as a team</h3>
             <p>Open any team's HQ exactly as their leader sees it — Pulse, Coach, all of it. Sign out to come back to yourself.</p>

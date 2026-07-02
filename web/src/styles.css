@@ -212,15 +212,19 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .setinput .suffix{ position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--taupe); font-size:13px; pointer-events:none; }
 
 /* HQ home (the shell) */
-.hq{ min-height:100vh; }
-.hq-main{ max-width:1000px; margin:0 auto; padding:36px 24px 64px; }
-.hq-hero{ margin:22px 0 30px; }
-.hq-hero .eyebrow{ color:var(--gold-dk); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.09em; }
-.hq-hero h1{ font-size:34px; margin:8px 0 8px; }
-.hq-hero p{ color:#5c513e; font-size:16px; max-width:60ch; }
-.hq-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
-@media(max-width:820px){ .hq-cards{ grid-template-columns:1fr; } }
-.hq-card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:var(--shadow); transition:transform .18s, box-shadow .18s; display:flex; flex-direction:column; }
+.hqhero{ background:radial-gradient(700px 340px at 88% -25%, #4a3a24 0%, rgba(74,58,36,0) 60%), linear-gradient(155deg,#33281a,#241b10); color:#f4ecdc; border:0; position:relative; overflow:hidden; padding:34px 38px; margin-bottom:20px; }
+.hqhero::after{ content:""; position:absolute; width:280px; height:280px; right:-90px; bottom:-110px; border-radius:50%;
+  background:radial-gradient(circle, rgba(169,121,31,.34), rgba(169,121,31,0) 68%); pointer-events:none; }
+.hqhero .ey{ position:relative; font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--gold-lt); font-weight:700; }
+.hqhero h1{ position:relative; font-size:32px; line-height:1.16; margin:10px 0 8px; color:#fdf7ec; max-width:22ch; }
+.hqhero p{ position:relative; font-size:15px; color:#cdbfa5; max-width:52ch; line-height:1.6; margin:0; }
+/* self-balancing — product count keeps growing (3→4→5 in one session alone), so a
+   hardcoded column count just relocates the orphaned-card bug each time it changes.
+   Flexbox (not grid auto-fit) so a partial last row grows to fill itself instead of
+   leaving a phantom empty grid cell where grid's shared column tracks would. */
+.hq-cards{ display:flex; flex-wrap:wrap; gap:18px; }
+.hq-card{ flex:1 1 260px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:var(--shadow); transition:transform .18s, box-shadow .18s; display:flex; flex-direction:column; }
+@media(max-width:820px){ .hq-card{ flex-basis:100%; } }
 .hq-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-lg); }
 .hq-card.soon{ opacity:.72; }
 .hq-ico{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
@@ -230,14 +234,27 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .hq-card p{ color:#5c513e; font-size:14px; flex:1; margin:0 0 18px; }
 .hq-card .btn{ width:100%; text-align:center; }
 .hq-soon{ text-align:center; color:var(--taupe); font-size:13px; font-weight:700; padding:11px; border:1px dashed var(--line); border-radius:10px; }
+/* admin utility card — same .hq-card grammar (radius/shadow/padding), not a one-off
+   inline override; the gold accent bar is the same visual language as .kpi .accent */
+.hq-card-admin{ position:relative; overflow:hidden; padding-left:28px; background:linear-gradient(100deg, #fbf3e2 0%, var(--card) 40%); margin-bottom:18px; }
+.hq-card-admin::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--gold); }
 .side-back{ font-size:12px; color:#a99a80; cursor:pointer; padding:2px 10px 12px; }
 .side-back:hover{ color:#f2e8d5; }
 
-/* top bar (HQ home) */
+.logo-sub{ font-weight:500; font-size:15px; color:var(--taupe); }
+
+/* Legacy light top-bar shell — still used by Prospect.tsx and Studio.tsx, which
+   haven't been redesigned to the dark .shell/.side yet (out of scope for this
+   pass; Home.tsx and Rep.tsx have already moved to .shell/.side + .hqhero above). */
 .topbar{ display:flex; align-items:center; justify-content:space-between; padding:14px 28px;
   border-bottom:1px solid var(--line); background:rgba(251,247,240,.92); }
 .topbar-right{ display:flex; align-items:center; gap:16px; }
-.logo-sub{ font-weight:500; font-size:15px; color:var(--taupe); }
+.hq{ min-height:100vh; }
+.hq-main{ max-width:1000px; margin:0 auto; padding:36px 24px 64px; }
+.hq-hero{ margin:22px 0 30px; }
+.hq-hero .eyebrow{ color:var(--gold-dk); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.09em; }
+.hq-hero h1{ font-size:34px; margin:8px 0 8px; }
+.hq-hero p{ color:#5c513e; font-size:16px; max-width:60ch; }
 
 /* TRU Rep — curriculum + progress */
 .repmod{ border-top:1px solid var(--line); }
@@ -585,7 +602,13 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   .ac-step.sect .ac-step-label{ font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; font-weight:800; color:var(--mac); overflow:visible; white-space:normal; }
   .ac-step.sect.on .ac-step-label{ color:#fff; }
   .ac-step.sect:first-child{ margin-top:0; border-top:0; }
-  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px 0; min-height:0; }
+  /* flex-start, not center — centering a short card (e.g. a single video/stat
+     screen) in a min-height:100vh stage split the leftover space into an
+     awkward equal void above AND below the content. Anchoring to the top reads
+     as a normal page instead of something floating in empty space; .ac-nav
+     stays pinned near the bottom either way since .ac-cardzone still absorbs
+     the remaining flex space. */
+  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding:30px 0; min-height:0; }
   .ac-lessonhead{ margin-bottom:12px; }
   .ac-count{ font-size:15px; }
   .ac-nav{ margin-top:8px; }

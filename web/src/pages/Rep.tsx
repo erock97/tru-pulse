@@ -53,19 +53,29 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const teamCert = agents.length ? Math.round((agents.filter((a) => pct(a.id) === 100).length / agents.length) * 100) : 0;
 
   return (
-    <div className="hq">
-      <header className="topbar">
-        <TruLogo size={30} wordSize={22} sub="Rep" />
-        <div className="topbar-right">
-          {onHome && <button className="link small" onClick={onHome}>‹ TRU HQ</button>}
-          <span className="muted small">{org.name}</span>
+    <div className="shell">
+      <aside className="side">
+        {onHome && <div className="side-back" onClick={onHome}>‹ TRU HQ</div>}
+        <div className="side-logo"><TruLogo size={26} wordSize={19} sub="Rep" /></div>
+        <div className="side-foot">
+          <span className="av">{initials(org.name)}</span>
+          <div style={{ lineHeight: 1.3 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#f2e8d5' }}>{org.name}</div>
+            <div style={{ fontSize: 11, color: '#a99a80' }}>Admin</div>
+          </div>
         </div>
-      </header>
-      <main className="hq-main">
-        <div className="hq-hero fu">
-          <div className="eyebrow" style={{ color: '#2f6bb0' }}>Make it stick</div>
-          <h1>Onboarding & certification</h1>
-          <p>Certify every agent on the program — the Preferred standards, the required pipeline, real scripts and practice drills, and a server-graded quiz to pass on every module. Agents sign in with their own login; you invite, watch progress, and sign off here.</p>
+      </aside>
+      <main className="main">
+        <div className="main-head">
+          <div>
+            <h2>Onboarding & certification</h2>
+            <span className="muted small">Make it stick</span>
+          </div>
+        </div>
+        <div className="card hqhero fu">
+          <div className="ey" style={{ color: '#7fb1e6' }}>Make it stick</div>
+          <h1>Certify every agent on the program.</h1>
+          <p>The Preferred standards, the required pipeline, real scripts and practice drills, and a server-graded quiz to pass on every module. Agents sign in with their own login; you invite, watch progress, and sign off here.</p>
         </div>
 
         <div className="grid4" style={{ marginBottom: 20 }}>
