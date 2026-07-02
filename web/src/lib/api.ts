@@ -69,8 +69,30 @@ export async function adminActAs(email: string): Promise<void> {
   });
   const j = (await res.json().catch(() => ({}))) as { token_hash?: string; type?: string; error?: string };
   if (!res.ok || !j.token_hash) throw new Error(j.error ?? 'Could not start the session');
+  // Stash the OWNER's session first, so Exit can restore it without a re-login.
+  const { data: cur } = await supabase.auth.getSession();
+  if (cur.session) {
+    try {
+      sessionStorage.setItem('hq_admin_return', JSON.stringify({ at: cur.session.access_token, rt: cur.session.refresh_token }));
+    } catch { /* private mode — Exit falls back to sign-out */ }
+  }
   const { error } = await supabase.auth.verifyOtp({ type: 'magiclink', token_hash: j.token_hash });
   if (error) throw error;
+}
+
+/** Is this browser inside an impersonated session (owner tokens stashed)? */
+export function hasAdminReturn(): boolean {
+  try { return !!sessionStorage.getItem('hq_admin_return'); } catch { return false; }
+}
+
+/** Exit impersonation: restore the owner's own session (falls back to sign-out). */
+export async function adminReturn(): Promise<void> {
+  let saved: { at: string; rt: string } | null = null;
+  try { saved = JSON.parse(sessionStorage.getItem('hq_admin_return') ?? 'null'); } catch { saved = null; }
+  try { sessionStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
+  if (!saved) { await supabase.auth.signOut(); return; }
+  const { error } = await supabase.auth.setSession({ access_token: saved.at, refresh_token: saved.rt });
+  if (error) await supabase.auth.signOut();
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
@@ -108,6 +130,7 @@ export interface DealRow {
   price: number | null;
   commission: number | null;
   agent_name: string | null;
+  fub_person_id?: number | null; // joins the deal to its lead (and so its source)
   projected_close: string | null;
   fub_created: string | null;
 }
@@ -143,7 +166,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),
     // Degrades to [] until the deals table exists (supabase-js returns an error, not a throw).
-    supabase.from('deals').select('team_id,stage,stage_class,price,commission,agent_name,projected_close,fub_created'),
+    supabase.from('deals').select('team_id,stage,stage_class,price,commission,agent_name,fub_person_id,projected_close,fub_created'),
   ]);
   return {
     teams: (teams.data as DashboardData['teams']) ?? [],

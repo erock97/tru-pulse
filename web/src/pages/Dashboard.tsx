@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { gciAtRisk, payModel, PAY_LABEL, isClosing, isOfferPlus, type StageClass } from '../../../shared/flags';
+import { payModel, PAY_LABEL, isClosing, isOfferPlus, type StageClass } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
@@ -64,7 +64,38 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const capacity = Number(data.settings?.per_agent_capacity ?? 20);
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
   const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
-  const risk = gciAtRisk({ zeroContact: zero, avgGci, closeRatePct: closeRate, windowDays: winDays });
+
+  // Commission at risk — priced with each source's REAL conversion, from this
+  // team's own outcomes: a closing's deal links to its person, whose lead carries
+  // the source. UC counts the same as Closed (Eric's rule). A source with no
+  // closings yet falls back to the close-rate setting so risk never reads $0
+  // just because the data is young. Conversion uses ALL synced history (stable),
+  // applied to the zero-contact leads in the current window.
+  const srcOfPerson = new Map<string, string>();
+  for (const l of data.leads) {
+    if (l.fub_person_id) srcOfPerson.set(`${l.team_id}:${l.fub_person_id}`, l.source_family ?? 'Other');
+  }
+  const allLeadsBySrc = new Map<string, number>();
+  for (const l of data.leads) {
+    const s = l.source_family ?? 'Other';
+    allLeadsBySrc.set(s, (allLeadsBySrc.get(s) ?? 0) + 1);
+  }
+  const closingsBySrc = new Map<string, number>();
+  for (const d of data.deals) {
+    if (!isClosing((d.stage_class ?? 'other') as StageClass) || !d.fub_person_id) continue;
+    const s = srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`);
+    if (s) closingsBySrc.set(s, (closingsBySrc.get(s) ?? 0) + 1);
+  }
+  const convOf = (s: string) => {
+    const nAll = allLeadsBySrc.get(s) ?? 0;
+    const cAll = closingsBySrc.get(s) ?? 0;
+    return cAll > 0 && nAll > 0 ? cAll / nAll : closeRate / 100;
+  };
+  let riskWin = 0;
+  for (const l of leads) {
+    if (l.flag === 'zero_contact') riskWin += convOf(l.source_family ?? 'Other') * avgGci;
+  }
+  const risk = { window: riskWin, annual: riskWin * (365 / Math.max(winDays, 1)) };
 
   // Per-agent rollup.
   const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number }>();
@@ -94,7 +125,15 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const sources = [...bySource.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([name, n]) => ({ name, n, c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other, pay: payModel(name) }));
+    .map(([name, n]) => ({
+      name, n,
+      c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
+      pay: payModel(name),
+      closed: closingsBySrc.get(name) ?? 0,
+      convPct: (closingsBySrc.get(name) ?? 0) > 0
+        ? Math.round(((closingsBySrc.get(name) ?? 0) / (allLeadsBySrc.get(name) || 1)) * 1000) / 10
+        : null,
+    }));
   const upfront = sources.filter((s) => s.pay === 'upfront').reduce((s, x) => s + x.n, 0);
   const atClose = sources.filter((s) => s.pay === 'atclose').reduce((s, x) => s + x.n, 0);
 
@@ -208,8 +247,9 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 <div className="ey">Commission at risk</div>
                 <div className="big"><CountUp value={risk.annual} fmt={money} /> / yr</div>
                 <div className="sub">
-                  from tracked leads nobody personally worked — paid-up-front spend plus untapped
-                  pay-at-close GCI ({closeRate}% close × {money(avgGci)} avg).
+                  from tracked leads nobody personally worked — priced at each source's real
+                  conversion (UC + Closed ÷ leads, from your own data) × {money(avgGci)} avg.
+                  Sources without a closing yet use your {closeRate}% setting.
                 </div>
               </div>
               <div className="card ringwrap fu">
@@ -334,7 +374,7 @@ function Accountability(p: {
 
 // ── Sources ─────────────────────────────────────────────────────────────────
 function Sources(p: {
-  sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose' }>;
+  sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose'; closed: number; convPct: number | null }>;
   total: number; upfront: number; atClose: number;
 }) {
   return (
@@ -362,13 +402,15 @@ function Sources(p: {
       <div className="card tcard fu">
         <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Every source</h3></div>
         <table className="tbl">
-          <thead><tr><th>Source</th><th>Leads</th><th>Share</th><th>How you pay</th></tr></thead>
+          <thead><tr><th>Source</th><th>Leads</th><th>Share</th><th>Closed (UC+)</th><th>Conversion</th><th>How you pay</th></tr></thead>
           <tbody>
             {p.sources.map((s) => (
               <tr key={s.name}>
                 <td><span className="cell-agent"><span className="dot" style={{ background: s.c, width: 10, height: 10, borderRadius: 3 }} />{s.name}</span></td>
                 <td>{s.n}</td>
                 <td>{p.total ? Math.round((s.n / p.total) * 100) : 0}%</td>
+                <td>{s.closed}</td>
+                <td>{s.convPct == null ? <span className="muted">—</span> : `${s.convPct}%`}</td>
                 <td><span className={`pill ${s.pay === 'atclose' ? 'pill-warn' : 'pill-ok'}`}>{PAY_LABEL[s.pay]}</span></td>
               </tr>
             ))}
@@ -414,7 +456,8 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
 
   const SOURCE_OPTS: Array<[string, string]> = [
     ['Zillow', 'Zillow Preferred / Flex'],
-    ['Realtor.com', 'Realtor.com · MVIP'],
+    ['Realtor.com MVIP', 'Realtor.com MVIP (Market VIP / Opcity)'],
+    ['Realtor.com', 'Realtor.com (paid up front)'],
     ['Homes.com', 'Homes.com'],
     ['Facebook', 'Facebook / Instagram'],
     ['Google', 'Google / LSA'],

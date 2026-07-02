@@ -102,7 +102,7 @@ export default {
       }
       // Which paid-source families this org actually uses (drives every board filter).
       if (Array.isArray(body.sources)) {
-        const KNOWN = ['Zillow', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
+        const KNOWN = ['Zillow', 'Realtor.com MVIP', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
         const picked = (body.sources as unknown[]).map(String).filter((s) => KNOWN.includes(s));
         if (picked.length) patch.sources = picked;
       }

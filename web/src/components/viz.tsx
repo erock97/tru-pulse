@@ -124,6 +124,7 @@ export function Donut({ sources }: { sources: Array<{ name: string; n: number; c
 
 export const SOURCE_COLORS: Record<string, string> = {
   'Zillow': '#a9791f',
+  'Realtor.com MVIP': '#e0784a',
   'Realtor.com': '#c0492f',
   'Homes.com': '#2e8b57',
   'Facebook': '#2f6bb0',

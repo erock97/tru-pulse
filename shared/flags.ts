@@ -14,7 +14,9 @@ export const ZILLOW_CONNECTED_TAG = 'zillow connected';
 // Referrals = pay-at-close networks. Bare "Opcity" is intentionally excluded (sunsetting).
 export const SOURCE_FAMILIES: Array<[string, string[]]> = [
   ['Zillow',      ['zillow']],                     // incl. Zillow Flex (pay-at-close)
-  ['Realtor.com', ['realtor.com', 'market vip']],  // incl. MVIP referral
+  // MVIP must match BEFORE plain Realtor.com ("Realtor.com MVIP" contains both).
+  ['Realtor.com MVIP', ['market vip', 'mvip']],    // "Realtor.com MVIP", "Market VIP via Opcity BLA"
+  ['Realtor.com', ['realtor.com', 'realtordotcom']],
   ['Homes.com',   ['homes.com']],
   ['Facebook',    ['facebook', 'instagram']],
   ['Google',      ['google', 'adwords', 'local services', 'lsa', 'ppc']],
@@ -45,6 +47,7 @@ export function isTargetSource(source: string | null | undefined): boolean {
 export type PayModel = 'upfront' | 'atclose';
 export const PAY_MODEL: Record<string, PayModel> = {
   'Zillow': 'atclose',
+  'Realtor.com MVIP': 'atclose',  // Market VIP / Opcity = referral fee at close
   'Realtor.com': 'upfront',
   'Homes.com': 'upfront',
   'Facebook': 'upfront',
