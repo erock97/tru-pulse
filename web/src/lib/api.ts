@@ -556,7 +556,13 @@ async function allLeads(): Promise<LeadRow[]> {
   const PAGE = 1000;
   const out: LeadRow[] = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.from('leads').select(cols).range(from, from + PAGE - 1);
+    // A stable ORDER is REQUIRED — without it, offset pagination returns rows in an
+    // unstable order across requests, so pages overlap/drop and the count swings.
+    const { data, error } = await supabase
+      .from('leads')
+      .select(cols)
+      .order('fub_person_id', { ascending: true })
+      .range(from, from + PAGE - 1);
     if (error || !data || data.length === 0) break;
     out.push(...(data as LeadRow[]));
     if (data.length < PAGE) break;
