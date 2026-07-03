@@ -549,13 +549,28 @@ export interface DashboardData {
   deals: DealRow[];
 }
 
+// PostgREST caps each response at 1000 rows — a team can have several thousand leads,
+// so page through them all or the whole board (closings, GCI, per-agent) undercounts.
+async function allLeads(): Promise<LeadRow[]> {
+  const cols = 'team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond';
+  const PAGE = 1000;
+  const out: LeadRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from('leads').select(cols).range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    out.push(...(data as LeadRow[]));
+    if (data.length < PAGE) break;
+  }
+  return out;
+}
+
 export async function loadDashboard(): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
     supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads').limit(1),
-    supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond'),
+    allLeads(),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),
     // Degrades to [] until the deals table exists (supabase-js returns an error, not a throw).
@@ -564,7 +579,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   return {
     teams: (teams.data as DashboardData['teams']) ?? [],
     settings: (settings.data?.[0] as Settings) ?? null,
-    leads: (leads.data as LeadRow[]) ?? [],
+    leads: leads,
     cases: (cases.data as CaseRow[]) ?? [],
     agents: (agents.data as AgentRow[]) ?? [],
     deals: (deals.data as DealRow[]) ?? [],
