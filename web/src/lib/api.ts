@@ -534,6 +534,10 @@ export interface Settings {
   strike_limit: number;
   per_agent_capacity: number;
   sources?: string[] | null;   // enabled source families; null/absent = all
+  // Pause watch — broker-set rules for pausing new lead flow to an agent.
+  pause_volume_on?: boolean | null;     // rule 1: at per_agent_capacity leads this month
+  pause_no_close_on?: boolean | null;   // rule 2: N leads taken since their last UC/close
+  pause_no_close_leads?: number | null; // rule 2 threshold (default 30)
 }
 export interface DashboardData {
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
@@ -549,7 +553,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
-    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources').limit(1),
+    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_no_close_on,pause_no_close_leads').limit(1),
     supabase.from('leads').select('team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond'),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('name,email,phone'),
@@ -630,7 +634,7 @@ function demoDashboard(): DashboardData {
   mk(27, 'offer', 'Offer', 30);
   return {
     teams: [{ id: 'demo', name: 'Main office', fub_subdomain: null }],
-    settings: { avg_gci: 10000, close_rate: 2, window_hours: 48, strike_limit: 3, per_agent_capacity: 20 },
+    settings: { avg_gci: 10000, close_rate: 2, window_hours: 48, strike_limit: 3, per_agent_capacity: 20, pause_volume_on: true, pause_no_close_on: true, pause_no_close_leads: 30 },
     leads,
     cases,
     agents: [],

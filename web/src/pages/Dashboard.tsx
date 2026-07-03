@@ -17,12 +17,16 @@ type View = 'overview' | 'accountability' | 'sources' | 'settings';
 type Win = '7' | '14' | 'mtd' | '90' | '180';
 const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo']];
 
+// Pause watch — why an agent is paused from new leads. 'capacity' = hit the
+// monthly volume cap; 'no_close' = took N leads since their last under-contract.
+interface PauseReason { kind: 'capacity' | 'no_close'; count: number; cap: number }
+
 interface Drill {
   leads: LeadRow[];
   contacts: Map<string, { email: string | null; phone: string | null }>;
   subs: Map<string, string | null>;
   closings: Map<string, number>;
-  paused: Map<string, { count: number; cap: number }>;
+  paused: Map<string, PauseReason[]>;
 }
 
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
@@ -98,12 +102,15 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const risk = { window: riskWin, annual: riskWin * (365 / Math.max(winDays, 1)) };
 
-  // Per-agent rollup.
-  const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number }>();
+  // Per-agent rollup (srcs = this agent's lead count broken out by source family,
+  // shown right in the table row so lead distribution is visible without drilling).
+  const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number; srcs: Map<string, number> }>();
   for (const l of leads) {
     const a = ownerOf(l);
-    const r = byAgent.get(a) ?? { zero: 0, stuck: 0, worked: 0, total: 0 };
+    const r = byAgent.get(a) ?? { zero: 0, stuck: 0, worked: 0, total: 0, srcs: new Map<string, number>() };
     r.total++;
+    const sf = l.source_family || 'Other';
+    r.srcs.set(sf, (r.srcs.get(sf) ?? 0) + 1);
     if (l.flag === 'zero_contact') r.zero++;
     else if (l.flag === 'stuck') r.stuck++;
     else if (l.flag === 'worked') r.worked++;
@@ -156,19 +163,51 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const activeAgents = [...byAgent.keys()].filter((a) => isPerson(a)).length;
   const headroom = Math.max(0, activeAgents * capacity - total);
 
-  // Capacity pause — an agent who has taken their monthly lead capacity is PAUSED
-  // from new assignments (they already have a full plate to work). Counted
-  // month-to-date, independent of the window filter, so it always reflects "this
-  // month." Threshold = the per-agent capacity setting (default 20).
+  // ── Pause watch — broker-set rules (Settings) that pause new lead flow ──────
+  // Rule 1 (capacity): agent took their monthly volume cap — a full plate to work.
+  // Rule 2 (no_close): agent took N leads since their LAST under-contract. Any UC
+  // resets the clock — it doesn't have to come from those N leads — but something
+  // has to go under contract or the leads stop. Both computed on ALL data (not the
+  // window filter) so a pause never disappears just because the window narrowed.
+  const pauseVolumeOn = data.settings?.pause_volume_on !== false;       // default on (existing behavior)
+  const pauseNoCloseOn = data.settings?.pause_no_close_on === true;     // broker opts in
+  const pauseNoCloseLeads = Math.max(1, Number(data.settings?.pause_no_close_leads ?? 30));
+  const pausedByAgent = new Map<string, PauseReason[]>();
+  const addPause = (a: string, r: PauseReason) => pausedByAgent.set(a, [...(pausedByAgent.get(a) ?? []), r]);
+
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
-  const monthByAgent = new Map<string, number>();
-  for (const l of data.leads) {
-    if (!l.assigned_to) continue;
-    if (l.fub_created && Date.parse(l.fub_created) < monthStart) continue;
-    monthByAgent.set(l.assigned_to, (monthByAgent.get(l.assigned_to) ?? 0) + 1);
+  if (pauseVolumeOn) {
+    const monthByAgent = new Map<string, number>();
+    for (const l of data.leads) {
+      if (!l.assigned_to) continue;
+      if (l.fub_created && Date.parse(l.fub_created) < monthStart) continue;
+      monthByAgent.set(l.assigned_to, (monthByAgent.get(l.assigned_to) ?? 0) + 1);
+    }
+    for (const [a, n] of monthByAgent) if (n >= capacity) addPause(a, { kind: 'capacity', count: n, cap: capacity });
   }
-  const pausedByAgent = new Map<string, { count: number; cap: number }>();
-  for (const [a, n] of monthByAgent) if (n >= capacity) pausedByAgent.set(a, { count: n, cap: capacity });
+  if (pauseNoCloseOn) {
+    // Anchor = when the agent's most recent UC/closed deal was created (deal
+    // creation ≈ went under contract; enteredStageAt is unreliable and a
+    // projected close date sits in the future).
+    const lastUcByAgent = new Map<string, number>();
+    for (const d of data.deals) {
+      if (!isClosing((d.stage_class ?? 'other') as StageClass) || !d.agent_name) continue;
+      const t = d.fub_created ? Date.parse(d.fub_created) : d.projected_close ? Date.parse(d.projected_close) : NaN;
+      if (Number.isNaN(t)) continue;
+      const k = norm(d.agent_name);
+      if (t > (lastUcByAgent.get(k) ?? 0)) lastUcByAgent.set(k, t);
+    }
+    const sinceUc = new Map<string, number>();
+    for (const l of data.leads) {
+      if (!l.assigned_to) continue;
+      const anchor = lastUcByAgent.get(norm(l.assigned_to));
+      // Never closed → every lead counts. Otherwise only leads taken after the
+      // last UC count (undated leads can't be ordered, so they get the benefit).
+      if (anchor && (!l.fub_created || Date.parse(l.fub_created) <= anchor)) continue;
+      sinceUc.set(l.assigned_to, (sinceUc.get(l.assigned_to) ?? 0) + 1);
+    }
+    for (const [a, n] of sinceUc) if (n >= pauseNoCloseLeads) addPause(a, { kind: 'no_close', count: n, cap: pauseNoCloseLeads });
+  }
   const pausedCount = pausedByAgent.size;
 
   // Deal conversion + production. UC and Closed count the SAME (Eric's rule).
@@ -382,7 +421,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 </div>
                 <div className="row">
                   <span className="tag" style={{ background: '#f4ece0', color: '#8a6e20' }}>{pausedCount}</span>
-                  <div className="t"><b>Paused · at capacity</b><br /><span className="muted">hit {capacity} leads this month — route elsewhere</span></div>
+                  <div className="t"><b>Paused · pause watch</b><br /><span className="muted">tripped a pause rule — route new leads elsewhere</span></div>
                 </div>
                 <div className="row">
                   <span className="tag" style={{ background: '#eef4ef', color: 'var(--green)' }}>{headroom}</span>
@@ -398,6 +437,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
           <Accountability
             strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
             pauseCount={pauseCount} newStrikes7d={newStrikes7d} openCases={openCases}
+            paused={pausedByAgent} pauseWatchOn={pauseVolumeOn || pauseNoCloseOn}
           />
         )}
         {view === 'sources' && <Sources sources={sources} total={total} upfront={upfront} atClose={atClose} />}
@@ -413,10 +453,12 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
 function Accountability(p: {
   strikesByAgent: Map<string, number>; strikeLimit: number;
   pauseCount: number; newStrikes7d: number; openCases: number;
+  paused: Map<string, PauseReason[]>; pauseWatchOn: boolean;
 }) {
   const rows = [...p.strikesByAgent.entries()]
     .filter(([a]) => a !== 'Unassigned')
     .sort((a, b) => b[1] - a[1]);
+  const pausedRows = [...p.paused.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
   const clean = rows.length === 0 && p.pauseCount === 0 && p.newStrikes7d === 0;
   return (
     <>
@@ -445,6 +487,32 @@ function Accountability(p: {
           outbound texts) or lets one stall in the Lead stage. Reaching {p.strikeLimit} strikes in a
           rolling 30 days triggers a coach-confirmed pause recommendation — never an automatic action.
         </p>
+      </div>
+
+      <div className="card tcard fu">
+        <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Pause watch · new leads held</h3></div>
+        <table className="tbl">
+          <thead>
+            <tr><th>Agent</th><th>Why</th><th>Turns back on when</th></tr>
+          </thead>
+          <tbody>
+            {!p.pauseWatchOn ? (
+              <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '22px' }}>Pause watch is off — set your rules in Settings.</td></tr>
+            ) : pausedRows.length === 0 ? (
+              <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '22px' }}>Nobody's paused — every agent is inside the rules.</td></tr>
+            ) : pausedRows.map(([a, reasons]) => (
+              <tr key={a}>
+                <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}<span className="badge cap">⏸ Paused</span></span></td>
+                <td>{reasons.map((r) => (
+                  <div key={r.kind} className={r.kind === 'no_close' ? 'bad' : 'warn'} style={{ fontWeight: 600 }}>
+                    {r.kind === 'capacity' ? `${r.count} of ${r.cap} leads this month` : `${r.count} leads since last under-contract (rule: ${r.cap})`}
+                  </div>
+                ))}</td>
+                <td className="muted">{reasons.some((r) => r.kind === 'no_close') ? 'Something goes under contract' : 'The month rolls over'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="card tcard fu">
@@ -593,6 +661,24 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
       {F('window_hours', 'Contact window', "Hours a new lead can sit before it's flagged.", 'hrs')}
       {F('strike_limit', 'Strike limit', 'Strikes in 30 days that trigger a pause recommendation.')}
       {F('per_agent_capacity', 'Per-agent capacity', 'Leads one agent can work well — sets coverage headroom.')}
+
+      <div className="setrow" style={{ display: 'block' }}>
+        <div className="setlabel">Pause watch</div>
+        <div className="muted small" style={{ marginBottom: 10 }}>
+          Your rules for pausing new lead flow to an agent. A paused agent gets the ⏸ badge on
+          the board and shows up on the Accountability tab — routing stays your call.
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: '0 0 8px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={form.pause_volume_on !== false} onChange={() => setForm({ ...form, pause_volume_on: form.pause_volume_on === false })} style={{ width: 16, height: 16, margin: 0 }} />
+          Pause at monthly volume — agent hits the per-agent capacity above this month
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: 0, cursor: 'pointer' }}>
+          <input type="checkbox" checked={form.pause_no_close_on === true} onChange={() => setForm({ ...form, pause_no_close_on: form.pause_no_close_on !== true })} style={{ width: 16, height: 16, margin: 0 }} />
+          Pause on no closings — agent takes the leads below without an under-contract
+        </label>
+      </div>
+      {F('pause_no_close_leads', 'Leads without a closing', 'Any under-contract resets the count — but something has to go under contract or the leads stop.')}
+
       <button className="btn" onClick={save} disabled={busy} style={{ marginTop: 18 }}>{busy ? 'Saving…' : 'Save settings'}</button>
     </div>
   );
@@ -601,10 +687,16 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
 // ── Agent table with drill-down ─────────────────────────────────────────────
 const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
 
+interface AgentStats { zero: number; stuck: number; worked: number; total: number; srcs: Map<string, number> }
+
+const pauseLabel = (r: PauseReason) => r.kind === 'capacity'
+  ? `At capacity — ${r.count} of ${r.cap} leads this month`
+  : `${r.count} leads since their last under-contract — the rule is ${r.cap}`;
+
 type SortKey = 'agent' | 'total' | 'zero' | 'stuck' | 'worked' | 'workedpct' | 'strikes';
 
 function AgentTable(p: {
-  agents: Array<[string, { zero: number; stuck: number; worked: number; total: number }]>;
+  agents: Array<[string, AgentStats]>;
   strikesByAgent: Map<string, number>; strikeLimit: number; caption: string; drill: Drill;
 }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -615,7 +707,7 @@ function AgentTable(p: {
   const clickSort = (key: SortKey) => setSort((s) =>
     s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) } : { key, dir: key === 'agent' ? 1 : -1 });
 
-  const val = (a: string, r: { zero: number; stuck: number; worked: number; total: number }, key: SortKey): number | string => {
+  const val = (a: string, r: AgentStats, key: SortKey): number | string => {
     switch (key) {
       case 'agent': return a.toLowerCase();
       case 'total': return r.total;
@@ -645,9 +737,12 @@ function AgentTable(p: {
         <thead>
           <tr>
             {HEADERS.map(([key, label]) => (
-              <th key={key} className={`sortable${sort.key === key ? ' on' : ''}`} onClick={() => clickSort(key)}>
-                {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : '↕'}</span>
-              </th>
+              <FragmentRow key={key}>
+                <th className={`sortable${sort.key === key ? ' on' : ''}`} onClick={() => clickSort(key)}>
+                  {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : '↕'}</span>
+                </th>
+                {key === 'total' && <th>By source</th>}
+              </FragmentRow>
             ))}
           </tr>
         </thead>
@@ -655,14 +750,20 @@ function AgentTable(p: {
           {rows.map(([a, r]) => {
             const s = p.strikesByAgent.get(a) ?? 0;
             const pause = s >= p.strikeLimit;
+            const pr = p.drill.paused.get(a);
             const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
             const wp = r.total ? Math.round((r.worked / r.total) * 100) : 0;
             const isOpen = open === a;
             return (
               <FragmentRow key={a}>
                 <tr className={isOpen ? 'row-open' : ''} onClick={() => toggle(a)} style={{ cursor: 'pointer' }}>
-                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{p.drill.paused.get(a) && <span className="badge cap" title={`At capacity — ${p.drill.paused.get(a)!.count} of ${p.drill.paused.get(a)!.cap} leads this month`}>⏸ Paused</span>}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
+                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pr && <span className="badge cap" title={pr.map(pauseLabel).join(' · ')}>⏸ Paused</span>}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
                   <td>{r.total}</td>
+                  <td><span className="srcchips">{[...r.srcs.entries()].sort((x, y) => y[1] - x[1]).map(([sn, n]) => (
+                    <span className="srcchip" key={sn} title={`${sn} · ${n} lead${n === 1 ? '' : 's'}`}>
+                      <span className="dot" style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />{n}
+                    </span>
+                  ))}</span></td>
                   <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
                   <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
                   <td>{r.worked}</td>
@@ -671,7 +772,7 @@ function AgentTable(p: {
                 </tr>
                 {isOpen && (
                   <tr className="drillrow">
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       <AgentDrill agent={a} counts={r} drill={p.drill} flagF={flagF} setFlagF={setFlagF} />
                     </td>
                   </tr>
@@ -711,9 +812,13 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
   const paused = drill.paused.get(agent);
   const first = agent.split(' ')[0];
   const needN = counts.zero + counts.stuck;
-  // Pre-written texts. Pause = WARM (a capacity pause is a compliment, not a
-  // correction — they did nothing wrong). Reminder = a nudge on un-worked leads.
-  const pauseMsg = `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
+  // Pre-written texts. Capacity pause = WARM (it's a compliment — they did nothing
+  // wrong). No-close pause = honest but supportive: the leads hold until one lands.
+  // Reminder = a nudge on un-worked leads.
+  const noClose = paused?.find((r) => r.kind === 'no_close');
+  const pauseMsg = noClose
+    ? `Hey ${first} — I'm holding new leads for now. You've taken ${noClose.count} since your last under-contract, and the team rule is something has to go under contract every ${noClose.cap}. Let's get on a call, work the pipeline you already have, and get one across — the moment it lands, leads turn right back on. I'm in it with you.`
+    : `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
   // The reminder lists the actual un-worked leads with a tap-through FUB link each,
   // so the agent goes straight to the person. Capped so the text stays sendable.
   const fubLink = (l: LeadRow) => {
@@ -733,12 +838,14 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
 
   return (
     <div className="drill">
-      {paused && (
-        <div className="pausebar">
+      {paused?.map((r) => (
+        <div className="pausebar" key={r.kind}>
           <span className="pausebar-tag">⏸ PAUSED</span>
-          <span><b>At capacity</b> — {paused.count} of {paused.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
+          {r.kind === 'capacity'
+            ? <span><b>At capacity</b> — {r.count} of {r.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
+            : <span><b>No closings</b> — {r.count} leads taken since their last under-contract (rule: every {r.cap} needs one). New leads hold until something goes under contract.</span>}
         </div>
-      )}
+      ))}
       <div className="drill-head">
         <div className="drill-chips">
           {chips.map(([k, l, n]) => (
@@ -748,7 +855,7 @@ function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
         </div>
         {isPerson(agent) && (
           <div className="drill-acts">
-            {paused && sms(pauseMsg) && <a className="abtn warm" href={sms(pauseMsg)!} title="Warm, pre-written: you're at capacity — nothing wrong, keep going">💬 Pause text</a>}
+            {paused && sms(pauseMsg) && <a className="abtn warm" href={sms(pauseMsg)!} title={noClose ? 'Pre-written: leads hold until one goes under contract — supportive, not a scolding' : "Warm, pre-written: you're at capacity — nothing wrong, keep going"}>💬 Pause text</a>}
             {needN > 0 && sms(remindMsg) && <a className="abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${needN} un-worked leads`}>💬 Reminder{needN > 0 ? ` (${needN})` : ''}</a>}
             {emailHref ? <a className="abtn" href={emailHref}>✉ Email</a> : <span className="abtn off" title="No email on file — add it in FUB">✉ No email</span>}
             {digits ? <a className="abtn" href={`sms:${digits}`}>💬 Text</a> : <span className="abtn off" title="No mobile on file — add it in FUB">💬 No mobile</span>}

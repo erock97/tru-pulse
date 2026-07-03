@@ -99,9 +99,13 @@ export default {
       const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
       if (!body) return json({ error: 'bad body' }, 422);
       const patch: Record<string, unknown> = {};
-      for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity']) {
+      for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity', 'pause_no_close_leads']) {
         const v = Number(body[k]);
         if (body[k] != null && Number.isFinite(v)) patch[k] = v;
+      }
+      // Pause-watch toggles (booleans, so they skip the numeric coercion above).
+      for (const k of ['pause_volume_on', 'pause_no_close_on']) {
+        if (typeof body[k] === 'boolean') patch[k] = body[k];
       }
       // Which paid-source families this org actually uses (drives every board filter).
       if (Array.isArray(body.sources)) {

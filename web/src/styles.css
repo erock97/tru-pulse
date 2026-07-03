@@ -128,6 +128,10 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .av-sm{ width:28px; height:28px; border-radius:50%; background:var(--cream2); color:var(--gold-dk); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; border:1px solid var(--line); }
 .badge{ background:var(--terra); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px; }
 .badge.cap{ background:#8a6e20; }
+/* per-agent lead count split by source, inline in the table row */
+.srcchips{ display:inline-flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.srcchip{ display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--ink); background:var(--cream2); border:1px solid var(--line); border-radius:14px; padding:2px 8px 2px 5px; white-space:nowrap; }
+.srcchip .dot{ width:8px; height:8px; border-radius:3px; flex-shrink:0; }
 .pausebar{ display:flex; align-items:center; gap:11px; background:linear-gradient(90deg,#f7efd9,#f3e8cc); border:1px solid #e6d3a6; border-radius:11px; padding:10px 13px; margin-bottom:12px; font-size:12.5px; color:#5c4a1e; line-height:1.45; }
 .pausebar-tag{ flex-shrink:0; background:#8a6e20; color:#fff; font-size:10px; font-weight:800; letter-spacing:.5px; padding:4px 9px; border-radius:7px; }
 .pausebar b{ color:#3f3115; }
