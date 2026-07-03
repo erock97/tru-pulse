@@ -210,10 +210,7 @@ export async function fubAddTask(
   return r.status >= 200 && r.status < 300;
 }
 
-/** Scan /identity for the team's *.followupboss.com subdomain. */
-export async function detectSubdomain(key: string): Promise<string | null> {
-  const { status, body } = await fubGet(key, '/identity');
-  if (status !== 200 || !body) return null;
+function subdomainFrom(body: any): string | null {
   const found: string[] = [];
   const walk = (o: any) => {
     if (o && typeof o === 'object') {
@@ -227,4 +224,19 @@ export async function detectSubdomain(key: string): Promise<string | null> {
   };
   walk(body);
   return found[0] ?? null;
+}
+
+/** Scan /identity for the team's *.followupboss.com subdomain. */
+export async function detectSubdomain(key: string): Promise<string | null> {
+  const { status, body } = await fubGet(key, '/identity');
+  if (status !== 200 || !body) return null;
+  return subdomainFrom(body);
+}
+
+/** Validate a FUB API key via /identity — the authoritative connect check. Returns
+ *  whether the key works and the account's subdomain, in one call. */
+export async function validateKey(key: string): Promise<{ valid: boolean; subdomain: string | null }> {
+  const { status, body } = await fubGet(key, '/identity');
+  if (status !== 200 || !body) return { valid: false, subdomain: null };
+  return { valid: true, subdomain: subdomainFrom(body) };
 }

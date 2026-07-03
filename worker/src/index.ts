@@ -9,7 +9,7 @@ import { syncTeam, syncAllActiveTeams, logStageChanges, type TeamRow } from './s
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey } from './crypto.js';
-import { registerWebhooks } from './fub.js';
+import { registerWebhooks, validateKey } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { runCircleCampaign, runOutboundCampaign, logDisposition } from './prospect/service.js';
 import { saveVoiceProfile, loadVoiceProfile, generateSocialCalendar, listSocialCalendar, setContentStatus } from './social/service.js';
@@ -29,7 +29,7 @@ function isAdmin(req: Request, env: Env): boolean {
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const database = db(env);
 
@@ -209,6 +209,55 @@ export default {
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
+    }
+
+    // A team lead connects / re-keys their Follow Up Boss account. Validates the key
+    // against FUB, stores it encrypted (team_secrets — the ONE key every TRU product
+    // reads), registers live webhooks, and kicks a background sync. Self-serve, so a
+    // corrupted/rotated key can be fixed without ops.
+    if (url.pathname === '/connect-fub' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const orgIds = await userOrgIds(database, userId);
+      if (!orgIds.length) return json({ error: 'no org' }, 403);
+      const body = (await req.json().catch(() => null)) as { fubKey?: string; teamId?: string } | null;
+      const fubKey = body?.fubKey?.trim();
+      if (!fubKey) return json({ error: 'fubKey required' }, 422);
+      const teams = await database.select('teams', `org_id=in.(${orgIds.join(',')})&is_active=eq.true&select=id,org_id`);
+      const team = body?.teamId ? teams.find((t) => t.id === body.teamId) : (teams.length === 1 ? teams[0] : null);
+      if (!team) return json({ error: teams.length > 1 ? 'teamId required (multiple teams)' : 'no team for this account' }, 422);
+      const check = await validateKey(fubKey);
+      if (!check.valid) return json({ error: 'That API key was rejected by Follow Up Boss. Copy it fresh from FUB → Admin → API.' }, 400);
+      try {
+        const enc = await encryptKey(await importEncKey(env.FUB_ENC_KEY), fubKey);
+        await database.upsert('team_secrets', [{ team_id: team.id, org_id: team.org_id, fub_key_enc: enc }], 'team_id');
+        if (check.subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: check.subdomain });
+        if (env.FUB_SYSTEM_KEY) {
+          const cb = `${url.origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+          try { await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY); } catch { /* live updates are best-effort */ }
+        }
+        // Heavy full pull → run in the background so the UI returns immediately.
+        ctx.waitUntil(syncTeam(env, database, { id: team.id, org_id: team.org_id, fub_subdomain: check.subdomain }, 180).catch(() => {}));
+        return json({ ok: true, subdomain: check.subdomain, syncing: true });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Connection status for the caller's team(s): is a key stored, subdomain, last sync.
+    if (url.pathname === '/connection' && req.method === 'GET') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const orgIds = await userOrgIds(database, userId);
+      if (!orgIds.length) return json([]);
+      const teams = await database.select('teams', `org_id=in.(${orgIds.join(',')})&is_active=eq.true&select=id,name,fub_subdomain`);
+      const secrets = await database.select('team_secrets', `org_id=in.(${orgIds.join(',')})&select=team_id`);
+      const hasKey = new Set((secrets as Array<{ team_id: string }>).map((s) => s.team_id));
+      const state = await database.select('sync_state', 'select=team_id,last_sync_at');
+      const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
+      return json((teams as Array<{ id: string; name: string; fub_subdomain: string | null }>).map((t) => ({
+        teamId: t.id, name: t.name, connected: hasKey.has(t.id), subdomain: t.fub_subdomain, lastSync: lastByTeam.get(t.id) ?? null,
+      })));
     }
 
     // Admin: run the 3-strike reconcile now (ops / testing).

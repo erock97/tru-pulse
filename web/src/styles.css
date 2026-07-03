@@ -210,6 +210,12 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 /* editable settings form */
 .setrow{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--line); }
 .setrow:first-of-type{ padding-top:0; }
+/* FUB connection status rows */
+.connrow{ display:flex; align-items:center; gap:11px; padding:9px 0; border-top:1px solid var(--line); }
+.connrow:first-of-type{ border-top:0; }
+.conndot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.conndot.on{ background:var(--green); box-shadow:0 0 0 3px rgba(46,139,87,.16); }
+.conndot.off{ background:var(--terra); box-shadow:0 0 0 3px rgba(192,73,47,.16); }
 .setlabel{ font-size:14px; font-weight:700; margin-bottom:2px; }
 .setinput{ position:relative; flex-shrink:0; }
 .setinput input{ width:140px; text-align:right; padding-right:34px; }

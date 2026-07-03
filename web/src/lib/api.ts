@@ -495,6 +495,32 @@ export async function saveSettings(patch: Partial<Settings>): Promise<void> {
   if (!res.ok) throw new Error('Save failed');
 }
 
+// ── Follow Up Boss connection (the ONE key per team, shared across all TRU products) ──
+export interface Connection {
+  teamId: string;
+  name: string;
+  connected: boolean;
+  subdomain: string | null;
+  lastSync: string | null;
+}
+export async function loadConnection(): Promise<Connection[]> {
+  if (isDemo) return [{ teamId: 'demo', name: 'Sample Realty', connected: true, subdomain: 'sample', lastSync: new Date().toISOString() }];
+  const res = await fetch(WORKER_URL + '/connection', { headers: { Authorization: 'Bearer ' + (await token()) } });
+  if (!res.ok) return [];
+  return res.json();
+}
+export async function connectFub(fubKey: string, teamId?: string): Promise<{ ok: boolean; subdomain: string | null }> {
+  if (isDemo) return { ok: true, subdomain: 'sample' };
+  const res = await fetch(WORKER_URL + '/connect-fub', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify({ fubKey, teamId }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; subdomain?: string | null; error?: string };
+  if (!res.ok) throw new Error(body.error || 'Could not connect to Follow Up Boss.');
+  return { ok: !!body.ok, subdomain: body.subdomain ?? null };
+}
+
 export interface LeadRow {
   team_id: string;
   assigned_to: string | null;

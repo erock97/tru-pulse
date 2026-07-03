@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
-import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
+import { loadDashboard, saveSettings, loadConnection, connectFub, type DashboardData, type Settings, type LeadRow, type Connection } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
@@ -568,6 +568,37 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   const set = (k: keyof Settings) => (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: Number(e.target.value) });
 
+  // Follow Up Boss connection — the ONE key per team, shared across every TRU product.
+  const [conns, setConns] = useState<Connection[] | null>(null);
+  const [keyInput, setKeyInput] = useState('');
+  const [connBusy, setConnBusy] = useState(false);
+  const [connMsg, setConnMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const loadConn = () => { void loadConnection().then(setConns); };
+  useEffect(() => { loadConn(); }, []);
+  async function doConnect() {
+    const k = keyInput.trim();
+    if (!k || connBusy) return;
+    setConnBusy(true); setConnMsg(null);
+    try {
+      const r = await connectFub(k);
+      setKeyInput('');
+      setConnMsg({ ok: true, text: `Connected${r.subdomain ? ` to ${r.subdomain}.followupboss.com` : ''} — pulling your data now. It’ll fill in over the next minute.` });
+      setTimeout(loadConn, 4000);
+    } catch (e) {
+      setConnMsg({ ok: false, text: e instanceof Error ? e.message : 'Could not connect.' });
+    } finally {
+      setConnBusy(false);
+    }
+  }
+  const ago = (iso: string | null) => {
+    if (!iso) return 'never';
+    const mins = Math.round((Date.now() - Date.parse(iso)) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.round(mins / 60);
+    return hrs < 24 ? `${hrs} hr ago` : `${Math.round(hrs / 24)} d ago`;
+  };
+
   async function save() {
     setBusy(true); setMsg(null);
     try {
@@ -612,6 +643,40 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
 
   return (
     <div className="card fu" style={{ maxWidth: 640 }}>
+      <div className="setrow" style={{ display: 'block' }}>
+        <div className="setlabel">Follow Up Boss connection</div>
+        <div className="muted small" style={{ marginBottom: 10 }}>
+          Your API key connects every TRU product — Pulse, Coach, and the rest — to this team’s
+          Follow Up Boss. Enter it once here; paste a new one anytime a key is rotated or stops working.
+        </div>
+        {(conns ?? []).map((c) => (
+          <div key={c.teamId} className="connrow">
+            <span className={`conndot ${c.connected ? 'on' : 'off'}`} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5 }}>{c.name}</div>
+              <div className="muted small">
+                {c.connected
+                  ? <>Connected{c.subdomain ? ` · ${c.subdomain}.followupboss.com` : ''} · last sync {ago(c.lastSync)}</>
+                  : 'Not connected — enter your API key below'}
+              </div>
+            </div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          <input
+            type="password"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            placeholder="Paste your Follow Up Boss API key"
+            autoComplete="off"
+            style={{ flex: 1, minWidth: 240, padding: '11px 12px', border: '1px solid var(--line)', borderRadius: 10, fontSize: 14, background: '#fff', color: 'var(--ink)' }}
+          />
+          <button className="btn" onClick={doConnect} disabled={!keyInput.trim() || connBusy}>{connBusy ? 'Connecting…' : 'Connect & sync'}</button>
+        </div>
+        <div className="muted small" style={{ marginTop: 6 }}>Find it in FUB → Admin → API. Stored encrypted; never shown in the browser.</div>
+        {connMsg && <div className={connMsg.ok ? 'ok' : 'err'} style={{ marginTop: 10 }}>{connMsg.text}</div>}
+      </div>
+
       {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
       <div className="setrow" style={{ display: 'block' }}>
         <div className="setlabel">Lead sources you pay for</div>
