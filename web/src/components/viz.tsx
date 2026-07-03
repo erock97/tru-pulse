@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** Animate a number from 0 → target (easeOutCubic) on mount / when target changes. */
+/** Ease a number toward the target (easeOutCubic) when it changes. Seeds at the target
+ *  so it is ALWAYS correct on mount — even if the parent re-renders/remounts under load
+ *  (the old 0-based version got reset each render and stuck mid-climb). */
 export function useCountUp(target: number, dur = 1100): number {
-  const [v, setV] = useState(0);
+  const [v, setV] = useState(target);
+  const prev = useRef(target);
   useEffect(() => {
+    const from = prev.current;
+    prev.current = target;
+    if (from === target) { setV(target); return; }
     let raf = 0;
     let start: number | null = null;
     const step = (t: number) => {
       if (start === null) start = t;
       const p = Math.min((t - start) / dur, 1);
       const e = 1 - Math.pow(1 - p, 3);
-      setV(target * e);
+      setV(from + (target - from) * e);
       if (p < 1) raf = requestAnimationFrame(step);
       else setV(target);
     };
