@@ -10,7 +10,7 @@ import { sourceFamily, classifyLead, isStuckStage, stageClass, isOfferPlus } fro
 // Contact counts (calls/texts) are only meaningful for RECENT active leads (the
 // accountability horizon) and each costs 2 FUB subrequests — so we never fetch them
 // for the full all-time pull. Older/advanced leads flag from their stage alone.
-const CONTACT_HORIZON_MS = 90 * 86400_000;
+const CONTACT_HORIZON_MS = 45 * 86400_000;
 
 export interface TeamRow {
   id: string;
