@@ -54,6 +54,15 @@ export default {
       }
     }
 
+    // Admin: list active teams + their last sync (to drive per-team syncs).
+    if (url.pathname === '/teams' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      const teams = await database.select('teams', 'is_active=eq.true&select=id,name,org_id');
+      const state = await database.select('sync_state', 'select=team_id,last_sync_at');
+      const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
+      return json((teams as Array<{ id: string; name: string }>).map((t) => ({ id: t.id, name: t.name, last_sync_at: lastByTeam.get(t.id) ?? null })));
+    }
+
     // Sync. Admin → one team (?teamId=) or all. Else → the caller's own org(s).
     if (url.pathname === '/sync' && req.method === 'POST') {
       const windowDays = Number(url.searchParams.get('window') ?? 180);
