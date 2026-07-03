@@ -42,30 +42,20 @@ export async function fubGet(
   return { status: 429, body: null };
 }
 
-/** Paginate /people newest-first until older than the window (or MAX_PAGES). */
-export async function pullPeople(key: string, windowDays: number): Promise<any[]> {
-  const cutoff = Date.now() - windowDays * 86400_000;
+/** Paginate ALL of /people (newest-first) to completion — NOT a created-date window.
+ *  Closings come from OLDER leads (long sales cycles), so any created-date cutoff
+ *  structurally hides every closed deal. We pull everyone and classify by current
+ *  stage; the read layer windows the accountability views by date as needed. */
+export async function pullPeople(key: string): Promise<any[]> {
   const leads: any[] = [];
   let offset = 0;
   for (let page = 0; page < MAX_PAGES; page++) {
-    const { status, body } = await fubGet(key, '/people', {
-      limit: 100,
-      offset,
-      sort: '-created',
-    });
+    const { status, body } = await fubGet(key, '/people', { limit: 100, offset, sort: '-created' });
     if (status !== 200 || !body) break;
     const people: any[] = body.people ?? [];
     if (people.length === 0) break;
-    let stop = false;
-    for (const p of people) {
-      const created = Date.parse(p.created ?? '');
-      if (!Number.isNaN(created) && created < cutoff) {
-        stop = true;
-        break;
-      }
-      leads.push(p);
-    }
-    if (stop || people.length < 100) break;
+    leads.push(...people);
+    if (people.length < 100) break;
     offset += 100;
   }
   return leads;

@@ -5,7 +5,12 @@ import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
 import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds, getPeopleByIds } from './fub.js';
-import { sourceFamily, classifyLead, isStuckStage, stageClass } from '../../shared/flags.js';
+import { sourceFamily, classifyLead, isStuckStage, stageClass, isOfferPlus } from '../../shared/flags.js';
+
+// Contact counts (calls/texts) are only meaningful for RECENT active leads (the
+// accountability horizon) and each costs 2 FUB subrequests — so we never fetch them
+// for the full all-time pull. Older/advanced leads flag from their stage alone.
+const CONTACT_HORIZON_MS = 90 * 86400_000;
 
 export interface TeamRow {
   id: string;
@@ -14,7 +19,9 @@ export interface TeamRow {
 }
 
 // 180-day default window so the dashboard's 6-month view has real coverage.
-export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays = 180) {
+// windowDays is retained for call-site compatibility but no longer bounds the people
+// pull — we sync ALL tracked people now (a created-date window hid closed deals).
+export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDays = 180) {
   // 1. Decrypt this tenant's FUB key (only the Worker can read team_secrets).
   const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
   if (!secret.length) throw new Error(`no FUB key for team ${team.id}`);
@@ -27,24 +34,37 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
     if (sub) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });
   }
 
-  // 3. Pull people in window; keep only tracked paid sources.
-  const people = await pullPeople(fubKey, windowDays);
+  // 3. Pull ALL people (no created-date window — that hid every closed deal); keep
+  //    only tracked paid sources.
+  const people = await pullPeople(fubKey);
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
   const ponds = await pullPonds(fubKey);
 
-  // 4. Classify each and upsert. Stuck leads short-circuit (skip the API calls).
+  // 4. Classify each and upsert. Contact API calls (2 subrequests each) are spent
+  //    ONLY on recent, active, non-advanced leads — never the whole all-time pull:
+  //    stuck → stuck; offer/UC/closed → clearly worked; old active → assume worked.
   const rows: any[] = [];
   const nowIso = new Date().toISOString();
+  const nowMs = Date.now();
   for (const p of inScope) {
     const stage = String(p.stage ?? '');
     const tags: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => String(t)) : [];
+    const createdMs = p.created ? Date.parse(p.created) : NaN;
+    const recent = Number.isNaN(createdMs) || (nowMs - createdMs) <= CONTACT_HORIZON_MS;
     let outgoingTexts = 0;
     let calls = 0;
-    if (!isStuckStage(stage)) {
+    let flag: string;
+    if (isStuckStage(stage)) {
+      flag = 'stuck';
+    } else if (isOfferPlus(stageClass(stage))) {
+      flag = 'worked';
+    } else if (recent) {
       outgoingTexts = await countOutgoingTexts(fubKey, p.id);
       calls = await countCalls(fubKey, p.id);
+      flag = classifyLead({ stage, tags, outgoingTexts, calls });
+    } else {
+      flag = 'worked';
     }
-    const flag = classifyLead({ stage, tags, outgoingTexts, calls });
     rows.push({
       org_id: team.org_id,
       team_id: team.id,
