@@ -71,6 +71,13 @@ export async function pullPeople(key: string, windowDays: number): Promise<any[]
   return leads;
 }
 
+/** Fetch specific people by comma-separated FUB ids — the webhook stage-log path. */
+export async function getPeopleByIds(key: string, ids: string): Promise<any[]> {
+  const { status, body } = await fubGet(key, '/people', { id: ids, limit: 100 });
+  if (status !== 200 || !body) return [];
+  return body.people ?? [];
+}
+
 /** Non-automated outgoing texts for a person (isIncoming === false). */
 export async function countOutgoingTexts(key: string, personId: number): Promise<number> {
   const { status, body } = await fubGet(key, '/textMessages', { personId, limit: 100 });

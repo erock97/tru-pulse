@@ -5,7 +5,7 @@ import type { Env } from './env.js';
 import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
-import { syncTeam, syncAllActiveTeams, type TeamRow } from './sync.js';
+import { syncTeam, syncAllActiveTeams, logStageChanges, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey } from './crypto.js';
@@ -133,8 +133,16 @@ export default {
       }
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
+      const team = rows[0] as TeamRow;
+      // FUB posts { event, resourceIds }. On a stage change, stamp the moment into
+      // person_stage_log — the dated closings/UC signal (never the Deals tab).
+      const payload = (await req.json().catch(() => null)) as { event?: string; resourceIds?: number[] } | null;
       try {
-        return json({ ok: true, synced: await syncTeam(env, database, rows[0] as TeamRow, 30) });
+        const synced = await syncTeam(env, database, team, 30);
+        const logged = payload?.event === 'peopleStageUpdated' && Array.isArray(payload.resourceIds)
+          ? await logStageChanges(env, database, team, payload.resourceIds)
+          : 0;
+        return json({ ok: true, synced, logged });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }

@@ -4,7 +4,7 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds, getPeopleByIds } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage, stageClass } from '../../shared/flags.js';
 
 export interface TeamRow {
@@ -102,6 +102,27 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, windowDays
     stuck: rows.filter((r) => r.flag === 'stuck').length,
     worked: rows.filter((r) => r.flag === 'worked').length,
   };
+}
+
+/** Log the moment specific people changed stage → person_stage_log. The reliable,
+ *  dated closings/UC signal (never the FUB Deals tab, which agents rarely fill in).
+ *  FUB exposes no historical stage date, so this accrues accurately from go-live;
+ *  fed by the peopleStageUpdated webhook. Fetches the changed people by id so an
+ *  under-contract on an OLD lead (outside the sync window) is still stamped. */
+export async function logStageChanges(env: Env, database: Db, team: TeamRow, ids: number[]): Promise<number> {
+  const clean = ids.filter((n) => typeof n === 'number' && Number.isFinite(n));
+  if (!clean.length) return 0;
+  const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
+  if (!secret.length) return 0;
+  const encKey = await importEncKey(env.FUB_ENC_KEY);
+  const fubKey = await decryptKey(encKey, secret[0].fub_key_enc);
+  const people = await getPeopleByIds(fubKey, clean.join(','));
+  const now = new Date().toISOString();
+  const rows = people
+    .filter((p) => p.stage)
+    .map((p) => ({ org_id: team.org_id, team_id: team.id, fub_person_id: p.id, stage: String(p.stage), changed_at: now }));
+  if (rows.length) await database.upsert('person_stage_log', rows);
+  return rows.length;
 }
 
 const normName = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
