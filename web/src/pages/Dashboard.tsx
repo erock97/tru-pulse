@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { payModel, PAY_LABEL, isClosing, isOfferPlus, type StageClass } from '../../../shared/flags';
+import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass, type StageClass } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
@@ -165,12 +165,12 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
 
   // ── Pause watch — broker-set rules (Settings) that pause new lead flow ──────
   // Rule 1 (capacity): agent took their monthly volume cap — a full plate to work.
-  // Rule 2 (no_close): a genuine production drought. An agent is CLEARED if they
-  // hold a live under-contract OR converted anywhere in their most-recent N leads;
-  // only N+ leads with nothing under contract and no recent close trips it. Deals
-  // join to the agent's own leads by person (fub_person_id) — the reliable join
-  // used across Pulse, never an agent-name/date proxy. Both computed on ALL data
-  // (not the window filter) so a pause never disappears just because it narrowed.
+  // Rule 2 (no_close): a genuine production drought, read from the PERSON'S OWN STAGE
+  // (leads.stage, synced from FUB) — NEVER the FUB Deals object, which agents rarely
+  // fill in. A lead whose stage is Under Contract / Closed IS the conversion. Cleared
+  // if any of their leads is under contract right now, OR one closed inside their most
+  // -recent N leads. Only N+ leads with nothing under contract and no recent close trips
+  // it. All on ALL leads (not the window filter) so a pause doesn't vanish on narrowing.
   const pauseVolumeOn = data.settings?.pause_volume_on !== false;       // default on (existing behavior)
   const pauseVolumeLeads = Math.max(1, Number(data.settings?.pause_volume_leads ?? capacity)); // own threshold; falls back to capacity
   const pauseNoCloseOn = data.settings?.pause_no_close_on === true;     // broker opts in
@@ -189,34 +189,22 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     for (const [a, n] of monthByAgent) if (n >= pauseVolumeLeads) addPause(a, { kind: 'capacity', count: n, cap: pauseVolumeLeads });
   }
   if (pauseNoCloseOn) {
-    // Person-join: who's in play right now (open UC) and who ever converted (UC or
-    // Closed). Keyed team_id:fub_person_id — the same join used for source/conversion.
-    const ucPersons = new Set<string>();        // a live under-contract this instant
-    const convertedPersons = new Set<string>(); // ever reached UC or Closed
-    for (const d of data.deals) {
-      if (!d.fub_person_id) continue;
-      const cls = (d.stage_class ?? 'other') as StageClass;
-      const key = `${d.team_id}:${d.fub_person_id}`;
-      if (cls === 'uc') ucPersons.add(key);
-      if (isClosing(cls)) convertedPersons.add(key);
-    }
     const leadsByAgent = new Map<string, LeadRow[]>();
     for (const l of data.leads) {
       if (!l.assigned_to) continue;
       const arr = leadsByAgent.get(l.assigned_to);
       if (arr) arr.push(l); else leadsByAgent.set(l.assigned_to, [l]);
     }
-    const pkey = (l: LeadRow) => `${l.team_id}:${l.fub_person_id}`;
     for (const [a, ls] of leadsByAgent) {
-      if (ls.length < pauseNoCloseLeads) continue;                                  // not enough leads to be a drought
-      if (ls.some((l) => l.fub_person_id && ucPersons.has(pkey(l)))) continue;      // holds a live UC → producing, never pause
-      // Drought = leads taken since their most recent conversion (newest first;
-      // undated leads sink to the bottom). A conversion inside the last N clears them.
+      if (ls.length < pauseNoCloseLeads) continue;                                     // not enough leads to be a drought
+      if (ls.some((l) => stageClass(l.stage) === 'uc')) continue;                      // a lead under contract right now → producing
+      // Drought = leads taken since their most recent close (newest first; undated
+      // leads sink to the bottom). A close inside the last N leads clears them.
       const byNewest = [...ls].sort((x, y) =>
         (y.fub_created ? Date.parse(y.fub_created) : 0) - (x.fub_created ? Date.parse(x.fub_created) : 0));
       let drought = byNewest.length;
       for (let i = 0; i < byNewest.length; i++) {
-        if (byNewest[i].fub_person_id && convertedPersons.has(pkey(byNewest[i]))) { drought = i; break; }
+        if (isClosing(stageClass(byNewest[i].stage))) { drought = i; break; }
       }
       if (drought >= pauseNoCloseLeads) addPause(a, { kind: 'no_close', count: drought, cap: pauseNoCloseLeads });
     }
