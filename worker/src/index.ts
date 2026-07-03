@@ -99,7 +99,7 @@ export default {
       const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
       if (!body) return json({ error: 'bad body' }, 422);
       const patch: Record<string, unknown> = {};
-      for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity', 'pause_no_close_leads']) {
+      for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity', 'pause_volume_leads', 'pause_no_close_leads']) {
         const v = Number(body[k]);
         if (body[k] != null && Number.isFinite(v)) patch[k] = v;
       }

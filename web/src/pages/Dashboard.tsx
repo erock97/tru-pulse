@@ -170,6 +170,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // has to go under contract or the leads stop. Both computed on ALL data (not the
   // window filter) so a pause never disappears just because the window narrowed.
   const pauseVolumeOn = data.settings?.pause_volume_on !== false;       // default on (existing behavior)
+  const pauseVolumeLeads = Math.max(1, Number(data.settings?.pause_volume_leads ?? capacity)); // own threshold; falls back to capacity
   const pauseNoCloseOn = data.settings?.pause_no_close_on === true;     // broker opts in
   const pauseNoCloseLeads = Math.max(1, Number(data.settings?.pause_no_close_leads ?? 30));
   const pausedByAgent = new Map<string, PauseReason[]>();
@@ -183,7 +184,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
       if (l.fub_created && Date.parse(l.fub_created) < monthStart) continue;
       monthByAgent.set(l.assigned_to, (monthByAgent.get(l.assigned_to) ?? 0) + 1);
     }
-    for (const [a, n] of monthByAgent) if (n >= capacity) addPause(a, { kind: 'capacity', count: n, cap: capacity });
+    for (const [a, n] of monthByAgent) if (n >= pauseVolumeLeads) addPause(a, { kind: 'capacity', count: n, cap: pauseVolumeLeads });
   }
   if (pauseNoCloseOn) {
     // Anchor = when the agent's most recent UC/closed deal was created (deal
@@ -665,19 +666,22 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
       <div className="setrow" style={{ display: 'block' }}>
         <div className="setlabel">Pause watch</div>
         <div className="muted small" style={{ marginBottom: 10 }}>
-          Your rules for pausing new lead flow to an agent. A paused agent gets the ⏸ badge on
-          the board and shows up on the Accountability tab — routing stays your call.
+          Your rules for pausing new lead flow to an agent. Both are computed live from the
+          synced FUB data on every load — full history, nothing tracked from today forward.
+          A paused agent gets the ⏸ badge on the board and shows up on the Accountability
+          tab — routing stays your call.
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: '0 0 8px', cursor: 'pointer' }}>
           <input type="checkbox" checked={form.pause_volume_on !== false} onChange={() => setForm({ ...form, pause_volume_on: form.pause_volume_on === false })} style={{ width: 16, height: 16, margin: 0 }} />
-          Pause at monthly volume — agent hits the per-agent capacity above this month
+          Pause at monthly volume — agent takes the leads below in one calendar month
         </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: 0, cursor: 'pointer' }}>
           <input type="checkbox" checked={form.pause_no_close_on === true} onChange={() => setForm({ ...form, pause_no_close_on: form.pause_no_close_on !== true })} style={{ width: 16, height: 16, margin: 0 }} />
           Pause on no closings — agent takes the leads below without an under-contract
         </label>
       </div>
-      {F('pause_no_close_leads', 'Leads without a closing', 'Any under-contract resets the count — but something has to go under contract or the leads stop.')}
+      {F('pause_volume_leads', 'Monthly volume cap', 'Leads taken this month that trigger the volume pause. Resets when the month rolls over.')}
+      {F('pause_no_close_leads', 'Leads without a closing', 'Counted live from their FUB history: leads taken since their last under-contract. Any UC — from any lead — resets it, but something has to go under contract or the leads stop.')}
 
       <button className="btn" onClick={save} disabled={busy} style={{ marginTop: 18 }}>{busy ? 'Saving…' : 'Save settings'}</button>
     </div>
