@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass, type StageClass } from '../../../shared/flags';
+import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
@@ -64,32 +64,24 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const worked = leads.filter((l) => l.flag === 'worked').length;
   const workedPct = total ? Math.round((worked / total) * 100) : 0;
 
-  const avgGci = Number(data.settings?.avg_gci ?? 10000);
+  const avgGci = Number(data.settings?.avg_gci ?? 4000);
   const closeRate = Number(data.settings?.close_rate ?? 2);
   const capacity = Number(data.settings?.per_agent_capacity ?? 20);
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
   const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
 
-  // Commission at risk — priced with each source's REAL conversion, from this
-  // team's own outcomes: a closing's deal links to its person, whose lead carries
-  // the source. UC counts the same as Closed (Eric's rule). A source with no
-  // closings yet falls back to the close-rate setting so risk never reads $0
-  // just because the data is young. Conversion uses ALL synced history (stable),
-  // applied to the zero-contact leads in the current window.
-  const srcOfPerson = new Map<string, string>();
-  for (const l of data.leads) {
-    if (l.fub_person_id) srcOfPerson.set(`${l.team_id}:${l.fub_person_id}`, l.source_family ?? 'Other');
-  }
+  // Commission at risk — priced with each source's REAL conversion from this team's
+  // own outcomes. A "closing" is a lead whose PERSON STAGE is Under Contract / Closed
+  // (never the Deals tab). UC counts the same as Closed (Eric's rule). A source with no
+  // closings yet falls back to the close-rate setting so risk never reads $0 on young
+  // data. Conversion uses ALL synced leads (stable), applied to the zero-contact leads
+  // in the current window.
   const allLeadsBySrc = new Map<string, number>();
+  const closingsBySrc = new Map<string, number>();
   for (const l of data.leads) {
     const s = l.source_family ?? 'Other';
     allLeadsBySrc.set(s, (allLeadsBySrc.get(s) ?? 0) + 1);
-  }
-  const closingsBySrc = new Map<string, number>();
-  for (const d of data.deals) {
-    if (!isClosing((d.stage_class ?? 'other') as StageClass) || !d.fub_person_id) continue;
-    const s = srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`);
-    if (s) closingsBySrc.set(s, (closingsBySrc.get(s) ?? 0) + 1);
+    if (isClosing(stageClass(l.stage))) closingsBySrc.set(s, (closingsBySrc.get(s) ?? 0) + 1);
   }
   const convOf = (s: string) => {
     const nAll = allLeadsBySrc.get(s) ?? 0;
@@ -211,52 +203,28 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const pausedCount = pausedByAgent.size;
 
-  // Deal conversion + production. UC and Closed count the SAME (Eric's rule).
-  // CONVERSION IS TRAILING, not windowed: a rate needs a settled cohort — dividing
-  // deals-by-close-date against this-window's just-arrived leads produced >100%
-  // nonsense (a UC deal closing now from a lead created months ago). So offer rate
-  // and leads-per-closing run over the whole tracked-lead base (source-filtered),
-  // joining each deal to its lead's person. Production (closings count + GCI) is
-  // the real dollar activity across all deals.
-  const bestStage = new Map<string, StageClass>();
-  const RANK: Record<StageClass, number> = { other: 0, offer: 1, uc: 2, closed: 3 };
-  for (const d of data.deals) {
-    if (!d.fub_person_id) continue;
-    const k = `${d.team_id}:${d.fub_person_id}`;
-    const c = (d.stage_class ?? 'other') as StageClass;
-    if (RANK[c] > RANK[bestStage.get(k) ?? 'other']) bestStage.set(k, c);
-  }
-  // OFFER RATE — of THIS WINDOW's paid leads, the share whose person reached offer+
-  // (person-join, ≤100%). A trackable trend that matures as the window widens; only
-  // deals that trace to a tracked paid lead count (honest paid-lead ROI).
+  // Production — from the PERSON'S STAGE (leads.stage), never the Deals tab. UC and
+  // Closed count the same (Eric's rule). This is the CURRENT SNAPSHOT: how many tracked
+  // leads are under contract / closed right now (source-filtered, not created-windowed,
+  // because "under contract" is a pipeline state, not a dated event). GCI carries no
+  // dollar on a person, so GCI = count × the flat editable avg-GCI setting. The dated
+  // window trend rides person_stage_log (changed_at) as it accrues from go-live.
+  const allTracked = enabledSources
+    ? data.leads.filter((l) => enabledSources.includes(l.source_family ?? 'Other'))
+    : data.leads;
+  // OFFER RATE — of THIS WINDOW's paid leads, the share whose stage reached offer+.
   let leadsReachedOffer = 0;
-  let leadsReachedClose = 0;
-  for (const l of leads) {
-    if (!l.fub_person_id) continue;
-    const st = bestStage.get(`${l.team_id}:${l.fub_person_id}`);
-    if (st && isOfferPlus(st)) leadsReachedOffer++;
-    if (st && isClosing(st)) leadsReachedClose++;
-  }
+  for (const l of leads) if (isOfferPlus(stageClass(l.stage))) leadsReachedOffer++;
   const offerRate = total ? Math.round((leadsReachedOffer / total) * 100) : 0;
-
-  // CLOSINGS + GCI — WINDOWED by close date (UC counts as closed; NEVER all-time).
-  // A month-over-month trend, not a static lifetime tally. Signature's 221 lifetime
-  // closings become "closed in this window," so leads-per-closing reads true.
-  const closings = data.deals.filter((d) => {
-    if (!isClosing((d.stage_class ?? 'other') as StageClass)) return false;
-    const t = d.projected_close ? Date.parse(d.projected_close) : d.fub_created ? Date.parse(d.fub_created) : NaN;
-    if (!Number.isNaN(t) && t < cutoff) return false;
-    if (!enabledSources) return true;
-    const s = d.fub_person_id ? srcOfPerson.get(`${d.team_id}:${d.fub_person_id}`) : null;
-    return !s || enabledSources.includes(s);
-  });
-  const gciInPlay = closings.reduce((s, d) => s + Number(d.commission ?? 0), 0);
-  // Leads per closing = leads in window ÷ closings in window — the intuitive,
-  // trackable ratio. Widen the window for a stable read.
-  const perClosing = closings.length ? Math.max(1, Math.round(total / closings.length)) : null;
+  // Closings snapshot (UC + Closed by current stage) → count, GCI, leads-per-closing,
+  // per-agent (for the drill Closings stat).
+  const closingLeads = allTracked.filter((l) => isClosing(stageClass(l.stage)));
+  const closingsCount = closingLeads.length;
+  const gciInPlay = closingsCount * avgGci;
+  const perClosing = closingsCount ? Math.max(1, Math.round(allTracked.length / closingsCount)) : null;
   const closingsByAgent = new Map<string, number>();
-  for (const d of closings) {
-    const a = norm(d.agent_name);
+  for (const l of closingLeads) {
+    const a = norm(l.assigned_to ?? '');
     if (a) closingsByAgent.set(a, (closingsByAgent.get(a) ?? 0) + 1);
   }
   const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent };
@@ -356,7 +324,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
                 <div className="big">{perClosing ? `1 : ${perClosing}` : '—'}</div>
                 <div className="lbl">Leads per closing</div>
               </div>
-              <KPI color="#2e8b57" icon={ICON.check} value={closings.length} label="Total closings (all sources)" />
+              <KPI color="#2e8b57" icon={ICON.check} value={closingsCount} label="Under contract + closed" />
               <div className="card kpi fu">
                 <span className="accent" style={{ background: '#8f6416' }} />
                 <div className="ico" style={{ background: '#8f641622', color: '#8f6416' }}>{ICON.gci}</div>
@@ -365,7 +333,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               </div>
             </div>
             <div className="muted small" style={{ margin: '8px 2px 0' }}>
-              All four <b>track with the date window</b> above — close it in on a month or open it to 6 for the trend. <b>Offer rate</b> counts only paid leads whose person reached offer+ (the honest paid-lead ROI); <b>closings</b> are UC + Closed with a close date in the window. Widen the window for a stable leads-per-closing read.
+              <b>Offer rate</b> tracks the date window — the share of this window's paid leads whose stage reached offer+. <b>Under contract + closed</b>, <b>GCI</b>, and <b>leads per closing</b> are a live snapshot of your whole tracked pipeline, read from each person's stage in FUB (never the Deals tab). GCI = that count × your GCI-per-deal setting.
             </div>
 
             <div className="grid2">
