@@ -199,6 +199,14 @@ async function syncDeals(database: Db, team: TeamRow, fubKey: string) {
 
 export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 180) {
   const teams: TeamRow[] = await database.select('teams', 'is_active=eq.true&select=id,org_id,fub_subdomain');
+  // Sync the STALEST teams first so no team is starved if a run is cut short by the
+  // Worker limit (the all-people pull is heavy). Over repeated cron runs every active
+  // team stays fresh; the FUB webhook keeps each live between runs regardless. A team
+  // that times out mid-sync doesn't upsert (upsert is last), so it stays stalest and
+  // is retried first next run — self-healing coverage for ALL teams.
+  const state = (await database.select('sync_state', 'select=team_id,last_sync_at')) as Array<{ team_id: string; last_sync_at: string | null }>;
+  const lastByTeam = new Map(state.map((s) => [s.team_id, s.last_sync_at ? Date.parse(s.last_sync_at) : 0]));
+  teams.sort((a, b) => (lastByTeam.get(a.id) ?? 0) - (lastByTeam.get(b.id) ?? 0));
   const results: Record<string, unknown> = {};
   for (const t of teams) {
     try {
