@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { myOrg, isDemo, adminLeaders, hasAdminReturn, adminReturn, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -107,7 +108,10 @@ export default function App() {
   if (session === undefined || (session && org === undefined)) {
     return <div className="center-wrap"><div className="spinner" /></div>;
   }
-  if (!session) return <Login />;
+  if (!session) {
+    if (route === '/login') return <Login />;
+    return <Landing onEnter={() => { window.location.hash = '#/login'; }} />;
+  }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
