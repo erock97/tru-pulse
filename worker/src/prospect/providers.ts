@@ -25,7 +25,7 @@ const OWNERS = ['Ann Lee', 'Bob Kim', 'Cara Diaz', 'Dan Ford', 'Eve Ng', 'Frank 
 export function fakeNeighborSource(): NeighborSource {
   return {
     async neighborsAround({ latitude, longitude, limit }) {
-      const n = Math.min(limit, 12);
+      const n = Math.min(limit, 20);
       const out: NeighborRecord[] = [];
       for (let i = 0; i < n; i += 1) {
         const seed = hash(`${latitude},${longitude},${i}`);
@@ -86,7 +86,7 @@ export function fakeDncScrubber(): DncScrubber {
 // they ride the exact same buildOutboundCampaign pipeline as circle.
 
 function fakeListings(seedTag: string, limit: number, status: 'expired' | 'fsbo'): NeighborRecord[] {
-  const n = Math.min(limit, 12);
+  const n = Math.min(limit, 20);
   const out: NeighborRecord[] = [];
   for (let i = 0; i < n; i += 1) {
     const seed = hash(`${seedTag},${status},${i}`);

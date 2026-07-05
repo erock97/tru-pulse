@@ -163,6 +163,10 @@ export interface RunOutboundInput {
   channel: ListingChannel;
   name?: string;
   limit?: number;
+  // Farm radius (miles) the operator pulled from. The demo feed is already sized
+  // by `limit`; this is captured on the campaign so the real MLS/feed adapter can
+  // geo-filter to this radius when providers go live.
+  radiusMiles?: number;
 }
 
 const OUTBOUND_SUBJECT: Record<ListingChannel, string> = {
@@ -195,7 +199,7 @@ export async function runOutboundCampaign(
     created_by_agent: input.agentId ?? null,
     channel: input.channel,
     name: input.name ?? (input.channel === 'expired' ? 'Expired listings' : 'FSBO listings'),
-    config: { limit },
+    config: { limit, radius_mi: input.radiusMiles ?? null },
   });
 
   const providers = prospectProviders(env);

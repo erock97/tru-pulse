@@ -25,16 +25,19 @@ export function db(env: Env) {
       if (!res.ok) throw new Error(`insert ${table} ${res.status}: ${await res.text()}`);
       return ((await res.json()) as any[])[0];
     },
-    async upsert(table: string, rows: any[], onConflict?: string): Promise<void> {
+    async upsert(table: string, rows: any[], onConflict?: string, opts?: { ignoreDuplicates?: boolean }): Promise<void> {
       if (rows.length === 0) return;
       const url = new URL(`${base}/${table}`);
       if (onConflict) url.searchParams.set('on_conflict', onConflict);
+      // merge = update on conflict (default); ignore = keep the existing row (used by
+      // the stage log so a lead's FIRST time reaching a stage keeps its original date).
+      const resolution = opts?.ignoreDuplicates ? 'ignore-duplicates' : 'merge-duplicates';
       // Chunk to stay well under any body limits on big backfills.
       for (let i = 0; i < rows.length; i += 500) {
         const chunk = rows.slice(i, i + 500);
         const res = await fetch(url.toString(), {
           method: 'POST',
-          headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+          headers: { ...headers, Prefer: `resolution=${resolution},return=minimal` },
           body: JSON.stringify(chunk),
         });
         if (!res.ok) throw new Error(`upsert ${table} ${res.status}: ${await res.text()}`);

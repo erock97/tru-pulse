@@ -5,11 +5,11 @@ import type { Env } from './env.js';
 import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
-import { syncTeam, syncAllActiveTeams, logStageChanges, type TeamRow } from './sync.js';
+import { syncTeam, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey } from './crypto.js';
-import { registerWebhooks, validateKey } from './fub.js';
+import { registerWebhooks, validateKey, fubGet } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { runCircleCampaign, runOutboundCampaign, logDisposition } from './prospect/service.js';
 import { saveVoiceProfile, loadVoiceProfile, generateSocialCalendar, listSocialCalendar, setContentStatus } from './social/service.js';
@@ -26,6 +26,30 @@ function json(obj: unknown, status = 200): Response {
 }
 function isAdmin(req: Request, env: Env): boolean {
   return req.headers.get('x-admin-token') === env.ADMIN_TOKEN;
+}
+
+// Store a validated FUB key for a team and bring its data online: encrypt → upsert
+// team_secrets (the ONE key every TRU product reads) → register live webhooks →
+// background full sync. Shared by the team-lead self-serve path AND the admin
+// on-behalf path so the two can never drift.
+async function connectTeamKey(
+  env: Env,
+  database: ReturnType<typeof db>,
+  ctx: ExecutionContext,
+  origin: string,
+  team: { id: string; org_id: string },
+  fubKey: string,
+  subdomain: string | null,
+): Promise<void> {
+  const enc = await encryptKey(await importEncKey(env.FUB_ENC_KEY), fubKey);
+  await database.upsert('team_secrets', [{ team_id: team.id, org_id: team.org_id, fub_key_enc: enc }], 'team_id');
+  if (subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: subdomain });
+  if (env.FUB_SYSTEM_KEY) {
+    const cb = `${origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+    try { await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY); } catch { /* live updates are best-effort */ }
+  }
+  // Heavy full pull → background so the UI returns immediately.
+  ctx.waitUntil(syncTeam(env, database, { id: team.id, org_id: team.org_id, fub_subdomain: subdomain }, 180).catch(() => {}));
 }
 
 export default {
@@ -61,6 +85,77 @@ export default {
       const state = await database.select('sync_state', 'select=team_id,last_sync_at');
       const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
       return json((teams as Array<{ id: string; name: string }>).map((t) => ({ id: t.id, name: t.name, last_sync_at: lastByTeam.get(t.id) ?? null })));
+    }
+
+    // Admin diagnostic: probe FUB for a dated stage-change history through the PEOPLE
+    // side (no Deals tab). Reports the person-object field names, any date-ish fields,
+    // and what /events returns for currently under-contract/closed people — so we can
+    // tell whether we can reconstruct "closed in last N months" cookie-free. Read-only.
+    if (url.pathname === '/admin/probe-events' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      const teamId = url.searchParams.get('teamId');
+      if (!teamId) return json({ error: 'teamId required' }, 422);
+      const secret = await database.select('team_secrets', `team_id=eq.${teamId}&select=fub_key_enc`);
+      if (!secret.length) return json({ error: 'no FUB key for team' }, 404);
+      const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
+
+      const people: any[] = [];
+      for (let off = 0; off < 8000; off += 100) {
+        const r = await fubGet(fubKey, '/people', { limit: 100, offset: off, sort: '-created' });
+        const batch: any[] = r.body?.people ?? [];
+        people.push(...batch);
+        if (batch.length < 100) break;
+      }
+
+      const stageHist: Record<string, number> = {};
+      for (const p of people) { const s = String(p.stage ?? '(none)'); stageHist[s] = (stageHist[s] ?? 0) + 1; }
+
+      const isClosingStr = (s: string) => { const x = s.toLowerCase(); return x.includes('close') || x.includes('contract') || x.includes('pending') || x.includes('escrow'); };
+      const deadRe = /lost|nurture|trash|archive|no longer|dead|inactive|junk|spam|not interested/i;
+      const greedy = people.filter((p) => isClosingStr(String(p.stage ?? '')));
+      const strict = greedy.filter((p) => !deadRe.test(String(p.stage ?? '')));
+      const withDate = strict.filter((p) => p.dealCloseDate);
+      const monthHist: Record<string, number> = {};
+      for (const p of withDate) { const d = String(p.dealCloseDate).slice(0, 7); monthHist[d] = (monthHist[d] ?? 0) + 1; }
+
+      // Hunt for stage history across FUB's surface + confirm webhook capture.
+      const sysHdr: Record<string, string> = env.FUB_SYSTEM_KEY
+        ? { 'X-System': 'TerrasonFUBDashboard', 'X-System-Key': env.FUB_SYSTEM_KEY } : {};
+      const wh = await fubGet(fubKey, '/webhooks', { limit: 100 }, sysHdr);
+      const webhooks = (wh.body?.webhooks ?? []).map((w: any) => ({ event: w.event, url: w.url, status: w.status }));
+      const recentEv = await fubGet(fubKey, '/events', { limit: 100 });
+      const recentEventTypes = [...new Set((recentEv.body?.events ?? []).map((e: any) => String(e.type ?? e.eventType)))];
+      const stagesRes = await fubGet(fubKey, '/stages', { limit: 100 });
+      const stagesList = (stagesRes.body?.stages ?? []).map((s: any) => ({ id: s.id, name: s.name, count: s.count ?? null }));
+      const oneCloser: any = strict[0] ? { ...strict[0] } : null;
+      if (oneCloser) for (const k of ['name', 'firstName', 'lastName', 'emails', 'phones', 'addresses', 'picture', 'socialData']) delete oneCloser[k];
+
+      const logSample = await database.select('person_stage_log', `team_id=eq.${teamId}&select=*&order=changed_at.desc&limit=4`).catch(() => [] as any[]);
+      const logRows = await database.select('person_stage_log', `team_id=eq.${teamId}&select=fub_person_id,stage,changed_at&limit=6000`).catch(() => [] as any[]);
+      const logPersons = new Set(logRows.map((r: any) => r.fub_person_id));
+      const logStages = new Set(logRows.map((r: any) => String(r.stage)));
+
+      return json({
+        team: teamId,
+        peoplePulled: people.length,
+        stageHistogram: Object.fromEntries(Object.entries(stageHist).sort((a, b) => b[1] - a[1])),
+        stageLog_columns: logSample[0] ? Object.keys(logSample[0]) : [],
+        stageLog_totalRows: logRows.length,
+        stageLog_distinctPeople: logPersons.size,
+        stageLog_rowsPerPerson: logPersons.size ? Math.round((logRows.length / logPersons.size) * 100) / 100 : 0,
+        stageLog_distinctStages: [...logStages],
+        stageLog_sample: logSample,
+        fub_webhooksRegistered: webhooks,
+        fub_recentEventTypes: recentEventTypes,
+        fub_stagesList: stagesList,
+        fub_fullPersonRedacted: oneCloser,
+        closers_greedyMatch: greedy.length,
+        closers_strict_excludingDeadStages: strict.length,
+        closers_withDealCloseDate: withDate.length,
+        dealCloseDateCoveragePct: strict.length ? Math.round((withDate.length / strict.length) * 100) : 0,
+        closedByMonth_desc: Object.fromEntries(Object.entries(monthHist).sort((a, b) => (a[0] < b[0] ? 1 : -1))),
+        personKeys: people[0] ? Object.keys(people[0]) : [],
+      });
     }
 
     // Sync. Admin → one team (?teamId=) or all. Else → the caller's own org(s).
@@ -143,15 +238,14 @@ export default {
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
       const team = rows[0] as TeamRow;
-      // FUB posts { event, resourceIds }. On a stage change, stamp the moment into
-      // person_stage_log — the dated closings/UC signal (never the Deals tab).
-      const payload = (await req.json().catch(() => null)) as { event?: string; resourceIds?: number[] } | null;
+      // A re-sync accrues the stage-progression log itself (syncTeam), so the webhook
+      // just triggers a fast sync for near-real-time flag + stage-hit updates. The
+      // 30-min cron does the same for every team, so capture never depends on a
+      // single webhook landing.
+      await req.json().catch(() => null); // drain body (FUB posts { event, resourceIds })
       try {
         const synced = await syncTeam(env, database, team, 30);
-        const logged = payload?.event === 'peopleStageUpdated' && Array.isArray(payload.resourceIds)
-          ? await logStageChanges(env, database, team, payload.resourceIds)
-          : 0;
-        return json({ ok: true, synced, logged });
+        return json({ ok: true, synced });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
@@ -229,15 +323,7 @@ export default {
       const check = await validateKey(fubKey);
       if (!check.valid) return json({ error: 'That API key was rejected by Follow Up Boss. Copy it fresh from FUB → Admin → API.' }, 400);
       try {
-        const enc = await encryptKey(await importEncKey(env.FUB_ENC_KEY), fubKey);
-        await database.upsert('team_secrets', [{ team_id: team.id, org_id: team.org_id, fub_key_enc: enc }], 'team_id');
-        if (check.subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: check.subdomain });
-        if (env.FUB_SYSTEM_KEY) {
-          const cb = `${url.origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
-          try { await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY); } catch { /* live updates are best-effort */ }
-        }
-        // Heavy full pull → run in the background so the UI returns immediately.
-        ctx.waitUntil(syncTeam(env, database, { id: team.id, org_id: team.org_id, fub_subdomain: check.subdomain }, 180).catch(() => {}));
+        await connectTeamKey(env, database, ctx, url.origin, team, fubKey, check.subdomain);
         return json({ ok: true, subdomain: check.subdomain, syncing: true });
       } catch (e) {
         return json({ error: String(e) }, 500);
@@ -323,6 +409,46 @@ export default {
         const props = gl?.properties ?? gl;
         if (!res.ok || !props?.hashed_token) return json({ error: 'could not mint session' }, 502);
         return json({ token_hash: props.hashed_token, type: props.verification_type || 'magiclink' });
+      }
+
+      // Admin connection board: every team's FUB status in one place — the verify-at-
+      // a-glance view AND the source for setting a key on a team's behalf.
+      if (url.pathname === '/admin/connections' && req.method === 'GET') {
+        const [teams, orgs, secrets, state] = await Promise.all([
+          database.select('teams', 'is_active=eq.true&select=id,name,org_id,fub_subdomain'),
+          database.select('orgs', 'select=id,name'),
+          database.select('team_secrets', 'select=team_id'),
+          database.select('sync_state', 'select=team_id,last_sync_at'),
+        ]);
+        const orgById = new Map((orgs as Array<{ id: string; name: string }>).map((o) => [o.id, o.name]));
+        const hasKey = new Set((secrets as Array<{ team_id: string }>).map((s) => s.team_id));
+        const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
+        const out = (teams as Array<{ id: string; name: string; org_id: string; fub_subdomain: string | null }>)
+          .map((t) => ({
+            teamId: t.id, name: t.name, orgName: orgById.get(t.org_id) ?? '—',
+            connected: hasKey.has(t.id), subdomain: t.fub_subdomain, lastSync: lastByTeam.get(t.id) ?? null,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        return json({ connections: out });
+      }
+
+      // Admin sets/rotates any team's FUB key on their behalf (no impersonation).
+      if (url.pathname === '/admin/connect-fub' && req.method === 'POST') {
+        const body = (await req.json().catch(() => null)) as { teamId?: string; fubKey?: string } | null;
+        const teamId = String(body?.teamId ?? '').trim();
+        const fubKey = body?.fubKey?.trim();
+        if (!teamId || !fubKey) return json({ error: 'teamId and fubKey required' }, 422);
+        const rows = await database.select('teams', `id=eq.${teamId}&select=id,org_id`);
+        if (!rows.length) return json({ error: 'team not found' }, 404);
+        const team = rows[0] as { id: string; org_id: string };
+        const check = await validateKey(fubKey);
+        if (!check.valid) return json({ error: 'That API key was rejected by Follow Up Boss. Copy it fresh from FUB → Admin → API.' }, 400);
+        try {
+          await connectTeamKey(env, database, ctx, url.origin, team, fubKey, check.subdomain);
+          return json({ ok: true, subdomain: check.subdomain, syncing: true });
+        } catch (e) {
+          return json({ error: String(e) }, 500);
+        }
       }
     }
 
@@ -598,6 +724,7 @@ export default {
         return json(await runOutboundCampaign(env, database, {
           orgId: orgIds[0], teamId: body?.teamId ?? null, agentId: body?.agentId ?? null,
           channel, name: body?.name, limit: Number(body?.limit) || 25,
+          radiusMiles: Number.isFinite(Number(body?.radiusMiles)) ? Number(body?.radiusMiles) : undefined,
         }));
       } catch (e) {
         return json({ error: String(e) }, 500);

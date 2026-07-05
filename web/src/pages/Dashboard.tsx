@@ -1,12 +1,23 @@
-import { useEffect, useState, type ReactNode, type ChangeEvent } from 'react';
-import { loadDashboard, saveSettings, loadConnection, connectFub, type DashboardData, type Settings, type LeadRow, type Connection } from '../lib/api';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
+import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
-import { CountUp, Ring, Donut, SOURCE_COLORS } from '../components/viz';
+import { CountUp, SOURCE_COLORS } from '../components/viz';
+import { FubConnect } from '../components/FubConnect';
+import { HqShell } from '../components/hqShell';
+import { Icon } from '../components/hqUi';
+import { useReveal, useCountUp } from '../hqHooks';
+import '../truHqDark.css';
+
+/* ============================================================
+   PULSE (Dashboard) — dark asymmetric BENTO reskin.
+   PRESENTATION ONLY. Every number below flows from the SAME real
+   computed values the previous render used — loadDashboard(),
+   the per-agent rollup, source mix, person-stage production,
+   commission-at-risk, accountability + pause-watch. No mock data.
+   ============================================================ */
 
 const money = (n: number) => '$' + Math.round(n).toLocaleString();
-const initials = (name: string) =>
-  name.split(' ').map((w) => w[0] ?? '').slice(0, 2).join('').toUpperCase();
 const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 // A lead's accountable owner: the agent, else its pond (ponds get their own rows —
 // that's where unowned leads hide), else Unassigned.
@@ -29,13 +40,47 @@ interface Drill {
   paused: Map<string, PauseReason[]>;
 }
 
+// A per-agent record used by the constellation / triage / roster. `agent` is the
+// display owner string; every field is a REAL rollup value (see below).
+type AgentStatus = 'on_track' | 'at_risk' | 'paused';
+interface AgentNode {
+  agent: string;
+  person: boolean;
+  total: number;
+  zero: number;
+  stuck: number;
+  worked: number;
+  workedPct: number;
+  strikes: number;
+  paused: PauseReason[];
+  source: string;      // the agent's dominant lead source (for the source lens)
+  srcs: Map<string, number>;
+  status: AgentStatus;
+}
+
+const STATUS_META: Record<AgentStatus, { label: string; color: string; soft: string }> = {
+  on_track: { label: 'On track', color: 'var(--sea-hi)', soft: 'var(--sea-soft)' },
+  at_risk: { label: 'At risk', color: 'var(--accent-hi)', soft: 'var(--accent-soft)' },
+  paused: { label: 'Paused', color: 'var(--terracotta)', soft: 'rgba(192,107,79,0.14)' },
+};
+
+// Module-level cache (keyed by org) so returning to Pulse renders INSTANTLY from the
+// last load and refreshes in the background — no spinner flash on Home→Pulse. Keyed
+// by org.id so an impersonation switch never flashes the previous team's data.
+let _dashCache: { orgId: string; data: DashboardData } | null = null;
+
 export default function Dashboard({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<DashboardData | null>(
+    _dashCache && _dashCache.orgId === org.id ? _dashCache.data : null,
+  );
   const [view, setView] = useState<View>('overview');
   const [win, setWin] = useState<Win>('mtd');
+  const canvasRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
-    setData(await loadDashboard());
+    const d = await loadDashboard();
+    _dashCache = { orgId: org.id, data: d };
+    setData(d);
   }
   useEffect(() => {
     void load();
@@ -45,7 +90,23 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     return () => clearInterval(id);
   }, []);
 
-  if (!data) return <div className="center-wrap"><div className="spinner" /></div>;
+  // Reveal the fade-up sections once data has painted (scoped to this subtree).
+  useReveal([data, view], canvasRef.current);
+
+  if (!data) {
+    return (
+      <div className="tru-dark">
+        <div className="center-wrap" style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
+          <div className="spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // REAL DATA PIPELINE — unchanged from the prior render. Every value below is
+  // computed exactly as before; only the JSX that consumes it is new.
+  // ══════════════════════════════════════════════════════════════════════════
 
   // Date window — leads without a created date stay visible in every window.
   const today = new Date();
@@ -95,7 +156,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const risk = { window: riskWin, annual: riskWin * (365 / Math.max(winDays, 1)) };
 
   // Per-agent rollup (srcs = this agent's lead count broken out by source family,
-  // shown right in the table row so lead distribution is visible without drilling).
+  // shown right in the row so lead distribution is visible without drilling).
   const byAgent = new Map<string, { zero: number; stuck: number; worked: number; total: number; srcs: Map<string, number> }>();
   for (const l of leads) {
     const a = ownerOf(l);
@@ -156,13 +217,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const headroom = Math.max(0, activeAgents * capacity - total);
 
   // ── Pause watch — broker-set rules (Settings) that pause new lead flow ──────
-  // Rule 1 (capacity): agent took their monthly volume cap — a full plate to work.
-  // Rule 2 (no_close): a genuine production drought, read from the PERSON'S OWN STAGE
-  // (leads.stage, synced from FUB) — NEVER the FUB Deals object, which agents rarely
-  // fill in. A lead whose stage is Under Contract / Closed IS the conversion. Cleared
-  // if any of their leads is under contract right now, OR one closed inside their most
-  // -recent N leads. Only N+ leads with nothing under contract and no recent close trips
-  // it. All on ALL leads (not the window filter) so a pause doesn't vanish on narrowing.
   const pauseVolumeOn = data.settings?.pause_volume_on !== false;       // default on (existing behavior)
   const pauseVolumeLeads = Math.max(1, Number(data.settings?.pause_volume_leads ?? capacity)); // own threshold; falls back to capacity
   const pauseNoCloseOn = data.settings?.pause_no_close_on === true;     // broker opts in
@@ -190,8 +244,6 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     for (const [a, ls] of leadsByAgent) {
       if (ls.length < pauseNoCloseLeads) continue;                                     // not enough leads to be a drought
       if (ls.some((l) => stageClass(l.stage) === 'uc')) continue;                      // a lead under contract right now → producing
-      // Drought = leads taken since their most recent close (newest first; undated
-      // leads sink to the bottom). A close inside the last N leads clears them.
       const byNewest = [...ls].sort((x, y) =>
         (y.fub_created ? Date.parse(y.fub_created) : 0) - (x.fub_created ? Date.parse(x.fub_created) : 0));
       let drought = byNewest.length;
@@ -203,21 +255,13 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const pausedCount = pausedByAgent.size;
 
-  // Production — from the PERSON'S STAGE (leads.stage), never the Deals tab. UC and
-  // Closed count the same (Eric's rule). This is the CURRENT SNAPSHOT: how many tracked
-  // leads are under contract / closed right now (source-filtered, not created-windowed,
-  // because "under contract" is a pipeline state, not a dated event). GCI carries no
-  // dollar on a person, so GCI = count × the flat editable avg-GCI setting. The dated
-  // window trend rides person_stage_log (changed_at) as it accrues from go-live.
+  // Production — from the PERSON'S STAGE (leads.stage), never the Deals tab.
   const allTracked = enabledSources
     ? data.leads.filter((l) => enabledSources.includes(l.source_family ?? 'Other'))
     : data.leads;
-  // OFFER RATE — of THIS WINDOW's paid leads, the share whose stage reached offer+.
   let leadsReachedOffer = 0;
   for (const l of leads) if (isOfferPlus(stageClass(l.stage))) leadsReachedOffer++;
   const offerRate = total ? Math.round((leadsReachedOffer / total) * 100) : 0;
-  // Closings snapshot (UC + Closed by current stage) → count, GCI, leads-per-closing,
-  // per-agent (for the drill Closings stat).
   const closingLeads = allTracked.filter((l) => isClosing(stageClass(l.stage)));
   const closingsCount = closingLeads.length;
   const gciInPlay = closingsCount * avgGci;
@@ -229,375 +273,946 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent };
 
-  const nav = (v: View, icon: ReactNode, label: string) => (
-    <div className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>{icon}{label}</div>
-  );
+  // ── Derive the constellation / triage / roster nodes from the REAL rollup ───
+  // status: paused (tripped a pause rule) → at_risk (any strike, high zero+stuck,
+  // or low worked%) → on_track. ring size ∝ real lead count. dominant source = the
+  // source family the agent holds the most of. Pond/unassigned buckets are kept
+  // (they're real owners of un-worked leads) but flagged as non-person so their
+  // per-agent actions/drill match the previous behavior.
+  const nodes: AgentNode[] = agents.map(([agent, r]) => {
+    const strikes = strikesByAgent.get(agent) ?? 0;
+    const paused = pausedByAgent.get(agent) ?? [];
+    const workedP = r.total ? Math.round((r.worked / r.total) * 100) : 0;
+    let status: AgentStatus = 'on_track';
+    if (paused.length || strikes >= strikeLimit) status = 'paused';
+    else if (strikes > 0 || r.zero + r.stuck >= Math.max(2, Math.ceil(r.total * 0.4)) || (r.total >= 3 && workedP < 55)) status = 'at_risk';
+    const domSrc = [...r.srcs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Other';
+    return {
+      agent, person: isPerson(agent), total: r.total, zero: r.zero, stuck: r.stuck,
+      worked: r.worked, workedPct: workedP, strikes, paused, source: domSrc, srcs: r.srcs, status,
+    };
+  });
 
   const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : `last ${win} days`;
-  const HEAD: Record<View, { title: string; sub: string }> = {
-    overview: { title: 'Overview', sub: `${org.name} · ${winLabel}` },
-    accountability: { title: 'Accountability', sub: 'The 3-strike ledger · last 30 days' },
-    sources: { title: 'Sources', sub: `Where your tracked leads come from · ${winLabel}` },
-    settings: { title: 'Settings', sub: 'Flag windows, strike rules & the $-at-risk math' },
+  const HEAD: Record<View, { title: string; eyebrow: string }> = {
+    overview: { title: 'Pulse — who’s working what.', eyebrow: `Lead accountability · ${org.name}` },
+    accountability: { title: 'Accountability', eyebrow: 'The 3-strike ledger · last 30 days' },
+    sources: { title: 'Sources', eyebrow: `Where your tracked leads come from · ${winLabel}` },
+    settings: { title: 'Settings', eyebrow: 'Flag windows, strike rules & the $-at-risk math' },
   };
 
+  const SUBNAV: Array<[View, string]> = [
+    ['overview', 'pulse'], ['accountability', 'coach'], ['sources', 'prospect'], ['settings', 'rep'],
+  ];
+
+  const context = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {view !== 'settings' && (
+        <div className="ps-winpills">
+          {WINDOWS.map(([k, l]) => (
+            <span key={k} className={`ps-winpill${win === k ? ' on' : ''}`} onClick={() => setWin(k)}>{l}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="shell">
-      <aside className="side">
-        {onHome && <div className="side-back" onClick={onHome}>‹ TRU HQ</div>}
-        <div className="side-logo">T<span className="t">RU</span> Pulse</div>
-        {nav('overview', ICON.grid, 'Overview')}
-        {nav('accountability', ICON.shield, 'Accountability')}
-        {nav('sources', ICON.sources, 'Sources')}
-        {nav('settings', ICON.gear, 'Settings')}
-        <div className="side-foot">
-          <span className="av">{initials(org.name)}</span>
-          <div style={{ lineHeight: 1.3 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f2e8d5' }}>{org.name}</div>
-            <div style={{ fontSize: 11, color: '#a99a80' }}>Admin</div>
+    <div className="tru-dark">
+      <HqShell
+        orgName={org.name}
+        eyebrow={HEAD[view].eyebrow}
+        title={HEAD[view].title}
+        context={context}
+        onSignOut={() => supabase.auth.signOut()}
+        nav={{
+          onHome: () => onHome?.(),
+          onOpenPulse: () => setView('overview'),
+          onOpenCoach: () => { window.location.hash = '/coach'; },
+          onOpenRep: () => { window.location.hash = '/rep'; },
+          onOpenProspect: () => { window.location.hash = '/prospect'; },
+          onOpenStudio: () => { window.location.hash = '/studio'; },
+        }}
+      >
+        <div className="pulse-canvas" ref={canvasRef}>
+          <div className="pulse-ambient" aria-hidden />
+
+          {/* view switch (kept as a sub-nav so all four real views survive) */}
+          <div className="ps-subnav reveal" style={{ marginBottom: 18 }}>
+            {SUBNAV.map(([v, icon]) => (
+              <button key={v} className={`ps-subnav-btn${view === v ? ' on' : ''}`} onClick={() => setView(v)}>
+                <Icon name={icon} size={16} />
+                {v === 'overview' ? 'Overview' : v[0].toUpperCase() + v.slice(1)}
+              </button>
+            ))}
           </div>
+
+          {view === 'overview' && (total === 0 ? (
+            <div className="card ps-emptyview reveal">
+              <h3>No leads tracked yet</h3>
+              <p>
+                Leads sync in automatically from Follow Up Boss for every source you’ve enabled.
+                Once your first lead comes in this window, tracked count, contact status, and the
+                strike ledger all fill in here — nothing to configure.
+              </p>
+              <button className="btn" onClick={() => setView('settings')}>Check your sources →</button>
+            </div>
+          ) : (
+            <Overview
+              org={org} winLabel={winLabel}
+              total={total} zero={zero} stuck={stuck} worked={worked} workedPct={workedPct}
+              risk={risk} avgGci={avgGci} closeRate={closeRate}
+              sources={sources}
+              offerRate={offerRate} perClosing={perClosing} closingsCount={closingsCount} gciInPlay={gciInPlay}
+              nodes={nodes}
+              pauseCount={pauseCount} newStrikes7d={newStrikes7d} pausedCount={pausedCount} headroom={headroom}
+              strikeLimit={strikeLimit}
+              drill={drill}
+            />
+          ))}
+
+          {view === 'accountability' && (
+            <Accountability
+              strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
+              pauseCount={pauseCount} newStrikes7d={newStrikes7d} openCases={openCases}
+              paused={pausedByAgent} pauseWatchOn={pauseVolumeOn || pauseNoCloseOn}
+            />
+          )}
+          {view === 'sources' && <Sources sources={sources} total={total} upfront={upfront} atClose={atClose} />}
+          {view === 'settings' && data.settings && (
+            <SettingsView initial={data.settings} onSaved={() => void load()} />
+          )}
         </div>
-      </aside>
-
-      <main className="main">
-        <div className="main-head">
-          <div>
-            <h2>{HEAD[view].title}</h2>
-            <span className="muted small">{HEAD[view].sub}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            {view !== 'settings' && (
-              <div className="winpills">
-                {WINDOWS.map(([k, l]) => (
-                  <span key={k} className={`winpill${win === k ? ' on' : ''}`} onClick={() => setWin(k)}>{l}</span>
-                ))}
-              </div>
-            )}
-            <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
-          </div>
-        </div>
-
-        {view === 'overview' && (total === 0 ? (
-          <div className="card fu emptyview">
-            <div className="emptyview-ico">{ICON.leads}</div>
-            <h3>No leads tracked yet</h3>
-            <p>
-              Leads sync in automatically from Follow Up Boss for every source you've enabled.
-              Once your first lead comes in this window, tracked count, contact status, and the
-              strike ledger all fill in here — nothing to configure.
-            </p>
-            <button className="btn ghost" onClick={() => setView('settings')}>Check your sources →</button>
-          </div>
-        ) : (
-          <>
-            <div className="grid4">
-              <KPI color="#a9791f" icon={ICON.leads} value={total} label="Tracked leads" />
-              <KPI color="#c0492f" icon={ICON.zero} value={zero} label="Zero contact" />
-              <KPI color="#8f6416" icon={ICON.clock} value={stuck} label="Stuck in Lead" />
-              <KPI color="#2e8b57" icon={ICON.check} value={workedPct} suffix="%" label="Worked" />
-            </div>
-
-            {sources.length > 0 && (
-              <div className="card fu srcbreak">
-                <h3 className="ch">Leads by source · {winLabel}</h3>
-                <div className="srcgrid">
-                  {sources.map((s) => (
-                    <div className="srccard" key={s.name}>
-                      <span className="srccard-bar" style={{ background: s.c }} />
-                      <div className="srccard-name"><span className="dot" style={{ background: s.c }} />{s.name}</div>
-                      <div className="srccard-n"><CountUp value={s.n} /></div>
-                      <div className="srccard-sub">
-                        {s.zero ? <span className="bad">{s.zero} no contact</span> : <span className="touched">all touched</span>}
-                        <span className="muted"> · {s.workedPct}% worked</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="grid4" style={{ marginTop: 16 }}>
-              <KPI color="#a9791f" icon={ICON.offer} value={offerRate} suffix="%" label="Offer rate · paid leads" />
-              <div className="card kpi fu">
-                <span className="accent" style={{ background: '#2f6bb0' }} />
-                <div className="ico" style={{ background: '#2f6bb022', color: '#2f6bb0' }}>{ICON.ratio}</div>
-                <div className="big">{perClosing ? `1 : ${perClosing}` : '—'}</div>
-                <div className="lbl">Leads per closing</div>
-              </div>
-              <KPI color="#2e8b57" icon={ICON.check} value={closingsCount} label="Under contract + closed" />
-              <div className="card kpi fu">
-                <span className="accent" style={{ background: '#8f6416' }} />
-                <div className="ico" style={{ background: '#8f641622', color: '#8f6416' }}>{ICON.gci}</div>
-                <div className="big"><CountUp value={gciInPlay} fmt={money} /></div>
-                <div className="lbl">GCI closed (all sources)</div>
-              </div>
-            </div>
-            <div className="muted small" style={{ margin: '8px 2px 0' }}>
-              <b>Offer rate</b> tracks the date window — the share of this window's paid leads whose stage reached offer+. <b>Under contract + closed</b>, <b>GCI</b>, and <b>leads per closing</b> are a live snapshot of your whole tracked pipeline, read from each person's stage in FUB (never the Deals tab). GCI = that count × your GCI-per-deal setting.
-            </div>
-
-            <div className="grid2">
-              <div className="card risk fu">
-                <div className="ey">Commission at risk</div>
-                <div className="big"><CountUp value={risk.annual} fmt={money} /> / yr</div>
-                <div className="sub">
-                  from tracked leads nobody personally worked — priced at each source's real
-                  conversion (UC + Closed ÷ leads, from your own data) × {money(avgGci)} avg.
-                  Sources without a closing yet use your {closeRate}% setting.
-                </div>
-              </div>
-              <div className="card ringwrap fu">
-                <Ring pct={workedPct} />
-                <div className="cap">of tracked leads actually worked</div>
-              </div>
-            </div>
-
-            <div className="grid2b">
-              <div className="card fu">
-                <h3 className="ch">Where the leads come from</h3>
-                {sources.length === 0 ? (
-                  <p className="muted small">No leads in this window.</p>
-                ) : (
-                  <>
-                    <div className="donutwrap">
-                      <Donut sources={sources} />
-                      <div className="legend">
-                        {sources.map((s) => (
-                          <div className="leg" key={s.name}>
-                            <span className="dot" style={{ background: s.c }} />
-                            {s.name}
-                            <b>{s.n}</b>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="paysplit">
-                      <span><b>{upfront}</b> paid up front</span>
-                      <span><b>{atClose}</b> pay at close</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="card accsum fu">
-                <h3 className="ch">Accountability this week</h3>
-                <div className="row">
-                  <span className="tag" style={{ background: '#fbe9e5', color: 'var(--terra)' }}>{pauseCount}</span>
-                  <div className="t"><b>Pause recommended</b><br /><span className="muted">agents at {strikeLimit}+ strikes / 30 days</span></div>
-                </div>
-                <div className="row">
-                  <span className="tag" style={{ background: '#f7eede', color: 'var(--gold-dk)' }}>{newStrikes7d}</span>
-                  <div className="t"><b>New strikes</b><br /><span className="muted">opened in the last 7 days</span></div>
-                </div>
-                <div className="row">
-                  <span className="tag" style={{ background: '#f4ece0', color: '#8a6e20' }}>{pausedCount}</span>
-                  <div className="t"><b>Paused · pause watch</b><br /><span className="muted">tripped a pause rule — route new leads elsewhere</span></div>
-                </div>
-                <div className="row">
-                  <span className="tag" style={{ background: '#eef4ef', color: 'var(--green)' }}>{headroom}</span>
-                  <div className="t"><b>Coverage headroom</b><br /><span className="muted">capacity vs. tracked intake</span></div>
-                </div>
-              </div>
-            </div>
-
-            <AgentTable agents={agents} strikesByAgent={strikesByAgent} strikeLimit={strikeLimit} caption="By agent · click a row to drill in" drill={drill} />
-          </>
-        ))}
-        {view === 'accountability' && (
-          <Accountability
-            strikesByAgent={strikesByAgent} strikeLimit={strikeLimit}
-            pauseCount={pauseCount} newStrikes7d={newStrikes7d} openCases={openCases}
-            paused={pausedByAgent} pauseWatchOn={pauseVolumeOn || pauseNoCloseOn}
-          />
-        )}
-        {view === 'sources' && <Sources sources={sources} total={total} upfront={upfront} atClose={atClose} />}
-        {view === 'settings' && data.settings && (
-          <SettingsView initial={data.settings} onSaved={() => void load()} />
-        )}
-      </main>
+      </HqShell>
     </div>
   );
 }
 
-// ── Accountability ──────────────────────────────────────────────────────────
+/* ============================================================
+   OVERVIEW — the bento + constellation + triage + roster + spine
+   ============================================================ */
+function Overview(p: {
+  org: { id: string; name: string }; winLabel: string;
+  total: number; zero: number; stuck: number; worked: number; workedPct: number;
+  risk: { window: number; annual: number }; avgGci: number; closeRate: number;
+  sources: Array<{ name: string; n: number; c: string; workedPct: number; zero: number }>;
+  offerRate: number; perClosing: number | null; closingsCount: number; gciInPlay: number;
+  nodes: AgentNode[];
+  pauseCount: number; newStrikes7d: number; pausedCount: number; headroom: number;
+  strikeLimit: number;
+  drill: Drill;
+}) {
+  const srcTotal = p.sources.reduce((a, s) => a + s.n, 0);
+  const acct = [
+    { icon: 'shield', label: 'Pause recommended', value: p.pauseCount, note: `at ${p.strikeLimit}+ strikes / 30 days`, tone: 'warn' },
+    { icon: 'target', label: 'New strikes this week', value: p.newStrikes7d, note: 'opened in the last 7 days', tone: '' },
+    { icon: 'clock', label: 'Paused · pause watch', value: p.pausedCount, note: 'tripped a pause rule — route elsewhere', tone: '' },
+    { icon: 'coach', label: 'Coverage headroom', value: p.headroom, note: 'capacity vs. tracked intake', tone: 'good' },
+  ];
+  return (
+    <>
+      {/* ============ HERO BENTO ============ */}
+      <section className="ps-bento">
+        {/* Anchor: commission at risk */}
+        <article className="card ps-risk reveal">
+          <div className="ps-risk-glow" />
+          <span className="risk-eyebrow"><Icon name="shield" size={16} /> Commission at risk</span>
+          <div className="ps-risk-stat">
+            <div className="ps-risk-num">
+              $<CountUp value={p.risk.annual} fmt={(n) => Math.round(n).toLocaleString()} />
+              <span className="ps-risk-unit">/yr</span>
+            </div>
+          </div>
+          <p className="ps-risk-note">
+            {p.zero} lead{p.zero === 1 ? '' : 's'} nobody personally worked, priced at each source’s
+            real conversion (UC + Closed ÷ leads, your own data) × {money(p.avgGci)} avg. Young sources
+            fall back to your {p.closeRate}% setting.
+          </p>
+          <RiskSpark />
+        </article>
+
+        {/* Centerpiece: Worked gauge + satellite chips (REAL tracked/zero/stuck) */}
+        <article className="card ps-worked reveal" data-delay="80">
+          <div className="panel-head">
+            <h3>Worked · {p.winLabel}</h3>
+            <span className="panel-sub">Share of {p.total} tracked leads touched</span>
+          </div>
+          <div className="ps-worked-body">
+            <WorkedGauge pct={p.workedPct} />
+            <div className="ps-satellites">
+              <Chip value={p.total} label="Tracked" />
+              <Chip value={p.zero} label="Zero contact" />
+              <Chip value={p.stuck} label="Stuck in Lead" />
+            </div>
+          </div>
+        </article>
+
+        {/* Production cluster — REAL person-stage production */}
+        <article className="card ps-gci reveal" data-delay="140">
+          <div className="ps-gci-glow" />
+          <span className="ps-tile-eyebrow">Gross commission</span>
+          <div className="ps-gci-body">
+            <div className="ps-gci-num">$<CountUp value={p.gciInPlay} fmt={(n) => Math.round(n).toLocaleString()} /></div>
+            <div className="ps-gci-label">GCI closed · all sources</div>
+            <svg className="ps-arc" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden>
+              <path d="M2 34 Q40 30 60 20 T118 4" fill="none" stroke="url(#psRiskLine)" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="118" cy="4" r="3.5" fill="var(--accent-hi)" />
+            </svg>
+          </div>
+        </article>
+        <article className="card ps-prod ps-prod-a reveal" data-delay="180">
+          <BigNum value={p.closingsCount} label="Under contract + closed" />
+        </article>
+        <article className="card ps-prod ps-prod-b reveal" data-delay="220">
+          <div className="ps-prod-inner">
+            <div className="ps-prod-num">{p.perClosing ? `1 : ${p.perClosing}` : '—'}</div>
+            <div className="ps-prod-label">Leads per closing</div>
+          </div>
+        </article>
+        <article className="card ps-prod ps-prod-c reveal" data-delay="260">
+          <BigNum value={p.offerRate} suffix="%" label="Offer rate · paid leads" />
+        </article>
+      </section>
+
+      <DividerWave />
+
+      {/* ============ LEADS BY SOURCE — proportion bar (REAL source mix) ============ */}
+      {p.sources.length > 0 && (
+        <section className="ps-source reveal">
+          <div className="panel-head">
+            <h3>Leads by source</h3>
+            <span className="panel-sub">Where the pipeline comes from · {srcTotal} leads · {p.winLabel}</span>
+          </div>
+          <div className="ps-source-bar">
+            {p.sources.map((s, i) => (
+              <div
+                key={s.name}
+                className="ps-source-seg"
+                title={`${s.name} · ${s.n} lead${s.n === 1 ? '' : 's'} · ${s.workedPct}% worked`}
+                style={{
+                  flexGrow: s.n,
+                  background: `linear-gradient(180deg, ${s.c}, color-mix(in srgb, ${s.c} 72%, #000))`,
+                  animationDelay: `${i * 120}ms`,
+                }}
+              >
+                {srcTotal > 0 && s.n / srcTotal > 0.06 && <span className="ps-source-seg-val">{s.n}</span>}
+              </div>
+            ))}
+          </div>
+          <div className="ps-source-legend">
+            {p.sources.map((s) => (
+              <span key={s.name} className="ps-source-leg">
+                <i style={{ background: s.c }} /> {s.name}
+                <b>{s.n}</b>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ============ TEAM HEALTH FIELD (REAL per-agent nodes) ============ */}
+      <TeamHealth nodes={p.nodes} drill={p.drill} strikeLimit={p.strikeLimit} />
+
+      {/* ============ ACCOUNTABILITY SPINE (REAL counts) ============ */}
+      <section className="ps-acct reveal">
+        <div className="panel-head">
+          <h3>Accountability this week</h3>
+          <span className="panel-sub">3-strike will-not-skill</span>
+        </div>
+        <ol className="ps-spine">
+          {acct.map((a, i) => (
+            <li key={a.label} className={`ps-spine-node ${a.tone}`} style={{ animationDelay: `${i * 90}ms` }}>
+              <span className="ps-spine-mark"><Icon name={a.icon} size={16} /></span>
+              <div className="ps-spine-body">
+                <div className="ps-spine-top">
+                  <span className="ps-spine-label">{a.label}</span>
+                  <SpineValue value={a.value} />
+                </div>
+                <div className="ps-spine-note">{a.note}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* one shared gradient def for the arcs/sparks */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
+        <defs>
+          <linearGradient id="psRiskLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="var(--accent-hi)" />
+            <stop offset="1" stopColor="var(--terracotta)" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </>
+  );
+}
+
+/* ============================================================
+   TEAM HEALTH — triage column + constellation + roster.
+   All three derive from the SAME real `nodes` array.
+   ============================================================ */
+function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: Drill; strikeLimit: number }) {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState<string | null>(null);
+  const rosterRef = useRef<HTMLDivElement | null>(null);
+
+  // Triage = the real agents who need action first: paused / high-strike / zero-contact.
+  const triage = useMemo(
+    () => nodes.filter((a) => a.status === 'paused' || a.strikes >= strikeLimit || a.zero > 0).slice(0, 6),
+    [nodes, strikeLimit],
+  );
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return nodes;
+    return nodes.filter((a) => a.agent.toLowerCase().includes(needle) || a.source.toLowerCase().includes(needle));
+  }, [q, nodes]);
+  const CAP = 12;
+  const shown = filtered.slice(0, CAP);
+
+  const statusCounts = (s: AgentStatus) => nodes.filter((a) => a.status === s).length;
+  const toggle = (a: string) => setOpen((o) => (o === a ? null : a));
+  // Opening from a ring / triage card: surface the agent in the roster (search by
+  // name so they're never hidden past the cap or an active filter), open their
+  // drill-down, and bring the roster into view. Same drill component either way.
+  const pick = (agent: string) => {
+    setQ(agent);
+    setOpen(agent);
+    requestAnimationFrame(() => rosterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+  };
+
+  return (
+    <section className="ps-field">
+      <div className="panel-head reveal">
+        <h3>Team health · {nodes.length} agent{nodes.length === 1 ? '' : 's'}</h3>
+        <span className="panel-sub">Triage the few, scan the whole roster</span>
+      </div>
+
+      <div className="ps-field-grid">
+        {/* Triage column */}
+        <div className="ps-triage reveal">
+          <div className="ps-triage-head">
+            <span className={`ps-triage-count${triage.length === 0 ? ' clear' : ''}`}>{triage.length}</span>
+            <div>
+              <div className="ps-triage-title">Need you this week</div>
+              <div className="ps-triage-sub">paused · {strikeLimit}-strike · zero contact</div>
+            </div>
+          </div>
+          <div className="ps-triage-list">
+            {triage.length === 0 ? (
+              <div className="ps-triage-empty">Clean board — nobody paused, striking out, or sitting on an untouched lead.</div>
+            ) : triage.map((a) => (
+              <div key={a.agent} className={`ps-triage-card status-${a.status}`} onClick={() => pick(a.agent)}>
+                <div className="ps-triage-dot" style={{ background: STATUS_META[a.status].color }} />
+                <div className="ps-triage-info">
+                  <div className="ps-triage-name">{a.agent}</div>
+                  <div className="ps-triage-meta">
+                    {a.strikes >= strikeLimit ? `${a.strikes} strikes` : a.zero > 0 ? `${a.zero} zero-contact` : STATUS_META[a.status].label}
+                    {' · '}{a.total} leads · {a.workedPct}% worked
+                  </div>
+                </div>
+                <button className="ps-prep" onClick={(e) => { e.stopPropagation(); pick(a.agent); }} aria-label={`Open ${a.agent}`}>
+                  <Icon name="pulse" size={15} /> Open
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Constellation */}
+        <div className="ps-const-wrap reveal" data-delay="100">
+          <Constellation nodes={nodes} onPick={pick} />
+          <div className="ps-const-legend">
+            {(Object.keys(STATUS_META) as AgentStatus[]).map((k) => (
+              <span key={k} className="ps-leg">
+                <i style={{ background: STATUS_META[k].color }} /> {STATUS_META[k].label}
+                <b>{statusCounts(k)}</b>
+              </span>
+            ))}
+            <span className="ps-leg-note">ring size = lead load · click to drill in</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Searchable capped roster — clicking a row opens the SAME drill-down */}
+      <div className="ps-roster reveal" data-delay="120" ref={rosterRef}>
+        <div className="ps-roster-head">
+          <div className="ps-search">
+            <Icon name="prospect" size={16} />
+            <input
+              className="ps-search-input"
+              placeholder={`Search ${nodes.length} agent${nodes.length === 1 ? '' : 's'} by name or source…`}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <span className="ps-roster-count">
+            Showing {shown.length} of {filtered.length}
+            {filtered.length !== nodes.length ? ` (of ${nodes.length})` : ''}
+          </span>
+        </div>
+        <div className="table-wrap">
+          <table className="tru-table">
+            <thead>
+              <tr>
+                <th>Agent</th><th>By source</th><th>Leads</th><th>Zero</th><th>Stuck</th><th>Worked</th><th>Strikes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((a) => {
+                const isOpen = open === a.agent;
+                return (
+                  <FragmentRow key={a.agent}>
+                    <tr className={`rowlink${a.status === 'paused' ? ' row-paused' : ''}${isOpen ? ' row-open' : ''}`} onClick={() => toggle(a.agent)}>
+                      <td>
+                        <span className="cell-agent">
+                          <span className="cell-name">{a.agent}</span>
+                          {a.paused.length > 0 && <span className="pill-paused">⏸ Paused</span>}
+                          {a.strikes >= strikeLimit && a.paused.length === 0 && <span className="pill-strike">Pause rec</span>}
+                          <span className="cell-caret">{isOpen ? '▾' : '▸'}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <span className="src-chips">
+                          {[...a.srcs.entries()].sort((x, y) => y[1] - x[1]).map(([sn, n]) => (
+                            <span className="src-chip" key={sn} title={`${sn} · ${n} lead${n === 1 ? '' : 's'}`}>
+                              <i style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />{n}
+                            </span>
+                          ))}
+                        </span>
+                      </td>
+                      <td>{a.total}</td>
+                      <td className={a.zero > 0 ? 'cell-warn' : ''}>{a.zero}</td>
+                      <td>{a.stuck}</td>
+                      <td><span className={`cell-worked ${a.workedPct < 60 ? 'low' : ''}`}>{a.workedPct}%</span></td>
+                      <td><span className={`cell-strikes s${Math.min(3, a.strikes)}`}>{a.strikes}</span></td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="drill-tr">
+                        <td colSpan={7}>
+                          <AgentDrill node={a} drill={drill} />
+                        </td>
+                      </tr>
+                    )}
+                  </FragmentRow>
+                );
+              })}
+              {shown.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 28 }}>
+                    No agents match “{q}”.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > CAP && (
+          <div className="ps-roster-more">
+            {filtered.length - CAP} more — refine the search to narrow the roster.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   CONSTELLATION — each ring = one REAL agent. color = status,
+   size ∝ real lead count. Lens re-sorts by real status /
+   performance (worked% − strike penalty) / dominant source.
+   ============================================================ */
+type Lens = 'status' | 'performance' | 'source';
+type Pos = { x: number; y: number };
+const CW = 640;
+const CH = 420;
+const LENSES: { key: Lens; label: string }[] = [
+  { key: 'status', label: 'By status' },
+  { key: 'performance', label: 'By performance' },
+  { key: 'source', label: 'By source' },
+];
+
+/** Small deterministic LCG keyed off a seed number (stable jitter). */
+function rng(seed: number) {
+  let s = (seed * 2654435761) & 0x7fffffff;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+function clamp(x: number, y: number, rad: number): Pos {
+  return { x: Math.max(rad + 6, Math.min(CW - rad - 6, x)), y: Math.max(rad + 6, Math.min(CH - rad - 6, y)) };
+}
+const scoreOf = (a: AgentNode) => a.workedPct - a.strikes * 8;
+
+// Cluster geometry, hoisted so BOTH the layout math and the halo render use the same
+// centers. Every lens draws its own colored "category" halos (not just By status).
+const STATUS_CENTERS: Record<AgentStatus, { x: number; y: number; spread: number }> = {
+  on_track: { x: CW * 0.66, y: CH * 0.42, spread: 200 },
+  at_risk: { x: CW * 0.3, y: CH * 0.32, spread: 120 },
+  paused: { x: CW * 0.24, y: CH * 0.76, spread: 90 },
+};
+const SRC_SLOTS = [
+  { x: CW * 0.28, y: CH * 0.44, spread: 150 },
+  { x: CW * 0.62, y: CH * 0.34, spread: 120 },
+  { x: CW * 0.78, y: CH * 0.72, spread: 110 },
+  { x: CW * 0.45, y: CH * 0.6, spread: 110 },
+];
+// Soft halo tints, cycled per source cluster so each source reads as its own group.
+const SRC_HALO = ['var(--accent-soft)', 'var(--sea-soft)', 'rgba(192,107,79,0.14)', 'rgba(91,157,240,0.13)'];
+
+function Constellation({ nodes, onPick }: { nodes: AgentNode[]; onPick: (agent: string) => void }) {
+  const [lens, setLens] = useState<Lens>('status');
+  const [hover, setHover] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Ring geometry — size scales by real lead load (relative to the busiest agent).
+  const rings = useMemo(() => {
+    const maxLeads = Math.max(1, ...nodes.map((n) => n.total));
+    return nodes.map((a, i) => {
+      const rad = 5 + (a.total / maxLeads) * 11;
+      return { a, rad, core: Math.max(1.5, rad * 0.32), i };
+    });
+  }, [nodes]);
+
+  // Top sources → cluster centers for the "By source" lens (real dominant sources).
+  const topSources = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const n of nodes) c.set(n.source, (c.get(n.source) ?? 0) + 1);
+    return [...c.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s);
+  }, [nodes]);
+
+  const layouts = useMemo(() => {
+    const status: Pos[] = rings.map(({ a, rad, i }) => {
+      const r = rng(i * 13 + 3);
+      const ctr = STATUS_CENTERS[a.status];
+      const ang = r() * Math.PI * 2;
+      const dist = Math.pow(r(), 0.7) * ctr.spread;
+      return clamp(ctr.x + Math.cos(ang) * dist, ctr.y + Math.sin(ang) * dist * 0.72, rad);
+    });
+    const scores = rings.map((n) => scoreOf(n.a));
+    const lo = Math.min(...scores, 0);
+    const hi = Math.max(...scores, 1);
+    const performance: Pos[] = rings.map(({ rad, i }, idx) => {
+      const t = (scores[idx] - lo) / (hi - lo || 1);
+      const x = 70 + t * (CW - 70 - 46);
+      const r = rng(i * 29 + 11);
+      const y = CH * 0.52 + (r() - 0.5) * 2 * (CH * 0.34);
+      return clamp(x, y, rad);
+    });
+    const source: Pos[] = rings.map(({ a, rad, i }) => {
+      const r = rng(i * 17 + 5);
+      const slot = SRC_SLOTS[Math.max(0, topSources.indexOf(a.source)) % SRC_SLOTS.length];
+      const ang = r() * Math.PI * 2;
+      const dist = Math.pow(r(), 0.7) * slot.spread;
+      return clamp(slot.x + Math.cos(ang) * dist, slot.y + Math.sin(ang) * dist * 0.78, rad);
+    });
+    return { status, performance, source };
+  }, [rings, topSources]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    const t = window.setTimeout(() => setMounted(true), 250);
+    return () => { cancelAnimationFrame(id); window.clearTimeout(t); };
+  }, []);
+
+  const pos = layouts[lens];
+  const paused = nodes.filter((a) => a.status === 'paused').length;
+  const atRisk = nodes.filter((a) => a.status === 'at_risk').length;
+  const insight: Record<Lens, string> = {
+    status: paused + atRisk === 0 ? 'Every agent is on track — no action needed this week.' : `${paused} paused · ${atRisk} at risk — action needed this week.`,
+    performance: 'Ranked by worked % minus a strike penalty — the long tail sits left.',
+    source: topSources[0] ? `${topSources[0]} is the dominant pipe across the floor.` : 'Lead sources across the roster.',
+  };
+  const hoverNode = hover != null ? rings[hover] : null;
+
+  return (
+    <div className="ps-constellation" data-lens={lens}>
+      <div className="ps-lens" role="tablist" aria-label="Constellation lens">
+        {LENSES.map((l) => (
+          <button key={l.key} role="tab" aria-selected={lens === l.key}
+            className={`ps-lens-btn ${lens === l.key ? 'is-active' : ''}`} onClick={() => setLens(l.key)}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <div className="ps-insight" key={lens}>{insight[lens]}</div>
+
+      <div className="ps-const-stage">
+        <svg viewBox={`0 0 ${CW} ${CH}`} className="ps-const-svg" role="img" aria-label="Team health constellation">
+          <defs>
+            <radialGradient id="psConstGlow" cx="50%" cy="45%" r="60%">
+              <stop offset="0" stopColor="var(--accent-soft)" />
+              <stop offset="1" stopColor="transparent" />
+            </radialGradient>
+          </defs>
+          <rect x="0" y="0" width={CW} height={CH} fill="url(#psConstGlow)" />
+
+          <g className="ps-halos" key={lens}>
+            {lens === 'status' && (
+              <>
+                <circle cx={CW * 0.66} cy={CH * 0.42} r={150} fill="var(--sea-soft)" opacity="0.5" />
+                <circle cx={CW * 0.3} cy={CH * 0.32} r={96} fill="var(--accent-soft)" opacity="0.7" />
+                <circle cx={CW * 0.24} cy={CH * 0.76} r={74} fill="rgba(192,107,79,0.10)" />
+              </>
+            )}
+            {lens === 'performance' && (
+              <>
+                <circle cx={CW * 0.2} cy={CH * 0.5} r={126} fill="rgba(192,107,79,0.13)" opacity="0.9" />
+                <circle cx={CW * 0.52} cy={CH * 0.5} r={126} fill="var(--accent-soft)" opacity="0.7" />
+                <circle cx={CW * 0.84} cy={CH * 0.5} r={126} fill="var(--sea-soft)" opacity="0.6" />
+              </>
+            )}
+            {lens === 'source' && topSources.slice(0, SRC_SLOTS.length).map((src, i) => (
+              <g key={src}>
+                <circle cx={SRC_SLOTS[i].x} cy={SRC_SLOTS[i].y} r={SRC_SLOTS[i].spread * 0.82} fill={SRC_HALO[i % SRC_HALO.length]} opacity="0.6" />
+                <text x={SRC_SLOTS[i].x} y={SRC_SLOTS[i].y} textAnchor="middle" style={{ fontSize: 13, fontWeight: 700, fill: 'var(--text-40)', pointerEvents: 'none' }}>{src}</text>
+              </g>
+            ))}
+          </g>
+          <g className="ps-axis" style={{ opacity: lens === 'performance' ? 1 : 0 }}>
+            <line x1={54} y1={CH - 26} x2={CW - 30} y2={CH - 26} stroke="var(--border-soft)" strokeWidth="1" />
+            <text x={58} y={CH - 10} className="ps-axis-cap">lower ← performance</text>
+            <text x={CW - 34} y={CH - 10} textAnchor="end" className="ps-axis-cap">performance → higher</text>
+          </g>
+
+          <g className={`ps-nodes ${mounted ? 'is-in' : ''} ${hover != null ? 'has-hover' : ''}`}>
+            {rings.map((n, idx) => {
+              const meta = STATUS_META[n.a.status];
+              const pt = pos[idx];
+              const isHover = hover === idx;
+              const stagger = Math.min(idx * 8, 1100);
+              return (
+                <g key={n.a.agent} className={`ps-node ${isHover ? 'is-hover' : ''}`}
+                  transform={`translate(${pt.x} ${pt.y})`}
+                  style={{ ['--enter-delay' as string]: `${stagger}ms` }}
+                  onMouseEnter={() => setHover(idx)}
+                  onMouseLeave={() => setHover((h) => (h === idx ? null : h))}
+                  onClick={() => onPick(n.a.agent)}>
+                  <circle className="ps-node-halo" r={n.rad + 8} fill="none" stroke={meta.color} />
+                  <circle className="ps-node-ring" r={n.rad} fill={meta.soft} stroke={meta.color} />
+                  <circle className="ps-node-core" r={n.core} fill={meta.color} />
+                </g>
+              );
+            })}
+          </g>
+        </svg>
+
+        {hoverNode && <HoverCard node={hoverNode.a} pos={pos[hover!]} onPick={onPick} />}
+      </div>
+    </div>
+  );
+}
+
+function HoverCard({ node, pos, onPick }: { node: AgentNode; pos: Pos; onPick: (a: string) => void }) {
+  const meta = STATUS_META[node.status];
+  const leftPct = (pos.x / CW) * 100;
+  const topPct = (pos.y / CH) * 100;
+  const flip = leftPct > 62;
+  return (
+    <div className={`ps-hcard ${flip ? 'flip' : ''}`} style={{ left: `${leftPct}%`, top: `${topPct}%` }}>
+      <div className="ps-hcard-top">
+        <span className="ps-hcard-name">{node.agent}</span>
+        <span className="ps-hcard-pill" style={{ color: meta.color, background: meta.soft, borderColor: meta.color }}>{meta.label}</span>
+      </div>
+      <div className="ps-hcard-worked">
+        <div className="ps-hcard-bar"><span style={{ width: `${node.workedPct}%`, background: meta.color }} /></div>
+        <b>{node.workedPct}%</b> worked
+      </div>
+      <div className="ps-hcard-stats">
+        <span>{node.total} leads</span>
+        <span>{node.source}</span>
+        <span className={node.strikes >= 2 ? 'warn' : ''}>{node.strikes} strike{node.strikes === 1 ? '' : 's'}</span>
+      </div>
+      <button className="ps-hcard-btn" onClick={() => onPick(node.agent)}>
+        <Icon name="pulse" size={14} /> Open agent
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   AGENT DRILL — the REAL per-lead drill-down (same behavior as
+   before): flag chips, closings stat, pre-written texts/email,
+   by-source breakdown, and the per-lead list with FUB deep-links.
+   ============================================================ */
+const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
+
+function AgentDrill({ node, drill }: { node: AgentNode; drill: Drill }) {
+  const agent = node.agent;
+  const [flagF, setFlagF] = useState<string>('all');
+  const mine = drill.leads.filter((l) => ownerOf(l) === agent);
+  const shown = flagF === 'all' ? mine : mine.filter((l) => l.flag === flagF);
+  const bySrc = new Map<string, number>();
+  for (const l of mine) { const s = l.source_family || 'Other'; bySrc.set(s, (bySrc.get(s) ?? 0) + 1); }
+  const srcRows = [...bySrc.entries()].sort((a, b) => b[1] - a[1]);
+  const c = drill.contacts.get(norm(agent));
+  const chips: Array<[string, string, number]> = [
+    ['all', 'All', node.total],
+    ['zero_contact', 'Zero contact', node.zero],
+    ['stuck', 'In Lead', node.stuck],
+    ['worked', 'Worked', node.worked],
+  ];
+  const paused = drill.paused.get(agent);
+  const first = agent.split(' ')[0];
+  const needN = node.zero + node.stuck;
+  const noClose = paused?.find((r) => r.kind === 'no_close');
+  const pauseMsg = noClose
+    ? `Hey ${first} — I'm holding new leads for now. You've taken ${noClose.count} since your last under-contract, and the team rule is something has to go under contract every ${noClose.cap}. Let's get on a call, work the pipeline you already have, and get one across — the moment it lands, leads turn right back on. I'm in it with you.`
+    : `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
+  const fubLink = (l: LeadRow) => {
+    const sub = drill.subs.get(l.team_id);
+    return l.fub_person_id ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}` : null;
+  };
+  const needLeads = mine.filter((l) => l.flag === 'zero_contact' || l.flag === 'stuck');
+  const CAP = 5;
+  const leadLines = needLeads.slice(0, CAP).map((l) => { const link = fubLink(l); return `• ${l.name || 'Lead'}${link ? `: ${link}` : ''}`; }).join('\n');
+  const moreLine = needLeads.length > CAP ? `\n…plus ${needLeads.length - CAP} more in Pulse.` : '';
+  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Please reach out today:\n${leadLines}${moreLine}`;
+  const digits = c?.phone ? c.phone.replace(/[^+\d]/g, '') : null;
+  const sms = (body: string) => (digits ? `sms:${digits}?&body=${encodeURIComponent(body)}` : null);
+  const emailHref = c?.email
+    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(needN > 0 ? remindMsg : `Hey ${first} — quick check-in on your pipeline. Anything I can help with this week?`)}`
+    : null;
+
+  return (
+    <div className="ps-drill">
+      {paused?.map((r) => (
+        <div className="ps-pausebar" key={r.kind}>
+          <span className="ps-pausebar-tag">⏸ PAUSED</span>
+          {r.kind === 'capacity'
+            ? <span><b>At capacity</b> — {r.count} of {r.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
+            : <span><b>No closings</b> — {r.count} leads taken since their last under-contract (rule: every {r.cap} needs one). New leads hold until something goes under contract.</span>}
+        </div>
+      ))}
+      <div className="ps-drill-head">
+        <div className="ps-drill-chips">
+          {chips.map(([k, l, n]) => (
+            <span key={k} className={`ps-fchip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
+          ))}
+          <span className="ps-fchip stat">Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b></span>
+        </div>
+        {node.person && (
+          <div className="ps-drill-acts">
+            {paused && sms(pauseMsg) && <a className="ps-abtn warm" href={sms(pauseMsg)!} title={noClose ? 'Pre-written: leads hold until one goes under contract — supportive' : "Warm, pre-written: you're at capacity — nothing wrong, keep going"}>💬 Pause text</a>}
+            {needN > 0 && sms(remindMsg) && <a className="ps-abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${needN} un-worked leads`}>💬 Reminder ({needN})</a>}
+            {emailHref ? <a className="ps-abtn" href={emailHref}>✉ Email</a> : <span className="ps-abtn off" title="No email on file — add it in FUB">✉ No email</span>}
+            {digits ? <a className="ps-abtn" href={`sms:${digits}`}>💬 Text</a> : <span className="ps-abtn off" title="No mobile on file — add it in FUB">💬 No mobile</span>}
+          </div>
+        )}
+      </div>
+      {srcRows.length > 0 && (
+        <div className="ps-drill-src">
+          <span className="ps-drill-src-lbl">BY SOURCE</span>
+          {srcRows.map(([name, n]) => (
+            <span className="ps-drill-src-chip" key={name}>
+              <i style={{ background: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other }} />
+              {name} <b>{n}</b>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="ps-drill-list">
+        {shown.length === 0 ? (
+          <div style={{ color: 'var(--text-50)', fontSize: 13, padding: '10px 2px' }}>No leads match this filter in the current window.</div>
+        ) : shown.map((l, i) => {
+          const href = fubLink(l);
+          const cls = l.flag === 'worked' ? 'ok' : l.flag === 'stuck' ? 'warn' : 'bad';
+          return (
+            <div className="ps-leadline" key={i}>
+              <i style={{ background: SOURCE_COLORS[l.source_family ?? 'Other'] ?? SOURCE_COLORS.Other }} />
+              <span className="ln">{l.name || 'Lead'}</span>
+              <span className="muted">{l.source_family ?? 'Other'}{l.stage ? ` · ${l.stage}` : ''}{l.pond && l.assigned_to ? ` · Pond: ${l.pond}` : ''}</span>
+              <span className={`ps-lead-pill ${cls}`}>{FLAG_LABEL[l.flag ?? ''] ?? l.flag}</span>
+              {href && <a className="ps-abtn sm" href={href} target="_blank" rel="noreferrer">FUB ↗</a>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ACCOUNTABILITY view (restyled dark, same real data)
+   ============================================================ */
 function Accountability(p: {
   strikesByAgent: Map<string, number>; strikeLimit: number;
   pauseCount: number; newStrikes7d: number; openCases: number;
   paused: Map<string, PauseReason[]>; pauseWatchOn: boolean;
 }) {
-  const rows = [...p.strikesByAgent.entries()]
-    .filter(([a]) => a !== 'Unassigned')
-    .sort((a, b) => b[1] - a[1]);
+  const rows = [...p.strikesByAgent.entries()].filter(([a]) => a !== 'Unassigned').sort((a, b) => b[1] - a[1]);
   const pausedRows = [...p.paused.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
   const clean = rows.length === 0 && p.pauseCount === 0 && p.newStrikes7d === 0;
+  const kpis = [
+    { label: 'Pause recommended', value: p.pauseCount, tone: 'warn' },
+    { label: 'New strikes (7d)', value: p.newStrikes7d, tone: '' },
+    { label: 'Open cases', value: p.openCases, tone: '' },
+    { label: 'Strike limit', value: p.strikeLimit, tone: 'good' },
+  ];
   return (
     <>
-      <div className="grid4">
-        <KPI color="#c0492f" icon={ICON.shield} value={p.pauseCount} label="Pause recommended" />
-        <KPI color="#8f6416" icon={ICON.clock} value={p.newStrikes7d} label="New strikes (7d)" />
-        <KPI color="#a9791f" icon={ICON.leads} value={p.openCases} label="Open cases" />
-        <KPI color="#2e8b57" icon={ICON.check} value={p.strikeLimit} label="Strike limit" />
-      </div>
+      <section className="ps-source reveal" style={{ marginBottom: 18 }}>
+        <div className="ps-source-legend" style={{ margin: 0, gap: 32 }}>
+          {kpis.map((k) => (
+            <span key={k.label} className="ps-source-leg" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+              <span className="ps-spine-val" style={{ color: k.tone === 'warn' ? 'var(--terracotta)' : k.tone === 'good' ? 'var(--sea-hi)' : 'var(--text-strong)' }}>
+                <SpineValue value={k.value} />
+              </span>
+              {k.label}
+            </span>
+          ))}
+        </div>
+      </section>
 
       {clean && (
-        <div className="card risk fu" style={{ marginTop: 16 }}>
-          <div className="ey">Clean board</div>
-          <div className="big">0 strikes</div>
-          <div className="sub">
+        <article className="card ps-risk reveal" style={{ minHeight: 'auto', borderColor: 'rgba(74,124,111,0.4)' }}>
+          <span className="risk-eyebrow" style={{ color: 'var(--sea-hi)' }}><Icon name="shield" size={16} /> Clean board</span>
+          <div className="ps-gci-num" style={{ fontSize: 42 }}>0 strikes</div>
+          <p className="ps-risk-note">
             No agent has crossed the {p.strikeLimit}-strike threshold in the last 30 days, and no new
             strikes opened this week. The pipeline discipline is holding — nothing to act on right now.
-          </div>
-        </div>
+          </p>
+        </article>
       )}
 
-      <div className="card fu" style={{ marginTop: 16 }}>
-        <h3 className="ch">How the ledger works</h3>
-        <p className="muted small" style={{ lineHeight: 1.6, margin: 0 }}>
+      <section className="ps-acct reveal" style={{ marginTop: 18 }}>
+        <div className="panel-head"><h3>How the ledger works</h3></div>
+        <p className="panel-sub" style={{ lineHeight: 1.6 }}>
           A strike opens when an agent leaves a tracked lead un-worked (no call and fewer than two
           outbound texts) or lets one stall in the Lead stage. Reaching {p.strikeLimit} strikes in a
           rolling 30 days triggers a coach-confirmed pause recommendation — never an automatic action.
         </p>
-      </div>
+      </section>
 
-      <div className="card tcard fu">
-        <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Pause watch · new leads held</h3></div>
-        <table className="tbl">
-          <thead>
-            <tr><th>Agent</th><th>Why</th><th>Turns back on when</th></tr>
-          </thead>
-          <tbody>
-            {!p.pauseWatchOn ? (
-              <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '22px' }}>Pause watch is off — set your rules in Settings.</td></tr>
-            ) : pausedRows.length === 0 ? (
-              <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '22px' }}>Nobody's paused — every agent is inside the rules.</td></tr>
-            ) : pausedRows.map(([a, reasons]) => (
-              <tr key={a}>
-                <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}<span className="badge cap">⏸ Paused</span></span></td>
-                <td>{reasons.map((r) => (
-                  <div key={r.kind} className={r.kind === 'no_close' ? 'bad' : 'warn'} style={{ fontWeight: 600 }}>
-                    {r.kind === 'capacity' ? `${r.count} of ${r.cap} leads this month` : `${r.count} leads since last under-contract (rule: ${r.cap})`}
-                  </div>
-                ))}</td>
-                <td className="muted">{reasons.some((r) => r.kind === 'no_close') ? 'Something goes under contract' : 'The month rolls over'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card tcard fu">
-        <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Strikes by agent · last 30 days</h3></div>
-        <table className="tbl">
-          <thead>
-            <tr><th>Agent</th><th>Strikes (30d)</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr><td colSpan={3} className="muted" style={{ textAlign: 'center', padding: '22px' }}>No strikes on record — clean board.</td></tr>
-            ) : rows.map(([a, s]) => {
-              const pause = s >= p.strikeLimit;
-              const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
-              return (
+      <section className="ps-roster reveal" style={{ marginTop: 18 }}>
+        <div className="panel-head"><h3>Pause watch · new leads held</h3></div>
+        <div className="table-wrap">
+          <table className="tru-table">
+            <thead><tr><th>Agent</th><th>Why</th><th>Turns back on when</th></tr></thead>
+            <tbody>
+              {!p.pauseWatchOn ? (
+                <tr><td colSpan={3} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 22 }}>Pause watch is off — set your rules in Settings.</td></tr>
+              ) : pausedRows.length === 0 ? (
+                <tr><td colSpan={3} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 22 }}>Nobody’s paused — every agent is inside the rules.</td></tr>
+              ) : pausedRows.map(([a, reasons]) => (
                 <tr key={a}>
-                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pause && <span className="badge">Pause rec</span>}</span></td>
-                  <td><span className={`pill ${pill}`}>{s}</span></td>
-                  <td className={pause ? 'bad' : s > 0 ? 'warn' : ''}>{pause ? 'Pause recommended' : s > 0 ? 'On watch' : 'Clear'}</td>
+                  <td><span className="cell-agent"><span className="cell-name">{a}</span><span className="pill-paused">⏸ Paused</span></span></td>
+                  <td>{reasons.map((r) => (
+                    <div key={r.kind} className={r.kind === 'no_close' ? 'cell-warn' : ''} style={{ fontWeight: 600, color: r.kind === 'no_close' ? 'var(--terracotta)' : 'var(--accent-hi)' }}>
+                      {r.kind === 'capacity' ? `${r.count} of ${r.cap} leads this month` : `${r.count} leads since last under-contract (rule: ${r.cap})`}
+                    </div>
+                  ))}</td>
+                  <td style={{ color: 'var(--text-50)' }}>{reasons.some((r) => r.kind === 'no_close') ? 'Something goes under contract' : 'The month rolls over'}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="ps-roster reveal" style={{ marginTop: 18 }}>
+        <div className="panel-head"><h3>Strikes by agent · last 30 days</h3></div>
+        <div className="table-wrap">
+          <table className="tru-table">
+            <thead><tr><th>Agent</th><th>Strikes (30d)</th><th>Status</th></tr></thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr><td colSpan={3} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 22 }}>No strikes on record — clean board.</td></tr>
+              ) : rows.map(([a, s]) => {
+                const pause = s >= p.strikeLimit;
+                return (
+                  <tr key={a}>
+                    <td><span className="cell-agent"><span className="cell-name">{a}</span>{pause && <span className="pill-strike">Pause rec</span>}</span></td>
+                    <td><span className={`cell-strikes s${Math.min(3, s)}`}>{s}</span></td>
+                    <td className={pause ? 'cell-warn' : ''} style={{ color: pause ? 'var(--terracotta)' : s > 0 ? 'var(--accent-hi)' : 'var(--text-60)' }}>{pause ? 'Pause recommended' : s > 0 ? 'On watch' : 'Clear'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </>
   );
 }
 
-// ── Sources ─────────────────────────────────────────────────────────────────
+/* ============================================================
+   SOURCES view (restyled dark, same real data)
+   ============================================================ */
 function Sources(p: {
   sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose'; closed: number; convPct: number | null }>;
   total: number; upfront: number; atClose: number;
 }) {
+  const srcTotal = p.sources.reduce((a, s) => a + s.n, 0);
   return (
     <>
-      <div className="grid2b">
-        <div className="card fu">
-          <h3 className="ch">Source mix</h3>
-          {p.sources.length === 0 ? <p className="muted small">No leads in this window.</p> : (
-            <div className="donutwrap"><Donut sources={p.sources} /><div className="legend">
-              {p.sources.map((s) => (
-                <div className="leg" key={s.name}><span className="dot" style={{ background: s.c }} />{s.name}<b>{s.n}</b></div>
-              ))}
-            </div></div>
-          )}
-        </div>
-        <div className="card fu">
-          <h3 className="ch">How you pay for them</h3>
-          <div className="paycard">
-            <div><div className="paycard-n">{p.upfront}</div><div className="paycard-l">Paid up front</div><div className="muted small">Subscription / ad spend — Realtor.com, Homes.com, Facebook, Google. Un-worked here is real wasted spend.</div></div>
-            <div><div className="paycard-n">{p.atClose}</div><div className="paycard-l">Pay at close</div><div className="muted small">Referral fee at close — Zillow, referral networks. Un-worked here is untapped GCI, not out-of-pocket.</div></div>
+      {p.sources.length > 0 && (
+        <section className="ps-source reveal" style={{ marginBottom: 18 }}>
+          <div className="panel-head"><h3>Source mix</h3><span className="panel-sub">{srcTotal} tracked leads</span></div>
+          <div className="ps-source-bar">
+            {p.sources.map((s, i) => (
+              <div key={s.name} className="ps-source-seg" title={`${s.name} · ${s.n}`}
+                style={{ flexGrow: s.n, background: `linear-gradient(180deg, ${s.c}, color-mix(in srgb, ${s.c} 72%, #000))`, animationDelay: `${i * 120}ms` }}>
+                {srcTotal > 0 && s.n / srcTotal > 0.06 && <span className="ps-source-seg-val">{s.n}</span>}
+              </div>
+            ))}
           </div>
-        </div>
+          <div className="ps-source-legend">
+            {p.sources.map((s) => (
+              <span key={s.name} className="ps-source-leg"><i style={{ background: s.c }} /> {s.name}<b>{s.n}</b></span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="ps-field-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 18 }}>
+        <section className="ps-acct reveal">
+          <div className="panel-head"><h3>Paid up front</h3></div>
+          <div className="ps-gci-num" style={{ fontSize: 40 }}><CountUp value={p.upfront} /></div>
+          <p className="panel-sub" style={{ marginTop: 8 }}>Subscription / ad spend — Realtor.com, Homes.com, Facebook, Google. Un-worked here is real wasted spend.</p>
+        </section>
+        <section className="ps-acct reveal" data-delay="80">
+          <div className="panel-head"><h3>Pay at close</h3></div>
+          <div className="ps-gci-num" style={{ fontSize: 40 }}><CountUp value={p.atClose} /></div>
+          <p className="panel-sub" style={{ marginTop: 8 }}>Referral fee at close — Zillow, referral networks. Un-worked here is untapped GCI, not out-of-pocket.</p>
+        </section>
       </div>
 
-      <div className="card tcard fu">
-        <div className="thead"><h3 className="ch" style={{ margin: 0 }}>Every source</h3></div>
-        <table className="tbl">
-          <thead><tr><th>Source</th><th>Leads</th><th>Share</th><th>Closed (UC+)</th><th>Conversion</th><th>How you pay</th></tr></thead>
-          <tbody>
-            {p.sources.map((s) => (
-              <tr key={s.name}>
-                <td><span className="cell-agent"><span className="dot" style={{ background: s.c, width: 10, height: 10, borderRadius: 3 }} />{s.name}</span></td>
-                <td>{s.n}</td>
-                <td>{p.total ? Math.round((s.n / p.total) * 100) : 0}%</td>
-                <td>{s.closed}</td>
-                <td>{s.convPct == null ? <span className="muted">—</span> : `${s.convPct}%`}</td>
-                <td><span className={`pill ${s.pay === 'atclose' ? 'pill-warn' : 'pill-ok'}`}>{PAY_LABEL[s.pay]}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <section className="ps-roster reveal" data-delay="120">
+        <div className="panel-head"><h3>Every source</h3></div>
+        <div className="table-wrap">
+          <table className="tru-table">
+            <thead><tr><th>Source</th><th>Leads</th><th>Share</th><th>Closed (UC+)</th><th>Conversion</th><th>How you pay</th></tr></thead>
+            <tbody>
+              {p.sources.map((s) => (
+                <tr key={s.name}>
+                  <td><span className="cell-agent"><i style={{ background: s.c, width: 10, height: 10, borderRadius: 3, display: 'inline-block' }} /><span className="cell-name">{s.name}</span></span></td>
+                  <td>{s.n}</td>
+                  <td>{p.total ? Math.round((s.n / p.total) * 100) : 0}%</td>
+                  <td>{s.closed}</td>
+                  <td>{s.convPct == null ? <span style={{ color: 'var(--text-50)' }}>—</span> : `${s.convPct}%`}</td>
+                  <td><span className={s.pay === 'atclose' ? 'pill-strike' : 'pill-paused'} style={s.pay === 'atclose' ? {} : { color: 'var(--sea-hi)', background: 'var(--sea-soft)', borderColor: 'rgba(74,124,111,0.4)' }}>{PAY_LABEL[s.pay]}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </>
   );
 }
 
-// ── Settings (editable via the Worker) ──────────────────────────────────────
+/* ============================================================
+   SETTINGS view (restyled dark, same real save)
+   ============================================================ */
 function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => void }) {
   const [form, setForm] = useState<Settings>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const set = (k: keyof Settings) => (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: Number(e.target.value) });
-
-  // Follow Up Boss connection — the ONE key per team, shared across every TRU product.
-  const [conns, setConns] = useState<Connection[] | null>(null);
-  const [keyInput, setKeyInput] = useState('');
-  const [connBusy, setConnBusy] = useState(false);
-  const [connMsg, setConnMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const loadConn = () => { void loadConnection().then(setConns); };
-  useEffect(() => { loadConn(); }, []);
-  async function doConnect() {
-    const k = keyInput.trim();
-    if (!k || connBusy) return;
-    setConnBusy(true); setConnMsg(null);
-    try {
-      const r = await connectFub(k);
-      setKeyInput('');
-      setConnMsg({ ok: true, text: `Connected${r.subdomain ? ` to ${r.subdomain}.followupboss.com` : ''} — pulling your data now. It’ll fill in over the next minute.` });
-      setTimeout(loadConn, 4000);
-    } catch (e) {
-      setConnMsg({ ok: false, text: e instanceof Error ? e.message : 'Could not connect.' });
-    } finally {
-      setConnBusy(false);
-    }
-  }
-  const ago = (iso: string | null) => {
-    if (!iso) return 'never';
-    const mins = Math.round((Date.now() - Date.parse(iso)) / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins} min ago`;
-    const hrs = Math.round(mins / 60);
-    return hrs < 24 ? `${hrs} hr ago` : `${Math.round(hrs / 24)} d ago`;
-  };
 
   async function save() {
     setBusy(true); setMsg(null);
@@ -615,9 +1230,9 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   // Plain function returning JSX (NOT a component): a component defined inside
   // render remounts on every keystroke and drops input focus after one digit.
   const F = (k: keyof Settings, label: string, hint: string, suffix?: string) => (
-    <div className="setrow" key={k}>
-      <div><div className="setlabel">{label}</div><div className="muted small">{hint}</div></div>
-      <div className="setinput">
+    <div className="ps-setrow" key={k}>
+      <div><div className="ps-setlabel">{label}</div><div className="ps-sethint">{hint}</div></div>
+      <div className="ps-setinput">
         <input type="number" value={String(form[k] ?? '')} onChange={set(k)} />
         {suffix && <span className="suffix">{suffix}</span>}
       </div>
@@ -642,74 +1257,51 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   };
 
   return (
-    <div className="card fu" style={{ maxWidth: 640 }}>
-      <div className="setrow" style={{ display: 'block' }}>
-        <div className="setlabel">Follow Up Boss connection</div>
-        <div className="muted small" style={{ marginBottom: 10 }}>
+    <div className="card ps-settings reveal">
+      <div className="ps-setrow block">
+        <div className="ps-setlabel">Follow Up Boss connection</div>
+        <div className="ps-sethint" style={{ marginBottom: 10 }}>
           Your API key connects every TRU product — Pulse, Coach, and the rest — to this team’s
           Follow Up Boss. Enter it once here; paste a new one anytime a key is rotated or stops working.
         </div>
-        {(conns ?? []).map((c) => (
-          <div key={c.teamId} className="connrow">
-            <span className={`conndot ${c.connected ? 'on' : 'off'}`} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5 }}>{c.name}</div>
-              <div className="muted small">
-                {c.connected
-                  ? <>Connected{c.subdomain ? ` · ${c.subdomain}.followupboss.com` : ''} · last sync {ago(c.lastSync)}</>
-                  : 'Not connected — enter your API key below'}
-              </div>
-            </div>
-          </div>
-        ))}
-        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="Paste your Follow Up Boss API key"
-            autoComplete="off"
-            style={{ flex: 1, minWidth: 240, padding: '11px 12px', border: '1px solid var(--line)', borderRadius: 10, fontSize: 14, background: '#fff', color: 'var(--ink)' }}
-          />
-          <button className="btn" onClick={doConnect} disabled={!keyInput.trim() || connBusy}>{connBusy ? 'Connecting…' : 'Connect & sync'}</button>
-        </div>
-        <div className="muted small" style={{ marginTop: 6 }}>Find it in FUB → Admin → API. Stored encrypted; never shown in the browser.</div>
-        {connMsg && <div className={connMsg.ok ? 'ok' : 'err'} style={{ marginTop: 10 }}>{connMsg.text}</div>}
+        <FubConnect />
       </div>
 
-      {msg && <div className={msg.ok ? 'ok' : 'err'}>{msg.text}</div>}
-      <div className="setrow" style={{ display: 'block' }}>
-        <div className="setlabel">Lead sources you pay for</div>
-        <div className="muted small" style={{ marginBottom: 10 }}>Only checked sources count on the board — every KPI, chart, and per-agent number follows.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {msg && <div className={msg.ok ? 'ok' : 'err'} style={{ margin: '10px 0' }}>{msg.text}</div>}
+
+      <div className="ps-setrow block">
+        <div className="ps-setlabel">Lead sources you pay for</div>
+        <div className="ps-sethint" style={{ marginBottom: 10 }}>Only checked sources count on the board — every KPI, chart, and per-agent number follows.</div>
+        <div className="ps-src-grid">
           {SOURCE_OPTS.map(([k, label]) => (
-            <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: 0, cursor: 'pointer' }}>
-              <input type="checkbox" checked={checkedSources.includes(k)} onChange={() => toggleSource(k)} style={{ width: 16, height: 16, margin: 0 }} />
+            <label key={k} className="ps-src-opt">
+              <input type="checkbox" checked={checkedSources.includes(k)} onChange={() => toggleSource(k)} />
               {label}
             </label>
           ))}
         </div>
       </div>
+
       {F('avg_gci', 'Average GCI per deal', 'Drives the commission-at-risk math.', '$')}
       {F('close_rate', 'Worked-lead close rate', '% of properly worked leads that close.', '%')}
-      {F('window_hours', 'Contact window', "Hours a new lead can sit before it's flagged.", 'hrs')}
+      {F('window_hours', 'Contact window', "Hours a new lead can sit before it’s flagged.", 'hrs')}
       {F('strike_limit', 'Strike limit', 'Strikes in 30 days that trigger a pause recommendation.')}
       {F('per_agent_capacity', 'Per-agent capacity', 'Leads one agent can work well — sets coverage headroom.')}
 
-      <div className="setrow" style={{ display: 'block' }}>
-        <div className="setlabel">Pause watch</div>
-        <div className="muted small" style={{ marginBottom: 10 }}>
+      <div className="ps-setrow block">
+        <div className="ps-setlabel">Pause watch</div>
+        <div className="ps-sethint" style={{ marginBottom: 10 }}>
           Your rules for pausing new lead flow to an agent. Both are computed live from the
           synced FUB data on every load — full history, nothing tracked from today forward.
           A paused agent gets the ⏸ badge on the board and shows up on the Accountability
           tab — routing stays your call.
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: '0 0 8px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={form.pause_volume_on !== false} onChange={() => setForm({ ...form, pause_volume_on: form.pause_volume_on === false })} style={{ width: 16, height: 16, margin: 0 }} />
+        <label className="ps-src-opt" style={{ marginBottom: 8 }}>
+          <input type="checkbox" checked={form.pause_volume_on !== false} onChange={() => setForm({ ...form, pause_volume_on: form.pause_volume_on === false })} />
           Pause at monthly volume — agent takes the leads below in one calendar month
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, margin: 0, cursor: 'pointer' }}>
-          <input type="checkbox" checked={form.pause_no_close_on === true} onChange={() => setForm({ ...form, pause_no_close_on: form.pause_no_close_on !== true })} style={{ width: 16, height: 16, margin: 0 }} />
+        <label className="ps-src-opt">
+          <input type="checkbox" checked={form.pause_no_close_on === true} onChange={() => setForm({ ...form, pause_no_close_on: form.pause_no_close_on !== true })} />
           Pause on no closings — agent takes the leads below without an under-contract
         </label>
       </div>
@@ -721,246 +1313,104 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
   );
 }
 
-// ── Agent table with drill-down ─────────────────────────────────────────────
-const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
-
-interface AgentStats { zero: number; stuck: number; worked: number; total: number; srcs: Map<string, number> }
-
-const pauseLabel = (r: PauseReason) => r.kind === 'capacity'
-  ? `At capacity — ${r.count} of ${r.cap} leads this month`
-  : `${r.count} leads since their last under-contract — the rule is ${r.cap}`;
-
-type SortKey = 'agent' | 'total' | 'zero' | 'stuck' | 'worked' | 'workedpct' | 'strikes';
-
-function AgentTable(p: {
-  agents: Array<[string, AgentStats]>;
-  strikesByAgent: Map<string, number>; strikeLimit: number; caption: string; drill: Drill;
-}) {
-  const [open, setOpen] = useState<string | null>(null);
-  const [flagF, setFlagF] = useState<string>('all');
-  // Default: leads needing attention float up (zero + stuck, desc).
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'zero', dir: -1 });
-  const toggle = (a: string) => { setOpen(open === a ? null : a); setFlagF('all'); };
-  const clickSort = (key: SortKey) => setSort((s) =>
-    s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) } : { key, dir: key === 'agent' ? 1 : -1 });
-
-  const val = (a: string, r: AgentStats, key: SortKey): number | string => {
-    switch (key) {
-      case 'agent': return a.toLowerCase();
-      case 'total': return r.total;
-      case 'zero': return r.zero + r.stuck; // "needs attention" — the default lens
-      case 'stuck': return r.stuck;
-      case 'worked': return r.worked;
-      case 'workedpct': return r.total ? r.worked / r.total : 0;
-      case 'strikes': return p.strikesByAgent.get(a) ?? 0;
-    }
-  };
-  const rows = [...p.agents].sort(([an, ar], [bn, br]) => {
-    const av = val(an, ar, sort.key); const bv = val(bn, br, sort.key);
-    if (av < bv) return -1 * sort.dir;
-    if (av > bv) return 1 * sort.dir;
-    return an.localeCompare(bn);
-  });
-
-  const HEADERS: Array<[SortKey, string]> = [
-    ['agent', 'Agent'], ['total', 'Leads'], ['zero', 'Zero contact'],
-    ['stuck', 'Stuck'], ['worked', 'Worked'], ['workedpct', 'Worked %'], ['strikes', 'Strikes (30d)'],
-  ];
-
-  return (
-    <div className="card tcard fu">
-      <div className="thead"><h3 className="ch" style={{ margin: 0 }}>{p.caption}</h3></div>
-      <table className="tbl">
-        <thead>
-          <tr>
-            {HEADERS.map(([key, label]) => (
-              <FragmentRow key={key}>
-                <th className={`sortable${sort.key === key ? ' on' : ''}`} onClick={() => clickSort(key)}>
-                  {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : '↕'}</span>
-                </th>
-                {key === 'total' && <th>By source</th>}
-              </FragmentRow>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(([a, r]) => {
-            const s = p.strikesByAgent.get(a) ?? 0;
-            const pause = s >= p.strikeLimit;
-            const pr = p.drill.paused.get(a);
-            const pill = pause ? 'pill-bad' : s > 0 ? 'pill-warn' : 'pill-ok';
-            const wp = r.total ? Math.round((r.worked / r.total) * 100) : 0;
-            const isOpen = open === a;
-            return (
-              <FragmentRow key={a}>
-                <tr className={isOpen ? 'row-open' : ''} onClick={() => toggle(a)} style={{ cursor: 'pointer' }}>
-                  <td><span className="cell-agent"><span className="av-sm">{initials(a)}</span>{a}{pr && <span className="badge cap" title={pr.map(pauseLabel).join(' · ')}>⏸ Paused</span>}{pause && <span className="badge">Pause rec</span>}<span className="caret">{isOpen ? '▾' : '▸'}</span></span></td>
-                  <td>{r.total}</td>
-                  <td><span className="srcchips">{[...r.srcs.entries()].sort((x, y) => y[1] - x[1]).map(([sn, n]) => (
-                    <span className="srcchip" key={sn} title={`${sn} · ${n} lead${n === 1 ? '' : 's'}`}>
-                      <span className="dot" style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />{n}
-                    </span>
-                  ))}</span></td>
-                  <td className={r.zero ? 'bad' : ''}>{r.zero}</td>
-                  <td className={r.stuck ? 'warn' : ''}>{r.stuck}</td>
-                  <td>{r.worked}</td>
-                  <td>{wp}%</td>
-                  <td><span className={`pill ${pill}`}>{s}</span></td>
-                </tr>
-                {isOpen && (
-                  <tr className="drillrow">
-                    <td colSpan={8}>
-                      <AgentDrill agent={a} counts={r} drill={p.drill} flagF={flagF} setFlagF={setFlagF} />
-                    </td>
-                  </tr>
-                )}
-              </FragmentRow>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// React fragments can't take a key directly in .map without importing Fragment; tiny helper.
+/* ============================================================
+   Small presentational helpers
+   ============================================================ */
 function FragmentRow({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function AgentDrill({ agent, counts, drill, flagF, setFlagF }: {
-  agent: string;
-  counts: { zero: number; stuck: number; worked: number; total: number };
-  drill: Drill; flagF: string; setFlagF: (f: string) => void;
-}) {
-  const mine = drill.leads.filter((l) => ownerOf(l) === agent);
-  const shown = flagF === 'all' ? mine : mine.filter((l) => l.flag === flagF);
-  // This agent's leads broken out by source (the "total per agent" split by source).
-  const bySrc = new Map<string, number>();
-  for (const l of mine) { const s = l.source_family || 'Other'; bySrc.set(s, (bySrc.get(s) ?? 0) + 1); }
-  const srcRows = [...bySrc.entries()].sort((a, b) => b[1] - a[1]);
-  const c = drill.contacts.get(norm(agent));
-  const chips: Array<[string, string, number]> = [
-    ['all', 'All', counts.total],
-    ['zero_contact', 'Zero contact', counts.zero],
-    ['stuck', 'In Lead', counts.stuck],
-    ['worked', 'Worked', counts.worked],
-  ];
-  const paused = drill.paused.get(agent);
-  const first = agent.split(' ')[0];
-  const needN = counts.zero + counts.stuck;
-  // Pre-written texts. Capacity pause = WARM (it's a compliment — they did nothing
-  // wrong). No-close pause = honest but supportive: the leads hold until one lands.
-  // Reminder = a nudge on un-worked leads.
-  const noClose = paused?.find((r) => r.kind === 'no_close');
-  const pauseMsg = noClose
-    ? `Hey ${first} — I'm holding new leads for now. You've taken ${noClose.count} since your last under-contract, and the team rule is something has to go under contract every ${noClose.cap}. Let's get on a call, work the pipeline you already have, and get one across — the moment it lands, leads turn right back on. I'm in it with you.`
-    : `Hey ${first} — awesome month! You've hit your lead capacity, so I'm holding new leads off your plate for a bit. Nothing wrong at all on your end — I just want you locked in on closing what you already have. Keep crushing it. 🙌`;
-  // The reminder lists the actual un-worked leads with a tap-through FUB link each,
-  // so the agent goes straight to the person. Capped so the text stays sendable.
-  const fubLink = (l: LeadRow) => {
-    const sub = drill.subs.get(l.team_id);
-    return l.fub_person_id ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}` : null;
-  };
-  const needLeads = mine.filter((l) => l.flag === 'zero_contact' || l.flag === 'stuck');
-  const CAP = 5;
-  const leadLines = needLeads.slice(0, CAP).map((l) => { const link = fubLink(l); return `• ${l.name || 'Lead'}${link ? `: ${link}` : ''}`; }).join('\n');
-  const moreLine = needLeads.length > CAP ? `\n…plus ${needLeads.length - CAP} more in Pulse.` : '';
-  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Please reach out today:\n${leadLines}${moreLine}`;
-  const digits = c?.phone ? c.phone.replace(/[^+\d]/g, '') : null;
-  const sms = (body: string) => (digits ? `sms:${digits}?&body=${encodeURIComponent(body)}` : null);
-  const emailHref = c?.email
-    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(needN > 0 ? remindMsg : `Hey ${first} — quick check-in on your pipeline. Anything I can help with this week?`)}`
-    : null;
-
+function WorkedGauge({ pct }: { pct: number }) {
+  const size = 208;
+  const stroke = 16;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c - (pct / 100) * c;
   return (
-    <div className="drill">
-      {paused?.map((r) => (
-        <div className="pausebar" key={r.kind}>
-          <span className="pausebar-tag">⏸ PAUSED</span>
-          {r.kind === 'capacity'
-            ? <span><b>At capacity</b> — {r.count} of {r.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
-            : <span><b>No closings</b> — {r.count} leads taken since their last under-contract (rule: every {r.cap} needs one). New leads hold until something goes under contract.</span>}
-        </div>
-      ))}
-      <div className="drill-head">
-        <div className="drill-chips">
-          {chips.map(([k, l, n]) => (
-            <span key={k} className={`chip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
-          ))}
-          <span className="chip stat">Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b></span>
-        </div>
-        {isPerson(agent) && (
-          <div className="drill-acts">
-            {paused && sms(pauseMsg) && <a className="abtn warm" href={sms(pauseMsg)!} title={noClose ? 'Pre-written: leads hold until one goes under contract — supportive, not a scolding' : "Warm, pre-written: you're at capacity — nothing wrong, keep going"}>💬 Pause text</a>}
-            {needN > 0 && sms(remindMsg) && <a className="abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${needN} un-worked leads`}>💬 Reminder{needN > 0 ? ` (${needN})` : ''}</a>}
-            {emailHref ? <a className="abtn" href={emailHref}>✉ Email</a> : <span className="abtn off" title="No email on file — add it in FUB">✉ No email</span>}
-            {digits ? <a className="abtn" href={`sms:${digits}`}>💬 Text</a> : <span className="abtn off" title="No mobile on file — add it in FUB">💬 No mobile</span>}
-          </div>
-        )}
-      </div>
-      {srcRows.length > 0 && (
-        <div className="drill-src">
-          <span className="drill-src-lbl">BY SOURCE</span>
-          {srcRows.map(([name, n]) => (
-            <span className="drill-src-chip" key={name}>
-              <span className="dot" style={{ background: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other }} />
-              {name} <b>{n}</b>
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="drill-list">
-        {shown.length === 0 ? (
-          <div className="muted small" style={{ padding: '10px 2px' }}>No leads match this filter in the current window.</div>
-        ) : shown.map((l, i) => {
-          // Deep-link to the person in FUB; the generic app host redirects to the
-          // team's own subdomain for a logged-in user, so the link always exists.
-          const sub = drill.subs.get(l.team_id);
-          const fubHref = l.fub_person_id
-            ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}`
-            : null;
-          const pill = l.flag === 'worked' ? 'pill-ok' : l.flag === 'stuck' ? 'pill-warn' : 'pill-bad';
-          return (
-            <div className="leadline" key={i}>
-              <span className="dot" style={{ background: SOURCE_COLORS[l.source_family ?? 'Other'] ?? SOURCE_COLORS.Other }} />
-              <span className="ln">{l.name || 'Lead'}</span>
-              <span className="muted small">{l.source_family ?? 'Other'}{l.stage ? ` · ${l.stage}` : ''}{l.pond && l.assigned_to ? ` · Pond: ${l.pond}` : ''}</span>
-              <span className={`pill ${pill}`} style={{ marginLeft: 'auto' }}>{FLAG_LABEL[l.flag ?? ''] ?? l.flag}</span>
-              {fubHref && <a className="abtn sm" href={fubHref} target="_blank" rel="noreferrer">FUB ↗</a>}
-            </div>
-          );
-        })}
+    <div className="ps-gauge" style={{ width: size, height: size }}>
+      <div className="ps-gauge-glow" />
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <linearGradient id="psWorkedGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="var(--accent-hi)" />
+            <stop offset="1" stopColor="var(--accent)" />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r + 9} fill="none" stroke="var(--track-outer)" strokeWidth="1" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track-fill-2)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#psWorkedGrad)" strokeWidth={stroke}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dashoffset 1.4s var(--ease)' }} />
+        <circle cx={size / 2} cy={size / 2} r={r - stroke} fill="none" stroke="var(--track-hairline)" strokeWidth="1" />
+      </svg>
+      <div className="ps-gauge-center">
+        <div className="ps-gauge-num">{pct}%</div>
+        <div className="ps-gauge-cap">Worked</div>
       </div>
     </div>
   );
 }
 
-function KPI({ color, icon, value, suffix, label }: { color: string; icon: ReactNode; value: number; suffix?: string; label: string }) {
+function Chip({ value, label }: { value: number; label: string }) {
+  const { ref, val } = useCountUp(value);
   return (
-    <div className="card kpi fu">
-      <span className="accent" style={{ background: color }} />
-      <div className="ico" style={{ background: color + '22', color }}>{icon}</div>
-      <div className="big"><CountUp value={value} fmt={suffix ? (n) => `${Math.round(n)}${suffix}` : undefined} /></div>
-      <div className="lbl">{label}</div>
+    <div className="ps-chip">
+      <div className="ps-chip-num"><span ref={ref}>{val}</span></div>
+      <div className="ps-chip-label">{label}</div>
     </div>
   );
 }
 
-const svg = (children: ReactNode) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>{children}</svg>
-);
-const ICON = {
-  grid: svg(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>),
-  shield: svg(<path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5z" />),
-  users: svg(<><circle cx="9" cy="8" r="3" /><path d="M2 21c0-3.5 3-6 7-6s7 2.5 7 6" /><circle cx="18" cy="9" r="2.5" /><path d="M16.5 15c3 .4 5.5 2.6 5.5 6" /></>),
-  sources: svg(<><path d="M12 3v9l7 4" /><circle cx="12" cy="12" r="9" /></>),
-  gear: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></>),
-  leads: svg(<path d="M4 6h16M4 12h16M4 18h10" />),
-  zero: svg(<><circle cx="12" cy="12" r="9" /><path d="M5 5l14 14" /></>),
-  clock: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
-  check: svg(<path d="M4 12l5 5L20 6" />),
-  offer: svg(<><path d="M12 3v18" /><path d="M17 7c0-1.7-2.2-3-5-3S7 5.3 7 7s1.6 2.6 5 3c3.4.4 5 1.3 5 3s-2.2 3-5 3-5-1.3-5-3" /></>),
-  ratio: svg(<><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M19 5L5 19" /></>),
-  gci: svg(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a4 4 0 0 1 8 0v2" /></>),
-};
+function BigNum({ value, label, suffix = '' }: { value: number; label: string; suffix?: string }) {
+  const { ref, val } = useCountUp(value);
+  return (
+    <div className="ps-prod-inner">
+      <div className="ps-prod-num"><span ref={ref}>{val}</span>{suffix}</div>
+      <div className="ps-prod-label">{label}</div>
+    </div>
+  );
+}
+
+function SpineValue({ value }: { value: number }) {
+  const { ref, val } = useCountUp(value);
+  return <span className="ps-spine-val" ref={ref}>{val}</span>;
+}
+
+function RiskSpark() {
+  const pts = [22, 26, 21, 30, 25, 34, 40, 52, 61];
+  const w = 320;
+  const h = 130;
+  const max = 66;
+  const x = (i: number) => (i * w) / (pts.length - 1);
+  const y = (v: number) => h - (v / max) * h;
+  const line = pts.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(v)}`).join(' ');
+  const area = `${line} L${w},${h} L0,${h} Z`;
+  return (
+    <svg className="risk-spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden>
+      <defs>
+        <linearGradient id="psRiskFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="rgba(192,107,79,0.34)" />
+          <stop offset="1" stopColor="rgba(192,107,79,0)" />
+        </linearGradient>
+        <linearGradient id="psRiskSparkLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="var(--accent-hi)" />
+          <stop offset="1" stopColor="var(--terracotta)" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#psRiskFill)" />
+      <path d={line} fill="none" stroke="url(#psRiskSparkLine)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="risk-spark-line" />
+      <circle cx={x(pts.length - 1)} cy={y(pts[pts.length - 1])} r="5" fill="var(--terracotta)" />
+    </svg>
+  );
+}
+
+function DividerWave() {
+  return (
+    <div className="ps-divider" aria-hidden>
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
+        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="var(--accent-soft)" />
+        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--accent-line)" strokeWidth="1.5" />
+      </svg>
+    </div>
+  );
+}

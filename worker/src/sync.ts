@@ -4,13 +4,22 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds, getPeopleByIds } from './fub.js';
+import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage, stageClass, isOfferPlus } from '../../shared/flags.js';
 
 // Contact counts (calls/texts) are only meaningful for RECENT active leads (the
 // accountability horizon) and each costs 2 FUB subrequests — so we never fetch them
 // for the full all-time pull. Older/advanced leads flag from their stage alone.
 const CONTACT_HORIZON_MS = 45 * 86400_000;
+
+// FUB deal close dates arrive as "2026-06-30 05:00:00" — normalize to ISO (UTC).
+function dealDateIso(v: unknown): string | null {
+  if (!v) return null;
+  const s = String(v).trim().replace(' ', 'T');
+  const withZone = /[zZ]$/.test(s) || /[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z';
+  const d = new Date(withZone);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
 
 export interface TeamRow {
   id: string;
@@ -39,6 +48,22 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
   const people = await pullPeople(fubKey);
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
   const ponds = await pullPonds(fubKey);
+
+  // Stage-progression log — the reliable forward history (FUB exposes no stage
+  // history via API; see fub.ts). We accrue a dated "hit" the FIRST time a lead
+  // reaches an achievement stage (offer / under contract / closed), stamped with
+  // the owning agent. On a team's very first sync we can't know WHEN older leads
+  // reached their stage, so those seed as date_source='seed' (dateless, excluded
+  // from windowed counts) — except closings, which take the real dealCloseDate
+  // when present. Every sync after that, a newly-seen hit is a live transition we
+  // caught, dated now. Runs for EVERY team via the cron, so it's automatic on the
+  // first sync of any new team the moment its key is added — no per-team setup.
+  const priorHits = (await database
+    .select('person_stage_log', `team_id=eq.${team.id}&select=fub_person_id,stage`)
+    .catch(() => [] as any[])) as Array<{ fub_person_id: number; stage: string }>;
+  const hitSeen = new Set(priorHits.map((r) => `${r.fub_person_id}|${r.stage}`));
+  const isInitialSeed = priorHits.length === 0;
+  const stageLogRows: any[] = [];
 
   // 4. Classify each and upsert. Contact API calls (2 subrequests each) are spent
   //    ONLY on recent, active, non-advanced leads — never the whole all-time pull:
@@ -83,6 +108,36 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
       calls,
       synced_at: nowIso,
     });
+
+    // Accrue the stage-progression hit (offer / UC / closed) if we haven't logged
+    // this lead at this stage before. One dated hit per (lead, stage) — a lead that
+    // climbs offer → UC → closed produces three hits, each credited to its agent.
+    const sc = stageClass(stage);
+    const hitKey = `${p.id}|${p.stage}`;
+    if (p.stage && (sc === 'offer' || sc === 'uc' || sc === 'closed') && !hitSeen.has(hitKey)) {
+      hitSeen.add(hitKey);
+      let changedAt: string | null;
+      let dateSource: string;
+      if (sc === 'closed' && dealDateIso(p.dealCloseDate)) {
+        changedAt = dealDateIso(p.dealCloseDate); dateSource = 'deal_close_date';
+      } else if (isInitialSeed) {
+        changedAt = null; dateSource = 'seed';
+      } else {
+        changedAt = nowIso; dateSource = 'live';
+      }
+      stageLogRows.push({
+        org_id: team.org_id,
+        team_id: team.id,
+        fub_person_id: p.id,
+        stage: p.stage,
+        stage_class: sc,
+        agent_name: p.assignedTo ?? null,
+        agent_user_id: p.assignedUserId ?? null,
+        changed_at: changedAt,
+        detected_at: nowIso,
+        date_source: dateSource,
+      });
+    }
   }
   // Upsert; if the pond column hasn't been added yet, retry without it so the
   // lead sync never breaks on a schema that's one migration behind.
@@ -113,6 +168,14 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
     // metrics enrichment only
   }
 
+  // Stage-progression log — additive; ignore-duplicates so a lead's first-seen date
+  // at a stage is never overwritten by a later sync. Never fails the lead sync.
+  try {
+    await database.upsert('person_stage_log', stageLogRows, 'team_id,fub_person_id,stage', { ignoreDuplicates: true });
+  } catch {
+    // the log is a metrics enrichment layer; a schema not-yet-migrated must not break sync
+  }
+
   await database.upsert('sync_state', [{ team_id: team.id, org_id: team.org_id, last_sync_at: nowIso }], 'team_id');
 
   return {
@@ -122,27 +185,6 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
     stuck: rows.filter((r) => r.flag === 'stuck').length,
     worked: rows.filter((r) => r.flag === 'worked').length,
   };
-}
-
-/** Log the moment specific people changed stage → person_stage_log. The reliable,
- *  dated closings/UC signal (never the FUB Deals tab, which agents rarely fill in).
- *  FUB exposes no historical stage date, so this accrues accurately from go-live;
- *  fed by the peopleStageUpdated webhook. Fetches the changed people by id so an
- *  under-contract on an OLD lead (outside the sync window) is still stamped. */
-export async function logStageChanges(env: Env, database: Db, team: TeamRow, ids: number[]): Promise<number> {
-  const clean = ids.filter((n) => typeof n === 'number' && Number.isFinite(n));
-  if (!clean.length) return 0;
-  const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
-  if (!secret.length) return 0;
-  const encKey = await importEncKey(env.FUB_ENC_KEY);
-  const fubKey = await decryptKey(encKey, secret[0].fub_key_enc);
-  const people = await getPeopleByIds(fubKey, clean.join(','));
-  const now = new Date().toISOString();
-  const rows = people
-    .filter((p) => p.stage)
-    .map((p) => ({ org_id: team.org_id, team_id: team.id, fub_person_id: p.id, stage: String(p.stage), changed_at: now }));
-  if (rows.length) await database.upsert('person_stage_log', rows);
-  return rows.length;
 }
 
 const normName = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');

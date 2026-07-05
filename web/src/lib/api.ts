@@ -458,6 +458,10 @@ export async function adminActAs(email: string): Promise<void> {
   const j = (await res.json().catch(() => ({}))) as { token_hash?: string; type?: string; error?: string };
   if (!res.ok || !j.token_hash) throw new Error(j.error ?? 'Could not start the session');
   // Stash the OWNER's session first, so Exit can restore it without a re-login.
+  // Refresh right before stashing so we store the NEWEST token pair — a refresh
+  // token that gets rotated after we save it is exactly what makes Exit fail and
+  // dump the owner to the login screen. getSession after a refresh = freshest pair.
+  await supabase.auth.refreshSession().catch(() => {});
   const { data: cur } = await supabase.auth.getSession();
   if (cur.session) {
     try {
@@ -473,14 +477,24 @@ export function hasAdminReturn(): boolean {
   try { return !!sessionStorage.getItem('hq_admin_return'); } catch { return false; }
 }
 
-/** Exit impersonation: restore the owner's own session (falls back to sign-out). */
+/** Exit impersonation: restore the owner's own session so they land back on their
+ *  HQ (the act-as picker) — NOT the login screen. Only a genuinely dead owner
+ *  session falls back to sign-out. */
 export async function adminReturn(): Promise<void> {
   let saved: { at: string; rt: string } | null = null;
   try { saved = JSON.parse(sessionStorage.getItem('hq_admin_return') ?? 'null'); } catch { saved = null; }
   try { sessionStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
+  // Leave whatever product route we were impersonating in; land on the HQ home.
+  try { window.location.hash = '/'; } catch { /* noop */ }
   if (!saved) { await supabase.auth.signOut(); return; }
+  // Restore the owner's own session. setSession refreshes automatically if the
+  // access token has expired; if that fails, try the refresh token directly before
+  // giving up — only a truly revoked session should ever reach the login screen.
   const { error } = await supabase.auth.setSession({ access_token: saved.at, refresh_token: saved.rt });
-  if (error) await supabase.auth.signOut();
+  if (error) {
+    const { error: e2 } = await supabase.auth.refreshSession({ refresh_token: saved.rt });
+    if (e2) await supabase.auth.signOut();
+  }
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
@@ -519,6 +533,34 @@ export async function connectFub(fubKey: string, teamId?: string): Promise<{ ok:
   const body = (await res.json().catch(() => ({}))) as { ok?: boolean; subdomain?: string | null; error?: string };
   if (!res.ok) throw new Error(body.error || 'Could not connect to Follow Up Boss.');
   return { ok: !!body.ok, subdomain: body.subdomain ?? null };
+}
+
+// ── Admin (platform owner): every team's connection in one board, and setting a
+//    team's key on their behalf — no impersonation needed. ──
+export interface AdminConnection {
+  teamId: string;
+  name: string;
+  orgName: string;
+  connected: boolean;
+  subdomain: string | null;
+  lastSync: string | null;
+}
+export async function adminConnections(): Promise<AdminConnection[]> {
+  if (isDemo) return [];
+  const res = await fetch(WORKER_URL + '/admin/connections', { headers: { Authorization: 'Bearer ' + (await token()) } });
+  if (!res.ok) return [];
+  const j = (await res.json()) as { connections?: AdminConnection[] };
+  return j.connections ?? [];
+}
+export async function adminConnectFub(teamId: string, fubKey: string): Promise<{ ok: boolean; subdomain: string | null }> {
+  const res = await fetch(WORKER_URL + '/admin/connect-fub', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify({ teamId, fubKey }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; subdomain?: string | null; error?: string };
+  if (!res.ok || !body.ok) throw new Error(body.error || 'Could not connect to Follow Up Boss.');
+  return { ok: true, subdomain: body.subdomain ?? null };
 }
 
 export interface LeadRow {
@@ -726,7 +768,7 @@ export async function runCircle(
 /** Run an Expired or FSBO campaign (same pipeline as circle, feed-based source). */
 export async function runListing(
   channel: 'expired' | 'fsbo',
-  opts?: { name?: string; limit?: number },
+  opts?: { name?: string; limit?: number; radiusMiles?: number },
 ): Promise<{ campaignId: string; summary: CircleSummary; providersLive: boolean; dossiers: number }> {
   const res = await fetch(WORKER_URL + '/prospect/listing/run', {
     method: 'POST',

@@ -204,9 +204,26 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
   const clientRef = useRef<RetellWebClient | null>(null);
   const practiceRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const unblockRef = useRef<(() => void) | null>(null);
+
+  // Browser autoplay policy blocks the buyer's audio track unless playback is kicked
+  // off under a user gesture. The `await simStart()` before the call consumes the
+  // Call-button click, so we re-arm playback here and on the next tap as a fallback.
+  const enableAudio = () => { void clientRef.current?.startAudioPlayback().catch(() => {}); };
+  const armAudioFallback = () => {
+    if (unblockRef.current) return;
+    const fn = () => enableAudio();
+    unblockRef.current = fn;
+    window.addEventListener('pointerdown', fn, { capture: true });
+  };
+  const disarmAudioFallback = () => {
+    if (unblockRef.current) window.removeEventListener('pointerdown', unblockRef.current, { capture: true } as EventListenerOptions);
+    unblockRef.current = null;
+  };
 
   useEffect(() => () => { // leave = hang up
     clientRef.current?.stopCall();
+    disarmAudioFallback();
     if (timerRef.current) window.clearInterval(timerRef.current);
   }, []);
 
@@ -229,10 +246,13 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
       client.on('call_started', () => {
         setPhase('live'); setSeconds(0);
         timerRef.current = window.setInterval(() => setSeconds((x) => x + 1), 1000);
+        enableAudio(); // make the buyer audible the moment the call is up
       });
-      client.on('call_ended', () => { void grade(); });
-      client.on('error', () => { setErr('The call dropped — try again.'); setPhase('error'); client.stopCall(); });
+      client.on('call_ended', () => { disarmAudioFallback(); void grade(); });
+      client.on('error', () => { setErr('The call dropped — try again.'); setPhase('error'); disarmAudioFallback(); client.stopCall(); });
       await client.startCall({ accessToken });
+      enableAudio();       // unblock playback now…
+      armAudioFallback();  // …and guarantee it on the next tap if autoplay blocked us
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Could not start the call.');
       setPhase('error');
@@ -241,6 +261,7 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
 
   function hangUp() {
     if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+    disarmAudioFallback();
     if (isDemo) { void grade(); return; }
     clientRef.current?.stopCall(); // → call_ended → grade()
   }
@@ -319,6 +340,13 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
             <div className="ac-simlive-sub">{phase === 'connecting' ? 'Connecting…' : `Live · ${mmss} — speak naturally, like a real connection call`}</div>
             {phase === 'live' && (
               <button className="btn ac-simend" onClick={hangUp}>End call &amp; get graded</button>
+            )}
+            {!isDemo && phase === 'live' && (
+              <button
+                className="link small"
+                onClick={enableAudio}
+                style={{ marginTop: 8, color: '#a9791f', fontWeight: 700 }}
+              >🔊 Can’t hear them? Tap to turn on sound</button>
             )}
             {isDemo && phase === 'live' && <div className="ac-simlive-demo">Demo mode: no mic — hit end whenever to see the scorecard.</div>}
           </div>
