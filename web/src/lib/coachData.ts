@@ -549,3 +549,16 @@ export function readCoachCache(orgId: string): RosterAgent[] | null {
 export function writeCoachCache(orgId: string, roster: RosterAgent[]): void {
   _coachCache = { orgId, roster };
 }
+
+export async function loadFullRoster(): Promise<{ id: string; name: string; coaching_enabled: boolean; hasAssessment: boolean }[]> {
+  if (isDemo) return [];
+  const { data, error } = await supabase
+    .from('agents')
+    .select('id, name, coaching_enabled, assessments(code)')
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((a: any) => ({
+    id: a.id, name: a.name, coaching_enabled: !!a.coaching_enabled,
+    hasAssessment: Array.isArray(a.assessments) && a.assessments.length > 0,
+  }));
+}

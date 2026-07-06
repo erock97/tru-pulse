@@ -731,3 +731,28 @@ function demoDashboard(): DashboardData {
     deals,
   };
 }
+
+// ── Coach assessment intake ─────────────────────────────────────────────
+export async function resolveCohortRoster(token: string): Promise<{ id: string; name: string }[]> {
+  const { data, error } = await supabase.rpc('resolve_cohort_roster', { p_token: token });
+  if (error) throw error;
+  return (data as { id: string; name: string }[]) ?? [];
+}
+
+export async function submitCohortAssessment(input: {
+  token: string; agentId: string; personalCode: string; personalAxes: unknown;
+  businessCode: string; tallies: Record<string, number>; answers: unknown;
+}): Promise<{ agent_id: string; token: string }> {
+  const { data, error } = await supabase.rpc('submit_cohort_assessment', {
+    p_token: input.token, p_agent_id: input.agentId, p_personal_code: input.personalCode,
+    p_personal_axes: input.personalAxes, p_business_code: input.businessCode,
+    p_tallies: input.tallies, p_answers: input.answers,
+  });
+  if (error) throw error;
+  return data as { agent_id: string; token: string };
+}
+
+export async function setCoaching(agentId: string, on: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_coaching', { p_agent_id: agentId, p_on: on });
+  if (error) throw error;
+}
