@@ -10,13 +10,21 @@ test('20 personal + 32 pro questions, 5/8 per axis', () => {
   }
 });
 
-test('scorePersonal: all-max toward first pole gives that letter at 100%', () => {
-  // answer +3 to every statement; letters mix by keys, so score net respects q.keys direction
-  const ans = PERSONAL_QUESTIONS.map(() => 3);
+test('scorePersonal: coherent max toward pole A gives 100% and code P-Pro-R-D', () => {
+  // Answer every statement fully toward its axis's first pole (mixed keys → mixed signs).
+  // This is the only coherent "maxed" input; answering +3 to all would be self-contradictory
+  // (agreeing with both poles at once) and must NOT read as 100% confidence.
+  const poleA: Record<string, string> = { energy: 'P', approach: 'Pro', deal: 'R', decision: 'D' };
+  const ans = PERSONAL_QUESTIONS.map((q) => (q.keys === poleA[q.axis] ? 3 : -3));
   const r = scorePersonal(ans);
   expect(r.axes.energy.pct).toBe(100);
-  expect(typeof r.code).toBe('string');
-  expect(r.code.split('-')).toHaveLength(4);
+  expect(r.code).toBe('P-Pro-R-D');
+});
+
+test('scorePersonal: contradictory all-+3 input reads as low confidence, not 100%', () => {
+  const r = scorePersonal(PERSONAL_QUESTIONS.map(() => 3));
+  // mixed-direction statements + uniform agreement → small net → mid-range pct
+  expect(r.axes.energy.pct).toBeLessThan(80);
 });
 
 test('scorePro: alternating slider indices yield a 4-letter code and 50-100 pct', () => {

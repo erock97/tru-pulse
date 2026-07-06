@@ -249,10 +249,11 @@ function scoreAxes(items: { axis: Axis; primary: Pole; weight: number }[], maxAb
     let net = 0;
     for (const it of forAxis) net += it.primary === a ? it.weight : -it.weight;
     const letter = net >= 0 ? a : b;
-    // A net imbalance of one full-strength answer (maxAbs) already saturates
-    // confidence to 100% — pct scales the net against a single answer's max
-    // weight, not against the whole axis's question count.
-    const denom = maxAbs || 1;
+    // Percentage scales the net imbalance against the axis's maximum possible
+    // net (every question answered at full strength toward the same pole), so
+    // pct spans the full 50–100 range and reads "to a T" instead of saturating
+    // to 100% on any small lean.
+    const denom = forAxis.length * maxAbs || 1;
     const pct = Math.min(100, 50 + Math.round((Math.abs(net) / denom) * 50));
     axes[axis] = { letter, pct };
   }
