@@ -41,7 +41,7 @@ Both instruments already exist in the standalone app's `truFramework.js` and are
 | Decision (D/I) | Head-led / Heart-led | Data / Instinct |
 
 - **Personal baseline** — `BASELINE_QUESTIONS`: 20 Likert statements (5/axis, mixed direction), context-free personality. `scoreBaseline` → `personal_code` + per-axis percentages → `PERSONAL_TYPES` (16 personal identities).
-- **Professional** — `QUESTIONS`: 32 forced-choice (a/b, 8/axis), real-estate-contextualized. `scoreAssessment` → `code` + 8 tallies → `ARCH` (16 professional archetypes) + `LL` coaching lens + `AG`/`CG` guidance.
+- **Professional** — `QUESTIONS`: 32 **semantic-differential** items (8/axis), real-estate-contextualized. Each keeps its vivid two-scenario A/B framing, but the agent answers on a **graded, even-point slider** (6-point, no neutral — they must lean) between the two options. Scored like the personal part → per-axis **percentages** + letter → `code` → `ARCH` (16 professional archetypes) + `LL` coaching lens + `AG`/`CG` guidance. *(Change from the ported binary a/b: the spectrum yields the nuance/percentages that make a result read "to a T," while preserving the concrete scenario writing that makes the business read pop.)*
 
 **Order: person first, then business.** The agent takes the personal baseline, then the professional set.
 
@@ -74,9 +74,14 @@ Agent sees their two-act wow reveal → Rep course now available
 - No login required to take the assessment; no per-agent link chasing.
 - **Trade-off accepted:** self-identification is slightly less airtight than a per-agent token, but it is a self-assessment (low stakes) and the lead can clear + resend a mismatched profile. Per-agent links are explicitly out of scope for v1.
 
-## 7. Results experience
+## 7. Experience, brand & responsive requirements
 
-**Agent — two-act wow reveal** (this is where the wow is won or lost; the existing dark HQ design system is the canvas):
+These are hard requirements across **both the survey and the results**, agent- and lead-facing:
+
+- **On-brand, premium, never cheap.** Built native in Pulse's **dark-gold TRU visual system** (the molten/cinematic brand of `truhq.co` + `app.truhq.co`) — *including the public invite/link landing*, the first screen an agent sees. No carryover of the old standalone's cream/mobile-app look.
+- **Fully responsive — first-class on mobile *and* desktop, not one.** Agents most often open the shared team link on a **phone**, so mobile is primary; but the survey and results must also feel intentional on desktop — no narrow mobile card floating in empty space (the exact "cheap" failure of the old survey). The lead's Coach view is desktop-primary via Pulse's responsive shell. Every screen adapts to the device: intro, the slider questions, the reveal, and the lead's read.
+
+**Agent — two-act wow reveal** (where the wow is won or lost; the dark HQ design system is the canvas):
 1. **Act 1 — Personal:** lead with the personal type (the felt-seen hit) — name, identity description, strengths, per-axis meters.
 2. **Act 2 — Professional:** the professional archetype — how they show up in the business.
 3. **Divergence:** "here's where you show up differently at work" — the axes where personal ≠ professional letter.
@@ -107,7 +112,7 @@ Agent sees their two-act wow reveal → Rep course now available
 - RPC `resolve_cohort_roster(join_token)` → cohort member names for the pick-your-name step.
 - RPC / action to set `coaching_enabled` (the "Add to Coach" toggle), org-leader scoped.
 
-**Scoring:** ported client-side (Approach A); the RPC stores results in the shape `loadProfile` already expects. No worker changes required.
+**Scoring:** ported client-side (Approach A). **Both parts** now use the personal part's percentage math (`scoreBaseline`-style net → per-axis pct → letter), so the professional side yields percentages too. The RPC stores results in the shape `loadProfile` expects (code/letters/tallies) plus the per-axis percentages for the reveal. No worker changes required.
 
 ## 10. Content & naming standard
 
@@ -117,7 +122,7 @@ Archetype names must **read clearly and map to the personality on sight** — no
 3. Distinct from all 15 siblings **and** from the other set (personal vs professional must not blur).
 4. Flattering but honest.
 
-**Known offenders to fix:** *Bold Visionary, Heartfelt Catalyst, Creative Navigator, Independent Maker* (and soften *Relentless Achiever / Energized Hunter*). **Known collision to resolve:** personal "The Architect" (T-Pro-V-D) vs professional "The Strategic Architect" (T-Pro-R-D). Names are Eric's IP; drafts are proposed, Eric approves final.
+The naming work applies to **both** sets — the **professional archetypes need it as much as the personal ones.** Confirmed flat in testing: *The Niche Specialist* (T-Rec-R-D) reads as a job description, not an identity you'd wear (directional drafts: *The Cornerstone / The Domain Authority*). Other offenders: *Bold Visionary, Heartfelt Catalyst, Creative Navigator, Independent Maker* (soften *Relentless Achiever / Energized Hunter*). **Known collision to resolve:** personal "The Architect" (T-Pro-V-D) vs professional "The Strategic Architect" (T-Pro-R-D). The bar: every name should read as clearly and wearably as 16Personalities' "The Architect." Names are Eric's IP; drafts proposed, Eric approves final.
 
 ## 11. Phasing (Approach C)
 
