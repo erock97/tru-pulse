@@ -166,7 +166,10 @@
   /* --- Cinematic brand intro (bold reveal, then fade to site) --- */
   .truland #intro{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity 1s ease}
   .truland #intro.done{opacity:0;pointer-events:none}
-  .truland #intro video{width:100%;height:100%;object-fit:cover}
+  .truland #intro video{width:100%;height:100%}
+  .truland #introvid{object-fit:cover;position:relative;z-index:1}
+  .truland .intro-fill{position:absolute;inset:0;object-fit:cover;filter:blur(34px) brightness(.55) saturate(1.1);transform:scale(1.25);display:none;z-index:0}
+  @media (max-width:760px),(max-aspect-ratio:1/1){ .truland #introvid{object-fit:contain} .truland .intro-fill{display:block} }
   .truland #intro .skip{position:absolute;bottom:26px;right:28px;font:500 12px/1 "Hanken Grotesk",system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(243,236,227,.55);background:rgba(0,0,0,.35);border:1px solid rgba(243,236,227,.18);padding:9px 15px;border-radius:999px;cursor:pointer;transition:color .2s,border-color .2s}
   .truland #intro .skip:hover{color:#E9A23B;border-color:rgba(233,162,59,.5)}
   html.intro-lock{overflow:hidden}

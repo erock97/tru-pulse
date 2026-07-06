@@ -42,6 +42,22 @@ export default function Landing({ onEnter }: LandingProps) {
           if (el && el.parentNode) el.remove();
         }, 1050);
       }
+      // On phones: square reveal (full "TRU" visible) + a blurred copy behind it to fill the screen
+      const fill = document.getElementById('introfill') as HTMLVideoElement | null;
+      const isPhone = window.matchMedia('(max-width:760px),(max-aspect-ratio:1/1)').matches;
+      if (vid && isPhone) {
+        vid.poster = '/TRU-lockup-square.jpg';
+        const src = vid.querySelector('source');
+        if (src) {
+          src.src = '/TRU-reveal-square.mp4';
+          vid.load();
+        }
+        if (fill) {
+          fill.src = '/TRU-reveal-square.mp4';
+          fill.load();
+          fill.play().catch(() => {});
+        }
+      }
       if (vid) {
         const p = vid.play();
         if (p && p.catch) p.catch(() => dismiss());
@@ -56,6 +72,7 @@ export default function Landing({ onEnter }: LandingProps) {
         held = true;
         try {
           if (vid) vid.pause();
+          if (fill) fill.pause();
         } catch (e) {
           /* noop */
         }
@@ -160,6 +177,7 @@ export default function Landing({ onEnter }: LandingProps) {
   return (
     <div className="truland" ref={wrapRef}>
       <div id="intro" aria-hidden="true">
+        <video id="introfill" className="intro-fill" muted playsInline preload="auto" aria-hidden="true" />
         <video id="introvid" muted playsInline preload="auto" poster="/TRU-lockup.jpg">
           <source src="/TRU-reveal.mp4" type="video/mp4" />
         </video>
@@ -236,18 +254,17 @@ export default function Landing({ onEnter }: LandingProps) {
         <section className="panel band" id="pricing"><div className="wrap">
           <div className="kick reveal">Pricing</div>
           <h2 className="h2 reveal d1">One standard. Three ways to <em>run it</em>.</h2>
-          <p className="sub reveal d2">Start with the audit and the daily move. Add coaching and certification as your standard takes hold.</p>
-          {/* REPLACE: confirm prices + exactly what each tier includes */}
+          <p className="sub reveal d2">Start with coaching. Add the accountability dashboard, then full certification, as your standard takes hold.</p>
           <div className="tiers">
             <div className="tier reveal d1">
               <div className="tname">TRU Coach</div>
               <div className="price">$349<span> / mo</span></div>
-              <div className="td">See it, and coach it &mdash; the audit plus the daily action plan for one team.</div>
+              <div className="td">Coach every agent the way they&rsquo;re wired &mdash; profiles plus a 4-minute guided 1:1 prep.</div>
               <ul>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Accountability Audit on your live pipeline</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>TRU Pulse dashboard + weekly Brief</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Daily action plan &amp; 1:1 coaching moves</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>One team, up to 15 agents</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Behavioral profiling for every agent</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>4-minute guided 1:1 prep</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Weekly check-ins &amp; goals</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Ask-TRU AI coaching</li>
               </ul>
               <a href="#cta" className="cta ghost" onClick={enter}>Get your free audit<span className="pea"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
             </div>
@@ -255,12 +272,12 @@ export default function Landing({ onEnter }: LandingProps) {
               <div className="tag">Most teams start here</div>
               <div className="tname">TRU Command</div>
               <div className="price">$649<span> / mo</span></div>
-              <div className="td">Everything in Coach, plus behavioral profiles and your nurture pond worked for you.</div>
+              <div className="td">Everything in Coach, plus the accountability dashboard that watches every lead you pay for.</div>
               <ul>
                 <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Everything in Coach</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Behavioral agent profiles</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>TRU Prospect &mdash; your pond, worked</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Up to 40 agents + admin roles</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>TRU Pulse accountability dashboard</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Zero-contact &amp; stuck-lead alerts</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Speed, closings &amp; the 3-strike ledger</li>
               </ul>
               <a href="#cta" className="cta" onClick={enter}>Get your free audit<span className="pea"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
             </div>
@@ -270,25 +287,15 @@ export default function Landing({ onEnter }: LandingProps) {
               <div className="td">The whole system &mdash; every agent certified on your standard, nothing left to chance.</div>
               <ul>
                 <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Everything in Command</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>TRU Rep certification for every agent</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Unlimited agents &amp; teams</li>
-                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Priority support &amp; onboarding</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>TRU Rep &mdash; onboarding &amp; certification</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Program standards, scripts &amp; graded quizzes</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>AI call practice &amp; ALMS grading (coming)</li>
+                <li><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" /></svg>Priority onboarding &amp; support</li>
               </ul>
               <a href="#cta" className="cta ghost" onClick={enter}>Get your free audit<span className="pea"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
             </div>
           </div>
-        </div></section>
-
-        <section className="panel band" id="proof"><div className="wrap">
-          <div className="kick reveal">Proof</div>
-          <h2 className="h2 reveal d1">Leaders who stopped <em>guessing</em>.</h2>
-          <p className="sub reveal d2">Placeholder voices for now &mdash; your real ones drop right in here.</p>
-          {/* REPLACE these three with real testimonials before go-live */}
-          <div className="quotes">
-            <div className="quote reveal d1"><div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p className="qt">&ldquo;Found $40k of commission slipping through leads nobody had personally worked &mdash; in the first week.&rdquo;</p><div className="who"><div className="av">M</div><div><div className="nm">Placeholder Name</div><div className="br">Brokerage &middot; City</div></div></div></div>
-            <div className="quote reveal d2"><div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p className="qt">&ldquo;I finally know which agent needs me this week instead of finding out at the monthly review.&rdquo;</p><div className="who"><div className="av">R</div><div><div className="nm">Placeholder Name</div><div className="br">Brokerage &middot; City</div></div></div></div>
-            <div className="quote reveal d3"><div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p className="qt">&ldquo;Four minutes a morning and my whole team runs on the same standard. It just sticks now.&rdquo;</p><div className="who"><div className="av">J</div><div><div className="nm">Placeholder Name</div><div className="br">Brokerage &middot; City</div></div></div></div>
-          </div>
+          <p className="reveal" style={{ marginTop: '1.4rem', fontSize: '0.82rem', color: 'var(--faint)' }}>Billed annually &middot; up to 15 seats &middot; +$25/agent beyond 15 &middot; month-to-month available &middot; founding-team pricing.</p>
         </div></section>
 
         <section className="panel ctaband" id="cta"><div className="wrap">

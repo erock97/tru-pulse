@@ -110,7 +110,7 @@ export default function App() {
   }
   if (!session) {
     if (route === '/login') return <Login />;
-    return <Landing onEnter={() => { window.location.hash = '#/login'; }} />;
+    return <Landing onEnter={() => { window.location.href = 'https://app.truhq.co'; }} />;
   }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
