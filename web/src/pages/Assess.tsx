@@ -137,15 +137,26 @@ function AssessFlow({
     return (
       <div className="asx-shell tru-dark">
         <div className="asx-card asx-quiz">
-          <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
-          <div className="asx-badge">PART 1 OF 2 · YOU AS A PERSON</div>
-          <div className="asx-count">{pIdx + 1} / {PERSONAL_QUESTIONS.length}</div>
-          <h2 className="asx-q">{q.text}</h2>
-          <div className="asx-likert-labels"><span>Disagree</span><span>Agree</span></div>
-          <div className="asx-scale">
-            {[-3, -2, -1, 0, 1, 2, 3].map((v) => (
-              <button key={v} className="asx-dot" aria-label={`${v}`} onClick={() => answerPersonal(v)} />
-            ))}
+          <div className="asx-quiz-top">
+            <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
+            <div className="asx-badge">PART 1 OF 2 · YOU AS A PERSON</div>
+            <div className="asx-count">{pIdx + 1} / {PERSONAL_QUESTIONS.length}</div>
+          </div>
+          <div className="asx-quiz-body" key={pIdx}>
+            <h2 className="asx-q">{q.text}</h2>
+            <div className="asx-likert-labels"><span>Disagree</span><span>Agree</span></div>
+            <div className="asx-scale asx-scale-7">
+              {[-3, -2, -1, 0, 1, 2, 3].map((v) => {
+                const mag = Math.abs(v);
+                const sz = ['asx-sz1', 'asx-sz2', 'asx-sz3', 'asx-sz4'][mag];
+                const side = v < 0 ? 'asx-dot-neg' : v > 0 ? 'asx-dot-pos' : 'asx-dot-mid';
+                return (
+                  <button key={v} className={`asx-dot ${sz} ${side}`}
+                    aria-label={v === 0 ? 'Neutral' : v < 0 ? `Disagree ${mag}` : `Agree ${mag}`}
+                    onClick={() => answerPersonal(v)} />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -156,15 +167,15 @@ function AssessFlow({
     const type = PERSONAL_TYPES[personalResult.code];
     return (
       <div className="asx-shell tru-dark">
-        <div className="asx-card asx-reveal-card">
-          <div className="asx-eyebrow">YOU, AS A PERSON</div>
+        <div className="asx-card asx-reveal-card asx-act1" key="act1">
+          <div className="asx-act-marker">Act One · Who You Are</div>
           <h1 className="asx-h1">{type.name}</h1>
           <p className="asx-sub">{type.desc}</p>
           <div className="asx-meters">
-            {AXIS_ORDER.map((ax) => {
+            {AXIS_ORDER.map((ax, i) => {
               const a = personalResult.axes[ax];
               return (
-                <div className="asx-meter-row" key={ax}>
+                <div className="asx-meter-row" key={ax} style={{ ['--mi' as string]: i }}>
                   <div className="asx-meter-label">
                     <span>{AXIS_LABEL[ax]}</span>
                     <span className="asx-meter-val">{PERSONAL_LABELS[a.letter]} · {a.pct}%</span>
@@ -178,7 +189,7 @@ function AssessFlow({
             {type.strengths.map((s) => <span className="asx-chip" key={s}>{s}</span>)}
           </div>
           <p className="asx-watch"><strong>Watch for:</strong> {type.watch}</p>
-          <button className="asx-cta" onClick={() => setStage('pro')}>Now, how you work →</button>
+          <button className="asx-cta asx-cta-curtain" onClick={() => setStage('pro')}>Now, how you work →</button>
         </div>
       </div>
     );
@@ -190,16 +201,26 @@ function AssessFlow({
     return (
       <div className="asx-shell tru-dark">
         <div className="asx-card asx-quiz">
-          <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
-          <div className="asx-badge">PART 2 OF 2 · HOW YOU WORK</div>
-          <div className="asx-count">{bIdx + 1} / {PRO_QUESTIONS.length}</div>
-          <h2 className="asx-q-sub">Which sounds more like you?</h2>
-          <div className="asx-diff">
-            <div className="asx-diff-labels"><span>{q.a}</span><span>{q.b}</span></div>
-            <div className="asx-scale asx-scale-6">
-              {[0, 1, 2, 3, 4, 5].map((idx) => (
-                <button key={idx} className="asx-dot" aria-label={`${idx}`} onClick={() => answerPro(idx)} />
-              ))}
+          <div className="asx-quiz-top">
+            <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
+            <div className="asx-badge">PART 2 OF 2 · HOW YOU WORK</div>
+            <div className="asx-count">{bIdx + 1} / {PRO_QUESTIONS.length}</div>
+          </div>
+          <div className="asx-quiz-body" key={bIdx}>
+            <h2 className="asx-q-sub">Which sounds more like you?</h2>
+            <div className="asx-diff">
+              <div className="asx-diff-labels"><span className="a">{q.a}</span><span className="b">{q.b}</span></div>
+              <div className="asx-scale asx-scale-6">
+                {[0, 1, 2, 3, 4, 5].map((idx) => {
+                  const tier = (idx === 0 || idx === 5) ? 'asx-sz4' : (idx === 1 || idx === 4) ? 'asx-sz3' : 'asx-sz2';
+                  const side = idx <= 2 ? 'asx-dot-a' : 'asx-dot-b';
+                  return (
+                    <button key={idx} className={`asx-dot ${tier} ${side}`}
+                      aria-label={idx <= 2 ? `Left option, strength ${3 - idx}` : `Right option, strength ${idx - 2}`}
+                      onClick={() => answerPro(idx)} />
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -212,28 +233,28 @@ function AssessFlow({
     const divergentAxes = divergence(personalResult, proResult);
     return (
       <div className="asx-shell tru-dark">
-        <div className="asx-card asx-reveal-card">
-          <div className="asx-eyebrow">HOW YOU WORK</div>
-          <div className="asx-arch-emoji" style={{ color: arch.color }}>{arch.emoji}</div>
+        <div className="asx-card asx-reveal-card asx-act2" key="act2" style={{ ['--arch' as string]: arch.color }}>
+          <div className="asx-act-marker">Act Two · How You Work</div>
+          <div className="asx-medallion"><span>{arch.emoji}</span></div>
           <h1 className="asx-h1">{arch.name}</h1>
           <p className="asx-sub">{arch.tagline}</p>
           <div className="asx-meters">
-            {AXIS_ORDER.map((ax) => {
+            {AXIS_ORDER.map((ax, i) => {
               const a = proResult.axes[ax];
               return (
-                <div className="asx-meter-row" key={ax}>
+                <div className="asx-meter-row" key={ax} style={{ ['--mi' as string]: i }}>
                   <div className="asx-meter-label">
                     <span>{AXIS_LABEL[ax]}</span>
                     <span className="asx-meter-val">{WORK_LABELS[a.letter]} · {a.pct}%</span>
                   </div>
-                  <div className="asx-meter"><span style={{ width: `${a.pct}%` }} /></div>
+                  <div className="asx-meter asx-meter-arch"><span style={{ width: `${a.pct}%` }} /></div>
                 </div>
               );
             })}
           </div>
           {divergentAxes.length > 0 && (
             <div className="asx-divergence">
-              <div className="asx-eyebrow">WHERE WORK STRETCHES YOU</div>
+              <div className="asx-divergence-head">Where Work Stretches You</div>
               {divergentAxes.map((ax) => (
                 <p className="asx-diverge-line" key={ax}>
                   In life you're <strong>{PERSONAL_LABELS[personalResult.axes[ax].letter]}</strong>, but at work you show up <strong>{WORK_LABELS[proResult.axes[ax].letter]}</strong>.
