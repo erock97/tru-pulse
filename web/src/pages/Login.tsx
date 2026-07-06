@@ -50,10 +50,14 @@ export default function Login() {
   return (
     <div className="tru-dark tru-login">
       <div className="tru-login-brand">
+        <video className="tru-login-video" autoPlay muted loop playsInline poster="/hero-poster.jpg" aria-hidden>
+          <source src="/hero-loop.mp4" type="video/mp4" />
+        </video>
+        <div className="tru-login-scrim" aria-hidden />
         <div className="tru-login-glow" aria-hidden />
         <div className="tru-login-brand-inner">
           <div style={{ marginBottom: 28 }}><TruLogo size={30} wordSize={22} sub="HQ" /></div>
-          <h1 style={{ fontFamily: 'var(--hq-font)', fontSize: 'clamp(28px,3.6vw,42px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--on-hero)' }}>
+          <h1 style={{ fontFamily: 'var(--hq-serif)', fontSize: 'clamp(30px,3.8vw,46px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--on-hero)' }}>
             Your team, one login — Pulse and Coach in one place.
           </h1>
           <p style={{ color: 'var(--on-hero-60)', fontSize: 17, marginTop: 16, maxWidth: '46ch' }}>
@@ -73,7 +77,7 @@ export default function Login() {
 
       <div className="tru-login-form">
         <div style={{ width: '100%', maxWidth: 380 }}>
-          <h2 style={{ fontFamily: 'var(--hq-font)', fontSize: 28, fontWeight: 700, color: 'var(--text-strong)' }}>
+          <h2 style={{ fontFamily: 'var(--hq-serif)', fontSize: 30, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-strong)' }}>
             {mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
           </h2>
           <p style={{ color: 'var(--text-60)', fontSize: 14, marginTop: 4 }}>Sign in to your TRU HQ.</p>

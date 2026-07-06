@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { provisionOrg, triggerSync } from '../lib/api';
 import { supabase } from '../lib/supabase';
+import { TruLogo } from '../components/TruLogo';
+import '../truHqDark.css';
 
 interface TeamInput {
   name: string;
   fubKey: string;
 }
 
+// First-run: name the org + connect Follow Up Boss. AUTH/PROVISIONING LOGIC UNCHANGED —
+// dark reskin onto the shared auth field.
 export default function Onboarding({ onDone }: { onDone: () => void }) {
   const [orgName, setOrgName] = useState('');
   const [teams, setTeams] = useState<TeamInput[]>([{ name: '', fubKey: '' }]);
@@ -37,29 +41,38 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
     }
   }
 
+  const backdrop = (
+    <>
+      <video className="tru-auth-video" autoPlay muted loop playsInline poster="/hero-poster.jpg" aria-hidden>
+        <source src="/hero-loop.mp4" type="video/mp4" />
+      </video>
+      <div className="tru-auth-scrim" aria-hidden />
+    </>
+  );
+
   if (step !== 'form') {
     return (
-      <div className="center-wrap">
-        <div className="onb" style={{ textAlign: 'center', maxWidth: 420 }}>
+      <div className="tru-dark tru-auth">
+        {backdrop}
+        <div className="tru-auth-card" style={{ textAlign: 'center' }}>
           <div className="spinner" />
-          <h2 style={{ fontSize: 20 }}>
+          <h2 className="tru-auth-title" style={{ fontSize: 22 }}>
             {step === 'provisioning' ? 'Setting up your workspace…' : 'Pulling your leads from Follow Up Boss…'}
           </h2>
-          <p className="muted small">This can take a minute on the first sync. Hang tight.</p>
+          <p className="tru-auth-sub">This can take a minute on the first sync. Hang tight.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="center-wrap">
-      <div className="onb">
-        <div className="brand-logo" style={{ color: 'var(--ink)' }}>
-          T<span className="t" style={{ color: 'var(--gold)' }}>RU</span> Pulse
-        </div>
-        <h2 style={{ fontSize: 24, margin: '14px 0 4px' }}>Let's connect your team.</h2>
-        <p className="muted small">
-          Paste your Follow Up Boss API key (FUB → Admin → API). It's encrypted and used read-only — we never write to your CRM.
+    <div className="tru-dark tru-auth">
+      {backdrop}
+      <div className="tru-auth-card" style={{ maxWidth: 520 }}>
+        <div className="tru-auth-logo"><TruLogo size={28} wordSize={20} sub="HQ" /></div>
+        <h1 className="tru-auth-title">Let&rsquo;s connect your team.</h1>
+        <p className="tru-auth-sub">
+          Paste your Follow Up Boss API key (FUB &rarr; Admin &rarr; API). It&rsquo;s encrypted and used read-only &mdash; we never write to your CRM.
         </p>
         <form onSubmit={submit}>
           <label>Team / brokerage name</label>
@@ -72,7 +85,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
               </div>
               <div className="grow">
                 <label>FUB API key</label>
-                <input value={t.fubKey} onChange={(e) => setTeam(i, { fubKey: e.target.value })} placeholder="fka_…" />
+                <input value={t.fubKey} onChange={(e) => setTeam(i, { fubKey: e.target.value })} placeholder="fka_&hellip;" />
               </div>
             </div>
           ))}
@@ -82,7 +95,9 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           {error && <div className="err">{error}</div>}
           <button className="btn full" type="submit">Create &amp; sync</button>
         </form>
-        <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        <div className="tru-auth-foot">
+          <button className="link" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        </div>
       </div>
     </div>
   );

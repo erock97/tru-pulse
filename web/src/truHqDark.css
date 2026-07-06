@@ -276,18 +276,26 @@ html[data-theme="warm"] .tru-dark {
   flex-direction: column;
   justify-content: center;
   padding: clamp(32px, 5vw, 72px);
-  background: linear-gradient(160deg, #33281a, #1a130a);
+  background: linear-gradient(160deg, #17110a, #0b0906);
   border-right: 1px solid var(--border-soft);
+}
+.tru-login-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.5;
+}
+.tru-login-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(160deg, rgba(12, 10, 8, 0.5), rgba(12, 10, 8, 0.82));
 }
 .tru-login-glow {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(760px 520px at 10% -10%, rgba(169, 121, 31, 0.22), transparent 60%),
-    radial-gradient(600px 500px at 92% 118%, rgba(169, 121, 31, 0.12), transparent 60%);
+    radial-gradient(760px 520px at 10% -10%, rgba(233, 162, 59, 0.20), transparent 60%),
+    radial-gradient(600px 500px at 92% 118%, rgba(210, 102, 28, 0.12), transparent 60%);
 }
-.tru-login-brand-inner { position: relative; max-width: 480px; }
+.tru-login-brand-inner { position: relative; z-index: 2; max-width: 480px; }
 .tru-login-form {
   display: flex;
   align-items: center;
@@ -299,6 +307,50 @@ html[data-theme="warm"] .tru-dark {
   .tru-login { grid-template-columns: 1fr; }
   .tru-login-brand { display: none; }
 }
+
+/* ---------- Single-card auth (SetPassword / Onboarding): one focused card
+   on the obsidian video field — the interior's most landing-like moment ---------- */
+.tru-auth {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  overflow: hidden;
+  background: var(--base);
+}
+.tru-auth-video {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.4; z-index: 0;
+}
+.tru-auth-scrim {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 50% -8%, rgba(233, 162, 59, 0.12), transparent 60%),
+    linear-gradient(160deg, rgba(12, 10, 8, 0.72), rgba(12, 10, 8, 0.9));
+}
+.tru-auth-card {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 460px;
+  background: rgba(20, 16, 9, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: clamp(28px, 4vw, 44px);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.85);
+}
+.tru-auth-logo { margin-bottom: 20px; }
+.tru-auth-title { font-family: var(--hq-serif); font-size: clamp(23px, 3vw, 31px); font-weight: 700; letter-spacing: -0.02em; color: var(--text-strong); line-height: 1.1; }
+.tru-auth-sub { color: var(--text-60); font-size: 14.5px; margin-top: 8px; line-height: 1.5; }
+.tru-auth form { margin-top: 22px; }
+.tru-auth label { display: block; font-size: 13px; font-weight: 700; color: var(--text-strong); margin: 14px 0 6px; }
+.tru-auth .row2 { display: flex; gap: 12px; }
+.tru-auth .row2 .grow { flex: 1; min-width: 0; }
+.tru-auth .btn.full { width: 100%; margin-top: 18px; }
+.tru-auth .link { color: var(--accent-hi); font-weight: 700; background: none; border: 0; cursor: pointer; padding: 8px 0; font-size: 14px; }
+.tru-auth .err { margin-top: 12px; color: var(--terracotta); font-size: 13.5px; }
+.tru-auth-foot { margin-top: 14px; text-align: center; }
+.tru-auth .spinner { border: 3px solid var(--border-soft); border-top-color: var(--accent); margin: 0 auto 16px; }
 
 /* ---------- Top bar ---------- */
 .tru-dark .topbar {
