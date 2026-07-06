@@ -10,6 +10,7 @@ import Coach from './pages/Coach';
 import Rep from './pages/Rep';
 import AgentCourse from './pages/AgentCourse';
 import SetPassword from './pages/SetPassword';
+import Assess from './pages/Assess';
 
 type Org = { id: string; name: string; plan?: string };
 
@@ -86,6 +87,16 @@ export default function App() {
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
         : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />;
+
+  // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
+  const assessToken = (() => {
+    if (!route.startsWith('/assess')) return null;
+    const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    return q.get('t');
+  })();
+  if (route.startsWith('/assess')) {
+    return <Assess token={assessToken ?? ''} />;
+  }
 
   if (isDemo && route === '/learn') {
     return <AgentCourse agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
