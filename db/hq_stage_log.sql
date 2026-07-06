@@ -11,11 +11,13 @@
 -- climbs Submitting Offers -> Under Contract -> Closed produces three dated hits,
 -- each creditable to its agent within the window it happened.
 --
--- Run once. Safe to re-run (drops + recreates; the table starts empty).
+-- Idempotent + NON-DESTRUCTIVE: safe to run anytime, including against a live prod
+-- DB. Uses `create ... if not exists`, so re-running never drops the table or its
+-- accrued data (sync upserts regardless). To intentionally reset in dev, drop it by
+-- hand first. (Previously used `drop table ... cascade` — removed so a production
+-- cutover can never destroy stage history by accident.)
 
-drop table if exists person_stage_log cascade;
-
-create table person_stage_log (
+create table if not exists person_stage_log (
   id            bigint generated always as identity primary key,
   org_id        uuid   not null,
   team_id       uuid   not null,
@@ -30,8 +32,8 @@ create table person_stage_log (
   unique (team_id, fub_person_id, stage)            -- one dated hit per (lead, stage)
 );
 
-create index person_stage_log_win_idx   on person_stage_log (team_id, stage_class, changed_at);
-create index person_stage_log_agent_idx on person_stage_log (team_id, agent_user_id, stage_class, changed_at);
+create index if not exists person_stage_log_win_idx   on person_stage_log (team_id, stage_class, changed_at);
+create index if not exists person_stage_log_agent_idx on person_stage_log (team_id, agent_user_id, stage_class, changed_at);
 
 -- RLS mirrors every other org-scoped table: a signed-in member reads only their org.
 alter table person_stage_log enable row level security;

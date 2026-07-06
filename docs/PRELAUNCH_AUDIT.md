@@ -4,12 +4,25 @@ Branch: `redesign-cinematic`. Baseline (production): `main` @ `a336aa3`.
 Scope shipping: Home, Pulse, Coach, Rep + trainings, agent course. Prospect **pulled**;
 Studio unlaunched.
 
-## VERDICT: 🔴 NO-GO to ship the branch as-is — with a clear path to GO.
+## VERDICT: 🟢 GO — as an independent Cloudflare Pages build (workarounds applied).
 
-The **visual redesign itself is clean and presentation-only.** The blocker is that the
-branch is *not* a clean front-end-only delta from production — it inherits a pre-existing
-feature WIP that carries backend changes and a **destructive DB migration**. Those must be
-handled deliberately, not ridden along a "presentational" cutover.
+Original finding was 🔴 NO-GO for a *naive full merge+deploy* (it would ride backend
+changes + a destructive migration along with the pixels). **Resolved** — see
+`SHIP_RUNBOOK.md`:
+- **Deploys are independent** (Pages / wrangler / manual SQL) — nothing rides along; the
+  frontend ships alone.
+- **The destructive migration is now non-destructive** (`db/hq_stage_log.sql` → `create if
+  not exists`; the `drop … cascade` was removed).
+- **Coach is now previewable** (demo roster) — the last consistency gap is closed.
+
+The visual redesign is clean, presentation-only, and internally consistent. The worker and
+the (now safe) migration remain separate, deliberate steps — de-risked, not blockers.
+
+--- original findings below (retained for the record) ---
+
+The **visual redesign itself is clean and presentation-only.** The (now-resolved) blocker
+was that the branch is not a clean front-end-only delta from production — it inherits a
+pre-existing feature WIP that carried backend changes and a then-destructive DB migration.
 
 ---
 

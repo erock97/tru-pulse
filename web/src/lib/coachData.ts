@@ -14,6 +14,7 @@
 // same shared-DB/RLS access the reads already use. No auth/user/other-table writes.
 
 import { supabase } from './supabase';
+import { isDemo } from './api';
 
 /* ============================================================
    FRAMEWORK CONSTS (ported from truFramework.js — the parts the
@@ -171,22 +172,30 @@ interface AgentRow {
 }
 
 export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
-  const { data, error } = await supabase
-    .from('agents')
-    .select('id, team_id, token, name, email, phone, created_at, assessments(code, taken_at), checkins(created_at, met, leads, convos, focus)')
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-
-  // Best-effort: personal (baseline) codes. The column may not exist — if so, skip.
+  // Demo/preview: render a believable Sample Realty roster with NO backend, so Coach
+  // is previewable on ?demo=1 like every other tab. Never touches Supabase.
   const pcodes: Record<string, string> = {};
-  const pcRes = await supabase.from('agents').select('id, personal_code');
-  if (!pcRes.error && pcRes.data) {
-    (pcRes.data as Array<{ id: string; personal_code: string | null }>).forEach((x) => {
-      if (x.personal_code) pcodes[x.id] = x.personal_code;
-    });
+  let data: AgentRow[] | null;
+  if (isDemo) {
+    data = demoAgentRows();
+  } else {
+    const res = await supabase
+      .from('agents')
+      .select('id, team_id, token, name, email, phone, created_at, assessments(code, taken_at), checkins(created_at, met, leads, convos, focus)')
+      .order('created_at', { ascending: true });
+    if (res.error) throw res.error;
+    data = res.data as AgentRow[] | null;
+
+    // Best-effort: personal (baseline) codes. The column may not exist — if so, skip.
+    const pcRes = await supabase.from('agents').select('id, personal_code');
+    if (!pcRes.error && pcRes.data) {
+      (pcRes.data as Array<{ id: string; personal_code: string | null }>).forEach((x) => {
+        if (x.personal_code) pcodes[x.id] = x.personal_code;
+      });
+    }
   }
 
-  return ((data as AgentRow[] | null) || [])
+  return (data || [])
     .map((agent): RosterAgent | null => {
       const assessments = (agent.assessments || [])
         .slice()
@@ -229,6 +238,35 @@ export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
       };
     })
     .filter((x): x is RosterAgent => Boolean(x));
+}
+
+/* Demo roster (Sample Realty) — raw agent rows fed through the SAME mapper above,
+   so every derived field (archetype, pace, health) is computed the real way. Only
+   returned under ?demo=1. Varied paces exercise the on-track / slipping / stalled /
+   no-check-in states so the whole Coach dashboard renders in preview + sales demos. */
+function demoAgentRows(): AgentRow[] {
+  const now = Date.now();
+  const DAY = 86400_000;
+  const iso = (d: number) => new Date(now - d * DAY).toISOString();
+  const mk = (
+    id: string, name: string, code: string,
+    assessedDays: number, lastCheckinDays: number | null, focus: string,
+  ): AgentRow => ({
+    id, team_id: 'demo', token: null, name, email: null, phone: null,
+    created_at: iso(assessedDays),
+    assessments: [{ code, taken_at: iso(assessedDays) }],
+    checkins: lastCheckinDays === null ? [] : [
+      { created_at: iso(lastCheckinDays), met: 3, leads: 14, convos: 6, focus },
+    ],
+  });
+  return [
+    mk('demo-c1', 'Trevor Holland', 'P-Pro-R-D', 42, 2, 'Speed-to-lead on every Zillow connect'),
+    mk('demo-c2', 'Dana Cole', 'T-Pro-V-I', 58, 9, 'Move pre-approval earlier in the call'),
+    mk('demo-c3', 'Priya Nair', 'P-Rec-R-I', 31, 17, 'Rebuild the daily follow-up cadence'),
+    mk('demo-c4', 'Marcus Delgado', 'P-Pro-V-I', 76, 4, 'Run ALMS on every first conversation'),
+    mk('demo-c5', 'Maria Lopez', 'T-Pro-R-I', 21, null, 'First check-in — set the baseline'),
+    mk('demo-c6', 'Sam Whitfield', 'P-Rec-V-D', 95, 24, 'Reset the standard, hold the line'),
+  ];
 }
 
 export const QUADNOTE: Record<string, string> = {
