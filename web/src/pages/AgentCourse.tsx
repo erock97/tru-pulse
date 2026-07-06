@@ -6,6 +6,7 @@ import {
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
 } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
+import '../truHqDark.css';
 
 type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim';
 
@@ -428,7 +429,7 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
 function Shell({ accent, num, rail, children }: { accent: string; num: number; rail: ReactNode; children: ReactNode }) {
   return (
-    <div className="ac ac-shell" style={{ ['--mac' as string]: accent }}>
+    <div className="ac ac-shell tru-dark" style={{ ['--mac' as string]: accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>

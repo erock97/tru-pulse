@@ -478,7 +478,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 @media(max-width:480px){ .ac-statgrid{ grid-template-columns:1fr; } }
 
 /* callout */
-.ac-callout{ background:linear-gradient(120deg, rgba(169,121,31,.16), rgba(169,121,31,.06)); border:1px solid color-mix(in srgb, var(--mac) 30%, transparent); border-left:5px solid var(--gold); border-radius:16px; padding:22px 22px; font-size:16.5px; line-height:1.6; color:var(--ac-text); font-weight:650; }
+.ac-callout{ background:linear-gradient(120deg, rgba(233,162,59,.16), rgba(233,162,59,.06)); border:1px solid color-mix(in srgb, var(--mac) 30%, transparent); border-left:5px solid var(--gold); border-radius:16px; padding:22px 22px; font-size:16.5px; line-height:1.6; color:var(--ac-text); font-weight:650; }
 
 /* drill — practice rep with instant feedback */
 .ac-drill{ background:var(--ac-card-flat); border:1.5px solid color-mix(in srgb, var(--mac) 35%, var(--ac-border)); border-radius:18px; padding:22px 20px; box-shadow:0 18px 40px -24px color-mix(in srgb, var(--mac) 40%, transparent); }

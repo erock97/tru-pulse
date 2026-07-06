@@ -802,6 +802,26 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark .hh-signout:hover { color: var(--text-strong); }
 
 /* ============================================================
+   AGENT-COURSE LESSONS — onto the elevated system
+   The .ac- lesson styles live in styles.css on the legacy brass/cold palette.
+   Wrapping the lesson Shell in .tru-dark gives it Playfair h1-h3 + grain; here
+   we remap the styles.css color vars (used across the .ac- rules) to the landing
+   palette, scoped to the lesson shell so no other surface is affected.
+   ============================================================ */
+.ac-shell.tru-dark {
+  --gold: #E9A23B;
+  --gold-lt: #F2C079;
+  --gold-dk: #C77E1F;
+  --ink: #F3ECE0;
+  --ink2: #A79C8D;
+  --line: rgba(243, 236, 224, 0.12);
+  --cream: #141009;
+  --cream2: #1B150D;
+  background: var(--base);
+}
+.ac-shell.tru-dark::after { z-index: 5; }
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1000px) {
