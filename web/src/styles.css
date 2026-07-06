@@ -263,9 +263,9 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 
 .logo-sub{ font-weight:500; font-size:15px; color:var(--taupe); }
 
-/* Legacy light top-bar shell — still used by Prospect.tsx and Studio.tsx, which
-   haven't been redesigned to the dark .shell/.side yet (out of scope for this
-   pass; Home.tsx and Rep.tsx have already moved to .shell/.side + .hqhero above). */
+/* Legacy light top-bar shell. The .topbar class is still consumed by the dark
+   HqShell header; the .hq/.hq-main/.hq-hero rules below are holdovers from the
+   old light pages (Prospect/Studio were removed 2026-07-06) kept only as a base. */
 .topbar{ display:flex; align-items:center; justify-content:space-between; padding:14px 28px;
   border-bottom:1px solid var(--line); background:rgba(251,247,240,.92); }
 .topbar-right{ display:flex; align-items:center; gap:16px; }

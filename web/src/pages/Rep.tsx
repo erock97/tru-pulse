@@ -209,8 +209,6 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
           onOpenPulse: () => { window.location.hash = '/pulse'; },
           onOpenCoach: () => { window.location.hash = '/'; },
           onOpenRep: () => { window.location.hash = '/rep'; },
-          onOpenProspect: () => { window.location.hash = '/prospect'; },
-          onOpenStudio: () => { window.location.hash = '/studio'; },
         }}
       >
         <div className="rp-canvas" ref={canvasRef}>

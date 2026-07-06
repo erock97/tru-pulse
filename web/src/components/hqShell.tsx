@@ -9,8 +9,6 @@ export interface ShellNav {
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep?: () => void;
-  onOpenProspect?: () => void;
-  onOpenStudio?: () => void;
 }
 
 /** The dark unified HQ shell: sidebar + slim top bar. Wired to the REAL
@@ -40,8 +38,7 @@ export function HqShell({
   const activeKey = route.startsWith('pulse') ? 'pulse'
     : route.startsWith('coach') ? 'coach'
       : route.startsWith('rep') ? 'rep'
-        : route.startsWith('prospect') ? 'prospect'
-          : 'home';
+        : 'home';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them
   // back to their HQ "Act as a team" picker, not the login).
   const impersonating = hasAdminReturn();
@@ -50,8 +47,6 @@ export function HqShell({
     { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
     { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
-    { key: 'prospect', label: 'Prospect', icon: 'prospect', onClick: nav.onOpenProspect },
-    { key: 'studio', label: 'Studio', icon: 'studio', soon: true },
   ];
   return (
     <div className="tru-shell">

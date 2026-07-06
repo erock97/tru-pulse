@@ -331,8 +331,6 @@ function coachNav(onHome?: () => void) {
     onOpenPulse: () => { window.location.hash = '/pulse'; },
     onOpenCoach: () => { window.location.hash = '/coach'; },
     onOpenRep: () => { window.location.hash = '/rep'; },
-    onOpenProspect: () => { window.location.hash = '/prospect'; },
-    onOpenStudio: () => { window.location.hash = '/studio'; },
   };
 }
 

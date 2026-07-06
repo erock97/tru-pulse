@@ -8,8 +8,6 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
-import Prospect from './pages/Prospect';
-import Studio from './pages/Studio';
 import AgentCourse from './pages/AgentCourse';
 import SetPassword from './pages/SetPassword';
 
@@ -87,11 +85,7 @@ export default function App() {
         ? <Coach org={o} onHome={() => go('/')} />
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
-        : route === '/prospect'
-          ? <Prospect org={o} onHome={() => go('/')} />
-          : route === '/studio'
-            ? <Studio org={o} onHome={() => go('/')} />
-            : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} onOpenProspect={() => go('/prospect')} onOpenStudio={() => go('/studio')} adminLeaders={adminLeaders} />;
+        : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />;
 
   if (isDemo && route === '/learn') {
     return <AgentCourse agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;

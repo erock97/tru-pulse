@@ -74,29 +74,6 @@ function ProgressArc({ pct }: { pct: number }) {
   );
 }
 
-/* ---- small radial "compliance-cleared" pin (Prospect) ---- */
-function ShieldPin() {
-  return (
-    <svg className="hh-pin" viewBox="0 0 48 48" aria-hidden>
-      <circle cx="24" cy="24" r="21" fill="var(--sea-soft)" stroke="var(--sea-hi)" strokeWidth="1.5" />
-      <circle
-        cx="24"
-        cy="24"
-        r="21"
-        fill="none"
-        stroke="var(--sea-hi)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeDasharray={2 * Math.PI * 21}
-        strokeDashoffset={0}
-        transform="rotate(-90 24 24)"
-        className="hh-pin-ring"
-      />
-      <path d="M17 24l5 5 9-10" fill="none" stroke="var(--sea-hi)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /* ---- count-up mini stat used inside the Pulse tile ---- */
 function GciCount() {
   const { ref, val } = useCountUp(392);
@@ -138,15 +115,11 @@ export default function Home({
   org,
   onOpenPulse,
   onOpenRep,
-  onOpenProspect,
-  onOpenStudio,
   adminLeaders,
 }: {
   org: { id: string; name: string };
   onOpenPulse: () => void;
   onOpenRep?: () => void;
-  onOpenProspect?: () => void;
-  onOpenStudio?: () => void;
   adminLeaders?: AdminLeader[];
 }) {
   // Platform-owner tile: pick a team, become its leader, land back here as them.
@@ -242,8 +215,6 @@ export default function Home({
           onOpenPulse,
           onOpenCoach: openCoachInApp,
           onOpenRep,
-          onOpenProspect,
-          onOpenStudio,
         }}
       >
         <div className="hh-canvas" ref={canvasRef}>
@@ -319,33 +290,6 @@ export default function Home({
               </div>
               <p className="hh-tile-pitch">Onboard and certify every agent on the program.</p>
               <ProgressArc pct={0} />
-            </article>
-
-            {/* PROSPECT */}
-            <article className="hqcard hqcard-hover hh-tile hh-small hh-prospect reveal" data-delay="240" {...tileProps(onOpenProspect)}>
-              <div className="hh-tile-top">
-                <span className="hh-tile-icon">
-                  <Icon name="prospect" size={20} />
-                </span>
-                <h4 className="hh-tile-name">Prospect</h4>
-              </div>
-              <p className="hh-tile-pitch">Circle, expired, and FSBO calling — every number DNC-scrubbed.</p>
-              <div className="hh-prospect-stat">
-                <ShieldPin />
-                <span className="hh-tile-stat sea">Compliance-cleared lists</span>
-              </div>
-            </article>
-
-            {/* STUDIO — muted SOON tile */}
-            <article className="hqcard hh-tile hh-small hh-studio reveal" data-delay="280">
-              <div className="hh-tile-top">
-                <span className="hh-tile-icon muted">
-                  <Icon name="studio" size={20} />
-                </span>
-                <span className="side-soon">Soon</span>
-              </div>
-              <h4 className="hh-tile-name muted">Studio</h4>
-              <p className="hh-tile-pitch">Social content and listing promotion, on autopilot.</p>
             </article>
           </section>
 
