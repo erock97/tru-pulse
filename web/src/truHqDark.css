@@ -1,6 +1,10 @@
+@import './truHqFonts.css';
+
 /* ============================================================
-   TRU HQ — Dark design system (ported from the TRU HQ Redesign
-   mockup: theme.css + app.css + hq.css).
+   TRU HQ — Dark design system. Elevated to the truhq.co landing
+   standard: warm-obsidian palette, Playfair Display + Hanken
+   Grotesk type, gold-gradient CTA physics, and filmic grain.
+   (Originally ported from the TRU HQ Redesign mockup.)
 
    SCOPING: every token and rule here is scoped under `.tru-dark`
    so it CANNOT clobber the existing global `styles.css` (:root vars
@@ -14,22 +18,23 @@
 
 /* ---- Tokens live on the wrapper, NOT :root, so nothing leaks out ---- */
 .tru-dark {
-  --base: #141414;
-  --panel: #1a1a1a;
-  --card: #262626;
-  --card-flat: #141414;
-  --border: #333333;
-  --border-soft: #262626;
+  --base: #0C0A08;
+  --panel: #141009;
+  --card: #1B150D;
+  --card-flat: #14110A;
+  --border: rgba(243, 236, 224, 0.14);
+  --border-soft: rgba(243, 236, 224, 0.07);
 
-  --text: #ffffff;
-  --text-60: #999999;
-  --text-50: #808080;
-  --text-40: #666666;
+  --text: #F3ECE0;
+  --text-60: #A79C8D;
+  --text-50: #8A7F70;
+  --text-40: #6A6053;
 
-  --accent: #a9791f;
-  --accent-hi: #c9962f;
-  --accent-soft: rgba(169, 121, 31, 0.14);
-  --accent-line: rgba(169, 121, 31, 0.35);
+  --accent: #E9A23B;
+  --accent-hi: #F2C079;
+  --accent-soft: rgba(233, 162, 59, 0.15);
+  --accent-line: rgba(233, 162, 59, 0.30);
+  --ember: #D2661C;
 
   --espresso: #33281a;
   --cream: #fbf7f0;
@@ -39,14 +44,14 @@
   --terracotta: #c06b4f;
 
   --text-strong: #ffffff;
-  --on-hero: #ffffff;
-  --on-hero-60: rgba(255, 255, 255, 0.66);
-  --hero-grad: linear-gradient(135deg, #1d1710, var(--panel) 60%);
-  --hero-grad-alt: linear-gradient(135deg, #1d1710, var(--panel) 62%);
+  --on-hero: #F8F2E8;
+  --on-hero-60: rgba(243, 236, 224, 0.64);
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #2a1e0e 0%, transparent 52%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #2a1e0e 0%, transparent 52%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
   --hero-border: var(--accent-line);
   --hover-fill: rgba(255, 255, 255, 0.04);
   --avatar-ring: rgba(255, 255, 255, 0.08);
-  --stat-grad: linear-gradient(180deg, #fff, var(--accent-hi));
+  --stat-grad: linear-gradient(180deg, #F8F2E8, var(--accent-hi));
   --card-shadow: none;
   --card-hover-shadow: 0 22px 50px -30px rgba(0, 0, 0, 0.9);
   --track-fill: #2a2a2a;
@@ -62,7 +67,8 @@
   --r-pill: 999px;
   --r-chip: 28px;
 
-  --hq-font: "Urbanist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --hq-font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --hq-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Turn the wrapper into the dark app surface (page background handled
@@ -108,7 +114,13 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark * { box-sizing: border-box; }
 .tru-dark h1,
 .tru-dark h2,
-.tru-dark h3,
+.tru-dark h3 {
+  margin: 0;
+  font-family: var(--hq-serif);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+}
 .tru-dark h4 {
   margin: 0;
   font-weight: 600;
@@ -116,6 +128,18 @@ html[data-theme="warm"] .tru-dark {
   line-height: 1.15;
 }
 .tru-dark p { margin: 0; }
+
+/* Filmic grain — the landing's signature texture, fixed over the whole dark app.
+   pointer-events:none so it never intercepts clicks; static, so reduced-motion safe. */
+.tru-dark::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
 /* ---------- App shell (dark sidebar + main) ---------- */
 .tru-shell {
@@ -172,10 +196,24 @@ html[data-theme="warm"] .tru-dark {
   background: var(--hover-fill);
 }
 .tru-shell .side-link.active {
+  position: relative;
   color: var(--text-strong);
   background: var(--accent-soft);
   border-color: var(--accent-line);
 }
+.tru-shell .side-link.active::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--accent-hi);
+  box-shadow: 0 0 10px -1px var(--accent);
+}
+.tru-shell .side-link.active svg { color: var(--accent-hi); }
 .tru-shell .side-soon {
   margin-left: auto;
   font-size: 11px;
@@ -276,7 +314,7 @@ html[data-theme="warm"] .tru-dark {
      through as a cream band — this reskinned topbar sits on the dark canvas. */
   background: transparent;
 }
-.tru-dark .topbar h1 { font-size: clamp(24px, 3.2vw, 34px); font-weight: 700; color: var(--text-strong); font-family: var(--hq-font); }
+.tru-dark .topbar h1 { font-size: clamp(26px, 3.4vw, 37px); font-weight: 700; color: var(--text-strong); }
 .tru-dark .main-eyebrow {
   color: var(--accent-hi);
   font-weight: 600;
@@ -350,12 +388,13 @@ html[data-theme="warm"] .tru-dark {
 }
 .tru-dark .hqbtn-primary {
   background: linear-gradient(180deg, var(--accent-hi), var(--accent));
-  color: #fff;
-  box-shadow: 0 8px 26px -10px var(--accent);
+  color: #20140A;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 14px 34px -16px var(--ember);
 }
 .tru-dark .hqbtn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px -10px var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 20px 46px -18px var(--ember);
 }
 .tru-dark .hqbtn-ghost {
   background: var(--panel);
@@ -385,21 +424,29 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark .hq-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--panel);
+  gap: 9px;
+  background: rgba(20, 16, 9, 0.5);
   border: 1px solid var(--border-soft);
   border-radius: var(--r-pill);
-  padding: 8px 16px;
-  font-size: 15px;
+  padding: 7px 15px;
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--text-60);
+  backdrop-filter: blur(6px);
 }
 .tru-dark .hq-eyebrow .dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  animation: hqTwinkle 3s ease-in-out infinite;
+}
+@keyframes hqTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .hq-eyebrow .dot { animation: none; }
 }
 
 /* ---------- Avatar ---------- */
@@ -486,11 +533,11 @@ html[data-theme="warm"] .tru-dark {
   gap: 16px;
 }
 .tru-dark .hh-hero-title {
-  font-size: clamp(30px, 4.2vw, 46px);
+  font-size: clamp(34px, 4.8vw, 54px);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--on-hero);
-  line-height: 1;
+  line-height: 0.98;
 }
 .tru-dark .hh-hero-sub {
   color: var(--on-hero-60);
@@ -580,11 +627,14 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark .hh-coach { grid-area: coach; }
 .tru-dark .hh-coach-body {
   position: relative;
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
-  margin-top: auto;
+  text-align: center;
+  padding: 6px 0 2px;
 }
 
 .tru-dark .hh-small { min-height: 150px; }
@@ -686,6 +736,18 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark input::placeholder { color: var(--text-50); }
 .tru-dark input:focus,
 .tru-dark select:focus { outline: 2px solid var(--accent); border-color: var(--accent) !important; }
+/* Checkboxes & radios: native control tinted to system gold. The text-input
+   background/border rules above must NOT apply to them (they'd draw a panel box
+   behind the browser-blue check), so reset those and set accent-color. Systemic —
+   covers Pulse Settings/Sources and every future form. */
+.tru-dark input[type="checkbox"],
+.tru-dark input[type="radio"] {
+  accent-color: var(--accent);
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+}
 /* The real components use className="btn" for their connect buttons and
    inline var(--line) borders — override just inside the dark subtree. */
 .tru-dark .btn {

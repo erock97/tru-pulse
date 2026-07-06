@@ -1,53 +1,234 @@
-# Design Handoff — TRU HQ (app.truhq.co)
+# TRU HQ — Interior Design System
 
-Findings from the design lead pass, for the TRU Web Developer to implement. Ordered by priority. Each item lists the file, the problem, and the fix.
+**The governing visual system for `app.truhq.co`.** Every tab block inherits this. Apply
+these patterns; do not reinvent them per-screen. Source of truth for tokens/classes is
+`web/src/truHqDark.css` (scoped under `.tru-dark`); self-hosted type is `truHqFonts.css`.
 
----
-
-## Status (2026-07-02)
-
-Items 1–3 are **fixed, but staged on an isolated branch (`ui-polish`), not yet live** — `App.tsx`/`Home.tsx`/`Rep.tsx` are actively being edited on this working tree by another session (Rep + Prospect wiring), so touching them directly here risked clobbering that in-progress work. The fix branch lives at `C:\Users\ericg\OneDrive\Desktop\TRU-Pulse-ui-polish` (git worktree, branch `ui-polish`), rebuilt against the current 4-product `PRODUCTS` list and verified with a local dev server. It needs a manual merge once the Home/Rep work on this tree settles — flag if you want that done now instead of waiting.
-
-Item 4 is **fixed and live on this working tree** (`web/src/pages/Dashboard.tsx`, `web/src/styles.css`) — it didn't touch any actively-edited file, so it shipped directly.
+> Supersedes the 2026-07-02 audit-findings version of this file (preserved in git). Those
+> items described the old cream Home and are resolved by the dark redesign.
 
 ---
 
-## P0 — Broken layout
+## 0. The governing principle — drama budget
 
-### 1. Home grid leaves an orphaned card with a gaping empty gap
-**Status: ✅ Fixed — staged on `ui-polish`, pending merge.** Switched to `repeat(2,1fr)` (2×2), per your own top recommendation for a 4-product steady state. Verified: Pulse/Coach on row 1, Rep/Prospect on row 2, no orphan, no gap.
+The `truhq.co` landing feels premium because it spends its **entire** drama budget on one
+thing: a cinematic hero (video, huge Playfair reveal, motion). That works because a
+landing has one job — a first impression.
 
-**File:** `web/src/styles.css:213`
-```css
-.hq-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
-```
-There are 4 product cards (Pulse, Coach, Rep, Prospect) in a fixed 3-column grid. The 4th card (TRU Prospect) wraps to its own row and sits alone on the left, leaving a huge empty void to its right. This is the single clunkiest thing on the page — it reads like an unfinished template, not a shipped product.
+**An app interior cannot do this.** Dashboards, tables, dense KPIs and forms are where
+work happens; hero drama every screen would be exhausting and would bury the data. So the
+rule that governs every downstream decision:
 
-**Fix (pick one):**
-- Switch to `grid-template-columns:repeat(2,1fr)` for a clean 2x2 (best if we're staying at 4 products for a while — reads more deliberate/premium at this count).
-- Or `grid-template-columns:repeat(auto-fit,minmax(260px,1fr))` if more products are coming soon and the grid needs to self-balance.
-- Do not ship 3-column with an odd card count again — audit this any time `PRODUCTS` in `Home.tsx` changes length.
+> **Spend drama once per screen. Everything else is restraint.**
+> Each surface gets **one** anchored cinematic moment — usually the hero card or the single
+> most important metric. Everywhere else, the luxury is carried quietly by **material**
+> (warm-obsidian depth, grain, hairline borders), **type** (Playfair for meaning, Hanken
+> for data), and **gold used as an accent, never a fill**. Restraint *is* the premium
+> signal on a functional surface. When in doubt, make it quieter, not louder.
 
----
-
-## P1 — Visual polish / "does this look like a real product" gaps
-
-### 2. Zero visual identity beyond flat icon chips
-**Status: ⚠️ Partially addressed — staged on `ui-polish`, pending merge.** Also gave the HQ hub the same dark `.shell`/`.side` sidebar Pulse uses (was a separate, plain light top-bar before — inconsistent shell across the suite) and replaced the flat text-only hero with a bold dark-gradient hero card (same recipe as Pulse's "Commission at risk"), plus a soft radial glow accent (same pattern as the login page's brand panel). That's the "one strong visual anchor" for the hub itself. Did **not** add per-card photography/illustration — that's a bigger asset-sourcing task, flagging as still open if you want real imagery per product.
-**File:** `web/src/pages/Home.tsx:9-14`, `.hq-ico` in styles.css:218
-All 4 product icons are thin-stroke line icons in a 44px rounded-square tinted chip. Functional, but it's the same pattern every AI-generated dashboard uses. There's no photography, no illustration, no texture anywhere on the hub page — just text and colored squares on cream. For a page whose whole job is "make the leader feel like they're stepping into something premium," this needs one strong visual anchor (a hero illustration, a subtle background texture/gradient behind the hero copy, or richer per-card art) instead of relying entirely on typography + flat chips.
-
-### 3. "Act as a team" admin card visually disconnected from product cards
-**Status: ✅ Fixed — staged on `ui-polish`, pending merge.** Now uses the same `.hq-card` base (radius/shadow/padding — identical box model to the product cards) plus a `.hq-card-admin` modifier: a soft gold-tinted background wash and a 4px solid gold left accent bar (same visual language as `.kpi .accent` elsewhere in the app), replacing the one-off inline `boxShadow`/`borderColor` override.
-**File:** `web/src/pages/Home.tsx:117`
-The admin card uses an amber-outlined white card with an inline `boxShadow` override, while the 4 product cards below use the standard `.hq-card` treatment. The two card styles sitting stacked on the same page don't feel like the same design system — the admin card looks like a warning/alert banner, not a peer content block. Give it the same visual grammar as the other cards (or intentionally re-skin it as a distinct "admin utility" component with its own consistent style used elsewhere in the app), not a one-off inline style.
-
-### 4. Pulse dashboard's empty state is indistinguishable from "broken"
-**Status: ✅ Fixed — live.** When `total === 0` for the selected window, Overview now renders a single dedicated empty state (icon chip, "No leads tracked yet" heading, plain-language explanation of how leads sync in, and a "Check your sources →" button that jumps to Settings) instead of a wall of flat zero-value KPI cards and an unguarded 0%-donut ring. Verified end-to-end including the button's navigation to Settings.
-**Page:** TRU Pulse → Overview (`#/pulse`)
-When a team has zero tracked data, every metric renders as a greyed-out "0" / "0%" / "—" and two major panels ("Where the leads come from", the donut chart) go nearly blank. There's no illustration, no "no leads tracked yet — here's how to add your first one" prompt, nothing that tells a new user this is expected rather than a loading/error state. First-run experience matters as much as steady-state — a client seeing this on day one will assume the product is broken.
+Litmus test for any interior screen: if more than one element is competing to be the
+"wow," cut back until exactly one wins.
 
 ---
 
-## Notes for next pass
-This is an initial sweep of the Home hub and Pulse Overview only. Coach, Rep, and Prospect screens have not been audited yet — will cover those next and append findings here rather than opening a new file. Flag anything you fix so it can be checked off instead of re-flagged.
+## 1. Color tokens
+
+All tokens live on `.tru-dark` (never `:root`, so they can't leak into the legacy light
+`styles.css`). Warm obsidian base, warm off-white ink, single gold accent family.
+
+| Token | Value | Role |
+|---|---|---|
+| `--base` | `#0C0A08` | App canvas — warm obsidian (matches landing `--bg`) |
+| `--panel` | `#141009` | Sidebar, insets, quiet surfaces |
+| `--card` | `#1B150D` | Standard card material |
+| `--card-flat` | `#14110A` | Flatter card / nested surface |
+| `--border` | `rgba(243,236,224,.14)` | Hairline — warm, never grey |
+| `--border-soft` | `rgba(243,236,224,.07)` | Dividers, quiet edges |
+| `--text` | `#F3ECE0` | Body ink (warm off-white, never pure `#fff`) |
+| `--text-60` | `#A79C8D` | Secondary / captions |
+| `--text-50` | `#8A7F70` | Muted labels |
+| `--text-40` | `#6A6053` | Faintest — placeholders, disabled |
+| `--text-strong` | `#F8F2E8` | Headlines |
+| `--accent` | `#E9A23B` | **The** gold (matches landing `--gold`) |
+| `--accent-hi` | `#F2C079` | Gold highlight / gradient top |
+| `--accent-soft` | `rgba(233,162,59,.15)` | Gold wash — glows, chips, active states |
+| `--accent-line` | `rgba(233,162,59,.30)` | Gold hairline |
+| `--ember` | `#D2661C` | CTA shadow warmth (landing `--ember`) |
+| `--sea` / `--sea-hi` / `--sea-soft` | `#4a7c6f` / `#6fbfa9` / `rgba(74,124,111,.16)` | Secondary "good/compliant" accent — use sparingly (Prospect compliance, positive deltas) |
+| `--risk` (add if needed) | `#E08258` | Risk/warning — matches landing `--risk` |
+
+**Gold discipline:** gold fills only the *one* primary CTA and small accents (dots,
+rings, active pills, thin left-bars). Never gold-fill a whole card or a large area — that
+reads cheap. On dense data, gold marks the *one* number that matters.
+
+**Warm theme:** the `data-theme="warm"` toggle re-skins to a cream palette. It's a
+secondary mode; design dark-first, verify warm doesn't break, don't optimize for it.
+
+---
+
+## 2. Type
+
+Two families, self-hosted (`truHqFonts.css`), copied from the landing.
+
+- **Playfair Display** (`--hq-serif`) — 700 / 800 / 800-italic. **Meaning & moments:**
+  page titles, hero headlines, card names, big stat numbers, section headers. This is the
+  cinematic voice. Auto-applied to `.tru-dark h1,h2,h3`.
+- **Hanken Grotesk** (`--hq-font`) — 400 / 500 / 600. **Everything functional:** body,
+  labels, table cells, form fields, captions, buttons, dense data. Applied to `h4` and
+  all text by default.
+
+**Scale** (fluid; clamp for responsiveness):
+
+| Role | Family | Size | Weight | Notes |
+|---|---|---|---|---|
+| Page title (topbar h1) | Serif | `clamp(26px,3.4vw,37px)` | 700 | e.g. "Pulse — who's working what." |
+| Hero headline | Serif | `clamp(30px,4.2vw,46px)` | 800 | one per screen |
+| Section header (h3) | Serif | 20–26px | 700 | "Leads by source", "The certification journey" |
+| Card/tile name (h4) | **Sans** | 17–20px | 600 | stays sans for legibility on tiles |
+| Big stat number | Serif | 30–48px | 800 | the anchored metric; often `--stat-grad` |
+| Body | Sans | 15–16px | 400–500 | `--text` / `--text-60` |
+| Eyebrow / kicker | Sans | 13–14px | 600 | uppercase, `.04em` tracking, `--accent-hi` |
+| Caption / label | Sans | 12–13px | 500 | `--text-50`, often uppercase for KPI labels |
+
+**Rule:** a number the leader is meant to *feel* is serif; a number they *scan* (table
+cell, list) is sans. Letter-spacing tightens on serif (`-0.02em`), stays neutral on sans.
+
+---
+
+## 3. Spacing, layout & page frame
+
+- **Base unit 4px.** Common steps: 6, 8, 12, 14, 18, 24, 30, 44.
+- **Shell grid:** `268px` sidebar + fluid main (`.tru-shell`).
+- **Content max-width:** the main column breathes; cards in bento/grid, `gap: 18px`.
+- **Card padding:** 24–26px standard tile; `clamp(28px,3.6vw,44px)` hero.
+- **Radii:** `--r-card 14px`, `--r-card-lg 16px`, `--r-btn 10px`, pill `999px`, chip `28px`.
+- **Section rhythm:** ~30px topbar → content; ~18px between cards; a curved wave divider
+  (`.ps-divider`, gold-soft fill) separates major bands (already used on Home/Pulse/Rep).
+- **Density scales with purpose:** launcher (Home) = generous, few large tiles;
+  dashboard (Pulse) = tighter, many KPI tiles; both use the same tokens.
+
+---
+
+## 4. Surfaces & elevation
+
+Depth comes from **material + light**, not heavy drop shadows (dark UIs don't shadow well).
+
+- **Card** (`.hqcard`): `--card` fill, 1px `--border-soft`, radius `--r-card`. Flat at
+  rest. Hover (`.hqcard-hover`): subtle lift + `--card-hover-shadow` (deep, low-opacity
+  black) + border warms to `--accent-line`. Interactive tiles get `tileProps` (role/link,
+  keyboard).
+- **Hero card** (`.hh-hero`, and Pulse's commission-at-risk card): `--hero-grad`
+  (radial warm-ember glow off one corner + obsidian linear), 1px `--hero-border`, plus an
+  inner `.hh-hero-glow` layer. This is the **one dramatic surface per screen**.
+- **Ambient glow** (`.hh-ambient`): a large, very soft multi-radial (`--accent-soft` +
+  ember + `--sea-soft`) behind the canvas top. One per page, low opacity — atmosphere, not
+  decoration.
+- **Filmic grain**: global `.tru-dark::after`, fixed, 5% opacity SVG fractal-noise,
+  `pointer-events:none`. The landing's signature texture; leave it on everywhere.
+- **Stat gradient text** (`--stat-grad`): warm-white→gold vertical gradient on the big
+  serif numbers. Reserve for anchored metrics.
+
+---
+
+## 5. Motion
+
+Ease: `--ease: cubic-bezier(.22,1,.36,1)` (the landing's `--e`). Everything uses it.
+
+- **Reveal-on-scroll** (`.reveal` + `useReveal`): elements fade/rise in as they enter
+  (IntersectionObserver, `data-delay` staggers). Default for cards/sections.
+- **Count-up** (`useCountUp`): big stat numbers animate from 0 on first view (cubic
+  ease-out, ~1.6s). Only the anchored metrics — not every number.
+- **Ring draw-in**: SVG score rings animate `stroke-dashoffset` (1.1s). Used for
+  hustle/certification/worked-% donuts.
+- **Hover physics**: primary CTA lifts `translateY(-2px)` with a deepening ember shadow;
+  cards lift subtly. Fast (`.18s`), never bouncy on functional surfaces.
+- **Reduced motion**: `prefers-reduced-motion: reduce` must short-circuit reveals/count-ups
+  to final state, pause any video, keep grain (it's static). Non-negotiable for a11y.
+
+**Discipline:** motion *reveals and rewards*, it doesn't loop or decorate. No infinite
+animations except the tiny badge-dot twinkle. If motion doesn't help comprehension or
+delight on first view, cut it.
+
+---
+
+## 6. Shell (every tab sits in this)
+
+`HqShell` (`components/hqShell.tsx`) is the frame — do not fork it per tab.
+
+- **Sidebar** (`.side`): `--panel`, sticky full-height. TRU logo (wordmark, gold "RU"),
+  nav links with 20px stroke icons; active link = `.active` (gold-soft fill + gold text).
+  "Soon" items disabled with a `.side-soon` chip. Foot: org avatar + name + role, sign-out,
+  and the impersonation "Acting as / Exit" block for platform owners.
+- **Topbar** (`.topbar`): serif page title (`h1`) + `--accent-hi` uppercase eyebrow
+  (`.main-eyebrow`), a right-aligned context slot, and the Dark/Warm `ThemeToggle`.
+  Transparent — sits on the canvas, bottom hairline only.
+- Each page renders its own `HqShell` with `eyebrow` + `title` and pipes real open-callbacks
+  through `nav` (hash routing untouched — **presentation only, never touch routing/data**).
+
+---
+
+## 7. Per-surface direction (drama budget applied)
+
+| Surface | Route | Drama moment | Restraint zone |
+|---|---|---|---|
+| **Home** (launcher) | `/` | The hero anchor tile ("Your TRU HQ") + the bento composition itself | Product tiles: quiet, one mini-viz each (spark/ring/progress/shield) |
+| **Pulse** (dashboard) | `/pulse` | The commission-at-risk hero card + the worked-% donut | KPI tiles, source bars, tables stay flat/scannable; gold marks only the risk number |
+| **Rep** (certification) | `/rep` | The "Certify every agent" hero + certification ring | Module journey list, stat tiles, quiz rows: calm, numbered, legible |
+| **Coach** | `/coach` | The agent/1:1 prep focal card | Roster + prep detail: editorial, restrained |
+| **Prospect** | `/prospect` | One compliance/queue focal stat | Call-list rows are a **table** — maximum restraint, `--sea` for "cleared" only |
+| **Course** (agent) | `/learn` | The lesson/module cover + progress ring | **Long-form reading**: lesson cards are editorial — serif for lesson prose is OK here, generous line-height, one idea per card. Quizzes: quiet, clear right/wrong states |
+| **Auth** (Login/Onboarding/SetPassword) | — | This is the interior's *most landing-like* moment: one focused card floating on the ambient-glow + grain obsidian field, serif headline, the gold CTA. Spend drama on the background, keep the form itself dead simple. **Backdrop plan:** this is the ONE interior surface where a cinematic video backdrop belongs — first reuse the landing's existing obsidian assets (`hero-loop.mp4` / `TRU-reveal`), only reach for a generative tool (Higgsfield) if those can't deliver. Restyle only — never touch the Supabase auth/recovery/invite logic. |
+
+Tables & forms (Prospect list, Pulse settings, onboarding) are the true test of restraint:
+warm hairlines, `--panel` header row, `--text-60` labels, generous row height, focus rings
+in `--accent`. No zebra stripes, no heavy borders, no gold fills.
+
+---
+
+## 8. Component-pattern reference
+
+Use these existing patterns (classes/components in `truHqDark.css` + `components/hqUi.tsx`).
+Each Sonnet tab block **applies**, never rebuilds.
+
+- **Buttons** — `.hqbtn` base. `.hqbtn-primary` = gold gradient (`--accent-hi`→`--accent`),
+  **dark ink** `#20140A`, inner-highlight + ember shadow, hover lift. `.hqbtn-ghost` =
+  `--panel` fill + hairline, warms on hover. `.hqbtn-sm` for dense contexts. One primary
+  per view.
+- **Eyebrow pill** (`.hq-eyebrow` / `.main-eyebrow`) — gold dot + uppercase kicker.
+- **Card** — `.hqcard` (+ `.hqcard-hover` for clickable). Hero variants get `.hh-hero` +
+  glow layer.
+- **Stat tile** — big serif number (optionally `--stat-grad` + `useCountUp`) over a
+  sans uppercase label. Optional mini-viz corner accent.
+- **Ring** (`<Ring pct label color>` in `hqUi.tsx`) — score/percentage donut, draws in,
+  `--track-fill` track + gold arc.
+- **Mini-viz** — gold sparkline (area+line gradient), tiny upward arc, slim progress bar
+  (`.hh-progress`), compliance shield-pin (`--sea`). Keep them small and single-purpose.
+- **Avatar** (`<Avatar name size tone>`) — initials on a warm gradient chip.
+- **Pills** — filter/window pills (7d/MTD/90d…) and sub-tabs (Overview/Accountability/
+  Sources/Settings): pill row, active = `--accent-soft` fill + gold text/line.
+- **Chips** — source/tag chips: `--panel` fill, hairline, small sans bold.
+- **Divider** — curved wave (`.ps-divider`, `--accent-soft` fill + `--accent-line`
+  stroke) between major bands.
+- **Empty state** — icon chip + serif heading + plain-language explanation + one
+  `.hqbtn` next-step. Never a wall of zeros (see the resolved Pulse empty-state pattern).
+- **Icons** — inline 1.8-stroke SVGs via `<Icon name>`; extend the switch, don't add a lib.
+
+---
+
+## 9. Guardrails (unchanged, restated)
+
+- **Front-end only** — `web/src/**`. Never `worker/`, `db/`, RLS, or data-fetch logic.
+- **Presentation only** — reskins keep every auth/routing/data call identical.
+- **Preview on `?demo=1`** (Sample Realty). Never a production Supabase connection.
+- **The `truhq.co` landing files are LIVE + READ-ONLY** — reference to copy from, never edit.
+- Work on branch `redesign-cinematic`; the prior WIP is safe on `redesign-dark-wip-snapshot`.
+
+---
+
+## 10. Current state (as of this block)
+
+Foundation **done** on `redesign-cinematic`: fonts, warm-obsidian palette, landing gold,
+Playfair serif headings, CTA physics, grain — all on the shared token layer. **Home, Pulse,
+Rep, Coach already render in the dark system** and inherit the foundation. Remaining
+per-tab work is polish-to-bar + bringing any still-legacy surface (verify Prospect,
+`/learn` course, auth screens) fully into this system, one gated block at a time.

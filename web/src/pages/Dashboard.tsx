@@ -296,7 +296,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : `last ${win} days`;
   const HEAD: Record<View, { title: string; eyebrow: string }> = {
     overview: { title: 'Pulse — who’s working what.', eyebrow: `Lead accountability · ${org.name}` },
-    accountability: { title: 'Accountability', eyebrow: 'The 3-strike ledger · last 30 days' },
+    accountability: { title: 'What to do today', eyebrow: 'Who needs action first · this week' },
     sources: { title: 'Sources', eyebrow: `Where your tracked leads come from · ${winLabel}` },
     settings: { title: 'Settings', eyebrow: 'Flag windows, strike rules & the $-at-risk math' },
   };
@@ -342,7 +342,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             {SUBNAV.map(([v, icon]) => (
               <button key={v} className={`ps-subnav-btn${view === v ? ' on' : ''}`} onClick={() => setView(v)}>
                 <Icon name={icon} size={16} />
-                {v === 'overview' ? 'Overview' : v[0].toUpperCase() + v.slice(1)}
+                {v === 'overview' ? 'Overview' : v === 'accountability' ? 'What to do today' : v[0].toUpperCase() + v.slice(1)}
               </button>
             ))}
           </div>
@@ -1087,7 +1087,7 @@ function Accountability(p: {
       </section>
 
       <section className="ps-roster reveal" style={{ marginTop: 18 }}>
-        <div className="panel-head"><h3>Pause watch · new leads held</h3></div>
+        <div className="panel-head"><h3>Recommended pauses · new leads held</h3><span className="panel-sub">Pause in Zillow, then confirm here</span></div>
         <div className="table-wrap">
           <table className="tru-table">
             <thead><tr><th>Agent</th><th>Why</th><th>Turns back on when</th></tr></thead>
@@ -1098,7 +1098,7 @@ function Accountability(p: {
                 <tr><td colSpan={3} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 22 }}>Nobody’s paused — every agent is inside the rules.</td></tr>
               ) : pausedRows.map(([a, reasons]) => (
                 <tr key={a}>
-                  <td><span className="cell-agent"><span className="cell-name">{a}</span><span className="pill-paused">⏸ Paused</span></span></td>
+                  <td><span className="cell-agent"><span className="cell-name">{a}</span><span className="pill-paused">⏸ Paused</span><a className="ps-abtn sm" href="https://premieragent.zillow.com/leads/routing/routing" target="_blank" rel="noopener noreferrer" title="Open Zillow lead routing to pause this agent">Pause in Zillow ↗</a></span></td>
                   <td>{reasons.map((r) => (
                     <div key={r.kind} className={r.kind === 'no_close' ? 'cell-warn' : ''} style={{ fontWeight: 600, color: r.kind === 'no_close' ? 'var(--terracotta)' : 'var(--accent-hi)' }}>
                       {r.kind === 'capacity' ? `${r.count} of ${r.cap} leads this month` : `${r.count} leads since last under-contract (rule: ${r.cap})`}

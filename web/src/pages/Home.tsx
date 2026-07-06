@@ -302,10 +302,10 @@ export default function Home({
               </div>
               <p className="hh-tile-pitch">Walk into every agent's business and prep a 1:1 that lands.</p>
               <div className="hh-coach-body">
+                <Ring pct={78} size={116} stroke={9} label="78" color="var(--accent-hi)" />
                 <div className="hh-tile-stat">
                   <span className="hh-prod-dot" />6 agents · avg hustle
                 </div>
-                <Ring pct={78} size={76} stroke={8} label="78" color="var(--accent-hi)" />
               </div>
             </article>
 
