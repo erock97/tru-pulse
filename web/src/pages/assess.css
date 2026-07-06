@@ -10,4 +10,46 @@
   border: 1px solid rgba(255,255,255,.08); color: #f2e8d5; font-size: 16px; font-weight: 600; cursor: pointer; }
 .asx-pick:hover { border-color: var(--accent); background: rgba(169,121,31,.12); }
 .asx-msg { color: #c9baa0; }
+.asx-cta { margin-top: 24px; width: 100%; padding: 16px 20px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: var(--hq-font); font-size: 16px; font-weight: 700; color: #241a0c;
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  box-shadow: 0 10px 26px -12px var(--accent); transition: transform .15s ease; }
+.asx-cta:hover { transform: translateY(-1px); }
+
+/* ── progress + badge (quiz stages) ── */
+.asx-progress { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; margin-bottom: 18px; }
+.asx-progress > span { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent-hi)); transition: width .3s ease; }
+.asx-badge { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-hi); font-weight: 800; }
+.asx-count { font-size: 12px; color: #8a7d68; margin-top: 4px; }
+.asx-quiz { max-width: 640px; }
+.asx-q { font-size: clamp(22px, 4.5vw, 30px); line-height: 1.3; margin: 18px 0 4px; color: #f2e8d5; }
+.asx-q-sub { font-size: 15px; color: #c9baa0; margin: 18px 0 0; font-weight: 600; }
+.asx-likert-labels { display: flex; justify-content: space-between; margin-top: 22px; font-size: 13px; color: #8a7d68; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ── shared quiz/reveal scale + slider (Task 6 Step 2) ── */
+.asx-scale { display: flex; gap: 10px; justify-content: space-between; margin-top: 20px; }
+.asx-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(169,121,31,.5); background: transparent; cursor: pointer; flex-shrink: 0; }
+.asx-dot:hover { background: var(--accent); border-color: var(--accent-hi); }
+.asx-scale-6 { justify-content: space-evenly; }
+.asx-diff { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.asx-diff-labels { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: #c9baa0; margin-top: 20px; }
+.asx-diff-labels span { flex: 1; }
+.asx-diff-labels span:last-child { text-align: right; }
+.asx-meter { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.asx-meter > span { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent-hi)); transition: width .5s ease; }
+@media (max-width: 600px) { .asx-scale { gap: 6px; } .asx-dot { width: 34px; height: 34px; } .asx-diff-labels { font-size: 12px; } }
+
+/* ── reveal stages (personalResult / proResult) ── */
+.asx-reveal-card { max-width: 620px; }
+.asx-arch-emoji { font-size: 40px; line-height: 1; margin-top: 4px; }
+.asx-meters { display: grid; gap: 16px; margin: 24px 0; }
+.asx-meter-row { display: grid; gap: 6px; }
+.asx-meter-label { display: flex; justify-content: space-between; font-size: 13px; color: #c9baa0; }
+.asx-meter-val { color: var(--accent-hi); font-weight: 700; }
+.asx-strengths { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.asx-chip { padding: 6px 14px; border-radius: 999px; background: rgba(233,162,59,.12); border: 1px solid var(--accent-line); color: #f2e8d5; font-size: 13px; font-weight: 600; }
+.asx-watch { font-size: 14px; color: #c9baa0; line-height: 1.5; }
+.asx-divergence { margin: 20px 0; padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(169,121,31,.25); }
+.asx-diverge-line { font-size: 14px; color: #f2e8d5; line-height: 1.6; margin-top: 8px; }
+.asx-diverge-line:first-of-type { margin-top: 10px; }
 @media (max-width: 600px) { .asx-card { border-radius: 16px; } }
