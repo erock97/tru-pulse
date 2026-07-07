@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { supabase } from '../lib/supabase';
+import { setCoaching, isDemo } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -9,9 +10,15 @@ import {
   saveCheckin, saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
+  loadFullRoster, loadTeamLinks,
   type RosterAgent, type Profile, type Goal, type Commitment, type Checkin, type TeamSeg,
+  type TeamLink,
 } from '../lib/coachData';
 import '../truHqDark.css';
+
+/* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
+   agents to Coach" picker and to derive the "Not yet assessed" lane. */
+type FullRosterRow = { id: string; name: string; coaching_enabled: boolean; hasAssessment: boolean };
 
 /* ============================================================
    COACH (native) — the standalone Coaching app, reskinned into the
@@ -130,6 +137,17 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
   const [openId, setOpenId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
+  // Cohort management (Task 8): the full Pulse roster (for the picker + the
+  // "not yet assessed" lane) and each team's public assessment join link.
+  // Both are best-effort — if they fail to load, the main coaching dashboard
+  // (loadRoster, above) still works on its own.
+  const [fullRoster, setFullRoster] = useState<FullRosterRow[]>([]);
+  const [teamLinks, setTeamLinks] = useState<TeamLink[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerErr, setPickerErr] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [copiedTeam, setCopiedTeam] = useState<string | null>(null);
+
   useEffect(() => {
     let live = true;
     (async () => {
@@ -148,7 +166,60 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org.id]);
 
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const [fr, tl] = await Promise.all([loadFullRoster(), loadTeamLinks()]);
+        if (!live) return;
+        setFullRoster(fr);
+        setTeamLinks(tl);
+      } catch {
+        // Best-effort: header actions + the "not yet assessed" lane just stay
+        // empty/hidden if this fails; the coaching dashboard above is unaffected.
+      }
+    })();
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [org.id]);
+
   useReveal([roster, openId], canvasRef.current);
+
+  // Cohort members added to Coach who haven't taken the assessment yet — a
+  // distinct lane, never fabricated archetype data.
+  const pending = useMemo(
+    () => fullRoster.filter((a) => a.coaching_enabled && !a.hasAssessment),
+    [fullRoster],
+  );
+
+  async function copyTeamLink(t: TeamLink) {
+    const url = `${window.location.origin}/#/assess?t=${t.joinToken}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedTeam(t.teamId);
+      window.setTimeout(() => setCopiedTeam((cur) => (cur === t.teamId ? null : cur)), 1800);
+    } catch {
+      // Clipboard permission denied — no confirmation, but nothing throws.
+    }
+  }
+
+  async function onTogglePicker(agent: FullRosterRow, on: boolean) {
+    setTogglingId(agent.id);
+    setPickerErr(null);
+    setFullRoster((prev) => prev.map((a) => (a.id === agent.id ? { ...a, coaching_enabled: on } : a)));
+    try {
+      await setCoaching(agent.id, on);
+      const [r, fr] = await Promise.all([loadRoster(), loadFullRoster()]);
+      writeCoachCache(org.id, r);
+      setRoster(r);
+      setFullRoster(fr);
+    } catch (e) {
+      setFullRoster((prev) => prev.map((a) => (a.id === agent.id ? { ...a, coaching_enabled: !on } : a)));
+      setPickerErr(e instanceof Error ? e.message : 'Could not update this agent’s coaching status.');
+    } finally {
+      setTogglingId(null);
+    }
+  }
 
   const mix = useMemo(() => (roster ? teamMix(roster) : null), [roster]);
 
@@ -167,7 +238,30 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
     return { withHealth, teamHealth, onTrack, needsYou, leaderboard, dueCount, assessed };
   }, [roster]);
 
-  const context = null;
+  // Header actions only make sense on the roster dashboard, not the agent drill-in.
+  const context = !openId ? (
+    <div className="coach-header-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+      {teamLinks.map((t) => (
+        <button
+          key={t.teamId}
+          type="button"
+          className="hqbtn hqbtn-ghost hqbtn-sm"
+          onClick={() => copyTeamLink(t)}
+        >
+          {copiedTeam === t.teamId ? 'Copied!' : teamLinks.length > 1 ? `Copy link · ${t.name}` : 'Copy team assessment link'}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="hqbtn hqbtn-primary hqbtn-sm"
+        onClick={() => setPickerOpen(true)}
+        disabled={isDemo}
+        title={isDemo ? 'Not available in the demo preview' : undefined}
+      >
+        <Icon name="coach" size={15} /> Add agents to Coach
+      </button>
+    </div>
+  ) : null;
 
   if (!roster) {
     return (
@@ -202,16 +296,19 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
 
           {openAgent ? (
             <AgentDrill agent={openAgent} onBack={() => setOpenId(null)} />
-          ) : roster.length === 0 || !derived || !mix ? (
-            <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
-              <h3>No profiled agents yet</h3>
-              <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-                Once your agents complete the TRU assessment, each one appears here with their archetype,
-                pace, and coaching health — plus a drill-in for prepping a 1:1 that lands.
-              </p>
-            </div>
           ) : (
             <>
+              {roster.length === 0 || !derived || !mix ? (
+                <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
+                  <h3>No profiled agents yet</h3>
+                  <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
+                    {pending.length > 0
+                      ? 'Your cohort is added — once they complete the TRU assessment, each one appears here with their archetype, pace, and coaching health.'
+                      : 'Coach shows only the agents you’ve curated. Use “Add agents to Coach” above to build your cohort, then have them take the TRU assessment.'}
+                  </p>
+                </div>
+              ) : (
+                <>
               {/* ============ HERO BENTO ============ */}
               <section className="coach-bento">
                 <article className="card hustle-card reveal">
@@ -317,10 +414,146 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
                   )}
                 </aside>
               </section>
+                </>
+              )}
+
+              {pending.length > 0 && (
+                <>
+                  <DividerWave />
+                  <section className="agents-panel reveal">
+                    <div className="panel-head">
+                      <h3>Not yet assessed</h3>
+                      <span className="panel-sub">In your cohort, waiting on their first TRU assessment</span>
+                    </div>
+                    <div className="agents-grid">
+                      {pending.map((a) => (
+                        <article key={a.id} className="card agent" style={{ opacity: 0.78 }}>
+                          <div className="agent-top">
+                            <Avatar name={a.name} size={46} tone={2} />
+                            <span
+                              style={{
+                                fontSize: 12, fontWeight: 700, color: 'var(--accent-hi)',
+                                border: '1px solid var(--accent-line)', background: 'var(--accent-soft)',
+                                borderRadius: 999, padding: '5px 12px', whiteSpace: 'nowrap',
+                              }}
+                            >
+                              Invited
+                            </span>
+                          </div>
+                          <div className="agent-body">
+                            <div className="agent-name">{a.name}</div>
+                            <div className="agent-meta"><span className="agent-type">Awaiting assessment result</span></div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
             </>
           )}
         </div>
       </HqShell>
+
+      {pickerOpen && (
+        <AddAgentsModal
+          roster={fullRoster}
+          onClose={() => setPickerOpen(false)}
+          onToggle={onTogglePicker}
+          togglingId={togglingId}
+          err={pickerErr}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   ADD AGENTS TO COACH — a picker modal listing the FULL Pulse
+   roster (may be dozens; scrollable, never list-limited). Each row
+   toggles agents.coaching_enabled via setCoaching(id, on); the
+   parent refreshes the roster + full roster + pending lane on success.
+   ============================================================ */
+function AddAgentsModal({
+  roster, onClose, onToggle, togglingId, err,
+}: {
+  roster: FullRosterRow[];
+  onClose: () => void;
+  onToggle: (agent: FullRosterRow, on: boolean) => void;
+  togglingId: string | null;
+  err: string | null;
+}) {
+  const [q, setQ] = useState('');
+  const filtered = q.trim()
+    ? roster.filter((a) => a.name.toLowerCase().includes(q.trim().toLowerCase()))
+    : roster;
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add agents to Coach"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200, display: 'grid', placeItems: 'center',
+        background: 'rgba(6,8,14,0.66)', padding: 24,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="card"
+        style={{ width: 'min(560px, 100%)', maxHeight: '82vh', display: 'flex', flexDirection: 'column', padding: 28 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <h3 style={{ margin: 0 }}>Add agents to Coach</h3>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+        <p style={{ color: 'var(--text-60)', fontSize: 14, marginTop: 0, marginBottom: 16 }}>
+          Toggle on the agents you want to coach — Coach only ever shows the agents you’ve added here.
+        </p>
+        <input
+          type="text"
+          className="ad-input"
+          placeholder="Search agents…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          style={{ marginBottom: 14 }}
+        />
+        {err && <div className="ad-inline-err" style={{ marginBottom: 12 }}>{err}</div>}
+        <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {roster.length === 0 ? (
+            <p style={{ color: 'var(--text-60)', fontSize: 14 }}>No agents found on this team yet.</p>
+          ) : filtered.length === 0 ? (
+            <p style={{ color: 'var(--text-60)', fontSize: 14 }}>No agents match “{q}”.</p>
+          ) : (
+            filtered.map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 4px', borderBottom: '1px solid var(--border-soft)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Avatar name={a.name} size={32} tone={0} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14.5 }}>{a.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-60)' }}>{a.hasAssessment ? 'Assessed' : 'Not yet assessed'}</div>
+                  </div>
+                </div>
+                <label className="ad-toggle" style={{ marginBottom: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={a.coaching_enabled}
+                    disabled={togglingId === a.id}
+                    onChange={(e) => onToggle(a, e.target.checked)}
+                  />
+                  <span className="ad-toggle-track"><span className="ad-toggle-dot" /></span>
+                </label>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }

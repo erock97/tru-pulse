@@ -167,6 +167,7 @@ interface AgentRow {
   email: string | null;
   phone: string | null;
   created_at: string;
+  coaching_enabled?: boolean | null;
   assessments: Array<{ code: string; taken_at: string }> | null;
   checkins: Array<{ created_at: string; met: unknown; leads: unknown; convos: unknown; focus: string | null }> | null;
 }
@@ -181,7 +182,7 @@ export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
   } else {
     const res = await supabase
       .from('agents')
-      .select('id, team_id, token, name, email, phone, created_at, assessments(code, taken_at), checkins(created_at, met, leads, convos, focus)')
+      .select('id, team_id, token, name, email, phone, created_at, coaching_enabled, assessments(code, taken_at), checkins(created_at, met, leads, convos, focus)')
       .order('created_at', { ascending: true });
     if (res.error) throw res.error;
     data = res.data as AgentRow[] | null;
@@ -203,8 +204,12 @@ export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
       const checkins = (agent.checkins || [])
         .slice()
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Coach = a lead-curated cohort, not the whole Pulse roster: agents the leader
+      // hasn't added via "Add agents to Coach" (coaching_enabled=false) never appear
+      // here. Demo rows are marked coaching_enabled below so ?demo=1 keeps rendering.
+      if (!agent.coaching_enabled) return null;
       const latest = assessments[0] || null;
-      if (!latest) return null; // not-yet-assessed agents show in invited/pending lanes, not the roster
+      if (!latest) return null; // not-yet-assessed cohort members show in the "Not yet assessed" lane (derived in Coach.tsx from loadFullRoster), not this archetype roster
       const code = latest.code;
       const ar = archOf(code);
       const lc = llOf(code);
@@ -253,6 +258,7 @@ function demoAgentRows(): AgentRow[] {
     assessedDays: number, lastCheckinDays: number | null, focus: string,
   ): AgentRow => ({
     id, team_id: 'demo', token: null, name, email: null, phone: null,
+    coaching_enabled: true,
     created_at: iso(assessedDays),
     assessments: [{ code, taken_at: iso(assessedDays) }],
     checkins: lastCheckinDays === null ? [] : [
@@ -561,4 +567,20 @@ export async function loadFullRoster(): Promise<{ id: string; name: string; coac
     id: a.id, name: a.name, coaching_enabled: !!a.coaching_enabled,
     hasAssessment: Array.isArray(a.assessments) && a.assessments.length > 0,
   }));
+}
+
+// One row per team, carrying the public cohort-assessment join link
+// (#/assess?t=<join_token> — resolved by the resolve_cohort_roster RPC).
+// "Copy team assessment link" in Coach.tsx builds the full URL from this.
+export interface TeamLink { teamId: string; name: string; joinToken: string }
+export async function loadTeamLinks(): Promise<TeamLink[]> {
+  if (isDemo) return [];
+  const { data, error } = await supabase
+    .from('teams')
+    .select('id, name, join_token')
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return (data ?? [])
+    .filter((t: any) => !!t.join_token)
+    .map((t: any) => ({ teamId: t.id, name: t.name, joinToken: t.join_token }));
 }
