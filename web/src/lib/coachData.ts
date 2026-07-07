@@ -17,63 +17,23 @@ import { supabase } from './supabase';
 import { isDemo } from './api';
 import {
   PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS, divergence,
+  ARCH, LL, TRAIT_LABELS,
   type Axis, type Pole, type AxisResult,
 } from './assessmentData';
 
 /* ============================================================
    FRAMEWORK CONSTS (ported from truFramework.js — the parts the
    roster/profile derivation depends on).
+   ARCH / LL / TRAIT_LABELS now come from assessmentData.ts (the single
+   source of truth for archetype names) so Coach and the public reveal
+   never show diverging archetype names for the same code.
    ============================================================ */
 
-export interface Arch { name: string; emoji: string; color: string; tagline: string }
-export const ARCH: Record<string, Arch> = {
-  'P-Pro-R-D': { name: 'The Networked Powerhouse', emoji: '🔗', color: '#3B6FE0', tagline: 'Building empires one relationship at a time — with the data to back it up' },
-  'P-Pro-R-I': { name: 'The Natural Connector', emoji: '✨', color: '#9B6CE0', tagline: 'Every conversation you have is a door — and you always find the handle' },
-  'P-Pro-V-D': { name: 'The Relentless Achiever', emoji: '⚡', color: '#E0524F', tagline: 'More calls. More doors. More closings. Repeat.' },
-  'P-Pro-V-I': { name: 'The Energized Hunter', emoji: '🎯', color: '#EE7A3A', tagline: "You don't wait for leads — you manufacture them" },
-  'P-Rec-R-D': { name: 'The Trusted Advisor', emoji: '🏛️', color: '#1FA876', tagline: "Clients don't just hire you — they choose you, and they stay for life" },
-  'P-Rec-R-I': { name: 'The Warm Nurturer', emoji: '🌱', color: '#E0A340', tagline: "You don't have to sell — people feel taken care of and they never leave" },
-  'P-Rec-V-D': { name: 'The Market Authority', emoji: '📊', color: '#1BA6C9', tagline: "You don't chase business — your expertise makes clients come to you" },
-  'P-Rec-V-I': { name: 'The Compelling Storyteller', emoji: '🎭', color: '#A972E8', tagline: "You help clients fall in love with their future before they've seen the price" },
-  'T-Pro-R-D': { name: 'The Strategic Architect', emoji: '🏗️', color: '#3B6FE0', tagline: "You built a relationship machine — and it runs whether you're watching or not" },
-  'T-Pro-R-I': { name: 'The Bold Visionary', emoji: '🔮', color: '#9B6CE0', tagline: "You see the market three moves ahead — and you're already in position" },
-  'T-Pro-V-D': { name: 'The Performance Analyst', emoji: '📈', color: '#1FA88E', tagline: 'Your metrics tell you exactly what to do — and you do it' },
-  'T-Pro-V-I': { name: 'The Instinct Closer', emoji: '⚔️', color: '#E0524F', tagline: 'When the window opens, you feel it — and you never miss it' },
-  'T-Rec-R-D': { name: 'The Niche Specialist', emoji: '🏆', color: '#3B6FE0', tagline: "You don't compete for everything — you dominate something" },
-  'T-Rec-R-I': { name: 'The Creative Navigator', emoji: '🧭', color: '#1BA6C9', tagline: 'You find a path where others see only dead ends' },
-  'T-Rec-V-D': { name: 'The Systems Optimizer', emoji: '⚙️', color: '#1FA876', tagline: 'Your operation is the most efficient in the room — by design' },
-  'T-Rec-V-I': { name: 'The Efficient Dealmaker', emoji: '💼', color: '#D9923A', tagline: 'Simple. Fast. Done. Every time.' },
-};
-
-export interface Lens { quad: string; signal: string; unlock: string; law: string; max: number }
-export const LL: Record<string, Lens> = {
-  'P-Pro-R-D': { quad: 'Achiever', signal: 'Cancels 1:1s or stops sharing wins — disengagement is forming.', unlock: 'Pick one newer agent and mentor them for 90 days — growing from a top producer into someone who develops others is their next leap.', law: 'Law of Addition', max: 3 },
-  'P-Pro-R-I': { quad: 'Achiever', signal: 'Stops telling stories about clients — emotional disconnection is starting.', unlock: 'Take one thing they win at naturally and write it into a repeatable, step-by-step process — so it works even on an off day.', law: 'Law of Connection', max: 2 },
-  'P-Pro-V-D': { quad: 'Achiever', signal: 'Starts making excuses for missed numbers rather than problem-solving them.', unlock: 'Take one activity off their plate and transfer it to someone they develop.', law: 'Law of Momentum', max: 3 },
-  'P-Pro-V-I': { quad: 'Striver', signal: 'Energy spikes followed by silence — burning fast and crashing.', unlock: 'Implement one non-negotiable daily habit and hold it for 30 days.', law: 'Law of Momentum', max: 2 },
-  'P-Rec-R-D': { quad: 'Achiever', signal: 'Clients stop referring — their reputation is their metric. Watch it closely.', unlock: 'Have them teach their client-care system to one other agent — multiplying their approach through others is the growth edge.', law: 'Law of Legacy', max: 3 },
-  'P-Rec-R-I': { quad: 'Striver', signal: 'Becomes overly apologetic or starts over-explaining — feeling unsafe.', unlock: 'Have one direct, confident client conversation without softening the message.', law: 'Law of Connection', max: 2 },
-  'P-Rec-V-D': { quad: 'Achiever', signal: 'Stops creating content or sharing market insights — lost sense of purpose as an expert.', unlock: 'Develop one other agent using their market-knowledge system.', law: 'Law of Priorities', max: 3 },
-  'P-Rec-V-I': { quad: 'Striver', signal: 'Stories become about past wins, not future ones — forward energy is draining.', unlock: 'Turn one big win into a written case study they can show prospects — proof that backs up the story with results.', law: 'Law of Momentum', max: 2 },
-  'T-Pro-R-D': { quad: 'Achiever', signal: 'Starts questioning the strategy rather than executing it — lost faith in the plan.', unlock: 'Build a scalable system and teach it to one person — teaching reveals the next growth edge.', law: 'Law of Priorities', max: 3 },
-  'T-Pro-R-I': { quad: 'Independent', signal: 'Stops proposing new ideas — creative energy is being suppressed or ignored.', unlock: 'Complete one initiative start to finish without pivoting — proof they can close as well as open.', law: 'Law of Timing', max: 2 },
-  'T-Pro-V-D': { quad: 'Achiever', signal: 'Starts rationalizing underperformance with data rather than diagnosing it.', unlock: 'Build a tracking system for one other agent and teach them to use it.', law: 'Law of Priorities', max: 3 },
-  'T-Pro-V-I': { quad: 'Independent', signal: 'Slows down, starts missing obvious closes, becomes selective about which leads to pursue.', unlock: 'Win one deal through a slow-burn strategy that required sustained relationship investment.', law: 'Law of Timing', max: 3 },
-  'T-Rec-R-D': { quad: 'Independent', signal: 'Becomes territorial about their niche process or resistant to any outside input.', unlock: 'Have them teach one teammate something only they know — the first step from solo expert to someone who lifts the team.', law: 'Law of Addition', max: 2 },
-  'T-Rec-R-I': { quad: 'Independent', signal: "Quality of client communication drops — they're running on autopilot.", unlock: 'Document one complex transaction navigated successfully — that case study becomes a client-acquisition tool.', law: 'Law of Timing', max: 2 },
-  'T-Rec-V-D': { quad: 'Achiever', signal: 'Starts optimizing the wrong things — busy on metrics that don\'t move the needle.', unlock: 'Have them package their best system into a version other agents can run — scaling it beyond themselves is the growth edge.', law: 'Law of Priorities', max: 3 },
-  'T-Rec-V-I': { quad: 'Independent', signal: 'Completes tasks without engaging — tasks-over-outcomes mindset is setting in.', unlock: 'Have them call 3 past clients this month purely to reconnect, no agenda — relationships are the muscle their efficiency tends to skip.', law: 'Law of Connection', max: 2 },
-};
+export type Arch = (typeof ARCH)[string];
+export type Lens = (typeof LL)[string];
 
 export const QUAD_COLOR: Record<string, string> = {
   Achiever: '#2E8B57', Striver: '#2F6BB0', Independent: '#A9791F', Detractor: '#C0492F',
-};
-
-export const TRAIT_LABELS: Record<string, string> = {
-  P: 'People-Oriented', T: 'Task-Oriented',
-  Pro: 'Proactive', Rec: 'Authority Builder',
-  R: 'Relationship-Focused', V: 'Volume-Driven',
-  D: 'Data-Driven', I: 'Intuition-Led',
 };
 
 // GOAL FUNNEL MATH — quarterly transactions → leads needed → monthly / weekly.
@@ -413,7 +373,7 @@ export function deriveProfile(
   const curLvl = ll.max >= 3 ? 3 : 2;
   let shift: Shift | null = null;
   if (prev && prev.code !== code && latest) {
-    const a = code.split('-'); const b = prev.code.split('-');
+    const a = code.split('-') as Pole[]; const b = prev.code.split('-') as Pole[];
     const idx = a.findIndex((x, i) => x !== b[i]);
     if (idx >= 0) {
       shift = {
