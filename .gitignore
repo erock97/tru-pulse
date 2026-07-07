@@ -8,3 +8,4 @@ dist/
 .env.production
 *.log
 .DS_Store
+.gstack/

@@ -575,9 +575,15 @@ export interface LeadRow {
   pond?: string | null;
 }
 export interface AgentRow {
+  id: string;
   name: string;
   email: string | null;
   phone: string | null;
+  // Manual pause (leader-set; sole source of truth for "Paused" — see hq_agent_pause.sql).
+  is_paused: boolean;
+  pause_reason: string | null;   // at_capacity | no_closings | on_leave | coaching | other
+  pause_note: string | null;     // free text, used when pause_reason = 'other'
+  paused_at: string | null;
 }
 export interface DealRow {
   team_id: string;
@@ -594,6 +600,19 @@ export interface CaseRow {
   assigned_to: string | null;
   status: string;
   opened_at: string;
+}
+// person_stage_log — the dated carry-forward achievement hits that back Section 1's
+// accuracy work (docs/accuracy-definitions.md). One row per (lead, stage) the first
+// time it's reached. No source_family of its own — join to LeadRow.fub_person_id ->
+// source_family in shared/metrics.ts if a numerator needs to be scoped by source.
+export interface StageLogRow {
+  fub_person_id: number;
+  stage_class: string | null; // offer | uc | closed | other
+  changed_at: string | null;  // null = dateless (seed, pre-history)
+  date_source: string | null; // live | deal_close_date | seed | tableau
+  agent_user_id: number | string | null;
+  agent_name: string | null;
+  team_id?: string;
 }
 export interface Settings {
   avg_gci: number;
@@ -615,6 +634,7 @@ export interface DashboardData {
   cases: CaseRow[];
   agents: AgentRow[];
   deals: DealRow[];
+  stageLog: StageLogRow[];
 }
 
 // PostgREST caps each response at 1000 rows — a team can have several thousand leads,
@@ -638,17 +658,44 @@ async function allLeads(): Promise<LeadRow[]> {
   return out;
 }
 
+// person_stage_log can run to several thousand rows too (up to 3 hits/lead) — page
+// it exactly like allLeads() so the accuracy metrics never silently undercount past
+// PostgREST's 1000-row cap. Degrades to [] if the table is a migration behind (the
+// same defensive posture worker/src/sync.ts already takes on this table).
+async function allStageLog(): Promise<StageLogRow[]> {
+  const cols = 'fub_person_id,stage_class,changed_at,date_source,agent_user_id,agent_name,team_id';
+  const PAGE = 1000;
+  const out: StageLogRow[] = [];
+  try {
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('person_stage_log')
+        .select(cols)
+        .order('fub_person_id', { ascending: true })
+        .order('changed_at', { ascending: true, nullsFirst: true })
+        .range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      out.push(...(data as StageLogRow[]));
+      if (data.length < PAGE) break;
+    }
+  } catch {
+    return out; // never fail the whole dashboard load over the accuracy enrichment layer
+  }
+  return out;
+}
+
 export async function loadDashboard(): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [teams, settings, leads, cases, agents, deals] = await Promise.all([
+  const [teams, settings, leads, cases, agents, deals, stageLog] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
     supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads').limit(1),
     allLeads(),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
-    supabase.from('agents').select('name,email,phone'),
+    supabase.from('agents').select('id,name,email,phone,is_paused,pause_reason,pause_note,paused_at'),
     // Degrades to [] until the deals table exists (supabase-js returns an error, not a throw).
     supabase.from('deals').select('team_id,stage,stage_class,price,commission,agent_name,fub_person_id,projected_close,fub_created'),
+    allStageLog(),
   ]);
   return {
     teams: (teams.data as DashboardData['teams']) ?? [],
@@ -657,6 +704,7 @@ export async function loadDashboard(): Promise<DashboardData> {
     cases: (cases.data as CaseRow[]) ?? [],
     agents: (agents.data as AgentRow[]) ?? [],
     deals: (deals.data as DealRow[]) ?? [],
+    stageLog: stageLog,
   };
 }
 
@@ -685,19 +733,30 @@ function demoDashboard(): DashboardData {
     for (let i = 0; i < n; i++) srcPool.push(name);
   });
   let si = 0;
+  const dayMs = 86400_000;
   const leads: LeadRow[] = [];
   const cases: CaseRow[] = [];
+  // Section 1 (accuracy): every demo lead needs a fub_person_id + fub_created so
+  // shared/metrics.ts (created-date windowed denominator) has something to chew on —
+  // without these, computeWindowedMetrics excludes every demo lead as "dateless" and
+  // the accuracy tiles all render zero. Spread deterministically across ~13 months so
+  // the window tabs visibly move.
+  let leadPersonId = 1;
   for (const [name, paid, zero, stuck, , strikes] of agentSpec) {
     for (let i = 0; i < paid; i++) {
       const flag = i < zero ? 'zero_contact' : i < zero + stuck ? 'stuck' : 'worked';
       const ponded = name === 'Unassigned';
+      const daysAgo = (leadPersonId * 37) % 400;
       leads.push({
         team_id: 'demo',
         assigned_to: ponded ? null : name,
         flag,
         source_family: srcPool[si++ % srcPool.length],
         pond: ponded ? 'New Buyer Pond' : null,
+        fub_person_id: leadPersonId,
+        fub_created: new Date(Date.now() - daysAgo * dayMs).toISOString(),
       });
+      leadPersonId++;
     }
     for (let s = 0; s < strikes; s++) {
       cases.push({ assigned_to: name, status: 'open', opened_at: new Date(Date.now() - (s + 1) * 3 * 86400_000).toISOString() });
@@ -705,17 +764,39 @@ function demoDashboard(): DashboardData {
   }
   // Demo deals: 27 closings (16 closed + 11 UC) off 543 leads ≈ 1:20, and
   // 54 offer-or-beyond ≈ 10% offer rate — the numbers the pitch tells.
-  const dayMs = 86400_000;
   const deals: DealRow[] = [];
   const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Priya Nair', 'Marcus Delgado', 'Maria Lopez'];
+  const dealSrcCycle = ['Zillow', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
+  // Section 1 (accuracy): a matching stageLog hit per deal, so the ?demo=1 preview has
+  // something for shared/metrics.ts to chew on once Block 3 wires it up. fub_person_id
+  // is synthetic and demo-only — never overlaps with a real team's ids. Each deal also
+  // gets a mirrored `leads` row (below) — without it, the stageLog hit's fub_person_id
+  // has no matching lead, shared/metrics.ts can't resolve its source family, and the
+  // hit is silently excluded from every accuracy number (offer rate/closings/conversion
+  // all read zero in the preview).
+  const stageLog: StageLogRow[] = [];
+  let demoPersonId = 900000;
   const mk = (n: number, cls: string, stage: string, closeInDays: number) => {
     for (let i = 0; i < n; i++) {
+      const personId = demoPersonId++;
+      const agent = dealAgents[i % dealAgents.length];
+      const srcFamily = dealSrcCycle[i % dealSrcCycle.length];
+      const createdIso = new Date(Date.now() - (5 + (i % 22)) * dayMs).toISOString();
       deals.push({
         team_id: 'demo', stage, stage_class: cls,
         price: 380_000 + (i % 7) * 45_000, commission: 9_000 + (i % 5) * 1_800,
-        agent_name: dealAgents[i % dealAgents.length],
+        agent_name: agent, fub_person_id: personId,
         projected_close: new Date(Date.now() + closeInDays * dayMs - (i % 20) * dayMs).toISOString(),
-        fub_created: new Date(Date.now() - (5 + (i % 22)) * dayMs).toISOString(),
+        fub_created: createdIso,
+      });
+      stageLog.push({
+        fub_person_id: personId, stage_class: cls, team_id: 'demo',
+        changed_at: new Date(Date.now() - (i % 20) * dayMs).toISOString(),
+        date_source: 'live', agent_user_id: null, agent_name: agent,
+      });
+      leads.push({
+        team_id: 'demo', assigned_to: agent, flag: 'worked',
+        source_family: srcFamily, fub_person_id: personId, fub_created: createdIso,
       });
     }
   };
@@ -729,6 +810,7 @@ function demoDashboard(): DashboardData {
     cases,
     agents: [],
     deals,
+    stageLog,
   };
 }
 
@@ -754,5 +836,22 @@ export async function submitCohortAssessment(input: {
 
 export async function setCoaching(agentId: string, on: boolean): Promise<void> {
   const { error } = await supabase.rpc('set_coaching', { p_agent_id: agentId, p_on: on });
+  if (error) throw error;
+}
+
+// ── Manual agent pause (leader-set; sole source of truth for "Paused") ─────
+// Mirrors setCoaching()'s RPC mechanism (db/hq_agent_pause.sql: set_agent_pause,
+// gated by is_org_member(org_id), same as set_coaching).
+export async function setAgentPause(
+  agentId: string,
+  opts: { isPaused: boolean; reason?: string | null; note?: string | null },
+): Promise<void> {
+  if (isDemo) return;
+  const { error } = await supabase.rpc('set_agent_pause', {
+    p_agent_id: agentId,
+    p_is_paused: opts.isPaused,
+    p_reason: opts.reason ?? null,
+    p_note: opts.note ?? null,
+  });
   if (error) throw error;
 }

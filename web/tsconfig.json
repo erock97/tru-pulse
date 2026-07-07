@@ -16,5 +16,5 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "../shared/flags.ts"]
+  "include": ["src", "../shared/flags.ts", "../shared/metrics.ts"]
 }

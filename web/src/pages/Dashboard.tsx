@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
-import { loadDashboard, saveSettings, type DashboardData, type Settings, type LeadRow } from '../lib/api';
+import { loadDashboard, saveSettings, setAgentPause, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
+import { payModel, PAY_LABEL, isClosing, stageClass } from '../../../shared/flags';
+import {
+  computeWindowedMetrics, computeAllTimeConversion, computeAllTimeConversionBySource,
+  computeAllTimeOfferRatio, computeAgentTrends,
+  type MetricsLead, type MetricsStageHit,
+} from '../../../shared/metrics';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
 import { HqShell } from '../components/hqShell';
@@ -25,12 +30,18 @@ const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` :
 const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
 type View = 'overview' | 'accountability' | 'sources' | 'settings';
-type Win = '7' | '14' | 'mtd' | '90' | '180';
-const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo']];
+type Win = '7' | '14' | 'mtd' | '90' | '180' | '365';
+const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo'], ['365', '12mo']];
 
 // Pause watch — why an agent is paused from new leads. 'capacity' = hit the
 // monthly volume cap; 'no_close' = took N leads since their last under-contract.
 interface PauseReason { kind: 'capacity' | 'no_close'; count: number; cap: number }
+
+// §3b agent-level trend surface: windowed offers/closings for the SELECTED
+// window + a delta vs the prior equal-length period (see shared/metrics.ts
+// computeAgentTrends). Keyed by norm(agent) in Drill.trends, same convention
+// as Drill.closings/contacts/paused below.
+interface AgentTrendInfo { offersReached: number; closings: number; offersDelta: number; closingsDelta: number }
 
 interface Drill {
   leads: LeadRow[];
@@ -38,10 +49,14 @@ interface Drill {
   subs: Map<string, string | null>;
   closings: Map<string, number>;
   paused: Map<string, PauseReason[]>;
+  trends: Map<string, AgentTrendInfo>;
 }
 
 // A per-agent record used by the constellation / triage / roster. `agent` is the
 // display owner string; every field is a REAL rollup value (see below).
+// status: 'paused' is MANUAL ONLY — set when a leader ticks "Pause this agent" in
+// the drill (agents.is_paused). Auto pause-watch rules (capacity / no-close) and the
+// strike limit are a SOFT hint (`pauseRecommended`) — they never claim "Paused".
 type AgentStatus = 'on_track' | 'at_risk' | 'paused';
 interface AgentNode {
   agent: string;
@@ -52,7 +67,12 @@ interface AgentNode {
   worked: number;
   workedPct: number;
   strikes: number;
-  paused: PauseReason[];
+  paused: PauseReason[];      // auto pause-watch recommendation reasons (NOT manual)
+  pauseRecommended: boolean;  // true when an auto rule tripped (pause-watch or strikes)
+  agentId: string | null;     // agents.id — null when unmatched (pond/unassigned/demo)
+  pauseReason: string | null; // manual pause reason code, when is_paused
+  pauseNote: string | null;   // manual pause free-text note (reason = 'other')
+  pausedAt: string | null;    // manual pause timestamp
   source: string;      // the agent's dominant lead source (for the source lens)
   srcs: Map<string, number>;
   status: AgentStatus;
@@ -63,6 +83,18 @@ const STATUS_META: Record<AgentStatus, { label: string; color: string; soft: str
   at_risk: { label: 'At risk', color: 'var(--accent-hi)', soft: 'var(--accent-soft)' },
   paused: { label: 'Paused', color: 'var(--terracotta)', soft: 'rgba(192,107,79,0.14)' },
 };
+
+// Manual pause reasons (agents.pause_reason) — mirrors db/hq_agent_pause.sql.
+const PAUSE_REASONS: Array<[string, string]> = [
+  ['at_capacity', 'At capacity'],
+  ['no_closings', 'No closings'],
+  ['on_leave', 'On leave'],
+  ['coaching', 'Coaching'],
+  ['other', 'Other'],
+];
+const PAUSE_REASON_LABEL: Record<string, string> = Object.fromEntries(PAUSE_REASONS);
+const pauseTitle = (a: { pauseReason: string | null; pauseNote: string | null }) =>
+  a.pauseReason ? (PAUSE_REASON_LABEL[a.pauseReason] ?? a.pauseReason) + (a.pauseNote ? `: ${a.pauseNote}` : '') : 'Paused';
 
 // Module-level cache (keyed by org) so returning to Pulse renders INSTANTLY from the
 // last load and refreshes in the background — no spinner flash on Home→Pulse. Keyed
@@ -131,6 +163,33 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
   const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
 
+  // Production — off the DATED carry-forward log (person_stage_log), per the locked
+  // definitions in docs/accuracy-definitions.md (Section 1, Block 3): offer/UC/closed
+  // are windowed by ACHIEVEMENT date (changed_at), independent of a lead's created
+  // date, with carry-forward (a direct jump to Under Contract still counts as
+  // offer-reached — never 0%). Conversion is a STABLE all-time 1:N ratio that does
+  // NOT move with the window tab below — only the windowed counts do.
+  const metricsLeads: MetricsLead[] = data.leads.map((l) => ({
+    fub_person_id: l.fub_person_id ?? -1,
+    source_family: l.source_family,
+    fub_created: l.fub_created ?? null,
+    assigned_to: l.assigned_to,
+  }));
+  const metricsHits: MetricsStageHit[] = data.stageLog;
+  const windowed = computeWindowedMetrics(metricsLeads, metricsHits, { window: win, enabledSources });
+  const conversion = computeAllTimeConversion(metricsLeads, metricsHits, enabledSources);
+  const conversionBySource = computeAllTimeConversionBySource(metricsLeads, metricsHits);
+  // §3a (RULED 2026-07-07): the offer headline is a STABLE, ALL-TIME 1:N ratio —
+  // NOT the windowed offersReached ÷ totalLeads %, which whipsaws on short windows
+  // for the same reason §4 fixed for conversion. The windowed `offersReached`
+  // COUNT still exists on `windowed` (it feeds the §3b agent trends below); only
+  // the headline RATE goes stable.
+  const offerRatio = computeAllTimeOfferRatio(metricsLeads, metricsHits, enabledSources);
+  const offerRatioLabel = offerRatio.ratioLabel; // "1 : N" or "—" — stable all-time, not windowed
+  const closingsCount = windowed.underContractOrClosed;
+  const gciInPlay = closingsCount * avgGci;
+  const perClosingLabel = conversion.ratioLabel; // "1 : N" or "—" — stable all-time, not windowed
+
   // Commission at risk — priced with each source's REAL conversion from this team's
   // own outcomes. A "closing" is a lead whose PERSON STAGE is Under Contract / Closed
   // (never the Deals tab). UC counts the same as Closed (Eric's rule). A source with no
@@ -175,6 +234,11 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // FUB subdomain per team (for per-lead links).
   const contacts = new Map<string, { email: string | null; phone: string | null }>();
   for (const a of data.agents) contacts.set(norm(a.name), { email: a.email, phone: a.phone });
+  // Manual pause lookup — the SOLE source of truth for "Paused" (see AgentNode above).
+  const pauseByAgent = new Map<string, { id: string; is_paused: boolean; pause_reason: string | null; pause_note: string | null; paused_at: string | null }>();
+  for (const a of data.agents) {
+    pauseByAgent.set(norm(a.name), { id: a.id, is_paused: a.is_paused, pause_reason: a.pause_reason, pause_note: a.pause_note, paused_at: a.paused_at });
+  }
   const subs = new Map<string, string | null>();
   for (const t of data.teams) subs.set(t.id, t.fub_subdomain);
 
@@ -191,16 +255,19 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const sources = [...bySource.entries()]
     .sort((a, b) => b[1].total - a[1].total)
-    .map(([name, r]) => ({
-      name, n: r.total, zero: r.zero, stuck: r.stuck, worked: r.worked,
-      workedPct: r.total ? Math.round((r.worked / r.total) * 100) : 0,
-      c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
-      pay: payModel(name),
-      closed: closingsBySrc.get(name) ?? 0,
-      convPct: (closingsBySrc.get(name) ?? 0) > 0
-        ? Math.round(((closingsBySrc.get(name) ?? 0) / (allLeadsBySrc.get(name) || 1)) * 1000) / 10
-        : null,
-    }));
+    .map(([name, r]) => {
+      const conv = conversionBySource[name];
+      return {
+        name, n: r.total, zero: r.zero, stuck: r.stuck, worked: r.worked,
+        workedPct: r.total ? Math.round((r.worked / r.total) * 100) : 0,
+        c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
+        pay: payModel(name),
+        // Closed + conversion are now the LOG-backed all-time 1:N baseline (per source),
+        // per docs/accuracy-definitions.md §4 — not the current-stage snapshot.
+        closed: conv?.allTimeClosings ?? 0,
+        convLabel: conv?.ratioLabel ?? '—',
+      };
+    });
   const upfront = sources.filter((s) => s.pay === 'upfront').reduce((s, x) => s + x.n, 0);
   const atClose = sources.filter((s) => s.pay === 'atclose').reduce((s, x) => s + x.n, 0);
 
@@ -235,6 +302,17 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     for (const [a, n] of monthByAgent) if (n >= pauseVolumeLeads) addPause(a, { kind: 'capacity', count: n, cap: pauseVolumeLeads });
   }
   if (pauseNoCloseOn) {
+    // Carry-forward: a lead "produced" if it EVER reached Under Contract / Closed
+    // per the dated person_stage_log — not the current-stage snapshot. So a deal
+    // that went UC then fell through (or advanced past UC) still counts as a
+    // production point and resets the drought, instead of falsely penalizing the
+    // agent. Seed (pre-log) hits are intentionally included here: "did it ever
+    // happen" doesn't need a date. (docs/accuracy-definitions.md — the same
+    // carry-forward principle behind offer rate / closings.)
+    const producedPersons = new Set<number>();
+    for (const h of data.stageLog) {
+      if (h.fub_person_id != null && (h.stage_class === 'uc' || h.stage_class === 'closed')) producedPersons.add(h.fub_person_id);
+    }
     const leadsByAgent = new Map<string, LeadRow[]>();
     for (const l of data.leads) {
       if (!l.assigned_to) continue;
@@ -248,30 +326,24 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
         (y.fub_created ? Date.parse(y.fub_created) : 0) - (x.fub_created ? Date.parse(x.fub_created) : 0));
       let drought = byNewest.length;
       for (let i = 0; i < byNewest.length; i++) {
-        if (isClosing(stageClass(byNewest[i].stage))) { drought = i; break; }
+        const pid = byNewest[i].fub_person_id;
+        if (pid != null && producedPersons.has(pid)) { drought = i; break; }           // carry-forward: ever reached UC/closed
       }
       if (drought >= pauseNoCloseLeads) addPause(a, { kind: 'no_close', count: drought, cap: pauseNoCloseLeads });
     }
   }
   const pausedCount = pausedByAgent.size;
 
-  // Production — from the PERSON'S STAGE (leads.stage), never the Deals tab.
-  const allTracked = enabledSources
-    ? data.leads.filter((l) => enabledSources.includes(l.source_family ?? 'Other'))
-    : data.leads;
-  let leadsReachedOffer = 0;
-  for (const l of leads) if (isOfferPlus(stageClass(l.stage))) leadsReachedOffer++;
-  const offerRate = total ? Math.round((leadsReachedOffer / total) * 100) : 0;
-  const closingLeads = allTracked.filter((l) => isClosing(stageClass(l.stage)));
-  const closingsCount = closingLeads.length;
-  const gciInPlay = closingsCount * avgGci;
-  const perClosing = closingsCount ? Math.max(1, Math.round(allTracked.length / closingsCount)) : null;
+  // §3b (RULED 2026-07-07) — per-agent windowed offers/closings + a ▲/▼ delta vs
+  // the prior equal-length period. Single-sourced: the drill's "Closings" chip AND
+  // the trend arrows both read off this ONE computeAgentTrends() call, so there's
+  // one per-agent closings number, not two divergent ones.
+  const agentTrends = computeAgentTrends(metricsLeads, metricsHits, { window: win, enabledSources });
+  const trendsByAgent = new Map<string, AgentTrendInfo>();
+  for (const t of agentTrends) trendsByAgent.set(norm(t.agent), t);
   const closingsByAgent = new Map<string, number>();
-  for (const l of closingLeads) {
-    const a = norm(l.assigned_to ?? '');
-    if (a) closingsByAgent.set(a, (closingsByAgent.get(a) ?? 0) + 1);
-  }
-  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent };
+  for (const t of agentTrends) if (t.closings > 0) closingsByAgent.set(norm(t.agent), t.closings);
+  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent, trends: trendsByAgent };
 
   // ── Derive the constellation / triage / roster nodes from the REAL rollup ───
   // status: paused (tripped a pause rule) → at_risk (any strike, high zero+stuck,
@@ -281,19 +353,26 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // per-agent actions/drill match the previous behavior.
   const nodes: AgentNode[] = agents.map(([agent, r]) => {
     const strikes = strikesByAgent.get(agent) ?? 0;
-    const paused = pausedByAgent.get(agent) ?? [];
+    const paused = pausedByAgent.get(agent) ?? [];        // auto pause-watch reasons (recommendation only)
+    const manual = pauseByAgent.get(norm(agent));
+    const pauseRecommended = paused.length > 0 || strikes >= strikeLimit;
     const workedP = r.total ? Math.round((r.worked / r.total) * 100) : 0;
+    // 'paused' status is MANUAL ONLY (manual?.is_paused). Auto rules (pause-watch,
+    // strike limit) fall into 'at_risk' + the softer pauseRecommended flag — they
+    // never claim the agent is "Paused".
     let status: AgentStatus = 'on_track';
-    if (paused.length || strikes >= strikeLimit) status = 'paused';
-    else if (strikes > 0 || r.zero + r.stuck >= Math.max(2, Math.ceil(r.total * 0.4)) || (r.total >= 3 && workedP < 55)) status = 'at_risk';
+    if (manual?.is_paused) status = 'paused';
+    else if (pauseRecommended || strikes > 0 || r.zero + r.stuck >= Math.max(2, Math.ceil(r.total * 0.4)) || (r.total >= 3 && workedP < 55)) status = 'at_risk';
     const domSrc = [...r.srcs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Other';
     return {
       agent, person: isPerson(agent), total: r.total, zero: r.zero, stuck: r.stuck,
-      worked: r.worked, workedPct: workedP, strikes, paused, source: domSrc, srcs: r.srcs, status,
+      worked: r.worked, workedPct: workedP, strikes, paused, pauseRecommended, source: domSrc, srcs: r.srcs, status,
+      agentId: manual?.id ?? null, pauseReason: manual?.pause_reason ?? null,
+      pauseNote: manual?.pause_note ?? null, pausedAt: manual?.paused_at ?? null,
     };
   });
 
-  const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : `last ${win} days`;
+  const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : win === '365' ? 'last 12 months' : `last ${win} days`;
   const HEAD: Record<View, { title: string; eyebrow: string }> = {
     overview: { title: 'Pulse — who’s working what.', eyebrow: `Lead accountability · ${org.name}` },
     accountability: { title: 'What to do today', eyebrow: 'Who needs action first · this week' },
@@ -361,11 +440,12 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               total={total} zero={zero} stuck={stuck} worked={worked} workedPct={workedPct}
               risk={risk} avgGci={avgGci} closeRate={closeRate}
               sources={sources}
-              offerRate={offerRate} perClosing={perClosing} closingsCount={closingsCount} gciInPlay={gciInPlay}
+              offerRatioLabel={offerRatioLabel} perClosingLabel={perClosingLabel} closingsCount={closingsCount} gciInPlay={gciInPlay}
               nodes={nodes}
               pauseCount={pauseCount} newStrikes7d={newStrikes7d} pausedCount={pausedCount} headroom={headroom}
               strikeLimit={strikeLimit}
               drill={drill}
+              onRefresh={() => void load()}
             />
           ))}
 
@@ -394,17 +474,18 @@ function Overview(p: {
   total: number; zero: number; stuck: number; worked: number; workedPct: number;
   risk: { window: number; annual: number }; avgGci: number; closeRate: number;
   sources: Array<{ name: string; n: number; c: string; workedPct: number; zero: number }>;
-  offerRate: number; perClosing: number | null; closingsCount: number; gciInPlay: number;
+  offerRatioLabel: string; perClosingLabel: string; closingsCount: number; gciInPlay: number;
   nodes: AgentNode[];
   pauseCount: number; newStrikes7d: number; pausedCount: number; headroom: number;
   strikeLimit: number;
   drill: Drill;
+  onRefresh: () => void;
 }) {
   const srcTotal = p.sources.reduce((a, s) => a + s.n, 0);
   const acct = [
     { icon: 'shield', label: 'Pause recommended', value: p.pauseCount, note: `at ${p.strikeLimit}+ strikes / 30 days`, tone: 'warn' },
     { icon: 'target', label: 'New strikes this week', value: p.newStrikes7d, note: 'opened in the last 7 days', tone: '' },
-    { icon: 'clock', label: 'Paused · pause watch', value: p.pausedCount, note: 'tripped a pause rule — route elsewhere', tone: '' },
+    { icon: 'clock', label: 'Pause rec · pause watch', value: p.pausedCount, note: 'tripped a volume/no-close rule', tone: '' },
     { icon: 'coach', label: 'Coverage headroom', value: p.headroom, note: 'capacity vs. tracked intake', tone: 'good' },
   ];
   return (
@@ -463,12 +544,17 @@ function Overview(p: {
         </article>
         <article className="card ps-prod ps-prod-b reveal" data-delay="220">
           <div className="ps-prod-inner">
-            <div className="ps-prod-num">{p.perClosing ? `1 : ${p.perClosing}` : '—'}</div>
+            <div className="ps-prod-num">{p.perClosingLabel}</div>
             <div className="ps-prod-label">Leads per closing</div>
           </div>
         </article>
         <article className="card ps-prod ps-prod-c reveal" data-delay="260">
-          <BigNum value={p.offerRate} suffix="%" label="Offer rate · paid leads" />
+          {/* §3a: stable all-time 1:N, NOT a windowed % — reads as a funnel with
+              "Leads per closing" beside it (ps-prod-b). Never moves with the tab. */}
+          <div className="ps-prod-inner">
+            <div className="ps-prod-num">{p.offerRatioLabel}</div>
+            <div className="ps-prod-label">Leads per offer</div>
+          </div>
         </article>
       </section>
 
@@ -509,7 +595,7 @@ function Overview(p: {
       )}
 
       {/* ============ TEAM HEALTH FIELD (REAL per-agent nodes) ============ */}
-      <TeamHealth nodes={p.nodes} drill={p.drill} strikeLimit={p.strikeLimit} />
+      <TeamHealth nodes={p.nodes} drill={p.drill} strikeLimit={p.strikeLimit} onRefresh={p.onRefresh} />
 
       {/* ============ ACCOUNTABILITY SPINE (REAL counts) ============ */}
       <section className="ps-acct reveal">
@@ -550,15 +636,16 @@ function Overview(p: {
    TEAM HEALTH — triage column + constellation + roster.
    All three derive from the SAME real `nodes` array.
    ============================================================ */
-function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: Drill; strikeLimit: number }) {
+function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode[]; drill: Drill; strikeLimit: number; onRefresh: () => void }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const rosterRef = useRef<HTMLDivElement | null>(null);
 
-  // Triage = the real agents who need action first: paused / high-strike / zero-contact.
+  // Triage = the real agents who need action first: paused (manual) / pause-recommended
+  // (auto rules, incl. strikes) / zero-contact.
   const triage = useMemo(
-    () => nodes.filter((a) => a.status === 'paused' || a.strikes >= strikeLimit || a.zero > 0).slice(0, 6),
-    [nodes, strikeLimit],
+    () => nodes.filter((a) => a.status === 'paused' || a.pauseRecommended || a.zero > 0).slice(0, 6),
+    [nodes],
   );
 
   const filtered = useMemo(() => {
@@ -594,7 +681,7 @@ function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: 
             <span className={`ps-triage-count${triage.length === 0 ? ' clear' : ''}`}>{triage.length}</span>
             <div>
               <div className="ps-triage-title">Need you this week</div>
-              <div className="ps-triage-sub">paused · {strikeLimit}-strike · zero contact</div>
+              <div className="ps-triage-sub">paused · pause rec · zero contact</div>
             </div>
           </div>
           <div className="ps-triage-list">
@@ -606,7 +693,10 @@ function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: 
                 <div className="ps-triage-info">
                   <div className="ps-triage-name">{a.agent}</div>
                   <div className="ps-triage-meta">
-                    {a.strikes >= strikeLimit ? `${a.strikes} strikes` : a.zero > 0 ? `${a.zero} zero-contact` : STATUS_META[a.status].label}
+                    {a.status === 'paused' ? pauseTitle(a)
+                      : a.strikes >= strikeLimit ? `${a.strikes} strikes`
+                      : a.zero > 0 ? `${a.zero} zero-contact`
+                      : a.pauseRecommended ? 'Pause recommended' : STATUS_META[a.status].label}
                     {' · '}{a.total} leads · {a.workedPct}% worked
                   </div>
                 </div>
@@ -666,8 +756,8 @@ function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: 
                       <td>
                         <span className="cell-agent">
                           <span className="cell-name">{a.agent}</span>
-                          {a.paused.length > 0 && <span className="pill-paused">⏸ Paused</span>}
-                          {a.strikes >= strikeLimit && a.paused.length === 0 && <span className="pill-strike">Pause rec</span>}
+                          {a.status === 'paused' && <span className="pill-paused" title={pauseTitle(a)}>⏸ Paused</span>}
+                          {a.status !== 'paused' && a.pauseRecommended && <span className="pill-strike">Pause rec</span>}
                           <span className="cell-caret">{isOpen ? '▾' : '▸'}</span>
                         </span>
                       </td>
@@ -689,7 +779,7 @@ function TeamHealth({ nodes, drill, strikeLimit }: { nodes: AgentNode[]; drill: 
                     {isOpen && (
                       <tr className="drill-tr">
                         <td colSpan={7}>
-                          <AgentDrill node={a} drill={drill} />
+                          <AgentDrill node={a} drill={drill} onRefresh={onRefresh} />
                         </td>
                       </tr>
                     )}
@@ -937,7 +1027,80 @@ function HoverCard({ node, pos, onPick }: { node: AgentNode; pos: Pos; onPick: (
    ============================================================ */
 const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
 
-function AgentDrill({ node, drill }: { node: AgentNode; drill: Drill }) {
+/** The manual pause control — the ONLY thing that can make an agent's status
+ *  read "Paused". One compact row: a toggle, and (when on) a reason dropdown +
+ *  an optional note for "Other". Hidden entirely when there's no agent id to
+ *  write to (demo mode, or a pond/unassigned bucket — those never reach here
+ *  since the caller only renders this for `node.person`). */
+function PauseControl({ agentId, isPaused, reason, note, pausedAt, onSaved }: {
+  agentId: string | null; isPaused: boolean; reason: string | null; note: string | null;
+  pausedAt: string | null; onSaved: () => void;
+}) {
+  const [checked, setChecked] = useState(isPaused);
+  const [r, setR] = useState(reason ?? 'at_capacity');
+  const [n, setN] = useState(note ?? '');
+  const [busy, setBusy] = useState(false);
+
+  // Stay in sync with a fresh load() (e.g. another tab/leader changed it) as long
+  // as nothing is in flight from THIS control — never clobber a pending edit.
+  useEffect(() => {
+    if (busy) return;
+    setChecked(isPaused);
+    setR(reason ?? 'at_capacity');
+    setN(note ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPaused, reason, note]);
+
+  if (!agentId) return null; // no id to match — never call the write
+
+  async function commit(nextChecked: boolean, nextReason: string, nextNote: string) {
+    setBusy(true);
+    try {
+      await setAgentPause(agentId!, {
+        isPaused: nextChecked,
+        reason: nextChecked ? nextReason : null,
+        note: nextChecked && nextReason === 'other' ? nextNote : null,
+      });
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="ps-pausectl">
+      <label className="ad-toggle" style={{ marginBottom: 0 }}>
+        <input
+          type="checkbox" checked={checked} disabled={busy}
+          onChange={(e) => { const c = e.target.checked; setChecked(c); void commit(c, r, n); }}
+        />
+        <span className="ad-toggle-track"><span className="ad-toggle-dot" /></span>
+      </label>
+      <span className="ps-pausectl-label">Pause this agent</span>
+      {checked && (
+        <>
+          <span className="ps-pausectl-reasonlbl">Reason</span>
+          <select
+            className="ad-input ps-pausectl-select" value={r} disabled={busy}
+            onChange={(e) => { const v = e.target.value; setR(v); void commit(true, v, n); }}
+          >
+            {PAUSE_REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          {r === 'other' && (
+            <input
+              className="ad-input ps-pausectl-note" placeholder="Say why…" value={n} disabled={busy}
+              onChange={(e) => setN(e.target.value)}
+              onBlur={() => void commit(true, r, n)}
+            />
+          )}
+          {pausedAt && <span className="ps-pausectl-since">since {new Date(pausedAt).toLocaleDateString()}</span>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill; onRefresh: () => void }) {
   const agent = node.agent;
   const [flagF, setFlagF] = useState<string>('all');
   const mine = drill.leads.filter((l) => ownerOf(l) === agent);
@@ -946,6 +1109,8 @@ function AgentDrill({ node, drill }: { node: AgentNode; drill: Drill }) {
   for (const l of mine) { const s = l.source_family || 'Other'; bySrc.set(s, (bySrc.get(s) ?? 0) + 1); }
   const srcRows = [...bySrc.entries()].sort((a, b) => b[1] - a[1]);
   const c = drill.contacts.get(norm(agent));
+  // §3b: this agent's windowed offers/closings + ▲/▼ vs the prior equal-length period.
+  const trend = drill.trends.get(norm(agent));
   const chips: Array<[string, string, number]> = [
     ['all', 'All', node.total],
     ['zero_contact', 'Zero contact', node.zero],
@@ -976,12 +1141,24 @@ function AgentDrill({ node, drill }: { node: AgentNode; drill: Drill }) {
 
   return (
     <div className="ps-drill">
-      {paused?.map((r) => (
-        <div className="ps-pausebar" key={r.kind}>
-          <span className="ps-pausebar-tag">⏸ PAUSED</span>
+      {node.person && (
+        <PauseControl
+          agentId={node.agentId}
+          isPaused={node.status === 'paused'}
+          reason={node.pauseReason}
+          note={node.pauseNote}
+          pausedAt={node.pausedAt}
+          onSaved={onRefresh}
+        />
+      )}
+      {/* Auto pause-watch — a SOFT recommendation, never claims the agent is paused.
+          Hidden once a leader has manually paused (the control above already says so). */}
+      {node.status !== 'paused' && paused?.map((r) => (
+        <div className="ps-pausebar rec" key={r.kind}>
+          <span className="ps-pausebar-tag">⏸ PAUSE RECOMMENDED</span>
           {r.kind === 'capacity'
-            ? <span><b>At capacity</b> — {r.count} of {r.cap} leads taken this month. Route new leads elsewhere until next month; they have a full plate to work.</span>
-            : <span><b>No closings</b> — {r.count} leads taken since their last under-contract (rule: every {r.cap} needs one). New leads hold until something goes under contract.</span>}
+            ? <span><b>At capacity</b> — {r.count} of {r.cap} leads taken this month. Consider routing new leads elsewhere until next month.</span>
+            : <span><b>No closings</b> — {r.count} leads taken since their last under-contract (rule: every {r.cap} needs one).</span>}
         </div>
       ))}
       <div className="ps-drill-head">
@@ -989,7 +1166,14 @@ function AgentDrill({ node, drill }: { node: AgentNode; drill: Drill }) {
           {chips.map(([k, l, n]) => (
             <span key={k} className={`ps-fchip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
           ))}
-          <span className="ps-fchip stat">Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b></span>
+          <span className="ps-fchip stat">
+            Offers <b>{trend?.offersReached ?? 0}</b>
+            <TrendTag delta={trend?.offersDelta ?? 0} />
+          </span>
+          <span className="ps-fchip stat">
+            Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b>
+            <TrendTag delta={trend?.closingsDelta ?? 0} />
+          </span>
         </div>
         {node.person && (
           <div className="ps-drill-acts">
@@ -1096,7 +1280,7 @@ function Accountability(p: {
                 <tr><td colSpan={3} style={{ color: 'var(--text-50)', textAlign: 'center', padding: 22 }}>Nobody’s paused — every agent is inside the rules.</td></tr>
               ) : pausedRows.map(([a, reasons]) => (
                 <tr key={a}>
-                  <td><span className="cell-agent"><span className="cell-name">{a}</span><span className="pill-paused">⏸ Paused</span><a className="ps-abtn sm" href="https://premieragent.zillow.com/leads/routing/routing" target="_blank" rel="noopener noreferrer" title="Open Zillow lead routing to pause this agent">Pause in Zillow ↗</a></span></td>
+                  <td><span className="cell-agent"><span className="cell-name">{a}</span><span className="pill-strike">⏸ Pause rec</span><a className="ps-abtn sm" href="https://premieragent.zillow.com/leads/routing/routing" target="_blank" rel="noopener noreferrer" title="Open Zillow lead routing to pause this agent">Pause in Zillow ↗</a></span></td>
                   <td>{reasons.map((r) => (
                     <div key={r.kind} className={r.kind === 'no_close' ? 'cell-warn' : ''} style={{ fontWeight: 600, color: r.kind === 'no_close' ? 'var(--terracotta)' : 'var(--accent-hi)' }}>
                       {r.kind === 'capacity' ? `${r.count} of ${r.cap} leads this month` : `${r.count} leads since last under-contract (rule: ${r.cap})`}
@@ -1140,7 +1324,7 @@ function Accountability(p: {
    SOURCES view (restyled dark, same real data)
    ============================================================ */
 function Sources(p: {
-  sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose'; closed: number; convPct: number | null }>;
+  sources: Array<{ name: string; n: number; c: string; pay: 'upfront' | 'atclose'; closed: number; convLabel: string }>;
   total: number; upfront: number; atClose: number;
 }) {
   const srcTotal = p.sources.reduce((a, s) => a + s.n, 0);
@@ -1190,7 +1374,7 @@ function Sources(p: {
                   <td>{s.n}</td>
                   <td>{p.total ? Math.round((s.n / p.total) * 100) : 0}%</td>
                   <td>{s.closed}</td>
-                  <td>{s.convPct == null ? <span style={{ color: 'var(--text-50)' }}>—</span> : `${s.convPct}%`}</td>
+                  <td>{s.convLabel === '—' ? <span style={{ color: 'var(--text-50)' }}>—</span> : s.convLabel}</td>
                   <td><span className={s.pay === 'atclose' ? 'pill-strike' : 'pill-paused'} style={s.pay === 'atclose' ? {} : { color: 'var(--sea-hi)', background: 'var(--sea-soft)', borderColor: 'rgba(74,124,111,0.4)' }}>{PAY_LABEL[s.pay]}</span></td>
                 </tr>
               ))}
@@ -1372,6 +1556,19 @@ function BigNum({ value, label, suffix = '' }: { value: number; label: string; s
 function SpineValue({ value }: { value: number }) {
   const { ref, val } = useCountUp(value);
   return <span className="ps-spine-val" ref={ref}>{val}</span>;
+}
+
+// §3b — the agent-level trend indicator: ▲N (up), ▼N (down), or — (flat) vs the
+// prior equal-length period. Small and inline so it drops into an existing chip
+// without changing the roster/drill layout.
+function TrendTag({ delta }: { delta: number }) {
+  if (delta === 0) return <span style={{ color: 'var(--text-50)', marginLeft: 5, fontWeight: 700 }}>—</span>;
+  const up = delta > 0;
+  return (
+    <span style={{ color: up ? 'var(--sea-hi)' : 'var(--terracotta)', marginLeft: 5, fontWeight: 700 }}>
+      {up ? '▲' : '▼'}{Math.abs(delta)}
+    </span>
+  );
 }
 
 function RiskSpark() {
