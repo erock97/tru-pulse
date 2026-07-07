@@ -15,6 +15,10 @@
 
 import { supabase } from './supabase';
 import { isDemo } from './api';
+import {
+  PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS, divergence,
+  type Axis, type Pole, type AxisResult,
+} from './assessmentData';
 
 /* ============================================================
    FRAMEWORK CONSTS (ported from truFramework.js — the parts the
@@ -317,7 +321,51 @@ export async function loadProfile(agentId: string): Promise<Profile> {
     .eq('agent_id', agentId)
     .order('taken_at', { ascending: false });
   if (error) throw error;
-  return deriveProfile((data as AssessmentRow[] | null) || []);
+
+  // Best-effort: the personal (baseline) profile. Agents assessed on the old
+  // site (business-only) have no personal_code/personal_axes — the columns
+  // or the row itself may come back empty. Degrade to null, never throw.
+  let personalCode: string | null = null;
+  let personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null;
+  const pRes = await supabase.from('agents').select('personal_code, personal_axes').eq('id', agentId).maybeSingle();
+  if (!pRes.error && pRes.data) {
+    const row = pRes.data as { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null };
+    personalCode = row.personal_code ?? null;
+    personalAxes = row.personal_axes ?? null;
+  }
+
+  return deriveProfile((data as AssessmentRow[] | null) || [], personalCode, personalAxes);
+}
+
+// AXIS_ORDER mirrors assessmentData.ts's (private) axis order — the 4-letter
+// codes (both personal_code and the business `code`) are always
+// energy-approach-deal-decision, so splitting a code on '-' in this order
+// lines up with AxisResult.axes position-by-position.
+const AXIS_KEYS: Axis[] = ['energy', 'approach', 'deal', 'decision'];
+
+// Build a minimal AxisResult from a 4-letter code alone (pct is irrelevant to
+// divergence()/label lookups, which only compare/read the letter).
+function codeToAxisResult(code: string, axes?: Record<Axis, { letter: Pole; pct: number }> | null): AxisResult {
+  if (axes) return { code, axes };
+  const letters = code.split('-') as Pole[];
+  const built = {} as AxisResult['axes'];
+  AXIS_KEYS.forEach((ax, i) => { built[ax] = { letter: letters[i], pct: 50 }; });
+  return { code, axes: built };
+}
+
+function computeDivergences(
+  businessCode: string,
+  personalCode: string | null,
+  personalAxes: Record<Axis, { letter: Pole; pct: number }> | null,
+): { axis: Axis; personalLabel: string; workLabel: string }[] {
+  if (!personalCode) return [];
+  const personal = codeToAxisResult(personalCode, personalAxes);
+  const business = codeToAxisResult(businessCode);
+  return divergence(personal, business).map((axis) => ({
+    axis,
+    personalLabel: PERSONAL_LABELS[personal.axes[axis].letter],
+    workLabel: WORK_LABELS[business.axes[axis].letter],
+  }));
 }
 
 const DIM_NAMES = ['Energy', 'Approach', 'Deal Style', 'Decisions'];
@@ -333,9 +381,16 @@ export interface Profile {
   history: HistoryRow[]; grew: number; shift: Shift | null;
   archName: string; emoji: string; color: string; tagline: string;
   quad: string; law: string; signal: string; unlock: string;
+  personalCode: string | null;
+  personalType: { name: string; desc: string; strengths: string[]; watch: string } | null;
+  divergences: { axis: Axis; personalLabel: string; workLabel: string }[];
 }
 
-export function deriveProfile(rows: AssessmentRow[]): Profile {
+export function deriveProfile(
+  rows: AssessmentRow[],
+  personalCode: string | null = null,
+  personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null,
+): Profile {
   const takes = rows.length || 1;
   const latest = rows[0] || null;
   const code = latest ? latest.code : 'P-Rec-R-I';
@@ -388,11 +443,14 @@ export function deriveProfile(rows: AssessmentRow[]): Profile {
   const grew = curLvl - oldestLvl;
 
   const ar = archOf(code);
+  const personalType = personalCode ? (PERSONAL_TYPES[personalCode] ?? null) : null;
+  const divergences = computeDivergences(code, personalCode, personalAxes);
   return {
     code, takes, confPct: conf.pct, confLabel: conf.label, confColor,
     confBg: confColor + '22', span, dimStatus, curLvl, history, grew, shift,
     archName: ar.name, emoji: ar.emoji, color: ar.color, tagline: ar.tagline,
     quad: ll.quad, law: ll.law, signal: ll.signal, unlock: ll.unlock,
+    personalCode: personalCode ?? null, personalType, divergences,
   };
 }
 

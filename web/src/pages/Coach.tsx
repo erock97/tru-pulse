@@ -14,6 +14,7 @@ import {
   type RosterAgent, type Profile, type Goal, type Commitment, type Checkin, type TeamSeg,
   type TeamLink,
 } from '../lib/coachData';
+import { CG } from '../lib/assessmentData';
 import '../truHqDark.css';
 
 /* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
@@ -589,6 +590,11 @@ function Stat({ value, label, prefix = '', suffix = '' }: { value: number; label
   );
 }
 
+/* ---- Display titles for the 4 divergence axes (energy/approach/deal/decision). ---- */
+const AXIS_TITLE: Record<string, string> = {
+  energy: 'Energy', approach: 'Approach', deal: 'Deal Style', decision: 'Decisions',
+};
+
 /* ---- Deterministic 1:1 talking points, FeedForward-style. Built from the
    archetype's signal/unlock (already derived) + pace + recent focus. No AI, no
    network — pure function of what we already know about the agent. ---- */
@@ -779,6 +785,66 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
           )}
         </section>
       </div>
+
+      {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
+          (Task 7's baseline assessment). Old-site, business-only agents simply
+          don't render these two cards — no crash, no empty headings. */}
+      {(profile?.personalType || (profile && profile.divergences.length > 0)) && (
+        <div className="ad-grid" style={{ marginTop: 22 }}>
+          {profile?.personalType && (
+            <section className="card ad-panel">
+              <div className="ad-panel-head">
+                <h3>Who they are</h3>
+                <span className="panel-sub">{profile.personalCode}</span>
+              </div>
+              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-strong)', marginBottom: 8 }}>
+                {profile.personalType.name}
+              </p>
+              <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 16 }}>{profile.personalType.desc}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {profile.personalType.strengths.map((s) => (
+                  <span key={s} className="chip">{s}</span>
+                ))}
+              </div>
+              <div className="ad-shift">{profile.personalType.watch}</div>
+            </section>
+          )}
+
+          {profile && profile.divergences.length > 0 && (
+            <section className="card ad-panel">
+              <div className="ad-panel-head">
+                <h3>Where they diverge</h3>
+                <span className="panel-sub">{profile.divergences.length} of 4 axes</span>
+              </div>
+              <ul className="ad-wired">
+                {profile.divergences.map((d) => (
+                  <li key={d.axis}>
+                    <span className="ad-wired-tag blind">{AXIS_TITLE[d.axis]}</span>
+                    <p>In life they’re {d.personalLabel.toLowerCase()}, but at work they show up {d.workLabel.toLowerCase()}.</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* THE 1:1 PLAYBOOK — always present for an assessed agent (business code). */}
+      {profile && CG[profile.code] && (
+        <section className="card ad-panel" style={{ marginTop: 22 }}>
+          <div className="ad-panel-head">
+            <h3>How to run their 1:1</h3>
+            <span className="panel-sub">{agent.archName}</span>
+          </div>
+          <ul className="ad-wired">
+            <li><span className="ad-wired-tag drive">Communicate</span><p>{CG[profile.code].communicate}</p></li>
+            <li><span className="ad-wired-tag drive">Motivate</span><p>{CG[profile.code].motivate}</p></li>
+            <li><span className="ad-wired-tag blind">Hold accountable</span><p>{CG[profile.code].accountable}</p></li>
+            <li><span className="ad-wired-tag blind">In conflict</span><p>{CG[profile.code].conflict}</p></li>
+            <li><span className="ad-wired-tag drive">FeedForward ask</span><p>{CG[profile.code].feedforward}</p></li>
+          </ul>
+        </section>
+      )}
 
       {/* 2. 1:1 PREP SHEET (writes: checkins) */}
       <OneOnOneSheet
