@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, setAgentPause, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { payModel, PAY_LABEL, isClosing, stageClass } from '../../../shared/flags';
-import {
-  computeWindowedMetrics, computeAllTimeConversion, computeAllTimeConversionBySource,
-  computeAllTimeOfferRatio, computeAgentTrends,
-  type MetricsLead, type MetricsStageHit,
-} from '../../../shared/metrics';
+import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
 import { HqShell } from '../components/hqShell';
@@ -37,11 +32,14 @@ const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'
 // monthly volume cap; 'no_close' = took N leads since their last under-contract.
 interface PauseReason { kind: 'capacity' | 'no_close'; count: number; cap: number }
 
-// §3b agent-level trend surface: windowed offers/closings for the SELECTED
-// window + a delta vs the prior equal-length period (see shared/metrics.ts
-// computeAgentTrends). Keyed by norm(agent) in Drill.trends, same convention
-// as Drill.closings/contacts/paused below.
-interface AgentTrendInfo { offersReached: number; closings: number; offersDelta: number; closingsDelta: number }
+// Per-agent CURRENT-STAGE, CREATED-DATE-WINDOWED counts (computed straight off
+// `leads` — see the baseline block below). Keyed by norm(agent) in Drill.stats,
+// same convention as Drill.closings/contacts/paused below. Period-over-period
+// ▲/▼ trend arrows are removed for now — they depended on `person_stage_log`
+// dated history, which has no reliable backfill (tracking starts going
+// forward). They return once that log accrues history; shared/metrics.ts
+// (computeAgentTrends) stays in place for that future layer.
+interface AgentStat { offersReached: number; closings: number }
 
 interface Drill {
   leads: LeadRow[];
@@ -49,7 +47,7 @@ interface Drill {
   subs: Map<string, string | null>;
   closings: Map<string, number>;
   paused: Map<string, PauseReason[]>;
-  trends: Map<string, AgentTrendInfo>;
+  stats: Map<string, AgentStat>;
 }
 
 // A per-agent record used by the constellation / triage / roster. `agent` is the
@@ -163,32 +161,20 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
   const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
 
-  // Production — off the DATED carry-forward log (person_stage_log), per the locked
-  // definitions in docs/accuracy-definitions.md (Section 1, Block 3): offer/UC/closed
-  // are windowed by ACHIEVEMENT date (changed_at), independent of a lead's created
-  // date, with carry-forward (a direct jump to Under Contract still counts as
-  // offer-reached — never 0%). Conversion is a STABLE all-time 1:N ratio that does
-  // NOT move with the window tab below — only the windowed counts do.
-  const metricsLeads: MetricsLead[] = data.leads.map((l) => ({
-    fub_person_id: l.fub_person_id ?? -1,
-    source_family: l.source_family,
-    fub_created: l.fub_created ?? null,
-    assigned_to: l.assigned_to,
-  }));
-  const metricsHits: MetricsStageHit[] = data.stageLog;
-  const windowed = computeWindowedMetrics(metricsLeads, metricsHits, { window: win, enabledSources });
-  const conversion = computeAllTimeConversion(metricsLeads, metricsHits, enabledSources);
-  const conversionBySource = computeAllTimeConversionBySource(metricsLeads, metricsHits);
-  // §3a (RULED 2026-07-07): the offer headline is a STABLE, ALL-TIME 1:N ratio —
-  // NOT the windowed offersReached ÷ totalLeads %, which whipsaws on short windows
-  // for the same reason §4 fixed for conversion. The windowed `offersReached`
-  // COUNT still exists on `windowed` (it feeds the §3b agent trends below); only
-  // the headline RATE goes stable.
-  const offerRatio = computeAllTimeOfferRatio(metricsLeads, metricsHits, enabledSources);
-  const offerRatioLabel = offerRatio.ratioLabel; // "1 : N" or "—" — stable all-time, not windowed
-  const closingsCount = windowed.underContractOrClosed;
+  // Production — BASELINE (Eric, 2026-07-07): CURRENT STAGE, CREATED-DATE-WINDOWED,
+  // computed directly off `leads` (the same created-date + source windowed set as
+  // `total` above). This SUPERSEDES the prior person_stage_log / achievement-date
+  // approach in docs/accuracy-definitions.md. isClosing = UC or Closed, current
+  // stage (Eric's rule: UC == Closed). isOfferPlus = offer-or-beyond, carry-forward
+  // (a lead currently sitting in UC/Closed still counts as having reached offer —
+  // never a false 0). Both the counts and the two "1 : N" ratios below move with
+  // the window tab (7/14/mtd/90/180/365, 12mo is the primary view).
+  const closingsCount = leads.filter((l) => isClosing(stageClass(l.stage))).length;
+  const offersReached = leads.filter((l) => isOfferPlus(stageClass(l.stage))).length;
   const gciInPlay = closingsCount * avgGci;
-  const perClosingLabel = conversion.ratioLabel; // "1 : N" or "—" — stable all-time, not windowed
+  // "Leads per closing" / "Leads per offer" — 1 : N, N = leads in window ÷ count.
+  const perClosingLabel = closingsCount > 0 ? `1 : ${Math.max(1, Math.round(total / closingsCount))}` : '—';
+  const offerRatioLabel = offersReached > 0 ? `1 : ${Math.max(1, Math.round(total / offersReached))}` : '—';
 
   // Commission at risk — priced with each source's REAL conversion from this team's
   // own outcomes. A "closing" is a lead whose PERSON STAGE is Under Contract / Closed
@@ -243,31 +229,29 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   for (const t of data.teams) subs.set(t.id, t.fub_subdomain);
 
   // Source mix + per-source flag breakdown + pay-model split.
-  const bySource = new Map<string, { total: number; zero: number; stuck: number; worked: number }>();
+  const bySource = new Map<string, { total: number; zero: number; stuck: number; worked: number; closings: number }>();
   for (const l of leads) {
     const s = l.source_family || 'Other';
-    const r = bySource.get(s) ?? { total: 0, zero: 0, stuck: 0, worked: 0 };
+    const r = bySource.get(s) ?? { total: 0, zero: 0, stuck: 0, worked: 0, closings: 0 };
     r.total++;
     if (l.flag === 'zero_contact') r.zero++;
     else if (l.flag === 'stuck') r.stuck++;
     else if (l.flag === 'worked') r.worked++;
+    if (isClosing(stageClass(l.stage))) r.closings++;
     bySource.set(s, r);
   }
   const sources = [...bySource.entries()]
     .sort((a, b) => b[1].total - a[1].total)
-    .map(([name, r]) => {
-      const conv = conversionBySource[name];
-      return {
-        name, n: r.total, zero: r.zero, stuck: r.stuck, worked: r.worked,
-        workedPct: r.total ? Math.round((r.worked / r.total) * 100) : 0,
-        c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
-        pay: payModel(name),
-        // Closed + conversion are now the LOG-backed all-time 1:N baseline (per source),
-        // per docs/accuracy-definitions.md §4 — not the current-stage snapshot.
-        closed: conv?.allTimeClosings ?? 0,
-        convLabel: conv?.ratioLabel ?? '—',
-      };
-    });
+    .map(([name, r]) => ({
+      name, n: r.total, zero: r.zero, stuck: r.stuck, worked: r.worked,
+      workedPct: r.total ? Math.round((r.worked / r.total) * 100) : 0,
+      c: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other,
+      pay: payModel(name),
+      // Closed + conversion are the SAME baseline as the tiles above: current
+      // stage, created-date-windowed, straight off this source's slice of `leads`.
+      closed: r.closings,
+      convLabel: r.closings > 0 ? `1 : ${Math.max(1, Math.round(r.total / r.closings))}` : '—',
+    }));
   const upfront = sources.filter((s) => s.pay === 'upfront').reduce((s, x) => s + x.n, 0);
   const atClose = sources.filter((s) => s.pay === 'atclose').reduce((s, x) => s + x.n, 0);
 
@@ -334,16 +318,22 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   }
   const pausedCount = pausedByAgent.size;
 
-  // §3b (RULED 2026-07-07) — per-agent windowed offers/closings + a ▲/▼ delta vs
-  // the prior equal-length period. Single-sourced: the drill's "Closings" chip AND
-  // the trend arrows both read off this ONE computeAgentTrends() call, so there's
-  // one per-agent closings number, not two divergent ones.
-  const agentTrends = computeAgentTrends(metricsLeads, metricsHits, { window: win, enabledSources });
-  const trendsByAgent = new Map<string, AgentTrendInfo>();
-  for (const t of agentTrends) trendsByAgent.set(norm(t.agent), t);
+  // Per-agent offers/closings — SAME baseline as the team tiles: current stage,
+  // created-date-windowed, straight off `leads` via ownerOf(). Trend arrows
+  // (▲/▼ vs the prior period) are removed for now — see the AgentStat comment
+  // above; they return once person_stage_log accrues real dated history.
+  const statsByAgent = new Map<string, AgentStat>();
+  for (const l of leads) {
+    const a = norm(ownerOf(l));
+    const r = statsByAgent.get(a) ?? { offersReached: 0, closings: 0 };
+    const sc = stageClass(l.stage);
+    if (isOfferPlus(sc)) r.offersReached++;
+    if (isClosing(sc)) r.closings++;
+    statsByAgent.set(a, r);
+  }
   const closingsByAgent = new Map<string, number>();
-  for (const t of agentTrends) if (t.closings > 0) closingsByAgent.set(norm(t.agent), t.closings);
-  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent, trends: trendsByAgent };
+  for (const [a, r] of statsByAgent) if (r.closings > 0) closingsByAgent.set(a, r.closings);
+  const drill: Drill = { leads, contacts, subs, closings: closingsByAgent, paused: pausedByAgent, stats: statsByAgent };
 
   // ── Derive the constellation / triage / roster nodes from the REAL rollup ───
   // status: paused (tripped a pause rule) → at_risk (any strike, high zero+stuck,
@@ -1109,8 +1099,9 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
   for (const l of mine) { const s = l.source_family || 'Other'; bySrc.set(s, (bySrc.get(s) ?? 0) + 1); }
   const srcRows = [...bySrc.entries()].sort((a, b) => b[1] - a[1]);
   const c = drill.contacts.get(norm(agent));
-  // §3b: this agent's windowed offers/closings + ▲/▼ vs the prior equal-length period.
-  const trend = drill.trends.get(norm(agent));
+  // This agent's current-stage, created-date-windowed offers/closings (see AgentStat).
+  // No ▲/▼ trend yet — returns once person_stage_log accrues real dated history.
+  const stat = drill.stats.get(norm(agent));
   const chips: Array<[string, string, number]> = [
     ['all', 'All', node.total],
     ['zero_contact', 'Zero contact', node.zero],
@@ -1167,12 +1158,10 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
             <span key={k} className={`ps-fchip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
           ))}
           <span className="ps-fchip stat">
-            Offers <b>{trend?.offersReached ?? 0}</b>
-            <TrendTag delta={trend?.offersDelta ?? 0} />
+            Offers <b>{stat?.offersReached ?? 0}</b>
           </span>
           <span className="ps-fchip stat">
             Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b>
-            <TrendTag delta={trend?.closingsDelta ?? 0} />
           </span>
         </div>
         {node.person && (
@@ -1556,19 +1545,6 @@ function BigNum({ value, label, suffix = '' }: { value: number; label: string; s
 function SpineValue({ value }: { value: number }) {
   const { ref, val } = useCountUp(value);
   return <span className="ps-spine-val" ref={ref}>{val}</span>;
-}
-
-// §3b — the agent-level trend indicator: ▲N (up), ▼N (down), or — (flat) vs the
-// prior equal-length period. Small and inline so it drops into an existing chip
-// without changing the roster/drill layout.
-function TrendTag({ delta }: { delta: number }) {
-  if (delta === 0) return <span style={{ color: 'var(--text-50)', marginLeft: 5, fontWeight: 700 }}>—</span>;
-  const up = delta > 0;
-  return (
-    <span style={{ color: up ? 'var(--sea-hi)' : 'var(--terracotta)', marginLeft: 5, fontWeight: 700 }}>
-      {up ? '▲' : '▼'}{Math.abs(delta)}
-    </span>
-  );
 }
 
 function RiskSpark() {
