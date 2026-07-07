@@ -42,21 +42,54 @@ export async function fubGet(
   return { status: 429, body: null };
 }
 
-/** Paginate ALL of /people (newest-first) to completion — NOT a created-date window.
- *  Closings come from OLDER leads (long sales cycles), so any created-date cutoff
- *  structurally hides every closed deal. We pull everyone and classify by current
- *  stage; the read layer windows the accountability views by date as needed. */
-export async function pullPeople(key: string): Promise<any[]> {
+/** Fetch an absolute FUB URL (auth + retry), used for CURSOR pagination via the
+ *  _metadata.nextLink FUB returns. Mirrors fubGet's retry/backoff. */
+export async function fubGetUrl(key: string, fullUrl: string): Promise<FubResult> {
+  const auth = btoa(key.trim() + ':');
+  const headers = { Authorization: 'Basic ' + auth, Accept: 'application/json' };
+  for (let attempt = 0; attempt < 4; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(fullUrl, { headers });
+    } catch {
+      await sleep((attempt + 1) * 500);
+      continue;
+    }
+    if (res.status === 429 || res.status === 503) {
+      const ra = Number(res.headers.get('Retry-After')) || attempt + 1;
+      await sleep(ra * 1000);
+      continue;
+    }
+    const body = res.status === 204 ? null : await res.json().catch(() => null);
+    return { status: res.status, body };
+  }
+  return { status: 429, body: null };
+}
+
+/** Paginate /people newest-first via FUB's CURSOR (_metadata.nextLink).
+ *  WHY CURSOR, NOT OFFSET: FUB enforces keyset/cursor pagination past a ~10k offset
+ *  ceiling (docs.followupboss.com/reference/pagination) — the old `offset` loop
+ *  silently truncated large teams at 10,000 people, so their older CLOSED leads
+ *  (created earlier in the year) never synced. Cursor paging walks the whole set.
+ *  Bounded to `sinceMs` (default ~13 months, covering the 12-month baseline window
+ *  + buffer) so a huge team's pull stays complete-but-finite rather than dragging in
+ *  years of history and blowing the Worker subrequest budget. */
+export async function pullPeople(key: string, sinceMs = Date.now() - 400 * 86400_000): Promise<any[]> {
   const leads: any[] = [];
-  let offset = 0;
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const { status, body } = await fubGet(key, '/people', { limit: 100, offset, sort: '-created' });
-    if (status !== 200 || !body) break;
-    const people: any[] = body.people ?? [];
+  const HARD_CAP = 3000; // runaway guard only (~300k people)
+  let result = await fubGet(key, '/people', { limit: 100, sort: '-created' });
+  for (let page = 0; page < HARD_CAP; page++) {
+    if (result.status !== 200 || !result.body) break;
+    const people: any[] = result.body.people ?? [];
     if (people.length === 0) break;
     leads.push(...people);
+    // Newest-first: once the oldest row on this page predates the window, stop.
+    const oldest = people[people.length - 1]?.created;
+    if (oldest && !Number.isNaN(Date.parse(oldest)) && Date.parse(oldest) < sinceMs) break;
     if (people.length < 100) break;
-    offset += 100;
+    const nextLink: string | undefined = result.body._metadata?.nextLink;
+    if (!nextLink) break;
+    result = await fubGetUrl(key, nextLink);
   }
   return leads;
 }

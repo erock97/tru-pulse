@@ -71,6 +71,11 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
   const rows: any[] = [];
   const nowIso = new Date().toISOString();
   const nowMs = Date.now();
+  // Cap per-sync contact-lookup subrequests (2 each) so a large team's now-complete
+  // cursor pull can't exhaust the Worker subrequest budget mid-run (which would abort
+  // before the upserts land). Budget-skipped recent leads default to 'worked' (never a
+  // false strike) and get properly classified on a later run as budget frees up.
+  let contactBudget = 250;
   for (const p of inScope) {
     const stage = String(p.stage ?? '');
     const tags: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => String(t)) : [];
@@ -83,7 +88,8 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
       flag = 'stuck';
     } else if (isOfferPlus(stageClass(stage))) {
       flag = 'worked';
-    } else if (recent) {
+    } else if (recent && contactBudget > 0) {
+      contactBudget--;
       outgoingTexts = await countOutgoingTexts(fubKey, p.id);
       calls = await countCalls(fubKey, p.id);
       flag = classifyLead({ stage, tags, outgoingTexts, calls });
