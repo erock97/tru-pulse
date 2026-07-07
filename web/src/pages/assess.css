@@ -145,6 +145,18 @@
 }
 @media (max-width: 600px) { .asx-card { border-radius: 16px; } }
 
+/* ── Task 7: registration + done screens ── */
+.asx-cta-link { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+.asx-register-form { margin-top: 22px; display: grid; gap: 4px; }
+.asx-field-label { font-size: 13px; font-weight: 700; color: #c9baa0; margin: 14px 0 6px; }
+.asx-field-label:first-child { margin-top: 0; }
+.asx-field { width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.03); color: #f2e8d5; font-size: 15px; font-family: var(--hq-font); outline: none;
+  transition: border-color .15s ease; box-sizing: border-box; }
+.asx-field:focus { border-color: var(--accent); }
+.asx-form-err { margin-top: 12px; padding: 10px 13px; border-radius: 8px; font-size: 13px;
+  background: rgba(192,107,79,.14); border: 1px solid rgba(192,107,79,.4); color: #e0a48c; }
+
 /* ── reduced motion: render final resting state, no transforms/animations ── */
 @media (prefers-reduced-motion: reduce) {
   .asx-reveal-card > *,

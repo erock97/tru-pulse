@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { resolveCohortRoster } from '../lib/api';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { resolveCohortRoster, submitCohortAssessment, claimAgent } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
   ARCH, PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS,
@@ -72,8 +73,21 @@ export default function Assess({ token }: { token: string }) {
   }
 
   if (stage === 'register' || stage === 'done') {
-    // Task 7 builds these. personalResult/proResult/pAns/bAns/agent are ready above.
-    return <div className="asx-shell tru-dark"><div className="asx-card">Coming in Task 7</div></div>;
+    // personalResult/proResult are guaranteed non-null here — reaching this stage
+    // requires having passed through proResult, which sets both.
+    return (
+      <RegisterFlow
+        agent={agent!}
+        token={token}
+        preview={preview}
+        personalResult={personalResult!}
+        proResult={proResult!}
+        pAns={pAns}
+        bAns={bAns}
+        stage={stage}
+        setStage={setStage}
+      />
+    );
   }
 
   return (
@@ -269,4 +283,104 @@ function AssessFlow({
   }
 
   return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
+}
+
+// ── Task 7: gated submit + registration ─────────────────────────────────────
+// Mounted only when stage is 'register'/'done'. Fires the cohort-assessment
+// write exactly once on mount (ref-guarded — React StrictMode double-invokes
+// effects in dev), then renders the email/password registration form and the
+// final "you're in" screen. In `?preview=1` this NEVER touches the backend:
+// no submit_cohort_assessment RPC, no auth.signUp — it just walks the screens.
+function RegisterFlow({
+  agent, token, preview, personalResult, proResult, pAns, bAns, stage, setStage,
+}: {
+  agent: { id: string; name: string };
+  token: string;
+  preview: boolean;
+  personalResult: AxisResult;
+  proResult: AxisResult;
+  pAns: number[];
+  bAns: number[];
+  stage: Stage;
+  setStage: (s: Stage) => void;
+}) {
+  const submitted = useRef(false);
+  const [submitErr, setSubmitErr] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    if (submitted.current) return;
+    submitted.current = true;
+    if (preview) return; // design walk-through only — never hits the DB.
+    const tallies = {
+      energy_p: proResult.axes.energy.letter === 'P' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
+      energy_t: proResult.axes.energy.letter === 'T' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
+      approach_pro: proResult.axes.approach.letter === 'Pro' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
+      approach_rec: proResult.axes.approach.letter === 'Rec' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
+      deal_r: proResult.axes.deal.letter === 'R' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
+      deal_v: proResult.axes.deal.letter === 'V' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
+      decision_d: proResult.axes.decision.letter === 'D' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
+      decision_i: proResult.axes.decision.letter === 'I' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
+    };
+    submitCohortAssessment({
+      token, agentId: agent.id, personalCode: personalResult.code, personalAxes: personalResult.axes,
+      businessCode: proResult.code, tallies, answers: { personal: pAns, pro: bAns },
+    }).catch(() => setSubmitErr('Your result didn’t save — refresh and try again, or ask your team lead for a fresh link.'));
+    // Fire once on mount; deps intentionally omitted (values are stable for the
+    // lifetime of this mount, and the ref guard prevents a second fire anyway).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setErr('');
+    setBusy(true);
+    if (preview) { setStage('done'); setBusy(false); return; } // never create real auth users from a preview
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) { setErr(error.message); setBusy(false); return; }
+    try { await claimAgent(); } catch { /* links on next confirmed login instead */ }
+    setStage('done');
+    setBusy(false);
+  }
+
+  if (stage === 'done') {
+    return (
+      <div className="asx-shell tru-dark">
+        <div className="asx-card asx-reveal-card">
+          <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
+          <h1 className="asx-h1">You're in.</h1>
+          <p className="asx-sub">Your team lead has your profile. Sign in any time to revisit your result.</p>
+          <a className="asx-cta asx-cta-link" href="https://app.truhq.co">Go to app.truhq.co →</a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="asx-shell tru-dark">
+      <div className="asx-card asx-reveal-card">
+        <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
+        <h1 className="asx-h1">Save your result and see it any time.</h1>
+        <p className="asx-sub">Create a quick login — your team lead already has your profile.</p>
+        <form className="asx-register-form" onSubmit={submit}>
+          <label className="asx-field-label" htmlFor="asx-email">Email</label>
+          <input
+            id="asx-email" className="asx-field" type="email" value={email}
+            onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
+          />
+          <label className="asx-field-label" htmlFor="asx-password">Password</label>
+          <input
+            id="asx-password" className="asx-field" type="password" value={password}
+            onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" minLength={6}
+          />
+          {err && <div className="asx-form-err">{err}</div>}
+          {submitErr && <div className="asx-form-err">{submitErr}</div>}
+          <button className="asx-cta" type="submit" disabled={busy}>{busy ? '…' : 'Create account →'}</button>
+        </form>
+      </div>
+    </div>
+  );
 }
