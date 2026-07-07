@@ -15,6 +15,12 @@ alter table agents add column if not exists coaching_enabled boolean not null de
 alter table agents add column if not exists personal_axes    jsonb;
 create index if not exists agents_coaching_idx on agents (team_id) where coaching_enabled;
 
+-- Cutover backfill: carry existing (old-site) assessed agents into the cohort so Coach
+-- is not empty on deploy. Idempotent; a lead can still remove anyone via the picker.
+update agents set coaching_enabled = true
+ where coaching_enabled = false
+   and id in (select agent_id from assessments);
+
 -- Leader toggles cohort membership for an agent in their own org.
 -- Reuses the vetted is_org_member(org_id) helper from schema.sql.
 create or replace function set_coaching(p_agent_id uuid, p_on boolean)
