@@ -26,23 +26,27 @@
 .asx-q-sub { font-size: 15px; color: #c9baa0; margin: 18px 0 0; font-weight: 600; }
 .asx-likert-labels { display: flex; justify-content: space-between; margin-top: 22px; font-size: 13px; color: #8a7d68; text-transform: uppercase; letter-spacing: .06em; }
 
-/* ── Upgrade 3: desktop questions fill the viewport ── */
+/* ── Upgrade 3→4: desktop question card is a dense, weighty focal card ──
+   Task 6d: the card previously used min-height:64vh + flex-centering to fill
+   the viewport, which read as cavernous around a short question. Now the
+   card hugs its content with generous (not cavernous) padding — the shell
+   (.asx-shell) already vertically centers, so a shorter card still sits
+   balanced mid-screen. Visual weight is added instead via bigger type, a
+   wider dot scale and roomier internal spacing, so the shorter card still
+   feels intentional and full rather than shrunken. */
 .asx-quiz-body { animation: asx-qfade .35s ease both; }
 @keyframes asx-qfade { from { opacity: 0; transform: translateY(8px); } }
 @media (min-width: 900px) {
-  /* Bottom padding is intentionally smaller than top: .asx-quiz-body already
-     centers the question block within the space left after .asx-quiz-top, so
-     the card's own bottom padding was stacking on top of that centering gap
-     with no visual break, reading as a much bigger hole below the dots than
-     above the question. Trimming it brings the two perceived gaps in line. */
-  .asx-quiz { max-width: 840px; min-height: 64vh; display: flex; flex-direction: column;
-    padding: clamp(40px, 4.5vw, 60px) clamp(40px, 4.5vw, 60px) clamp(20px, 2.4vw, 28px); }
-  .asx-quiz-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .asx-q { font-size: clamp(32px, 3.6vw, 46px); margin-top: 8px; }
-  .asx-q-sub { font-size: 17px; }
-  .asx-scale { margin-top: 28px; }
-  .asx-diff-labels { font-size: 16px; }
-  .asx-likert-labels { font-size: 14px; }
+  .asx-quiz { max-width: 840px; padding: clamp(44px, 4.6vw, 64px) clamp(48px, 5vw, 68px); }
+  .asx-q { font-size: clamp(38px, 4.2vw, 56px); line-height: 1.2; margin-top: 10px; }
+  .asx-q-sub { font-size: 21px; }
+  .asx-scale { margin-top: 34px; gap: 16px; }
+  .asx-diff-labels { font-size: 18px; margin-top: 26px; }
+  .asx-likert-labels { font-size: 15px; margin-top: 26px; }
+  .asx-sz1 { width: 50px; height: 50px; }
+  .asx-sz2 { width: 58px; height: 58px; }
+  .asx-sz3 { width: 68px; height: 68px; }
+  .asx-sz4 { width: 78px; height: 78px; }
 }
 
 /* ── graduated scale + slider (Upgrade 2) ── */
