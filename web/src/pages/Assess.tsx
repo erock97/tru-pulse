@@ -247,7 +247,7 @@ function AssessFlow({
                     <span>{AXIS_LABEL[ax]}</span>
                     <span className="asx-meter-val">{WORK_LABELS[a.letter]} · {a.pct}%</span>
                   </div>
-                  <div className="asx-meter asx-meter-arch"><span style={{ width: `${a.pct}%` }} /></div>
+                  <div className="asx-meter"><span style={{ width: `${a.pct}%` }} /></div>
                 </div>
               );
             })}

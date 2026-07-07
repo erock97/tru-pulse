@@ -30,7 +30,13 @@
 .asx-quiz-body { animation: asx-qfade .35s ease both; }
 @keyframes asx-qfade { from { opacity: 0; transform: translateY(8px); } }
 @media (min-width: 900px) {
-  .asx-quiz { max-width: 840px; min-height: 64vh; display: flex; flex-direction: column; padding: clamp(40px, 4.5vw, 60px); }
+  /* Bottom padding is intentionally smaller than top: .asx-quiz-body already
+     centers the question block within the space left after .asx-quiz-top, so
+     the card's own bottom padding was stacking on top of that centering gap
+     with no visual break, reading as a much bigger hole below the dots than
+     above the question. Trimming it brings the two perceived gaps in line. */
+  .asx-quiz { max-width: 840px; min-height: 64vh; display: flex; flex-direction: column;
+    padding: clamp(40px, 4.5vw, 60px) clamp(40px, 4.5vw, 60px) clamp(20px, 2.4vw, 28px); }
   .asx-quiz-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .asx-q { font-size: clamp(32px, 3.6vw, 46px); margin-top: 8px; }
   .asx-q-sub { font-size: 17px; }
@@ -72,7 +78,6 @@
   background: linear-gradient(90deg,var(--accent),var(--accent-hi));
   animation: asx-fill 720ms cubic-bezier(.22,.61,.36,1) both;
   animation-delay: calc(.5s + var(--mi, 0) * .09s); }
-.asx-meter-arch > span { background: linear-gradient(90deg, var(--arch, var(--accent)), color-mix(in srgb, var(--arch, var(--accent-hi)) 55%, #F2C079)); }
 @keyframes asx-fill { from { width: 0; } }
 
 @media (max-width: 600px) {
@@ -100,10 +105,10 @@
 .asx-act-marker { font-family: var(--hq-serif); font-size: 13px; letter-spacing: .18em; text-transform: uppercase;
   color: var(--accent-hi); font-weight: 700; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .asx-act-marker::before { content: ""; width: 26px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent)); }
-.asx-act2 .asx-act-marker { color: var(--arch); }
-.asx-act2 .asx-act-marker::before { background: linear-gradient(90deg, transparent, var(--arch)); }
 
-/* Act 2 archetype identity: medallion + name halo */
+/* Act 2 archetype identity: the ONLY two places arch color shows up are the
+   medallion glow/ring below and the divergence-box accent further down.
+   Everything else on Act 2 stays TRU gold, matching Act 1's treatment. */
 .asx-medallion { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 30px; line-height: 1; margin: 6px 0 4px;
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--arch, var(--accent)) 26%, transparent), rgba(255,255,255,.02));
@@ -111,18 +116,10 @@
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--arch, var(--accent)) 10%, transparent), 0 10px 30px -8px var(--arch, var(--accent)); }
 .asx-medallion > span { filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--arch, var(--accent)) 60%, transparent)); }
 
-.asx-act2 .asx-h1 { position: relative; width: fit-content; }
-.asx-act2 .asx-h1::before { content: ""; position: absolute; left: -8%; top: 50%; transform: translateY(-50%);
-  width: 116%; height: 150%; z-index: -1; pointer-events: none;
-  background: radial-gradient(60% 70% at 30% 50%, color-mix(in srgb, var(--arch, var(--accent)) 28%, transparent), transparent 70%);
-  filter: blur(6px); }
-.asx-act2 .asx-sub { color: color-mix(in srgb, var(--arch, #c9baa0) 22%, #c9baa0); }
-
 .asx-meters { display: grid; gap: 16px; margin: 24px 0; }
 .asx-meter-row { display: grid; gap: 6px; }
 .asx-meter-label { display: flex; justify-content: space-between; font-size: 13px; color: #c9baa0; }
 .asx-meter-val { color: var(--accent-hi); font-weight: 700; }
-.asx-act2 .asx-meter-val { color: color-mix(in srgb, var(--arch, var(--accent-hi)) 60%, #F2C079); }
 .asx-strengths { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .asx-chip { padding: 6px 14px; border-radius: 999px; background: rgba(233,162,59,.12); border: 1px solid var(--accent-line); color: #f2e8d5; font-size: 13px; font-weight: 600; }
 .asx-watch { font-size: 14px; color: #c9baa0; line-height: 1.5; }
@@ -134,9 +131,9 @@
   border-left: 3px solid var(--arch, var(--accent));
   box-shadow: 0 12px 40px -20px var(--arch, var(--accent)); }
 .asx-divergence-head { font-family: var(--hq-serif); font-size: 16px; font-weight: 700; letter-spacing: .04em;
-  color: color-mix(in srgb, var(--arch, var(--accent-hi)) 65%, #F2C079); margin-bottom: 4px; }
+  color: var(--accent-hi); margin-bottom: 4px; }
 .asx-diverge-line { font-size: 15px; color: #f2e8d5; line-height: 1.6; margin-top: 10px; }
-.asx-diverge-line strong { color: color-mix(in srgb, var(--arch, var(--accent-hi)) 55%, #F2C079); }
+.asx-diverge-line strong { color: var(--accent-hi); }
 
 @media (min-width: 900px) {
   .asx-reveal-card { max-width: 720px; padding: clamp(40px, 4vw, 56px); }
