@@ -43,8 +43,20 @@ export async function fubGet(
 }
 
 /** Fetch an absolute FUB URL (auth + retry), used for CURSOR pagination via the
- *  _metadata.nextLink FUB returns. Mirrors fubGet's retry/backoff. */
+ *  _metadata.nextLink FUB returns. Mirrors fubGet's retry/backoff.
+ *  SECURITY: only ever send the per-tenant FUB credential to FUB's own host. The URL
+ *  comes from an API response; validating the host prevents leaking the key to an
+ *  arbitrary origin if that response were ever tampered with (SSRF-style exfil). */
 export async function fubGetUrl(key: string, fullUrl: string): Promise<FubResult> {
+  let parsed: URL;
+  try {
+    parsed = new URL(fullUrl);
+  } catch {
+    return { status: 400, body: null };
+  }
+  if (parsed.protocol !== 'https:' || parsed.host !== new URL(BASE).host) {
+    return { status: 400, body: null };
+  }
   const auth = btoa(key.trim() + ':');
   const headers = { Authorization: 'Basic ' + auth, Accept: 'application/json' };
   for (let attempt = 0; attempt < 4; attempt++) {
