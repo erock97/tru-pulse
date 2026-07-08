@@ -1142,6 +1142,15 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
   // This agent's current-stage, created-date-windowed offers/closings (see AgentStat).
   // No ▲/▼ trend yet — returns once person_stage_log accrues real dated history.
   const stat = drill.stats.get(norm(agent));
+  // Per-agent "leads per offer / closing" — the SAME 1 : N ratio the team tiles show
+  // (leads in window ÷ count). node.total is this agent's windowed, tracked-source lead
+  // count — the same baseline as the team's `total`, scoped to one agent — so it follows
+  // the window tab (12mo = the primary baseline) and fills out to a truer ratio as history
+  // accrues. Show the raw count too, mirroring the team's "count + leads-per" pairing.
+  const aOffers = stat?.offersReached ?? 0;
+  const aClosings = stat?.closings ?? 0;
+  const perOfferA = aOffers > 0 ? `1 : ${Math.max(1, Math.round(node.total / aOffers))}` : '—';
+  const perCloseA = aClosings > 0 ? `1 : ${Math.max(1, Math.round(node.total / aClosings))}` : '—';
   const chips: Array<[string, string, number]> = [
     ['all', 'All', node.total],
     ['zero_contact', 'Zero contact', node.zero],
@@ -1214,11 +1223,11 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
           {chips.map(([k, l, n]) => (
             <span key={k} className={`ps-fchip${flagF === k ? ' on' : ''}`} onClick={() => setFlagF(k)}>{l} <b>{n}</b></span>
           ))}
-          <span className="ps-fchip stat">
-            Offers <b>{stat?.offersReached ?? 0}</b>
+          <span className="ps-fchip stat" title="Offers reached, and leads taken per offer (this window; the 12-month view is the baseline)">
+            Offers <b>{aOffers}</b> · <b>{perOfferA}</b> leads
           </span>
-          <span className="ps-fchip stat">
-            Closings <b>{drill.closings.get(norm(agent)) ?? 0}</b>
+          <span className="ps-fchip stat" title="Under contract + closed, and leads taken to land one under contract / sale (this window; the 12-month view is the baseline)">
+            Closings <b>{aClosings}</b> · <b>{perCloseA}</b> leads
           </span>
         </div>
         {node.person && (
