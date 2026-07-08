@@ -45,28 +45,37 @@ export function useReveal(deps: unknown[] = [], root?: HTMLElement | null) {
 export function useCountUp(target: number, durationMs = 1400) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const [val, setVal] = useState(0);
-  const started = useRef(false);
+  // Track which target we last animated to (null = never). Keyed on the target
+  // rather than a boolean flag so that when the value changes (e.g. the window
+  // tab switches MTD→12mo and a count goes 1→25) the number re-animates instead
+  // of freezing at the first value it ever showed.
+  const ranFor = useRef<number | null>(null);
+  const valRef = useRef(0);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+    let raf = 0;
     const run = () => {
-      if (started.current) return;
-      started.current = true;
+      if (ranFor.current === target) return;
+      const from = valRef.current;
+      ranFor.current = target;
       const t0 = performance.now();
       const tick = (now: number) => {
         const p = Math.min(1, (now - t0) / durationMs);
         const eased = 1 - Math.pow(1 - p, 3);
-        setVal(Math.round(target * eased));
-        if (p < 1) requestAnimationFrame(tick);
-        else setVal(target);
+        const cur = Math.round(from + (target - from) * eased);
+        valRef.current = cur;
+        setVal(cur);
+        if (p < 1) raf = requestAnimationFrame(tick);
+        else { valRef.current = target; setVal(target); }
       };
-      requestAnimationFrame(tick);
+      raf = requestAnimationFrame(tick);
     };
     const r = node.getBoundingClientRect();
     if (r.top < window.innerHeight && r.bottom > 0) {
       run();
-      return;
+      return () => cancelAnimationFrame(raf);
     }
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && run()),
@@ -77,6 +86,7 @@ export function useCountUp(target: number, durationMs = 1400) {
     return () => {
       io.disconnect();
       window.clearTimeout(fallback);
+      cancelAnimationFrame(raf);
     };
   }, [target, durationMs]);
 
