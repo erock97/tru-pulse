@@ -104,7 +104,14 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     _dashCache && _dashCache.orgId === org.id ? _dashCache.data : null,
   );
   const [view, setView] = useState<View>('overview');
-  const [win, setWin] = useState<Win>('mtd');
+  // Remember the selected window across reloads — Chrome's Memory Saver discards a
+  // backgrounded tab, and a leader shouldn't land back on MTD after checking a lead.
+  const [win, setWin] = useState<Win>(() => {
+    try { return (sessionStorage.getItem('pulse.win') as Win) || 'mtd'; } catch { return 'mtd'; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem('pulse.win', win); } catch { /* private mode */ }
+  }, [win]);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
@@ -628,8 +635,24 @@ function Overview(p: {
    ============================================================ */
 function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode[]; drill: Drill; strikeLimit: number; onRefresh: () => void }) {
   const [q, setQ] = useState('');
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(() => {
+    try { return sessionStorage.getItem('pulse.open') || null; } catch { return null; }
+  });
   const rosterRef = useRef<HTMLDivElement | null>(null);
+  // Keep the leader's place across a Memory-Saver discard-reload: persist the open
+  // agent, and on mount re-surface + scroll to it (or clear it if that agent is gone).
+  useEffect(() => {
+    try { if (open) sessionStorage.setItem('pulse.open', open); else sessionStorage.removeItem('pulse.open'); } catch { /* private mode */ }
+  }, [open]);
+  useEffect(() => {
+    if (open && nodes.some((n) => n.agent === open)) {
+      setQ(open);
+      requestAnimationFrame(() => rosterRef.current?.scrollIntoView({ block: 'nearest' }));
+    } else if (open) {
+      setOpen(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Triage = the real agents who need action first: paused (manual) / pause-recommended
   // (auto rules, incl. strikes) / zero-contact.
