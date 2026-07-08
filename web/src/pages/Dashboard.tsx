@@ -1130,10 +1130,14 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
     return /\d/.test(s) && !/\s/.test(s);
   };
   const remindLeads = needLeads.filter((l) => !isPlaceholderName(l.name) || fubLink(l));
-  // Names-only, numbered, and the FULL list — no cap. Named leads show just the name
-  // (clean); an unnamed lead shows its FUB link so the agent can still reach it.
+  // Numbered, FULL list — no cap. Every lead shows its FUB link so the agent can tap
+  // straight through; a placeholder name is relabeled "Unnamed lead" but still linked.
   const leadLines = remindLeads
-    .map((l, i) => (isPlaceholderName(l.name) ? `${i + 1}. Unnamed lead — ${fubLink(l)}` : `${i + 1}. ${l.name}`))
+    .map((l, i) => {
+      const label = isPlaceholderName(l.name) ? 'Unnamed lead' : l.name;
+      const link = fubLink(l);
+      return link ? `${i + 1}. ${label} — ${link}` : `${i + 1}. ${label}`;
+    })
     .join('\n');
   const remindN = remindLeads.length;
   const remindMsg = `${first} — ${remindN} lead${remindN === 1 ? '' : 's'} ${remindN === 1 ? 'needs' : 'need'} a first touch (never contacted or stuck in Lead). Please work ${remindN === 1 ? 'this' : 'these'} today:\n\n${leadLines}`;
