@@ -647,10 +647,15 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
   useEffect(() => {
     if (open && nodes.some((n) => n.agent === open)) {
       setQ(open);
-      requestAnimationFrame(() => rosterRef.current?.scrollIntoView({ block: 'nearest' }));
-    } else if (open) {
-      setOpen(null);
+      // Land on the reopened agent, not the top. A single rAF fires before the data
+      // paint + reveal animations settle the layout (and the browser's own scroll
+      // restore can reset us), so re-assert the scroll a couple beats later.
+      const toAgent = () => rosterRef.current?.scrollIntoView({ block: 'start' });
+      const t1 = setTimeout(toAgent, 300);
+      const t2 = setTimeout(toAgent, 800);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
     }
+    if (open) setOpen(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
