@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
-import { supabase } from '../lib/supabase';
 import {
-  loadCourse, gradeQuiz, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts,
+  loadCourse, gradeQuiz, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
 } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
@@ -78,7 +77,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
       <div className="ac">
         <header className="ac-top">
           <TruLogo size={26} wordSize={19} sub="Rep" />
-          <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <button className="link small" onClick={() => signOutClean()}>Sign out</button>
         </header>
         <main className="ac-main">
           <div className="ac-hero2 fu">
@@ -453,7 +452,7 @@ function RailHead({ module: m, onBack }: { module: CourseModule; onBack: () => v
 function RailFoot() {
   return (
     <div className="ac-rail-foot">
-      <button className="link small" onClick={() => supabase.auth.signOut()}>Sign out</button>
+      <button className="link small" onClick={() => signOutClean()}>Sign out</button>
     </div>
   );
 }

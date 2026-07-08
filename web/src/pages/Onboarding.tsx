@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { provisionOrg, triggerSync } from '../lib/api';
-import { supabase } from '../lib/supabase';
+import { provisionOrg, triggerSync, signOutClean } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
@@ -96,7 +95,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           <button className="btn full" type="submit">Create &amp; sync</button>
         </form>
         <div className="tru-auth-foot">
-          <button className="link" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <button className="link" onClick={() => signOutClean()}>Sign out</button>
         </div>
       </div>
     </div>
