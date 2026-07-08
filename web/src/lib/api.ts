@@ -626,6 +626,7 @@ export interface Settings {
   pause_volume_leads?: number | null;   // rule 1 threshold (defaults to per_agent_capacity)
   pause_no_close_on?: boolean | null;   // rule 2: N leads taken since their last UC/close
   pause_no_close_leads?: number | null; // rule 2 threshold (default 30)
+  pause_no_close_since?: string | null; // rule 2 clean-slate: only count leads created on/after this ISO date; null = all history
 }
 export interface DashboardData {
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
@@ -689,7 +690,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals, stageLog] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
-    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads').limit(1),
+    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads,pause_no_close_since').limit(1),
     allLeads(),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('id,name,email,phone,is_paused,pause_reason,pause_note,paused_at'),

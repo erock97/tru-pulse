@@ -209,6 +209,16 @@ export default {
       for (const k of ['pause_volume_on', 'pause_no_close_on']) {
         if (typeof body[k] === 'boolean') patch[k] = body[k];
       }
+      // Clean-slate date for the no-closings rule: nullable ISO timestamp. An explicit
+      // null/'' clears the slate (count all history again); a valid date sets it.
+      if ('pause_no_close_since' in body) {
+        const raw = body.pause_no_close_since;
+        if (raw == null || raw === '') patch.pause_no_close_since = null;
+        else {
+          const t = Date.parse(String(raw));
+          if (Number.isFinite(t)) patch.pause_no_close_since = new Date(t).toISOString();
+        }
+      }
       // Which paid-source families this org actually uses (drives every board filter).
       if (Array.isArray(body.sources)) {
         const KNOWN = ['Zillow', 'Realtor.com MVIP', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];

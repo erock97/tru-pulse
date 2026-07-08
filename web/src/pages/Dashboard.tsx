@@ -279,6 +279,10 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const pauseVolumeLeads = Math.max(1, Number(data.settings?.pause_volume_leads ?? capacity)); // own threshold; falls back to capacity
   const pauseNoCloseOn = data.settings?.pause_no_close_on === true;     // broker opts in
   const pauseNoCloseLeads = Math.max(1, Number(data.settings?.pause_no_close_leads ?? 30));
+  // Clean slate: only judge the no-closings drought over the era we've actually been
+  // tracking closings. FUB has no stage history, so a legacy book reads as "never
+  // produced" and falsely trips the rule. null = count all history (today's behavior).
+  const pauseNoCloseSince = data.settings?.pause_no_close_since ? Date.parse(data.settings.pause_no_close_since) : null;
   const pausedByAgent = new Map<string, PauseReason[]>();
   const addPause = (a: string, r: PauseReason) => pausedByAgent.set(a, [...(pausedByAgent.get(a) ?? []), r]);
 
@@ -307,6 +311,10 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     const leadsByAgent = new Map<string, LeadRow[]>();
     for (const l of data.leads) {
       if (!l.assigned_to) continue;
+      if (pauseNoCloseSince != null) {
+        if (!l.fub_created) continue;                                 // unknown intake date → exclude while a slate is set
+        if (Date.parse(l.fub_created) < pauseNoCloseSince) continue;  // pre-slate lead → doesn't count toward the drought
+      }
       const arr = leadsByAgent.get(l.assigned_to);
       if (arr) arr.push(l); else leadsByAgent.set(l.assigned_to, [l]);
     }
@@ -1523,6 +1531,21 @@ function SettingsView({ initial, onSaved }: { initial: Settings; onSaved: () => 
       </div>
       {F('pause_volume_leads', 'Monthly volume cap', 'Leads taken this month that trigger the volume pause. Resets when the month rolls over.')}
       {F('pause_no_close_leads', 'Leads without a closing', 'Counted live from their FUB history: leads taken since their last under-contract. Any UC — from any lead — resets it, but something has to go under contract or the leads stop.')}
+      <div className="ps-setrow">
+        <div>
+          <div className="ps-setlabel">Clean-slate date</div>
+          <div className="ps-sethint">Only leads received on or after this date count toward the no-closings rule. Set it to today to give everyone a fresh start; leave blank to count all history. (We can only enforce this rule over the period we’ve been tracking closings.)</div>
+        </div>
+        <div className="ps-setinput" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <input
+            type="date"
+            value={form.pause_no_close_since ? String(form.pause_no_close_since).slice(0, 10) : ''}
+            onChange={(e) => setForm({ ...form, pause_no_close_since: e.target.value ? new Date(e.target.value).toISOString() : null })}
+          />
+          <button type="button" className="btn" style={{ padding: '4px 12px' }} onClick={() => setForm({ ...form, pause_no_close_since: new Date().toISOString() })}>Today</button>
+          <button type="button" className="btn ghost" style={{ padding: '4px 12px' }} onClick={() => setForm({ ...form, pause_no_close_since: null })}>Clear</button>
+        </div>
+      </div>
 
       <button className="btn" onClick={save} disabled={busy} style={{ marginTop: 18 }}>{busy ? 'Saving…' : 'Save settings'}</button>
     </div>
