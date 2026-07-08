@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { supabase } from '../lib/supabase';
-import { adminActAs, type AdminLeader } from '../lib/api';
+import { adminActAs, signOutClean, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 import { FubConnect } from '../components/FubConnect';
 import { AdminConnections } from '../components/AdminConnections';
@@ -207,7 +207,7 @@ export default function Home({
         orgName={org.name}
         eyebrow="Your TRU HQ"
         title={`Welcome back, ${org.name}.`}
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={() => signOutClean()}
         nav={{
           onHome: () => {
             window.location.hash = '/';

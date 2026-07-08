@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { loadRep, inviteAgent, signOffAgent, simScenarios, type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario } from '../lib/api';
-import { supabase } from '../lib/supabase';
+import { loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario } from '../lib/api';
 import { Lesson, SimView } from './AgentCourse';
 import { HqShell } from '../components/hqShell';
 import { Icon, Ring, Avatar } from '../components/hqUi';
@@ -203,7 +202,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
         orgName={org.name}
         eyebrow="Onboarding & certification"
         title="Rep — certify every agent."
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={() => signOutClean()}
         nav={{
           onHome: () => onHome?.(),
           onOpenPulse: () => { window.location.hash = '/pulse'; },

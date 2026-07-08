@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
-import { supabase } from '../lib/supabase';
-import { setCoaching, isDemo } from '../lib/api';
+import { setCoaching, isDemo, signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -269,7 +268,7 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
       <div className="tru-dark">
         <HqShell
           orgName={org.name} eyebrow={`Coaching · ${org.name}`} title="Coach — your team, at a glance."
-          onSignOut={() => supabase.auth.signOut()}
+          onSignOut={() => signOutClean()}
           nav={coachNav(onHome)}
         >
           <div className="center-wrap" style={{ minHeight: '50vh', display: 'grid', placeItems: 'center' }}>
@@ -289,7 +288,7 @@ export default function Coach({ org, onHome }: { org: { id: string; name: string
         eyebrow={openAgent ? `Coaching · ${org.name}` : 'Monday, coaching brief'}
         title={openAgent ? `Coach — ${openAgent.name}` : 'Coach — your team, at a glance.'}
         context={context}
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={() => signOutClean()}
         nav={coachNav(onHome)}
       >
         <div className="coach-canvas" ref={canvasRef}>

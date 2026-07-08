@@ -465,7 +465,12 @@ export async function adminActAs(email: string): Promise<void> {
   const { data: cur } = await supabase.auth.getSession();
   if (cur.session) {
     try {
-      sessionStorage.setItem('hq_admin_return', JSON.stringify({ at: cur.session.access_token, rt: cur.session.refresh_token }));
+      // localStorage, NOT sessionStorage: the impersonated Supabase session lives in
+      // localStorage, so it survives new tabs and browser restarts — but sessionStorage
+      // does not. Stashing the return token in sessionStorage meant that any fresh tab
+      // loaded AS the team with no way back, so the "Exit — switch teams" control
+      // vanished. Matching the token's lifetime to the session's keeps it available.
+      localStorage.setItem('hq_admin_return', JSON.stringify({ at: cur.session.access_token, rt: cur.session.refresh_token }));
     } catch { /* private mode — Exit falls back to sign-out */ }
   }
   const { error } = await supabase.auth.verifyOtp({ type: 'magiclink', token_hash: j.token_hash });
@@ -474,7 +479,7 @@ export async function adminActAs(email: string): Promise<void> {
 
 /** Is this browser inside an impersonated session (owner tokens stashed)? */
 export function hasAdminReturn(): boolean {
-  try { return !!sessionStorage.getItem('hq_admin_return'); } catch { return false; }
+  try { return !!localStorage.getItem('hq_admin_return'); } catch { return false; }
 }
 
 /** Exit impersonation: restore the owner's own session so they land back on their
@@ -482,8 +487,8 @@ export function hasAdminReturn(): boolean {
  *  session falls back to sign-out. */
 export async function adminReturn(): Promise<void> {
   let saved: { at: string; rt: string } | null = null;
-  try { saved = JSON.parse(sessionStorage.getItem('hq_admin_return') ?? 'null'); } catch { saved = null; }
-  try { sessionStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
+  try { saved = JSON.parse(localStorage.getItem('hq_admin_return') ?? 'null'); } catch { saved = null; }
+  try { localStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
   // Leave whatever product route we were impersonating in; land on the HQ home.
   try { window.location.hash = '/'; } catch { /* noop */ }
   if (!saved) { await supabase.auth.signOut(); return; }
@@ -495,6 +500,14 @@ export async function adminReturn(): Promise<void> {
     const { error: e2 } = await supabase.auth.refreshSession({ refresh_token: saved.rt });
     if (e2) await supabase.auth.signOut();
   }
+}
+
+/** Sign out AND drop any stashed owner-return token. Now that the token lives in
+ *  localStorage (durable), a raw signOut while impersonating would otherwise leave a
+ *  stale return handle behind that shows a phantom "Exit — switch teams" next login. */
+export async function signOutClean(): Promise<void> {
+  try { localStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
+  await supabase.auth.signOut();
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS

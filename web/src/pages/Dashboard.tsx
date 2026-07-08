@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
-import { loadDashboard, saveSettings, setAgentPause, type DashboardData, type Settings, type LeadRow } from '../lib/api';
-import { supabase } from '../lib/supabase';
+import { loadDashboard, saveSettings, setAgentPause, signOutClean, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
@@ -408,7 +407,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
         eyebrow={HEAD[view].eyebrow}
         title={HEAD[view].title}
         context={context}
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={() => signOutClean()}
         nav={{
           onHome: () => onHome?.(),
           onOpenPulse: () => setView('overview'),
