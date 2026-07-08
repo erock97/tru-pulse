@@ -1111,6 +1111,11 @@ function PauseControl({ agentId, isPaused, reason, note, pausedAt, onSaved }: {
           >
             {PAUSE_REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
+          <a
+            className="ps-abtn sm" href="https://premieragent.zillow.com/leads/routing/routing"
+            target="_blank" rel="noopener noreferrer"
+            title="Open Zillow lead routing to pause this agent"
+          >Pause in Zillow ↗</a>
           {r === 'other' && (
             <input
               className="ad-input ps-pausectl-note" placeholder="Say why…" value={n} disabled={busy}
