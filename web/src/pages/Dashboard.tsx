@@ -1110,7 +1110,6 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
   ];
   const paused = drill.paused.get(agent);
   const first = agent.split(' ')[0];
-  const needN = node.zero + node.stuck;
   const noClose = paused?.find((r) => r.kind === 'no_close');
   const pauseMsg = noClose
     ? `Hey ${first} — I'm holding new leads for now. You've taken ${noClose.count} since your last under-contract, and the team rule is something has to go under contract every ${noClose.cap}. Let's get on a call, work the pipeline you already have, and get one across — the moment it lands, leads turn right back on. I'm in it with you.`
@@ -1120,14 +1119,28 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
     return l.fub_person_id ? `https://${sub ? sub + '.followupboss.com' : 'app.followupboss.com'}/2/people/view/${l.fub_person_id}` : null;
   };
   const needLeads = mine.filter((l) => l.flag === 'zero_contact' || l.flag === 'stuck');
-  const CAP = 5;
-  const leadLines = needLeads.slice(0, CAP).map((l) => { const link = fubLink(l); return `• ${l.name || 'Lead'}${link ? `: ${link}` : ''}`; }).join('\n');
-  const moreLine = needLeads.length > CAP ? `\n…plus ${needLeads.length - CAP} more in Pulse.` : '';
-  const remindMsg = `Hey ${first} — you've got ${needN} lead${needN === 1 ? '' : 's'} that still ${needN === 1 ? 'needs' : 'need'} a first touch (uncontacted or sitting in Lead). Please reach out today:\n${leadLines}${moreLine}`;
+  // A FUB "name" that's really a system placeholder (Zuser…/User123, a random token,
+  // or a bare phone number) carries no signal — relabel those "Unnamed lead" so the
+  // text reads clean. Keep such a lead only if it still has a FUB link the agent can
+  // open; a nameless, link-less lead isn't actionable, so drop it.
+  const isPlaceholderName = (n?: string | null) => {
+    const s = (n ?? '').trim();
+    if (!s) return true;
+    if (/^z?user\d+$/i.test(s)) return true;
+    return /\d/.test(s) && !/\s/.test(s);
+  };
+  const remindLeads = needLeads.filter((l) => !isPlaceholderName(l.name) || fubLink(l));
+  // Names-only, numbered, and the FULL list — no cap. Named leads show just the name
+  // (clean); an unnamed lead shows its FUB link so the agent can still reach it.
+  const leadLines = remindLeads
+    .map((l, i) => (isPlaceholderName(l.name) ? `${i + 1}. Unnamed lead — ${fubLink(l)}` : `${i + 1}. ${l.name}`))
+    .join('\n');
+  const remindN = remindLeads.length;
+  const remindMsg = `${first} — ${remindN} lead${remindN === 1 ? '' : 's'} ${remindN === 1 ? 'needs' : 'need'} a first touch (never contacted or stuck in Lead). Please work ${remindN === 1 ? 'this' : 'these'} today:\n\n${leadLines}`;
   const digits = c?.phone ? c.phone.replace(/[^+\d]/g, '') : null;
   const sms = (body: string) => (digits ? `sms:${digits}?&body=${encodeURIComponent(body)}` : null);
   const emailHref = c?.email
-    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(needN > 0 ? remindMsg : `Hey ${first} — quick check-in on your pipeline. Anything I can help with this week?`)}`
+    ? `mailto:${c.email}?subject=${encodeURIComponent('Your leads this week')}&body=${encodeURIComponent(remindN > 0 ? remindMsg : `Hey ${first} — quick check-in on your pipeline. Anything I can help with this week?`)}`
     : null;
 
   return (
@@ -1167,7 +1180,7 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
         {node.person && (
           <div className="ps-drill-acts">
             {paused && sms(pauseMsg) && <a className="ps-abtn warm" href={sms(pauseMsg)!} title={noClose ? 'Pre-written: leads hold until one goes under contract — supportive' : "Warm, pre-written: you're at capacity — nothing wrong, keep going"}>💬 Pause text</a>}
-            {needN > 0 && sms(remindMsg) && <a className="ps-abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${needN} un-worked leads`}>💬 Reminder ({needN})</a>}
+            {remindN > 0 && sms(remindMsg) && <a className="ps-abtn" href={sms(remindMsg)!} title={`Nudge ${first} on ${remindN} un-worked leads`}>💬 Reminder ({remindN})</a>}
             {emailHref ? <a className="ps-abtn" href={emailHref}>✉ Email</a> : <span className="ps-abtn off" title="No email on file — add it in FUB">✉ No email</span>}
             {digits ? <a className="ps-abtn" href={`sms:${digits}`}>💬 Text</a> : <span className="ps-abtn off" title="No mobile on file — add it in FUB">💬 No mobile</span>}
           </div>
