@@ -8,6 +8,7 @@ export interface Env {
   BRIEF_FROM?: string;                // e.g. "TRU Pulse <pulse@trucoaching.co>"
   WEBHOOK_SECRET?: string;            // shared secret in the FUB webhook callback URL (?key=)
   FUB_SYSTEM_KEY?: string;            // FUB system key (X-System-Key) — required to create webhooks
+  FUB_SYSTEM_NAME?: string;           // FUB system name (X-System) — defaults to 'TerrasonFUBDashboard' when unset
   // TRU Rep — Live Sim (practice calls). Optional until configured.
   RETELL_API_KEY?: string;            // Retell account (shared with voice-isa)
   RETELL_AGENT_ID?: string;           // the practice-buyer agent (created by db/setup_practice_agent.mjs)

@@ -5,7 +5,7 @@ import type { Env } from './env.js';
 import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
-import { syncTeam, syncAllActiveTeams, type TeamRow } from './sync.js';
+import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey } from './crypto.js';
@@ -44,7 +44,14 @@ async function connectTeamKey(
   if (subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: subdomain });
   if (env.FUB_SYSTEM_KEY) {
     const cb = `${origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
-    try { await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY); } catch { /* live updates are best-effort */ }
+    try {
+      await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME);
+    } catch (e) {
+      // Live updates are best-effort — never block the connect flow on FUB's webhook
+      // API — but a failed registration must be VISIBLE (in `wrangler tail`), not
+      // silently swallowed, or the team quietly falls back to cron-only freshness.
+      console.error(`registerWebhooks failed for team ${team.id}:`, e);
+    }
   }
   // Heavy full pull → background so the UI returns immediately.
   ctx.waitUntil(syncTeam(env, database, { id: team.id, org_id: team.org_id, fub_subdomain: subdomain }, 180).catch(() => {}));
@@ -120,7 +127,7 @@ export default {
       const sysHdr: Record<string, string> = env.FUB_SYSTEM_KEY
         ? { 'X-System': 'TerrasonFUBDashboard', 'X-System-Key': env.FUB_SYSTEM_KEY } : {};
       const wh = await fubGet(fubKey, '/webhooks', { limit: 100 }, sysHdr);
-      const webhooks = (wh.body?.webhooks ?? []).map((w: any) => ({ event: w.event, url: w.url, status: w.status }));
+      const webhooks = (wh.body?.webhooks ?? []).map((w: any) => ({ ...w }));
       const recentEv = await fubGet(fubKey, '/events', { limit: 100 });
       const recentEventTypes = [...new Set((recentEv.body?.events ?? []).map((e: any) => String(e.type ?? e.eventType)))];
       const stagesRes = await fubGet(fubKey, '/stages', { limit: 100 });
@@ -246,17 +253,38 @@ export default {
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
       const team = rows[0] as TeamRow;
-      // A re-sync accrues the stage-progression log itself (syncTeam), so the webhook
-      // just triggers a fast sync for near-real-time flag + stage-hit updates. The
-      // 30-min cron does the same for every team, so capture never depends on a
-      // single webhook landing.
-      await req.json().catch(() => null); // drain body (FUB posts { event, resourceIds })
-      try {
-        const synced = await syncTeam(env, database, team, 30);
-        return json({ ok: true, synced });
-      } catch (e) {
-        return json({ error: String(e) }, 500);
-      }
+      // FUB posts { event, resourceIds }. A people event with a small, explicit id
+      // list is the fast path: fetch just those lead(s) by id and upsert them
+      // (syncPeopleByIds) — near-instant, and it accrues the stage-progression log
+      // itself (same core syncTeam uses). Anything else — a call/text event (whose
+      // resourceIds aren't person ids) or a missing/empty/oversized id list — falls
+      // back to the existing full team re-sync. The 30-min cron does a full sync for
+      // every team regardless, so capture never depends on a single webhook landing.
+      const body = (await req.json().catch(() => null)) as { event?: string; resourceIds?: unknown } | null;
+      const event = String(body?.event ?? '');
+      const resourceIds = Array.isArray(body?.resourceIds) ? (body!.resourceIds as unknown[]) : null;
+      // FUB disables a webhook that doesn't respond quickly, and on large teams the
+      // sync itself can take longer than FUB's timeout — so ack immediately and let
+      // the actual sync run in the background via ctx.waitUntil. Errors are only
+      // visible in `wrangler tail` now (the caller already got a 200), so log both
+      // the outcome and any failure loudly.
+      ctx.waitUntil(
+        (async () => {
+          try {
+            if (event.startsWith('people') && resourceIds && resourceIds.length > 0 && resourceIds.length <= 100) {
+              const ids = resourceIds.map(String).join(',');
+              const synced = await syncPeopleByIds(env, database, team, ids);
+              console.log(`webhook/fub team=${teamId} mode=targeted synced=${JSON.stringify(synced)}`);
+            } else {
+              const synced = await syncTeam(env, database, team);
+              console.log(`webhook/fub team=${teamId} mode=full synced=${JSON.stringify(synced)}`);
+            }
+          } catch (e) {
+            console.error(`webhook/fub team=${teamId} sync failed:`, e);
+          }
+        })(),
+      );
+      return json({ ok: true, accepted: true });
     }
 
     // Admin: point a team's FUB account at our webhook so updates arrive live.
@@ -269,7 +297,7 @@ export default {
       try {
         const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
         const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
-        return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY) });
+        return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME) });
       } catch (e) {
         return json({ error: String(e) }, 500);
       }

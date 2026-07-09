@@ -179,6 +179,21 @@ export async function fubPost(key: string, path: string, body: unknown, extra: R
   return { status: res.status, body: b };
 }
 
+export async function fubDelete(key: string, path: string, extra: Record<string, string> = {}): Promise<FubResult> {
+  const auth = btoa(key.trim() + ':');
+  let res: Response | null = null;
+  try {
+    res = await fetch(BASE + path, {
+      method: 'DELETE',
+      headers: { Authorization: 'Basic ' + auth, Accept: 'application/json', ...extra },
+    });
+  } catch {
+    return { status: 0, body: null };
+  }
+  const b = res.status === 204 ? null : await res.json().catch(() => null);
+  return { status: res.status, body: b };
+}
+
 // The FUB events that can change a lead's flag — new lead, stage/tag edits, and the
 // contact activity (calls/texts) the "worked" rule counts. Registering these makes
 // Pulse update live instead of waiting on the cron.
@@ -187,24 +202,42 @@ export const FUB_WEBHOOK_EVENTS = [
 ];
 
 // FUB requires webhook creation to identify a registered integration via these
-// headers. We reuse Eric's existing FUB system (same key as the Terrason dashboard).
-const X_SYSTEM = 'TerrasonFUBDashboard';
+// headers. Historically we reused Eric's existing FUB system (same key as the
+// Terrason dashboard) — but FUB disables a webhook when two integrations share
+// one system identity, so the name is now configurable via env.FUB_SYSTEM_NAME
+// (falling back to this default so behavior is unchanged until it's set).
+const DEFAULT_X_SYSTEM = 'TerrasonFUBDashboard';
 
 /** Idempotently register the flag-affecting webhooks for this account → callbackUrl. */
 export async function registerWebhooks(
   key: string,
   callbackUrl: string,
   systemKey?: string,
+  systemName?: string,
 ): Promise<Array<{ event: string; status: number; id?: number; error?: string }>> {
-  const sys: Record<string, string> = systemKey ? { 'X-System': X_SYSTEM, 'X-System-Key': systemKey } : {};
-  const existing = await fubGet(key, '/webhooks', { limit: 100 }, sys);
-  const have = new Set<string>();
-  if (existing.status === 200 && existing.body) {
-    for (const w of existing.body.webhooks ?? []) have.add(`${w.event}|${w.url}`);
-  }
+  const sys: Record<string, string> = systemKey
+    ? { 'X-System': systemName || DEFAULT_X_SYSTEM, 'X-System-Key': systemKey }
+    : {};
   const out: Array<{ event: string; status: number; id?: number; error?: string }> = [];
+
+  // FUB deduplicates webhooks by URL *path* (it ignores the ?query string), and a
+  // webhook that ever got auto-disabled never recovers — so re-registering the same
+  // path just silently skips and leaves the dead one in place. Delete every existing
+  // webhook on OUR exact path first (matched by the path prefix, so fub-sync and any
+  // other integration on a different path are never touched), then create fresh ones
+  // that inherit the current — fixed — handler's behavior.
+  const pathPrefix = callbackUrl.split('?')[0];
+  const existing = await fubGet(key, '/webhooks', { limit: 100 }, sys);
+  if (existing.status === 200 && existing.body) {
+    for (const w of existing.body.webhooks ?? []) {
+      if (String(w.url ?? '').startsWith(pathPrefix)) {
+        const del = await fubDelete(key, `/webhooks/${w.id}`, sys);
+        out.push({ event: `deleted:${w.event}#${w.id}`, status: del.status });
+      }
+    }
+  }
+
   for (const event of FUB_WEBHOOK_EVENTS) {
-    if (have.has(`${event}|${callbackUrl}`)) { out.push({ event, status: 200 }); continue; }
     const r = await fubPost(key, '/webhooks', { event, url: callbackUrl }, sys);
     out.push({ event, status: r.status, id: r.body?.id, error: r.status >= 300 ? JSON.stringify(r.body) : undefined });
   }
@@ -228,7 +261,7 @@ export async function fubCreatePerson(
   p: { name?: string | null; phone?: string | null; source?: string; tags?: string[] },
   systemKey?: string,
 ): Promise<number | null> {
-  const sys: Record<string, string> = systemKey ? { 'X-System': X_SYSTEM, 'X-System-Key': systemKey } : {};
+  const sys: Record<string, string> = systemKey ? { 'X-System': DEFAULT_X_SYSTEM, 'X-System-Key': systemKey } : {};
   const person: any = { source: p.source ?? 'TRU Prospect', ...splitName(p.name) };
   if (p.phone) person.phones = [{ value: p.phone, type: 'mobile' }];
   if (p.tags?.length) person.tags = p.tags;

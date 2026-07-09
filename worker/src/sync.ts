@@ -4,7 +4,7 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
-import { pullPeople, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
+import { pullPeople, getPeopleByIds, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage, stageClass, isOfferPlus } from '../../shared/flags.js';
 
 // Contact counts (calls/texts) are only meaningful for RECENT active leads (the
@@ -27,25 +27,22 @@ export interface TeamRow {
   fub_subdomain: string | null;
 }
 
-// 180-day default window so the dashboard's 6-month view has real coverage.
-// windowDays is retained for call-site compatibility but no longer bounds the people
-// pull — we sync ALL tracked people now (a created-date window hid closed deals).
-export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDays = 180) {
-  // 1. Decrypt this tenant's FUB key (only the Worker can read team_secrets).
-  const secret = await database.select('team_secrets', `team_id=eq.${team.id}&select=fub_key_enc`);
-  if (!secret.length) throw new Error(`no FUB key for team ${team.id}`);
+// Decrypt this tenant's FUB key (only the Worker can read team_secrets). Shared by
+// syncTeam (full pull) and syncPeopleByIds (targeted webhook pull) so the two paths
+// can never drift on how the key is fetched/decrypted.
+async function decryptTeamKey(env: Env, database: Db, teamId: string): Promise<string> {
+  const secret = await database.select('team_secrets', `team_id=eq.${teamId}&select=fub_key_enc`);
+  if (!secret.length) throw new Error(`no FUB key for team ${teamId}`);
   const encKey = await importEncKey(env.FUB_ENC_KEY);
-  const fubKey = await decryptKey(encKey, secret[0].fub_key_enc);
+  return decryptKey(encKey, secret[0].fub_key_enc);
+}
 
-  // 2. Backfill the subdomain if we don't have it (for per-record FUB links).
-  if (!team.fub_subdomain) {
-    const sub = await detectSubdomain(fubKey);
-    if (sub) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });
-  }
-
-  // 3. Pull ALL people (no created-date window — that hid every closed deal); keep
-  //    only tracked paid sources.
-  const people = await pullPeople(fubKey);
+// The classify-and-upsert core, shared by a full team sync (syncTeam) and the
+// targeted webhook path (syncPeopleByIds) — whichever set of `people` FUB gives us,
+// this is the ONE place that turns them into 'leads' rows + stage-log hits, so the
+// two paths can never classify the same lead differently.
+export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey: string, people: any[]) {
+  // Keep only tracked paid sources.
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
   const ponds = await pullPonds(fubKey);
 
@@ -157,6 +154,44 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
     }
   }
 
+  // Stage-progression log — additive; ignore-duplicates so a lead's first-seen date
+  // at a stage is never overwritten by a later sync. Never fails the lead sync.
+  try {
+    await database.upsert('person_stage_log', stageLogRows, 'team_id,fub_person_id,stage', { ignoreDuplicates: true });
+  } catch {
+    // the log is a metrics enrichment layer; a schema not-yet-migrated must not break sync
+  }
+
+  return {
+    upserted: rows.length,
+    stageHits: stageLogRows.length,
+    inScope: inScope.length,
+    zeroContact: rows.filter((r) => r.flag === 'zero_contact').length,
+    stuck: rows.filter((r) => r.flag === 'stuck').length,
+    worked: rows.filter((r) => r.flag === 'worked').length,
+  };
+}
+
+// 180-day default window so the dashboard's 6-month view has real coverage.
+// windowDays is retained for call-site compatibility but no longer bounds the people
+// pull — we sync ALL tracked people now (a created-date window hid closed deals).
+export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDays = 180) {
+  // 1. Decrypt this tenant's FUB key (only the Worker can read team_secrets).
+  const fubKey = await decryptTeamKey(env, database, team.id);
+
+  // 2. Backfill the subdomain if we don't have it (for per-record FUB links).
+  if (!team.fub_subdomain) {
+    const sub = await detectSubdomain(fubKey);
+    if (sub) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });
+  }
+
+  // 3. Pull ALL people (no created-date window — that hid every closed deal) and run
+  //    them through the shared classify-and-upsert core (syncPeople above) — the
+  //    same core the targeted webhook path uses, so a full sync and a targeted
+  //    webhook sync can never classify a lead differently.
+  const people = await pullPeople(fubKey);
+  const result = await syncPeople(env, database, team, fubKey, people);
+
   // Keep the shared agents rows stocked with FUB's contact info (email/phone) so
   // the dashboard's email/text actions always have someone to reach. Existing rows
   // (e.g. migrated from Coach) are matched by fub_user_id, then by name — never duplicated.
@@ -174,23 +209,28 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
     // metrics enrichment only
   }
 
-  // Stage-progression log — additive; ignore-duplicates so a lead's first-seen date
-  // at a stage is never overwritten by a later sync. Never fails the lead sync.
-  try {
-    await database.upsert('person_stage_log', stageLogRows, 'team_id,fub_person_id,stage', { ignoreDuplicates: true });
-  } catch {
-    // the log is a metrics enrichment layer; a schema not-yet-migrated must not break sync
-  }
-
-  await database.upsert('sync_state', [{ team_id: team.id, org_id: team.org_id, last_sync_at: nowIso }], 'team_id');
+  await database.upsert(
+    'sync_state',
+    [{ team_id: team.id, org_id: team.org_id, last_sync_at: new Date().toISOString() }],
+    'team_id',
+  );
 
   return {
     pulled: people.length,
-    inScope: inScope.length,
-    zeroContact: rows.filter((r) => r.flag === 'zero_contact').length,
-    stuck: rows.filter((r) => r.flag === 'stuck').length,
-    worked: rows.filter((r) => r.flag === 'worked').length,
+    inScope: result.inScope,
+    zeroContact: result.zeroContact,
+    stuck: result.stuck,
+    worked: result.worked,
   };
+}
+
+// Targeted webhook path: FUB tells us exactly which person id(s) changed, so we
+// fetch ONLY those (getPeopleByIds) and run them through the same classify-and-
+// upsert core a full sync uses — a near-instant update instead of a full-team pull.
+export async function syncPeopleByIds(env: Env, database: Db, team: TeamRow, ids: string) {
+  const fubKey = await decryptTeamKey(env, database, team.id);
+  const people = await getPeopleByIds(fubKey, ids);
+  return syncPeople(env, database, team, fubKey, people);
 }
 
 const normName = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
