@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, FormEvent, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { setCoaching, isDemo, signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
 import {
-  loadRoster, teamMix, loadProfile, loadGoalBundle, loadCheckins,
-  saveCheckin, saveGoalFields, setQuarter, toggleCommitment, addCommitment,
+  loadRoster, teamMix, loadProfile, loadGoalBundle,
+  loadCheckinBundle, loadOpenCommitments, saveStructuredCheckin,
+  saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
   loadFullRoster, loadTeamLinks,
-  type RosterAgent, type Profile, type Goal, type Commitment, type Checkin, type TeamSeg,
-  type TeamLink,
+  ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
+  type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
+  type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
+  type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
 import { CG } from '../lib/assessmentData';
 import '../truHqDark.css';
@@ -594,36 +597,118 @@ const AXIS_TITLE: Record<string, string> = {
   energy: 'Energy', approach: 'Approach', deal: 'Deal Style', decision: 'Decisions',
 };
 
-/* ---- Deterministic 1:1 talking points, FeedForward-style. Built from the
-   archetype's signal/unlock (already derived) + pace + recent focus. No AI, no
-   network — pure function of what we already know about the agent. ---- */
-function talkingPoints(agent: RosterAgent, profile: Profile | null, lastFocus: string): string[] {
-  const first = firstName(agent.name);
-  const pts: string[] = [];
-  // 1) Open on the relationship / where they stand — paced by heartbeat.
-  if (agent.pace === 'No check-ins') {
-    pts.push(`Open by genuinely catching up — this is ${first}’s first logged 1:1, so earn the room before any ask.`);
-  } else if (agent.pace === 'Stalled' || agent.pace === 'Slipping') {
-    pts.push(`Name that it’s been ${agent.lastLabel} since you last connected, own the gap, and ask what’s changed for ${first} since.`);
-  } else {
-    pts.push(`Lead with a win — ${first} is on track, so reinforce the behavior that’s working before you stretch them.`);
-  }
-  // 2) FeedForward from the archetype's next unlock (future-focused, not a critique).
-  if (profile?.unlock) {
-    pts.push(`FeedForward: “Here’s one move for the quarter ahead — ${profile.unlock.charAt(0).toLowerCase()}${profile.unlock.slice(1)}”`);
-  }
-  // 3) Watch-for from the early-warning signal (so the leader listens for it live).
-  if (profile?.signal) {
-    pts.push(`Listen for the early-warning signal: ${profile.signal.charAt(0).toLowerCase()}${profile.signal.slice(1)}`);
-  }
-  // 4) Tie back to their own last stated focus, if any.
-  if (lastFocus) {
-    pts.push(`Close the loop on their last focus — “${lastFocus}” — before you set the next one.`);
-  }
-  return pts.slice(0, 4);
-}
+// NOTE: the old deterministic "talking points" list (FeedForward-style, built
+// from archetype signal/unlock + pace + last focus) that used to render
+// beside the old yes/no OneOnOneSheet is retired by Block 4b's design
+// (COACH_1ON1_STRUCTURED_DESIGN.md §4): "left = the guided checklist
+// (replacing 'The move' talking points — the archetype-specific pointers
+// migrate into checklist cues + the untouched Playbook card above)". The
+// archetype-specific coaching content still renders, unchanged, in the
+// "How to run their 1:1" Playbook card and the checklist's own cues.
 
 const todayISODate = () => new Date().toISOString().slice(0, 10);
+
+/* ============================================================
+   1:1 IN-PROGRESS DRAFT — localStorage, keyed per agent, so
+   leaving the drill (back to team, another agent, or a tab/hash
+   switch) never loses what a leader has already typed. Mirrors
+   the "optimistic + debounced" persistence style used by
+   GoalSheet's editGoal (see saveGoalFields below). Best-effort:
+   any storage failure is swallowed so the form never breaks.
+
+   v2 (Block 4b, COACH_1ON1_STRUCTURED_DESIGN.md §5) — the richer
+   structured form's shape: multi-item wins + a single next-commitments
+   list, per-item commitment-review statuses, checklist ticks, met
+   tri-state, and the private note. Same storage key as v1 so nobody
+   loses an in-flight draft on deploy day — loadOneOnOneDraft migrates an
+   old v1 draft ({met:boolean, win, focus, date}) into v2 on read. (An
+   in-flight v2 draft that still carries a legacy `focuses` array folds
+   those into `commitments` on read — see loadOneOnOneDraft.)
+   ============================================================ */
+interface OneOnOneDraftV2 {
+  v: 2;
+  met: MetStatus;
+  date: string;
+  wins: string[];
+  commitments: string[];
+  reviews: Record<string, CommitmentStatus>;
+  checklist: Record<string, boolean>;
+  privateNote: string;
+}
+
+const oneOnOneDraftKey = (agentId: string) => `pulse:1on1draft:${agentId}`;
+
+function emptyOneOnOneDraft(): OneOnOneDraftV2 {
+  return {
+    v: 2, met: 'yes', date: todayISODate(),
+    wins: [], commitments: [], reviews: {}, checklist: {}, privateNote: '',
+  };
+}
+
+function isStringArray(x: unknown): x is string[] {
+  return Array.isArray(x) && x.every((v) => typeof v === 'string');
+}
+
+function loadOneOnOneDraft(agentId: string): OneOnOneDraftV2 | null {
+  try {
+    const raw = window.localStorage.getItem(oneOnOneDraftKey(agentId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    if (parsed.v === 2) {
+      const met: MetStatus = parsed.met === 'yes' || parsed.met === 'partial' || parsed.met === 'no' ? parsed.met : 'yes';
+      // A pre-merge v2 draft may still carry a separate `focuses` array; fold it
+      // ahead of any commitments so an in-flight draft survives the merge.
+      const legacyFocuses = isStringArray(parsed.focuses) ? parsed.focuses : [];
+      const commitments = isStringArray(parsed.commitments) ? parsed.commitments : [];
+      return {
+        v: 2,
+        met,
+        date: typeof parsed.date === 'string' ? parsed.date : todayISODate(),
+        wins: isStringArray(parsed.wins) ? parsed.wins : [],
+        commitments: [...legacyFocuses, ...commitments],
+        reviews: parsed.reviews && typeof parsed.reviews === 'object' ? parsed.reviews : {},
+        checklist: parsed.checklist && typeof parsed.checklist === 'object' ? parsed.checklist : {},
+        privateNote: typeof parsed.privateNote === 'string' ? parsed.privateNote : '',
+      };
+    }
+
+    // v1 migration — { met: boolean, win: string, focus: string, date: string }.
+    // Fold the single win into wins, and the single next-focus into the merged
+    // commitments list, so an in-flight v1 draft survives instead of vanishing.
+    if ('met' in parsed || 'win' in parsed || 'focus' in parsed || 'date' in parsed) {
+      const win = typeof parsed.win === 'string' ? parsed.win.trim() : '';
+      const focus = typeof parsed.focus === 'string' ? parsed.focus.trim() : '';
+      return {
+        v: 2,
+        met: parsed.met === false ? 'no' : 'yes',
+        date: typeof parsed.date === 'string' ? parsed.date : todayISODate(),
+        wins: win ? [win] : [],
+        commitments: focus ? [focus] : [], reviews: {}, checklist: {}, privateNote: '',
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function saveOneOnOneDraft(agentId: string, draft: OneOnOneDraftV2): void {
+  try {
+    window.localStorage.setItem(oneOnOneDraftKey(agentId), JSON.stringify(draft));
+  } catch {
+    /* best-effort — a storage failure should never break the form */
+  }
+}
+
+function clearOneOnOneDraft(agentId: string): void {
+  try {
+    window.localStorage.removeItem(oneOnOneDraftKey(agentId));
+  } catch {
+    /* best-effort */
+  }
+}
 
 /* ---- Saved-badge helper: a subtle, self-clearing "Saved"/"Logged" pill. ---- */
 function useSavedFlag(): [string | null, (label?: string) => void] {
@@ -642,7 +727,8 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
-  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
+  const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
   const [writeErr, setWriteErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -651,13 +737,18 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
       try {
         // loadGoalBundle now CREATES + SEEDS on first open (write path). Run the
         // reads first so a denied goal-write can't blank the profile/history.
-        const [p, ci] = await Promise.all([
+        // loadCheckinBundle (Block 4a/4b) enriches each checkins row with its
+        // structured children (checkin_items + checkin_leader) so Past 1:1s can
+        // render the richer detail without a second round-trip per row.
+        const [p, ci, oc] = await Promise.all([
           loadProfile(agent.id),
-          loadCheckins(agent.id),
+          loadCheckinBundle(agent.id),
+          loadOpenCommitments(agent.id),
         ]);
         if (!live) return;
         setProfile(p);
         setCheckins(ci);
+        setOpenCommitments(oc);
         try {
           const gb = await loadGoalBundle(agent.id, agent.teamId, agent.code);
           if (!live) return;
@@ -679,7 +770,6 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
   const health = healthOf(agent);
   const fnl = goal ? goalFunnel(goal) : null;
   const doneCount = commitments.filter((c) => c.done).length;
-  const points = talkingPoints(agent, profile, checkins[0]?.focus || agent.lastFocus || '');
 
   return (
     <>
@@ -845,13 +935,27 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
         </section>
       )}
 
-      {/* 2. 1:1 PREP SHEET (writes: checkins) */}
-      <OneOnOneSheet
+      {/* 2. RUN THIS 1:1 — structured leadership form (Block 4b), replacing the
+          old yes/no OneOnOneSheet. Writes: checkins + checkin_items + checkin_leader
+          via the one-RPC saveStructuredCheckin (COACH_1ON1_STRUCTURED_DESIGN.md §1d). */}
+      <RunOneOnOneSheet
         agent={agent}
-        points={points}
         checkins={checkins}
-        onLogged={(row) => setCheckins((prev) => [row, ...prev])}
+        openCommitments={openCommitments}
+        onLogged={(bundle, reviews) => {
+          setCheckins((prev) => [bundle, ...applyReviewsToCheckins(prev, reviews, bundle.id)]);
+          setOpenCommitments((prev) => {
+            const reviewedIds = new Set(reviews.map((r) => r.itemId));
+            const stillOpen = prev.filter((i) => !reviewedIds.has(i.id));
+            const newOpen = bundle.items.filter((i) => i.kind === 'commitment' && i.status === null);
+            return [...stillOpen, ...newOpen];
+          });
+        }}
       />
+
+      {/* 2b. PAST 1:1s — read-back of everything logged above, so a leader can
+          reopen any prior conversation before running the next one. */}
+      <PastOneOnOnes agent={agent} checkins={checkins} />
 
       {/* 3. GOAL & COMMITMENT SHEET (writes: goals + commitments) */}
       <GoalSheet
@@ -868,51 +972,205 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
 }
 
 /* ============================================================
-   1:1 PREP SHEET — deterministic move (talking points) + recent
-   context + an inline "Log this 1:1" form → saveCheckin(checkins).
+   RUN THIS 1:1 — the structured leadership form (Block 4b), built to
+   COACH_1ON1_STRUCTURED_DESIGN.md §4. Replaces the old yes/no
+   OneOnOneSheet. Left column = a compact five-step "tuck-away guide"
+   (collapsed by default, tap a step for its cue + archetype cue; ⚡ steps
+   auto-tick) plus the leader-only private note; right column = the capture
+   groups in meeting order (review last commitments → wins → next
+   commitments) + the met tri-state/date/save footer. Nothing persists
+   until "Log this 1:1" — saveStructuredCheckin (one RPC) writes
+   checkins + checkin_items + checkin_leader together.
    ============================================================ */
-function OneOnOneSheet({
-  agent, points, checkins, onLogged,
+
+// Applies review outcomes recorded in THIS session back onto the items
+// they belong to in prior sessions' bundles, so reopening an older 1:1
+// in Past 1:1s shows the outcome the leader just set (not "still open").
+function applyReviewsToCheckins(
+  prev: CheckinBundle[], reviews: CommitmentReview[], newCheckinId: string,
+): CheckinBundle[] {
+  if (reviews.length === 0) return prev;
+  const byId = new Map(reviews.map((r) => [r.itemId, r.status]));
+  return prev.map((b) => ({
+    ...b,
+    items: b.items.map((it) => (byId.has(it.id) ? { ...it, status: byId.get(it.id)!, reviewedIn: newCheckinId } : it)),
+  }));
+}
+
+const REVIEW_PILL_CLASS: Record<CommitmentStatus, string> = { done: 'yes', partial: 'partial', missed: 'no' };
+const MET_PILL_CLASS: Record<MetStatus, string> = { yes: 'yes', partial: 'partial', no: 'no' };
+
+// One multi-add capture group (Wins / Next commitments) — same add-row
+// idiom as CommitGroup (Goal & Commitments), just
+// without the done-toggle/edit-in-place (these are per-session text items,
+// not standing checklist rows).
+function MultiAddGroup({
+  title, items, placeholder, helper, emptyText, tone = 'accent', onAdd, onRemove,
+}: {
+  title: string;
+  items: string[];
+  placeholder: string;
+  helper?: string;
+  emptyText?: string;
+  tone?: 'accent' | 'sea';
+  onAdd: (text: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  const [draft, setDraft] = useState('');
+  return (
+    <div className={`ro-group ro-group-${tone}`}>
+      <div className="ro-group-head">
+        <span className="ro-group-title">{title}</span>
+        {items.length > 0 && <span className="ro-group-count">{items.length}</span>}
+      </div>
+      {helper && <p className="ro-group-helper">{helper}</p>}
+      <div className="ro-rows">
+        {items.map((text, i) => (
+          <div key={i} className="ro-row">
+            <span className="ro-row-dot" aria-hidden />
+            <span className="ro-row-text">{text}</span>
+            <button type="button" className="ro-row-del" aria-label={`Remove ${title.toLowerCase()} item`} onClick={() => onRemove(i)}>×</button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="ro-empty">{emptyText || 'Nothing added yet.'}</p>}
+      </div>
+      <form
+        className="ro-add"
+        onSubmit={(e) => { e.preventDefault(); if (draft.trim()) { onAdd(draft); setDraft(''); } }}
+      >
+        <input className="ad-input ro-add-input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder} />
+        <button type="submit" className="btn btn-ghost btn-sm ro-add-btn" disabled={!draft.trim()}>Add</button>
+      </form>
+    </div>
+  );
+}
+
+function RunOneOnOneSheet({
+  agent, checkins, openCommitments, onLogged,
 }: {
   agent: RosterAgent;
-  points: string[];
-  checkins: Checkin[];
-  onLogged: (row: Checkin) => void;
+  checkins: CheckinBundle[];
+  openCommitments: CheckinItem[];
+  onLogged: (bundle: CheckinBundle, reviews: CommitmentReview[]) => void;
 }) {
   const first = firstName(agent.name);
-  const [met, setMet] = useState(true);
-  const [win, setWin] = useState('');
-  const [focus, setFocus] = useState('');
-  const [date, setDate] = useState(todayISODate());
+  const [draft, setDraftState] = useState<OneOnOneDraftV2>(() => loadOneOnOneDraft(agent.id) ?? emptyOneOnOneDraft());
+  const [draftRestored, setDraftRestored] = useState(() => !!loadOneOnOneDraft(agent.id));
+  const [openStep, setOpenStep] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [flag, flash] = useSavedFlag();
+  const debounce = useRef<number | null>(null);
+  const touchedSteps = useRef<Set<string>>(new Set());
+  useEffect(() => () => { if (debounce.current) window.clearTimeout(debounce.current); }, []);
 
   const lastFocus = checkins[0]?.focus || '';
   const daysSinceLast = agent.lastDays >= 99 ? null : agent.lastDays;
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  function queueDraftSave(next: OneOnOneDraftV2) {
+    if (debounce.current) window.clearTimeout(debounce.current);
+    debounce.current = window.setTimeout(() => saveOneOnOneDraft(agent.id, next), 550);
+  }
+  // Optimistic field edit → debounced draft persist (mirrors GoalSheet's editGoal).
+  function update(patch: Partial<OneOnOneDraftV2>) {
+    setDraftState((d) => {
+      const next = { ...d, ...patch };
+      queueDraftSave(next);
+      return next;
+    });
+  }
+
+  // ⚡ auto-tick: review/win/next reflect what the capture groups actually
+  // hold, at zero extra clicks — but once a leader manually toggles a given
+  // step, that step stops auto-updating (their choice wins from then on).
+  useEffect(() => {
+    const reviewedAll = openCommitments.length === 0 || openCommitments.every((c) => !!draft.reviews[c.id]);
+    const autoVals: Record<string, boolean> = {
+      review: reviewedAll,
+      win: draft.wins.some((w) => w.trim().length > 0),
+      next: draft.commitments.some((c) => c.trim().length > 0),
+    };
+    setDraftState((d) => {
+      let changed = false;
+      const nextChecklist = { ...d.checklist };
+      Object.entries(autoVals).forEach(([id, val]) => {
+        if (touchedSteps.current.has(id)) return;
+        if (!!nextChecklist[id] !== val) { nextChecklist[id] = val; changed = true; }
+      });
+      if (!changed) return d;
+      const next = { ...d, checklist: nextChecklist };
+      queueDraftSave(next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.wins, draft.commitments, draft.reviews, openCommitments]);
+
+  function toggleChecklistStep(id: string) {
+    touchedSteps.current.add(id);
+    update({ checklist: { ...draft.checklist, [id]: !draft.checklist[id] } });
+  }
+  function setReview(itemId: string, status: CommitmentStatus) {
+    update({ reviews: { ...draft.reviews, [itemId]: status } });
+  }
+  function addWin(t: string) { const s = t.trim(); if (s) update({ wins: [...draft.wins, s] }); }
+  function removeWin(i: number) { update({ wins: draft.wins.filter((_, idx) => idx !== i) }); }
+  function addCommit(t: string) { const s = t.trim(); if (s) update({ commitments: [...draft.commitments, s] }); }
+  function removeCommit(i: number) { update({ commitments: draft.commitments.filter((_, idx) => idx !== i) }); }
+
+  // Not a <form onSubmit> — this column can't be a <form> itself, since each
+  // MultiAddGroup below renders its OWN add-row <form> (mirroring CommitGroup's
+  // add idiom) and nested <form> elements are invalid HTML: the browser closes
+  // the outer form early and an Enter-to-add in a nested form falls through to
+  // a real, unhandled page submit (full reload, ?demo=1 lost). "Log this 1:1"
+  // is a plain button with an onClick instead.
+  async function submit() {
     if (saving) return;
     setSaving(true);
     setErr(null);
     try {
-      const row = await saveCheckin({
-        agentId: agent.id,
-        teamId: agent.teamId,
-        met,
-        win: win.trim() || null,
-        focus: focus.trim() || null,
-        // Local date at noon so it lands on the intended calendar day in any TZ.
-        createdAt: new Date(`${date}T12:00:00`).toISOString(),
+      const reviews: CommitmentReview[] = openCommitments
+        .filter((c) => !!draft.reviews[c.id])
+        .map((c) => ({ itemId: c.id, status: draft.reviews[c.id] }));
+      const wins = draft.wins.map((w) => w.trim()).filter(Boolean);
+      const commitmentTexts = draft.commitments.map((c) => c.trim()).filter(Boolean);
+      // Local date at noon so it lands on the intended calendar day in any TZ.
+      const createdAt = new Date(`${draft.date}T12:00:00`).toISOString();
+
+      const res = await saveStructuredCheckin({
+        agentId: agent.id, teamId: agent.teamId, met: draft.met, createdAt,
+        wins, commitments: commitmentTexts, reviews,
+        checklist: draft.checklist, privateNote: draft.privateNote.trim() || null,
       });
-      if (row) {
-        onLogged(row);
-        setWin('');
-        setFocus('');
-        setDate(todayISODate());
-        flash('Logged');
-      }
+      const checkinId = res?.checkinId ?? `local-${Date.now()}`;
+      const now = new Date().toISOString();
+      let seq = 0;
+      const mkItem = (kind: CheckinItemKind, body: string): CheckinItem => ({
+        id: `${checkinId}-item-${seq++}`, agentId: agent.id, checkinId, kind, body,
+        position: seq, status: null, reviewedIn: null, createdAt: now,
+      });
+      const bundle: CheckinBundle = {
+        id: checkinId, agent_id: agent.id, created_at: createdAt, met: draft.met,
+        // checkins.focus is back-filled from the FIRST next-commitment (mirrors
+        // the RPC) so the hero "last / next focus" line, roster pace, and Past
+        // 1:1s previews keep working now that "next focuses" is gone.
+        leads: null, convos: null, win: wins[0] ?? null, focus: commitmentTexts[0] ?? null,
+        items: [
+          ...wins.map((w) => mkItem('win', w)),
+          ...commitmentTexts.map((c) => mkItem('commitment', c)),
+        ],
+        leader: {
+          checkinId, agentId: agent.id, checklistVersion: ONE_ON_ONE_CHECKLIST_VERSION,
+          checklist: draft.checklist, privateNote: draft.privateNote.trim() || null,
+          createdAt: now, updatedAt: now,
+        },
+      };
+      onLogged(bundle, reviews);
+      if (debounce.current) { window.clearTimeout(debounce.current); debounce.current = null; }
+      clearOneOnOneDraft(agent.id);
+      setDraftRestored(false);
+      touchedSteps.current = new Set();
+      setDraftState(emptyOneOnOneDraft());
+      flash('Logged');
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : 'Could not log this 1:1 (write denied).');
     } finally {
@@ -920,72 +1178,332 @@ function OneOnOneSheet({
     }
   }
 
+  const totalSteps = ONE_ON_ONE_CHECKLIST.length;
+  const doneStepCount = ONE_ON_ONE_CHECKLIST.filter((s) => !!draft.checklist[s.id]).length;
+  const progressPct = Math.round((doneStepCount / totalSteps) * 100);
+  const arch = ARCHETYPE_CUES[agent.quad];
+  const archLabel = `For ${/^[AEIOU]/i.test(agent.quad) ? 'an' : 'a'} ${agent.quad}`;
+  const reviewedCount = openCommitments.filter((c) => !!draft.reviews[c.id]).length;
+
   return (
-    <section className="card ad-panel ad-sheet reveal" data-delay="60">
+    <section className="card ad-panel ad-sheet ro-sheet reveal" data-delay="60">
       <div className="ad-panel-head">
-        <h3>1:1 Prep</h3>
+        <h3>Run this 1:1</h3>
         <span className="panel-sub">
           {daysSinceLast == null ? 'No prior check-in' : `Last check-in ${daysSinceLast === 0 ? 'today' : `${daysSinceLast}d ago`}`}
           {lastFocus ? ` · focus: ${lastFocus}` : ''}
         </span>
       </div>
 
-      <div className="ad-sheet-cols">
-        {/* The coaching move — deterministic talking points */}
-        <div className="ad-sheet-block">
-          <div className="ad-sub-label"><span className="ad-wired-tag drive">The move</span></div>
-          {points.length > 0 ? (
-            <ol className="ad-points">
-              {points.map((p, i) => (
-                <li key={i} className="ad-point"><span className="ad-point-n">{i + 1}</span><span>{p}</span></li>
-              ))}
-            </ol>
-          ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading {first}’s coaching move…</p>
-          )}
+      <div className="ad-sheet-cols ro-cols">
+        {/* LEFT — the guided meeting (leader-only, never shown to the agent).
+            A compact "tuck-away guide": the five moves render as a lean number
+            + short-name strip with the progress meter; a step's full guidance
+            and its archetype cue only appear when the leader taps it (accordion,
+            one open at a time). Click a number to tick manually; ⚡ steps
+            tick themselves. The leader-only private note sits below. */}
+        <div className="ad-sheet-block ro-guide">
+          <div className="ro-guide-head">
+            <div className="ro-guide-heading">
+              <span className="ro-eyebrow">The meeting</span>
+              <span className="ro-private"><Icon name="target" size={12} /> only you see this</span>
+            </div>
+            <div className="ro-progress" role="img" aria-label={`${doneStepCount} of ${totalSteps} steps done`}>
+              <span className="ro-progress-count">{doneStepCount}<span className="ro-progress-total">/{totalSteps}</span></span>
+              <span className="ro-progress-track"><span className="ro-progress-fill" style={{ width: `${progressPct}%` }} /></span>
+            </div>
+          </div>
+          <div className="ro-strip">
+            {ONE_ON_ONE_CHECKLIST.map((step, i) => {
+              const done = !!draft.checklist[step.id];
+              const open = openStep === step.id;
+              return (
+                <div key={step.id} className={`ro-chip ${done ? 'done' : ''} ${open ? 'open' : ''}`}>
+                  <button
+                    type="button" className="ro-chip-mark"
+                    aria-pressed={done}
+                    aria-label={done ? `Mark ${step.short} not done` : `Mark ${step.short} done`}
+                    onClick={() => toggleChecklistStep(step.id)}
+                  >
+                    {done ? <Icon name="coach" size={12} /> : <span className="ro-chip-num">{i + 1}</span>}
+                  </button>
+                  <button
+                    type="button" className="ro-chip-name"
+                    aria-expanded={open}
+                    onClick={() => setOpenStep(open ? null : step.id)}
+                  >
+                    {step.short}
+                    {step.auto && <span className="ro-chip-auto" title="Ticks itself when its section is filled in">⚡</span>}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {openStep && (() => {
+            const step = ONE_ON_ONE_CHECKLIST.find((s) => s.id === openStep)!;
+            const archCue = step.id === 'win' ? arch?.praise : step.id === 'coach' ? arch?.coach : null;
+            return (
+              <div className="ro-cue-panel">
+                <div className="ro-cue-panel-head">
+                  <span className="ro-cue-panel-title">{step.title}</span>
+                  <button type="button" className="ro-cue-panel-close" aria-label="Hide guidance" onClick={() => setOpenStep(null)}>×</button>
+                </div>
+                <p className="ro-cue-panel-body">{step.cue}</p>
+                {archCue && (
+                  <div className="ro-arch-cue">
+                    <span className="ro-arch-tag">{archLabel}</span>
+                    <p>{archCue}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div className="ro-note">
+            <div className="ro-note-head">
+              <Icon name="target" size={13} />
+              <span>Private note</span>
+              <span className="ro-note-hint">never shown to {first}</span>
+            </div>
+            <textarea
+              className="ad-input ad-textarea ro-note-input" rows={3} value={draft.privateNote}
+              onChange={(e) => update({ privateNote: e.target.value })}
+              placeholder="Coaching context to remember before next time — for your eyes only."
+            />
+          </div>
         </div>
 
-        {/* Log this 1:1 — inline write form */}
-        <form className="ad-sheet-block ad-logform" onSubmit={submit}>
-          <div className="ad-sub-label">
-            <span className="ad-wired-tag blind">Log this 1:1</span>
-            {flag && <span className="ad-saved">{flag}</span>}
+        {/* RIGHT — the capture form, in meeting order. A <div>, not a <form> —
+            see the note on submit() above: the MultiAddGroups below each own a
+            real add-row <form>, and forms cannot nest. */}
+        <div className="ad-sheet-block ad-logform ro-capture">
+          <div className="ro-guide-head ro-capture-head">
+            <span className="ro-eyebrow">Capture</span>
+            <div className="ro-flags">
+              {draftRestored && <span className="ad-draft-note">Draft restored</span>}
+              {flag && <span className="ad-saved">{flag}</span>}
+            </div>
           </div>
 
-          <label className="ad-toggle">
-            <input type="checkbox" checked={met} onChange={(e) => setMet(e.target.checked)} />
-            <span className="ad-toggle-track"><span className="ad-toggle-dot" /></span>
-            <span className="ad-toggle-label">We met</span>
-          </label>
+          <div className="ro-group ro-group-review">
+            <div className="ro-group-head">
+              <span className="ro-group-title">From last time</span>
+              {openCommitments.length > 0 && (
+                <span className="ro-group-count">{reviewedCount}/{openCommitments.length}</span>
+              )}
+            </div>
+            <p className="ro-group-helper">Mark how each commitment landed before setting new ones.</p>
+            <div className="ro-rows">
+              {openCommitments.map((item) => (
+                <div key={item.id} className="ro-review-row">
+                  <span className="ro-review-text">{item.body}</span>
+                  <div className="ro-review-pills">
+                    {(['done', 'partial', 'missed'] as CommitmentStatus[]).map((s) => (
+                      <button
+                        key={s} type="button"
+                        className={`ad-met-pill ad-met-pill-btn ${REVIEW_PILL_CLASS[s]} ${draft.reviews[item.id] === s ? 'active' : ''}`}
+                        onClick={() => setReview(item.id, s)}
+                      >
+                        {COMMITMENT_STATUS_LABELS[s]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {openCommitments.length === 0 && (
+                <p className="ro-empty">No open commitments from a prior 1:1 — set the first ones below.</p>
+              )}
+            </div>
+          </div>
 
-          <label className="ad-field">
-            <span>A win to note (optional)</span>
-            <input
-              type="text" value={win} onChange={(e) => setWin(e.target.value)}
-              placeholder={`Something ${first} did well`} className="ad-input"
-            />
-          </label>
-
-          <label className="ad-field">
-            <span>Next focus</span>
-            <input
-              type="text" value={focus} onChange={(e) => setFocus(e.target.value)}
-              placeholder="What they’ll work on next" className="ad-input"
-            />
-          </label>
-
-          <label className="ad-field ad-field-date">
-            <span>Date</span>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="ad-input" max={todayISODate()} />
-          </label>
+          <MultiAddGroup
+            title="Wins" tone="sea" items={draft.wins}
+            helper="Celebrate first — name the exact behavior."
+            placeholder={`Something ${first} did well…`}
+            emptyText="No wins noted yet."
+            onAdd={addWin} onRemove={removeWin}
+          />
+          <MultiAddGroup
+            title="Next commitments" items={draft.commitments}
+            helper="Specific and countable — you’ll review these next 1:1."
+            placeholder="e.g. “20 sphere conversations by Fri”…"
+            emptyText="No commitments set yet."
+            onAdd={addCommit} onRemove={removeCommit}
+          />
 
           {err && <div className="ad-inline-err">{err}</div>}
 
-          <button type="submit" className="btn btn-primary btn-sm ad-log-btn" disabled={saving}>
-            <Icon name="coach" size={16} /> {saving ? 'Logging…' : 'Log this 1:1'}
-          </button>
-        </form>
+          <div className="ro-footer">
+            <div className="ro-footer-field">
+              <span className="ro-footer-label">Did you meet?</span>
+              <div className="ad-met-row">
+                {(['yes', 'partial', 'no'] as MetStatus[]).map((m) => (
+                  <button
+                    key={m} type="button"
+                    className={`ad-met-pill ad-met-pill-btn ${MET_PILL_CLASS[m]} ${draft.met === m ? 'active' : ''}`}
+                    onClick={() => update({ met: m })}
+                  >
+                    {MET_LABELS[m]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="ro-footer-field ro-footer-date">
+              <span className="ro-footer-label">Date</span>
+              <input
+                type="date" value={draft.date} max={todayISODate()}
+                onChange={(e) => update({ date: e.target.value })} className="ad-input"
+              />
+            </div>
+            <button type="button" className="btn btn-primary btn-sm ro-log-btn" disabled={saving} onClick={() => { void submit(); }}>
+              <Icon name="coach" size={16} /> {saving ? 'Logging…' : 'Log this 1:1'}
+            </button>
+          </div>
+        </div>
       </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   PAST 1:1s — read-back history for the drill-in. Every check-in
+   logged above (or, in ?demo=1, seeded) is already loaded onto
+   AgentDrill's `checkins` state; this just gives it somewhere to
+   be seen. Newest first, collapsed to a one-line summary, click to
+   expand the full notes — same click-to-open/caret language as
+   Rep's roster rows (rp-agent / rp-caret).
+   ============================================================ */
+function checkinDateLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+const MET_STATUS: Record<string, { cls: string; label: string }> = {
+  yes: { cls: 'yes', label: 'Met' },
+  true: { cls: 'yes', label: 'Met' },
+  partial: { cls: 'partial', label: 'Partial' },
+  no: { cls: 'no', label: 'Missed' },
+  false: { cls: 'no', label: 'Missed' },
+};
+function metStatus(met: unknown): { cls: string; label: string } {
+  return MET_STATUS[String(met)] || { cls: 'unknown', label: '—' };
+}
+
+function PastOneOnOnes({ agent, checkins }: { agent: RosterAgent; checkins: CheckinBundle[] }) {
+  const first = firstName(agent.name);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <section className="card ad-panel ad-sheet reveal" data-delay="80">
+      <div className="ad-panel-head">
+        <h3>Past 1:1s</h3>
+        <span className="panel-sub">
+          {checkins.length > 0 ? `${checkins.length} logged` : 'No history yet'}
+        </span>
+      </div>
+
+      {checkins.length === 0 ? (
+        <div className="ad-move-lead">
+          <span className="method-badge"><Icon name="coach" size={18} /></span>
+          <p>No logged 1:1s yet — once you log one above, it’ll show up here so you can reopen it before {first}’s next check-in.</p>
+        </div>
+      ) : (
+        <div className="ad-checkins">
+          {checkins.map((c) => {
+            const isOpen = openId === c.id;
+            const status = metStatus(c.met);
+            const preview = c.win && c.focus
+              ? `${c.win} · Next: ${c.focus}`
+              : c.win || (c.focus ? `Next: ${c.focus}` : 'No notes logged');
+            // A structured session (Block 4b) has checkin_items and/or a
+            // checkin_leader row; legacy quick check-ins have neither and
+            // fall back to the original win/focus-only detail below.
+            const wins = c.items.filter((i) => i.kind === 'win');
+            const commitmentItems = c.items.filter((i) => i.kind === 'commitment');
+            const isStructured = c.items.length > 0 || !!c.leader;
+            const checklistDone = c.leader ? ONE_ON_ONE_CHECKLIST.filter((s) => c.leader!.checklist[s.id]).length : 0;
+            return (
+              <div key={c.id} className={`ad-checkin ${isOpen ? 'open' : ''}`}>
+                <button
+                  type="button"
+                  className="ad-checkin-row"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenId(isOpen ? null : c.id)}
+                >
+                  <span className="ad-checkin-date">{checkinDateLabel(c.created_at)}</span>
+                  <span className={`ad-met-pill ${status.cls}`}>{status.label}</span>
+                  <span className="ad-checkin-focus">{preview}</span>
+                  <span className="ad-checkin-caret">{isOpen ? '▾' : '▸'}</span>
+                </button>
+                {isOpen && (
+                  <div className="ad-checkin-detail ro-past">
+                    {isStructured ? (
+                      <>
+                        <div className="ad-checkin-detail-row">
+                          <span className="ad-checkin-detail-label ro-past-label ro-past-win">Wins</span>
+                          {wins.length > 0 ? (
+                            <ul className="ad-detail-list">
+                              {wins.map((w) => <li key={w.id}>{w.body}</li>)}
+                            </ul>
+                          ) : <p className="ad-checkin-detail-text muted">Nothing noted.</p>}
+                        </div>
+                        <div className="ad-checkin-detail-row">
+                          <span className="ad-checkin-detail-label ro-past-label">Next commitments</span>
+                          {commitmentItems.length > 0 ? (
+                            <ul className="ad-detail-list ad-detail-list-commit">
+                              {commitmentItems.map((ci) => (
+                                <li key={ci.id}>
+                                  <span>{ci.body}</span>
+                                  {ci.status ? (
+                                    <span className={`ad-met-pill ${REVIEW_PILL_CLASS[ci.status]}`}>{COMMITMENT_STATUS_LABELS[ci.status]}</span>
+                                  ) : (
+                                    <span className="ad-met-pill unknown">Open</span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : <p className="ad-checkin-detail-text muted">None set.</p>}
+                        </div>
+                        {c.leader && (
+                          <div className="ro-leader-block">
+                            <div className="ro-leader-head">
+                              <Icon name="target" size={12} />
+                              <span>Leader-only</span>
+                              <span className="ro-leader-count">{checklistDone}/{ONE_ON_ONE_CHECKLIST.length} steps</span>
+                            </div>
+                            <p className="ro-leader-note">{c.leader.privateNote || 'No private note.'}</p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="ad-checkin-detail-row">
+                          <span className="ad-checkin-detail-label ro-past-label ro-past-win">Win</span>
+                          <p className="ad-checkin-detail-text">{c.win || 'Nothing noted.'}</p>
+                        </div>
+                        <div className="ad-checkin-detail-row">
+                          <span className="ad-checkin-detail-label ro-past-label">Next focus</span>
+                          <p className="ad-checkin-detail-text">{c.focus || 'Nothing noted.'}</p>
+                        </div>
+                      </>
+                    )}
+
+                    {(c.leads != null || c.convos != null) && (
+                      <div className="ad-checkin-detail-row">
+                        <span className="ad-checkin-detail-label ro-past-label">Activity</span>
+                        <span className="ad-checkin-nums">
+                          {c.leads != null ? `${c.leads} leads` : ''}
+                          {c.leads != null && c.convos != null ? ' · ' : ''}
+                          {c.convos != null ? `${c.convos} convos` : ''}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
