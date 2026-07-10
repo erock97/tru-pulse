@@ -26,6 +26,52 @@ function isAdmin(req: Request, env: Env): boolean {
   return req.headers.get('x-admin-token') === env.ADMIN_TOKEN;
 }
 
+// TRU Rep authoring — caller must be a leader OR admin of the target org.
+// Same `role=in.(admin,leader)` membership filter brief.ts already uses for
+// leaderEmails(); service-role read, so it's RLS-independent by design.
+async function isOrgLeaderOrAdmin(database: ReturnType<typeof db>, userId: string, orgId: string): Promise<boolean> {
+  const rows = await database.select('memberships', `org_id=eq.${orgId}&user_id=eq.${userId}&role=in.(admin,leader)&select=user_id`);
+  return rows.length > 0;
+}
+
+// Defense-in-depth for the Rep authoring routes below: every org/module id
+// arriving from the client is interpolated straight into a PostgREST filter
+// string (e.g. `org_id=eq.${orgId}`) — validating uuid shape first means a
+// malformed id 400s cleanly instead of being sent through as a filter value.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (s: string): boolean => UUID_RE.test(s);
+
+// db.ts has no delete() (every other write path is insert/upsert/update) —
+// authoring's replace-all question semantics need one, so this does a plain
+// service-role DELETE against PostgREST directly, matching db.ts's own header
+// shape rather than growing its surface for a single call site.
+async function deleteRepQuestions(env: Env, moduleId: string): Promise<void> {
+  const base = env.SUPABASE_URL.replace(/\/$/, '') + '/rest/v1';
+  const res = await fetch(`${base}/rep_questions?module_id=eq.${moduleId}`, {
+    method: 'DELETE',
+    headers: {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+  });
+  if (!res.ok) throw new Error(`delete rep_questions ${res.status}: ${await res.text()}`);
+}
+
+// Basic allow-list for authored media uploads (rep-media bucket). Extension is
+// the source of truth for the object key's suffix; contentType (when the
+// browser sends one) is cross-checked so a mislabeled file can't sneak past.
+const REP_UPLOAD_EXTS = new Set(['mp4', 'mov', 'webm', 'm4v', 'pdf', 'ppt', 'pptx', 'key', 'odp']);
+const REP_UPLOAD_CT_RE = [
+  /^video\//,
+  /^application\/pdf$/,
+  /^application\/vnd\.openxmlformats-officedocument\.presentationml/,
+  /^application\/vnd\.ms-powerpoint$/,
+  /^application\/vnd\.apple\.keynote$/,
+  /^application\/vnd\.oasis\.opendocument\.presentation$/,
+];
+
 // Store a validated FUB key for a team and bring its data online: encrypt → upsert
 // team_secrets (the ONE key every TRU product reads) → register live webhooks →
 // background full sync. Shared by the team-lead self-serve path AND the admin
@@ -718,6 +764,247 @@ export default {
         'agent_id,module_id',
       );
       return json({ score, passed, correct, total, review });
+    }
+
+    // Mint a SHORT-LIVED signed DOWNLOAD url for a private rep-media object so a
+    // learner can play/embed it in the course (Block 4). Storage RLS only grants
+    // read to org MEMBERS (is_org_member → memberships) and a learner agent is NOT
+    // a member (agents table, not memberships) — so a learner can never mint their
+    // own client-side createSignedUrl. This mirrors /rep/grade's exact learner
+    // lookup (agents.auth_id → org_id) and additionally authorizes a leader/admin
+    // of that same org (so the authoring preview can use the same path).
+    if (url.pathname === '/rep/media/sign-download' && req.method === 'GET') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const path = (url.searchParams.get('path') ?? '').trim();
+      const segs = path.split('/').filter(Boolean);
+      // Path convention is strictly <org_id>/<uuid>.<ext> (Block 1) — reject
+      // anything else (no traversal, no extra segments).
+      if (segs.length !== 2 || path.includes('..')) return json({ error: 'path required' }, 422);
+      if (!isUuid(segs[0]) || !/^[0-9a-f-]{36}\.[a-z0-9]+$/i.test(segs[1])) {
+        return json({ error: 'invalid id' }, 422);
+      }
+      const orgId = segs[0];
+      // Same lookup /rep/grade uses to resolve a learner agent to their org —
+      // never trust the path's org_id blindly; the caller must actually belong
+      // to it, either as that org's agent or as its leader/admin.
+      const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
+      const isAgentOfOrg = arows.length > 0 && (arows[0] as any).org_id === orgId;
+      const isLeader = !isAgentOfOrg && (await isOrgLeaderOrAdmin(database, userId, orgId));
+      if (!isAgentOfOrg && !isLeader) return json({ error: 'forbidden' }, 403);
+      try {
+        const objectPath = segs.map(encodeURIComponent).join('/');
+        const signRes = await fetch(
+          `${env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/sign/rep-media/${objectPath}`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ expiresIn: 3600 }),
+          },
+        );
+        const sj = (await signRes.json().catch(() => null)) as { signedURL?: string } | null;
+        if (!signRes.ok || !sj?.signedURL) return json({ error: 'could not sign download' }, 502);
+        const signedUrl = env.SUPABASE_URL.replace(/\/$/, '') + '/storage/v1' + sj.signedURL;
+        return json({ url: signedUrl });
+      } catch (e) {
+        return json({ error: String(e) }, 502);
+      }
+    }
+
+    // ── TRU Rep — authoring (custom modules) ────────────────────────────────
+    // Every route below: signed-in caller, leader/admin of the target org,
+    // never trusts an org_id/module_id from the body without checking it.
+
+    // Mint a Supabase Storage signed UPLOAD url for the private `rep-media`
+    // bucket (Block 1). There's no supabase-js binding in the Worker, so this
+    // talks to the Storage REST API directly with the same base URL + service
+    // key db.ts uses for PostgREST. Path convention: <org_id>/<uuid>.<ext>.
+    if (url.pathname === '/rep/uploads/sign' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const orgId = String(body?.org_id ?? '').trim();
+      const ext = String(body?.ext ?? '').trim().toLowerCase().replace(/^\./, '');
+      const contentType = body?.contentType ? String(body.contentType) : null;
+      if (!orgId || !ext) return json({ error: 'org_id and ext required' }, 422);
+      if (!isUuid(orgId)) return json({ error: 'invalid id' }, 422);
+      if (!(await isOrgLeaderOrAdmin(database, userId, orgId))) return json({ error: 'forbidden' }, 403);
+      if (!REP_UPLOAD_EXTS.has(ext)) return json({ error: 'file type not allowed' }, 422);
+      if (contentType && !REP_UPLOAD_CT_RE.some((re) => re.test(contentType))) {
+        return json({ error: 'file type not allowed' }, 422);
+      }
+      const objectPath = `${orgId}/${crypto.randomUUID()}.${ext}`;
+      try {
+        const signRes = await fetch(
+          `${env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/upload/sign/rep-media/${objectPath}`,
+          {
+            method: 'POST',
+            headers: {
+              apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+          },
+        );
+        const sj = (await signRes.json().catch(() => null)) as { url?: string } | null;
+        if (!signRes.ok || !sj?.url) return json({ error: 'could not sign upload' }, 502);
+        const tokenMatch = sj.url.match(/[?&]token=([^&]+)/);
+        const uploadToken = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+        if (!uploadToken) return json({ error: 'could not sign upload' }, 502);
+        const signedUrl = env.SUPABASE_URL.replace(/\/$/, '') + '/storage/v1' + sj.url;
+        return json({ path: objectPath, token: uploadToken, signedUrl });
+      } catch (e) {
+        return json({ error: String(e) }, 502);
+      }
+    }
+
+    // Create OR update a source='custom' module for the caller's org. Update
+    // requires the existing row to already be source='custom' AND in that
+    // org — a leader can never touch another org's rows or a system module.
+    if (url.pathname === '/rep/modules' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const orgId = String(body?.org_id ?? '').trim();
+      const title = String(body?.title ?? '').trim();
+      const id = body?.id ? String(body.id).trim() : null;
+      if (!orgId || !title) return json({ error: 'org_id and title required' }, 422);
+      if (!isUuid(orgId) || (id && !isUuid(id))) return json({ error: 'invalid id' }, 422);
+      if (!(await isOrgLeaderOrAdmin(database, userId, orgId))) return json({ error: 'forbidden' }, 403);
+      const patch: Record<string, unknown> = {
+        title,
+        summary: body?.summary ?? null,
+        cards: Array.isArray(body?.cards) ? body.cards : [],
+        pass_pct: Number.isFinite(Number(body?.pass_pct)) ? Number(body.pass_pct) : 80,
+      };
+      // `active` (the runtime on/off switch the learner loaders filter on) is
+      // kept a strict function of `status` so a draft can never be born live:
+      // whenever status is written, active = (status === 'published').
+      if (body?.status) {
+        const status = String(body.status);
+        patch.status = status;
+        patch.active = status === 'published';
+      }
+      try {
+        if (id) {
+          const existing = await database.select('rep_modules', `id=eq.${id}&select=id,org_id,source`);
+          if (!existing.length) return json({ error: 'module not found' }, 404);
+          const mod = existing[0] as any;
+          if (mod.source !== 'custom' || mod.org_id !== orgId) return json({ error: 'forbidden' }, 403);
+          // If no status was provided on this update, `active` is left untouched
+          // — omitting status must not flip a published module offline.
+          await database.update('rep_modules', `id=eq.${id}`, patch);
+          const rows = await database.select('rep_modules', `id=eq.${id}&select=*`);
+          return json(rows[0]);
+        }
+        const createStatus = (patch.status as string) ?? 'draft';
+        const row = await database.insert('rep_modules', {
+          ...patch,
+          org_id: orgId,
+          source: 'custom',
+          author_id: userId,
+          status: createStatus,
+          active: createStatus === 'published',
+        });
+        return json(row);
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Author/replace a custom module's quiz questions (delete-all + insert is
+    // the simplest correct semantics here — the module's org/source is
+    // re-verified so a stale/forged module id can't write into another org).
+    const questionsMatch = url.pathname.match(/^\/rep\/modules\/([^/]+)\/questions$/);
+    if (questionsMatch && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const moduleId = questionsMatch[1];
+      if (!isUuid(moduleId)) return json({ error: 'invalid id' }, 422);
+      const body = (await req.json().catch(() => null)) as any;
+      const questions = Array.isArray(body?.questions) ? (body.questions as any[]) : null;
+      if (!questions) return json({ error: 'questions[] required' }, 422);
+      const rows = await database.select('rep_modules', `id=eq.${moduleId}&select=id,org_id,source`);
+      if (!rows.length) return json({ error: 'module not found' }, 404);
+      const mod = rows[0] as any;
+      if (mod.source !== 'custom') return json({ error: 'forbidden' }, 403);
+      if (!(await isOrgLeaderOrAdmin(database, userId, mod.org_id))) return json({ error: 'forbidden' }, 403);
+      const payload = questions.map((q, i) => ({
+        module_id: moduleId,
+        idx: Number.isFinite(Number(q?.idx)) ? Number(q.idx) : i + 1,
+        prompt: String(q?.prompt ?? ''),
+        choices: Array.isArray(q?.choices) ? q.choices : [],
+        answer: Number.isFinite(Number(q?.answer)) ? Number(q.answer) : 0,
+        explain: q?.explain ?? null,
+      }));
+      if (payload.some((q) => !q.prompt || q.choices.length < 2)) {
+        return json({ error: 'each question needs a prompt and at least 2 choices' }, 422);
+      }
+      try {
+        await deleteRepQuestions(env, moduleId);
+        if (payload.length) await database.upsert('rep_questions', payload);
+        // Caller here is the authoring leader (not the learner grading path),
+        // so returning answer/explain is deliberate — rep_questions_public
+        // (hq_rep_agent.sql) is what actually reaches the browser for agents.
+        const saved = await database.select(
+          'rep_questions',
+          `module_id=eq.${moduleId}&select=id,idx,prompt,choices,answer,explain&order=idx`,
+        );
+        return json({ count: saved.length, questions: saved });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Return the REAL answers for a custom module's quiz — leader/admin authoring
+    // use only (prefills the editor without the re-confirm-every-answer friction
+    // the masked view forces). Re-fetches the module's own org_id/source server
+    // side (never trusts the client) so this can never leak a system module's
+    // answers or another org's custom module — and it is never reachable from any
+    // learner-facing path (learners still only ever read rep_questions_public).
+    const answersMatch = url.pathname.match(/^\/rep\/modules\/([^/]+)\/answers$/);
+    if (answersMatch && req.method === 'GET') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const moduleId = answersMatch[1];
+      if (!isUuid(moduleId)) return json({ error: 'invalid id' }, 422);
+      const rows = await database.select('rep_modules', `id=eq.${moduleId}&select=id,org_id,source`);
+      if (!rows.length) return json({ error: 'module not found' }, 404);
+      const mod = rows[0] as any;
+      if (mod.source !== 'custom') return json({ error: 'forbidden' }, 403);
+      if (!(await isOrgLeaderOrAdmin(database, userId, mod.org_id))) return json({ error: 'forbidden' }, 403);
+      const qs = await database.select(
+        'rep_questions',
+        `module_id=eq.${moduleId}&select=idx,prompt,choices,answer,explain&order=idx`,
+      );
+      return json({ questions: qs });
+    }
+
+    // Archive a custom module: status='archived' + active=false (active is
+    // the runtime on/off switch the learner-facing queries already filter on;
+    // status is the authoring lifecycle — Block 1's carry-forward note).
+    const archiveMatch = url.pathname.match(/^\/rep\/modules\/([^/]+)\/archive$/);
+    if (archiveMatch && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const moduleId = archiveMatch[1];
+      if (!isUuid(moduleId)) return json({ error: 'invalid id' }, 422);
+      const rows = await database.select('rep_modules', `id=eq.${moduleId}&select=id,org_id,source`);
+      if (!rows.length) return json({ error: 'module not found' }, 404);
+      const mod = rows[0] as any;
+      if (mod.source !== 'custom') return json({ error: 'forbidden' }, 403);
+      if (!(await isOrgLeaderOrAdmin(database, userId, mod.org_id))) return json({ error: 'forbidden' }, 403);
+      try {
+        await database.update('rep_modules', `id=eq.${moduleId}`, { status: 'archived', active: false });
+        return json({ ok: true });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
     }
 
     return json({ error: 'not found' }, 404);

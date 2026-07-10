@@ -42,7 +42,12 @@ export async function triggerSync(): Promise<unknown> {
 }
 
 // ── TRU Rep — agent onboarding / certification ──────────────────────────────
-export interface RepModule { id: string; idx: number; title: string; summary: string | null; body: string | null; pass_pct: number; questions: number; cards?: LessonCard[] | null }
+export interface RepModule {
+  id: string; idx: number; title: string; summary: string | null; body: string | null; pass_pct: number;
+  questions: number; cards?: LessonCard[] | null;
+  // Authoring (Block 2) — undefined for rows fetched before these columns existed at the callsite.
+  author_id?: string | null; source?: 'system' | 'custom'; status?: 'draft' | 'published' | 'archived';
+}
 export interface RepProgressRow { agent_id: string; module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at?: string | null }
 export interface RepAgent { id: string; name: string; email: string | null; invited: boolean }
 export interface RepPracticeRow { agent_id: string; scenario: string; status: string; score: number | null; passed: boolean | null; created_at: string }
@@ -50,8 +55,13 @@ export interface RepData { modules: RepModule[]; progress: RepProgressRow[]; age
 
 export async function loadRep(): Promise<RepData> {
   if (isDemo) return demoRep();
+  // Belt-and-suspenders: `active` is the runtime switch, `status` is the authoring
+  // lifecycle (Block 1/4). Both must read 'published/true' for a live module — the
+  // 24 shared TRU modules (org_id null) got status DEFAULT 'published' NOT NULL
+  // (hq_rep_authoring.sql) and pre-existing rows were backfilled to 'published', so
+  // this filter does not hide the built-in curriculum.
   const [mods, qs, prog, agents, prac] = await Promise.all([
-    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).order('idx'),
+    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
     supabase.from('rep_questions_public').select('module_id'),
     supabase.from('rep_progress').select('agent_id,module_id,status,score,passed_at,signed_off_at'),
     supabase.from('agents').select('id,name,email,auth_id').eq('excluded', false).order('name'),
@@ -71,7 +81,7 @@ export async function loadRep(): Promise<RepData> {
 // ── Agent side: identity + the course ───────────────────────────────────────
 export interface AgentIdentity { id: string; org_id: string; name: string; team_id: string }
 export interface CourseQuestion { id: string; idx: number; prompt: string; choices: string[] }
-/** One lesson screen. t: text | stat | stats | drill | callout | script | dialogue | compare | section. */
+/** One lesson screen. t: text | stat | stats | drill | callout | script | dialogue | compare | section | video | steps | media. */
 export interface LessonCard {
   t: string;
   n?: string;            // section — the part label ("Part 1")
@@ -85,15 +95,23 @@ export interface LessonCard {
   choices?: string[];    // drill
   answer?: number;       // drill (practice — instant feedback, ungraded)
   explain?: string;      // drill
-  title?: string;        // script / dialogue / video / steps heading
+  title?: string;        // script / dialogue / video / steps / media heading
   lines?: string[];      // script — the exact words to say
   turns?: Array<{ who: string; say: string }>;    // dialogue — 'lead' | 'agent'
   good?: string[];       // compare — DO column
+  // media (t:'media') — an uploaded rep-media asset (Block 1/2 authoring),
+  // distinct from t:'video' below (which embeds an external Loom/YouTube url).
+  kind?: 'video' | 'pdf' | 'slide';   // media — asset kind
+  path?: string;                      // media — object key in the rep-media bucket
   bad?: string[];        // compare — DON'T column
   url?: string;          // video — Loom share/embed URL (empty = "coming soon" placeholder)
   steps?: string[];      // steps — a pipeline/stage ladder
 }
-export interface CourseModule extends RepModule { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
+// Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
+// archived); CourseModule.status below is the learner's progress status
+// (not_started/in_progress/passed) — same name, different domain, so it's
+// deliberately overridden rather than reused.
+export interface CourseModule extends Omit<RepModule, 'status'> { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
 export interface GradeReview { idx: number; your: number; correct_index: number; is_correct: boolean; explain: string | null }
 export interface GradeResult { score: number; passed: boolean; correct: number; total: number; review: GradeReview[] }
 
@@ -136,6 +154,156 @@ export async function inviteAgent(agentId: string): Promise<{ link: string; emai
   const body = (await res.json().catch(() => ({}))) as { error?: string; link?: string; email?: string; reinvite?: boolean };
   if (!res.ok || !body.link) throw new Error(body.error ?? 'Could not create invite');
   return { link: body.link, email: body.email ?? '', reinvite: !!body.reinvite };
+}
+
+// ── TRU Rep — authoring (Block 2: Worker endpoints only; UI is Block 3) ─────
+
+/** Leader/admin: mint a signed upload URL for a media asset in the private `rep-media` bucket. */
+export async function signRepUpload(
+  orgId: string,
+  ext: string,
+  contentType?: string,
+): Promise<{ path: string; token: string; signedUrl: string }> {
+  const res = await fetch(WORKER_URL + '/rep/uploads/sign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify({ org_id: orgId, ext, contentType }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; path?: string; token?: string; signedUrl?: string };
+  if (!res.ok || !body.path || !body.token || !body.signedUrl) throw new Error(body.error ?? 'Could not sign upload');
+  return { path: body.path, token: body.token, signedUrl: body.signedUrl };
+}
+
+/** Leader/admin: create (no id) or update (id set) a source='custom' module for their org. */
+export async function saveRepModule(input: {
+  id?: string; org_id: string; title: string; summary?: string | null;
+  cards?: LessonCard[]; pass_pct?: number; status?: 'draft' | 'published' | 'archived';
+}): Promise<RepModule> {
+  const res = await fetch(WORKER_URL + '/rep/modules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json().catch(() => ({}))) as RepModule & { error?: string };
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? 'Could not save module');
+  return body;
+}
+
+/** Leader/admin: author/replace ALL quiz questions for a custom module (delete-all + insert). */
+export async function saveRepQuestions(
+  moduleId: string,
+  questions: Array<{ prompt: string; choices: string[]; answer: number; explain?: string | null; idx?: number }>,
+): Promise<{ count: number; questions: unknown[] }> {
+  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/questions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify({ questions }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; count?: number; questions?: unknown[] };
+  if (!res.ok) throw new Error(body.error ?? 'Could not save questions');
+  return { count: body.count ?? 0, questions: body.questions ?? [] };
+}
+
+/** Leader/admin: archive a custom module (status='archived', active=false). */
+export async function archiveRepModule(moduleId: string): Promise<void> {
+  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/archive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not archive module');
+}
+
+/** The signed-in user's membership role in this org ('admin' | 'leader' | 'coach'), or
+ *  null if they aren't a member. Mirrors the Worker's own isOrgLeaderOrAdmin() gate
+ *  (memberships.role in ('admin','leader')) — used client-side ONLY to decide whether
+ *  to show the authoring UI; the Worker re-checks on every write regardless. */
+export async function myOrgRole(orgId: string): Promise<string | null> {
+  if (isDemo) return 'admin';
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return null;
+  const { data } = await supabase.from('memberships').select('role').eq('org_id', orgId).eq('user_id', uid).limit(1);
+  return (data?.[0] as { role: string } | undefined)?.role ?? null;
+}
+
+/** Leader/admin: this org's own authored modules (source='custom'), at ANY status —
+ *  draft/published/archived — for the module-manager list. Deliberately separate from
+ *  loadRep() above, which stays the learner-facing published+active feed (Block 4 owns
+ *  that filter); this is authoring-only and never touches loadRep/loadCourse. */
+export async function loadRepCustomModules(orgId: string): Promise<RepModule[]> {
+  if (isDemo) return [];
+  const { data, error } = await supabase
+    .from('rep_modules')
+    .select('id,idx,title,summary,body,pass_pct,cards,author_id,source,status')
+    .eq('org_id', orgId)
+    .eq('source', 'custom')
+    .order('idx');
+  if (error) throw new Error(error.message);
+  return ((data as Omit<RepModule, 'questions'>[]) ?? []).map((m) => ({ ...m, questions: 0 }));
+}
+
+/** Leader/admin: prompt/choices for a custom module's existing quiz questions, via the
+ *  same answer-hiding view agents read (rep_questions_public) — there is no Worker GET
+ *  endpoint that returns answer/explain back out (by design: the save endpoint returns
+ *  them only in direct response to a save). So re-opening an already-authored quiz can
+ *  prefill prompts/choices but NOT which choice is correct — the editor UI must make the
+ *  leader re-confirm the correct answer for each carried-over question before saving. */
+export async function loadRepQuestionsMasked(moduleId: string): Promise<Array<{ id: string; idx: number; prompt: string; choices: string[] }>> {
+  const { data, error } = await supabase
+    .from('rep_questions_public')
+    .select('id,idx,prompt,choices')
+    .eq('module_id', moduleId)
+    .order('idx');
+  if (error) throw new Error(error.message);
+  return (data as Array<{ id: string; idx: number; prompt: string; choices: string[] }>) ?? [];
+}
+
+/** Learner OR leader/admin: mint a SHORT-LIVED signed download URL for a rep-media
+ *  object so it can be played/embedded in the course. Learner agents are NOT org
+ *  `memberships` (storage RLS only grants members), so they cannot mint their own
+ *  client-side `createSignedUrl` — the Worker mints this with the service role and
+ *  authorizes the caller (learner scoped to their own org, or a leader/admin of the
+ *  object's org) against the path's org_id segment. Never call Supabase Storage
+ *  directly for this from the browser. */
+export async function signRepMediaDownload(path: string): Promise<string> {
+  const res = await fetch(WORKER_URL + `/rep/media/sign-download?path=${encodeURIComponent(path)}`, {
+    headers: { Authorization: 'Bearer ' + (await token()) },
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
+  if (!res.ok || !body.url) throw new Error(body.error ?? 'Could not load this file');
+  return body.url;
+}
+
+/** Leader/admin ONLY: the real (unmasked) prompt/choices/answer/explain for a
+ *  source='custom' module's quiz, for prefilling the editor without the
+ *  re-confirm-every-answer friction `loadRepQuestionsMasked` requires. The Worker
+ *  re-verifies the module is source='custom' AND the caller is a leader/admin of
+ *  its org before returning anything — this must NEVER be reachable for a system
+ *  module or by a learner. */
+export async function loadRepQuestionsForEdit(
+  moduleId: string,
+): Promise<Array<{ idx: number; prompt: string; choices: string[]; answer: number; explain: string | null }>> {
+  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/answers`, {
+    headers: { Authorization: 'Bearer ' + (await token()) },
+  });
+  const body = (await res.json().catch(() => ({}))) as
+    { error?: string; questions?: Array<{ idx: number; prompt: string; choices: string[]; answer: number; explain: string | null }> };
+  if (!res.ok || !body.questions) throw new Error(body.error ?? 'Could not load the existing quiz');
+  return body.questions;
+}
+
+/** Leader/admin: upload a lesson media file to the private `rep-media` bucket via the
+ *  Worker-signed upload URL, then hand it off to supabase-js's uploadToSignedUrl (already
+ *  how this app's Storage client talks to Supabase elsewhere) rather than a raw fetch PUT.
+ *  Returns the object path to embed in a `{ t:'media' }` LessonCard. */
+export async function uploadRepMedia(file: File, orgId: string): Promise<string> {
+  const dot = file.name.lastIndexOf('.');
+  const ext = (dot >= 0 ? file.name.slice(dot + 1) : (file.type.split('/')[1] ?? 'bin')).toLowerCase();
+  const { path, token: uploadToken } = await signRepUpload(orgId, ext, file.type || undefined);
+  const { error } = await supabase.storage.from('rep-media').uploadToSignedUrl(path, uploadToken, file);
+  if (error) throw new Error(error.message);
+  return path;
 }
 
 // Self-contained course for ?demo=1 (previews + sales demos) — mirrors the real
@@ -272,8 +440,9 @@ const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
 /** Agent's own view: every module with its questions (answer-less) + own progress. */
 export async function loadCourse(agentId: string): Promise<CourseModule[]> {
   if (isDemo) return DEMO_COURSE.map(({ answers, ...m }) => { void answers; return m; });
+  // Same belt-and-suspenders status filter as loadRep() above — see its comment.
   const [mods, qs, prog] = await Promise.all([
-    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).order('idx'),
+    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
     supabase.from('rep_questions_public').select('id,module_id,idx,prompt,choices').order('idx'),
     supabase.from('rep_progress').select('module_id,status,score,passed_at,signed_off_at').eq('agent_id', agentId),
   ]);

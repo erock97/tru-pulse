@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
   loadCourse, gradeQuiz, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
+  signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
 } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
@@ -20,6 +21,7 @@ function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
   if (c.t === 'video') return `🎬 ${c.title ?? 'Watch'}`;
+  if (c.t === 'media') return `📎 ${c.title ?? (c.kind ? c.kind.toUpperCase() : 'Attachment')}`;
   if (c.t === 'steps') return c.title ?? 'The pipeline';
   if (c.t === 'callout') return 'The takeaway';
   if (c.t === 'stat') return `The number: ${c.big}`;
@@ -508,6 +510,52 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
   );
 }
 
+// An uploaded rep-media asset (Block 1/2 authoring). Distinct from the `video`
+// card above (external Loom/YouTube URL): this is a private Storage object, so
+// the download URL is fetched lazily (it's short-lived — signRepMediaDownload
+// mints it via the Worker with the service role, never a client-side signed
+// URL, since a learner agent isn't an org member for Storage RLS purposes).
+function MediaCard({ card }: { card: LessonCard }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    let alive = true;
+    setUrl(null);
+    setErr('');
+    if (!card.path) { setErr('This attachment is missing its file.'); return; }
+    signRepMediaDownload(card.path)
+      .then((u) => { if (alive) setUrl(u); })
+      .catch((e) => { if (alive) setErr(e instanceof Error ? e.message : 'Could not load this file — try again.'); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.path]);
+
+  return (
+    <div className="ac-media fu">
+      <div className="ac-media-tag">📎 {card.kind ? card.kind.toUpperCase() : 'FILE'}</div>
+      {card.title && <div className="ac-media-title">{card.title}</div>}
+      {err ? (
+        <div className="err">{err}</div>
+      ) : !url ? (
+        <div className="ac-media-loading">Loading…</div>
+      ) : card.kind === 'video' ? (
+        <video controls src={url} className="ac-media-video" />
+      ) : card.kind === 'pdf' ? (
+        <div className="ac-media-pdfwrap">
+          <object data={url} type="application/pdf" className="ac-media-pdf">
+            <iframe src={url} title={card.title ?? 'Document'} />
+          </object>
+          <a href={url} target="_blank" rel="noreferrer" className="ac-media-openlink">Open / download ↗</a>
+        </div>
+      ) : (
+        <a href={url} target="_blank" rel="noreferrer" className="btn ac-btn ac-media-slidelink">
+          Open {card.title || 'the slides'} ↗
+        </a>
+      )}
+    </div>
+  );
+}
+
 function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
   if (!card) return null;
   if (card.t === 'section') {
@@ -586,6 +634,9 @@ function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick:
         {card.body && <p className="ac-video-note">{card.body}</p>}
       </div>
     );
+  }
+  if (card.t === 'media') {
+    return <MediaCard card={card} />;
   }
   if (card.t === 'steps') {
     return (
