@@ -1,6 +1,30 @@
 # TRU Pulse — Metric Definitions (Section 1: Conversion & Total Leads)
 
-**Status:** Block 1 of `pulse-accuracy-section1-plan.md`. This is the single source of truth every later block (read layer, UI, capture, backfill, audit) builds against. Last updated 2026-07-07.
+> **⚠️ SUPERSEDED where noted — read this first (updated 2026-07-12).**
+> The **numerator model in §3, §3a, §4 and rulings #1/#3 below did NOT ship as
+> written.** The shipped Section 1 baseline (commit `584a0ea`, `Dashboard.tsx:170–183`)
+> is simpler and is the current source of truth:
+>
+> - **Offer / Under-Contract / Closed counts come from each lead's CURRENT STAGE**
+>   (`isClosing` / `isOfferPlus` on `stageClass(l.stage)`), **not** from
+>   `person_stage_log` achievement dates.
+> - **The numerators window by CREATED date** — the *same* created-date + source
+>   window as §2 total leads — **not** by achievement date. There is **no
+>   created-vs-achievement asymmetry** in the shipped dashboard.
+> - **The `1 : N` conversion and offer ratios MOVE WITH THE WINDOW TAB** (they are
+>   `total ÷ count` over the windowed set), **not** stable/all-time.
+> - Carry-forward still holds: a lead currently in UC/Closed still counts as having
+>   reached offer (never a false 0); UC == Closed.
+> - `person_stage_log` and the seed/backfill caveat (§5) are **not** on the
+>   dashboard-baseline path — `person_stage_log` remains the feed for the separate
+>   `no_close` pause rule, not these tiles.
+>
+> §1 (tracked-source universe), §2 (created-date-windowed total), §3b (agent-level
+> windowed counts + trend arrows), and rulings #2/#4/#5(denominator)/#6 still
+> describe shipped behavior. Everything below is preserved as the original design
+> record; where it conflicts with this banner, **the banner wins.**
+
+**Status:** Block 1 of `pulse-accuracy-section1-plan.md`. This is the single source of truth every later block (read layer, UI, capture, backfill, audit) builds against. Last updated 2026-07-07 (superseding banner added 2026-07-12).
 
 **Scope:** per-team accuracy of **total lead count**, **offer / under-contract / closed counts**, and **conversion**. All numbers are **org- and team-scoped** (RLS `is_org_member(org_id)`); never cross-team.
 

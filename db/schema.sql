@@ -186,6 +186,16 @@ create table if not exists org_settings (
   updated_at         timestamptz not null default now()
 );
 
+-- Pause-watch settings — added via feature migrations (self-healing, idempotent)
+-- and mirrored here so schema.sql reflects the live org_settings shape. Rule 1
+-- (volume) windows to the current month; rule 2 (no_close) is all-time, gated by
+-- the clean-slate date. See db/pause_no_close_since.sql and the app Settings card.
+alter table org_settings add column if not exists pause_volume_on     boolean;
+alter table org_settings add column if not exists pause_volume_leads   integer;      -- defaults to per_agent_capacity when null
+alter table org_settings add column if not exists pause_no_close_on    boolean;
+alter table org_settings add column if not exists pause_no_close_leads integer;      -- default 30 (in app)
+alter table org_settings add column if not exists pause_no_close_since timestamptz;  -- clean-slate: only count leads created on/after this date; null = all history
+
 -- ─────────────────────────────────────────────── sync bookkeeping
 create table if not exists sync_state (
   team_id          uuid primary key references teams(id) on delete cascade,
