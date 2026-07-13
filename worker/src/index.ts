@@ -9,7 +9,7 @@ import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './s
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey } from './crypto.js';
-import { registerWebhooks, validateKey, fubGet } from './fub.js';
+import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
@@ -171,7 +171,7 @@ export default {
 
       // Hunt for stage history across FUB's surface + confirm webhook capture.
       const sysHdr: Record<string, string> = env.FUB_SYSTEM_KEY
-        ? { 'X-System': 'TerrasonFUBDashboard', 'X-System-Key': env.FUB_SYSTEM_KEY } : {};
+        ? { 'X-System': env.FUB_SYSTEM_NAME || DEFAULT_X_SYSTEM, 'X-System-Key': env.FUB_SYSTEM_KEY } : {};
       const wh = await fubGet(fubKey, '/webhooks', { limit: 100 }, sysHdr);
       const webhooks = (wh.body?.webhooks ?? []).map((w: any) => ({ ...w }));
       const recentEv = await fubGet(fubKey, '/events', { limit: 100 });

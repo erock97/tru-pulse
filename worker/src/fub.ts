@@ -206,7 +206,7 @@ export const FUB_WEBHOOK_EVENTS = [
 // Terrason dashboard) — but FUB disables a webhook when two integrations share
 // one system identity, so the name is now configurable via env.FUB_SYSTEM_NAME
 // (falling back to this default so behavior is unchanged until it's set).
-const DEFAULT_X_SYSTEM = 'TerrasonFUBDashboard';
+export const DEFAULT_X_SYSTEM = 'TerrasonFUBDashboard';
 
 /** Idempotently register the flag-affecting webhooks for this account → callbackUrl. */
 export async function registerWebhooks(
@@ -260,8 +260,12 @@ export async function fubCreatePerson(
   key: string,
   p: { name?: string | null; phone?: string | null; source?: string; tags?: string[] },
   systemKey?: string,
+  systemName?: string,
 ): Promise<number | null> {
-  const sys: Record<string, string> = systemKey ? { 'X-System': DEFAULT_X_SYSTEM, 'X-System-Key': systemKey } : {};
+  // Honor FUB_SYSTEM_NAME so this write-path shares the same system identity as
+  // webhook registration (avoids a split-brain where webhooks say 'TruPulse' but
+  // person-creates still say the old default). Falls back to the default when unset.
+  const sys: Record<string, string> = systemKey ? { 'X-System': systemName || DEFAULT_X_SYSTEM, 'X-System-Key': systemKey } : {};
   const person: any = { source: p.source ?? 'TRU Prospect', ...splitName(p.name) };
   if (p.phone) person.phones = [{ value: p.phone, type: 'mobile' }];
   if (p.tags?.length) person.tags = p.tags;

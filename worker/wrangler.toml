@@ -13,3 +13,8 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1"]
 #   SUPABASE_SERVICE_ROLE_KEY    service-role key (bypasses RLS — server-side only)
 #   FUB_ENC_KEY                  base64 of a 32-byte AES-GCM key (encrypts tenant FUB keys)
 #   ADMIN_TOKEN                  guards /provision + manual /sync
+#   FUB_SYSTEM_KEY               FUB system key (X-System-Key) — REQUIRED to register webhooks
+#   FUB_SYSTEM_NAME              FUB system name (X-System) — set to 'TruPulse' so Pulse's
+#                                webhooks don't collide with the Terrason dashboard's system.
+#                                Falls back to 'TerrasonFUBDashboard' when unset (the old collision).
+#   WEBHOOK_SECRET               appended to the callback URL as ?key= to authenticate FUB→worker
