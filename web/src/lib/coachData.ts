@@ -960,6 +960,113 @@ function mapCheckinLeaderRow(r: CheckinLeaderRow): CheckinLeader {
   };
 }
 
+/* ============================================================
+   AGENT-SIDE 1:1 RECAP — "Your 1:1s" (Block 4c)
+   The agent's own read-back of the 1:1s their leader logged. AGENT-SAFE by
+   construction: it reads ONLY `checkins` (own rows via checkins_agent_self) +
+   `checkin_items` (own rows via checkin_items_agent_read) and NEVER touches
+   `checkin_leader` — see db/hq_coach_1on1_structured.sql:52-56, 103-104. Do not
+   add a leader field to MyOneOnOne, and never call loadCheckinBundle from any
+   agent view; that loader pulls the leader-only sidecar (checklist + private
+   note) and exists for the leader drill-in only.
+   ============================================================ */
+
+// One agent-visible 1:1: the shared summary (date/met/win) plus the agent-safe
+// child rows (wins + next commitments with their review outcome). No leader
+// checklist, no private note — those never leave the leader surface.
+export interface MyOneOnOne {
+  id: string;                 // checkin id
+  createdAt: string;
+  met: MetStatus | null;
+  win: string | null;         // legacy summary win (checkins.win) — fallback line
+  focus: string | null;       // legacy summary focus (checkins.focus)
+  wins: string[];             // checkin_items kind='win'
+  commitments: CheckinItem[]; // checkin_items kind='commitment' (status pill = Done/Partial/Missed/Open)
+}
+
+function normMet(v: unknown): MetStatus | null {
+  if (v === 'yes' || v === 'partial' || v === 'no') return v;
+  if (v === true) return 'yes';
+  if (v === false) return 'no';
+  return null;
+}
+
+// The agent's own 1:1 history, newest first. Leader-private data is never
+// fetched here (no checkin_leader query at all — the agent has no RLS grant on
+// it, and this code path must never reference it). Legacy quick check-ins (no
+// child rows) come back with empty wins/commitments and render as a plain line.
+export async function loadMyOneOnOnes(agentId: string): Promise<MyOneOnOne[]> {
+  if (isDemo) return demoMyOneOnOnes(agentId);
+  const base = await loadCheckins(agentId); // agent-readable via checkins_agent_self
+  if (base.length === 0) return [];
+  const ids = base.map((c) => c.id);
+  // AGENT-SAFE: checkin_items only. RLS (checkin_items_agent_read) already
+  // restricts these to the caller's own rows; we scope by their checkin ids too.
+  const { data, error } = await supabase
+    .from('checkin_items').select('*').in('checkin_id', ids)
+    .order('position', { ascending: true });
+  if (error) throw error;
+  const byCheckin = new Map<string, CheckinItem[]>();
+  (data || []).forEach((row: CheckinItemRow) => {
+    const m = mapCheckinItemRow(row);
+    const list = byCheckin.get(m.checkinId) || [];
+    list.push(m);
+    byCheckin.set(m.checkinId, list);
+  });
+  return base.map((c) => {
+    const items = byCheckin.get(c.id) || [];
+    return {
+      id: c.id, createdAt: c.created_at, met: normMet(c.met),
+      win: c.win, focus: c.focus,
+      wins: items.filter((i) => i.kind === 'win').map((i) => i.body),
+      commitments: items.filter((i) => i.kind === 'commitment'),
+    };
+  });
+}
+
+/* Demo agent recap (Jordan Rivera, the ?demo=1 #/learn identity — App.tsx sets
+   agent.id='demo-agent'). Three sessions cover all three renderings on one demo
+   agent: a fresh structured session with OPEN commitments, an earlier one whose
+   commitments were reviewed (Done/Partial pills), and a legacy-only session
+   (no child rows → the plain win/focus line). NO leader data, ever — this is
+   the exact surface the §2 leak audit checks. */
+function demoMyOneOnOnes(agentId: string): MyOneOnOne[] {
+  if (agentId !== 'demo-agent') return [];
+  const now = Date.now();
+  const DAY = 86400_000;
+  const iso = (d: number) => new Date(now - d * DAY).toISOString();
+  let s = 0;
+  const commit = (checkinId: string, body: string, status: CommitmentStatus | null): CheckinItem => ({
+    id: `demo-my-${s++}`, agentId, checkinId, kind: 'commitment', body,
+    position: s, status, reviewedIn: null, createdAt: iso(0),
+  });
+  return [
+    {
+      id: 'demo-my-c0', createdAt: iso(3), met: 'yes',
+      win: 'Closed my first buyer from the open-house list.', focus: 'Call every new lead within 5 minutes',
+      wins: ['Closed my first buyer from the open-house list.', 'Held two open houses solo.'],
+      commitments: [
+        commit('demo-my-c0', 'Call every new lead within 5 minutes this week', null),
+        commit('demo-my-c0', 'Preview 3 listings before Saturday’s showings', null),
+      ],
+    },
+    {
+      id: 'demo-my-c1', createdAt: iso(18), met: 'yes',
+      win: 'Booked 4 showings in one week.', focus: 'Ask every buyer for pre-approval up front',
+      wins: ['Booked 4 showings in one week.'],
+      commitments: [
+        commit('demo-my-c1', 'Set up a daily 9am call block', 'done'),
+        commit('demo-my-c1', 'Ask every buyer for pre-approval up front', 'partial'),
+      ],
+    },
+    {
+      id: 'demo-my-c2', createdAt: iso(33), met: 'partial',
+      win: null, focus: 'Build a consistent morning routine',
+      wins: [], commitments: [],
+    },
+  ];
+}
+
 // Log a 1:1 / check-in (ported). Writes ONLY the checkins table.
 export interface SaveCheckinArgs {
   agentId: string;

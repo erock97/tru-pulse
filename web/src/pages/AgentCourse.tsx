@@ -5,6 +5,7 @@ import {
   signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
 } from '../lib/api';
+import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
@@ -50,12 +51,16 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [simConfigured, setSimConfigured] = useState(false);
   const [attempts, setAttempts] = useState<SimAttempt[]>([]);
   const [sessionSimPass, setSessionSimPass] = useState(false);
+  const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
 
   const refresh = () => loadCourse(agent.id).then(setMods);
   useEffect(() => {
     void refresh();
     void simScenarios().then((s) => { setScenarios(s.scenarios); setSimConfigured(s.configured); });
     void mySimAttempts(agent.id).then(setAttempts);
+    // Agent-side 1:1 recap (Block 4c). Agent-safe by construction (checkin_items
+    // only, never checkin_leader). A failure here must never blank the course.
+    void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
@@ -151,6 +156,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               {simUnlocked && !simPassed ? <span className="ac-modstart">Take the call</span> : <span className="ac-modgo">{simPassed ? 'Again' : '›'}</span>}
             </button>
           </div>
+          {oneOnOnes && <MyOneOnOnes list={oneOnOnes} />}
         </main>
       </div>
     );
@@ -185,6 +191,65 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   ) : result ? (
     <Result module={active} result={result} onRetry={() => setView('quiz')} onReview={() => setView('lesson')} onHome={() => setView('home')} />
   ) : null;
+}
+
+// ── "Your 1:1s": the agent's read-back of the 1:1s their leader logged (Block 4c).
+// Renders ONLY agent-safe fields (date, met, wins, own commitments) — never the
+// leader checklist or private note, which this surface never even fetches.
+function MyOneOnOnes({ list }: { list: MyOneOnOne[] }) {
+  return (
+    <section className="ac-oo fu">
+      <div className="ac-oo-head">
+        <h2>Your 1:1s</h2>
+        <span className="ac-oo-sub">{list.length > 0 ? `${list.length} logged` : 'None yet'}</span>
+      </div>
+      {list.length > 0 ? (
+        <div className="ac-oo-list">{list.map((oo) => <OneOnOneCard key={oo.id} oo={oo} />)}</div>
+      ) : (
+        <p className="ac-oo-empty">No 1:1s logged yet. When your team leader logs your next 1:1, your wins and commitments show up here.</p>
+      )}
+    </section>
+  );
+}
+
+function OneOnOneCard({ oo }: { oo: MyOneOnOne }) {
+  const date = new Date(oo.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const structured = oo.wins.length > 0 || oo.commitments.length > 0;
+  return (
+    <div className="ac-oo-card">
+      <div className="ac-oo-top">
+        <span className="ac-oo-date">{date}</span>
+        <span className={`ac-oo-met ${oo.met ?? 'unknown'}`}>{oo.met ? MET_LABELS[oo.met] : '—'}</span>
+      </div>
+      {structured ? (
+        <>
+          {oo.wins.length > 0 && (
+            <>
+              <div className="ac-oo-lbl">Wins</div>
+              <ul className="ac-oo-wins">{oo.wins.map((w, i) => <li key={i}>{w}</li>)}</ul>
+            </>
+          )}
+          {oo.commitments.length > 0 && (
+            <>
+              <div className="ac-oo-lbl">Your commitments</div>
+              <ul className="ac-oo-commits">
+                {oo.commitments.map((c) => (
+                  <li key={c.id}>
+                    <span>{c.body}</span>
+                    <span className={`ac-oo-cpill ${c.status ?? 'open'}`}>
+                      {c.status ? COMMITMENT_STATUS_LABELS[c.status] : 'Open'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      ) : (
+        <p className="ac-oo-legacy">{oo.win || oo.focus || 'A quick check-in — no notes recorded.'}</p>
+      )}
+    </div>
+  );
 }
 
 // ── The Live Sim: pick a buyer, take the call, get graded on ALMS ───────────
