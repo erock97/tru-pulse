@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { supabase } from '../lib/supabase';
-import { adminActAs, signOutClean, type AdminLeader } from '../lib/api';
+import { adminActAs, isDemo, signOutClean, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 import { FubConnect } from '../components/FubConnect';
 import { AdminConnections } from '../components/AdminConnections';
@@ -289,7 +289,9 @@ export default function Home({
                 <h4 className="hh-tile-name">Rep</h4>
               </div>
               <p className="hh-tile-pitch">Onboard and certify every agent on the program.</p>
-              <ProgressArc pct={0} />
+              {/* Demo (?demo=1): match the Rep tab's seeded roster (1 of 3 certified = 33%)
+                  so the home tile doesn't contradict it. Real orgs keep the 0 placeholder. */}
+              <ProgressArc pct={isDemo ? 33 : 0} />
             </article>
           </section>
 

@@ -576,8 +576,20 @@ function demoRep(): RepData {
     { id: 'm0', idx: 1, title: 'Welcome to Preferred', summary: 'The program standards — and the pipeline that keeps you in it.', body: 'Three numbers Zillow holds you to.', pass_pct: 80, questions: 7, cards: DEMO_COURSE[0].cards },
     { id: 'm1', idx: 2, title: 'The TRU Way: Speed to Lead', summary: 'Why the first five minutes decide the deal.', body: 'A paid lead is a stopwatch, not a to-do…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[1].cards },
     { id: 'm2', idx: 3, title: 'The ALMS Call Framework', summary: 'Appointment, Location, Motivation, Summarize.', body: 'ALMS is the spine of every first call…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[2].cards },
-    { id: 'm3', idx: 4, title: 'Working a Paid Lead End to End', summary: 'What "worked" actually means.', body: 'A lead counts as WORKED when…', pass_pct: 80, questions: 7 },
-    { id: 'm4', idx: 5, title: 'Follow-Up Discipline & the CRM', summary: 'The system only works if the CRM tells the truth.', body: 'Your CRM is the single source of truth…', pass_pct: 80, questions: 7 },
+    { id: 'm3', idx: 4, title: 'Working a Paid Lead End to End', summary: 'What "worked" actually means.', body: 'A lead counts as WORKED when…', pass_pct: 80, questions: 7, cards: [
+      { t: 'section', n: 'The one word', title: 'What "worked" means', body: 'A lead is worked when a real person actually tried to reach them — not when the CRM fired an autotext.' },
+      { t: 'text', k: 'Worked is a verb', body: 'A paid lead counts as WORKED the moment you personally try to reach a real human — a live call, a real voicemail, a text you actually typed. An automated drip going out under your name is not you working the lead. It’s the system holding the door while you decide whether to walk through it.\n\nEvery lead sits in one of three states on your Pulse board: worked, stuck, or zero-contact. The whole job is keeping leads out of the bottom two — not by gaming the stage, but by doing the thing the stage is supposed to mean.' },
+      { t: 'steps', title: 'Working a lead, start to finish', steps: ['Speed: first personal touch inside the window', 'Double-dial, voicemail, then a text you actually typed', 'Set the next step — a real time on the calendar', 'Log the honest stage in Follow Up Boss', 'Keep following up until they answer, book, or clearly say no'] },
+      { t: 'drill', prompt: 'An autotext went out to a new lead an hour ago. No human has called. Is this lead "worked"?', choices: ['Yes — a touch is a touch', 'No — automated ≠ worked; it still needs a real attempt', 'Only if they replied', 'Yes, after 24 hours'], answer: 1, explain: 'Automation keeps the lead warm; it doesn’t count as you working it. Until a person tries to reach them, the lead is still zero-contact.' },
+      { t: 'callout', body: 'Worked, stuck, or zero-contact — every lead is one of the three. The whole program is just keeping more of them in the first bucket.' },
+    ] },
+    { id: 'm4', idx: 5, title: 'Follow-Up Discipline & the CRM', summary: 'The system only works if the CRM tells the truth.', body: 'Your CRM is the single source of truth…', pass_pct: 80, questions: 7, cards: [
+      { t: 'section', n: 'The scoreboard', title: 'The CRM tells the truth', body: 'Zillow and your leader read your whole funnel out of Follow Up Boss. If it’s wrong, your best work is invisible.' },
+      { t: 'text', k: 'If it’s not in the CRM, it didn’t happen', body: 'You can make the perfect call, set the perfect appointment, and sit down with a buyer who’s ready — and if the stage in Follow Up Boss never moves, none of it shows up. The system doesn’t see effort. It sees stages.\n\nThat cuts both ways. A CRM that tells the truth protects you: it’s the record that the lead was answered, the consult happened, the deal is real. Keep it honest and it works for you. Let it drift and your pipeline lies about you.' },
+      { t: 'steps', title: 'A simple follow-up cadence', steps: ['Day 1: multiple touches — call, voicemail, text', 'Days 2–7: a touch a day while intent is high', 'Weeks 2–4: every few days, mix call and text', 'Then a steady long-game rhythm until they act or opt out'] },
+      { t: 'drill', prompt: 'You met with a buyer today but never updated their stage. What does the system show?', choices: ['Met With', 'An abandoned lead — your consult is invisible', 'Under Contract', 'It updates itself'], answer: 1, explain: 'The funnel is only as true as you keep it. An un-updated stage reads as a lead nobody worked — even though you did the work.' },
+      { t: 'callout', body: 'The CRM isn’t paperwork. It’s the scoreboard the whole program is keeping — make sure it’s telling your story straight.' },
+    ] },
   ];
   const agents: RepAgent[] = [
     { id: 'a1', name: 'Maria Lopez', email: 'maria@example.com', invited: true },
@@ -585,11 +597,18 @@ function demoRep(): RepData {
     { id: 'a3', name: 'Dana Cole', email: 'dana@example.com', invited: false },
   ];
   const progress: RepProgressRow[] = [
+    // Maria (a1) — fully certified: passed all 5 modules, so the gauge reads alive
+    // (1 of 3 · ~33%) instead of a flat 0%. certifiedCount counts agents at 100%.
+    { agent_id: 'a1', module_id: 'm0', status: 'passed', score: 100, passed_at: '2026-06-18' },
     { agent_id: 'a1', module_id: 'm1', status: 'passed', score: 100, passed_at: '2026-06-20' },
     { agent_id: 'a1', module_id: 'm2', status: 'passed', score: 90, passed_at: '2026-06-22' },
-    { agent_id: 'a1', module_id: 'm3', status: 'in_progress', score: null, passed_at: null },
+    { agent_id: 'a1', module_id: 'm3', status: 'passed', score: 90, passed_at: '2026-06-24' },
+    { agent_id: 'a1', module_id: 'm4', status: 'passed', score: 80, passed_at: '2026-06-26' },
+    // Sam (a2) — mid-program (started, not certified).
+    { agent_id: 'a2', module_id: 'm0', status: 'passed', score: 90, passed_at: '2026-06-23' },
     { agent_id: 'a2', module_id: 'm1', status: 'passed', score: 80, passed_at: '2026-06-25' },
     { agent_id: 'a2', module_id: 'm2', status: 'in_progress', score: null, passed_at: null },
+    // Dana (a3) — invited, not started.
   ];
   const practice: RepPracticeRow[] = [
     { agent_id: 'a1', scenario: 'first_timer', status: 'graded', score: 86, passed: true, created_at: '2026-06-28' },
@@ -979,6 +998,11 @@ function demoDashboard(): DashboardData {
       });
       leads.push({
         team_id: 'demo', assigned_to: agent, flag: 'worked',
+        // The Overview money tiles classify closings/offers off `leads.stage`
+        // (isClosing(stageClass(l.stage))) — NOT off deals/stageLog — so the demo
+        // lead MUST carry the same stage string as its deal, or GCI/closings/leads-per
+        // read $0/"—". 'Closed'→closed, 'Pending'→uc, 'Offer'→offer (see shared/flags.ts).
+        stage,
         source_family: srcFamily, fub_person_id: personId, fub_created: createdIso,
       });
     }
