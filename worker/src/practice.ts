@@ -163,13 +163,18 @@ export async function agentIdForPersona(env: Env, persona: Persona): Promise<str
 }
 
 // ── Retell: create a browser (web) call with the persona's own agent ────────
-export async function createWebCall(env: Env, persona: Persona): Promise<{ callId: string; accessToken: string }> {
+/** Create the Retell web call, STAMPED with the Supabase user who started it.
+ *  The un-stored TEST path (leader "try it out") has no DB row to authorize against
+ *  on finish, so ownership rides on Retell's own call metadata — which only this
+ *  Worker can write, and which getCall() reads back for the finish-time check. */
+export async function createWebCall(env: Env, persona: Persona, ownerUserId: string): Promise<{ callId: string; accessToken: string }> {
   const agentId = await agentIdForPersona(env, persona);
   const res = await fetch(`${RETELL}/v2/create-web-call`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       agent_id: agentId,
+      metadata: { tru_owner_user_id: ownerUserId, tru_persona: persona.key },
       retell_llm_dynamic_variables: { persona_prompt: persona.prompt, persona_name: persona.name },
     }),
   });
@@ -178,14 +183,23 @@ export async function createWebCall(env: Env, persona: Persona): Promise<{ callI
   return { callId: j.call_id, accessToken: j.access_token };
 }
 
-export async function getCall(env: Env, callId: string): Promise<{ transcript: string | null; durationS: number | null; status: string }> {
+export async function getCall(env: Env, callId: string): Promise<{ transcript: string | null; durationS: number | null; status: string; ownerUserId: string | null }> {
   const res = await fetch(`${RETELL}/v2/get-call/${callId}`, {
     headers: { Authorization: `Bearer ${env.RETELL_API_KEY}` },
   });
   if (!res.ok) throw new Error(`retell get-call ${res.status}: ${await res.text()}`);
-  const j = (await res.json()) as { transcript?: string; call_status?: string; start_timestamp?: number; end_timestamp?: number };
+  const j = (await res.json()) as {
+    transcript?: string; call_status?: string; start_timestamp?: number; end_timestamp?: number;
+    metadata?: { tru_owner_user_id?: unknown };
+  };
   const durationS = j.start_timestamp && j.end_timestamp ? Math.round((j.end_timestamp - j.start_timestamp) / 1000) : null;
-  return { transcript: j.transcript ?? null, durationS, status: j.call_status ?? 'unknown' };
+  const owner = j.metadata?.tru_owner_user_id;
+  return {
+    transcript: j.transcript ?? null,
+    durationS,
+    status: j.call_status ?? 'unknown',
+    ownerUserId: typeof owner === 'string' && owner ? owner : null,
+  };
 }
 
 // ── Grading: the ALMS rubric, applied by Claude to the transcript ───────────

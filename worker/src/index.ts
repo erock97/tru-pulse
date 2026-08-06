@@ -244,8 +244,18 @@ export default {
       }
     }
 
-    // Update org thresholds / audit math. Signed-in user → patches their own org's
+    // Update org thresholds / audit math. Signed-in LEADER/ADMIN → patches that org's
     // settings (browser is RLS-read-only, so writes come through the Worker).
+    //
+    // Two guards here, both deliberate:
+    //  - WHICH org: never silently pick one. userOrgIds() is an unordered PostgREST
+    //    read, so a multi-org user's `orgIds[0]` was whichever row Postgres happened
+    //    to return first — a save could land on the wrong company. The target org is
+    //    now the caller's org only when they have exactly one; with more than one an
+    //    explicit body.org_id is REQUIRED (and must be one of theirs).
+    //  - WHO may write: these are org-wide numbers (GCI, strike limits, capacity),
+    //    so membership alone isn't enough — same leader/admin check the TRU Rep
+    //    authoring routes below already use.
     if (url.pathname === '/settings' && req.method === 'POST') {
       const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
       if (!userId) return json({ error: 'unauthorized' }, 401);
@@ -253,6 +263,18 @@ export default {
       if (!orgIds.length) return json({ error: 'no org' }, 403);
       const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
       if (!body) return json({ error: 'bad body' }, 422);
+      const requestedOrg = body.org_id != null ? String(body.org_id).trim() : '';
+      if (requestedOrg && !isUuid(requestedOrg)) return json({ error: 'invalid id' }, 422);
+      let targetOrg: string;
+      if (requestedOrg) {
+        if (!orgIds.includes(requestedOrg)) return json({ error: 'forbidden' }, 403);
+        targetOrg = requestedOrg;
+      } else if (orgIds.length === 1) {
+        targetOrg = orgIds[0];
+      } else {
+        return json({ error: 'org_id required (you belong to multiple organizations)' }, 422);
+      }
+      if (!(await isOrgLeaderOrAdmin(database, userId, targetOrg))) return json({ error: 'forbidden' }, 403);
       const patch: Record<string, unknown> = {};
       for (const k of ['avg_gci', 'close_rate', 'window_hours', 'strike_limit', 'strike_window_days', 'per_agent_capacity', 'pause_volume_leads', 'pause_no_close_leads']) {
         const v = Number(body[k]);
@@ -281,7 +303,7 @@ export default {
       if (!Object.keys(patch).length) return json({ error: 'nothing to update' }, 422);
       patch.updated_at = new Date().toISOString();
       try {
-        await database.update('org_settings', `org_id=eq.${orgIds[0]}`, patch);
+        await database.update('org_settings', `org_id=eq.${targetOrg}`, patch);
         return json({ ok: true });
       } catch (e) {
         return json({ error: String(e) }, 500);
@@ -631,19 +653,25 @@ export default {
       const agent = await agentFromAuth(database, userId);
       if (!agent) {
         // Leader/admin TEST mode: real call, real grade, nothing stored — a
-        // leader trying the sim never pollutes certification records.
+        // leader trying the sim never pollutes certification records. Membership
+        // alone isn't enough: this path returns a graded breakdown that quotes the
+        // call, so it's held to the same leader/admin bar as the other org-wide routes.
         const orgs = await userOrgIds(database, userId);
-        const allowed = orgs.length > 0 || (await database.select('admins', `id=eq.${userId}&select=id`)).length > 0;
+        let allowed = false;
+        for (const orgId of orgs) {
+          if (await isOrgLeaderOrAdmin(database, userId, orgId)) { allowed = true; break; }
+        }
+        if (!allowed) allowed = (await database.select('admins', `id=eq.${userId}&select=id`)).length > 0;
         if (!allowed) return json({ error: 'not an agent' }, 403);
         try {
-          const { callId, accessToken } = await createWebCall(env, persona);
+          const { callId, accessToken } = await createWebCall(env, persona, userId);
           return json({ practiceId: `test:${persona.key}:${callId}`, accessToken, test: true });
         } catch (e) {
           return json({ error: String(e) }, 502);
         }
       }
       try {
-        const { callId, accessToken } = await createWebCall(env, persona);
+        const { callId, accessToken } = await createWebCall(env, persona, userId);
         const row = await database.insert('rep_practice', {
           agent_id: agent.id, org_id: agent.org_id, scenario: persona.key, call_id: callId, status: 'started',
         });
@@ -662,16 +690,20 @@ export default {
       const practiceId = String(body?.practiceId ?? '');
       if (!practiceId) return json({ error: 'practiceId required' }, 422);
       // Leader/admin TEST mode: grade straight off the Retell call, store nothing.
+      // The call id here comes STRAIGHT FROM THE BROWSER and there is no stored row
+      // to authorize against — so ownership is checked against the call's own Retell
+      // metadata, stamped by createWebCall when this same user started it. Without
+      // that check any signed-in caller could hand us someone else's call id and get
+      // back a graded breakdown that quotes what was said on it.
       if (practiceId.startsWith('test:')) {
-        const orgs = await userOrgIds(database, userId);
-        const allowed = orgs.length > 0 || (await database.select('admins', `id=eq.${userId}&select=id`)).length > 0;
-        if (!allowed) return json({ error: 'forbidden' }, 403);
         const [, scenarioKey, callId] = practiceId.split(':');
+        if (!callId) return json({ error: 'forbidden' }, 403);
         try {
           let transcript: string | null = null;
           let durationS: number | null = null;
           for (let i = 0; i < 5; i++) {
             const call = await getCall(env, callId);
+            if (call.ownerUserId !== userId) return json({ error: 'forbidden' }, 403);
             transcript = call.transcript; durationS = call.durationS;
             if (transcript && call.status === 'ended') break;
             await new Promise((r) => setTimeout(r, 2000));

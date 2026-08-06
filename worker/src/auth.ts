@@ -14,8 +14,11 @@ export async function verifySupabaseUser(env: Env, authHeader: string | null): P
   return user.id ?? null;
 }
 
-/** Org ids the user belongs to (service-role read — RLS-independent). */
+/** Org ids the user belongs to (service-role read — RLS-independent).
+ *  Ordered so the result is STABLE across calls: PostgREST returns rows in whatever
+ *  order Postgres yields without an explicit sort, and callers that pick a single
+ *  org from this list must not get a different answer run to run. */
 export async function userOrgIds(database: Db, userId: string): Promise<string[]> {
-  const rows = await database.select('memberships', `user_id=eq.${userId}&select=org_id`);
+  const rows = await database.select('memberships', `user_id=eq.${userId}&select=org_id&order=org_id`);
   return rows.map((r) => r.org_id as string);
 }
