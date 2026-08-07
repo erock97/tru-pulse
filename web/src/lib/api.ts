@@ -699,7 +699,10 @@ export async function signOutClean(): Promise<void> {
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
- *  keeps the browser read-only), which patches org_settings with the service role. */
+ *  keeps the browser read-only), which patches org_settings with the service role.
+ *  `org_id` names the org being edited — the SAME row loadDashboard() read back —
+ *  so the save can never land on a different company than the one on screen. The
+ *  Worker still re-checks that the caller is a leader/admin of it. */
 export async function saveSettings(patch: Partial<Settings>): Promise<void> {
   if (isDemo) return;
   const res = await fetch(WORKER_URL + '/settings', {
@@ -816,6 +819,10 @@ export interface StageLogRow {
   team_id?: string;
 }
 export interface Settings {
+  // The org this settings row belongs to. Carried through the form and echoed back
+  // on save so a save always targets the org that was actually on screen — a user
+  // who belongs to more than one org would otherwise have had the Worker pick.
+  org_id?: string;
   avg_gci: number;
   close_rate: number;
   window_hours: number;
@@ -891,7 +898,10 @@ export async function loadDashboard(): Promise<DashboardData> {
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals, stageLog] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
-    supabase.from('org_settings').select('avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads,pause_no_close_since').limit(1),
+    // org_id is selected so a save can name the exact row that was read, and the
+    // ORDER makes "the first row" deterministic — without it a user in more than
+    // one org could be shown a different org's numbers from one load to the next.
+    supabase.from('org_settings').select('org_id,avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,pause_volume_on,pause_volume_leads,pause_no_close_on,pause_no_close_leads,pause_no_close_since').order('org_id', { ascending: true }).limit(1),
     allLeads(),
     supabase.from('accountability_cases').select('assigned_to,status,opened_at').gte('opened_at', sinceIso),
     supabase.from('agents').select('id,name,email,phone,is_paused,pause_reason,pause_note,paused_at'),
