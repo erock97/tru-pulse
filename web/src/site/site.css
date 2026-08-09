@@ -85,6 +85,15 @@
   content: '→'; position: absolute; left: 0; color: var(--gold);
 }
 
+/* Results disclaimer. Visually subordinate, but NOT the faint 0.66rem mono
+   `.note` treatment — that lands around 3.4:1 against the page, under the 4.5:1
+   floor for small text. A disclaimer nobody can read does not disclaim
+   anything. --muted clears the bar comfortably. */
+.truland .disclaimer {
+  color: var(--muted); font-size: .82rem; line-height: 1.65;
+  margin-top: 1.8rem; max-width: 62ch;
+}
+
 /* Long-form legal pages. Readable measure, nothing decorative. */
 .legal { max-width: 46rem; padding: 8rem 0 2rem; }
 .legal h1 { font-size: clamp(2rem, 4vw, 2.9rem); margin: 0 0 .4rem; line-height: 1.1; }

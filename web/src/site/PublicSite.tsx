@@ -5,6 +5,7 @@ import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
 import Home from './pages/Home';
 import Services from './pages/Services';
+import Work from './pages/Work';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -90,7 +91,8 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
       <main id="main">
         {route === '/' && <Home />}
         {route === '/services' && <Services />}
-        {/* Remaining page bodies arrive in Tasks 7–9. */}
+        {route === '/work' && <Work />}
+        {/* Remaining page bodies arrive in Tasks 8–9. */}
       </main>
       <SiteFooter />
     </div>
