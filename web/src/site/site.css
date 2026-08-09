@@ -1,0 +1,59 @@
+/* Marketing-site chrome. Colours come from the custom properties already
+   defined in Landing.css (--bg, --ink, --muted, --faint, --gold, --hair-2);
+   nothing here introduces a new palette, font, or motion. */
+
+/* Keyboard users must be able to jump the nav. Terrason had this on every page;
+   TRU had none. Visible only when focused. */
+.skiplink {
+  position: absolute; left: -9999px; top: 0; z-index: 999;
+  background: var(--gold); color: #17120b;
+  padding: .7rem 1.1rem; border-radius: 0 0 8px 0;
+  font-weight: 800; font-size: .85rem; text-decoration: none;
+}
+.skiplink:focus { left: 0; }
+
+/* The existing `.truland footer .wrap` rule sets display:flex with
+   space-between. These selectors are deliberately one step more specific so the
+   multi-row footer lays out as a grid without editing the original rule. */
+.truland footer.sitefoot .wrap {
+  display: grid; gap: 1.5rem; justify-content: initial; align-items: initial;
+}
+.truland footer.sitefoot { padding-block: 3.2rem 2.4rem; margin-top: 4rem; }
+
+.sitefoot-brand { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; }
+.sitefoot-brand .m { color: var(--faint); font-size: .84rem; }
+
+.sitefoot-addr {
+  display: flex; flex-direction: column; gap: .2rem;
+  font-style: normal; color: var(--faint); font-size: .82rem;
+}
+.sitefoot-addr a { color: inherit; }
+
+.sitefoot-legal { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .82rem; }
+.sitefoot-legal a { color: var(--faint); text-decoration: none; }
+.sitefoot-legal a:hover,
+.sitefoot-legal a:focus-visible { color: var(--gold); text-decoration: underline; }
+
+.sitefoot-copy { color: var(--faint); font-size: .76rem; margin: 0; }
+
+/* Long-form legal pages. Readable measure, nothing decorative. */
+.legal { max-width: 46rem; padding: 8rem 0 2rem; }
+.legal h1 { font-size: clamp(2rem, 4vw, 2.9rem); margin: 0 0 .4rem; line-height: 1.1; }
+.legal .updated {
+  color: var(--faint); font-size: .8rem; text-transform: uppercase;
+  letter-spacing: .08em; margin-bottom: 2.4rem;
+}
+.legal h2 { font-size: 1.15rem; margin: 2.4rem 0 .7rem; }
+.legal p, .legal li { line-height: 1.75; font-size: .95rem; color: var(--muted); }
+.legal ul { padding-left: 1.2rem; display: grid; gap: .45rem; margin: .8rem 0; }
+.legal a { color: var(--gold); }
+.legal .contact-block { display: flex; flex-direction: column; gap: .15rem; font-style: normal; }
+
+/* Every element focusable by keyboard shows it. */
+.truland a:focus-visible,
+.truland button:focus-visible,
+.truland input:focus-visible,
+.truland select:focus-visible,
+.truland textarea:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 3px;
+}
