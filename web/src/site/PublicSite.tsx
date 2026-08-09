@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PublicRoute } from '../lib/routes';
 import { applyHead, type PageMeta } from '../lib/head';
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
 import Home from './pages/Home';
+import Services from './pages/Services';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -43,18 +44,53 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
 };
 
 export default function PublicSite({ route }: { route: PublicRoute }) {
+  const shellRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     applyHead({ ...META[route], path: route });
     if (route !== '/') window.scrollTo(0, 0);
   }, [route]);
 
+  // The reveal-on-scroll machinery belongs to every marketing page, not just the
+  // home page. `.ready` unlocks the hero's fade/underline styles (they are all
+  // written as `.truland.ready …`); the observer adds `.in` to each `.reveal` as
+  // it comes into view. Without this, every page but the home page renders its
+  // copy at opacity 0.
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    const raf = requestAnimationFrame(() => shell.classList.add('ready'));
+    const settle = window.setTimeout(() => shell.classList.add('ready'), 300);
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.16, rootMargin: '0px 0px -8% 0px' },
+    );
+    shell.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(settle);
+      io.disconnect();
+    };
+  }, [route]);
+
   return (
-    <div className="truland">
+    <div className="truland" ref={shellRef}>
       <a className="skiplink" href="#main">Skip to content</a>
       <SiteHeader current={route} />
       <main id="main">
         {route === '/' && <Home />}
-        {/* Remaining page bodies arrive in Tasks 6–9. */}
+        {route === '/services' && <Services />}
+        {/* Remaining page bodies arrive in Tasks 7–9. */}
       </main>
       <SiteFooter />
     </div>

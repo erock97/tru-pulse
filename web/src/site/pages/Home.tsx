@@ -43,10 +43,6 @@ export default function Home() {
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // The reveal styles are all written as `.truland.ready …`, and .truland now
-    // lives one level up in PublicSite. Walk up to it, or the hero copy stays
-    // permanently at opacity 0.
-    const wrap = wrapRef.current?.closest('.truland') as HTMLElement | null;
     const timers: number[] = [];
     const cleanups: Array<() => void> = [];
     const t = (fn: () => void, ms: number) => {
@@ -127,15 +123,7 @@ export default function Home() {
         v.removeAttribute('autoplay');
         v.pause();
       }
-      wrap?.classList.add('ready');
-    } else {
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          wrap?.classList.add('ready');
-        });
-      });
     }
-    t(() => wrap?.classList.add('ready'), 300);
 
     function countUp(el: HTMLElement) {
       const to = parseFloat(el.getAttribute('data-to') || '0');
@@ -160,19 +148,8 @@ export default function Home() {
       requestAnimationFrame(step);
     }
 
-    const io = new IntersectionObserver(
-      function (es) {
-        es.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add('in');
-            io.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.16, rootMargin: '0px 0px -8% 0px' },
-    );
-    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
-    cleanups.push(() => io.disconnect());
+    // `.ready` and the `.reveal` observer now live in PublicSite, so every
+    // marketing page gets them — not only this one.
 
     const card = document.getElementById('auditCard');
     if (card) {
