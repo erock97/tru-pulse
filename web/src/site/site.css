@@ -1,0 +1,117 @@
+/* Marketing-site chrome. Colours come from the custom properties already
+   defined in Landing.css (--bg, --ink, --muted, --faint, --gold, --hair-2);
+   nothing here introduces a new palette, font, or motion. */
+
+/* Keyboard users must be able to jump the nav. The old marketing site had this on
+   every page; TRU had none. Visible only when focused. */
+.skiplink {
+  position: absolute; left: -9999px; top: 0; z-index: 999;
+  background: var(--gold); color: #17120b;
+  padding: .7rem 1.1rem; border-radius: 0 0 8px 0;
+  font-weight: 800; font-size: .85rem; text-decoration: none;
+}
+.skiplink:focus { left: 0; }
+
+/* The existing `.truland footer .wrap` rule sets display:flex with
+   space-between. These selectors are deliberately one step more specific so the
+   multi-row footer lays out as a grid without editing the original rule. */
+.truland footer.sitefoot .wrap {
+  display: grid; gap: 1.5rem; justify-content: initial; align-items: initial;
+}
+.truland footer.sitefoot { padding-block: 3.2rem 2.4rem; margin-top: 4rem; }
+
+.sitefoot-brand { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; }
+.sitefoot-brand .m { color: var(--faint); font-size: .84rem; }
+
+.sitefoot-addr {
+  display: flex; flex-direction: column; gap: .2rem;
+  font-style: normal; color: var(--faint); font-size: .82rem;
+}
+.sitefoot-addr a { color: inherit; }
+
+.sitefoot-legal { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .82rem; }
+.sitefoot-legal a { color: var(--faint); text-decoration: none; }
+.sitefoot-legal a:hover,
+.sitefoot-legal a:focus-visible { color: var(--gold); text-decoration: underline; }
+
+.sitefoot-copy { color: var(--faint); font-size: .76rem; margin: 0; }
+
+/* Seven service cards reuse the existing .pills/.p card treatment, but a fixed
+   three-column grid would leave a lone card stranded on the last row. Auto-fit
+   balances it at every width and still collapses to one column on a phone. */
+.truland .pills.svc { grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); }
+.truland .pills.svc .num {
+  display: block; color: var(--gold); font-size: .74rem;
+  letter-spacing: .14em; font-weight: 800; margin-bottom: .55rem;
+}
+
+/* Interior pages. `.band`'s padding is tuned for the home page, where each
+   section is a full-height beat. A content page has many short sections in a
+   row, and that rhythm leaves ~250px of dead space between every one. Same
+   design language, tighter cadence. */
+.truland .interior .band { padding-block: clamp(2.6rem, 4.5vw, 4.5rem); }
+.truland .interior > .band:first-child { padding-top: clamp(7.5rem, 11vw, 10rem); }
+.truland .interior > .band:last-child { padding-bottom: clamp(3.5rem, 6vw, 6rem); }
+
+/* Four packages, not three. Same card treatment as the existing .tier, one more
+   column, and it collapses to two-up then one-up on smaller screens. */
+.truland .tiers.pkg { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) { .truland .tiers.pkg { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .truland .tiers.pkg { grid-template-columns: 1fr; } }
+
+/* The package NAME takes the large serif slot the price used to occupy —
+   deliberately, because no price is published. */
+.truland .tier .pname {
+  font-family: var(--serif); font-weight: 800; font-size: 1.9rem;
+  margin-top: .45rem; line-height: 1.1;
+}
+.truland .tier .td { min-height: 0; }
+
+.truland .pkgnote {
+  color: var(--faint); font-size: .84rem; line-height: 1.6;
+  margin-top: 1.6rem; max-width: 60ch;
+}
+
+/* The outcome list — plain, two-up, no decorative bullets. */
+.truland .outcomes {
+  list-style: none; padding: 0; margin: 2rem 0 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: .7rem 1.6rem;
+}
+.truland .outcomes li {
+  color: var(--ink); font-size: .95rem; line-height: 1.45;
+  padding-left: 1.3rem; position: relative;
+}
+.truland .outcomes li::before {
+  content: '→'; position: absolute; left: 0; color: var(--gold);
+}
+
+/* Results disclaimer. Visually subordinate, but NOT the faint 0.66rem mono
+   `.note` treatment — that lands around 3.4:1 against the page, under the 4.5:1
+   floor for small text. A disclaimer nobody can read does not disclaim
+   anything. --muted clears the bar comfortably. */
+.truland .disclaimer {
+  color: var(--muted); font-size: .82rem; line-height: 1.65;
+  margin-top: 1.8rem; max-width: 62ch;
+}
+
+/* Long-form legal pages. Readable measure, nothing decorative. */
+.legal { max-width: 46rem; padding: 8rem 0 2rem; }
+.legal h1 { font-size: clamp(2rem, 4vw, 2.9rem); margin: 0 0 .4rem; line-height: 1.1; }
+.legal .updated {
+  color: var(--faint); font-size: .8rem; text-transform: uppercase;
+  letter-spacing: .08em; margin-bottom: 2.4rem;
+}
+.legal h2 { font-size: 1.15rem; margin: 2.4rem 0 .7rem; }
+.legal p, .legal li { line-height: 1.75; font-size: .95rem; color: var(--muted); }
+.legal ul { padding-left: 1.2rem; display: grid; gap: .45rem; margin: .8rem 0; }
+.legal a { color: var(--gold); }
+.legal .contact-block { display: flex; flex-direction: column; gap: .15rem; font-style: normal; }
+
+/* Every element focusable by keyboard shows it. */
+.truland a:focus-visible,
+.truland button:focus-visible,
+.truland input:focus-visible,
+.truland select:focus-visible,
+.truland textarea:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 3px;
+}

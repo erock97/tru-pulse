@@ -8,3 +8,6 @@ dist/
 .env.production
 *.log
 .DS_Store
+
+# Local tooling scratch, not part of the project
+.tru-brain-project.json

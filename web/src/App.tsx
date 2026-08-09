@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { myOrg, isDemo, adminLeaders, hasAdminReturn, adminReturn, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import Login from './pages/Login';
-import Landing from './pages/Landing';
+import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -37,6 +37,13 @@ export default function App() {
   const [recovery, setRecovery] = useState<boolean>(
     () => typeof window !== 'undefined' && /type=(recovery|invite)/.test(window.location.hash),
   );
+
+  // index.html now carries the marketing title, so the product claims its own
+  // tab name whenever a product screen is what's actually showing. Deliberately
+  // skipped when the signed-out marketing home renders below, which sets its own.
+  useEffect(() => {
+    if (isDemo || session || route === '/login') document.title = 'TRU HQ';
+  }, [session, route]);
 
   useEffect(() => {
     if (isDemo) return;
@@ -110,7 +117,10 @@ export default function App() {
   }
   if (!session) {
     if (route === '/login') return <Login />;
-    return <Landing onEnter={() => { window.location.href = 'https://app.truhq.co'; }} />;
+    // The marketing home. Only reached when signed out, so a signed-in visitor
+    // at "/" still gets their dashboard exactly as before. The other six public
+    // paths never reach App at all — main.tsx routes them (see routes.ts).
+    return <PublicSite route="/" />;
   }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;

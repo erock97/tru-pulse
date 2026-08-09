@@ -12,6 +12,7 @@ import { importEncKey, decryptKey, encryptKey } from './crypto.js';
 import { registerWebhooks, validateKey } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { runCircleCampaign, runOutboundCampaign, logDisposition } from './prospect/service.js';
+import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
 import { saveVoiceProfile, loadVoiceProfile, generateSocialCalendar, listSocialCalendar, setContentStatus } from './social/service.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
@@ -716,6 +717,45 @@ export default {
         } catch (e) {
           return json({ error: String(e) }, 500);
         }
+      }
+    }
+
+    // ── Public: application intake from truhq.co/apply ──────────────────────
+    // The only unauthenticated write path in this Worker. Everything else here
+    // requires an admin token or a signed-in Supabase user.
+    if (url.pathname === '/apply' && req.method === 'POST') {
+      const parsed = validateApplication(await req.json().catch(() => null));
+      if (!parsed.ok) {
+        // A tripped honeypot gets a success-shaped reply and stores nothing, so
+        // the bot learns neither that it was caught nor which field caught it.
+        if (parsed.error === 'honeypot') return json({ ok: true });
+        return json({ error: parsed.error }, 422);
+      }
+      const ip = req.headers.get('CF-Connecting-IP') ?? '0.0.0.0';
+      const ipHash = await hashIp(ip, env.FUB_ENC_KEY);
+      try {
+        if (await recentlySubmitted(database, ipHash)) {
+          return json({ error: 'too many submissions from here — email us instead' }, 429);
+        }
+        await database.insert('applications', {
+          full_name: parsed.value.fullName,
+          email: parsed.value.email,
+          role: parsed.value.role,
+          team_size: parsed.value.teamSize,
+          bottleneck: parsed.value.bottleneck,
+          marketing_opt_in: parsed.value.marketingOptIn,
+          consent_text: parsed.value.consentText,
+          consent_at: parsed.value.consentAt,
+          source_path: parsed.value.sourcePath,
+          ip_hash: ipHash,
+          user_agent: (req.headers.get('User-Agent') ?? '').slice(0, 500),
+        });
+        // The lead is stored by this point; a failed notification must not turn
+        // a captured application into an error the visitor sees.
+        ctx.waitUntil(notify(env, parsed.value).catch(() => {}));
+        return json({ ok: true });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
       }
     }
 
