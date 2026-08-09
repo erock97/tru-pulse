@@ -2,8 +2,8 @@
    defined in Landing.css (--bg, --ink, --muted, --faint, --gold, --hair-2);
    nothing here introduces a new palette, font, or motion. */
 
-/* Keyboard users must be able to jump the nav. Terrason had this on every page;
-   TRU had none. Visible only when focused. */
+/* Keyboard users must be able to jump the nav. The old marketing site had this on
+   every page; TRU had none. Visible only when focused. */
 .skiplink {
   position: absolute; left: -9999px; top: 0; z-index: 999;
   background: var(--gold); color: #17120b;
@@ -35,6 +35,15 @@
 .sitefoot-legal a:focus-visible { color: var(--gold); text-decoration: underline; }
 
 .sitefoot-copy { color: var(--faint); font-size: .76rem; margin: 0; }
+
+/* Seven service cards reuse the existing .pills/.p card treatment, but a fixed
+   three-column grid would leave a lone card stranded on the last row. Auto-fit
+   balances it at every width and still collapses to one column on a phone. */
+.truland .pills.svc { grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr)); }
+.truland .pills.svc .num {
+  display: block; color: var(--gold); font-size: .74rem;
+  letter-spacing: .14em; font-weight: 800; margin-bottom: .55rem;
+}
 
 /* Long-form legal pages. Readable measure, nothing decorative. */
 .legal { max-width: 46rem; padding: 8rem 0 2rem; }

@@ -3,6 +3,7 @@ import type { PublicRoute } from '../lib/routes';
 import { applyHead, type PageMeta } from '../lib/head';
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
+import Home from './pages/Home';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -52,7 +53,8 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
       <a className="skiplink" href="#main">Skip to content</a>
       <SiteHeader current={route} />
       <main id="main">
-        {/* Page bodies arrive in Tasks 5–9. */}
+        {route === '/' && <Home />}
+        {/* Remaining page bodies arrive in Tasks 6–9. */}
       </main>
       <SiteFooter />
     </div>
