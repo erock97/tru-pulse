@@ -6,6 +6,9 @@ import SiteFooter from './SiteFooter';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import Work from './pages/Work';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import RefundPolicy from './pages/RefundPolicy';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -92,7 +95,10 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
         {route === '/' && <Home />}
         {route === '/services' && <Services />}
         {route === '/work' && <Work />}
-        {/* Remaining page bodies arrive in Tasks 8–9. */}
+        {route === '/privacy' && <Privacy />}
+        {route === '/terms' && <Terms />}
+        {route === '/refund-policy' && <RefundPolicy />}
+        {/* The apply form arrives in Task 9. */}
       </main>
       <SiteFooter />
     </div>

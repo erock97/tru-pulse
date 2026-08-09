@@ -164,8 +164,12 @@ export default function Services() {
           coaching coverage you need. We&rsquo;ll provide a fixed-price proposal after the discovery call.
         </p>
         <p className="sub reveal d3">
-          Payments are processed via Stripe. Retainers are invoiced monthly. Engagements can be
-          paused or unpaused with reasonable notice to accommodate seasonal team dynamics.
+          Engagements start with an initial 90-day term, then continue month to month &mdash; we keep
+          invoicing until you tell us to stop, and you can cancel any time after the initial term
+          with 30 days&rsquo; notice. Change your mind within 48 hours of signing and we refund
+          everything, no questions asked. Payments are processed via Stripe and retainers are
+          invoiced monthly. The full terms are in our{' '}
+          <a href="/refund-policy">Refund &amp; Cancellation Policy</a>.
         </p>
       </div></section>
 

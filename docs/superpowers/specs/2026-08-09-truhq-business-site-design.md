@@ -343,6 +343,36 @@ Spec approved by Eric. Resolutions:
 4. **Contact address.** `Admin@terrasonconsulting.com` ships unless a `truhq.co` mailbox goes
    live first. One constant either way.
 
+### 9.1 Refund and cancellation terms — confirmed 2026-08-09
+
+The archived policy assumed 30-days-notice-anytime with no initial term. That is **not** how the
+business actually works, and the published policy is replaced accordingly:
+
+| Term | Rule |
+|---|---|
+| Initial term | **90 days.** Retainers invoiced monthly in advance. |
+| After the initial term | **Month-to-month, continues automatically.** Invoicing continues until the client cancels — no second signature, no renewal notice. |
+| Full refund window | **48 hours from signing the agreement.** Everything paid is refunded, no reason required. Short and fixed because real work is front-loaded. |
+| Cancelling inside the initial term | After the 48 hours, the balance of the 90-day term remains payable. Work in progress is finished and delivered. |
+| Cancelling after the initial term | 30 days' written notice. Prepaid amounts beyond the notice window refunded pro-rata. |
+| Per-deal payouts | **Survive termination.** Anything closed on or before the termination date remains payable and is invoiced after closing, even if that lands after the engagement ends. |
+
+**Auto-renewal is a regulated disclosure, not just copy.** Continuing to bill until the client
+cancels is an automatic renewal under Washington's and (more strictly) California's
+auto-renewal statutes and the FTC's negative-option rule. Those require the renewal terms to be
+disclosed clearly and conspicuously *before* the client commits, affirmative consent, and a
+straightforward cancellation path. The site therefore states the roll-to-month-to-month in bold in
+the refund policy, references it in the terms, and summarises it on the services page next to the
+investment copy. **The signed client agreement must carry the same disclosure** — the website
+alone does not satisfy this. Flag for the attorney handling the new entity.
+
+**Two judgment calls made in drafting, open to reversal:**
+1. *Pause and unpause* is carried over from the archived policy but scoped to **after** the
+   initial term, since an unrestricted pause would hollow out the 90-day commitment.
+2. *Deals pending at termination but closing afterwards* — the policy says this is governed by
+   the signed agreement rather than picking a rule. This is the single most-disputed clause in
+   commission-linked consulting agreements and is worth settling explicitly in the contract.
+
 ## 10. Out of scope
 
 Redirecting or preserving `terrasonconsulting.com`. Anything behind `app.truhq.co`. Redesigning
