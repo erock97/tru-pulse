@@ -622,9 +622,24 @@ git commit -m "feat: marketing chrome — header, compliant footer, skip link, p
 The highest-risk task in the plan. Two additions to `App.tsx`, nothing else, and the product proven unbroken before the commit lands.
 
 **Files:**
-- Modify: `web/src/App.tsx:32-34` (top of component) and `web/src/App.tsx:111-114` (the logged-out branch)
+- Modify: `web/src/main.tsx` (the sub-path switch — see the deviation note below)
+- Modify: `web/src/App.tsx` (the logged-out branch, plus a product tab-title effect)
 - Create: `web/public/_redirects`
 - Modify: `web/index.html:6`
+
+> **Deviation, applied 2026-08-09.** This task originally put the sub-path
+> short-circuit at the top of `App()`, above `useHashRoute()`. That is a hooks-order
+> violation — an early `return` before the hook calls — and it would still have run
+> the Supabase session effects on marketing pages. The switch moved to `main.tsx`
+> instead, choosing between `<PublicSite>` and `<App>` before `App` ever mounts.
+> Same behaviour, no conditional hooks, and genuinely zero auth work on a policy
+> page. `App.tsx` is left with a single change: `<PublicSite route="/" />` in place
+> of `<Landing>` in the existing signed-out branch.
+>
+> One knock-on: giving `index.html` the marketing title made the *product's* browser
+> tab read the marketing headline. `App.tsx` gained a small effect that restores
+> `TRU HQ` whenever a product screen is what's showing, skipped when the signed-out
+> marketing home renders so it cannot fight `applyHead`.
 
 **Interfaces:**
 - Consumes: `matchPublicRoute` (Task 2), `PublicSite` (Task 3).
