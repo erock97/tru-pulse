@@ -328,16 +328,20 @@ Eric's explicit ask: check the work thoroughly, because plenty in the background
 17. Mobile: the square intro reveal path still triggers under 760px.
 18. Lighthouse on the home and services pages before/after, for regressions only.
 
-## 9. Open questions for review
+## 9. Review outcome — 2026-08-09
 
-1. **Five pillars or seven services on the home page?** The old home said "Five pillars"; the
-   old services page and the pricing flier both say seven. Defaulting to **seven everywhere**
-   for coherence, since the flier leads with "7 core services, included for every team." Say
-   the word and the home page keeps its five-card teaser instead.
-2. **Contact address.** `Admin@terrasonconsulting.com` ships unless a `truhq.co` mailbox is
+Spec approved by Eric. Resolutions:
+
+1. **Seven services on the home page.** Confirmed — matches the services page and the flier.
+2. **Four packages, confirmed.** Essentials · Performance · Performance+ · Mega Team. The
+   canonical source is *Terrason Pricing Flier (1).pdf* in Eric's Google Drive
+   (`1PDBKJDI9suAoqOC9lYeJ9MMh64HkJLoo`, 2026-06-24), transcribed at the end of the archive
+   doc. Tier names, team-size bands, and the seven included services come from there. Dollar
+   figures do not ship.
+3. **Governing law: Washington, Snohomish County. Locked** — stays put through the entity
+   change, so `governingState` / `governingVenue` are stable even when `legalEntity` changes.
+4. **Contact address.** `Admin@terrasonconsulting.com` ships unless a `truhq.co` mailbox goes
    live first. One constant either way.
-3. **Governing law.** Washington / Snohomish County carries over from the old terms. If the
-   new entity registers elsewhere, this changes with it.
 
 ## 10. Out of scope
 
