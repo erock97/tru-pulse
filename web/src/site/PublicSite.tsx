@@ -9,6 +9,7 @@ import Work from './pages/Work';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import RefundPolicy from './pages/RefundPolicy';
+import Apply from './pages/Apply';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -98,7 +99,7 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
         {route === '/privacy' && <Privacy />}
         {route === '/terms' && <Terms />}
         {route === '/refund-policy' && <RefundPolicy />}
-        {/* The apply form arrives in Task 9. */}
+        {route === '/apply' && <Apply />}
       </main>
       <SiteFooter />
     </div>
