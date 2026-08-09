@@ -366,12 +366,19 @@ the refund policy, references it in the terms, and summarises it on the services
 investment copy. **The signed client agreement must carry the same disclosure** — the website
 alone does not satisfy this. Flag for the attorney handling the new entity.
 
-**Two judgment calls made in drafting, open to reversal:**
-1. *Pause and unpause* is carried over from the archived policy but scoped to **after** the
-   initial term, since an unrestricted pause would hollow out the 90-day commitment.
-2. *Deals pending at termination but closing afterwards* — the policy says this is governed by
-   the signed agreement rather than picking a rule. This is the single most-disputed clause in
-   commission-linked consulting agreements and is worth settling explicitly in the contract.
+**Both drafting judgment calls were overruled by Eric on 2026-08-09, and the policy now says:**
+1. **No seasonal pause at all.** The archived policy had one; it is removed outright, not
+   merely restricted to after the initial term.
+2. **Payouts trigger on closings, not contracts.** A transaction under contract at termination
+   that has not closed earns nothing. The policy states this outright instead of deferring to
+   the signed agreement.
+
+### 9.2 Deferred to after launch
+
+**An About page** covering both business owners. Eric wants the rest live first. It is *not*
+scaffolded as an empty route — shipping an empty room is exactly why `/insights` was dropped.
+When it ships it needs: both owners' names, roles, backgrounds, and headshots if they exist, plus
+entries in the nav, the footer, and `sitemap.xml`.
 
 ## 10. Out of scope
 

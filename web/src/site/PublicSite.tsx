@@ -43,7 +43,7 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
   },
   '/refund-policy': {
     title: 'Refund & Cancellation Policy — TRU',
-    description: 'How cancellations, pauses, and refunds work.',
+    description: 'The 90-day initial term, the 48-hour refund window, how to cancel, and how per-deal payouts work.',
   },
 };
 

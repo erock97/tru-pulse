@@ -6,7 +6,14 @@ import { BUSINESS } from '../../config/business';
 //   · 48 hours from signing → full refund, no questions asked
 //   · after that, through the initial 90-day term → the balance of the term is owed
 //   · after 90 days → month-to-month, continues until cancelled, 30 days' notice
-//   · per-deal payouts survive termination for anything closed through that date
+//   · per-deal payouts survive termination for anything CLOSED through that date
+//
+// Payouts trigger on closings, not on contracts (Eric, 2026-08-09) — a deal under
+// contract at termination that has not closed earns nothing, and the policy says
+// so outright rather than deferring to the agreement.
+//
+// There is deliberately NO seasonal pause provision. The archived policy had one;
+// it was removed because an unrestricted pause hollows out the 90-day commitment.
 //
 // The month-to-month roll is an automatic renewal, so it is stated plainly and
 // up front rather than buried — see the "Initial term" section.
@@ -84,21 +91,14 @@ export default function RefundPolicy() {
         <h2>Per-deal payouts after termination</h2>
         <p>
           Our compensation includes a payout on closed transactions in addition to the monthly
-          retainer. <strong>Cancellation does not waive payouts already earned.</strong> Any
-          transaction that closes on or before the effective termination date remains payable under
-          the terms of your agreement, and is invoiced in the normal course after closing —
-          including where that invoice falls after our work together has ended.
+          retainer. <strong>Payouts are earned on closings, not on contracts.</strong> A transaction
+          counts when it closes — being under contract does not, on its own, earn a payout.
         </p>
         <p>
-          The treatment of transactions that are pending or under contract at termination but close
-          afterwards is governed by your signed services agreement.
-        </p>
-
-        <h2>Pause and unpause</h2>
-        <p>
-          After the initial term, engagements may be paused for seasonal or operational reasons with
-          reasonable advance notice — typically 14 days. Paused months are not invoiced. Unpausing
-          requires written confirmation, and no penalty is applied for resuming an engagement.
+          <strong>Cancellation does not waive payouts already earned.</strong> Any transaction that
+          closes on or before the effective termination date remains payable and is invoiced in the
+          normal course after closing, including where that invoice falls after our work together
+          has ended. Transactions that have not closed by the termination date do not earn a payout.
         </p>
 
         <h2>Termination for cause</h2>
