@@ -6,6 +6,7 @@ export interface Env {
   ADMIN_TOKEN: string;                // guards ops routes (manual provision / sync-all)
   RESEND_API_KEY?: string;            // weekly Leadership Brief email (optional until set)
   BRIEF_FROM?: string;                // e.g. "TRU Pulse <pulse@trucoaching.co>"
+  APPLY_NOTIFY_TO?: string;           // comma-separated recipients for truhq.co/apply submissions
   WEBHOOK_SECRET?: string;            // shared secret in the FUB webhook callback URL (?key=)
   FUB_SYSTEM_KEY?: string;            // FUB system key (X-System-Key) — required to create webhooks
   FUB_SYSTEM_NAME?: string;           // FUB system name (X-System) — defaults to 'TerrasonFUBDashboard' when unset
