@@ -7,7 +7,7 @@
 //      A bare "#anchor" is an in-page link on a marketing page and is fine.
 
 export const PUBLIC_ROUTES = [
-  '/', '/services', '/work', '/apply', '/privacy', '/terms', '/refund-policy',
+  '/', '/services', '/work', '/about', '/apply', '/privacy', '/terms', '/refund-policy',
 ] as const;
 
 export type PublicRoute = (typeof PUBLIC_ROUTES)[number];

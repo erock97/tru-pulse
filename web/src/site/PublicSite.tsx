@@ -9,6 +9,7 @@ import Work from './pages/Work';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import RefundPolicy from './pages/RefundPolicy';
+import About from './pages/About';
 import Apply from './pages/Apply';
 import '../pages/Landing.css';
 import './site.css';
@@ -28,6 +29,11 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
     title: 'Work — TRU',
     description:
       'What changes when the operating system actually runs. Three engagements, and what we built in each.',
+  },
+  '/about': {
+    title: 'About — TRU',
+    description:
+      'Who you’d actually be working with. Twelve years in sales, eight of them in real estate prop tech at Zillow — recruiting, agent development, leadership training, KPIs and SOPs, and lead flow for some of the largest brokerages and teams in the country.',
   },
   '/apply': {
     title: 'Apply to work with us — TRU',
@@ -88,14 +94,46 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
     };
   }, [route]);
 
+  // The gold wisp used to live only on the home page, which left every interior
+  // page flat black and reading like a different site. It belongs to the shell.
+  // Fixed-position and behind a scrim, so it costs nothing in layout — and the
+  // 3.2MB loop is cached after the first page a visitor sees.
+  useEffect(() => {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const v = document.getElementById('bgvid') as HTMLVideoElement | null;
+    if (!v) return;
+    v.removeAttribute('autoplay');
+    v.pause();
+  }, [route]);
+
   return (
     <div className="truland" ref={shellRef}>
       <a className="skiplink" href="#main">Skip to content</a>
+      <div className="bg">
+        <video
+          id="bgvid"
+          autoPlay
+          muted
+          loop
+          playsInline
+          // preload="auto" on every page, deliberately. With "metadata" the
+          // interior pages sat at readyState 0 — autoplay had started but had no
+          // data, so visitors saw a frozen poster instead of the wisp. The loop
+          // is cached after the first page anyone lands on.
+          preload="auto"
+          poster="/hero-poster.jpg"
+        >
+          <source src="/hero-loop.mp4" type="video/mp4" />
+        </video>
+        <div className="scrim"></div>
+      </div>
+      <div className="grain"></div>
       <SiteHeader current={route} />
       <main id="main">
         {route === '/' && <Home />}
         {route === '/services' && <Services />}
         {route === '/work' && <Work />}
+        {route === '/about' && <About />}
         {route === '/privacy' && <Privacy />}
         {route === '/terms' && <Terms />}
         {route === '/refund-policy' && <RefundPolicy />}
