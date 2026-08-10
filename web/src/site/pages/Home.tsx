@@ -52,20 +52,49 @@ export default function Home() {
     };
 
     /* --- Cinematic brand intro: bold reveal plays, then fades to the site --- */
+
+    // Shown ONCE per visitor. The reveal is worth ~7 seconds of a stranger's
+    // attention exactly once; making someone sit through it again every time
+    // they come back to reread the packages is a toll, not an impression.
+    //
+    // Bump the version suffix to replay it for everyone (e.g. after recutting
+    // the video). Storage can throw in private mode or with cookies blocked, so
+    // every access is guarded — a failure just means the intro plays, which is
+    // the safe direction to fail.
+    const INTRO_KEY = 'tru:intro-seen:v1';
+    const seenIntro = () => {
+      try {
+        return window.localStorage.getItem(INTRO_KEY) === '1';
+      } catch {
+        return false;
+      }
+    };
+    const markIntroSeen = () => {
+      try {
+        window.localStorage.setItem(INTRO_KEY, '1');
+      } catch {
+        /* storage unavailable — it simply plays again next time */
+      }
+    };
+
     (function intro() {
       const el = document.getElementById('intro');
       const vid = document.getElementById('introvid') as HTMLVideoElement | null;
       if (!el) return;
-      if (reduce) {
+      if (reduce || seenIntro()) {
         if (el.parentNode) el.remove();
         return;
       }
       const doc = document.documentElement;
       let dismissed = false;
       doc.classList.add('intro-lock');
-      function dismiss() {
+      // markSeen=false is for the playback-failure path only. If the video never
+      // ran, the visitor has not actually seen the reveal, and burning the flag
+      // would cost them it permanently over one flaky load.
+      function dismiss(markSeen = true) {
         if (dismissed) return;
         dismissed = true;
+        if (markSeen) markIntroSeen();
         el!.classList.add('done');
         doc.classList.remove('intro-lock');
         t(() => {
@@ -90,10 +119,12 @@ export default function Home() {
       }
       if (vid) {
         const p = vid.play();
-        if (p && p.catch) p.catch(() => dismiss());
+        // Playback refused (autoplay policy, decode failure, dead connection).
+        // Drop straight to the site, but do NOT record it as seen.
+        if (p && p.catch) p.catch(() => dismiss(false));
       }
       const skip = el.querySelector('.skip');
-      if (skip) skip.addEventListener('click', dismiss);
+      if (skip) skip.addEventListener('click', () => dismiss(true));
       // Freeze on the fully-lit mark for a beat, THEN fade -> the handoff reads as intentional
       const HOLD_AT = 6.4;
       let held = false;
