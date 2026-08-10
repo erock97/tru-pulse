@@ -8,27 +8,56 @@
 <meta name="robots" content="noindex" />
 <style>
 /*
-  TruHQ's palette, written out rather than inherited: this page is served to
+  TRU HQ's palette, written out rather than inherited: this page is served to
   strangers without the app bundle, so its CSS variables do not exist here.
-  The values are copied from the app's own tokens so the two match, and dark
-  mode mirrors the app's dark set.
+  The values are copied from the marketing site's own tokens (Landing.css) so
+  the two match exactly.
+
+  ONE palette, not two. This used to default to a light cream set and show the
+  dark TRU HQ browns only under `prefers-color-scheme: dark` — so an agent on a
+  light-mode phone, which is most of them, got white cards and dark brown text
+  and never saw the brand at all. The page an agent lands on is the brand, so it
+  is no longer a function of their device setting.
+*/
+/*
+  Each value below is the marketing site's own token, copied exactly, with the
+  Landing.css name it came from beside it. Three of them used to be near-misses
+  — a 60%-opacity white where the site uses a solid warm grey, and hairlines at
+  .14/.07 against the site's .12/.06 — close enough to look deliberate and wrong
+  enough that the page did not quite belong to the site it is part of.
 */
 :root{
-  --base:#fbf7f0; --card:#ffffff; --panel:#f4eee3; --text:#33281a;
-  --muted:rgba(51,40,26,.62); --accent:#E9A23B; --gold-dk:#C77E1F;
-  --border:#e0d3bd; --line:#ece2d2; --soft:rgba(233,162,59,.15);
-  --sea:#4a7c6f; --terra:#c06b4f;
+  color-scheme: dark;
+  --base:#0C0A08;                  /* --bg      */
+  --panel:#141009;                 /* --bg-2    */
+  --text:#F3ECE0;                  /* --ink     */
+  --muted:#A79C8D;                 /* --muted   */
+  --faint:#6A6053;                 /* --faint   */
+  --accent:#F2C079;                /* --gold-soft */
+  --gold-dk:#E9A23B;               /* --gold    */
+  --border:rgba(243,236,224,0.12); /* --hair    */
+  --line:rgba(243,236,224,0.06);   /* --hair-2  */
+  --soft:rgba(233,162,59,.15);
+  /* No Landing.css equivalent: the site has no raised card on its dark ground.
+     Between --bg and --bg-2 in warmth so a card reads as lifted off the page
+     rather than as a second background colour. */
+  --card:#1B150D;
+  /* Success and failure. These were #4a7c6f and #c06b4f — mid-tone green and
+     rust picked to sit on cream. Left on the dark ground they are barely
+     brighter than the card behind them, so "Cancelled" and an error read as
+     the same grey murmur. The site already has a pair mixed for this ground. */
+  --sea:#86C79B;                   /* --good    */
+  --terra:#E08258;                 /* --risk    */
+  /* Ink for text sitting ON gold. The site puts near-black on its gold
+     (site.css .skiplink); this page used #fffdf8, which is white on orange —
+     about 1.9:1, under half the 4.5:1 minimum, on the one button every booking
+     goes through. */
+  --on-gold:#17120b;
   --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
   --serif:"Playfair Display",Georgia,"Times New Roman",serif;
   --r-card:14px; --r-btn:10px;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --base:#0C0A08; --card:#1B150D; --panel:#141009; --text:#F3ECE0;
-    --muted:rgba(243,236,224,.6); --accent:#F2C079; --gold-dk:#E9A23B;
-    --border:rgba(243,236,224,.14); --line:rgba(243,236,224,.07);
-    --soft:rgba(233,162,59,.15);
-  }
+  /* The site's easing, so motion here is recognisably the same hand. */
+  --e:cubic-bezier(0.22,1,0.36,1);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--base);color:var(--text);font:16px/1.55 var(--sans);
@@ -37,8 +66,11 @@ body{margin:0;background:var(--base);color:var(--text);font:16px/1.55 var(--sans
 header{margin-bottom:28px}
 h1{font-family:var(--serif);font-weight:600;font-size:2rem;margin:0 0 6px;letter-spacing:.005em}
 .sub{color:var(--muted);margin:0;font-size:.95rem}
+/* The shadow was rgba(51,40,26,.05) — a warm brown, mixed for the cream page
+   this used to be. On the dark ground a brown shadow lightens the edge it is
+   meant to seat, so a card sat in a faint halo instead of on the page. */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
-  padding:18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(51,40,26,.05)}
+  padding:18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.45)}
 button{font:inherit;cursor:pointer}
 .type{display:block;width:100%;text-align:left;background:var(--card);
   border:1px solid var(--border);border-radius:var(--r-card);padding:18px;margin-bottom:12px;
@@ -54,13 +86,13 @@ button{font:inherit;cursor:pointer}
 .slot{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-btn);
   padding:11px 8px;color:var(--text);text-align:center;font-variant-numeric:tabular-nums}
 .slot:hover{border-color:var(--accent);background:var(--soft)}
-.slot[aria-pressed=true]{background:var(--gold-dk);border-color:var(--gold-dk);color:#fffdf8}
+.slot[aria-pressed=true]{background:var(--gold-dk);border-color:var(--gold-dk);color:var(--on-gold)}
 label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 5px}
 input,textarea{width:100%;background:var(--panel);border:1px solid var(--border);
   border-radius:var(--r-btn);padding:11px 12px;color:var(--text);font:inherit}
 input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
 textarea{min-height:82px;resize:vertical}
-.primary{background:var(--gold-dk);color:#fffdf8;border:0;border-radius:var(--r-btn);
+.primary{background:var(--gold-dk);color:var(--on-gold);border:0;border-radius:var(--r-btn);
   padding:13px 24px;font-weight:600;margin-top:18px;width:100%}
 .primary:hover:not(:disabled){background:var(--accent)}
 .primary:disabled{opacity:.5;cursor:default}
@@ -75,7 +107,44 @@ textarea{min-height:82px;resize:vertical}
   border-top-color:var(--gold-dk);border-radius:50%;animation:t .7s linear infinite;
   vertical-align:-2px;margin-right:7px}
 @keyframes t{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spin{animation:none}.type:hover{transform:none}}
+
+/* ---------------- motion ----------------
+
+   The marketing site introduces every block the same way: up 42px, out of a
+   9px blur, over 1s on --e (Landing.css `.reveal`). This page had none of it,
+   so following a "Book a call" button meant watching a considered, moving page
+   hand off to a static one — the seam where a site stops feeling like itself.
+
+   An animation rather than the site's observer-plus-`.in`-class: this view is
+   rebuilt by assigning innerHTML, so its elements are new on every step and a
+   class toggled after mount would need re-applying each time. A CSS animation
+   runs on insertion, which is exactly when a step appears. `both` holds the
+   opening frame so nothing flashes at full opacity before it starts.
+
+   Shorter and shallower than the marketing page — 42px and a full second is
+   right for a scroll down a long story, and too much for someone three clicks
+   into booking a meeting who wants the next step now. */
+@keyframes rise{
+  from{opacity:0;transform:translateY(16px);filter:blur(6px)}
+  to{opacity:1;transform:none;filter:none}
+}
+header,.card,.type{animation:rise .5s var(--e) both}
+/* The type list arrives all at once; a small stagger reads as one list settling
+   rather than four things landing on the same frame. Capped at the fifth — past
+   that a visitor is waiting on choreography instead of choosing. */
+.type:nth-of-type(2){animation-delay:.05s}
+.type:nth-of-type(3){animation-delay:.1s}
+.type:nth-of-type(4){animation-delay:.15s}
+.type:nth-of-type(n+5){animation-delay:.2s}
+
+@media (prefers-reduced-motion:reduce){
+  .spin{animation:none}
+  .type:hover{transform:none}
+  /* Not `animation:none` — that would drop the element back to its unanimated
+     state, which for `both` is the opening frame: invisible and blurred. The
+     content has to end up visible, so the animation is kept and collapsed. */
+  header,.card,.type{animation-duration:.01ms;animation-delay:0ms}
+}
 </style>
 </head>
 <body>
@@ -128,9 +197,24 @@ textarea{min-height:82px;resize:vertical}
 
   /* ---------------- choosing a meeting type ---------------- */
 
+  /* Whose booking page this is.
+   *
+   * meeting_types is per-user and this project has more than one user. Without
+   * this filter the page listed EVERY published type from EVERY account: on
+   * 2026-08-09 it was advertising two types that sat on a client's login, one of
+   * them named "1:1 With Eric". Booking it would have resolved to that client's
+   * availability and written the event to their calendar, because the settlement
+   * engine loads the type's owner.
+   *
+   * Not a secret — it is a row id in a table anon may already read. It is here so
+   * a second tenant can never bleed onto this page again. A per-owner path is the
+   * eventual fix; this is the guard until then. */
+  var OWNER = "d6b9504c-f35e-49c9-af99-6a2de2069db8";
+
   function showTypes() {
     busy("Loading…");
     api("/rest/v1/meeting_types?select=slug,name,description,duration_minutes" +
+        "&user_id=eq." + OWNER +
         "&published=eq.true&order=sort_order.asc")
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (types) {
@@ -501,6 +585,7 @@ textarea{min-height:82px;resize:vertical}
     var path = params.get("t") || "";
     if (/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/.test(path)) {
       api("/rest/v1/meeting_types?select=slug,name,description,duration_minutes" +
+          "&user_id=eq." + OWNER +
           "&published=eq.true&slug=eq." + encodeURIComponent(path) + "&limit=1")
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (rows) { rows.length ? pickType(rows[0]) : showTypes(); })
