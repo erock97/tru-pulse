@@ -45,6 +45,16 @@
   letter-spacing: .14em; font-weight: 800; margin-bottom: .55rem;
 }
 
+/* The nav used to live inside the same component as the intro overlay, so the
+   overlay's z-index covered it. Now that the nav is in the shared header they
+   sit in different stacking contexts and the nav bleeds through the reveal.
+   The intro already puts `intro-lock` on <html> for the duration, so use that
+   rather than fight the stacking order — and it reads better anyway, with the
+   nav fading in as the mark clears. */
+html.intro-lock .truland .nav,
+html.intro-lock .truland .skiplink { opacity: 0; pointer-events: none; }
+.truland .nav { transition: background .4s, backdrop-filter .4s, opacity .6s ease .25s; }
+
 /* Interior pages. `.band`'s padding is tuned for the home page, where each
    section is a full-height beat. A content page has many short sections in a
    row, and that rhythm leaves ~250px of dead space between every one. Same
