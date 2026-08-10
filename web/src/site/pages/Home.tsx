@@ -148,14 +148,6 @@ export default function Home() {
       t(dismiss, 11500); // hard safety net
     })();
 
-    if (reduce) {
-      const v = document.getElementById('bgvid') as HTMLVideoElement | null;
-      if (v) {
-        v.removeAttribute('autoplay');
-        v.pause();
-      }
-    }
-
     // `.ready` and the `.reveal` observer live in PublicSite, so every marketing
     // page gets them — not only this one. The count-up animation that used to
     // live here went with the audit card it drove.
@@ -180,13 +172,8 @@ export default function Home() {
         </video>
         <button className="skip" type="button">Skip</button>
       </div>
-      <div className="bg">
-        <video id="bgvid" autoPlay muted loop playsInline preload="auto" poster="/hero-poster.jpg">
-          <source src="/hero-loop.mp4" type="video/mp4" />
-        </video>
-        <div className="scrim"></div>
-      </div>
-      <div className="grain"></div>
+      {/* The background wisp and grain moved to PublicSite so every page has
+          them, not just this one. */}
 
       <header className="hero" id="top"><div className="wrap">
         <div>

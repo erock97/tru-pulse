@@ -28,6 +28,7 @@ export default function SiteHeader({ current }: { current: PublicRoute }) {
       <div className="nlinks">
         {link('/services', 'Services')}
         {link('/work', 'Work')}
+        {link('/about', 'About')}
         {link('/apply', 'Apply')}
       </div>
       <div className="nright">

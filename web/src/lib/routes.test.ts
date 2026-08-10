@@ -3,7 +3,7 @@ import { matchPublicRoute, PUBLIC_ROUTES } from './routes';
 
 describe('matchPublicRoute', () => {
   it('matches every public sub-path', () => {
-    for (const p of ['/services', '/work', '/apply', '/privacy', '/terms', '/refund-policy']) {
+    for (const p of ['/services', '/work', '/about', '/apply', '/privacy', '/terms', '/refund-policy']) {
       expect(matchPublicRoute(p, '')).toBe(p);
     }
   });
@@ -42,8 +42,8 @@ describe('matchPublicRoute', () => {
     }
   });
 
-  it('exposes all seven routes with root first', () => {
-    expect(PUBLIC_ROUTES).toHaveLength(7);
+  it('exposes all eight routes with root first', () => {
+    expect(PUBLIC_ROUTES).toHaveLength(8);
     expect(PUBLIC_ROUTES[0]).toBe('/');
   });
 });
