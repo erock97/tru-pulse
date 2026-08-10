@@ -38,9 +38,10 @@ export default function Privacy() {
           data.
         </p>
         <p>
-          <strong>Information from third parties.</strong> If you book a strategy call via our
-          Calendly link, Calendly collects your name, email, and meeting preferences. Calendly&rsquo;s
-          privacy policy governs that data; we receive only the booking confirmation.
+          <strong>Booking a call.</strong> When you book a consultation with us, we collect your
+          name, email, and the time you chose, so we can hold the meeting and send you the
+          calendar invitation. Booking runs on our own scheduling page rather than a third-party
+          service, so this information goes directly to us.
         </p>
 
         <h2>How we use your information</h2>
@@ -62,8 +63,8 @@ export default function Privacy() {
         <ul>
           <li>
             <strong>Service providers</strong> who help us operate the business — Cloudflare
-            (hosting and privacy-friendly analytics), Supabase (database), Resend (transactional
-            email), Calendly (scheduling), and Stripe (payment processing for clients). These
+            (hosting and privacy-friendly analytics), Supabase (database and scheduling), Resend
+            (transactional email), and Stripe (payment processing for clients). These
             providers are contractually obligated to protect your data.
           </li>
           <li><strong>Legal authorities</strong> when required by law, subpoena, or court order.</li>

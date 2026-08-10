@@ -111,7 +111,7 @@ export default function Work() {
         </p>
         <div className="hcta reveal d2">
           <a href="/apply" className="cta">Apply to work with us{arrow}</a>
-          <a href={BUSINESS.calendly} className="cta ghost" target="_blank" rel="noopener noreferrer">
+          <a href={BUSINESS.bookingUrl} className="cta ghost" target="_blank" rel="noopener noreferrer">
             Book a call with our team{arrow}
           </a>
         </div>

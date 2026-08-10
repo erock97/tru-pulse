@@ -32,7 +32,27 @@ export const BUSINESS = {
 
   siteUrl: 'https://truhq.co',
   appUrl: 'https://app.truhq.co',
-  calendly: 'https://calendly.com/adamt-terrasonconsulting',
+
+  /* Every "book a call" on this site lands here.
+   *
+   * It used to be https://calendly.com/adamt-terrasonconsulting — a personal
+   * Calendly belonging to one person at the outgoing consulting company. A
+   * prospect who booked from truhq.co got that individual's calendar rather
+   * than the business's, the booking never appeared anywhere TRU could see it,
+   * and the meeting length was whatever that Calendly said, not what this site
+   * promised.
+   *
+   * This is TRU's own booking page (web/public/book/), backed by the meeting
+   * types in the TRU Pulse project and configured from the cockpit's BOOKING
+   * panel. `?t=` deep-links to one type; without it the page shows every
+   * published type and lets the visitor choose, which is not what a "book a
+   * call" button should do from a marketing page. Named for what it is rather
+   * than for a vendor, so re-pointing it never means editing prose that says
+   * "Calendly".
+   *
+   * If this slug is renamed or unpublished in the cockpit, this link 404s the
+   * chooser instead of failing loudly — check it after changing meeting types. */
+  bookingUrl: 'https://truhq.co/book/?t=client-consultation-call',
 } as const;
 
 // True while `legalEntity` still names the outgoing company.

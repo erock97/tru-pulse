@@ -195,7 +195,7 @@ export default function Home() {
           </p>
           <div className="hcta fade g3">
             <a href="/apply" className="cta">Apply to work with us{arrow}</a>
-            <a href={BUSINESS.calendly} className="cta ghost" target="_blank" rel="noopener noreferrer">
+            <a href={BUSINESS.bookingUrl} className="cta ghost" target="_blank" rel="noopener noreferrer">
               Book a call with our team{arrow}
             </a>
           </div>
@@ -275,14 +275,14 @@ export default function Home() {
           and there is nothing to buy separately. */}
 
       <section className="panel ctaband" id="cta"><div className="wrap">
-        <span className="badge reveal"><span className="s"></span>30 minutes, your real numbers</span>
+        <span className="badge reveal"><span className="s"></span>60 minutes, your real numbers</span>
         <h2 className="reveal d1" style={{ marginTop: '1.4rem' }}>Build the operating system your team <em>deserves</em>.</h2>
         <p className="sub reveal d2">
-          A 30-minute strategy call with our team, to map your bottleneck and the next move.
+          A 60-minute consultation with our team, to map your bottleneck and the next move.
           No pitch. No pressure.
         </p>
         <div className="hcta reveal d2">
-          <a href={BUSINESS.calendly} className="cta" target="_blank" rel="noopener noreferrer">Book a call with our team{arrow}</a>
+          <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">Book a call with our team{arrow}</a>
           <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
         </div>
       </div></section>

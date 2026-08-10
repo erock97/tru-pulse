@@ -102,7 +102,7 @@ export default function Apply() {
             <p>
               Every application is reviewed personally. If you&rsquo;d rather not wait, you can put
               time straight on the calendar &mdash;{' '}
-              <a href={BUSINESS.calendly} target="_blank" rel="noopener noreferrer">book a 30-minute call</a>.
+              <a href={BUSINESS.bookingUrl} target="_blank" rel="noopener noreferrer">book a 60-minute consultation</a>.
             </p>
           </div>
         </div></section>
@@ -204,7 +204,7 @@ export default function Apply() {
               <strong>That didn&rsquo;t go through.</strong> {failed}
               <br />
               Rather than retype it, put time straight on the calendar &mdash;{' '}
-              <a href={BUSINESS.calendly} target="_blank" rel="noopener noreferrer">book a 30-minute call</a>{' '}
+              <a href={BUSINESS.bookingUrl} target="_blank" rel="noopener noreferrer">book a 60-minute consultation</a>{' '}
               &mdash; or email us at{' '}
               <a href={`mailto:${BUSINESS.contactEmail}`}>{BUSINESS.contactEmail}</a>.
             </div>

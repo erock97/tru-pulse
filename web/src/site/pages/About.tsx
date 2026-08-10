@@ -91,7 +91,7 @@ export default function About() {
           No pitch.
         </p>
         <div className="hcta reveal d2">
-          <a href={BUSINESS.calendly} className="cta" target="_blank" rel="noopener noreferrer">
+          <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
             Book a call with our team{arrow}
           </a>
           <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>

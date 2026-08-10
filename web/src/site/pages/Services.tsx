@@ -57,7 +57,7 @@ const OUTCOMES = [
 
 const STEPS = [
   { n: '01', name: 'Apply', body: 'A few short questions about your team and where you’re stuck.' },
-  { n: '02', name: 'Discovery call', body: '30 minutes. We map the opportunity together. No pitch.' },
+  { n: '02', name: 'Consultation call', body: '60 minutes. We map the opportunity together. No pitch.' },
   { n: '03', name: 'Proposal', body: 'Package recommendation, fixed retainer, clear scope.' },
   { n: '04', name: 'Contract and first invoice', body: 'Standard services agreement, Stripe Invoicing.' },
   { n: '05', name: 'Onboarding', body: 'First leadership meeting and pipeline huddle within 7 business days of signed contract.' },
@@ -187,7 +187,7 @@ export default function Services() {
         </div>
         <div className="hcta reveal d2" style={{ marginTop: '2.4rem' }}>
           <a href="/apply" className="cta">Apply to work with us{arrow}</a>
-          <a href={BUSINESS.calendly} className="cta ghost" target="_blank" rel="noopener noreferrer">
+          <a href={BUSINESS.bookingUrl} className="cta ghost" target="_blank" rel="noopener noreferrer">
             Book a call with our team{arrow}
           </a>
         </div>
