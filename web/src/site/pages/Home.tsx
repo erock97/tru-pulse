@@ -125,49 +125,9 @@ export default function Home() {
       }
     }
 
-    function countUp(el: HTMLElement) {
-      const to = parseFloat(el.getAttribute('data-to') || '0');
-      const pre = el.getAttribute('data-prefix') || '';
-      const fmt = (v: number) => pre + Math.round(v).toLocaleString('en-US');
-      const span = el.classList.contains('amt') ? el.querySelector('span') : null;
-      if (reduce) {
-        if (span) span.textContent = fmt(to);
-        else el.textContent = fmt(to);
-        return;
-      }
-      let s: number | null = null;
-      const dur = 1600;
-      function step(ts: number) {
-        if (s === null) s = ts;
-        const p = Math.min((ts - s) / dur, 1);
-        const val = to * (1 - Math.pow(1 - p, 3));
-        if (span) span.textContent = fmt(val);
-        else el.textContent = fmt(val);
-        if (p < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    }
-
-    // `.ready` and the `.reveal` observer now live in PublicSite, so every
-    // marketing page gets them — not only this one.
-
-    const card = document.getElementById('auditCard');
-    if (card) {
-      const co = new IntersectionObserver(
-        function (es) {
-          es.forEach(function (e) {
-            if (!e.isIntersecting) return;
-            t(() => {
-              card.querySelectorAll('[data-to]').forEach((el) => countUp(el as HTMLElement));
-            }, 500);
-            co.unobserve(card);
-          });
-        },
-        { threshold: 0.35 },
-      );
-      co.observe(card);
-      cleanups.push(() => co.disconnect());
-    }
+    // `.ready` and the `.reveal` observer live in PublicSite, so every marketing
+    // page gets them — not only this one. The count-up animation that used to
+    // live here went with the audit card it drove.
 
     return () => {
       timers.forEach((id) => clearTimeout(id));
@@ -291,35 +251,10 @@ export default function Home() {
 
       </div></section>
 
-      {/* The audit gets its own band, as it did on the original page. Appending
-          it to the tooling section left the short left column centred against a
-          tall card, opening a large dead gap under the three pills. */}
-      <section className="panel band" id="audit"><div className="wrap">
-        <div className="split">
-          <div>
-            <div className="kick reveal">TRU Pulse &middot; See it</div>
-            <h2 className="h2 reveal d1">The audit you have been <em>avoiding</em>.</h2>
-            <p className="sub reveal d2">
-              We point Pulse at your pipeline and it counts, in real dollars, the commission
-              slipping through leads nobody personally worked.
-            </p>
-          </div>
-          <div className="card reveal d1" id="auditCard">
-            <div className="chead asm"><div className="cbrand">T<span className="r">RU</span> <span>Accountability Audit</span></div><div className="cmeta">Last 30 days</div></div>
-            <div className="risk asm"><div className="amt" data-to="51000" data-prefix="$"><span>$0</span><span className="per"> / yr</span></div><div className="cap">commission at risk from leads nobody personally worked</div></div>
-            <div className="srow asm"><div className="st a"><div className="n" data-to="543">0</div><div className="l">Tracked leads</div></div><div className="st b"><div className="n" data-to="21">0</div><div className="l">Zero contact</div></div><div className="st c"><div className="n" data-to="67">0</div><div className="l">Stuck</div></div></div>
-            <div className="leads asm"><div className="lh"><span>Lead</span><span>Source</span></div>
-              <div className="lr"><span><span className="dot" style={{ background: 'var(--risk)' }}></span>Marcus D.</span><span className="src">Realtor.com &middot; up front</span></div>
-              <div className="lr"><span><span className="dot" style={{ background: 'var(--gold)' }}></span>Priya N.</span><span className="src">Zillow &middot; at close</span></div>
-              <div className="lr" style={{ borderBottom: 'none' }}><span><span className="dot" style={{ background: 'var(--risk)' }}></span>Angela R.</span><span className="src">Facebook &middot; up front</span></div>
-            </div>
-            <p className="cap" style={{ marginTop: '1rem' }}>
-              Sample data &mdash; illustrative of the accountability dashboard included in your
-              engagement.
-            </p>
-          </div>
-        </div>
-      </div></section>
+      {/* The "free accountability audit" band was removed on 2026-08-09. It was
+          a lead magnet for selling TRU Pulse as a standalone product, which is
+          not what this business sells — the software comes with an engagement,
+          and there is nothing to buy separately. */}
 
       <section className="panel ctaband" id="cta"><div className="wrap">
         <span className="badge reveal"><span className="s"></span>30 minutes, your real numbers</span>
