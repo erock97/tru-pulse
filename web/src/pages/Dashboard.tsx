@@ -851,7 +851,8 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
           <table className="tru-table">
             <thead>
               <tr>
-                <th>Agent</th><th>By source</th><th>Leads</th><th>Zero</th><th>Stuck</th><th>Worked</th><th>Strikes</th>
+                <th>Agent</th><th className="col-source">By source</th><th className="col-leads">Leads</th>
+                <th>Zero</th><th className="col-stuck">Stuck</th><th className="col-worked">Worked</th><th>Strikes</th>
               </tr>
             </thead>
             <tbody>
@@ -868,7 +869,7 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
                           <span className="cell-caret">{isOpen ? '▾' : '▸'}</span>
                         </span>
                       </td>
-                      <td>
+                      <td className="col-source">
                         <span className="src-chips">
                           {[...a.srcs.entries()].sort((x, y) => y[1] - x[1]).map(([sn, n]) => (
                             <span className="src-chip" key={sn} title={`${sn} · ${n} lead${n === 1 ? '' : 's'}`}>
@@ -877,10 +878,10 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
                           ))}
                         </span>
                       </td>
-                      <td>{a.total}</td>
-                      <td className={a.zero > 0 ? 'cell-warn' : ''}>{a.zero}</td>
-                      <td>{a.stuck}</td>
-                      <td><span className={`cell-worked ${a.workedPct < 60 ? 'low' : ''}`}>{a.workedPct}%</span></td>
+                      <td className="col-leads">{a.total}</td>
+                      <td className={`col-zero${a.zero > 0 ? ' cell-warn' : ''}`}>{a.zero}</td>
+                      <td className="col-stuck">{a.stuck}</td>
+                      <td className="col-worked"><span className={`cell-worked ${a.workedPct < 60 ? 'low' : ''}`}>{a.workedPct}%</span></td>
                       <td><span className={`cell-strikes s${Math.min(3, a.strikes)}`}>{a.strikes}</span></td>
                     </tr>
                     {isOpen && (

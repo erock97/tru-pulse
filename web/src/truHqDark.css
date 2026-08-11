@@ -883,26 +883,76 @@ html[data-theme="warm"] .tru-dark {
   }
 }
 @media (max-width: 860px) {
+  /* THE overflow fix. A grid column sized 1fr still honours its children's
+     min-content width, so the old horizontal sidebar strip — four nav links plus
+     the user block plus "Exit — switch teams", none of which could shrink —
+     forced this grid to 754px inside a 412px phone. Every screen inherited it
+     and the whole app scrolled sideways. min-width:0 lets the columns actually
+     be as narrow as the screen; navigation moves to the bottom tab bar. */
   .tru-shell { grid-template-columns: 1fr; }
+  .tru-shell > .side,
+  .tru-shell > .main { min-width: 0; }
+
   .tru-shell .side {
     position: static;
     height: auto;
     flex-direction: row;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 12px;
-    padding: 14px 18px;
+    padding: 12px 16px;
+    min-width: 0;
   }
-  .tru-shell .side-logo { padding: 0; border: none; }
-  .tru-shell .side-nav {
-    flex-direction: row;
-    margin-top: 0;
-    flex-wrap: wrap;
-    flex: 1;
-    justify-content: center;
+  .tru-shell .side-logo { padding: 0; border: none; flex-shrink: 0; }
+  /* Nav lives in .tabbar on a phone. */
+  .tru-shell .side-nav { display: none; }
+  .tru-shell .side-foot {
+    flex-direction: row; align-items: center; margin-top: 0; gap: 10px;
+    min-width: 0; flex: 1; justify-content: flex-end;
   }
-  .tru-shell .side-link span { display: none; }
-  .tru-shell .side-foot { flex-direction: row; align-items: center; margin-top: 0; }
+  /* The org name is nice-to-have; the avatar already identifies the team, and on
+     a narrow screen the name is what pushes everything out. */
+  .tru-shell .side-user { gap: 8px; min-width: 0; }
+  .tru-shell .side-user-name,
+  .tru-shell .side-user-role {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22vw;
+  }
+  .tru-shell .side-link-btn { flex-shrink: 0; padding: 7px 11px; font-size: 12px; }
+
+  /* Title block: let long titles wrap instead of widening the page, and stack the
+     window pills under the heading rather than beside it. */
+  .tru-shell .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .tru-shell .topbar > div { min-width: 0; max-width: 100%; }
+  .tru-shell .topbar h1 { font-size: 25px; line-height: 1.18; }
+  .tru-shell .topbar-ctx { flex-wrap: wrap; gap: 10px; width: 100%; min-width: 0; }
+
+  /* Clear the fixed tab bar, including the phone's own gesture area. */
+  .tru-shell .main { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- Bottom tab bar (phones only) ---------- */
+.tabbar { display: none; }
+@media (max-width: 860px) {
+  .tabbar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border-soft, rgba(255, 255, 255, 0.09));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .tabbar-btn {
+    background: none; border: 0; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 10px 4px 9px; color: var(--text-50, #8A7F70);
+    font: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+    /* A comfortable thumb target, per Android's 48dp guidance. */
+    min-height: 52px;
+  }
+  .tabbar-btn.active { color: var(--accent-hi, #F2C079); }
+  .tabbar-btn:disabled { opacity: 0.4; cursor: default; }
 }
 @media (max-width: 680px) {
   .tru-dark .hh-bento {
@@ -2516,4 +2566,113 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: rgba(232, 201, 138, 0.055);
   border-left: 2px solid var(--accent-hi, #e8c98a);
   color: var(--text-strong);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHONE LAYOUT — Pulse, per Eric's call: numbers first, no 1:1 work here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  /* ---- Roster: name, untouched leads, strikes. Nothing else earns the width. ----
+     The full seven-column table measured 644px inside a 412px screen, which was
+     the last thing forcing the page to scroll sideways. The hidden columns are
+     still in the DOM and still on desktop — tap a row for the rest. */
+  .tru-dark .tru-table .col-source,
+  .tru-dark .tru-table .col-leads,
+  .tru-dark .tru-table .col-stuck,
+  .tru-dark .tru-table .col-worked { display: none; }
+  /* The desktop rule carries min-width: 620px so the seven columns stay legible
+     inside .table-wrap's horizontal scroll. With four columns hidden that floor is
+     what was still forcing the page 45px wider than the screen. */
+  .tru-dark .tru-table { width: 100%; table-layout: fixed; min-width: 0; }
+  .tru-dark .tru-table th,
+  .tru-dark .tru-table td { padding: 11px 8px; font-size: 13px; }
+  .tru-dark .tru-table th:first-child,
+  .tru-dark .tru-table td:first-child { width: auto; }
+  .tru-dark .tru-table .col-zero,
+  .tru-dark .tru-table th:nth-last-child(1),
+  .tru-dark .tru-table td:nth-last-child(1) { width: 62px; text-align: center; }
+  .tru-dark .cell-name { font-size: 13.5px; }
+  /* The agent cell holds name + status pills + caret; let it wrap rather than push. */
+  .tru-dark .cell-agent { flex-wrap: wrap; gap: 5px; min-width: 0; }
+
+  /* ---- The bubble chart goes. At this size the circles can't be compared and it
+     cost close to a full screen of height above the numbers. Desktop keeps it.
+     Its SVG also carried a min width that dragged the whole grid column out to
+     433px, so hiding it removes the last of the sideways scroll. ---- */
+  .tru-dark .ps-const-wrap { display: none; }
+  /* A grid column still honours its children's min-content width, so tell the
+     triage column it may be as narrow as the phone. */
+  /* Every screen has its own decorative glow — pulse-ambient, coach-ambient,
+     rp-ambient, hh-ambient — each sized past the edge on purpose and each adding
+     ~16px of sideways scroll on a phone. Match them by name rather than listing
+     canvases, so a new screen's glow is covered the day it's added. */
+  .tru-dark [class$="-ambient"] { max-width: 100%; }
+  .tru-dark .pulse-canvas,
+  .tru-dark .coach-canvas,
+  .tru-dark .rp-canvas,
+  .tru-dark .hh-canvas { overflow-x: clip; }
+
+  /* Rep's cards ran 3px past the edge on border-box math. */
+  .tru-dark .rp-funnel,
+  .tru-dark .rp-roster { min-width: 0; max-width: 100%; }
+  .tru-dark .rp-roster-head { flex-wrap: wrap; gap: 8px; min-width: 0; }
+
+  /* ---- Reclaim the top of the screen. Before this, the logo row, eyebrow, a
+     two-line title, the window pills and the theme switch ate ~440px — half a
+     phone — before the first number. Eric's brief was numbers first. ---- */
+  .tru-shell .topbar { padding-top: 6px; padding-bottom: 4px; gap: 8px; }
+  .tru-shell .topbar h1 { font-size: 21px; letter-spacing: -0.01em; }
+  .tru-shell .main-eyebrow { font-size: 10px; letter-spacing: 0.1em; }
+  /* Keep the theme switch (it's a real preference) but shrink it so it sits beside
+     the window pills instead of claiming a row of its own. */
+  .tru-dark .theme-toggle { transform: scale(0.86); transform-origin: left center; }
+  .tru-dark .ps-subnav { margin-bottom: 10px !important; }
+  .tru-dark .pulse-canvas { padding-top: 4px; }
+
+  /* Card and panel headings put the title and its sub-line side by side. At phone
+     width the title wraps and the two collide. Stack them. */
+  .tru-dark .panel-head {
+    flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 14px;
+  }
+  .tru-dark .panel-head h3 { font-size: 17px; line-height: 1.25; }
+  .tru-dark .panel-sub { font-size: 11.5px; }
+
+  /* Column labels have to fit a 62px column without clipping "Strikes". */
+  .tru-dark .tru-table th { font-size: 10px; letter-spacing: 0.03em; padding: 9px 6px; }
+
+  /* The roster search sat wider than its card. */
+  .tru-dark .ps-roster-head { gap: 10px; }
+  .tru-dark .ps-roster-search { width: 100%; min-width: 0; }
+  .tru-dark .ps-roster-search input { width: 100%; min-width: 0; font-size: 13px; }
+  .tru-dark .ps-roster-count { font-size: 11.5px; }
+
+  .tru-dark .ps-field-grid { gap: 12px; }
+  .tru-dark .ps-field-grid > * { min-width: 0; }
+  .tru-dark .ps-triage { padding: 16px; min-width: 0; }
+
+  /* ---- Tighter vertical rhythm: the page was 4,278px — four and a half screens
+     to reach numbers that belong in one. ---- */
+  .tru-dark .ps-bento { gap: 12px; margin-bottom: 4px; }
+  .tru-dark .ps-risk,
+  .tru-dark .ps-prod { padding: 16px 18px; }
+  .tru-dark .ps-prod-num { font-size: 26px; }
+  .tru-dark .ps-divider { height: 30px; margin: 4px 0 10px; }
+  .tru-dark .ps-source { padding: 16px 18px; }
+
+  /* Sub-nav tabs: scroll sideways in their own strip instead of widening the page. */
+  .tru-dark .ps-subnav {
+    display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    margin-left: -2px; padding: 2px;
+  }
+  .tru-dark .ps-subnav::-webkit-scrollbar { display: none; }
+  .tru-dark .ps-subnav-btn { flex: 0 0 auto; font-size: 12.5px; padding: 8px 12px; }
+
+  /* Window pills likewise — six of them never fit a phone row. */
+  .tru-dark .ps-winpills {
+    display: flex; flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; max-width: 100%;
+  }
+  .tru-dark .ps-winpills::-webkit-scrollbar { display: none; }
+  .tru-dark .ps-winpill { flex: 0 0 auto; }
 }

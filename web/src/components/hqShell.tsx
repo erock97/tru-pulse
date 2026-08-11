@@ -112,6 +112,25 @@ export function HqShell({
         </header>
         {children}
       </main>
+
+      {/* Phone navigation. Same links as the sidebar, fixed to the bottom where a
+          thumb reaches — and the reason the sidebar can stop trying to be a
+          horizontal strip, which is what forced the whole page 340px wider than
+          the screen. Hidden by CSS above 860px. */}
+      <nav className="tabbar" aria-label="Sections">
+        {links.map((l) => (
+          <button
+            key={l.key}
+            className={`tabbar-btn ${l.key === activeKey ? 'active' : ''}`}
+            onClick={l.soon ? undefined : l.onClick}
+            disabled={l.soon}
+            aria-current={l.key === activeKey ? 'page' : undefined}
+          >
+            <Icon name={l.icon} size={21} />
+            <span>{l.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
