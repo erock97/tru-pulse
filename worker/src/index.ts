@@ -5,6 +5,8 @@ import type { Env } from './env.js';
 import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
+import { runIntake, validateIntake } from './intake.js';
+import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
@@ -113,6 +115,9 @@ export default {
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.
+    // Keys are stored by connectTeamKey (below) rather than by provision(), so
+    // this path also registers FUB webhooks and starts a first sync — which it
+    // silently never did before.
     if (url.pathname === '/provision' && req.method === 'POST') {
       const body = (await req.json().catch(() => null)) as any;
       if (!body?.orgName || !Array.isArray(body?.teams)) {
@@ -123,8 +128,24 @@ export default {
         : await verifySupabaseUser(env, req.headers.get('Authorization'));
       if (!userId) return json({ error: 'unauthorized' }, 401);
       try {
-        const input: ProvisionInput = { orgName: body.orgName, userId, role: body.role, teams: body.teams };
-        return json(await provision(env, database, input));
+        const teams = body.teams as Array<{ name: string; fubKey?: string; subdomain?: string }>;
+        const input: ProvisionInput = {
+          orgName: body.orgName,
+          members: [{ userId, role: body.role ?? 'admin', name: body.name, email: body.email }],
+          teams: teams.map((t) => ({ name: t.name, subdomain: t.subdomain })),
+        };
+        const result = await provision(env, database, input);
+        for (let i = 0; i < teams.length; i++) {
+          const key = teams[i].fubKey;
+          if (!key) continue;
+          await connectTeamKey(
+            env, database, ctx, url.origin,
+            { id: result.teamIds[i], org_id: result.orgId },
+            key,
+            teams[i].subdomain ?? null,
+          );
+        }
+        return json(result);
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
@@ -495,6 +516,35 @@ export default {
             return { id: l.id, name: l.name, email: l.email, team_name: t?.name ?? '—', org_name: o?.name ?? '—' };
           });
         return json({ leaders: out });
+      }
+
+      // Owner intake — create a brokerage from a FUB key and email each of its
+      // team leaders a set-password link. Two leaders means two logins.
+      if (url.pathname === '/admin/intake' && req.method === 'POST') {
+        const parsed = validateIntake(await req.json().catch(() => null));
+        if (!parsed.ok) return json({ error: parsed.error }, 422);
+        try {
+          return json(await runIntake(env, database, ctx, url.origin, parsed.value, connectTeamKey));
+        } catch (e) {
+          return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+        }
+      }
+
+      // Re-send a leader's set-password link (they expire in 24h, single use).
+      if (url.pathname === '/admin/resend-invite' && req.method === 'POST') {
+        const body = (await req.json().catch(() => null)) as any;
+        const email = String(body?.email ?? '').trim().toLowerCase();
+        const name = String(body?.name ?? '').trim() || email;
+        const orgName = String(body?.orgName ?? '').trim() || 'TRU HQ';
+        if (!email) return json({ error: 'email required' }, 422);
+        try {
+          const existing = await authUserIdByEmail(env, email);
+          const { link } = await mintAuthLink(env, email, existing ? 'recovery' : 'invite');
+          const sent = await sendInviteEmail(env, { to: email, name, orgName, link });
+          return json({ sent, link: sent ? undefined : link });
+        } catch (e) {
+          return json({ error: e instanceof Error ? e.message : String(e) }, 502);
+        }
       }
 
       if (url.pathname === '/admin/impersonate' && req.method === 'POST') {
