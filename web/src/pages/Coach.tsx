@@ -756,23 +756,38 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
   useEffect(() => {
     const store = typeof window === 'undefined' ? null : window.sessionStorage;
     const key = scrollKey(agent.id);
+
+    // Deliberately setTimeout rather than requestAnimationFrame: rAF does not
+    // run at all while the tab is hidden, so a refresh that lands in a
+    // background tab would silently never restore. Retry a few times because
+    // the sheet's cards load async and the page is not tall enough to scroll
+    // to the saved offset on the first tick.
     const saved = readScroll(store, key);
-    if (saved !== null) {
-      // After paint, or the page is not yet tall enough to scroll to it.
-      requestAnimationFrame(() => window.scrollTo({ top: saved }));
-    }
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;               // coalesce to one write per frame
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        saveScroll(store, key, window.scrollY);
+    const timers: number[] = [];
+    if (saved !== null && saved > 0) {
+      [0, 80, 250, 600].forEach((delay) => {
+        timers.push(window.setTimeout(() => {
+          if (Math.abs(window.scrollY - saved) > 2) window.scrollTo({ top: saved });
+        }, delay));
       });
+    }
+
+    let debounce = 0;
+    const onScroll = () => {
+      if (debounce) window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => { saveScroll(store, key, window.scrollY); }, 120);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    // A tab switch can arrive before the debounce fires — flush so the offset
+    // that gets remembered is where they actually were when they left.
+    const onHide = () => { saveScroll(store, key, window.scrollY); };
+    window.addEventListener('visibilitychange', onHide);
+
     return () => {
       window.removeEventListener('scroll', onScroll);
-      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('visibilitychange', onHide);
+      if (debounce) window.clearTimeout(debounce);
+      timers.forEach((t) => window.clearTimeout(t));
     };
   }, [agent.id]);
 
