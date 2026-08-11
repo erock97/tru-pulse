@@ -2476,3 +2476,44 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .ad-header, .tru-dark .ad-hero { flex-direction: column; text-align: center; }
   .tru-dark .coach-bento { grid-template-columns: 1fr; grid-template-areas: "hustle" "mA" "mB" "mC"; }
 }
+
+/* ---------- How this works — the reference tab ---------- */
+/* Reads like a document, not a dashboard: one readable column, generous line
+   height, sections closed until clicked. Nothing opens or reorders on its own. */
+.tru-dark .htw { max-width: 76ch; }
+.tru-dark .htw-intro {
+  margin: 0 0 22px; font-size: 15px; line-height: 1.7; color: var(--text-60);
+}
+.tru-dark .htw-sec {
+  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.09));
+}
+.tru-dark .htw-sec:last-child { border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.09)); }
+.tru-dark .htw-q {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: none; border: 0; cursor: pointer; text-align: left;
+  font: inherit; font-size: 15.5px; font-weight: 600; color: var(--text-strong);
+  padding: 17px 2px; transition: color 0.15s;
+}
+.tru-dark .htw-q:hover { color: var(--accent-hi, #e8c98a); }
+.tru-dark .htw-sec.on .htw-q { color: var(--accent-hi, #e8c98a); }
+.tru-dark .htw-caret {
+  flex-shrink: 0; font-size: 17px; line-height: 1; opacity: 0.55; font-weight: 400;
+}
+.tru-dark .htw-a {
+  padding: 0 2px 22px; font-size: 14px; line-height: 1.75; color: var(--text-60);
+}
+.tru-dark .htw-a p { margin: 0 0 13px; }
+.tru-dark .htw-a p:last-child { margin-bottom: 0; }
+.tru-dark .htw-a strong { color: var(--text-strong); font-weight: 600; }
+.tru-dark .htw-a em { font-style: italic; }
+.tru-dark .htw-a ul,
+.tru-dark .htw-a ol { margin: 0 0 13px; padding-left: 22px; display: grid; gap: 9px; }
+.tru-dark .htw-a li { padding-left: 2px; }
+/* The honest-limits callout. Every section has one; it's the part that keeps a
+   leader from over-reading a number. */
+.tru-dark .htw-note {
+  margin: 15px 0 0 !important; padding: 13px 15px; border-radius: 9px;
+  background: rgba(232, 201, 138, 0.055);
+  border-left: 2px solid var(--accent-hi, #e8c98a);
+  color: var(--text-strong);
+}

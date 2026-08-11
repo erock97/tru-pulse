@@ -4,6 +4,7 @@ import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../.
 import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel, recordedOfferPersons } from '../../../shared/offerEvidence';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
+import { HowThisWorks } from '../components/HowThisWorks';
 import { HqShell } from '../components/hqShell';
 import { Icon } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -24,7 +25,7 @@ const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase().re
 const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` : 'Unassigned');
 const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
-type View = 'overview' | 'accountability' | 'sources' | 'settings';
+type View = 'overview' | 'accountability' | 'sources' | 'settings' | 'how';
 type Win = '7' | '14' | 'mtd' | '90' | '180' | '365';
 const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo'], ['365', '12mo']];
 
@@ -393,15 +394,17 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     accountability: { title: 'What to do today', eyebrow: 'Who needs action first · this week' },
     sources: { title: 'Sources', eyebrow: `Where your tracked leads come from · ${winLabel}` },
     settings: { title: 'Settings', eyebrow: 'Flag windows, strike rules & the $-at-risk math' },
+    how: { title: 'How this works', eyebrow: 'Where every number comes from — and what it can’t know' },
   };
 
   const SUBNAV: Array<[View, string]> = [
     ['overview', 'pulse'], ['accountability', 'coach'], ['sources', 'prospect'], ['settings', 'rep'],
+    ['how', 'shield'],
   ];
 
   const context = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      {view !== 'settings' && (
+      {view !== 'settings' && view !== 'how' && (
         <div className="ps-winpills">
           {WINDOWS.map(([k, l]) => (
             <span key={k} className={`ps-winpill${win === k ? ' on' : ''}`} onClick={() => setWin(k)}>{l}</span>
@@ -434,10 +437,17 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
             {SUBNAV.map(([v, icon]) => (
               <button key={v} className={`ps-subnav-btn${view === v ? ' on' : ''}`} onClick={() => setView(v)}>
                 <Icon name={icon} size={16} />
-                {v === 'overview' ? 'Overview' : v === 'accountability' ? 'What to do today' : v[0].toUpperCase() + v.slice(1)}
+                {v === 'overview' ? 'Overview'
+                  : v === 'accountability' ? 'What to do today'
+                  : v === 'how' ? 'How this works'
+                  : v[0].toUpperCase() + v.slice(1)}
               </button>
             ))}
           </div>
+
+          {/* Reference, not a dashboard — no data dependency, so it renders even
+              before a team's first sync lands. */}
+          {view === 'how' && <HowThisWorks />}
 
           {view === 'overview' && (total === 0 ? (
             <div className="card ps-emptyview reveal">
