@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
+import { userIdOf, identityChanged } from './lib/authIdentity';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
@@ -37,18 +38,28 @@ export default function App() {
     () => typeof window !== 'undefined' && /type=(recovery|invite)/.test(window.location.hash),
   );
 
+  // The signed-in user id we have already reacted to. A ref, not state, so a
+  // token refresh cannot schedule a render on its own.
+  const seenUserId = useRef<string | null | undefined>(undefined);
+
   useEffect(() => {
     if (isDemo) return;
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      setSession(s);
       if (event === 'PASSWORD_RECOVERY') setRecovery(true);
+      // Only publish the session when the PERSON changed. Tab-focus token
+      // refreshes land here constantly with a new object for the same user;
+      // publishing those unmounts whatever the leader is in the middle of.
+      if (identityChanged(seenUserId.current, userIdOf(s))) setSession(s);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     if (isDemo || session === undefined) return;
+    const nextUserId = userIdOf(session);
+    if (!identityChanged(seenUserId.current, nextUserId)) return;
+    seenUserId.current = nextUserId;
     if (!session) {
       setOrg(null);
       return;
