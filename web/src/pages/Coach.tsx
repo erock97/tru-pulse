@@ -134,10 +134,27 @@ function WiringBar({ segs }: { segs: TeamSeg[] }) {
 /* ============================================================
    COACH DASHBOARD
    ============================================================ */
-export default function Coach({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
+export default function Coach({
+  org,
+  onHome,
+  openAgentId = null,
+  onOpenAgent,
+}: {
+  org: { id: string; name: string };
+  onHome?: () => void;
+  openAgentId?: string | null;
+  onOpenAgent?: (id: string | null) => void;
+}) {
   const [roster, setRoster] = useState<RosterAgent[] | null>(() => readCoachCache(org.id));
   const [err, setErr] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Which agent's 1:1 is open lives in the ROUTE (see lib/coachRoute), so a
+  // refresh or the back button returns to the same sheet. `setOpenId` keeps its
+  // name and signature so every existing call site is unchanged; it now
+  // navigates instead of setting local state. Falls back to local state only
+  // when rendered without a router (the ?demo=1 preview).
+  const [localOpenId, setLocalOpenId] = useState<string | null>(null);
+  const openId = onOpenAgent ? openAgentId : localOpenId;
+  const setOpenId = onOpenAgent ?? setLocalOpenId;
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   // Cohort management (Task 8): the full Pulse roster (for the picker + the

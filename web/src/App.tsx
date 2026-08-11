@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import { userIdOf, identityChanged } from './lib/authIdentity';
+import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
@@ -93,8 +94,15 @@ export default function App() {
   const shell = (o: { id: string; name: string }, adminLeaders?: AdminLeader[]) =>
     route === '/pulse'
       ? <Dashboard org={o} onHome={() => go('/')} />
-      : route === '/coach'
-        ? <Coach org={o} onHome={() => go('/')} />
+      : isCoachRoute(route)
+        ? (
+          <Coach
+            org={o}
+            onHome={() => go('/')}
+            openAgentId={parseCoachAgentId(route)}
+            onOpenAgent={(id) => go(coachRoute(id))}
+          />
+        )
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
         : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />;
