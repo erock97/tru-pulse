@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, setAgentPause, signOutClean, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
+import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel } from '../../../shared/offerEvidence';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
 import { HqShell } from '../components/hqShell';
@@ -181,6 +182,18 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // "Leads per closing" / "Leads per offer" — 1 : N, N = leads in window ÷ count.
   const perClosingLabel = closingsCount > 0 ? `1 : ${Math.max(1, Math.round(total / closingsCount))}` : '—';
   const offerRatioLabel = offersReached > 0 ? `1 : ${Math.max(1, Math.round(total / offersReached))}` : '—';
+
+  // How much of that offer number is actually on the record, and how much is
+  // inferred from a deal having advanced. A leader coaching an agent off "leads
+  // per offer" needs to know the difference: 1-observed-and-79-assumed reads the
+  // same on screen as 79-observed, and means something completely different.
+  // recordedOffers spans ALL history on purpose — a lead that made an offer in
+  // March and has since fallen back is still a real attempt this rate drops.
+  const recordedOffers = new Set(
+    data.stageLog.filter((h) => h.stage_class === 'offer').map((h) => h.fub_person_id),
+  );
+  const offerEvidence = currentStageOfferEvidence(leads, recordedOffers);
+  const offerExplain = explainCurrentStageOffers(offerEvidence);
 
   // Commission at risk — priced with each source's REAL conversion from this team's
   // own outcomes. A "closing" is a lead whose PERSON STAGE is Under Contract / Closed
@@ -445,6 +458,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
               risk={risk} avgGci={avgGci} closeRate={closeRate}
               sources={sources}
               offerRatioLabel={offerRatioLabel} perClosingLabel={perClosingLabel} closingsCount={closingsCount} gciInPlay={gciInPlay}
+              offerExplain={offerExplain}
               nodes={nodes}
               pauseCount={pauseCount} newStrikes7d={newStrikes7d} pausedCount={pausedCount} headroom={headroom}
               strikeLimit={strikeLimit}
@@ -471,6 +485,60 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
 }
 
 /* ============================================================
+   OFFER CONFIDENCE — why the offer number is what it is.
+   ------------------------------------------------------------
+   A leader is going to coach an agent off "leads per offer". When a team's
+   agents skip the offer stage, that figure is inferred from deals that closed —
+   it looks identical on screen to a measured one and means something entirely
+   different. So the tile states the split, and expands into plain-English
+   reasons naming the cause and what it does to the number. Copy lives in
+   shared/offerEvidence.ts so it can be tested and never drifts from the maths.
+   ============================================================ */
+const offerTone = (c: ReturnType<typeof explainCurrentStageOffers>['confidence']) =>
+  c === 'measured' ? 'ps-oc-ok' : c === 'mixed' ? 'ps-oc-warn' : 'ps-oc-alert';
+
+/** The chip that sits under the "Leads per offer" figure. */
+function OfferConfidenceChip(
+  { x, open, onToggle }: {
+    x: ReturnType<typeof explainCurrentStageOffers>;
+    open: boolean; onToggle: () => void;
+  },
+) {
+  if (x.confidence === 'no-data') return null;
+  return (
+    <div className={`ps-oc ${offerTone(x.confidence)}`}>
+      <button
+        type="button" className="ps-oc-chip" onClick={onToggle} aria-expanded={open}
+        aria-controls="offer-confidence-panel" title="How this number was worked out"
+      >
+        {offerConfidenceLabel(x.confidence)}
+        <span className="ps-oc-caret" aria-hidden>{open ? '▲' : '▼'}</span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The explanation itself, rendered full width BELOW the production tiles rather
+ * than as a popover inside one. The tiles animate in via `.reveal`, whose
+ * transform/opacity creates a stacking context an absolutely-positioned panel
+ * cannot escape — it painted underneath the next section. Full width is also
+ * simply better for this text: it's meant to be read carefully, not squinted at
+ * in a 150px column.
+ */
+function OfferConfidencePanel({ x }: { x: ReturnType<typeof explainCurrentStageOffers> }) {
+  return (
+    <section id="offer-confidence-panel" className={`card ps-ocpanel ${offerTone(x.confidence)}`}>
+      <p className="ps-ocpanel-head">{x.headline}</p>
+      <ul className="ps-ocpanel-lines">
+        {x.lines.map((l, i) => <li key={i}>{l.plain}</li>)}
+      </ul>
+      {x.caution && <p className="ps-ocpanel-caution">{x.caution}</p>}
+    </section>
+  );
+}
+
+/* ============================================================
    OVERVIEW — the bento + constellation + triage + roster + spine
    ============================================================ */
 function Overview(p: {
@@ -479,6 +547,7 @@ function Overview(p: {
   risk: { window: number; annual: number }; avgGci: number; closeRate: number;
   sources: Array<{ name: string; n: number; c: string; workedPct: number; zero: number }>;
   offerRatioLabel: string; perClosingLabel: string; closingsCount: number; gciInPlay: number;
+  offerExplain: ReturnType<typeof explainCurrentStageOffers>;
   nodes: AgentNode[];
   pauseCount: number; newStrikes7d: number; pausedCount: number; headroom: number;
   strikeLimit: number;
@@ -486,6 +555,8 @@ function Overview(p: {
   onRefresh: () => void;
 }) {
   const srcTotal = p.sources.reduce((a, s) => a + s.n, 0);
+  // Manual only — the panel opens when the leader opens it and stays put.
+  const [ocOpen, setOcOpen] = useState(false);
   const acct = [
     { icon: 'shield', label: 'Pause recommended', value: p.pauseCount, note: `at ${p.strikeLimit}+ strikes / 30 days`, tone: 'warn' },
     { icon: 'target', label: 'New strikes this week', value: p.newStrikes7d, note: 'opened in the last 7 days', tone: '' },
@@ -558,9 +629,12 @@ function Overview(p: {
           <div className="ps-prod-inner">
             <div className="ps-prod-num">{p.offerRatioLabel}</div>
             <div className="ps-prod-label">Leads per offer</div>
+            <OfferConfidenceChip x={p.offerExplain} open={ocOpen} onToggle={() => setOcOpen((v) => !v)} />
           </div>
         </article>
       </section>
+
+      {ocOpen && p.offerExplain.confidence !== 'no-data' && <OfferConfidencePanel x={p.offerExplain} />}
 
       <DividerWave />
 

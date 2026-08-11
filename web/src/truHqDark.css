@@ -1052,6 +1052,46 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ps-prod-num { font-size: 30px; font-weight: 800; color: var(--text-strong); line-height: 1; letter-spacing: -0.01em; }
 .tru-dark .ps-prod-label { font-size: 13px; color: var(--text-60); margin-top: 6px; }
 
+/* ---------- Offer confidence: why the offer number is what it is ---------- */
+/* Deliberately quiet when the figure is measured and louder when it is mostly
+   inferred — a leader should never mistake an assumed rate for a measured one. */
+.tru-dark .ps-oc { margin-top: 10px; }
+.tru-dark .ps-oc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 999px; cursor: pointer;
+  background: transparent; border: 1px solid currentColor; color: var(--text-60);
+  transition: opacity 0.15s;
+}
+.tru-dark .ps-oc-chip:hover { opacity: 0.75; }
+.tru-dark .ps-oc-caret { font-size: 8px; opacity: 0.7; }
+.tru-dark .ps-oc-ok    .ps-oc-chip { color: #7ac77a; }
+.tru-dark .ps-oc-warn  .ps-oc-chip { color: #e0b055; }
+.tru-dark .ps-oc-alert .ps-oc-chip { color: #e08a55; }
+/* Full width, below the tiles. Not a popover: the tiles animate in via .reveal,
+   whose transform creates a stacking context an absolute panel can't escape, and
+   this text is meant to be read properly rather than squinted at in a 150px column. */
+.tru-dark .ps-ocpanel {
+  padding: 18px 22px; margin: 0 0 18px;
+  font-size: 13.5px; line-height: 1.65; color: var(--text-60);
+  border-left: 3px solid currentColor;
+}
+.tru-dark .ps-ocpanel.ps-oc-ok    { color: #7ac77a; }
+.tru-dark .ps-ocpanel.ps-oc-warn  { color: #e0b055; }
+.tru-dark .ps-ocpanel.ps-oc-alert { color: #e08a55; }
+.tru-dark .ps-ocpanel-head {
+  margin: 0 0 12px; color: var(--text-strong); font-weight: 700; font-size: 15px;
+}
+.tru-dark .ps-ocpanel-lines {
+  margin: 0; padding-left: 18px; display: grid; gap: 10px;
+  color: var(--text-60); max-width: 78ch;
+}
+.tru-dark .ps-ocpanel-caution {
+  margin: 14px 0 0; padding: 12px 14px; border-radius: 9px; max-width: 78ch;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-strong);
+}
+
 /* ---------- Curved SVG dividers ---------- */
 .tru-dark .ps-divider { width: 100%; height: 58px; margin: 10px 0 18px; }
 .tru-dark .ps-divider svg { width: 100%; height: 100%; display: block; }
