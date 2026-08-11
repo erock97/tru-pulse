@@ -158,8 +158,17 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
   // at a stage is never overwritten by a later sync. Never fails the lead sync.
   try {
     await database.upsert('person_stage_log', stageLogRows, 'team_id,fub_person_id,stage', { ignoreDuplicates: true });
-  } catch {
-    // the log is a metrics enrichment layer; a schema not-yet-migrated must not break sync
+  } catch (e) {
+    // Still never fails the lead sync — the log is a metrics enrichment layer and a
+    // schema one migration behind must not cost us the leads. But it MUST be visible
+    // in `wrangler tail`: this catch silently swallowed a NOT NULL violation on
+    // changed_at for months, so every new team started with no offer/closing history
+    // at all and nothing ever surfaced. Silence is what made that survivable.
+    console.error(
+      `person_stage_log upsert failed for team ${team.id} (${stageLogRows.length} rows, ` +
+      `${stageLogRows.filter((r) => !r.changed_at).length} undated):`,
+      e,
+    );
   }
 
   return {

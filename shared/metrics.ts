@@ -110,11 +110,38 @@ export interface AgentBucket {
   underContractOrClosed: number;
 }
 
+/**
+ * HOW we know each counted offer happened. Eric's rule is sound — a deal cannot
+ * close without an offer being made — so a closing counts as offer-reached. But
+ * that credit is an INFERENCE, not an observation, and the two are not equally
+ * trustworthy:
+ *
+ *  - observedLive       we watched the agent move the lead into an offer stage and
+ *                       stamped the real date. Fully trustworthy.
+ *  - observedBaseline    the lead was already sitting at an offer stage when the
+ *                       team was first set up. The offer is real; its date is a
+ *                       proxy (the day the lead was last touched in FUB).
+ *  - inferredFromClosing no offer step was ever recorded — the credit comes only
+ *                       from the deal reaching contract/closing. We don't know
+ *                       when the offer was made, so the closing date stands in.
+ *                       Critically, offers that were made and LOST leave no trace
+ *                       at all, so a rate built from these reads LOW.
+ *
+ * Every counted lead falls in exactly one bucket, and the three sum to
+ * offersReached. See shared/offerEvidence.ts for the leader-facing wording.
+ */
+export interface OfferEvidence {
+  observedLive: number;
+  observedBaseline: number;
+  inferredFromClosing: number;
+}
+
 export interface WindowedMetrics {
   window: Window;
   totalLeads: number;
   offersReached: number;
   underContractOrClosed: number;
+  offerEvidence: OfferEvidence;
   byAgent: AgentBucket[];
 }
 
@@ -179,6 +206,9 @@ export function computeWindowedMetrics(
   //    seed rows EXCLUDED, the lead's created date is NEVER consulted here. ──
   const offerPersons = new Set<number>();
   const ucPersons = new Set<number>();
+  // person -> strongest offer evidence seen: 3 watched live, 2 baseline snapshot,
+  // 1 inferred from a closing only. Kept as a rank so hit order never matters.
+  const offerBasisByPerson = new Map<number, number>();
   const offerPersonsByAgent = new Map<string, Set<number>>();
   const ucPersonsByAgent = new Map<string, Set<number>>();
   const addTo = (map: Map<string, Set<number>>, key: string, person: number) => {
@@ -201,6 +231,16 @@ export function computeWindowedMetrics(
       offerPersons.add(h.fub_person_id);
       addTo(offerPersonsByAgent, key, h.fub_person_id);
       getBucket(key, label); // ensure the bucket exists even if this agent has no leads assigned in-window
+      // Record the STRONGEST evidence this lead has for its offer credit. An
+      // actual offer-stage row beats a closing-only inference, and a watched
+      // move beats a baseline snapshot — so a lead that went offer → closed
+      // stays "observed" rather than being downgraded by its own closing.
+      if (cls === 'offer') {
+        const rank = h.date_source === 'backfill' || h.date_source === 'tableau' ? 2 : 3;
+        offerBasisByPerson.set(h.fub_person_id, Math.max(offerBasisByPerson.get(h.fub_person_id) ?? 0, rank));
+      } else if (!offerBasisByPerson.has(h.fub_person_id)) {
+        offerBasisByPerson.set(h.fub_person_id, 1); // closing-only, so far
+      }
     }
     if (isClosing(cls)) {
       ucPersons.add(h.fub_person_id);
@@ -212,11 +252,20 @@ export function computeWindowedMetrics(
   for (const [key, set] of offerPersonsByAgent) totalsByAgent.get(key)!.offersReached = set.size;
   for (const [key, set] of ucPersonsByAgent) totalsByAgent.get(key)!.underContractOrClosed = set.size;
 
+  const offerEvidence: OfferEvidence = { observedLive: 0, observedBaseline: 0, inferredFromClosing: 0 };
+  for (const person of offerPersons) {
+    const rank = offerBasisByPerson.get(person) ?? 1;
+    if (rank === 3) offerEvidence.observedLive++;
+    else if (rank === 2) offerEvidence.observedBaseline++;
+    else offerEvidence.inferredFromClosing++;
+  }
+
   return {
     window: opts.window,
     totalLeads,
     offersReached: offerPersons.size,
     underContractOrClosed: ucPersons.size,
+    offerEvidence,
     byAgent: [...totalsByAgent.values()].sort((a, b) => b.totalLeads - a.totalLeads),
   };
 }

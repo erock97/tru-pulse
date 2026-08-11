@@ -316,3 +316,81 @@ test('computeAgentTrends: seed hits are excluded from both the current and prior
   const dee = trends.find((t) => t.agent === 'Dee Park');
   expect(dee).toBeUndefined(); // no windowed hits at all for Dee — seed is excluded, agent never appears
 });
+
+// ── Offer evidence: HOW do we know each counted offer happened? ─────────────
+// Eric's rule is sound — a deal cannot close without an offer — so a closing
+// counts as offer-reached. But that credit is an inference, not an observation,
+// and a leader coaching off the number needs to see which is which.
+
+test('offer evidence: a stage move we watched happen is measured, not assumed', () => {
+  const leads = [lead({ fub_person_id: 1 })];
+  const hits = [hit({ fub_person_id: 1, stage_class: 'offer', date_source: 'live' })];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offersReached).toBe(1);
+  expect(m.offerEvidence).toEqual({ observedLive: 1, observedBaseline: 0, inferredFromClosing: 0 });
+});
+
+test('offer evidence: a closing with no offer step on record is assumed', () => {
+  const leads = [lead({ fub_person_id: 1 })];
+  const hits = [hit({ fub_person_id: 1, stage_class: 'closed', date_source: 'live' })];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offersReached).toBe(1);
+  expect(m.offerEvidence).toEqual({ observedLive: 0, observedBaseline: 0, inferredFromClosing: 1 });
+});
+
+test('offer evidence: an offer step from the one-time baseline is measured but dateless-in-origin', () => {
+  const leads = [lead({ fub_person_id: 1 })];
+  const hits = [hit({ fub_person_id: 1, stage_class: 'offer', date_source: 'backfill' })];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offerEvidence).toEqual({ observedLive: 0, observedBaseline: 1, inferredFromClosing: 0 });
+});
+
+test('offer evidence: a lead we watched reach offer AND then close is measured once, not assumed', () => {
+  const leads = [lead({ fub_person_id: 1 })];
+  const hits = [
+    hit({ fub_person_id: 1, stage_class: 'offer', changed_at: iso(NOW - days(5)), date_source: 'live' }),
+    hit({ fub_person_id: 1, stage_class: 'closed', changed_at: iso(NOW - days(1)), date_source: 'live' }),
+  ];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offersReached).toBe(1);
+  // The observation wins — having also closed does not downgrade it to an assumption.
+  expect(m.offerEvidence).toEqual({ observedLive: 1, observedBaseline: 0, inferredFromClosing: 0 });
+});
+
+test('offer evidence: the three buckets always add up to offersReached', () => {
+  const leads = [1, 2, 3, 4].map((id) => lead({ fub_person_id: id }));
+  const hits = [
+    hit({ fub_person_id: 1, stage_class: 'offer', date_source: 'live' }),
+    hit({ fub_person_id: 2, stage_class: 'offer', date_source: 'backfill' }),
+    hit({ fub_person_id: 3, stage_class: 'closed', date_source: 'live' }),
+    hit({ fub_person_id: 4, stage_class: 'uc', date_source: 'backfill' }),
+  ];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  const e = m.offerEvidence;
+  expect(e.observedLive + e.observedBaseline + e.inferredFromClosing).toBe(m.offersReached);
+  expect(e).toEqual({ observedLive: 1, observedBaseline: 1, inferredFromClosing: 2 });
+});
+
+test('offer evidence: Costigan-shaped data — almost entirely assumed', () => {
+  // 1 lead genuinely observed at the offer stage, 20 that only ever showed up closed.
+  const leads = Array.from({ length: 21 }, (_, i) => lead({ fub_person_id: i + 1 }));
+  const hits = [
+    hit({ fub_person_id: 1, stage_class: 'offer', date_source: 'live' }),
+    ...Array.from({ length: 20 }, (_, i) => hit({ fub_person_id: i + 2, stage_class: 'closed', date_source: 'live' })),
+  ];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offersReached).toBe(21);
+  expect(m.offerEvidence.observedLive).toBe(1);
+  expect(m.offerEvidence.inferredFromClosing).toBe(20);
+});
+
+test('offer evidence: rows outside the window and seed rows are excluded, as with the count', () => {
+  const leads = [lead({ fub_person_id: 1 }), lead({ fub_person_id: 2 })];
+  const hits = [
+    hit({ fub_person_id: 1, stage_class: 'offer', changed_at: iso(NOW - days(200)), date_source: 'live' }),
+    hit({ fub_person_id: 2, stage_class: 'offer', changed_at: null, date_source: 'seed' }),
+  ];
+  const m = computeWindowedMetrics(leads, hits, { window: '90', now: NOW });
+  expect(m.offersReached).toBe(0);
+  expect(m.offerEvidence).toEqual({ observedLive: 0, observedBaseline: 0, inferredFromClosing: 0 });
+});

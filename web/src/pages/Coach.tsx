@@ -17,6 +17,7 @@ import {
   type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
 import { CG } from '../lib/assessmentData';
+import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import '../truHqDark.css';
 
 /* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
@@ -134,10 +135,27 @@ function WiringBar({ segs }: { segs: TeamSeg[] }) {
 /* ============================================================
    COACH DASHBOARD
    ============================================================ */
-export default function Coach({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
+export default function Coach({
+  org,
+  onHome,
+  openAgentId = null,
+  onOpenAgent,
+}: {
+  org: { id: string; name: string };
+  onHome?: () => void;
+  openAgentId?: string | null;
+  onOpenAgent?: (id: string | null) => void;
+}) {
   const [roster, setRoster] = useState<RosterAgent[] | null>(() => readCoachCache(org.id));
   const [err, setErr] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Which agent's 1:1 is open lives in the ROUTE (see lib/coachRoute), so a
+  // refresh or the back button returns to the same sheet. `setOpenId` keeps its
+  // name and signature so every existing call site is unchanged; it now
+  // navigates instead of setting local state. Falls back to local state only
+  // when rendered without a router (the ?demo=1 preview).
+  const [localOpenId, setLocalOpenId] = useState<string | null>(null);
+  const openId = onOpenAgent ? openAgentId : localOpenId;
+  const setOpenId = onOpenAgent ?? setLocalOpenId;
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   // Cohort management (Task 8): the full Pulse roster (for the picker + the
@@ -730,6 +748,48 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
   const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
   const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
   const [writeErr, setWriteErr] = useState<string | null>(null);
+
+  // Remember where the leader was in THIS agent's sheet. Restoring on mount is
+  // what makes returning from another tab land on the same line rather than the
+  // top — the route gets them back to the right agent, this gets them back to
+  // the right place in it.
+  useEffect(() => {
+    const store = typeof window === 'undefined' ? null : window.sessionStorage;
+    const key = scrollKey(agent.id);
+
+    // Deliberately setTimeout rather than requestAnimationFrame: rAF does not
+    // run at all while the tab is hidden, so a refresh that lands in a
+    // background tab would silently never restore. Retry a few times because
+    // the sheet's cards load async and the page is not tall enough to scroll
+    // to the saved offset on the first tick.
+    const saved = readScroll(store, key);
+    const timers: number[] = [];
+    if (saved !== null && saved > 0) {
+      [0, 80, 250, 600].forEach((delay) => {
+        timers.push(window.setTimeout(() => {
+          if (Math.abs(window.scrollY - saved) > 2) window.scrollTo({ top: saved });
+        }, delay));
+      });
+    }
+
+    let debounce = 0;
+    const onScroll = () => {
+      if (debounce) window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => { saveScroll(store, key, window.scrollY); }, 120);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // A tab switch can arrive before the debounce fires — flush so the offset
+    // that gets remembered is where they actually were when they left.
+    const onHide = () => { saveScroll(store, key, window.scrollY); };
+    window.addEventListener('visibilitychange', onHide);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('visibilitychange', onHide);
+      if (debounce) window.clearTimeout(debounce);
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, [agent.id]);
 
   useEffect(() => {
     let live = true;
