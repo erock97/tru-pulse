@@ -1,0 +1,22 @@
+-- person_stage_log.changed_at must be NULLABLE.
+--
+-- A brand-new team's pre-existing offers / under-contracts genuinely have no known
+-- date. Follow Up Boss exposes no stage history through its API, and most teams
+-- don't use the Deals tab, so there is nothing to date them from. sync.ts writes
+-- those rows with changed_at = null on purpose (date_source = 'seed'), and both
+-- windowed loops in shared/metrics.ts already skip undated rows
+-- (`if (!h.changed_at) continue;`). web/src/lib/api.ts types the column as
+-- `string | null` and orders with `nullsFirst: true`. A unit test in
+-- worker/src/sync.test.ts asserts the seed path yields null.
+--
+-- In other words the whole codebase was written for a nullable column; only the
+-- deployed schema disagreed. Because the column was NOT NULL, that insert always
+-- failed — and since the batch is a single upsert, it discarded the closings that
+-- DID carry a real dealCloseDate along with the undated rows. The surrounding
+-- catch swallowed the error, so every new team silently began with no offer or
+-- closing history and nothing ever surfaced.
+--
+-- Applied to the live Pulse project 2026-08-11 as migration
+-- `stage_log_allow_undated_seed_rows`, after The Synergy Group NJ onboarded with
+-- 14 closed / 15 offers out / 2 under contract and logged zero of them.
+alter table person_stage_log alter column changed_at drop not null;
