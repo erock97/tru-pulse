@@ -17,6 +17,7 @@ import {
   type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
 import { CG } from '../lib/assessmentData';
+import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import '../truHqDark.css';
 
 /* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
@@ -747,6 +748,33 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
   const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
   const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
   const [writeErr, setWriteErr] = useState<string | null>(null);
+
+  // Remember where the leader was in THIS agent's sheet. Restoring on mount is
+  // what makes returning from another tab land on the same line rather than the
+  // top — the route gets them back to the right agent, this gets them back to
+  // the right place in it.
+  useEffect(() => {
+    const store = typeof window === 'undefined' ? null : window.sessionStorage;
+    const key = scrollKey(agent.id);
+    const saved = readScroll(store, key);
+    if (saved !== null) {
+      // After paint, or the page is not yet tall enough to scroll to it.
+      requestAnimationFrame(() => window.scrollTo({ top: saved }));
+    }
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;               // coalesce to one write per frame
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        saveScroll(store, key, window.scrollY);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [agent.id]);
 
   useEffect(() => {
     let live = true;
