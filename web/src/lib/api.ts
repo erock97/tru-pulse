@@ -1072,3 +1072,41 @@ export async function setAgentPause(
   });
   if (error) throw error;
 }
+
+// ── Platform owner: intake a new brokerage ──────────────────────────────────
+export interface IntakeLeaderResult {
+  name: string;
+  email: string;
+  status: 'invited' | 'email_failed' | 'failed';
+  link?: string;
+  error?: string;
+}
+export interface IntakeResult { orgId: string; teamIds: string[]; leaders: IntakeLeaderResult[] }
+
+export async function adminIntake(input: {
+  orgName: string;
+  teams: Array<{ name: string; fubKey: string; subdomain?: string }>;
+  leaders: Array<{ name: string; email: string; teamIndex: number }>;
+}): Promise<IntakeResult> {
+  const res = await fetch(WORKER_URL + '/admin/intake', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json().catch(() => ({}))) as any;
+  if (!res.ok) throw new Error(body.error ?? 'Could not create the team.');
+  return body as IntakeResult;
+}
+
+export async function adminResendInvite(o: {
+  email: string; name?: string; orgName?: string;
+}): Promise<{ sent: boolean; link?: string }> {
+  const res = await fetch(WORKER_URL + '/admin/resend-invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
+    body: JSON.stringify(o),
+  });
+  const body = (await res.json().catch(() => ({}))) as any;
+  if (!res.ok) throw new Error(body.error ?? 'Could not resend the invite.');
+  return body as { sent: boolean; link?: string };
+}

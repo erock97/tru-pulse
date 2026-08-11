@@ -4,6 +4,7 @@ import { adminActAs, isDemo, signOutClean, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 import { FubConnect } from '../components/FubConnect';
 import { AdminConnections } from '../components/AdminConnections';
+import { AdminIntake } from '../components/AdminIntake';
 import { HqShell } from '../components/hqShell';
 import { Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -324,6 +325,19 @@ export default function Home({
                   {actErr}
                 </div>
               )}
+            </section>
+          )}
+
+          {/* ============ PLATFORM OWNER: Add a team ============ */}
+          {adminLeaders && (
+            <section className="hqcard hh-panel reveal" data-delay="70" style={{ marginBottom: 18 }}>
+              <div className="hh-panel-tag">Platform owner</div>
+              <h3>Add a team</h3>
+              <p className="hh-panel-sub">
+                Set a brokerage up from their Follow Up Boss key. Each team leader gets their own
+                login and an email to set their password — nothing for them to configure.
+              </p>
+              <AdminIntake />
             </section>
           )}
 
