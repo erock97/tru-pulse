@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { loadDashboard, saveSettings, setAgentPause, signOutClean, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
-import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel } from '../../../shared/offerEvidence';
+import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel, recordedOfferPersons } from '../../../shared/offerEvidence';
 import { CountUp, SOURCE_COLORS } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
 import { HqShell } from '../components/hqShell';
@@ -189,9 +189,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // same on screen as 79-observed, and means something completely different.
   // recordedOffers spans ALL history on purpose — a lead that made an offer in
   // March and has since fallen back is still a real attempt this rate drops.
-  const recordedOffers = new Set(
-    data.stageLog.filter((h) => h.stage_class === 'offer').map((h) => h.fub_person_id),
-  );
+  const recordedOffers = recordedOfferPersons(data.stageLog);
   const offerEvidence = currentStageOfferEvidence(leads, recordedOffers);
   const offerExplain = explainCurrentStageOffers(offerEvidence);
 

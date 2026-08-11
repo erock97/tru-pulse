@@ -74,31 +74,31 @@ import { currentStageOfferEvidence, explainCurrentStageOffers } from './offerEvi
 const L = (id: number, stage: string) => ({ fub_person_id: id, stage });
 
 test('current stage: a lead sitting at the offer stage is visible, not assumed', () => {
-  const e = currentStageOfferEvidence([L(1, 'Submitting Offers')], new Set());
-  expect(e).toEqual({ visibleAtOfferStage: 1, assumedFromAdvance: 0, knownButNotCounted: 0 });
+  const e = currentStageOfferEvidence([L(1, 'Submitting Offers')], new Map());
+  expect(e).toEqual({ visibleAtOfferStage: 1, assumedFromAdvance: 0, knownButNotCounted: 0, fellBackFromContract: 0 });
 });
 
 test('current stage: a closed or under-contract lead is assumed from the advance', () => {
-  const e = currentStageOfferEvidence([L(1, 'Closed'), L(2, 'Under Contract')], new Set());
-  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 2, knownButNotCounted: 0 });
+  const e = currentStageOfferEvidence([L(1, 'Closed'), L(2, 'Under Contract')], new Map());
+  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 2, knownButNotCounted: 0, fellBackFromContract: 0 });
 });
 
 test('current stage: a recorded offer that fell back is counted as known-but-missing', () => {
   // We watched this lead make an offer; it is now parked in Nurture, so the
   // current-stage rule drops it from the rate entirely.
-  const e = currentStageOfferEvidence([L(1, 'Nurture')], new Set([1]));
-  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 1 });
+  const e = currentStageOfferEvidence([L(1, 'Nurture')], new Map([[1, 'offer' as const]]));
+  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 1, fellBackFromContract: 0 });
 });
 
 test('current stage: a recorded offer that went on to close is not double-counted', () => {
-  const e = currentStageOfferEvidence([L(1, 'Closed')], new Set([1]));
+  const e = currentStageOfferEvidence([L(1, 'Closed')], new Map([[1, 'offer' as const]]));
   expect(e.assumedFromAdvance + e.visibleAtOfferStage).toBe(1);
   expect(e.knownButNotCounted).toBe(0);
 });
 
 test('current stage: leads that never reached an offer are ignored entirely', () => {
-  const e = currentStageOfferEvidence([L(1, 'Lead'), L(2, 'Attempted Contact')], new Set());
-  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 0 });
+  const e = currentStageOfferEvidence([L(1, 'Lead'), L(2, 'Attempted Contact')], new Map());
+  expect(e).toEqual({ visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 0, fellBackFromContract: 0 });
 });
 
 test('Costigan shape: 1 visible, 79 assumed — flagged and explained', () => {
@@ -107,8 +107,8 @@ test('Costigan shape: 1 visible, 79 assumed — flagged and explained', () => {
     ...Array.from({ length: 69 }, (_, i) => L(i + 2, 'Closed')),
     ...Array.from({ length: 10 }, (_, i) => L(i + 200, 'Under Contract')),
   ];
-  const e = currentStageOfferEvidence(leads, new Set());
-  expect(e).toEqual({ visibleAtOfferStage: 1, assumedFromAdvance: 79, knownButNotCounted: 0 });
+  const e = currentStageOfferEvidence(leads, new Map());
+  expect(e).toEqual({ visibleAtOfferStage: 1, assumedFromAdvance: 79, knownButNotCounted: 0, fellBackFromContract: 0 });
 
   const x = explainCurrentStageOffers(e);
   expect(x.confidence).toBe('mostly-assumed');
@@ -124,7 +124,7 @@ test('Signature shape: known-but-missing offers are called out with their own li
     ...Array.from({ length: 201 }, (_, i) => L(i + 500, 'Closed')),
     ...Array.from({ length: 8 }, (_, i) => L(i + 900, 'Nurture')),
   ];
-  const recorded = new Set(Array.from({ length: 8 }, (_, i) => i + 900));
+  const recorded = new Map(Array.from({ length: 8 }, (_, i) => [i + 900, 'offer' as const]));
   const e = currentStageOfferEvidence(leads, recorded);
   expect(e.visibleAtOfferStage).toBe(118);
   expect(e.assumedFromAdvance).toBe(201);
@@ -140,4 +140,74 @@ test('displayed-offer copy carries no internal vocabulary', () => {
   const x = explainCurrentStageOffers({ visibleAtOfferStage: 2, assumedFromAdvance: 9, knownButNotCounted: 3 });
   const all = [x.headline, x.caution ?? '', ...x.lines.map((l) => l.plain)].join(' ');
   expect(all).not.toMatch(/stage_class|date_source|person_stage_log|isOfferPlus|carry-forward/);
+});
+
+// ── Anything that moved BACKWARD from offer-or-beyond must be flagged ────────
+// Not just offer → nurture. A lead that reached under contract and then died
+// certainly had an offer, and the current-stage rule drops it just the same.
+import { recordedOfferPersons } from './offerEvidence';
+
+test('recorded set includes contract and closed, not just the offer stage', () => {
+  const m = recordedOfferPersons([
+    { fub_person_id: 1, stage_class: 'offer' },
+    { fub_person_id: 2, stage_class: 'uc' },
+    { fub_person_id: 3, stage_class: 'closed' },
+    { fub_person_id: 4, stage_class: 'other' },
+  ]);
+  expect(m.get(1)).toBe('offer');
+  expect(m.get(2)).toBe('contract');
+  expect(m.get(3)).toBe('contract');
+  expect(m.has(4)).toBe(false);
+});
+
+test('reaching contract outranks an earlier offer for the same lead', () => {
+  const m = recordedOfferPersons([
+    { fub_person_id: 1, stage_class: 'offer' },
+    { fub_person_id: 1, stage_class: 'uc' },
+  ]);
+  expect(m.get(1)).toBe('contract');
+});
+
+test('a deal that reached contract then fell back is flagged, and called out separately', () => {
+  const e = currentStageOfferEvidence(
+    [L(1, 'Nurture'), L(2, 'Nurture')],
+    recordedOfferPersons([
+      { fub_person_id: 1, stage_class: 'uc' },     // deal fell apart
+      { fub_person_id: 2, stage_class: 'offer' },  // offer lost
+    ]),
+  );
+  expect(e.knownButNotCounted).toBe(2);
+  expect(e.fellBackFromContract).toBe(1);
+});
+
+test('Signature shape: 17 fell back, 10 of them from contract — both stated', () => {
+  const leads = [
+    ...Array.from({ length: 118 }, (_, i) => L(i + 1, 'Submitting offers')),
+    ...Array.from({ length: 201 }, (_, i) => L(i + 500, 'Closed')),
+    ...Array.from({ length: 17 }, (_, i) => L(i + 900, 'Nurture')),
+  ];
+  const rows = [
+    ...Array.from({ length: 10 }, (_, i) => ({ fub_person_id: i + 900, stage_class: 'uc' })),
+    ...Array.from({ length: 7 }, (_, i) => ({ fub_person_id: i + 910, stage_class: 'offer' })),
+  ];
+  const e = currentStageOfferEvidence(leads, recordedOfferPersons(rows));
+  expect(e.knownButNotCounted).toBe(17);
+  expect(e.fellBackFromContract).toBe(10);
+
+  const x = explainCurrentStageOffers(e);
+  const line = x.lines.find((l) => l.count === 17)!;
+  expect(line.plain).toMatch(/17/);
+  // The stronger fact — a deal that fell apart — must be said, not buried.
+  expect(line.plain).toMatch(/10/);
+  expect(line.plain).toMatch(/contract/i);
+});
+
+test('a lead still sitting at contract is not treated as having fallen back', () => {
+  const e = currentStageOfferEvidence(
+    [L(1, 'Under contract')],
+    recordedOfferPersons([{ fub_person_id: 1, stage_class: 'uc' }]),
+  );
+  expect(e.knownButNotCounted).toBe(0);
+  expect(e.fellBackFromContract).toBe(0);
+  expect(e.assumedFromAdvance).toBe(1);
 });

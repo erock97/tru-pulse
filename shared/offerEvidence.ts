@@ -132,7 +132,33 @@ export function explainOfferEvidence(e: OfferEvidence): OfferEvidenceExplanation
 export interface DisplayedOfferEvidence {
   visibleAtOfferStage: number;
   assumedFromAdvance: number;
+  /** Recorded as reaching offer or beyond, and has since moved BACKWARD. */
   knownButNotCounted: number;
+  /** Of those, the ones that got as far as contract/closed — deals that fell apart. */
+  fellBackFromContract: number;
+}
+
+/**
+ * Which leads we have a record of reaching offer OR BEYOND, and how far they got.
+ *
+ * Deliberately not just the offer stage: a lead that reached under contract and
+ * then died certainly made an offer, and the current-stage rule drops it exactly
+ * the same way. Anything that moved backward from offer-or-beyond is a real
+ * attempt missing from the rate.
+ */
+export function recordedOfferPersons(
+  rows: Array<{ fub_person_id: number; stage_class?: string | null }>,
+): Map<number, 'offer' | 'contract'> {
+  const out = new Map<number, 'offer' | 'contract'>();
+  for (const r of rows) {
+    const c = r.stage_class;
+    if (c === 'uc' || c === 'closed') {
+      out.set(r.fub_person_id, 'contract'); // reaching contract always outranks
+    } else if (c === 'offer' && !out.has(r.fub_person_id)) {
+      out.set(r.fub_person_id, 'offer');
+    }
+  }
+  return out;
 }
 
 const OFFER_STAGE_RE = /offer/i;
@@ -147,17 +173,23 @@ export function currentStageOfferEvidence(
   // Deliberately as loose as LeadRow really is: fub_person_id is nullable there,
   // and a lead with no person id simply can't be matched to a recorded offer.
   leads: Array<{ fub_person_id?: number | null; stage?: string | null }>,
-  recordedOffers: Set<number>,
+  recordedOffers: Map<number, 'offer' | 'contract'>,
 ): DisplayedOfferEvidence {
-  const out: DisplayedOfferEvidence = { visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 0 };
+  const out: DisplayedOfferEvidence = {
+    visibleAtOfferStage: 0, assumedFromAdvance: 0, knownButNotCounted: 0, fellBackFromContract: 0,
+  };
   for (const l of leads) {
     const stage = l.stage ?? '';
     if (ADVANCED_RE.test(stage) && !DEAD_RE.test(stage)) {
       out.assumedFromAdvance++;
     } else if (OFFER_STAGE_RE.test(stage) && !DEAD_RE.test(stage)) {
       out.visibleAtOfferStage++;
-    } else if (l.fub_person_id != null && recordedOffers.has(l.fub_person_id)) {
-      out.knownButNotCounted++;
+    } else if (l.fub_person_id != null) {
+      const reached = recordedOffers.get(l.fub_person_id);
+      if (reached) {
+        out.knownButNotCounted++;
+        if (reached === 'contract') out.fellBackFromContract++;
+      }
     }
   }
   return out;
@@ -206,13 +238,20 @@ export function explainCurrentStageOffers(e: DisplayedOfferEvidence): OfferEvide
 
   if (e.knownButNotCounted > 0) {
     const n = e.knownButNotCounted;
+    const fell = e.fellBackFromContract;
+    const contractBit =
+      fell > 0
+        ? ` ${fell} of ${plural(n, 'them', 'those')} got as far as under contract or closed before falling back — ` +
+          `${plural(fell, 'that is a deal', 'those are deals')} that came apart, not just an offer that lost.`
+        : '';
     lines.push({
       count: n,
       plain:
         `${n} more ${plural(n, 'offer we recorded is', 'offers we recorded are')} not counted here at all. ` +
-        `${plural(n, 'That lead', 'Those leads')} made an offer and has since moved back to an earlier stage, ` +
-        `and this rate only looks at where a lead sits today. ${plural(n, 'It is', 'They are')} real ` +
-        `${plural(n, 'attempt', 'attempts')} missing from the number.`,
+        `${plural(n, 'That lead', 'Those leads')} reached the offer stage or beyond and ${plural(n, 'has', 'have')} ` +
+        `since moved back to an earlier stage, and this rate only looks at where a lead sits today.` +
+        contractBit +
+        ` ${plural(n, 'It is a real attempt', 'They are real attempts')} missing from the number.`,
     });
   }
 
