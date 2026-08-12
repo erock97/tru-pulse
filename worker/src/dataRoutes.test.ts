@@ -361,3 +361,53 @@ describe('Coach write endpoints', () => {
     expect(res.status).toBe(403);
   });
 });
+
+// ── Rep ─────────────────────────────────────────────────────────────────────
+describe('Rep endpoints', () => {
+  const rep = (path: string, sid: string) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        headers: { Origin: APP, Cookie: `${COOKIE_NAME}=${sid}` },
+      }), env, ctx,
+    );
+
+  it('both endpoints require a session', async () => {
+    for (const p of ['/data/rep/board', '/data/rep/course?agentId=aaaaaaaa-1111-4111-8111-111111111111']) {
+      const res = await worker.fetch(
+        new Request(`https://api.truhq.co${p}`, { headers: { Origin: APP } }), env, ctx,
+      );
+      expect(res.status).toBe(401);
+    }
+  });
+
+  it('never sends the service-role key', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    await rep('/data/rep/board', sid);
+    expect(sentAuthHeaders.length).toBeGreaterThan(0);
+    for (const h of sentAuthHeaders) expect(h).not.toContain(SERVICE_ROLE);
+  });
+
+  it('board returns the shape the leader view expects', async () => {
+    const res = await rep('/data/rep/board', await signIn('acme@test.com'));
+    const body = await res.json() as any;
+    for (const k of ['modules', 'questions', 'progress', 'agents', 'practice']) {
+      expect(body).toHaveProperty(k);
+    }
+  });
+
+  it('course validates the agent id', async () => {
+    const sid = await signIn('acme@test.com');
+    expect((await rep('/data/rep/course?agentId=nope', sid)).status).toBe(422);
+  });
+
+  it('course reads questions from the masked view, so answers never ship', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    const res = await rep('/data/rep/course?agentId=aaaaaaaa-1111-4111-8111-111111111111', sid);
+    expect(res.status).toBe(200);
+    const text = JSON.stringify(await res.json());
+    expect(text).not.toContain('"answer"');
+    expect(text).not.toContain(SERVICE_ROLE);
+  });
+});

@@ -104,6 +104,35 @@ export async function handleDataRoutes(
   }
 
 
+  // ── Rep: the leader's certification board (loadRep). ──
+  if (url.pathname === '/data/rep/board' && req.method === 'GET') {
+    const [modules, questions, progress, agents, practice] = await Promise.all([
+      // `active` is the runtime switch, `status` the authoring lifecycle — both must
+      // read live, same belt-and-suspenders filter the browser used.
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_questions_public', 'select=module_id'),
+      db.select('rep_progress', 'select=agent_id,module_id,status,score,passed_at,signed_off_at'),
+      db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
+      db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
+    ]);
+    return json({ modules, questions, progress, agents, practice }, 200, cors);
+  }
+
+  // ── Rep: one agent's own course view (loadCourse). ──
+  // Questions come from rep_questions_public, which exposes prompt and choices but
+  // NOT the answer — that stays server-side so the course can't be read for answers.
+  if (url.pathname === '/data/rep/course' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const [modules, questions, progress, practice] = await Promise.all([
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_questions_public', 'select=id,module_id,idx,prompt,choices&order=idx.asc'),
+      db.select('rep_progress', `select=module_id,status,score,passed_at,signed_off_at&agent_id=eq.${agentId}`),
+      db.select('rep_practice', `select=scenario,status,score,passed,created_at&agent_id=eq.${agentId}&order=created_at.desc`),
+    ]);
+    return json({ modules, questions, progress, practice }, 200, cors);
+  }
+
   // ── Coach writes ──────────────────────────────────────────────────────────
   // Mutations run under the caller's own token, so Postgres applies WITH CHECK and
   // refuses a write into another tenant's row exactly as it refuses to read one. A
