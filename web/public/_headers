@@ -1,0 +1,32 @@
+# Cloudflare Pages response headers.
+#
+# The Content-Security-Policy is the belt to React's braces. React already escapes
+# everything and the app contains no dangerouslySetInnerHTML / innerHTML / eval, so
+# there is no known way to inject a script today. This makes that failure mode
+# survivable rather than fatal: even if a script did get in, it could not load from
+# another host, and could not send anything to one either. That matters because the
+# login token currently lives in browser storage — a stolen token is the exact attack
+# the cookie migration is aimed at, and this blocks the exfiltration half of it now.
+#
+# Every allowance below is here because something real needs it. Verified by loading
+# every screen and reading the console; a policy that breaks a page is worse than none.
+/*
+  # ── The things a compromised script would want, denied ──
+  # No plugins, no framing us (clickjacking), no rewriting where relative URLs point,
+  # no posting a form off-site.
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+
+  # script-src: our own bundle, plus Cloudflare's analytics beacon which Cloudflare
+  #   injects automatically — blocking it silently kills Web Analytics.
+  # connect-src: our API, Supabase (REST; no websockets in this app), and the beacon's
+  #   reporting endpoint.
+  # img-src / media-src: data: and blob: for generated avatars and inline assets;
+  #   Supabase for signed Storage URLs behind Rep lesson media.
+  # font-src: data: because the brand fonts are embedded as base64 in the CSS.
+  # frame-src + object-src: the Rep course iframes Loom videos, and renders PDFs via
+  #   <object> from signed Supabase URLs — 'none' here would break the document viewer.
+  # frame-ancestors: nobody may embed us.
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://api.truhq.co https://*.supabase.co https://cloudflareinsights.com; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; font-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-src 'self' https://www.loom.com https://*.supabase.co; object-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

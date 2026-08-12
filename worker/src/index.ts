@@ -6,27 +6,80 @@ import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
+import { handleAuthRoutes } from './authRoutes.js';
+import { handleDataRoutes } from './dataRoutes.js';
+import { handlePublicRoutes } from './publicRoutes.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
-import { importEncKey, decryptKey, encryptKey } from './crypto.js';
+import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, secretsMatch } from './crypto.js';
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
 
-// CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
-const CORS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token',
-  'Access-Control-Max-Age': '86400',
-};
-function json(obj: unknown, status = 200): Response {
-  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
+// CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
+// the app and the Worker live at different addresses.
+//
+// This used to answer `Access-Control-Allow-Origin: *` — every website on the
+// internet. Nothing was exploitable, because our login proof is a token in storage
+// only app.truhq.co can read, attached deliberately by our own code; a random site
+// has nothing to attach. The reason to narrow it anyway is what happens LATER: if
+// this app ever moves to cookie-based auth, the browser starts sending credentials
+// automatically, and "any origin" turns into "any website can act as your logged-in
+// leader" on the day of an unrelated, sensible change.
+//
+// Honest scope: this is a BROWSER protection. It stops cross-site use from a page in
+// someone's browser. It does not stop curl or a server-side proxy — nothing about
+// CORS can. Authentication is what stops those, and it already does.
+const ALLOWED_ORIGINS = new Set([
+  'https://app.truhq.co',
+  'https://truhq.co',
+  'https://www.truhq.co',
+]);
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^http:\/\/localhost(:\d+)?$/,          // local dev (vite)
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https:\/\/[a-z0-9-]+\.tru-pulse-app\.pages\.dev$/, // Pages preview deploys — a new
+  /^https:\/\/[a-z0-9-]+\.tru-landing\.pages\.dev$/,   // random subdomain every deploy, so
+                                                       // matched by shape, not by name
+];
+function originAllowed(origin: string): boolean {
+  return ALLOWED_ORIGINS.has(origin) || ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
 }
+/** Per-request CORS. Echoes the caller's origin only when it's on the list; an
+ *  unknown origin gets no header at all, which is what makes the browser refuse. */
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const base: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-slot-token',
+    'Access-Control-Max-Age': '86400',
+    // Responses differ by origin, so caches must key on it or they'd serve one
+    // tenant's allow-header to another origin.
+    Vary: 'Origin',
+  };
+  if (origin && originAllowed(origin)) base['Access-Control-Allow-Origin'] = origin;
+  return base;
+}
+function jsonWithCors(obj: unknown, status = 200, cors: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(obj), {
+    status, headers: { 'Content-Type': 'application/json', ...cors },
+  });
+}
+/** Compare two secrets in time that doesn't depend on where they first differ, so
+ *  the response latency can't be used to guess a token character by character. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function isAdmin(req: Request, env: Env): boolean {
-  return req.headers.get('x-admin-token') === env.ADMIN_TOKEN;
+  // Also fail closed: an unset ADMIN_TOKEN must never make every ops route public.
+  if (!env.ADMIN_TOKEN) return false;
+  return timingSafeEqual(req.headers.get('x-admin-token') ?? '', env.ADMIN_TOKEN);
 }
 
 // TRU Rep authoring — caller must be a leader OR admin of the target org.
@@ -92,7 +145,8 @@ async function connectTeamKey(
   await database.upsert('team_secrets', [{ team_id: team.id, org_id: team.org_id, fub_key_enc: enc }], 'team_id');
   if (subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: subdomain });
   if (env.FUB_SYSTEM_KEY) {
-    const cb = `${origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+    const cb = `${origin}/webhook/fub?team=${team.id}`
+      + (env.WEBHOOK_SECRET ? `&key=${await teamWebhookToken(env.WEBHOOK_SECRET, team.id)}` : '');
     try {
       await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME);
     } catch (e) {
@@ -111,7 +165,30 @@ export default {
     const url = new URL(req.url);
     const database = db(env);
 
-    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    // Shadow the module-level helper with a per-request one so every existing
+    // json(...) call below answers with this caller's CORS headers, untouched.
+    const cors = corsHeaders(req);
+    const json = (obj: unknown, status = 200) => jsonWithCors(obj, status, cors);
+
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+
+    // Cookie-based auth (Phase 3). Purely additive — the browser-side Supabase auth
+    // keeps working until the web app is switched over with VITE_AUTH_MODE.
+    const authResponse = await handleAuthRoutes(req, env, url, { originAllowed, cors });
+    if (authResponse) return authResponse;
+
+    // Data the browser used to read straight from Supabase — served here AS THE USER,
+    // so row-level security still decides what they can see. Additive: the browser
+    // keeps its direct path until VITE_AUTH_MODE flips.
+    // The no-login agent path (assessment / check-in links). Allowlisted, token-gated
+    // and rate limited — it is the only unauthenticated write surface in the system.
+    const publicResponse = await handlePublicRoutes(req, env, url, cors);
+    if (publicResponse) return publicResponse;
+
+    const dataResponse = await handleDataRoutes(
+      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
+    );
+    if (dataResponse) return dataResponse;
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.
@@ -337,9 +414,44 @@ export default {
     if (url.pathname === '/webhook/fub' && req.method === 'POST') {
       const teamId = url.searchParams.get('team');
       if (!teamId) return json({ error: 'team required' }, 400);
-      if (env.WEBHOOK_SECRET && url.searchParams.get('key') !== env.WEBHOOK_SECRET) {
-        return json({ error: 'forbidden' }, 403);
+      // FAIL CLOSED. This used to read `if (env.WEBHOOK_SECRET && key !== secret)`,
+      // which meant that if the secret were ever missing from the Worker's env, the
+      // check was skipped entirely and ANY caller could trigger a full team sync.
+      // An unset secret is a misconfiguration, not permission to skip the door.
+      if (!env.WEBHOOK_SECRET) {
+        console.error('webhook/fub refused: WEBHOOK_SECRET is not configured');
+        return json({ error: 'not configured' }, 503);
       }
+      // Door 1 — the per-team URL token. The legacy fallback that also accepted the
+      // raw shared WEBHOOK_SECRET is GONE (all four teams re-registered onto their
+      // own tokens 2026-08-11, confirmed by auth=team-token on live traffic). That
+      // shared value was readable by every customer in their own FUB settings, so
+      // accepting it at all defeated the point of deriving per-team tokens.
+      const presented = url.searchParams.get('key') ?? '';
+      const expectedTeamToken = await teamWebhookToken(env.WEBHOOK_SECRET, teamId);
+      if (!secretsMatch(presented, expectedTeamToken)) return json({ error: 'forbidden' }, 403);
+
+      // Door 2 — FUB's own signature over the body, keyed with OUR system key, which
+      // no customer can see. Read the body as TEXT first: the signature is computed
+      // over the exact bytes, so parsing and re-serialising would change them.
+      const rawBody = await req.text();
+      let sigState = 'skipped(no FUB_SYSTEM_KEY)';
+      if (env.FUB_SYSTEM_KEY) {
+        const header = req.headers.get('FUB-Signature') ?? '';
+        const expected = await fubSignature(env.FUB_SYSTEM_KEY, rawBody);
+        sigState = !header ? 'absent' : secretsMatch(header, expected) ? 'valid' : 'MISMATCH';
+      }
+      // LOG-ONLY for now, deliberately. Enforcing a signature we haven't yet seen
+      // FUB produce would silently kill live sync for every team; the log tells us
+      // whether the algorithm matches real traffic before we make it mandatory.
+      // Flip WEBHOOK_REQUIRE_SIGNATURE=1 to enforce once the log reads 'valid'.
+      if (env.WEBHOOK_REQUIRE_SIGNATURE === '1' && sigState !== 'valid') {
+        console.error(`webhook/fub team=${teamId} REJECTED signature=${sigState}`);
+        return json({ error: 'bad signature' }, 403);
+      }
+      console.log(
+        `webhook/fub team=${teamId} auth=team-token signature=${sigState}`,
+      );
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
       const team = rows[0] as TeamRow;
@@ -350,7 +462,7 @@ export default {
       // resourceIds aren't person ids) or a missing/empty/oversized id list — falls
       // back to the existing full team re-sync. The 30-min cron does a full sync for
       // every team regardless, so capture never depends on a single webhook landing.
-      const body = (await req.json().catch(() => null)) as { event?: string; resourceIds?: unknown } | null;
+      const body = (() => { try { return JSON.parse(rawBody) as { event?: string; resourceIds?: unknown }; } catch { return null; } })();
       const event = String(body?.event ?? '');
       const resourceIds = Array.isArray(body?.resourceIds) ? (body!.resourceIds as unknown[]) : null;
       // FUB disables a webhook that doesn't respond quickly, and on large teams the
@@ -386,7 +498,8 @@ export default {
       if (!secret.length) return json({ error: 'no FUB key for team' }, 404);
       try {
         const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
-        const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+        const cb = `${url.origin}/webhook/fub?team=${teamId}`
+          + (env.WEBHOOK_SECRET ? `&key=${await teamWebhookToken(env.WEBHOOK_SECRET, teamId)}` : '');
         return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME) });
       } catch (e) {
         return json({ error: String(e) }, 500);

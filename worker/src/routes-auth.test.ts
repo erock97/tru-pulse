@@ -275,3 +275,109 @@ describe('POST /rep/practice — call ownership', () => {
     expect((await post('/rep/practice/finish', { practiceId: 'test:relocator:x' })).status).toBe(401);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// Secrets must FAIL CLOSED. The webhook check used to be
+// `if (env.WEBHOOK_SECRET && key !== secret)`, so a missing secret skipped the
+// door entirely and any caller could trigger a full team sync. Same shape of bug
+// was possible on the ops token. These lock both shut.
+describe('unconfigured secrets fail closed', () => {
+  const post = (path: string, headers: Record<string, string> = {}) =>
+    worker.fetch(
+      new Request(`https://worker.test${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ event: 'peopleUpdated', resourceIds: [1] }),
+      }),
+      { ...env, WEBHOOK_SECRET: undefined, ADMIN_TOKEN: '' } as Env,
+      ctx,
+    );
+
+  it('refuses the FUB webhook when WEBHOOK_SECRET is not set', async () => {
+    const res = await post('/webhook/fub?team=t1');
+    expect(res.status).toBe(503);
+    expect(ctx.waitUntil).not.toHaveBeenCalled(); // no sync was scheduled
+  });
+
+  it('refuses the FUB webhook when the key is wrong', async () => {
+    const res = await worker.fetch(
+      new Request('https://worker.test/webhook/fub?team=t1&key=guess', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'peopleUpdated', resourceIds: [1] }),
+      }),
+      { ...env, WEBHOOK_SECRET: 'the-real-secret' } as Env,
+      ctx,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('does not treat an empty ADMIN_TOKEN as a valid ops token', async () => {
+    // An attacker sending no token must not match an unset secret.
+    const res = await post('/webhook/register?teamId=t1', { 'x-admin-token': '' });
+    expect([401, 403, 503]).toContain(res.status);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Which websites the Worker will answer. This replaced `Allow-Origin: *`.
+// The lookalike cases matter most: an anchoring mistake in one of the preview-URL
+// patterns would quietly re-open it to attacker-controlled domains.
+describe('CORS origin allowlist', () => {
+  const preflight = (origin?: string) =>
+    worker.fetch(
+      new Request('https://worker.test/health', {
+        method: 'OPTIONS',
+        ...(origin ? { headers: { Origin: origin } } : {}),
+      }),
+      env,
+      ctx,
+    );
+  const allowFor = async (origin?: string) =>
+    (await preflight(origin)).headers.get('Access-Control-Allow-Origin');
+
+  it('answers the real app and marketing site', async () => {
+    expect(await allowFor('https://app.truhq.co')).toBe('https://app.truhq.co');
+    expect(await allowFor('https://truhq.co')).toBe('https://truhq.co');
+    expect(await allowFor('https://www.truhq.co')).toBe('https://www.truhq.co');
+  });
+
+  it('answers local development', async () => {
+    expect(await allowFor('http://localhost:5173')).toBe('http://localhost:5173');
+    expect(await allowFor('http://127.0.0.1:4173')).toBe('http://127.0.0.1:4173');
+  });
+
+  it('answers Cloudflare preview deploys, whose subdomain changes every time', async () => {
+    expect(await allowFor('https://3f04a85b.tru-pulse-app.pages.dev'))
+      .toBe('https://3f04a85b.tru-pulse-app.pages.dev');
+  });
+
+  it('does NOT answer an unknown website', async () => {
+    expect(await allowFor('https://example.com')).toBeNull();
+    expect(await allowFor('https://evil.io')).toBeNull();
+  });
+
+  it('does NOT answer lookalike domains', async () => {
+    // Suffix tricks: our domain appearing as a prefix of somebody else's.
+    expect(await allowFor('https://app.truhq.co.evil.com')).toBeNull();
+    expect(await allowFor('https://truhq.co.attacker.net')).toBeNull();
+    // Prefix tricks: our name embedded without the real boundary.
+    expect(await allowFor('https://nottruhq.co')).toBeNull();
+    expect(await allowFor('https://evil-tru-pulse-app.pages.dev')).toBeNull();
+    // A preview-looking host on somebody else's suffix.
+    expect(await allowFor('https://abc.tru-pulse-app.pages.dev.evil.com')).toBeNull();
+    // Plain http on a real host — must not be waved through.
+    expect(await allowFor('http://app.truhq.co')).toBeNull();
+  });
+
+  it('still serves requests that carry no Origin at all (curl, FUB webhooks)', async () => {
+    // CORS is a browser mechanism; a non-browser caller has no Origin and must not
+    // be broken by this. Authentication is what guards those paths.
+    const res = await worker.fetch(new Request('https://worker.test/health'), env, ctx);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true });
+  });
+
+  it('tells caches that the answer depends on the origin', async () => {
+    expect((await preflight('https://app.truhq.co')).headers.get('Vary')).toBe('Origin');
+  });
+});
