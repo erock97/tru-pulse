@@ -7,6 +7,7 @@ import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
+import { handleDataRoutes } from './dataRoutes.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -174,6 +175,12 @@ export default {
     // keeps working until the web app is switched over with VITE_AUTH_MODE.
     const authResponse = await handleAuthRoutes(req, env, url, { originAllowed, cors });
     if (authResponse) return authResponse;
+
+    // Data the browser used to read straight from Supabase — served here AS THE USER,
+    // so row-level security still decides what they can see. Additive: the browser
+    // keeps its direct path until VITE_AUTH_MODE flips.
+    const dataResponse = await handleDataRoutes(req, env, url, cors);
+    if (dataResponse) return dataResponse;
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.

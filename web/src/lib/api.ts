@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { isCookieAuth } from './authClient';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -895,6 +896,24 @@ async function allStageLog(): Promise<StageLogRow[]> {
 
 export async function loadDashboard(): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
+  // Cookie mode: one call to the Worker, which reads Supabase AS THIS USER so the same
+  // row-level policies apply. Also collapses eight cross-origin round trips into one,
+  // which a phone on a bad connection notices. Token mode keeps the direct path below
+  // untouched until the cutover.
+  if (isCookieAuth) {
+    const res = await fetch(WORKER_URL + '/data/dashboard', { credentials: 'include' });
+    if (!res.ok) throw new Error('Could not load your dashboard.');
+    const d = (await res.json()) as DashboardData;
+    return {
+      teams: d.teams ?? [],
+      settings: d.settings ?? null,
+      leads: d.leads ?? [],
+      cases: d.cases ?? [],
+      agents: d.agents ?? [],
+      deals: d.deals ?? [],
+      stageLog: d.stageLog ?? [],
+    };
+  }
   const sinceIso = new Date(Date.now() - 30 * 86400_000).toISOString();
   const [teams, settings, leads, cases, agents, deals, stageLog] = await Promise.all([
     supabase.from('teams').select('id,name,fub_subdomain'),
