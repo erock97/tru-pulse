@@ -357,13 +357,14 @@ export default {
         console.error('webhook/fub refused: WEBHOOK_SECRET is not configured');
         return json({ error: 'not configured' }, 503);
       }
-      // Door 1 — the URL token. Accept the per-team derived token, and (until every
-      // team has been re-registered onto its own URL) the legacy shared secret too.
+      // Door 1 — the per-team URL token. The legacy fallback that also accepted the
+      // raw shared WEBHOOK_SECRET is GONE (all four teams re-registered onto their
+      // own tokens 2026-08-11, confirmed by auth=team-token on live traffic). That
+      // shared value was readable by every customer in their own FUB settings, so
+      // accepting it at all defeated the point of deriving per-team tokens.
       const presented = url.searchParams.get('key') ?? '';
       const expectedTeamToken = await teamWebhookToken(env.WEBHOOK_SECRET, teamId);
-      const viaTeamToken = secretsMatch(presented, expectedTeamToken);
-      const viaLegacyShared = secretsMatch(presented, env.WEBHOOK_SECRET);
-      if (!viaTeamToken && !viaLegacyShared) return json({ error: 'forbidden' }, 403);
+      if (!secretsMatch(presented, expectedTeamToken)) return json({ error: 'forbidden' }, 403);
 
       // Door 2 — FUB's own signature over the body, keyed with OUR system key, which
       // no customer can see. Read the body as TEXT first: the signature is computed
@@ -384,7 +385,7 @@ export default {
         return json({ error: 'bad signature' }, 403);
       }
       console.log(
-        `webhook/fub team=${teamId} auth=${viaTeamToken ? 'team-token' : 'legacy-shared'} signature=${sigState}`,
+        `webhook/fub team=${teamId} auth=team-token signature=${sigState}`,
       );
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
