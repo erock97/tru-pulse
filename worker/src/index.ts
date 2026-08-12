@@ -10,7 +10,7 @@ import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
 import { sendWeeklyBriefs } from './brief.js';
-import { importEncKey, decryptKey, encryptKey } from './crypto.js';
+import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, secretsMatch } from './crypto.js';
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
@@ -103,7 +103,8 @@ async function connectTeamKey(
   await database.upsert('team_secrets', [{ team_id: team.id, org_id: team.org_id, fub_key_enc: enc }], 'team_id');
   if (subdomain) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: subdomain });
   if (env.FUB_SYSTEM_KEY) {
-    const cb = `${origin}/webhook/fub?team=${team.id}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+    const cb = `${origin}/webhook/fub?team=${team.id}`
+      + (env.WEBHOOK_SECRET ? `&key=${await teamWebhookToken(env.WEBHOOK_SECRET, team.id)}` : '');
     try {
       await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME);
     } catch (e) {
@@ -356,9 +357,35 @@ export default {
         console.error('webhook/fub refused: WEBHOOK_SECRET is not configured');
         return json({ error: 'not configured' }, 503);
       }
-      if (!timingSafeEqual(url.searchParams.get('key') ?? '', env.WEBHOOK_SECRET)) {
-        return json({ error: 'forbidden' }, 403);
+      // Door 1 — the URL token. Accept the per-team derived token, and (until every
+      // team has been re-registered onto its own URL) the legacy shared secret too.
+      const presented = url.searchParams.get('key') ?? '';
+      const expectedTeamToken = await teamWebhookToken(env.WEBHOOK_SECRET, teamId);
+      const viaTeamToken = secretsMatch(presented, expectedTeamToken);
+      const viaLegacyShared = secretsMatch(presented, env.WEBHOOK_SECRET);
+      if (!viaTeamToken && !viaLegacyShared) return json({ error: 'forbidden' }, 403);
+
+      // Door 2 — FUB's own signature over the body, keyed with OUR system key, which
+      // no customer can see. Read the body as TEXT first: the signature is computed
+      // over the exact bytes, so parsing and re-serialising would change them.
+      const rawBody = await req.text();
+      let sigState = 'skipped(no FUB_SYSTEM_KEY)';
+      if (env.FUB_SYSTEM_KEY) {
+        const header = req.headers.get('FUB-Signature') ?? '';
+        const expected = await fubSignature(env.FUB_SYSTEM_KEY, rawBody);
+        sigState = !header ? 'absent' : secretsMatch(header, expected) ? 'valid' : 'MISMATCH';
       }
+      // LOG-ONLY for now, deliberately. Enforcing a signature we haven't yet seen
+      // FUB produce would silently kill live sync for every team; the log tells us
+      // whether the algorithm matches real traffic before we make it mandatory.
+      // Flip WEBHOOK_REQUIRE_SIGNATURE=1 to enforce once the log reads 'valid'.
+      if (env.WEBHOOK_REQUIRE_SIGNATURE === '1' && sigState !== 'valid') {
+        console.error(`webhook/fub team=${teamId} REJECTED signature=${sigState}`);
+        return json({ error: 'bad signature' }, 403);
+      }
+      console.log(
+        `webhook/fub team=${teamId} auth=${viaTeamToken ? 'team-token' : 'legacy-shared'} signature=${sigState}`,
+      );
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);
       if (!rows.length) return json({ error: 'team not found' }, 404);
       const team = rows[0] as TeamRow;
@@ -369,7 +396,7 @@ export default {
       // resourceIds aren't person ids) or a missing/empty/oversized id list — falls
       // back to the existing full team re-sync. The 30-min cron does a full sync for
       // every team regardless, so capture never depends on a single webhook landing.
-      const body = (await req.json().catch(() => null)) as { event?: string; resourceIds?: unknown } | null;
+      const body = (() => { try { return JSON.parse(rawBody) as { event?: string; resourceIds?: unknown }; } catch { return null; } })();
       const event = String(body?.event ?? '');
       const resourceIds = Array.isArray(body?.resourceIds) ? (body!.resourceIds as unknown[]) : null;
       // FUB disables a webhook that doesn't respond quickly, and on large teams the
@@ -405,7 +432,8 @@ export default {
       if (!secret.length) return json({ error: 'no FUB key for team' }, 404);
       try {
         const fubKey = await decryptKey(await importEncKey(env.FUB_ENC_KEY), secret[0].fub_key_enc);
-        const cb = `${url.origin}/webhook/fub?team=${teamId}` + (env.WEBHOOK_SECRET ? `&key=${env.WEBHOOK_SECRET}` : '');
+        const cb = `${url.origin}/webhook/fub?team=${teamId}`
+          + (env.WEBHOOK_SECRET ? `&key=${await teamWebhookToken(env.WEBHOOK_SECRET, teamId)}` : '');
         return json({ team: teamId, callback: cb, results: await registerWebhooks(fubKey, cb, env.FUB_SYSTEM_KEY, env.FUB_SYSTEM_NAME) });
       } catch (e) {
         return json({ error: String(e) }, 500);

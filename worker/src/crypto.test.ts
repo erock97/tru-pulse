@@ -49,3 +49,71 @@ describe('FUB key encryption', () => {
     await expect(decryptKey(other, ct)).rejects.toBeDefined();
   });
 });
+
+// ── FUB webhook signature + per-team callback token ─────────────────────────
+import { fubSignature, teamWebhookToken, secretsMatch } from './crypto.js';
+
+describe('fubSignature', () => {
+  // KNOWN-ANSWER TEST. FUB's published PHP sample is:
+  //   hash_hmac('sha256', base64_encode($body), X_SYSTEM_KEY)
+  // The vector below was produced independently with Node's crypto module, NOT with
+  // the implementation under test, so this pins our WebCrypto version to FUB's real
+  // algorithm. If someone "tidies" fubSignature and breaks it, this fails here
+  // rather than silently rejecting every live webhook in production.
+  const KEY = 'sys-key-123';
+  const BODY = '{"event":"peopleUpdated","resourceIds":[7,8]}';
+  const EXPECTED = '5733435b3a5f7c1ec0e7e4e1f2f8a894e6d8cbfc74034dc9f9d81a27025a63dc';
+
+  it('matches the documented algorithm: hex hmac over the BASE64 of the body', async () => {
+    expect(await fubSignature(KEY, BODY)).toBe(EXPECTED);
+  });
+
+  it('is hex and 64 chars (sha256)', async () => {
+    expect(await fubSignature('k', '{}')).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('changes if a single byte of the body changes', async () => {
+    expect(await fubSignature('k', '{"resourceIds":[1]}'))
+      .not.toBe(await fubSignature('k', '{"resourceIds":[2]}'));
+  });
+
+  it('changes with the system key — a customer cannot forge it without ours', async () => {
+    const body = '{"event":"peopleUpdated"}';
+    expect(await fubSignature('ours', body)).not.toBe(await fubSignature('theirs', body));
+  });
+
+  it('handles non-ascii in the body without throwing', async () => {
+    await expect(fubSignature('k', '{"name":"Renée Ortíz — 東京"}')).resolves.toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe('teamWebhookToken', () => {
+  it('gives each team a DIFFERENT token from the same master secret', async () => {
+    const a = await teamWebhookToken('master', 'team-aaa');
+    const b = await teamWebhookToken('master', 'team-bbb');
+    expect(a).not.toBe(b);
+  });
+
+  it('is stable for the same team, so re-registering yields the same URL', async () => {
+    expect(await teamWebhookToken('master', 't1')).toBe(await teamWebhookToken('master', 't1'));
+  });
+
+  it('never equals the master secret — reading your own URL must not reveal it', async () => {
+    const t = await teamWebhookToken('the-master-secret', 't1');
+    expect(t).not.toBe('the-master-secret');
+    expect(t).not.toContain('the-master-secret');
+  });
+
+  it('rotates every team when the master secret changes', async () => {
+    expect(await teamWebhookToken('old', 't1')).not.toBe(await teamWebhookToken('new', 't1'));
+  });
+});
+
+describe('secretsMatch', () => {
+  it('is true only for identical strings', () => {
+    expect(secretsMatch('abc', 'abc')).toBe(true);
+    expect(secretsMatch('abc', 'abd')).toBe(false);
+    expect(secretsMatch('abc', 'ab')).toBe(false);
+    expect(secretsMatch('', '')).toBe(true);
+  });
+});
