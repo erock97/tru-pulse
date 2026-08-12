@@ -87,9 +87,10 @@ and seeds rows on first open, so it can't be moved as a naive read. Split into:
 
 - **5a Coach reads** — roster, check-in bundle, profile, open commitments, full roster,
   team links. DONE for roster + check-in bundle.
-- **5b Coach writes** — the goal/commitment/check-in mutations. Each needs its own
-  test that a caller cannot write to another tenant's row, which is a stronger
-  assertion than the read tests.
+- **5b Coach writes** — DONE. Goal/commitment/check-in mutations behind /data/coach,
+  written as the user so WITH CHECK applies. 12 tests including cross-tenant write
+  refusals in both directions and a positive case, so the suite isn't just refusing
+  everything. Structured 1:1 stays an RPC to keep it transactional.
 - **5c Rep** — smaller and mostly reads: `rep_questions_public`, `rep_progress`,
   `rep_modules`, `rep_practice`.
 

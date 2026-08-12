@@ -28,6 +28,7 @@ export async function handleDataRoutes(
   env: Env,
   url: URL,
   cors: Record<string, string>,
+  originOk = true,
 ): Promise<Response | null> {
   if (!url.pathname.startsWith('/data/')) return null;
 
@@ -100,6 +101,85 @@ export async function handleDataRoutes(
       db.select('checkin_leader', `select=*&checkin_id=in.(${ids})`),
     ]);
     return json({ checkins, items, leader }, 200, cors);
+  }
+
+
+  // ── Coach writes ──────────────────────────────────────────────────────────
+  // Mutations run under the caller's own token, so Postgres applies WITH CHECK and
+  // refuses a write into another tenant's row exactly as it refuses to read one. A
+  // refusal is answered 403 — a permission decision, not a server fault — and the
+  // route never falls back to the service role to "make it work".
+  //
+  // Every mutating route also needs a recognised browser Origin (checked in index.ts's
+  // caller for /auth; repeated here because /data mutations are equally cookie-driven).
+  if (req.method === 'POST' && url.pathname.startsWith('/data/coach/')) {
+    if (!originOk) return json({ error: 'origin not allowed' }, 403, cors);
+    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!body) return json({ error: 'invalid body' }, 422, cors);
+
+    // Goal fields for one agent.
+    if (url.pathname === '/data/coach/goal') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const rows = await db.update('goals', `agent_id=eq.${agentId}`, body.fields ?? {});
+      if (!rows) return json({ error: 'not allowed' }, 403, cors);
+      return json({ goal: rows[0] ?? null }, 200, cors);
+    }
+
+    // Add / update / toggle / delete a commitment.
+    if (url.pathname === '/data/coach/commitment') {
+      const action = String(body.action ?? '');
+      if (action === 'add') {
+        const agentId = String(body.agentId ?? '');
+        if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+        const rows = await db.insert('commitments', body.row ?? {});
+        if (!rows) return json({ error: 'not allowed' }, 403, cors);
+        return json({ commitment: rows[0] ?? null }, 200, cors);
+      }
+      const id = String(body.id ?? '');
+      if (!UUID_RE.test(id)) return json({ error: 'invalid id' }, 422, cors);
+      if (action === 'update' || action === 'toggle') {
+        const rows = await db.update('commitments', `id=eq.${id}`, body.fields ?? {});
+        if (!rows) return json({ error: 'not allowed' }, 403, cors);
+        return json({ commitment: rows[0] ?? null }, 200, cors);
+      }
+      if (action === 'delete') {
+        const ok = await db.remove('commitments', `id=eq.${id}`);
+        return ok ? json({ ok: true }, 200, cors) : json({ error: 'not allowed' }, 403, cors);
+      }
+      return json({ error: 'unknown action' }, 422, cors);
+    }
+
+    // Log a structured 1:1. Stays an RPC because it writes the check-in plus its items
+    // and leader note in one transaction — splitting it here could leave a half-saved
+    // 1:1, which is worse than the round trip it would save.
+    if (url.pathname === '/data/coach/checkin') {
+      const { ok, data } = await db.rpc('log_structured_checkin', body.args ?? {});
+      if (!ok) return json({ error: 'not allowed' }, 403, cors);
+      return json({ result: data }, 200, cors);
+    }
+
+    // Pause / coaching toggles. Both database functions already check the caller's org
+    // role themselves (has_org_role / is_org_member) and raise if it fails, so a
+    // refusal surfaces as ok:false rather than a silent no-op.
+    if (url.pathname === '/data/coach/agent-flags') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      if (body.pause !== undefined) {
+        const { ok } = await db.rpc('set_agent_pause', {
+          p_agent_id: agentId, p_is_paused: !!body.pause,
+          p_reason: body.reason ?? null, p_note: body.note ?? null,
+        });
+        if (!ok) return json({ error: 'not allowed' }, 403, cors);
+      }
+      if (body.coaching !== undefined) {
+        const { ok } = await db.rpc('set_coaching', { p_agent_id: agentId, p_on: !!body.coaching });
+        if (!ok) return json({ error: 'not allowed' }, 403, cors);
+      }
+      return json({ ok: true }, 200, cors);
+    }
+
+    return json({ error: 'not found' }, 404, cors);
   }
 
   return json({ error: 'not found' }, 404, cors);

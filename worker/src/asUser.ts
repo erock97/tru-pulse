@@ -22,6 +22,13 @@ export interface UserClient {
   select<T = unknown>(table: string, query: string): Promise<T[]>;
   /** Page through a table until exhausted — PostgREST caps each response at 1000. */
   selectAll<T = unknown>(table: string, cols: string, order: string): Promise<T[]>;
+  /** Writes, also as the user — so RLS WITH CHECK decides what may be written.
+   *  Each returns null when the database refuses, which the caller turns into a 403
+   *  rather than pretending the write happened. */
+  insert<T = unknown>(table: string, rows: unknown): Promise<T[] | null>;
+  update<T = unknown>(table: string, query: string, patch: unknown): Promise<T[] | null>;
+  remove(table: string, query: string): Promise<boolean>;
+  rpc<T = unknown>(fn: string, args: unknown): Promise<{ ok: boolean; data: T | null }>;
 }
 
 const PAGE = 1000;
@@ -67,5 +74,49 @@ export async function supabaseAsUser(env: Env, sid: string | null): Promise<User
     return out;
   }
 
-  return { userId: sess.userId, select, selectAll };
+  // ── Writes ────────────────────────────────────────────────────────────────
+  // The user's token again, deliberately. RLS applies WITH CHECK to inserts and
+  // updates, so Postgres refuses a write into another tenant's row exactly as it
+  // refused to read one. Using the service role here would silently allow it.
+  //
+  // A refusal comes back as null / false rather than an exception, so a route can
+  // answer 403 instead of 500 — a permission decision is not a server fault.
+
+  async function insert<T = unknown>(table: string, rows: unknown): Promise<T[] | null> {
+    const res = await fetch(`${base}/${table}`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(rows),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T[];
+  }
+
+  async function update<T = unknown>(table: string, query: string, patch: unknown): Promise<T[] | null> {
+    const res = await fetch(`${base}/${table}?${query}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T[];
+  }
+
+  async function remove(table: string, query: string): Promise<boolean> {
+    const res = await fetch(`${base}/${table}?${query}`, { method: 'DELETE', headers });
+    return res.ok;
+  }
+
+  async function rpc<T = unknown>(fn: string, args: unknown): Promise<{ ok: boolean; data: T | null }> {
+    const res = await fetch(`${base}/rpc/${fn}`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) return { ok: false, data: null };
+    const text = await res.text();
+    return { ok: true, data: text ? (JSON.parse(text) as T) : null };
+  }
+
+  return { userId: sess.userId, select, selectAll, insert, update, remove, rpc };
 }

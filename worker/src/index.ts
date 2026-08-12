@@ -179,7 +179,9 @@ export default {
     // Data the browser used to read straight from Supabase — served here AS THE USER,
     // so row-level security still decides what they can see. Additive: the browser
     // keeps its direct path until VITE_AUTH_MODE flips.
-    const dataResponse = await handleDataRoutes(req, env, url, cors);
+    const dataResponse = await handleDataRoutes(
+      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
+    );
     if (dataResponse) return dataResponse;
     if (url.pathname === '/health') return json({ ok: true });
 

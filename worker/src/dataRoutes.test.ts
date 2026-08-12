@@ -33,6 +33,12 @@ function fakeKV() {
 /** Which org each user's token belongs to, i.e. what RLS would let them see. */
 const TOKEN_ORG: Record<string, string> = { 'at-acme': 'acme', 'at-globex': 'globex' };
 
+/** Which org owns each test agent — the fake resolves write targets through this. */
+const AGENT_ORG: Record<string, string> = {
+  'aaaaaaaa-1111-4111-8111-111111111111': 'acme',
+  'bbbbbbbb-2222-4222-8222-222222222222': 'globex',
+};
+
 const LEADS: Record<string, Array<{ team_id: string; name: string }>> = {
   acme: [{ team_id: 'acme-t1', name: 'Acme Lead' }],
   globex: [{ team_id: 'globex-t1', name: 'Globex Lead' }],
@@ -73,6 +79,24 @@ beforeEach(() => {
 
     if (u.pathname.startsWith('/rest/v1/')) {
       const table = u.pathname.slice('/rest/v1/'.length);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const callerOrg = TOKEN_ORG[auth.replace('Bearer ', '')];
+
+      // RLS stand-in for WRITES. Rows are named "<org>-..." so ownership is legible.
+      // A write is refused (403, as Postgres does) unless the caller's org owns the
+      // target — this is what proves the Worker isn't quietly using the service role.
+      if (method !== 'GET') {
+        const blob = url + String(init?.body ?? '');
+        const found = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.exec(blob)?.[0];
+        const targetOrg = found ? AGENT_ORG[found.toLowerCase()] : undefined;
+        if (!callerOrg || (targetOrg && targetOrg !== callerOrg)) {
+          return new Response(JSON.stringify({ message: 'new row violates row-level security policy' }), {
+            status: 403, headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        if (u.pathname.startsWith('/rest/v1/rpc/')) return ok({ checkinId: `${callerOrg}-ci` });
+        return ok([{ id: `${callerOrg}-row`, ok: true }]);
+      }
       // THIS is the RLS stand-in: what you see depends on your token, nothing else.
       const org = TOKEN_ORG[auth.replace('Bearer ', '')];
       if (!org) return ok([]); // unknown caller sees nothing, as a policy would decide
@@ -227,5 +251,113 @@ describe('Coach read endpoints', () => {
     const text = JSON.stringify(await (await coach('/data/coach/roster', sid)).json());
     expect(text).not.toContain('at-acme');
     expect(text).not.toContain(SERVICE_ROLE);
+  });
+});
+
+// ── Coach WRITES ────────────────────────────────────────────────────────────
+// The strongest assertion in this migration. A read bug shows someone the wrong
+// numbers; a write bug puts one team's commitment on another team's agent. The fake
+// Supabase above refuses a mutation whose target org differs from the caller's, the
+// way Postgres does via WITH CHECK — so if the Worker ever switched to the
+// service-role key, these tests fail rather than silently permitting it.
+describe('Coach write endpoints', () => {
+  const ACME_AGENT = 'aaaaaaaa-1111-4111-8111-111111111111';
+  const GLOBEX_AGENT = 'bbbbbbbb-2222-4222-8222-222222222222';
+
+  const write = (path: string, body: unknown, sid: string, origin: string | null = APP) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(origin ? { Origin: origin } : {}),
+          Cookie: `${COOKIE_NAME}=${sid}`,
+        },
+        body: JSON.stringify(body),
+      }),
+      env, ctx,
+    );
+
+  it('refuses a write with no session', async () => {
+    const res = await worker.fetch(
+      new Request('https://api.truhq.co/data/coach/goal', {
+        method: 'POST', headers: { Origin: APP, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: ACME_AGENT, fields: { quarter: 'Q3' } }),
+      }), env, ctx,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('refuses a write from an origin we do not recognise (CSRF on a mutation)', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/goal', { agentId: ACME_AGENT, fields: {} }, sid, 'https://evil.io');
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses a write with no Origin at all', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/goal', { agentId: ACME_AGENT, fields: {} }, sid, null);
+    expect(res.status).toBe(403);
+  });
+
+  it('lets a leader update a goal on their OWN agent', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/goal', { agentId: ACME_AGENT, fields: { quarter: 'Q3' } }, sid);
+    expect(res.status).toBe(200);
+  });
+
+  it('REFUSES a leader updating a goal on ANOTHER team\'s agent', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/goal', { agentId: GLOBEX_AGENT, fields: { quarter: 'Q3' } }, sid);
+    expect(res.status).toBe(403);
+  });
+
+  it('REFUSES adding a commitment onto another team\'s agent', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/commitment', {
+      action: 'add', agentId: GLOBEX_AGENT, row: { agent_id: GLOBEX_AGENT, text: 'sneak' },
+    }, sid);
+    expect(res.status).toBe(403);
+  });
+
+  it('REFUSES deleting another team\'s commitment', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/commitment', {
+      action: 'delete', id: GLOBEX_AGENT, // a row owned by the other team
+    }, sid);
+    expect(res.status).toBe(403);
+  });
+
+  it('validates ids before they reach a database filter', async () => {
+    const sid = await signIn('acme@test.com');
+    expect((await write('/data/coach/goal', { agentId: 'nope', fields: {} }, sid)).status).toBe(422);
+    expect((await write('/data/coach/commitment', { action: 'update', id: 'x&y' }, sid)).status).toBe(422);
+  });
+
+  it('rejects an unknown commitment action rather than guessing', async () => {
+    const sid = await signIn('acme@test.com');
+    expect((await write('/data/coach/commitment', { action: 'drop-table', id: ACME_AGENT }, sid)).status).toBe(422);
+  });
+
+  it('never uses the service-role key on a write', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    await write('/data/coach/goal', { agentId: ACME_AGENT, fields: { quarter: 'Q4' } }, sid);
+    expect(sentAuthHeaders.length).toBeGreaterThan(0);
+    for (const h of sentAuthHeaders) expect(h).not.toContain(SERVICE_ROLE);
+  });
+
+  it('logs a structured 1:1 via the transactional function, not piecemeal writes', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/checkin', { args: { p_agent_id: ACME_AGENT } }, sid);
+    expect(res.status).toBe(200);
+    // Splitting this into separate inserts could leave a half-saved 1:1.
+    expect(sentAuthHeaders.some((h) => h.includes('Bearer at-acme'))).toBe(true);
+  });
+
+  it('surfaces a refused pause as 403 rather than a silent no-op', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await write('/data/coach/agent-flags', { agentId: GLOBEX_AGENT, pause: true }, sid);
+    expect(res.status).toBe(403);
   });
 });
