@@ -39,6 +39,29 @@ export async function login(email: string, password: string): Promise<void> {
   await call('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
 }
 
+/** Create an account. `confirm` is true when the address still needs confirming,
+ *  in which case no session exists yet and the caller must not pretend otherwise. */
+export async function signup(email: string, password: string): Promise<{ confirm: boolean }> {
+  const r = await call<{ confirm?: boolean }>('/auth/signup', {
+    method: 'POST', body: JSON.stringify({ email, password }),
+  });
+  return { confirm: !!r.confirm };
+}
+
+/** Platform owner: act as a team. The swap happens server-side; nothing comes back. */
+export async function actAs(email: string): Promise<void> {
+  await call('/auth/act-as', { method: 'POST', body: JSON.stringify({ email }) });
+}
+
+/** Exit acting-as. `restored` is false when the owner's own session had expired,
+ *  which means they are now signed out rather than back on their own HQ. */
+export async function actAsReturn(): Promise<{ restored: boolean }> {
+  const r = await call<{ restored?: boolean }>('/auth/act-as/return', {
+    method: 'POST', body: '{}',
+  });
+  return { restored: !!r.restored };
+}
+
 /** Turn an invite / reset / act-as link into a session. */
 export async function exchange(tokenHash: string, type: string): Promise<void> {
   await call('/auth/exchange', {

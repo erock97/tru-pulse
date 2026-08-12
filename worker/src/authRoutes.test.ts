@@ -28,6 +28,9 @@ let ctx: ExecutionContext;
 /** What Supabase will answer, per test. */
 let supabase: { ok: boolean; body: unknown; status?: number };
 let calls: Array<{ url: string; method: string; body: unknown }>;
+/** Per-URL answers, for flows that call Supabase more than once (act-as). Returning
+ *  null falls back to the single `supabase` reply above. */
+let route: ((url: string) => { ok: boolean; body: unknown; status?: number } | null) | null;
 
 beforeEach(() => {
   kv = fakeKV();
@@ -38,6 +41,7 @@ beforeEach(() => {
   ctx = { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext;
   supabase = { ok: true, body: {} };
   calls = [];
+  route = null;
 
   vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.url;
@@ -45,8 +49,9 @@ beforeEach(() => {
       url, method: (init?.method ?? 'GET').toUpperCase(),
       body: init?.body ? JSON.parse(String(init.body)) : null,
     });
-    return new Response(JSON.stringify(supabase.body), {
-      status: supabase.status ?? (supabase.ok ? 200 : 401),
+    const r = route?.(url) ?? supabase;
+    return new Response(JSON.stringify(r.body), {
+      status: r.status ?? (r.ok ? 200 : 401),
       headers: { 'Content-Type': 'application/json' },
     });
   }));
@@ -310,5 +315,150 @@ describe('Google sign-in (server-side PKCE)', () => {
     const res = await nav('/auth/google/callback?code=bad', 'hq_pkce=abc');
     expect(res.headers.get('Location')).toContain('auth_error=signin_failed');
     expect(res.headers.get('Set-Cookie') ?? '').not.toContain(`${COOKIE_NAME}=h`);
+  });
+});
+
+describe('POST /auth/signup', () => {
+  it('creates a session when Supabase returns one', async () => {
+    supabase = { ok: true, body: goodSession };
+    const res = await post('/auth/signup', { email: 'new@acme.com', password: 'longenough1' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, confirm: false });
+    expect(res.headers.get('Set-Cookie')).toContain('HttpOnly');
+  });
+
+  it('says "confirm your email" instead of pretending to be signed in', async () => {
+    // Email confirmation on: Supabase answers 200 with a user and NO tokens.
+    supabase = { ok: true, body: { user: { id: 'u2', email: 'new@acme.com' } } };
+    const res = await post('/auth/signup', { email: 'new@acme.com', password: 'longenough1' });
+    expect(await res.json()).toEqual({ ok: true, confirm: true });
+    expect(res.headers.get('Set-Cookie')).toBeNull();
+  });
+
+  it('refuses a password shorter than 8 without calling Supabase', async () => {
+    const res = await post('/auth/signup', { email: 'a@b.com', password: 'short' });
+    expect(res.status).toBe(422);
+    expect(calls.length).toBe(0);
+  });
+
+  it('passes Supabase\'s reason through so the person can act on it', async () => {
+    supabase = { ok: false, status: 422, body: { msg: 'User already registered' } };
+    const res = await post('/auth/signup', { email: 'taken@acme.com', password: 'longenough1' });
+    expect(res.status).toBe(422);
+    expect((await res.json() as { error: string }).error).toBe('User already registered');
+  });
+
+  it('refuses a signup from an origin we do not recognise', async () => {
+    const res = await post('/auth/signup', { email: 'a@b.com', password: 'longenough1' },
+      { origin: 'https://evil.io' });
+    expect(res.status).toBe(403);
+  });
+
+  it('never returns a token in the body', async () => {
+    supabase = { ok: true, body: goodSession };
+    const res = await post('/auth/signup', { email: 'new@acme.com', password: 'longenough1' });
+    expect(JSON.stringify(await res.json())).not.toContain('at-123');
+  });
+});
+
+describe('acting as a team', () => {
+  /** Sign in as the owner and return their session id. */
+  async function ownerSid(): Promise<string> {
+    supabase = { ok: true, body: goodSession };
+    return sidFrom(await post('/auth/login', { email: 'owner@truhq.co', password: 'pw12345678' }));
+  }
+
+  /** admins table says yes, generate_link mints a hash, verify returns the team's session. */
+  function adminFlow(isAdmin = true) {
+    route = (url) => {
+      if (url.includes('/rest/v1/admins')) return { ok: true, body: isAdmin ? [{ id: 'user-1' }] : [] };
+      if (url.includes('generate_link')) return { ok: true, body: { properties: { hashed_token: 'h-1' } } };
+      if (url.includes('/auth/v1/verify')) return {
+        ok: true,
+        body: { access_token: 'team-at', refresh_token: 'team-rt', expires_in: 3600,
+                user: { id: 'team-user', email: 'lead@team.com' } },
+      };
+      return null;
+    };
+  }
+
+  it('swaps the cookie to the team without handing the browser anything', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const res = await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` });
+    expect(res.status).toBe(200);
+    const newSid = sidFrom(res);
+    expect(newSid).not.toBe(sid);
+    // No token, and no owner credential, anywhere in the reply.
+    const body = JSON.stringify(await res.json());
+    expect(body).not.toContain('team-at');
+    expect(body).not.toContain('at-123');
+  });
+
+  it('keeps the owner session alive so Exit can restore it', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const actRes = await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` });
+    const teamSid = sidFrom(actRes);
+    expect(kv.store.has(`sess:${sid}`)).toBe(true);
+
+    route = null;
+    const back = await post('/auth/act-as/return', {}, { cookie: `${COOKIE_NAME}=${teamSid}` });
+    expect(await back.json()).toEqual({ ok: true, restored: true });
+    expect(sidFrom(back)).toBe(sid);
+    // The impersonated session is gone, not left lying around.
+    expect(kv.store.has(`sess:${teamSid}`)).toBe(false);
+  });
+
+  it('refuses someone who is not in the admins table', async () => {
+    const sid = await ownerSid();
+    adminFlow(false);
+    const res = await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` });
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses when nobody is signed in', async () => {
+    adminFlow();
+    const res = await post('/auth/act-as', { email: 'lead@team.com' });
+    expect(res.status).toBe(401);
+  });
+
+  it('will not act as a team from inside another team', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const teamSid = sidFrom(await post('/auth/act-as', { email: 'a@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` }));
+    const again = await post('/auth/act-as', { email: 'b@team.com' }, { cookie: `${COOKIE_NAME}=${teamSid}` });
+    expect(again.status).toBe(409);
+  });
+
+  it('signs out cleanly if the owner session expired while they were away', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const teamSid = sidFrom(await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` }));
+    kv.store.delete(`sess:${sid}`); // owner session aged out
+    route = null;
+    const back = await post('/auth/act-as/return', {}, { cookie: `${COOKIE_NAME}=${teamSid}` });
+    expect(await back.json()).toEqual({ ok: true, restored: false });
+    expect(back.headers.get('Set-Cookie')).toContain('Max-Age=0');
+  });
+
+  it('signing out while acting as a team ends the owner session too', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const teamSid = sidFrom(await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` }));
+    route = null;
+    await post('/auth/logout', {}, { cookie: `${COOKIE_NAME}=${teamSid}` });
+    expect(kv.store.has(`sess:${sid}`)).toBe(false);
+    expect(kv.store.has(`sess:${teamSid}`)).toBe(false);
+  });
+
+  it('tells the app a way back exists', async () => {
+    const sid = await ownerSid();
+    adminFlow();
+    const teamSid = sidFrom(await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` }));
+    route = null;
+    supabase = { ok: true, body: { id: 'team-user', email: 'lead@team.com' } };
+    const me = await get('/auth/me', `${COOKIE_NAME}=${teamSid}`);
+    expect(await me.json()).toEqual({ user: { id: 'team-user', email: 'lead@team.com' }, canReturn: true });
   });
 });

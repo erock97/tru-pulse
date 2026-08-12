@@ -9,6 +9,7 @@ import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
+import { readCookie, withFreshToken } from './session.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -190,6 +191,32 @@ export default {
     );
     if (dataResponse) return dataResponse;
     if (url.pathname === '/health') return json({ ok: true });
+
+    // ── Cookie sessions for the routes written before them ──────────────────
+    // Everything below authenticates with `Authorization: Bearer <supabase token>`,
+    // which a cookie-mode browser cannot send — it has no token, by design. Rather
+    // than rewrite each route, hand it the token out of the session record here, so
+    // the code below sees exactly the request shape it has always seen.
+    //
+    // Two conditions, both load-bearing:
+    //   - Only when the caller sent NO Authorization header. A real bearer token
+    //     always wins, so nothing about the existing path changes.
+    //   - A recognised browser Origin is required for anything that changes state.
+    //     Cookies ride along automatically, so without this a form on another site
+    //     could drive these routes as the signed-in user (CSRF). A cross-site GET
+    //     can't read the reply (CORS), so reads don't need an Origin at all.
+    if (!req.headers.get('Authorization')) {
+      const sid = readCookie(req);
+      const originOk = originAllowed(req.headers.get('Origin') ?? '');
+      if (sid && (req.method === 'GET' || originOk)) {
+        const sess = await withFreshToken(env, sid);
+        if (sess) {
+          const headers = new Headers(req.headers);
+          headers.set('Authorization', 'Bearer ' + sess.accessToken);
+          req = new Request(req, { headers });
+        }
+      }
+    }
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.
     // Keys are stored by connectTeamKey (below) rather than by provision(), so

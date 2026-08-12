@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { isCookieAuth } from './authClient';
+import { isCookieAuth, actAs, actAsReturn } from './authClient';
+import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -12,6 +13,29 @@ async function token(): Promise<string> {
   return data.session?.access_token ?? '';
 }
 
+/**
+ * Call the Worker as the signed-in user, whichever mode we're in.
+ *
+ * Cookie mode sends the httpOnly session cookie and NO Authorization header — the
+ * browser has no token to send. The Worker fills the header in from the session
+ * record, so every route it already had keeps working unchanged. `credentials:
+ * 'include'` is what makes the browser attach the cookie cross-origin to
+ * api.truhq.co; without it every call looks signed-out, which is the first thing
+ * to check if something breaks after the cutover.
+ */
+export async function workerFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers: Record<string, string> = {
+    ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+    ...((init.headers as Record<string, string>) ?? {}),
+  };
+  if (!isCookieAuth) headers.Authorization = 'Bearer ' + (await token());
+  return fetch(WORKER_URL + path, {
+    ...init,
+    headers,
+    ...(isCookieAuth ? { credentials: 'include' as const } : {}),
+  });
+}
+
 /** RLS returns only the caller's org, so limit(1) is the user's org. */
 export async function myOrg(): Promise<{ id: string; name: string; plan: string } | null> {
   const { data } = await supabase.from('orgs').select('id,name,plan').limit(1);
@@ -22,9 +46,8 @@ export async function provisionOrg(
   orgName: string,
   teams: Array<{ name: string; fubKey: string; subdomain?: string }>,
 ): Promise<{ orgId: string; teamIds: string[] }> {
-  const res = await fetch(WORKER_URL + '/provision', {
+  const res = await workerFetch('/provision', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ orgName, teams }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; orgId?: string; teamIds?: string[] };
@@ -34,9 +57,8 @@ export async function provisionOrg(
 
 export async function triggerSync(): Promise<unknown> {
   if (isDemo) return {};
-  const res = await fetch(WORKER_URL + '/sync', {
+  const res = await workerFetch('/sync', {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + (await token()) },
   });
   if (!res.ok) throw new Error('Sync failed');
   return res.json();
@@ -118,8 +140,7 @@ export interface GradeResult { score: number; passed: boolean; correct: number; 
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {
-  const { data: u } = await supabase.auth.getUser();
-  const uid = u.user?.id;
+  const uid = (await currentUser())?.id ?? null;
   if (!uid) return null;
   const { data } = await supabase.from('agents').select('id,org_id,name,team_id').eq('auth_id', uid).limit(1);
   return (data?.[0] as AgentIdentity) ?? null;
@@ -135,8 +156,7 @@ export async function claimAgent(): Promise<string | null> {
 /** Leader: sign off a fully-certified agent (stamps every passed module). */
 export async function signOffAgent(agentId: string): Promise<void> {
   if (isDemo) return;
-  const { data: u } = await supabase.auth.getUser();
-  const who = u.user?.email ?? 'team leader';
+  const who = (await currentUser())?.email ?? 'team leader';
   const { error } = await supabase
     .from('rep_progress')
     .update({ signed_off_by: who, signed_off_at: new Date().toISOString() })
@@ -147,9 +167,8 @@ export async function signOffAgent(agentId: string): Promise<void> {
 
 /** Leader/admin: mint an invite (or re-invite) link for an agent. */
 export async function inviteAgent(agentId: string): Promise<{ link: string; email: string; reinvite: boolean }> {
-  const res = await fetch(WORKER_URL + '/rep/invite', {
+  const res = await workerFetch('/rep/invite', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ agentId }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; link?: string; email?: string; reinvite?: boolean };
@@ -165,9 +184,8 @@ export async function signRepUpload(
   ext: string,
   contentType?: string,
 ): Promise<{ path: string; token: string; signedUrl: string }> {
-  const res = await fetch(WORKER_URL + '/rep/uploads/sign', {
+  const res = await workerFetch('/rep/uploads/sign', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ org_id: orgId, ext, contentType }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; path?: string; token?: string; signedUrl?: string };
@@ -180,9 +198,8 @@ export async function saveRepModule(input: {
   id?: string; org_id: string; title: string; summary?: string | null;
   cards?: LessonCard[]; pass_pct?: number; status?: 'draft' | 'published' | 'archived';
 }): Promise<RepModule> {
-  const res = await fetch(WORKER_URL + '/rep/modules', {
+  const res = await workerFetch('/rep/modules', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify(input),
   });
   const body = (await res.json().catch(() => ({}))) as RepModule & { error?: string };
@@ -195,9 +212,8 @@ export async function saveRepQuestions(
   moduleId: string,
   questions: Array<{ prompt: string; choices: string[]; answer: number; explain?: string | null; idx?: number }>,
 ): Promise<{ count: number; questions: unknown[] }> {
-  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/questions`, {
+  const res = await workerFetch(`/rep/modules/${moduleId}/questions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ questions }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; count?: number; questions?: unknown[] };
@@ -207,9 +223,8 @@ export async function saveRepQuestions(
 
 /** Leader/admin: archive a custom module (status='archived', active=false). */
 export async function archiveRepModule(moduleId: string): Promise<void> {
-  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/archive`, {
+  const res = await workerFetch(`/rep/modules/${moduleId}/archive`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new Error(body.error ?? 'Could not archive module');
@@ -221,8 +236,7 @@ export async function archiveRepModule(moduleId: string): Promise<void> {
  *  to show the authoring UI; the Worker re-checks on every write regardless. */
 export async function myOrgRole(orgId: string): Promise<string | null> {
   if (isDemo) return 'admin';
-  const { data: u } = await supabase.auth.getUser();
-  const uid = u.user?.id;
+  const uid = (await currentUser())?.id ?? null;
   if (!uid) return null;
   const { data } = await supabase.from('memberships').select('role').eq('org_id', orgId).eq('user_id', uid).limit(1);
   return (data?.[0] as { role: string } | undefined)?.role ?? null;
@@ -268,8 +282,7 @@ export async function loadRepQuestionsMasked(moduleId: string): Promise<Array<{ 
  *  object's org) against the path's org_id segment. Never call Supabase Storage
  *  directly for this from the browser. */
 export async function signRepMediaDownload(path: string): Promise<string> {
-  const res = await fetch(WORKER_URL + `/rep/media/sign-download?path=${encodeURIComponent(path)}`, {
-    headers: { Authorization: 'Bearer ' + (await token()) },
+  const res = await workerFetch(`/rep/media/sign-download?path=${encodeURIComponent(path)}`, {
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
   if (!res.ok || !body.url) throw new Error(body.error ?? 'Could not load this file');
@@ -285,8 +298,7 @@ export async function signRepMediaDownload(path: string): Promise<string> {
 export async function loadRepQuestionsForEdit(
   moduleId: string,
 ): Promise<Array<{ idx: number; prompt: string; choices: string[]; answer: number; explain: string | null }>> {
-  const res = await fetch(WORKER_URL + `/rep/modules/${moduleId}/answers`, {
-    headers: { Authorization: 'Bearer ' + (await token()) },
+  const res = await workerFetch(`/rep/modules/${moduleId}/answers`, {
   });
   const body = (await res.json().catch(() => ({}))) as
     { error?: string; questions?: Array<{ idx: number; prompt: string; choices: string[]; answer: number; explain: string | null }> };
@@ -487,14 +499,13 @@ export async function simScenarios(): Promise<{ configured: boolean; scenarios: 
       ],
     };
   }
-  const res = await fetch(WORKER_URL + '/rep/practice/scenarios');
+  const res = await workerFetch('/rep/practice/scenarios');
   return (await res.json()) as { configured: boolean; scenarios: SimScenario[] };
 }
 
 export async function simStart(scenario: string): Promise<{ practiceId: string; accessToken: string }> {
-  const res = await fetch(WORKER_URL + '/rep/practice/start', {
+  const res = await workerFetch('/rep/practice/start', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ scenario }),
   });
   const body = (await res.json().catch(() => ({}))) as { error?: string; practiceId?: string; accessToken?: string };
@@ -503,9 +514,8 @@ export async function simStart(scenario: string): Promise<{ practiceId: string; 
 }
 
 export async function simFinish(practiceId: string): Promise<SimResult> {
-  const res = await fetch(WORKER_URL + '/rep/practice/finish', {
+  const res = await workerFetch('/rep/practice/finish', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ practiceId }),
   });
   const body = (await res.json().catch(() => ({}))) as SimResult & { error?: string };
@@ -562,9 +572,8 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
     }
     return { score, passed, correct, total, review };
   }
-  const res = await fetch(WORKER_URL + '/rep/grade', {
+  const res = await workerFetch('/rep/grade', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ moduleId, answers }),
   });
   const body = (await res.json().catch(() => ({}))) as GradeResult & { error?: string };
@@ -625,8 +634,7 @@ export interface AdminLeader { id: string; name: string; email: string; team_nam
 export async function adminLeaders(): Promise<AdminLeader[] | null> {
   if (isDemo) return null;
   try {
-    const res = await fetch(WORKER_URL + '/admin/leaders', {
-      headers: { Authorization: 'Bearer ' + (await token()) },
+    const res = await workerFetch('/admin/leaders', {
     });
     if (!res.ok) return null;
     const j = (await res.json()) as { leaders?: AdminLeader[] };
@@ -639,9 +647,16 @@ export async function adminLeaders(): Promise<AdminLeader[] | null> {
 /** Become a team leader: the Worker mints a one-time token, we verify it here —
  *  the session in THIS browser becomes theirs (their RLS applies everywhere). */
 export async function adminActAs(email: string): Promise<void> {
-  const res = await fetch(WORKER_URL + '/admin/impersonate', {
+  // Cookie mode: the whole swap happens in the Worker. The owner's own session simply
+  // stays alive server-side under its own id, so nothing needs stashing here — which
+  // retires the single highest-privilege secret this app ever put in the browser.
+  if (isCookieAuth) {
+    await actAs(email);
+    await refreshAuth();
+    return;
+  }
+  const res = await workerFetch('/admin/impersonate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ email }),
   });
   const j = (await res.json().catch(() => ({}))) as { token_hash?: string; type?: string; error?: string };
@@ -666,15 +681,24 @@ export async function adminActAs(email: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Is this browser inside an impersonated session (owner tokens stashed)? */
+/** Is there a way back to the owner's own HQ? Cookie mode asks the Worker (the
+ *  browser holds nothing to inspect); token mode checks the old localStorage stash. */
 export function hasAdminReturn(): boolean {
-  try { return !!localStorage.getItem('hq_admin_return'); } catch { return false; }
+  return hasActAsReturn();
 }
 
 /** Exit impersonation: restore the owner's own session so they land back on their
  *  HQ (the act-as picker) — NOT the login screen. Only a genuinely dead owner
  *  session falls back to sign-out. */
 export async function adminReturn(): Promise<void> {
+  if (isCookieAuth) {
+    try { window.location.hash = '/'; } catch { /* noop */ }
+    // restored:false means the owner's session aged out while they were away, so the
+    // Worker has signed them out rather than leaving them somewhere they can't leave.
+    await actAsReturn().catch(() => ({ restored: false }));
+    await refreshAuth();
+    return;
+  }
   let saved: { at: string; rt: string } | null = null;
   try { saved = JSON.parse(localStorage.getItem('hq_admin_return') ?? 'null'); } catch { saved = null; }
   try { localStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
@@ -695,8 +719,7 @@ export async function adminReturn(): Promise<void> {
  *  localStorage (durable), a raw signOut while impersonating would otherwise leave a
  *  stale return handle behind that shows a phantom "Exit — switch teams" next login. */
 export async function signOutClean(): Promise<void> {
-  try { localStorage.removeItem('hq_admin_return'); } catch { /* noop */ }
-  await supabase.auth.signOut();
+  await signOut();
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
@@ -706,9 +729,8 @@ export async function signOutClean(): Promise<void> {
  *  Worker still re-checks that the caller is a leader/admin of it. */
 export async function saveSettings(patch: Partial<Settings>): Promise<void> {
   if (isDemo) return;
-  const res = await fetch(WORKER_URL + '/settings', {
+  const res = await workerFetch('/settings', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify(patch),
   });
   if (!res.ok) throw new Error('Save failed');
@@ -724,15 +746,14 @@ export interface Connection {
 }
 export async function loadConnection(): Promise<Connection[]> {
   if (isDemo) return [{ teamId: 'demo', name: 'Sample Realty', connected: true, subdomain: 'sample', lastSync: new Date().toISOString() }];
-  const res = await fetch(WORKER_URL + '/connection', { headers: { Authorization: 'Bearer ' + (await token()) } });
+  const res = await workerFetch('/connection', {});
   if (!res.ok) return [];
   return res.json();
 }
 export async function connectFub(fubKey: string, teamId?: string): Promise<{ ok: boolean; subdomain: string | null }> {
   if (isDemo) return { ok: true, subdomain: 'sample' };
-  const res = await fetch(WORKER_URL + '/connect-fub', {
+  const res = await workerFetch('/connect-fub', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ fubKey, teamId }),
   });
   const body = (await res.json().catch(() => ({}))) as { ok?: boolean; subdomain?: string | null; error?: string };
@@ -752,15 +773,14 @@ export interface AdminConnection {
 }
 export async function adminConnections(): Promise<AdminConnection[]> {
   if (isDemo) return [];
-  const res = await fetch(WORKER_URL + '/admin/connections', { headers: { Authorization: 'Bearer ' + (await token()) } });
+  const res = await workerFetch('/admin/connections', {});
   if (!res.ok) return [];
   const j = (await res.json()) as { connections?: AdminConnection[] };
   return j.connections ?? [];
 }
 export async function adminConnectFub(teamId: string, fubKey: string): Promise<{ ok: boolean; subdomain: string | null }> {
-  const res = await fetch(WORKER_URL + '/admin/connect-fub', {
+  const res = await workerFetch('/admin/connect-fub', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify({ teamId, fubKey }),
   });
   const body = (await res.json().catch(() => ({}))) as { ok?: boolean; subdomain?: string | null; error?: string };
@@ -901,7 +921,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   // which a phone on a bad connection notices. Token mode keeps the direct path below
   // untouched until the cutover.
   if (isCookieAuth) {
-    const res = await fetch(WORKER_URL + '/data/dashboard', { credentials: 'include' });
+    const res = await workerFetch('/data/dashboard');
     if (!res.ok) throw new Error('Could not load your dashboard.');
     const d = (await res.json()) as DashboardData;
     return {
@@ -1107,9 +1127,8 @@ export async function adminIntake(input: {
   teams: Array<{ name: string; fubKey: string; subdomain?: string }>;
   leaders: Array<{ name: string; email: string; teamIndex: number }>;
 }): Promise<IntakeResult> {
-  const res = await fetch(WORKER_URL + '/admin/intake', {
+  const res = await workerFetch('/admin/intake', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify(input),
   });
   const body = (await res.json().catch(() => ({}))) as any;
@@ -1120,9 +1139,8 @@ export async function adminIntake(input: {
 export async function adminResendInvite(o: {
   email: string; name?: string; orgName?: string;
 }): Promise<{ sent: boolean; link?: string }> {
-  const res = await fetch(WORKER_URL + '/admin/resend-invite', {
+  const res = await workerFetch('/admin/resend-invite', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (await token()) },
     body: JSON.stringify(o),
   });
   const body = (await res.json().catch(() => ({}))) as any;

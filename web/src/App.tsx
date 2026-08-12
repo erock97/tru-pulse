@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
-import { supabase } from './lib/supabase';
+import { onAuthChange, onPasswordRecovery, exchangeLink, type AuthState } from './lib/auth';
+import { isCookieAuth } from './lib/authClient';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
@@ -32,7 +32,7 @@ function useHashRoute(): string {
 
 export default function App() {
   const route = useHashRoute();
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [session, setSession] = useState<AuthState | null | undefined>(undefined);
   const [org, setOrg] = useState<Org | null | undefined>(undefined);
   // Invite / password-reset links land with a recovery|invite token in the URL hash.
   const [recovery, setRecovery] = useState<boolean>(
@@ -45,15 +45,34 @@ export default function App() {
 
   useEffect(() => {
     if (isDemo) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === 'PASSWORD_RECOVERY') setRecovery(true);
+    // An invite or reset link lands with a one-time token in the URL hash. In token
+    // mode supabase-js swallows it on load and fires PASSWORD_RECOVERY. Cookie mode
+    // has to redeem it explicitly — the Worker swallows it instead, so the token
+    // becomes a server-side session and never becomes something this page holds.
+    if (isCookieAuth) {
+      // Supabase puts these in the query string on some link types and in the hash on
+      // others, so read both rather than betting on one and silently dropping invites.
+      const hash = new URLSearchParams(window.location.hash.replace(/^#\/?/, ''));
+      const query = new URLSearchParams(window.location.search);
+      const tokenHash = query.get('token_hash') ?? hash.get('token_hash');
+      const type = query.get('type') ?? hash.get('type');
+      if (tokenHash && type) {
+        // Strip it from the address bar first: a one-time token sitting in history
+        // (or in a shared screenshot) outlives the moment it was meant for.
+        history.replaceState(null, '', window.location.pathname);
+        setRecovery(type === 'recovery' || type === 'invite');
+        exchangeLink(tokenHash, type)
+          .catch(() => { /* an expired link just leaves them on the login screen */ });
+      }
+    }
+    const unsubscribe = onAuthChange((s) => {
       // Only publish the session when the PERSON changed. Tab-focus token
       // refreshes land here constantly with a new object for the same user;
       // publishing those unmounts whatever the leader is in the middle of.
       if (identityChanged(seenUserId.current, userIdOf(s))) setSession(s);
     });
-    return () => sub.subscription.unsubscribe();
+    const stopRecovery = onPasswordRecovery(() => setRecovery(true));
+    return () => { unsubscribe(); stopRecovery(); };
   }, []);
 
   useEffect(() => {

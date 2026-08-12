@@ -1,10 +1,11 @@
 import { useState, type FormEvent, type CSSProperties } from 'react';
-import { supabase } from '../lib/supabase';
+import { signIn, signUp, signInWithGoogle, requestPasswordReset } from '../lib/auth';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
-// Dark reskin of the sign-in page — matches the dark app. AUTH LOGIC UNCHANGED:
-// same signInWithPassword / signUp / OAuth / resetPasswordForEmail calls.
+// Dark reskin of the sign-in page. Every call goes through lib/auth, which picks the
+// server-held session or the older browser-token path from VITE_AUTH_MODE — so this
+// screen reads the same in both and nothing here knows what a token is.
 export default function Login() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -18,26 +19,34 @@ export default function Login() {
     setBusy(true);
     setError('');
     setNotice('');
-    const { error: authError } =
-      mode === 'signin'
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
-    if (authError) setError(authError.message);
-    else if (mode === 'signup') setNotice('Check your email to confirm, then sign in.');
+    try {
+      if (mode === 'signin') {
+        await signIn(email, password);
+      } else {
+        const { confirm } = await signUp(email, password);
+        // Only say "check your email" when there genuinely is no session yet.
+        if (confirm) setNotice('Check your email to confirm, then sign in.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+    }
     setBusy(false);
   }
 
   async function google() {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    await signInWithGoogle();
   }
 
   async function forgot() {
     if (!email) { setError('Enter your email first, then tap Forgot password.'); return; }
     setBusy(true); setError(''); setNotice('');
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    try {
+      await requestPasswordReset(email);
+      setNotice('Check your email for a link to reset your password.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send that email.');
+    }
     setBusy(false);
-    if (err) setError(err.message);
-    else setNotice('Check your email for a link to reset your password.');
   }
 
   const label: CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', marginBottom: 6 };

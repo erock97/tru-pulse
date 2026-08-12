@@ -11,7 +11,7 @@
 //      automatically, so this is what stops another site driving them (CSRF).
 import type { Env } from './env.js';
 import {
-  createSession, destroySession, readCookie, withFreshToken,
+  createSession, destroySession, readCookie, readSession, withFreshToken,
   sessionCookie, clearCookie,
 } from './session.js';
 
@@ -136,7 +136,14 @@ export async function handleAuthRoutes(
       return json({ user: null }, 200, { ...cors, 'Set-Cookie': clearCookie(env) });
     }
     const u = (await res.json()) as { id?: string; email?: string };
-    return json({ user: { id: u.id, email: u.email } }, 200, cors);
+    // canReturn drives the "Exit — switch teams" control. It replaces the old test
+    // of "is there a stashed owner token in localStorage", which the browser can no
+    // longer answer because it holds nothing.
+    return json(
+      { user: { id: u.id, email: u.email }, canReturn: !!sess.returnSid },
+      200,
+      cors,
+    );
   }
 
 
@@ -227,6 +234,43 @@ export async function handleAuthRoutes(
     return json({ ok: true }, 200, { ...cors, 'Set-Cookie': sessionCookie(newSid, env) });
   }
 
+  // ── Create an account. ──
+  // Answers `confirm: true` when Supabase withheld a session because the address
+  // still needs confirming, which is the project's current setting. The caller shows
+  // "check your email" for that and never assumes it is signed in.
+  if (url.pathname === '/auth/signup' && req.method === 'POST') {
+    const b = (await req.json().catch(() => null)) as { email?: string; password?: string } | null;
+    const email = String(b?.email ?? '').trim().toLowerCase();
+    const password = String(b?.password ?? '');
+    if (!email || !password) return json({ error: 'email and password required' }, 422, cors);
+    if (password.length < 8) return json({ error: 'use at least 8 characters' }, 422, cors);
+
+    // Rate limited for the same reason login is: an open signup endpoint is a free
+    // way to enumerate which addresses already have accounts, and to spray mail.
+    const ip = req.headers.get('CF-Connecting-IP') ?? '0.0.0.0';
+    if (await tooManyAttempts(env, ip, email)) {
+      return json({ error: 'too many attempts — wait a few minutes' }, 429, cors);
+    }
+    await noteAttempt(env, ip, email);
+
+    const res = await fetch(env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/signup', {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      // Supabase explains the real problem (already registered, breached password,
+      // too short); pass it through so the person can act on it.
+      const err = (await res.json().catch(() => null)) as { msg?: string; message?: string } | null;
+      return json({ error: err?.msg ?? err?.message ?? 'could not create that account' }, 422, cors);
+    }
+    const body = (await res.json()) as SupabaseSession;
+    const newSid = await startSession(env, body);
+    if (!newSid) return json({ ok: true, confirm: true }, 200, cors);
+    await clearAttempts(env, ip, email);
+    return json({ ok: true, confirm: false }, 200, { ...cors, 'Set-Cookie': sessionCookie(newSid, env) });
+  }
+
   // ── Exchange a one-time link for a session. ──
   // Backs the invite / password-reset / act-as flows, which today hand the browser a
   // token in the URL hash for supabase-js to swallow. Now the worker swallows it, so
@@ -292,9 +336,94 @@ export async function handleAuthRoutes(
     return json({ ok: true }, 200, cors);
   }
 
+  // ── Act as a team, and come back. ──────────────────────────────────────────
+  // The old flow handed the browser a one-time token, then stashed the OWNER's
+  // access AND refresh token in localStorage so "Exit" could restore them. That
+  // stash was the single highest-privilege secret in the product sitting in the
+  // place this migration exists to empty. Here the swap happens entirely in KV:
+  // the owner's session simply stays alive under its own id, and the impersonated
+  // session remembers that id. Nothing is copied and nothing is handed out.
+  if (url.pathname === '/auth/act-as' && req.method === 'POST') {
+    const sess = sid ? await withFreshToken(env, sid) : null;
+    if (!sess) return json({ error: 'not signed in' }, 401, cors);
+    // Never let an impersonated session start another one — that would build a chain
+    // whose "Exit" no longer lands on the real owner.
+    if (sess.returnSid) return json({ error: 'already acting as a team' }, 409, cors);
+
+    const b = (await req.json().catch(() => null)) as { email?: string } | null;
+    const email = String(b?.email ?? '').trim().toLowerCase();
+    if (!email) return json({ error: 'email required' }, 422, cors);
+
+    const rest = env.SUPABASE_URL.replace(/\/$/, '');
+    const serviceHeaders = {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+      'Content-Type': 'application/json',
+    };
+
+    // Same gate as /admin/*: listed in the admins table, checked server-side.
+    const adminRes = await fetch(
+      `${rest}/rest/v1/admins?id=eq.${encodeURIComponent(sess.userId)}&select=id`,
+      { headers: serviceHeaders },
+    );
+    const admins = adminRes.ok ? ((await adminRes.json()) as unknown[]) : [];
+    if (!admins.length) return json({ error: 'forbidden' }, 403, cors);
+
+    const linkRes = await fetch(`${rest}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: serviceHeaders,
+      body: JSON.stringify({ type: 'magiclink', email }),
+    });
+    const gl = (await linkRes.json().catch(() => null)) as
+      | { properties?: { hashed_token?: string }; hashed_token?: string }
+      | null;
+    const hashed = gl?.properties?.hashed_token ?? gl?.hashed_token;
+    if (!linkRes.ok || !hashed) return json({ error: 'could not start that session' }, 502, cors);
+
+    const verifyRes = await fetch(`${rest}/auth/v1/verify`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token_hash: hashed, type: 'magiclink' }),
+    });
+    if (!verifyRes.ok) return json({ error: 'could not start that session' }, 502, cors);
+
+    const body = (await verifyRes.json()) as SupabaseSession;
+    if (!body.access_token || !body.refresh_token || !body.user?.id) {
+      return json({ error: 'could not start that session' }, 502, cors);
+    }
+    // The owner's session is deliberately NOT destroyed — it is what Exit returns to.
+    const newSid = await createSession(env, {
+      userId: body.user.id,
+      accessToken: body.access_token,
+      refreshToken: body.refresh_token,
+      expiresAt: Math.floor(Date.now() / 1000) + (body.expires_in ?? 3600),
+      returnSid: sid ?? undefined,
+    });
+    return json({ ok: true }, 200, { ...cors, 'Set-Cookie': sessionCookie(newSid, env) });
+  }
+
+  // ── Exit: back to the owner's own session, or signed out if it has expired. ──
+  if (url.pathname === '/auth/act-as/return' && req.method === 'POST') {
+    const current = await readSession(env, sid);
+    const ownerSid = current?.returnSid ?? null;
+    const owner = ownerSid ? await readSession(env, ownerSid) : null;
+    // Drop the impersonated session either way: leaving it alive would leave a live
+    // credential for a team the owner has finished looking at.
+    await destroySession(env, sid);
+    if (!owner || !ownerSid) {
+      return json({ ok: true, restored: false }, 200, { ...cors, 'Set-Cookie': clearCookie(env) });
+    }
+    return json({ ok: true, restored: true }, 200, { ...cors, 'Set-Cookie': sessionCookie(ownerSid, env) });
+  }
+
   // ── Sign out. Kills the server-side session, not just the cookie, so a copied
   //    cookie is dead too. ──
   if (url.pathname === '/auth/logout' && req.method === 'POST') {
+    // Signing out while acting as a team must end the owner's session too. Otherwise
+    // it survives in KV with nothing pointing at it — a live credential nobody can
+    // see and nobody revoked.
+    const current = await readSession(env, sid);
+    if (current?.returnSid) await destroySession(env, current.returnSid);
     await destroySession(env, sid);
     return json({ ok: true }, 200, { ...cors, 'Set-Cookie': clearCookie(env) });
   }

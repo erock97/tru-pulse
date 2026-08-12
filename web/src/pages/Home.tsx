@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { supabase } from '../lib/supabase';
+import { isCookieAuth } from '../lib/authClient';
 import { adminActAs, isDemo, signOutClean, type AdminLeader } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
 import { FubConnect } from '../components/FubConnect';
@@ -154,6 +155,10 @@ export default function Home({
     setLeaving(true);
     const fallback = 'https://trucoaching.co';
     try {
+      // Cookie mode has no token to hand across, by design. This bridge is a retained
+      // fallback rather than the default Coach nav, so it drops to Coach's own login
+      // instead of growing a second server-side handoff for a path nobody takes.
+      if (isCookieAuth) { window.location.href = fallback; return; }
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) {

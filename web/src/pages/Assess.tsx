@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { resolveCohortRoster, submitCohortAssessment, claimAgent } from '../lib/api';
-import { supabase } from '../lib/supabase';
+import { signUp } from '../lib/auth';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
   ARCH, PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS,
@@ -339,8 +339,13 @@ function RegisterFlow({
     setErr('');
     setBusy(true);
     if (preview) { setStage('done'); setBusy(false); return; } // never create real auth users from a preview
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) { setErr(error.message); setBusy(false); return; }
+    try {
+      await signUp(email, password);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Could not create that account.');
+      setBusy(false);
+      return;
+    }
     try { await claimAgent(); } catch { /* links on next confirmed login instead */ }
     setStage('done');
     setBusy(false);

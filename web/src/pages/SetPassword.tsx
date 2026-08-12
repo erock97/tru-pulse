@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { supabase } from '../lib/supabase';
+import { setPassword as savePassword } from '../lib/auth';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
@@ -18,10 +18,14 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
     if (password !== confirm) { setError('Those passwords do not match.'); return; }
     setBusy(true);
     setError('');
-    const { error: err } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (err) setError(err.message);
-    else onDone();
+    try {
+      await savePassword(password);
+      setBusy(false);
+      onDone();
+    } catch (err) {
+      setBusy(false);
+      setError(err instanceof Error ? err.message : 'Could not set that password.');
+    }
   }
 
   return (

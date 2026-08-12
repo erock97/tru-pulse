@@ -24,6 +24,13 @@ export interface SessionRecord {
   /** Unix seconds when the ACCESS token expires (not the session). */
   expiresAt: number;
   createdAt: number;
+  /**
+   * Set only while a platform owner is acting as a team: the id of their OWN
+   * session, which stays alive in KV so "Exit" restores it without a re-login.
+   * A session id, not a token — the owner's credentials never get copied, and
+   * never go near the browser, which is what the old localStorage stash did.
+   */
+  returnSid?: string;
 }
 
 /** 32 random bytes, base64url. Long enough that guessing is not a strategy. */
