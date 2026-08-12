@@ -15,15 +15,54 @@ import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.j
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
 
-// CORS — the browser (app.truhq.co / Pages) calls /provision + /sync cross-origin.
-const CORS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token',
-  'Access-Control-Max-Age': '86400',
-};
-function json(obj: unknown, status = 200): Response {
-  return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
+// CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
+// the app and the Worker live at different addresses.
+//
+// This used to answer `Access-Control-Allow-Origin: *` — every website on the
+// internet. Nothing was exploitable, because our login proof is a token in storage
+// only app.truhq.co can read, attached deliberately by our own code; a random site
+// has nothing to attach. The reason to narrow it anyway is what happens LATER: if
+// this app ever moves to cookie-based auth, the browser starts sending credentials
+// automatically, and "any origin" turns into "any website can act as your logged-in
+// leader" on the day of an unrelated, sensible change.
+//
+// Honest scope: this is a BROWSER protection. It stops cross-site use from a page in
+// someone's browser. It does not stop curl or a server-side proxy — nothing about
+// CORS can. Authentication is what stops those, and it already does.
+const ALLOWED_ORIGINS = new Set([
+  'https://app.truhq.co',
+  'https://truhq.co',
+  'https://www.truhq.co',
+]);
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^http:\/\/localhost(:\d+)?$/,          // local dev (vite)
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https:\/\/[a-z0-9-]+\.tru-pulse-app\.pages\.dev$/, // Pages preview deploys — a new
+  /^https:\/\/[a-z0-9-]+\.tru-landing\.pages\.dev$/,   // random subdomain every deploy, so
+                                                       // matched by shape, not by name
+];
+function originAllowed(origin: string): boolean {
+  return ALLOWED_ORIGINS.has(origin) || ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+/** Per-request CORS. Echoes the caller's origin only when it's on the list; an
+ *  unknown origin gets no header at all, which is what makes the browser refuse. */
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const base: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-slot-token',
+    'Access-Control-Max-Age': '86400',
+    // Responses differ by origin, so caches must key on it or they'd serve one
+    // tenant's allow-header to another origin.
+    Vary: 'Origin',
+  };
+  if (origin && originAllowed(origin)) base['Access-Control-Allow-Origin'] = origin;
+  return base;
+}
+function jsonWithCors(obj: unknown, status = 200, cors: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(obj), {
+    status, headers: { 'Content-Type': 'application/json', ...cors },
+  });
 }
 /** Compare two secrets in time that doesn't depend on where they first differ, so
  *  the response latency can't be used to guess a token character by character. */
@@ -123,7 +162,12 @@ export default {
     const url = new URL(req.url);
     const database = db(env);
 
-    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    // Shadow the module-level helper with a per-request one so every existing
+    // json(...) call below answers with this caller's CORS headers, untouched.
+    const cors = corsHeaders(req);
+    const json = (obj: unknown, status = 200) => jsonWithCors(obj, status, cors);
+
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.
