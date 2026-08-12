@@ -36,8 +36,36 @@ export async function workerFetch(path: string, init: RequestInit = {}): Promise
   });
 }
 
+/**
+ * Org, agent row and org role in one answer.
+ *
+ * These three used to be three separate round trips made on nearly every load, and
+ * between them they decide which screen someone even sees. Cookie mode asks the
+ * Worker once and caches the reply for the rest of the tick, so the three callers
+ * below stay independent without becoming three requests again.
+ */
+interface Me {
+  org: { id: string; name: string; plan: string } | null;
+  agent: AgentIdentity | null;
+  role: string | null;
+}
+let mePromise: Promise<Me> | null = null;
+
+async function me(): Promise<Me> {
+  if (!mePromise) {
+    mePromise = workerFetch('/data/me')
+      .then((r) => (r.ok ? (r.json() as Promise<Me>) : { org: null, agent: null, role: null }))
+      .catch(() => ({ org: null, agent: null, role: null }));
+    // Cleared on the next tick so a later call (after signing in, or after acting as
+    // a team) asks again rather than replaying the previous person's answer.
+    void mePromise.finally(() => { queueMicrotask(() => { mePromise = null; }); });
+  }
+  return mePromise;
+}
+
 /** RLS returns only the caller's org, so limit(1) is the user's org. */
 export async function myOrg(): Promise<{ id: string; name: string; plan: string } | null> {
+  if (isCookieAuth) return (await me()).org;
   const { data } = await supabase.from('orgs').select('id,name,plan').limit(1);
   return (data?.[0] as { id: string; name: string; plan: string }) ?? null;
 }
@@ -83,21 +111,45 @@ export async function loadRep(): Promise<RepData> {
   // 24 shared TRU modules (org_id null) got status DEFAULT 'published' NOT NULL
   // (hq_rep_authoring.sql) and pre-existing rows were backfilled to 'published', so
   // this filter does not hide the built-in curriculum.
-  const [mods, qs, prog, agents, prac] = await Promise.all([
-    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
-    supabase.from('rep_questions_public').select('module_id'),
-    supabase.from('rep_progress').select('agent_id,module_id,status,score,passed_at,signed_off_at'),
-    supabase.from('agents').select('id,name,email,auth_id').eq('excluded', false).order('name'),
-    supabase.from('rep_practice').select('agent_id,scenario,status,score,passed,created_at'),
-  ]);
+  type AgentRow = { id: string; name: string; email: string | null; auth_id: string | null };
+  let mods: Omit<RepModule, 'questions'>[];
+  let qs: Array<{ module_id: string }>;
+  let prog: RepProgressRow[];
+  let agentRows: AgentRow[];
+  let prac: RepPracticeRow[];
+
+  if (isCookieAuth) {
+    // The same five reads, made once by the Worker as this user — five cross-origin
+    // round trips become one, and RLS still decides every row.
+    const res = await workerFetch('/data/rep/board');
+    if (!res.ok) throw new Error('Could not load the certification board.');
+    const d = (await res.json()) as {
+      modules: Omit<RepModule, 'questions'>[]; questions: Array<{ module_id: string }>;
+      progress: RepProgressRow[]; agents: AgentRow[]; practice: RepPracticeRow[];
+    };
+    [mods, qs, prog, agentRows, prac] = [d.modules ?? [], d.questions ?? [], d.progress ?? [], d.agents ?? [], d.practice ?? []];
+  } else {
+    const [m, q, p, a, pr] = await Promise.all([
+      supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
+      supabase.from('rep_questions_public').select('module_id'),
+      supabase.from('rep_progress').select('agent_id,module_id,status,score,passed_at,signed_off_at'),
+      supabase.from('agents').select('id,name,email,auth_id').eq('excluded', false).order('name'),
+      supabase.from('rep_practice').select('agent_id,scenario,status,score,passed,created_at'),
+    ]);
+    mods = (m.data as Omit<RepModule, 'questions'>[]) ?? [];
+    qs = (q.data as Array<{ module_id: string }>) ?? [];
+    prog = (p.data as RepProgressRow[]) ?? [];
+    agentRows = (a.data as AgentRow[]) ?? [];
+    prac = (pr.data as RepPracticeRow[]) ?? [];
+  }
+
   const qcount = new Map<string, number>();
-  ((qs.data as Array<{ module_id: string }>) ?? []).forEach((q) => qcount.set(q.module_id, (qcount.get(q.module_id) ?? 0) + 1));
+  qs.forEach((q) => qcount.set(q.module_id, (qcount.get(q.module_id) ?? 0) + 1));
   return {
-    modules: ((mods.data as Omit<RepModule, 'questions'>[]) ?? []).map((m) => ({ ...m, questions: qcount.get(m.id) ?? 0 })),
-    progress: (prog.data as RepProgressRow[]) ?? [],
-    agents: ((agents.data as Array<{ id: string; name: string; email: string | null; auth_id: string | null }>) ?? [])
-      .map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
-    practice: (prac.data as RepPracticeRow[]) ?? [],
+    modules: mods.map((m) => ({ ...m, questions: qcount.get(m.id) ?? 0 })),
+    progress: prog,
+    agents: agentRows.map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
+    practice: prac,
   };
 }
 
@@ -140,6 +192,7 @@ export interface GradeResult { score: number; passed: boolean; correct: number; 
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {
+  if (isCookieAuth) return (await me()).agent;
   const uid = (await currentUser())?.id ?? null;
   if (!uid) return null;
   const { data } = await supabase.from('agents').select('id,org_id,name,team_id').eq('auth_id', uid).limit(1);
@@ -148,6 +201,11 @@ export async function myAgent(): Promise<AgentIdentity | null> {
 
 /** Link this fresh login to an agent row by verified email; returns agent id or null. */
 export async function claimAgent(): Promise<string | null> {
+  if (isCookieAuth) {
+    const res = await workerFetch('/data/claim-agent', { method: 'POST', body: '{}' });
+    if (!res.ok) return null;
+    return ((await res.json()) as { agentId: string | null }).agentId;
+  }
   const { data, error } = await supabase.rpc('claim_agent');
   if (error) return null;
   return (data as string) ?? null;
@@ -157,6 +215,13 @@ export async function claimAgent(): Promise<string | null> {
 export async function signOffAgent(agentId: string): Promise<void> {
   if (isDemo) return;
   const who = (await currentUser())?.email ?? 'team leader';
+  if (isCookieAuth) {
+    const res = await workerFetch('/data/rep/sign-off', {
+      method: 'POST', body: JSON.stringify({ agentId, who }),
+    });
+    if (!res.ok) throw new Error('Could not sign this agent off.');
+    return;
+  }
   const { error } = await supabase
     .from('rep_progress')
     .update({ signed_off_by: who, signed_off_at: new Date().toISOString() })
@@ -236,6 +301,7 @@ export async function archiveRepModule(moduleId: string): Promise<void> {
  *  to show the authoring UI; the Worker re-checks on every write regardless. */
 export async function myOrgRole(orgId: string): Promise<string | null> {
   if (isDemo) return 'admin';
+  if (isCookieAuth) return (await me()).role;
   const uid = (await currentUser())?.id ?? null;
   if (!uid) return null;
   const { data } = await supabase.from('memberships').select('role').eq('org_id', orgId).eq('user_id', uid).limit(1);
@@ -248,6 +314,12 @@ export async function myOrgRole(orgId: string): Promise<string | null> {
  *  that filter); this is authoring-only and never touches loadRep/loadCourse. */
 export async function loadRepCustomModules(orgId: string): Promise<RepModule[]> {
   if (isDemo) return [];
+  if (isCookieAuth) {
+    const res = await workerFetch(`/data/rep/custom-modules?orgId=${encodeURIComponent(orgId)}`);
+    if (!res.ok) throw new Error('Could not load your modules.');
+    const d = (await res.json()) as { modules: Omit<RepModule, 'questions'>[] };
+    return (d.modules ?? []).map((m) => ({ ...m, questions: 0 }));
+  }
   const { data, error } = await supabase
     .from('rep_modules')
     .select('id,idx,title,summary,body,pass_pct,cards,author_id,source,status')
@@ -265,6 +337,12 @@ export async function loadRepCustomModules(orgId: string): Promise<RepModule[]> 
  *  prefill prompts/choices but NOT which choice is correct — the editor UI must make the
  *  leader re-confirm the correct answer for each carried-over question before saving. */
 export async function loadRepQuestionsMasked(moduleId: string): Promise<Array<{ id: string; idx: number; prompt: string; choices: string[] }>> {
+  if (isCookieAuth) {
+    const res = await workerFetch(`/data/rep/questions-masked?moduleId=${encodeURIComponent(moduleId)}`);
+    if (!res.ok) throw new Error('Could not load these questions.');
+    const d = (await res.json()) as { questions: Array<{ id: string; idx: number; prompt: string; choices: string[] }> };
+    return d.questions ?? [];
+  }
   const { data, error } = await supabase
     .from('rep_questions_public')
     .select('id,idx,prompt,choices')
@@ -454,19 +532,38 @@ const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
 export async function loadCourse(agentId: string): Promise<CourseModule[]> {
   if (isDemo) return DEMO_COURSE.map(({ answers, ...m }) => { void answers; return m; });
   // Same belt-and-suspenders status filter as loadRep() above — see its comment.
-  const [mods, qs, prog] = await Promise.all([
-    supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
-    supabase.from('rep_questions_public').select('id,module_id,idx,prompt,choices').order('idx'),
-    supabase.from('rep_progress').select('module_id,status,score,passed_at,signed_off_at').eq('agent_id', agentId),
-  ]);
+  type ModRow = Omit<RepModule, 'questions'> & { cards: LessonCard[] | null };
+  type ProgRow = { module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at: string | null };
+  let modRows: ModRow[];
+  let qRows: Array<CourseQuestion & { module_id: string }>;
+  let progRows: ProgRow[];
+
+  if (isCookieAuth) {
+    const res = await workerFetch(`/data/rep/course?agentId=${encodeURIComponent(agentId)}`);
+    if (!res.ok) throw new Error('Could not load your course.');
+    const d = (await res.json()) as {
+      modules: ModRow[]; questions: Array<CourseQuestion & { module_id: string }>; progress: ProgRow[];
+    };
+    [modRows, qRows, progRows] = [d.modules ?? [], d.questions ?? [], d.progress ?? []];
+  } else {
+    const [mods, qs, prog] = await Promise.all([
+      supabase.from('rep_modules').select('id,idx,title,summary,body,pass_pct,cards').eq('active', true).eq('status', 'published').order('idx'),
+      supabase.from('rep_questions_public').select('id,module_id,idx,prompt,choices').order('idx'),
+      supabase.from('rep_progress').select('module_id,status,score,passed_at,signed_off_at').eq('agent_id', agentId),
+    ]);
+    modRows = (mods.data as ModRow[]) ?? [];
+    qRows = (qs.data as Array<CourseQuestion & { module_id: string }>) ?? [];
+    progRows = (prog.data as ProgRow[]) ?? [];
+  }
+
   const byMod = new Map<string, CourseQuestion[]>();
-  ((qs.data as Array<CourseQuestion & { module_id: string }>) ?? []).forEach((q) => {
+  qRows.forEach((q) => {
     const arr = byMod.get(q.module_id) ?? [];
     arr.push({ id: q.id, idx: q.idx, prompt: q.prompt, choices: q.choices });
     byMod.set(q.module_id, arr);
   });
-  const progByMod = new Map((((prog.data as Array<{ module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at: string | null }>) ?? [])).map((p) => [p.module_id, p]));
-  return ((mods.data as Array<Omit<RepModule, 'questions'> & { cards: LessonCard[] | null }>) ?? []).map((m) => {
+  const progByMod = new Map(progRows.map((p) => [p.module_id, p]));
+  return modRows.map((m) => {
     const qlist = byMod.get(m.id) ?? [];
     const p = progByMod.get(m.id);
     // No structured cards yet → fall back to the body as plain text cards.
@@ -1072,6 +1169,17 @@ function demoDashboard(): DashboardData {
 
 // ── Coach assessment intake ─────────────────────────────────────────────
 export async function resolveCohortRoster(token: string): Promise<{ id: string; name: string }[]> {
+  // No login by design — the join token IS the authorisation. Cookie mode sends it to
+  // the Worker instead of calling the database directly, which puts rate limiting and
+  // validation in front of the only unauthenticated surface in the system.
+  if (isCookieAuth) {
+    const res = await workerFetch('/public/resolve-cohort-roster', {
+      method: 'POST', body: JSON.stringify({ p_token: token }),
+    });
+    if (!res.ok) throw new Error('This team link could not be opened.');
+    const d = (await res.json()) as { data?: { id: string; name: string }[] };
+    return d.data ?? [];
+  }
   const { data, error } = await supabase.rpc('resolve_cohort_roster', { p_token: token });
   if (error) throw error;
   return (data as { id: string; name: string }[]) ?? [];
@@ -1081,16 +1189,32 @@ export async function submitCohortAssessment(input: {
   token: string; agentId: string; personalCode: string; personalAxes: unknown;
   businessCode: string; tallies: Record<string, number>; answers: unknown;
 }): Promise<{ agent_id: string; token: string }> {
-  const { data, error } = await supabase.rpc('submit_cohort_assessment', {
+  const args = {
     p_token: input.token, p_agent_id: input.agentId, p_personal_code: input.personalCode,
     p_personal_axes: input.personalAxes, p_business_code: input.businessCode,
     p_tallies: input.tallies, p_answers: input.answers,
-  });
+  };
+  if (isCookieAuth) {
+    const res = await workerFetch('/public/submit-assessment', {
+      method: 'POST', body: JSON.stringify(args),
+    });
+    if (!res.ok) throw new Error('Could not save your assessment.');
+    const d = (await res.json()) as { data: { agent_id: string; token: string } };
+    return d.data;
+  }
+  const { data, error } = await supabase.rpc('submit_cohort_assessment', args);
   if (error) throw error;
   return data as { agent_id: string; token: string };
 }
 
 export async function setCoaching(agentId: string, on: boolean): Promise<void> {
+  if (isCookieAuth) {
+    const res = await workerFetch('/data/coach/agent-flags', {
+      method: 'POST', body: JSON.stringify({ agentId, coaching: on }),
+    });
+    if (!res.ok) throw new Error('Could not change coaching for this agent.');
+    return;
+  }
   const { error } = await supabase.rpc('set_coaching', { p_agent_id: agentId, p_on: on });
   if (error) throw error;
 }
@@ -1103,6 +1227,16 @@ export async function setAgentPause(
   opts: { isPaused: boolean; reason?: string | null; note?: string | null },
 ): Promise<void> {
   if (isDemo) return;
+  if (isCookieAuth) {
+    const res = await workerFetch('/data/coach/agent-flags', {
+      method: 'POST',
+      body: JSON.stringify({
+        agentId, pause: opts.isPaused, reason: opts.reason ?? null, note: opts.note ?? null,
+      }),
+    });
+    if (!res.ok) throw new Error('Could not change this agent’s pause.');
+    return;
+  }
   const { error } = await supabase.rpc('set_agent_pause', {
     p_agent_id: agentId,
     p_is_paused: opts.isPaused,

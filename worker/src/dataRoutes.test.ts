@@ -411,3 +411,102 @@ describe('Rep endpoints', () => {
     expect(text).not.toContain(SERVICE_ROLE);
   });
 });
+
+describe('the routes the cutover added', () => {
+  const get = (path: string, sid: string) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        headers: { Origin: APP, Cookie: `${COOKIE_NAME}=${sid}` },
+      }),
+      env, ctx,
+    );
+  const post = (path: string, sid: string, body: unknown, origin: string | null = APP) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(origin ? { Origin: origin } : {}),
+          Cookie: `${COOKIE_NAME}=${sid}`,
+        },
+        body: JSON.stringify(body),
+      }),
+      env, ctx,
+    );
+
+  it('/data/me answers org, agent and role in one call, as the user', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    const res = await get('/data/me', sid);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { org: unknown; agent: unknown; role: unknown };
+    expect(body).toHaveProperty('org');
+    expect(body).toHaveProperty('agent');
+    expect(body).toHaveProperty('role');
+    for (const h of sentAuthHeaders) expect(h).not.toContain(SERVICE_ROLE);
+  });
+
+  it('/data/me refuses a caller with no session', async () => {
+    const res = await worker.fetch(
+      new Request('https://api.truhq.co/data/me', { headers: { Origin: APP } }), env, ctx,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a malformed orgId rather than letting it reach a filter', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await get('/data/rep/custom-modules?orgId=select=*', sid);
+    expect(res.status).toBe(422);
+  });
+
+  it('rejects a malformed moduleId on the masked question read', async () => {
+    const sid = await signIn('acme@test.com');
+    expect((await get('/data/rep/questions-masked?moduleId=nope', sid)).status).toBe(422);
+  });
+
+  it('the masked question read never asks for the answer column', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    const res = await get('/data/rep/questions-masked?moduleId=aaaaaaaa-1111-4111-8111-111111111111', sid);
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(await res.json())).not.toContain('"answer"');
+  });
+
+  it('sign-off writes as the user, so RLS refuses another org\'s agent', async () => {
+    const sid = await signIn('acme@test.com');
+    // globex's agent — the fake refuses it exactly as a WITH CHECK policy would.
+    const res = await post('/data/rep/sign-off', sid,
+      { agentId: 'bbbbbbbb-2222-4222-8222-222222222222', who: 'acme lead' });
+    expect(res.status).toBe(403);
+  });
+
+  it('sign-off succeeds for the caller\'s own agent', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await post('/data/rep/sign-off', sid,
+      { agentId: 'aaaaaaaa-1111-4111-8111-111111111111', who: 'acme lead' });
+    expect(res.status).toBe(200);
+  });
+
+  it('refuses a sign-off from an origin we do not recognise', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await post('/data/rep/sign-off', sid,
+      { agentId: 'aaaaaaaa-1111-4111-8111-111111111111' }, 'https://evil.io');
+    expect(res.status).toBe(403);
+  });
+
+  it('claim-agent needs a recognised origin too', async () => {
+    const sid = await signIn('acme@test.com');
+    expect((await post('/data/claim-agent', sid, {}, 'https://evil.io')).status).toBe(403);
+    expect((await post('/data/claim-agent', sid, {})).status).toBe(200);
+  });
+
+  it('never sends the service-role key on any of them', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    await get('/data/me', sid);
+    await get('/data/rep/custom-modules?orgId=aaaaaaaa-1111-4111-8111-111111111111', sid);
+    await post('/data/claim-agent', sid, {});
+    expect(sentAuthHeaders.length).toBeGreaterThan(0);
+    for (const h of sentAuthHeaders) expect(h).not.toContain(SERVICE_ROLE);
+  });
+});

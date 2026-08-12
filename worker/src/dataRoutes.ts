@@ -133,6 +133,58 @@ export async function handleDataRoutes(
     return json({ modules, questions, progress, practice }, 200, cors);
   }
 
+  // ── Who this person is, in one round trip. ──
+  // Backs myOrg / myAgent / myOrgRole, which the app calls on nearly every load and
+  // which decide which screen someone even sees. RLS answers all three: the org list
+  // already returns only orgs the caller belongs to, so limit=1 IS their org, exactly
+  // as it was when the browser asked.
+  if (url.pathname === '/data/me' && req.method === 'GET') {
+    const [orgs, agents] = await Promise.all([
+      db.select<{ id: string; name: string; plan: string }>('orgs', 'select=id,name,plan&limit=1'),
+      db.select<{ id: string; org_id: string; name: string; team_id: string }>(
+        'agents', `select=id,org_id,name,team_id&auth_id=eq.${db.userId}&limit=1`,
+      ),
+    ]);
+    const org = orgs[0] ?? null;
+    // The caller's role in that org, for the authoring gates. Only meaningful once
+    // we know which org they're in, so it costs a second hop rather than a wasted one.
+    let role: string | null = null;
+    if (org) {
+      const rows = await db.select<{ role: string }>(
+        'memberships', `select=role&org_id=eq.${org.id}&user_id=eq.${db.userId}&limit=1`,
+      );
+      role = rows[0]?.role ?? null;
+    }
+    return json({ org, agent: agents[0] ?? null, role }, 200, cors);
+  }
+
+  // ── Rep authoring: this org's own modules, at any status. ──
+  // Deliberately separate from /data/rep/board, which is the learner-facing
+  // published+active feed. This one is the module manager's list.
+  if (url.pathname === '/data/rep/custom-modules' && req.method === 'GET') {
+    const orgId = url.searchParams.get('orgId') ?? '';
+    if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 422, cors);
+    const modules = await db.select(
+      'rep_modules',
+      `select=id,idx,title,summary,body,pass_pct,cards,author_id,source,status&org_id=eq.${orgId}` +
+      '&source=eq.custom&order=idx.asc',
+    );
+    return json({ modules }, 200, cors);
+  }
+
+  // ── Rep authoring: prompts and choices for an existing quiz, answers withheld. ──
+  // Reads the same answer-hiding view agents read, so re-opening a quiz can prefill
+  // the wording but never which choice is correct.
+  if (url.pathname === '/data/rep/questions-masked' && req.method === 'GET') {
+    const moduleId = url.searchParams.get('moduleId') ?? '';
+    if (!UUID_RE.test(moduleId)) return json({ error: 'invalid moduleId' }, 422, cors);
+    const questions = await db.select(
+      'rep_questions_public',
+      `select=id,idx,prompt,choices&module_id=eq.${moduleId}&order=idx.asc`,
+    );
+    return json({ questions }, 200, cors);
+  }
+
   // ── Coach writes ──────────────────────────────────────────────────────────
   // Mutations run under the caller's own token, so Postgres applies WITH CHECK and
   // refuses a write into another tenant's row exactly as it refuses to read one. A
@@ -209,6 +261,39 @@ export async function handleDataRoutes(
     }
 
     return json({ error: 'not found' }, 404, cors);
+  }
+
+  // ── Rep writes ────────────────────────────────────────────────────────────
+  if (req.method === 'POST' && url.pathname.startsWith('/data/rep/')) {
+    if (!originOk) return json({ error: 'origin not allowed' }, 403, cors);
+    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!body) return json({ error: 'invalid body' }, 422, cors);
+
+    // Leader signs off a fully-certified agent: stamp every passed module. As the
+    // user, so RLS refuses an agent in a team they don't lead.
+    if (url.pathname === '/data/rep/sign-off') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const who = String(body.who ?? 'team leader').slice(0, 200);
+      const rows = await db.update(
+        'rep_progress',
+        `agent_id=eq.${agentId}&status=eq.passed`,
+        { signed_off_by: who, signed_off_at: new Date().toISOString() },
+      );
+      if (!rows) return json({ error: 'not allowed' }, 403, cors);
+      return json({ ok: true, signed: rows.length }, 200, cors);
+    }
+
+    return json({ error: 'not found' }, 404, cors);
+  }
+
+  // ── Link this login to an agent row, by verified email. ──
+  // Runs on nearly every fresh sign-in. The database function decides whether there
+  // is a matching agent; a refusal is a legitimate "you're not an agent", not an error.
+  if (url.pathname === '/data/claim-agent' && req.method === 'POST') {
+    if (!originOk) return json({ error: 'origin not allowed' }, 403, cors);
+    const { ok, data } = await db.rpc<string>('claim_agent', {});
+    return json({ agentId: ok ? data : null }, 200, cors);
   }
 
   return json({ error: 'not found' }, 404, cors);
