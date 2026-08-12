@@ -8,6 +8,7 @@ import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
+import { handlePublicRoutes } from './publicRoutes.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -179,6 +180,11 @@ export default {
     // Data the browser used to read straight from Supabase — served here AS THE USER,
     // so row-level security still decides what they can see. Additive: the browser
     // keeps its direct path until VITE_AUTH_MODE flips.
+    // The no-login agent path (assessment / check-in links). Allowlisted, token-gated
+    // and rate limited — it is the only unauthenticated write surface in the system.
+    const publicResponse = await handlePublicRoutes(req, env, url, cors);
+    if (publicResponse) return publicResponse;
+
     const dataResponse = await handleDataRoutes(
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
     );

@@ -117,7 +117,12 @@ Last, because it's the only path that must work with no login.
 - [ ] Add per-IP rate limiting on these — the only unauthenticated write surface.
 - [ ] Test: a valid token works with no cookie; an invalid one is refused; the rate limit trips.
 - [ ] Verify the full agent journey on preview: open the link, take the assessment, see the result.
-- [ ] **Remove `VITE_SUPABASE_ANON_KEY` from the bundle.** Confirm with a secrets scan that the shipped JavaScript contains zero JWTs.
+- [ ] **Remove `VITE_SUPABASE_ANON_KEY` from the bundle.** ORDERING CORRECTION
+      (2026-08-12): this cannot happen in Phase 6. Production still runs
+      `VITE_AUTH_MODE=token`, and that path talks to Supabase directly, so pulling the
+      key would break the live app immediately. It moves to Phase 7, AFTER the cutover
+      and after the token path is deleted. Confirm then with a secrets scan that the
+      shipped JavaScript contains zero JWTs.
 - [ ] Then `revoke` the anon role's remaining grants and re-run the security advisors.
 - [ ] Commit.
 
