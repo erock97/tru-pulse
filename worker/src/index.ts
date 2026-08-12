@@ -6,6 +6,7 @@ import { db } from './db.js';
 import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
+import { handleAuthRoutes } from './authRoutes.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -168,6 +169,11 @@ export default {
     const json = (obj: unknown, status = 200) => jsonWithCors(obj, status, cors);
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+
+    // Cookie-based auth (Phase 3). Purely additive — the browser-side Supabase auth
+    // keeps working until the web app is switched over with VITE_AUTH_MODE.
+    const authResponse = await handleAuthRoutes(req, env, url, { originAllowed, cors });
+    if (authResponse) return authResponse;
     if (url.pathname === '/health') return json({ ok: true });
 
     // Provision a tenant. Admin token → userId from body; else the signed-in user.

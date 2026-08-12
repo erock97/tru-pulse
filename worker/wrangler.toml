@@ -40,3 +40,12 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1"]
 #   INVITE_FROM                  leader invite sender, e.g. "TRU HQ <hq@truhq.co>"
 #                                truhq.co is the ONLY domain verified in Resend; any
 #                                other sender domain is rejected SILENTLY.
+
+# Server-side login sessions (Phase 3 of the cookie-auth migration). The browser only
+# ever holds an opaque session id in an httpOnly cookie; the Supabase access and
+# refresh tokens live here, where no script can reach them. KV rather than an
+# encrypted cookie so a session can be REVOKED — offboard an agent and their access
+# ends immediately, which matters at hundreds of agents across seven teams.
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "d491e3cf16db4de8bd10addcab4d1a3f"
