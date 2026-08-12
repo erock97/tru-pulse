@@ -3,6 +3,23 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Serve on our own domain. Required before cookie auth: a cookie for truhq.co is
+# never sent to workers.dev, so the app and the API must be the same site. Also
+# stops leaking the Cloudflare account name in every request. The workers.dev
+# address keeps working, so existing FUB webhooks are unaffected until they are
+# deliberately re-registered (worker/ops/register-webhooks.sh).
+# workers_dev MUST stay true. Adding `routes` disables the workers.dev address by
+# default, and all four teams' FUB webhooks are registered against it — turning it
+# off took live updates down for every team until this was restored. Both addresses
+# serve the same Worker; the old one retires only after the hooks are re-registered
+# onto api.truhq.co via worker/ops/register-webhooks.sh.
+workers_dev = true
+preview_urls = true
+routes = [
+  { pattern = "api.truhq.co", custom_domain = true }
+]
+
+
 # Incremental sync every 30 min; daily 3-strike reconcile at 07:05;
 # weekly Leadership Brief Monday 13:00 UTC (~8-9am ET).
 [triggers]
