@@ -78,6 +78,24 @@ The repeatable pattern. Do Pulse first because it has the most traffic and the f
 
 ### Phase 5 — Coach and Rep
 
+**SCOPE CORRECTION (2026-08-12, after starting it).** The original estimate counted
+call *sites* and assumed Coach was reads like Pulse. It isn't. Coach is a read/write
+surface: inserts, updates and deletes across `goals`, `commitments`, `checkins`,
+`checkin_items`, `checkin_leader`, plus `log_structured_checkin`. Writes are where a
+tenancy mistake does damage rather than merely leaking, and `loadGoalBundle` creates
+and seeds rows on first open, so it can't be moved as a naive read. Split into:
+
+- **5a Coach reads** — roster, check-in bundle, profile, open commitments, full roster,
+  team links. DONE for roster + check-in bundle.
+- **5b Coach writes** — the goal/commitment/check-in mutations. Each needs its own
+  test that a caller cannot write to another tenant's row, which is a stronger
+  assertion than the read tests.
+- **5c Rep** — smaller and mostly reads: `rep_questions_public`, `rep_progress`,
+  `rep_modules`, `rep_practice`.
+
+Doing 5b in the same sitting as 5a would mean shipping writes I hadn't verified as
+carefully as the reads. Deliberately not done.
+
 Same pattern, one commit per product.
 
 - [ ] Coach: `commitments` 8, `checkin_items` 4, `goals` 3, `checkins` 2, `checkin_leader` 2, `assessments` 1, plus RPCs `log_structured_checkin`, `set_agent_pause`, `set_coaching`.

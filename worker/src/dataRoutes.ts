@@ -7,6 +7,11 @@ import type { Env } from './env.js';
 import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
 
+// Ids come from the query string, so validate the shape before it reaches a
+// PostgREST filter. Filters AND together so an id can't be widened to another
+// tenant's row, but a malformed one could still override `select`.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const LEAD_COLS = 'team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond';
 const STAGE_LOG_COLS = 'fub_person_id,stage_class,changed_at,date_source,agent_user_id,agent_name,team_id';
 const SETTINGS_COLS =
@@ -56,6 +61,45 @@ export async function handleDataRoutes(
       deals,
       stageLog,
     }, 200, cors);
+  }
+
+
+  // ── Coach: the roster behind loadRoster(). ──
+  // Keeps the nested select the browser used (assessments + checkins embedded), so the
+  // response maps 1:1 onto RosterAgent and the client change is one line. personal_code
+  // is fetched separately because the column may not exist on older databases — the
+  // browser treated that as best-effort and so do we.
+  if (url.pathname === '/data/coach/roster' && req.method === 'GET') {
+    const [agents, pcodes] = await Promise.all([
+      db.select(
+        'agents',
+        'select=id,team_id,token,name,email,phone,created_at,coaching_enabled,' +
+        'assessments(code,taken_at),checkins(created_at,met,leads,convos,focus)' +
+        '&order=created_at.asc',
+      ),
+      db.select('agents', 'select=id,personal_code'),
+    ]);
+    return json({ agents, pcodes }, 200, cors);
+  }
+
+  // ── Coach: one agent's check-in history with its structured children. ──
+  // The browser made three round trips (checkins, then items and leader by id list).
+  // Doing it here is one trip and cannot fetch children for a checkin the caller
+  // couldn't see, because every query runs under their own policies.
+  if (url.pathname === '/data/coach/checkins' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+
+    const checkins = await db.select<{ id: string }>(
+      'checkins', `select=*&agent_id=eq.${agentId}&order=created_at.desc`,
+    );
+    if (checkins.length === 0) return json({ checkins: [], items: [], leader: [] }, 200, cors);
+    const ids = checkins.map((c) => c.id).join(',');
+    const [items, leader] = await Promise.all([
+      db.select('checkin_items', `select=*&checkin_id=in.(${ids})&order=position.asc`),
+      db.select('checkin_leader', `select=*&checkin_id=in.(${ids})`),
+    ]);
+    return json({ checkins, items, leader }, 200, cors);
   }
 
   return json({ error: 'not found' }, 404, cors);

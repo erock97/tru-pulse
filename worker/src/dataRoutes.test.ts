@@ -171,3 +171,61 @@ describe('GET /data/dashboard', () => {
     expect((await dashboard(sid)).status).toBe(401);
   });
 });
+
+// ── Coach reads ─────────────────────────────────────────────────────────────
+// Same requirement as the dashboard: the user's own token, never the service role,
+// and no cross-tenant bleed. Plus id validation, since agentId arrives in the URL.
+describe('Coach read endpoints', () => {
+  const coach = (path: string, sid: string) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        headers: { Origin: APP, Cookie: `${COOKIE_NAME}=${sid}` },
+      }),
+      env, ctx,
+    );
+
+  it('roster requires a session', async () => {
+    const res = await worker.fetch(
+      new Request('https://api.truhq.co/data/coach/roster', { headers: { Origin: APP } }), env, ctx,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('roster never sends the service-role key', async () => {
+    const sid = await signIn('acme@test.com');
+    sentAuthHeaders = [];
+    await coach('/data/coach/roster', sid);
+    expect(sentAuthHeaders.length).toBeGreaterThan(0);
+    for (const h of sentAuthHeaders) expect(h).not.toContain(SERVICE_ROLE);
+  });
+
+  it('roster sends the caller\'s own token', async () => {
+    const sid = await signIn('globex@test.com');
+    sentAuthHeaders = [];
+    await coach('/data/coach/roster', sid);
+    expect(sentAuthHeaders.some((h) => h.includes('Bearer at-globex'))).toBe(true);
+  });
+
+  it('rejects an agentId that is not a uuid, before it reaches a database filter', async () => {
+    const sid = await signIn('acme@test.com');
+    for (const bad of ['not-a-uuid', '', 'x&select=*', '../etc']) {
+      const res = await coach(`/data/coach/checkins?agentId=${encodeURIComponent(bad)}`, sid);
+      expect(res.status).toBe(422);
+    }
+  });
+
+  it('accepts a well-formed agentId and returns the bundle shape', async () => {
+    const sid = await signIn('acme@test.com');
+    const res = await coach('/data/coach/checkins?agentId=3a84fd98-13f2-46e7-83a2-a1ed3aeadab7', sid);
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    for (const k of ['checkins', 'items', 'leader']) expect(body).toHaveProperty(k);
+  });
+
+  it('leaks no token into a Coach response', async () => {
+    const sid = await signIn('acme@test.com');
+    const text = JSON.stringify(await (await coach('/data/coach/roster', sid)).json());
+    expect(text).not.toContain('at-acme');
+    expect(text).not.toContain(SERVICE_ROLE);
+  });
+});
