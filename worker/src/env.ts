@@ -1,6 +1,7 @@
 export interface Env {
   SESSIONS: KVNamespace;              // server-side login sessions; see wrangler.toml
   AUTH_COOKIE_DOMAIN?: string;        // defaults to host-only on api.truhq.co
+  APP_ORIGIN?: string;                // where OAuth returns the user; defaults to app.truhq.co
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;  // bypasses RLS — server-side only
   SUPABASE_ANON_KEY: string;          // used to validate a caller's user token

@@ -15,6 +15,42 @@ import {
   sessionCookie, clearCookie,
 } from './session.js';
 
+
+// ── Google sign-in, server-side (PKCE) ──────────────────────────────────────
+// The browser-only flow returns tokens in the URL fragment, which never reaches a
+// server — so it cannot produce an httpOnly cookie. The code flow can: we send the
+// user to Supabase with a hashed one-time secret, Supabase sends back a code, and we
+// exchange code + secret for a session here.
+//
+// Endpoints and parameter names were read out of @supabase/auth-js rather than guessed:
+//   authorize: /auth/v1/authorize?provider=google&redirect_to=..&code_challenge=..&code_challenge_method=s256
+//   exchange:  POST /auth/v1/token?grant_type=pkce  { auth_code, code_verifier }
+//   challenge: base64url(sha256(verifier)), method 's256'
+
+/** The one-time secret. 56 hex chars, matching the library's own verifier length. */
+function newVerifier(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(28));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function challengeFor(verifier: string): Promise<string> {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  let bin = '';
+  for (const b of new Uint8Array(hash)) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+const PKCE_COOKIE = 'hq_pkce';
+
+/** Short-lived, httpOnly. Binds the callback to the browser that started the sign-in,
+ *  which is what stops someone else's code being redeemed in your session. */
+function pkceCookie(verifier: string): string {
+  return `${PKCE_COOKIE}=${verifier}; HttpOnly; Secure; SameSite=Lax; Path=/auth/google; Max-Age=600`;
+}
+function clearPkce(): string {
+  return `${PKCE_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/auth/google; Max-Age=0`;
+}
+
 export interface AuthDeps {
   /** Is this Origin one of ours? Reuses the Worker's single allowlist. */
   originAllowed: (origin: string) => boolean;
@@ -101,6 +137,57 @@ export async function handleAuthRoutes(
     }
     const u = (await res.json()) as { id?: string; email?: string };
     return json({ user: { id: u.id, email: u.email } }, 200, cors);
+  }
+
+
+  // ── Start Google sign-in. A top-level navigation, so it answers with a redirect. ──
+  if (url.pathname === '/auth/google/start' && req.method === 'GET') {
+    const verifier = newVerifier();
+    const challenge = await challengeFor(verifier);
+    const callback = `${url.origin}/auth/google/callback`;
+    const authorize =
+      env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/authorize'
+      + `?provider=google&redirect_to=${encodeURIComponent(callback)}`
+      + `&code_challenge=${encodeURIComponent(challenge)}&code_challenge_method=s256`;
+    return new Response(null, {
+      status: 302,
+      headers: { ...cors, Location: authorize, 'Set-Cookie': pkceCookie(verifier) },
+    });
+  }
+
+  // ── Google sends the user back here with a code. ──
+  if (url.pathname === '/auth/google/callback' && req.method === 'GET') {
+    // Where we send them afterwards is HARD-CODED, never taken from a query parameter —
+    // an attacker-controlled redirect target is how open-redirect phishing works.
+    const appUrl = env.APP_ORIGIN ?? 'https://app.truhq.co';
+    const fail = (why: string) => new Response(null, {
+      status: 302,
+      headers: { ...cors, Location: `${appUrl}/?auth_error=${encodeURIComponent(why)}`, 'Set-Cookie': clearPkce() },
+    });
+
+    if (url.searchParams.get('error')) return fail('google_declined');
+    const code = url.searchParams.get('code');
+    const verifier = readCookie(req, PKCE_COOKIE);
+    // No verifier means this callback didn't start in this browser — refuse it.
+    if (!code || !verifier) return fail('link_expired');
+
+    const res = await fetch(
+      env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/token?grant_type=pkce',
+      {
+        method: 'POST',
+        headers: { apikey: env.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
+      },
+    );
+    if (!res.ok) return fail('signin_failed');
+    const newSid = await startSession(env, (await res.json()) as SupabaseSession);
+    if (!newSid) return fail('signin_failed');
+
+    // Two Set-Cookie headers: install the session, discard the one-time secret.
+    const headers = new Headers({ ...cors, Location: appUrl });
+    headers.append('Set-Cookie', sessionCookie(newSid, env));
+    headers.append('Set-Cookie', clearPkce());
+    return new Response(null, { status: 302, headers });
   }
 
   // Everything below changes state, so it needs a browser origin we recognise.

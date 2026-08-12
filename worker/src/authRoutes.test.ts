@@ -237,3 +237,78 @@ describe('POST /auth/reset-request', () => {
     expect(await res.json()).toEqual({ ok: true });
   });
 });
+
+describe('Google sign-in (server-side PKCE)', () => {
+  const nav = (path: string, cookie?: string) =>
+    worker.fetch(
+      new Request(`https://api.truhq.co${path}`, {
+        headers: { ...(cookie ? { Cookie: cookie } : {}) }, redirect: 'manual',
+      }), env, ctx,
+    );
+
+  it('start redirects to Supabase with a hashed one-time secret, not the secret itself', async () => {
+    const res = await nav('/auth/google/start');
+    expect(res.status).toBe(302);
+    const loc = res.headers.get('Location') ?? '';
+    expect(loc).toContain('/auth/v1/authorize');
+    expect(loc).toContain('provider=google');
+    expect(loc).toContain('code_challenge_method=s256');
+    expect(loc).toContain('redirect_to=');
+
+    // The verifier goes in an httpOnly cookie; only its hash goes to Supabase.
+    const cookie = res.headers.get('Set-Cookie') ?? '';
+    expect(cookie).toContain('hq_pkce=');
+    expect(cookie).toContain('HttpOnly');
+    const verifier = /hq_pkce=([^;]+)/.exec(cookie)?.[1] ?? '';
+    expect(verifier).toMatch(/^[0-9a-f]{56}$/);
+    expect(loc).not.toContain(verifier);
+  });
+
+  it('a fresh secret each time, so two sign-ins cannot be crossed', async () => {
+    const a = /hq_pkce=([^;]+)/.exec((await nav('/auth/google/start')).headers.get('Set-Cookie') ?? '')?.[1];
+    const b = /hq_pkce=([^;]+)/.exec((await nav('/auth/google/start')).headers.get('Set-Cookie') ?? '')?.[1];
+    expect(a).not.toBe(b);
+  });
+
+  it('callback with no secret cookie is refused — it did not start in this browser', async () => {
+    const res = await nav('/auth/google/callback?code=abc');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toContain('auth_error=link_expired');
+  });
+
+  it('callback with no code is refused', async () => {
+    const res = await nav('/auth/google/callback', 'hq_pkce=deadbeef');
+    expect(res.headers.get('Location')).toContain('auth_error=link_expired');
+  });
+
+  it('handles the user declining at Google', async () => {
+    const res = await nav('/auth/google/callback?error=access_denied', 'hq_pkce=deadbeef');
+    expect(res.headers.get('Location')).toContain('auth_error=google_declined');
+  });
+
+  it('exchanges code + secret for a session and sets the httpOnly cookie', async () => {
+    supabase = { ok: true, body: goodSession };
+    const res = await nav('/auth/google/callback?code=real-code', 'hq_pkce=abcdef1234');
+    expect(res.status).toBe(302);
+    const cookies = res.headers.getSetCookie?.() ?? [res.headers.get('Set-Cookie') ?? ''];
+    const joined = cookies.join(' | ');
+    expect(joined).toContain(`${COOKIE_NAME}=`);   // session installed
+    expect(joined).toContain('HttpOnly');
+    expect(joined).toContain('hq_pkce=;');          // one-time secret discarded
+  });
+
+  it('always returns the user to OUR app, never to a url from the query string', async () => {
+    supabase = { ok: true, body: goodSession };
+    // An attacker-supplied redirect would be an open-redirect phishing vector.
+    const res = await nav('/auth/google/callback?code=c&redirect_to=https://evil.io', 'hq_pkce=abc');
+    expect(res.headers.get('Location')).not.toContain('evil.io');
+    expect(res.headers.get('Location')).toContain('truhq.co');
+  });
+
+  it('a failed exchange does not create a session', async () => {
+    supabase = { ok: false, body: {} };
+    const res = await nav('/auth/google/callback?code=bad', 'hq_pkce=abc');
+    expect(res.headers.get('Location')).toContain('auth_error=signin_failed');
+    expect(res.headers.get('Set-Cookie') ?? '').not.toContain(`${COOKIE_NAME}=h`);
+  });
+});
