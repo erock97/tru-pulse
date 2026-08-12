@@ -281,8 +281,13 @@ describe('Google sign-in (server-side PKCE)', () => {
     expect(res.headers.get('Location')).toContain('auth_error=link_expired');
   });
 
-  it('callback with no code is refused', async () => {
+  it('callback with no code is refused, and says which half was missing', async () => {
     const res = await nav('/auth/google/callback', 'hq_pkce=deadbeef');
+    expect(res.headers.get('Location')).toContain('auth_error=no_code');
+  });
+
+  it('callback with a code but no verifier is refused as an expired link', async () => {
+    const res = await nav('/auth/google/callback?code=abc');
     expect(res.headers.get('Location')).toContain('auth_error=link_expired');
   });
 

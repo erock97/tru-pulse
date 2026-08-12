@@ -356,6 +356,19 @@ describe('CORS origin allowlist', () => {
     expect(await allowFor('https://evil.io')).toBeNull();
   });
 
+  // Cookie auth is invisible to every other test: a request without this header
+  // still returns 200, and only the BROWSER throws the response away. Losing it
+  // breaks sign-in silently, so assert it directly.
+  it('allows credentials for an allowed origin, so the session cookie survives', async () => {
+    const res = await preflight('https://app.truhq.co');
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true');
+  });
+
+  it('does NOT allow credentials for an origin it refuses', async () => {
+    const res = await preflight('https://evil.io');
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBeNull();
+  });
+
   it('does NOT answer lookalike domains', async () => {
     // Suffix tricks: our domain appearing as a prefix of somebody else's.
     expect(await allowFor('https://app.truhq.co.evil.com')).toBeNull();

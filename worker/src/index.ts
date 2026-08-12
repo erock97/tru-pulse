@@ -60,7 +60,16 @@ function corsHeaders(req: Request): Record<string, string> {
     // tenant's allow-header to another origin.
     Vary: 'Origin',
   };
-  if (origin && originAllowed(origin)) base['Access-Control-Allow-Origin'] = origin;
+  if (origin && originAllowed(origin)) {
+    base['Access-Control-Allow-Origin'] = origin;
+    // Required for cookie auth, and easy to miss because nothing else needs it: a
+    // browser DISCARDS the response to any credentialed cross-origin request that
+    // comes back without this header. app.truhq.co -> api.truhq.co is cross-origin
+    // (same site, different host), so without it the app can never read its own
+    // session — sign-in appears to succeed and then lands back on the login screen.
+    // Safe because it is only ever sent alongside an echoed, allow-listed origin.
+    base['Access-Control-Allow-Credentials'] = 'true';
+  }
   return base;
 }
 function jsonWithCors(obj: unknown, status = 200, cors: Record<string, string> = {}): Response {

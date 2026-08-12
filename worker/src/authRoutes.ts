@@ -172,11 +172,21 @@ export async function handleAuthRoutes(
       headers: { ...cors, Location: `${appUrl}/?auth_error=${encodeURIComponent(why)}`, 'Set-Cookie': clearPkce() },
     });
 
-    if (url.searchParams.get('error')) return fail('google_declined');
     const code = url.searchParams.get('code');
     const verifier = readCookie(req, PKCE_COOKIE);
+    // One line, no secrets, saying which of the three ways this can fail happened.
+    // Without it a failed sign-in is indistinguishable from a page refresh, which is
+    // exactly how long this took to diagnose the first time.
+    console.log('auth/google/callback', JSON.stringify({
+      hasCode: !!code,
+      hasVerifier: !!verifier,
+      googleError: url.searchParams.get('error') ?? null,
+      params: [...url.searchParams.keys()],
+    }));
+
+    if (url.searchParams.get('error')) return fail('google_declined');
     // No verifier means this callback didn't start in this browser — refuse it.
-    if (!code || !verifier) return fail('link_expired');
+    if (!code || !verifier) return fail(!code ? 'no_code' : 'link_expired');
 
     const res = await fetch(
       env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/token?grant_type=pkce',
@@ -186,7 +196,10 @@ export async function handleAuthRoutes(
         body: JSON.stringify({ auth_code: code, code_verifier: verifier }),
       },
     );
-    if (!res.ok) return fail('signin_failed');
+    if (!res.ok) {
+      console.log('auth/google/callback exchange refused', res.status, (await res.text()).slice(0, 200));
+      return fail('signin_failed');
+    }
     const newSid = await startSession(env, (await res.json()) as SupabaseSession);
     if (!newSid) return fail('signin_failed');
 

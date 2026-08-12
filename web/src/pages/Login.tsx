@@ -11,7 +11,21 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  // A failed Google sign-in comes back as ?auth_error=<why>. Showing it matters more
+  // than it looks: without this the browser lands back here having silently discarded
+  // the reason, which is indistinguishable from the button doing nothing at all.
+  const [error, setError] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    const why = new URLSearchParams(window.location.search).get('auth_error');
+    if (!why) return '';
+    history.replaceState(null, '', window.location.pathname);
+    return ({
+      google_declined: 'Google sign-in was cancelled.',
+      link_expired: 'That sign-in took too long, or started in another browser. Try again.',
+      no_code: 'Google did not send us back a sign-in code. Try again.',
+      signin_failed: 'We could not finish signing you in with Google. Try again, or use your email and password.',
+    } as Record<string, string>)[why] ?? 'Google sign-in did not complete. Try again.';
+  });
   const [notice, setNotice] = useState('');
 
   async function submit(e: FormEvent) {
