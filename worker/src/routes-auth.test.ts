@@ -275,3 +275,45 @@ describe('POST /rep/practice — call ownership', () => {
     expect((await post('/rep/practice/finish', { practiceId: 'test:relocator:x' })).status).toBe(401);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// Secrets must FAIL CLOSED. The webhook check used to be
+// `if (env.WEBHOOK_SECRET && key !== secret)`, so a missing secret skipped the
+// door entirely and any caller could trigger a full team sync. Same shape of bug
+// was possible on the ops token. These lock both shut.
+describe('unconfigured secrets fail closed', () => {
+  const post = (path: string, headers: Record<string, string> = {}) =>
+    worker.fetch(
+      new Request(`https://worker.test${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ event: 'peopleUpdated', resourceIds: [1] }),
+      }),
+      { ...env, WEBHOOK_SECRET: undefined, ADMIN_TOKEN: '' } as Env,
+      ctx,
+    );
+
+  it('refuses the FUB webhook when WEBHOOK_SECRET is not set', async () => {
+    const res = await post('/webhook/fub?team=t1');
+    expect(res.status).toBe(503);
+    expect(ctx.waitUntil).not.toHaveBeenCalled(); // no sync was scheduled
+  });
+
+  it('refuses the FUB webhook when the key is wrong', async () => {
+    const res = await worker.fetch(
+      new Request('https://worker.test/webhook/fub?team=t1&key=guess', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'peopleUpdated', resourceIds: [1] }),
+      }),
+      { ...env, WEBHOOK_SECRET: 'the-real-secret' } as Env,
+      ctx,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('does not treat an empty ADMIN_TOKEN as a valid ops token', async () => {
+    // An attacker sending no token must not match an unset secret.
+    const res = await post('/webhook/register?teamId=t1', { 'x-admin-token': '' });
+    expect([401, 403, 503]).toContain(res.status);
+  });
+});

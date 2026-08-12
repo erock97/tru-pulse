@@ -25,8 +25,19 @@ const CORS: Record<string, string> = {
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 }
+/** Compare two secrets in time that doesn't depend on where they first differ, so
+ *  the response latency can't be used to guess a token character by character. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function isAdmin(req: Request, env: Env): boolean {
-  return req.headers.get('x-admin-token') === env.ADMIN_TOKEN;
+  // Also fail closed: an unset ADMIN_TOKEN must never make every ops route public.
+  if (!env.ADMIN_TOKEN) return false;
+  return timingSafeEqual(req.headers.get('x-admin-token') ?? '', env.ADMIN_TOKEN);
 }
 
 // TRU Rep authoring — caller must be a leader OR admin of the target org.
@@ -337,7 +348,15 @@ export default {
     if (url.pathname === '/webhook/fub' && req.method === 'POST') {
       const teamId = url.searchParams.get('team');
       if (!teamId) return json({ error: 'team required' }, 400);
-      if (env.WEBHOOK_SECRET && url.searchParams.get('key') !== env.WEBHOOK_SECRET) {
+      // FAIL CLOSED. This used to read `if (env.WEBHOOK_SECRET && key !== secret)`,
+      // which meant that if the secret were ever missing from the Worker's env, the
+      // check was skipped entirely and ANY caller could trigger a full team sync.
+      // An unset secret is a misconfiguration, not permission to skip the door.
+      if (!env.WEBHOOK_SECRET) {
+        console.error('webhook/fub refused: WEBHOOK_SECRET is not configured');
+        return json({ error: 'not configured' }, 503);
+      }
+      if (!timingSafeEqual(url.searchParams.get('key') ?? '', env.WEBHOOK_SECRET)) {
         return json({ error: 'forbidden' }, 403);
       }
       const rows = await database.select('teams', `id=eq.${teamId}&is_active=eq.true&select=id,org_id,fub_subdomain`);

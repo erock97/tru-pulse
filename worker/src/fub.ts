@@ -244,54 +244,6 @@ export async function registerWebhooks(
   return out;
 }
 
-// ── Writeback (TRU Prospect dispositions → FUB) ─────────────────────────────
-// A circle-prospected neighbor is a NEW contact — we create it in FUB the first
-// time a warm disposition fires, then reuse its id for later notes/tasks.
-
-function splitName(name: string | null | undefined): { firstName?: string; lastName?: string } {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return {};
-  if (parts.length === 1) return { firstName: parts[0] };
-  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
-}
-
-/** Create a person in FUB and return its id. Use only when we don't already hold one. */
-export async function fubCreatePerson(
-  key: string,
-  p: { name?: string | null; phone?: string | null; source?: string; tags?: string[] },
-  systemKey?: string,
-  systemName?: string,
-): Promise<number | null> {
-  // Honor FUB_SYSTEM_NAME so this write-path shares the same system identity as
-  // webhook registration (avoids a split-brain where webhooks say 'TruPulse' but
-  // person-creates still say the old default). Falls back to the default when unset.
-  const sys: Record<string, string> = systemKey ? { 'X-System': systemName || DEFAULT_X_SYSTEM, 'X-System-Key': systemKey } : {};
-  const person: any = { source: p.source ?? 'TRU Prospect', ...splitName(p.name) };
-  if (p.phone) person.phones = [{ value: p.phone, type: 'mobile' }];
-  if (p.tags?.length) person.tags = p.tags;
-  const r = await fubPost(key, '/people', person, sys);
-  if (r.status >= 200 && r.status < 300 && r.body?.id) return Number(r.body.id);
-  return null;
-}
-
-/** Append a note to a person. */
-export async function fubAddNote(key: string, personId: number, body: string, subject = 'TRU Prospect'): Promise<boolean> {
-  const r = await fubPost(key, '/notes', { personId, subject, body });
-  return r.status >= 200 && r.status < 300;
-}
-
-/** Create a follow-up task on a person. dueDate is ISO (YYYY-MM-DD or full). */
-export async function fubAddTask(
-  key: string,
-  personId: number,
-  opts: { description: string; dueDate?: string; type?: string },
-): Promise<boolean> {
-  const payload: any = { personId, type: opts.type ?? 'Follow Up', description: opts.description };
-  if (opts.dueDate) payload.dueDate = opts.dueDate;
-  const r = await fubPost(key, '/tasks', payload);
-  return r.status >= 200 && r.status < 300;
-}
-
 function subdomainFrom(body: any): string | null {
   const found: string[] = [];
   const walk = (o: any) => {
