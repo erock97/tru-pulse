@@ -477,10 +477,15 @@ export default {
         const expected = await fubSignature(env.FUB_SYSTEM_KEY, rawBody);
         sigState = !header ? 'absent' : secretsMatch(header, expected) ? 'valid' : 'MISMATCH';
       }
-      // LOG-ONLY for now, deliberately. Enforcing a signature we haven't yet seen
-      // FUB produce would silently kill live sync for every team; the log tells us
-      // whether the algorithm matches real traffic before we make it mandatory.
-      // Flip WEBHOOK_REQUIRE_SIGNATURE=1 to enforce once the log reads 'valid'.
+      // ENFORCED. WEBHOOK_REQUIRE_SIGNATURE=1 has been set since 2026-08-11 (b57e25f),
+      // after the log confirmed 'valid' against real FUB traffic for two teams — this
+      // started log-only precisely so we never enforced a signature we hadn't seen FUB
+      // produce. The guard stays conditional so it can be switched off in a hurry if
+      // FUB ever changes how they sign.
+      //
+      // Blast radius if a stale hook still carries an old key: that team drops to the
+      // 30-minute cron, which syncs every active team regardless — latency, not data
+      // loss — and it shows up here as a 403.
       if (env.WEBHOOK_REQUIRE_SIGNATURE === '1' && sigState !== 'valid') {
         console.error(`webhook/fub team=${teamId} REJECTED signature=${sigState}`);
         return json({ error: 'bad signature' }, 403);
