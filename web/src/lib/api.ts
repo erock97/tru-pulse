@@ -1,10 +1,3 @@
-// The browser-side Supabase client is on its way out. Two things still hold it here:
-//   - uploadRepMedia, which is authorised by a Worker-signed upload token rather than
-//     a session, so it is fine either way; and
-//   - mySimAttempts, which is a plain RLS read and therefore only works for a browser
-//     still carrying a pre-cutover token. See coachData.ts — same problem, 18 more
-//     call sites, and the reason the anon key cannot come out of the bundle yet.
-import { supabase } from './supabase';
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
 
@@ -320,16 +313,24 @@ export async function loadRepQuestionsForEdit(
   return body.questions;
 }
 
-/** Leader/admin: upload a lesson media file to the private `rep-media` bucket via the
- *  Worker-signed upload URL, then hand it off to supabase-js's uploadToSignedUrl (already
- *  how this app's Storage client talks to Supabase elsewhere) rather than a raw fetch PUT.
+/** Leader/admin: upload a lesson media file to the private `rep-media` bucket.
+ *
+ *  The Worker signs the upload and hands back a complete URL whose token IS the
+ *  authorisation, so this is a plain PUT — no database client and no key in the
+ *  browser. It used to go through supabase-js's uploadToSignedUrl, which is the only
+ *  reason this file needed a Supabase client at all.
+ *
  *  Returns the object path to embed in a `{ t:'media' }` LessonCard. */
 export async function uploadRepMedia(file: File, orgId: string): Promise<string> {
   const dot = file.name.lastIndexOf('.');
   const ext = (dot >= 0 ? file.name.slice(dot + 1) : (file.type.split('/')[1] ?? 'bin')).toLowerCase();
-  const { path, token: uploadToken } = await signRepUpload(orgId, ext, file.type || undefined);
-  const { error } = await supabase.storage.from('rep-media').uploadToSignedUrl(path, uploadToken, file);
-  if (error) throw new Error(error.message);
+  const { path, signedUrl } = await signRepUpload(orgId, ext, file.type || undefined);
+  const res = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: file.type ? { 'Content-Type': file.type } : {},
+    body: file,
+  });
+  if (!res.ok) throw new Error('Could not upload this file.');
   return path;
 }
 
@@ -564,12 +565,9 @@ export function demoSimResult(): SimResult {
 /** The agent's own sim attempts (RLS: self-read). */
 export async function mySimAttempts(agentId: string): Promise<SimAttempt[]> {
   if (isDemo) return [];
-  const { data } = await supabase
-    .from('rep_practice')
-    .select('id,scenario,status,score,passed,created_at')
-    .eq('agent_id', agentId)
-    .order('created_at', { ascending: false });
-  return (data as SimAttempt[]) ?? [];
+  const res = await workerFetch(`/data/rep/practice?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) return [];
+  return ((await res.json()) as { practice: SimAttempt[] | null }).practice ?? [];
 }
 
 /** Submit a module's answers for server-side grading. */

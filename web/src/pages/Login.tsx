@@ -4,7 +4,7 @@ import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
 // Dark reskin of the sign-in page. Every call goes through lib/auth, which picks the
-// server-held session or the older browser-token path from VITE_AUTH_MODE — so this
+// server-held session — so this
 // screen reads the same in both and nothing here knows what a token is.
 export default function Login() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');

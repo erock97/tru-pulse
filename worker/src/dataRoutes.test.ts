@@ -47,6 +47,10 @@ const LEADS: Record<string, Array<{ team_id: string; name: string }>> = {
 let env: Env;
 let ctx: ExecutionContext;
 let sentAuthHeaders: string[];
+/** Every PostgREST path the Worker asked for, so a test can assert which TABLES a
+ *  route touches — not just what it returned. Used to prove the agent-facing recap
+ *  never reaches for the leader's private note. */
+let sentPaths: string[];
 
 beforeEach(() => {
   env = {
@@ -55,6 +59,7 @@ beforeEach(() => {
   } as unknown as Env;
   ctx = { waitUntil: vi.fn(), passThroughOnException: vi.fn() } as unknown as ExecutionContext;
   sentAuthHeaders = [];
+  sentPaths = [];
 
   vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.url;
@@ -62,6 +67,7 @@ beforeEach(() => {
     const auth = String((init?.headers as any)?.Authorization ?? '');
     const apikey = String((init?.headers as any)?.apikey ?? '');
     sentAuthHeaders.push(`${auth} | ${apikey}`);
+    sentPaths.push(u.pathname + u.search);
 
     const ok = (b: unknown) => new Response(JSON.stringify(b), {
       status: 200, headers: { 'Content-Type': 'application/json' },
@@ -251,6 +257,77 @@ describe('Coach read endpoints', () => {
     const text = JSON.stringify(await (await coach('/data/coach/roster', sid)).json());
     expect(text).not.toContain('at-acme');
     expect(text).not.toContain(SERVICE_ROLE);
+  });
+
+  // ── The routes that finished the migration ──
+  // Until these existed, Coach read the database straight from the browser, which
+  // only worked in a browser still holding a pre-cutover token — so it answered as
+  // whoever that token belonged to, and returned nothing for anyone else.
+  const AGENT = '3a84fd98-13f2-46e7-83a2-a1ed3aeadab7';
+  const CHECKIN = '7c1d0b52-9f3e-4a11-9d64-2b8e4f6a1c33';
+
+  it('every Coach read requires a session', async () => {
+    for (const path of [
+      `/data/coach/profile?agentId=${AGENT}`,
+      `/data/coach/commitments?agentId=${AGENT}`,
+      `/data/coach/checkin-items?checkinId=${CHECKIN}`,
+      `/data/coach/checkin-leader?checkinId=${CHECKIN}`,
+      `/data/coach/open-commitments?agentId=${AGENT}`,
+      `/data/coach/my-one-on-ones?agentId=${AGENT}`,
+      '/data/coach/full-roster',
+      '/data/coach/team-links',
+      `/data/rep/practice?agentId=${AGENT}`,
+    ]) {
+      const res = await worker.fetch(
+        new Request(`https://api.truhq.co${path}`, { headers: { Origin: APP } }), env, ctx,
+      );
+      expect(res.status, path).toBe(401);
+    }
+  });
+
+  it('every id-taking Coach read refuses a non-uuid before it reaches a filter', async () => {
+    const sid = await signIn('acme@test.com');
+    for (const path of [
+      '/data/coach/profile?agentId=',
+      '/data/coach/commitments?agentId=',
+      '/data/coach/checkin-items?checkinId=',
+      '/data/coach/checkin-leader?checkinId=',
+      '/data/coach/open-commitments?agentId=',
+      '/data/coach/my-one-on-ones?agentId=',
+      '/data/rep/practice?agentId=',
+    ]) {
+      for (const bad of ['not-a-uuid', '', 'x&select=*']) {
+        const res = await coach(path + encodeURIComponent(bad), sid);
+        expect(res.status, path + bad).toBe(422);
+      }
+    }
+  });
+
+  it('the new Coach reads use the caller\'s own token, never the service role', async () => {
+    const sid = await signIn('globex@test.com');
+    for (const path of [
+      `/data/coach/profile?agentId=${AGENT}`,
+      `/data/coach/my-one-on-ones?agentId=${AGENT}`,
+      '/data/coach/full-roster',
+      '/data/coach/team-links',
+    ]) {
+      sentAuthHeaders = [];
+      await coach(path, sid);
+      expect(sentAuthHeaders.length, path).toBeGreaterThan(0);
+      for (const h of sentAuthHeaders) expect(h, path).not.toContain(SERVICE_ROLE);
+      expect(sentAuthHeaders.some((h) => h.includes('Bearer at-globex')), path).toBe(true);
+    }
+  });
+
+  // The agent-facing recap must not be able to reach the leader's private note. RLS
+  // would refuse it, but a route that never names the table cannot regress if a
+  // policy is later loosened.
+  it('the agent recap route never touches checkin_leader', async () => {
+    const sid = await signIn('acme@test.com');
+    sentPaths = [];
+    await coach(`/data/coach/my-one-on-ones?agentId=${AGENT}`, sid);
+    expect(sentPaths.length).toBeGreaterThan(0);
+    for (const p of sentPaths) expect(p).not.toContain('checkin_leader');
   });
 });
 

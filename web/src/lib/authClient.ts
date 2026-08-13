@@ -10,12 +10,6 @@
 // something appears broken after the cutover.
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
-/** 'cookie' once the cutover happens; 'token' keeps the existing supabase-js path. */
-export const AUTH_MODE: 'cookie' | 'token' =
-  (import.meta.env.VITE_AUTH_MODE as 'cookie' | 'token') ?? 'token';
-
-export const isCookieAuth = AUTH_MODE === 'cookie';
-
 export interface AuthUser { id: string; email: string | null }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {

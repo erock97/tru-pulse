@@ -104,6 +104,105 @@ export async function handleDataRoutes(
   }
 
 
+  // ── Coach: one agent's assessment history + their personal (baseline) profile. ──
+  // The personal columns are best-effort exactly as the browser treated them: agents
+  // assessed on the old business-only site have neither, and that is not an error.
+  if (url.pathname === '/data/coach/profile' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const [assessments, personal] = await Promise.all([
+      db.select(
+        'assessments',
+        'select=code,taken_at,energy_p,energy_t,approach_pro,approach_rec,deal_r,deal_v,' +
+        `decision_d,decision_i&agent_id=eq.${agentId}&order=taken_at.desc`,
+      ),
+      db.select('agents', `select=personal_code,personal_axes&id=eq.${agentId}&limit=1`),
+    ]);
+    return json({ assessments, personal: personal[0] ?? null }, 200, cors);
+  }
+
+  // ── Coach: an agent's commitment checklist. ──
+  if (url.pathname === '/data/coach/commitments' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const commitments = await db.select('commitments', `select=*&agent_id=eq.${agentId}`);
+    return json({ commitments }, 200, cors);
+  }
+
+  // ── Coach: the structured children of ONE 1:1. ──
+  // Two routes rather than one because the split is a permission boundary, not a
+  // convenience: checkin_items is agent-visible, checkin_leader is leader-private.
+  // Keeping them separate means the agent-side recap can never accidentally ask for
+  // the leader's note by passing a different flag.
+  if (url.pathname === '/data/coach/checkin-items' && req.method === 'GET') {
+    const checkinId = url.searchParams.get('checkinId') ?? '';
+    if (!UUID_RE.test(checkinId)) return json({ error: 'invalid checkinId' }, 422, cors);
+    const items = await db.select(
+      'checkin_items', `select=*&checkin_id=eq.${checkinId}&order=position.asc`,
+    );
+    return json({ items }, 200, cors);
+  }
+
+  if (url.pathname === '/data/coach/checkin-leader' && req.method === 'GET') {
+    const checkinId = url.searchParams.get('checkinId') ?? '';
+    if (!UUID_RE.test(checkinId)) return json({ error: 'invalid checkinId' }, 422, cors);
+    const rows = await db.select('checkin_leader', `select=*&checkin_id=eq.${checkinId}&limit=1`);
+    return json({ leader: rows[0] ?? null }, 200, cors);
+  }
+
+  // ── Coach: everything this agent still owes, across every past session. ──
+  if (url.pathname === '/data/coach/open-commitments' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const items = await db.select(
+      'checkin_items',
+      `select=*&agent_id=eq.${agentId}&kind=eq.commitment&status=is.null&order=created_at.asc`,
+    );
+    return json({ items }, 200, cors);
+  }
+
+  // ── Coach: the AGENT's own view of their 1:1s. ──
+  // Deliberately never touches checkin_leader. RLS would refuse the agent anyway, but
+  // the route not naming the table at all is the guarantee that survives a policy edit.
+  if (url.pathname === '/data/coach/my-one-on-ones' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const checkins = await db.select<{ id: string }>(
+      'checkins', `select=*&agent_id=eq.${agentId}&order=created_at.desc`,
+    );
+    if (checkins.length === 0) return json({ checkins: [], items: [] }, 200, cors);
+    const ids = checkins.map((c) => c.id).join(',');
+    const items = await db.select(
+      'checkin_items', `select=*&checkin_id=in.(${ids})&order=position.asc`,
+    );
+    return json({ checkins, items }, 200, cors);
+  }
+
+  // ── Coach: every agent in the org, for the "Add agents to Coach" picker. ──
+  if (url.pathname === '/data/coach/full-roster' && req.method === 'GET') {
+    const agents = await db.select(
+      'agents', 'select=id,name,coaching_enabled,assessments(code)&order=name.asc',
+    );
+    return json({ agents }, 200, cors);
+  }
+
+  // ── Coach: the per-team public assessment join links. ──
+  if (url.pathname === '/data/coach/team-links' && req.method === 'GET') {
+    const teams = await db.select('teams', 'select=id,name,join_token&order=name.asc');
+    return json({ teams }, 200, cors);
+  }
+
+  // ── Rep: one agent's own practice attempts. ──
+  if (url.pathname === '/data/rep/practice' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const practice = await db.select(
+      'rep_practice',
+      `select=id,scenario,status,score,passed,created_at&agent_id=eq.${agentId}&order=created_at.desc`,
+    );
+    return json({ practice }, 200, cors);
+  }
+
   // ── Rep: the leader's certification board (loadRep). ──
   if (url.pathname === '/data/rep/board' && req.method === 'GET') {
     const [modules, questions, progress, agents, practice] = await Promise.all([
@@ -205,6 +304,62 @@ export async function handleDataRoutes(
       const rows = await db.update('goals', `agent_id=eq.${agentId}`, body.fields ?? {});
       if (!rows) return json({ error: 'not allowed' }, 403, cors);
       return json({ goal: rows[0] ?? null }, 200, cors);
+    }
+
+    // First open of an agent's goal screen: fetch the goal and its checklist, creating
+    // both if this is the first time. The create half is why this is a POST and not a
+    // GET — opening the screen genuinely writes.
+    //
+    // Every read and write here runs as the user, so a leader who cannot see this agent
+    // gets a refusal rather than a freshly-seeded goal on someone else's agent.
+    if (url.pathname === '/data/coach/goal-bundle') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const teamId = body.teamId == null ? null : String(body.teamId);
+
+      let goals = await db.select<Record<string, unknown>>(
+        'goals', `select=*&agent_id=eq.${agentId}&limit=1`,
+      );
+      if (goals.length === 0) {
+        const created = await db.insert<Record<string, unknown>>('goals', {
+          agent_id: agentId, team_id: teamId, ...(body.goalDefaults ?? {}),
+        });
+        if (!created) return json({ error: 'not allowed' }, 403, cors);
+        goals = created;
+      }
+      const goal = goals[0] ?? null;
+
+      let commitments = await db.select<Record<string, unknown>>(
+        'commitments', `select=*&agent_id=eq.${agentId}`,
+      );
+      // Seed the starter checklist only when there is a goal to derive it from and the
+      // agent has none yet. The rows themselves are computed in the browser (they are
+      // pure text derived from the archetype) and sent along.
+      const seed = Array.isArray(body.seed) ? (body.seed as unknown[]) : [];
+      if (commitments.length === 0 && goal && seed.length > 0) {
+        const created = await db.insert<Record<string, unknown>>('commitments', seed);
+        if (!created) return json({ error: 'not allowed' }, 403, cors);
+        commitments = created;
+      }
+      return json({ goal, commitments }, 200, cors);
+    }
+
+    // Wipe an agent's checklist (the "start over" path on the goal screen).
+    if (url.pathname === '/data/coach/commitments-clear') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const ok = await db.remove('commitments', `agent_id=eq.${agentId}`);
+      return ok ? json({ ok: true }, 200, cors) : json({ error: 'not allowed' }, 403, cors);
+    }
+
+    // A plain (unstructured) check-in — the quick-log path. The structured 1:1 goes
+    // through /data/coach/checkin below, which is transactional.
+    if (url.pathname === '/data/coach/checkin-simple') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const rows = await db.insert<Record<string, unknown>>('checkins', body.row ?? {});
+      if (!rows) return json({ error: 'not allowed' }, 403, cors);
+      return json({ checkin: rows[0] ?? null }, 200, cors);
     }
 
     // Add / update / toggle / delete a commitment.

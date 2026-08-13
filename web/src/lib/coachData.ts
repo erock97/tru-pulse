@@ -8,13 +8,18 @@
 // TypeScript types are new.
 //
 // WRITES: the 1:1 Prep + Goal/Commitment sheets in the agent drill-in deliberately
-// write coaching data (the owner wants it saved/logged). The write functions ported
-// below (loadGoalBundle create/seed, saveGoalFields, toggle/add/update/deleteCommitment,
-// saveCheckin) touch ONLY the coaching tables — goals, commitments, checkins — via the
-// same shared-DB/RLS access the reads already use. No auth/user/other-table writes.
+// write coaching data (the owner wants it saved/logged). The write functions below
+// (loadGoalBundle create/seed, saveGoalFields, toggle/add/update/deleteCommitment,
+// saveCheckin) touch ONLY the coaching tables — goals, commitments, checkins.
+//
+// EVERY call here goes through the Worker, not straight to the database. That was not
+// true until the cookie cutover was finished: this file kept using the browser's own
+// database client, which meant Coach only worked in a browser still carrying a token
+// from before the switch — reading as whoever that token belonged to, and returning
+// nothing at all for anyone new. The Worker forwards the caller's own identity, so the
+// same row-level policies apply and the answer belongs to the person asking.
 
-import { supabase } from './supabase';
-import { isDemo } from './api';
+import { isDemo, workerFetch } from './api';
 import {
   PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS, divergence,
   ARCH, LL, TRAIT_LABELS,
@@ -144,20 +149,17 @@ export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
   if (isDemo) {
     data = demoAgentRows();
   } else {
-    const res = await supabase
-      .from('agents')
-      .select('id, team_id, token, name, email, phone, created_at, coaching_enabled, assessments(code, taken_at), checkins(created_at, met, leads, convos, focus)')
-      .order('created_at', { ascending: true });
-    if (res.error) throw res.error;
-    data = res.data as AgentRow[] | null;
-
+    const res = await workerFetch('/data/coach/roster');
+    if (!res.ok) throw new Error('Could not load your coaching roster.');
+    const d = (await res.json()) as {
+      agents: AgentRow[] | null;
+      pcodes: Array<{ id: string; personal_code: string | null }> | null;
+    };
+    data = d.agents ?? null;
     // Best-effort: personal (baseline) codes. The column may not exist — if so, skip.
-    const pcRes = await supabase.from('agents').select('id, personal_code');
-    if (!pcRes.error && pcRes.data) {
-      (pcRes.data as Array<{ id: string; personal_code: string | null }>).forEach((x) => {
-        if (x.personal_code) pcodes[x.id] = x.personal_code;
-      });
-    }
+    (d.pcodes ?? []).forEach((x) => {
+      if (x.personal_code) pcodes[x.id] = x.personal_code;
+    });
   }
 
   return (data || [])
@@ -286,21 +288,21 @@ export async function loadProfile(agentId: string): Promise<Profile> {
     const rows: AssessmentRow[] = (demoAgent?.assessments || []).map((a) => ({ code: a.code, taken_at: a.taken_at }));
     return deriveProfile(rows, null, null);
   }
-  const { data, error } = await supabase
-    .from('assessments')
-    .select('code, taken_at, energy_p, energy_t, approach_pro, approach_rec, deal_r, deal_v, decision_d, decision_i')
-    .eq('agent_id', agentId)
-    .order('taken_at', { ascending: false });
-  if (error) throw error;
+  const res = await workerFetch(`/data/coach/profile?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) throw new Error('Could not load this agent’s profile.');
+  const payload = (await res.json()) as {
+    assessments: AssessmentRow[] | null;
+    personal: { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null } | null;
+  };
+  const data = payload.assessments ?? [];
 
   // Best-effort: the personal (baseline) profile. Agents assessed on the old
   // site (business-only) have no personal_code/personal_axes — the columns
   // or the row itself may come back empty. Degrade to null, never throw.
   let personalCode: string | null = null;
   let personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null;
-  const pRes = await supabase.from('agents').select('personal_code, personal_axes').eq('id', agentId).maybeSingle();
-  if (!pRes.error && pRes.data) {
-    const row = pRes.data as { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null };
+  if (payload.personal) {
+    const row = payload.personal;
     personalCode = row.personal_code ?? null;
     personalAxes = row.personal_axes ?? null;
   }
@@ -608,37 +610,58 @@ export async function loadGoalBundle(
   teamId: string | null,
   code: string,
 ): Promise<{ goal: Goal | null; commitments: Commitment[] }> {
-  let { data: goal } = await supabase.from('goals').select('*').eq('agent_id', agentId).maybeSingle();
-  if (!goal) {
-    const insert = { agent_id: agentId, team_id: teamId, ...GOAL_DEFAULTS };
-    const res = await supabase.from('goals').insert(insert).select().single();
-    goal = res.data;
-  }
-  let { data: commitments } = await supabase.from('commitments').select('*').eq('agent_id', agentId);
-  commitments = commitments || [];
+  // The starter checklist is pure text derived from the archetype, so it is still
+  // computed here and sent along — the Worker only writes it when the agent genuinely
+  // has none, which keeps "seed on first open" from re-seeding a cleared list.
+  //
+  // generateBaseCommitments needs the goal to exist first, and the goal may itself be
+  // created by this call. Ask once with no seed, then once more with it, rather than
+  // teaching the Worker how to build the rows.
+  const first = await workerFetch('/data/coach/goal-bundle', {
+    method: 'POST',
+    body: JSON.stringify({ agentId, teamId, goalDefaults: GOAL_DEFAULTS }),
+  });
+  if (!first.ok) throw new Error('Could not open this agent’s goal.');
+  const d1 = (await first.json()) as { goal: Goal | null; commitments: Commitment[] | null };
+  const goal = d1.goal;
+  let commitments = d1.commitments ?? [];
+
   if (commitments.length === 0 && goal) {
-    const rows = generateBaseCommitments(code, goal as Goal).map((c) => ({
+    const seed = generateBaseCommitments(code, goal).map((c) => ({
       agent_id: agentId, team_id: teamId, source: c.source, text: c.text, is_custom: false, done: false,
     }));
-    const res = await supabase.from('commitments').insert(rows).select();
-    commitments = res.data || [];
+    const second = await workerFetch('/data/coach/goal-bundle', {
+      method: 'POST',
+      body: JSON.stringify({ agentId, teamId, goalDefaults: GOAL_DEFAULTS, seed }),
+    });
+    if (second.ok) {
+      const d2 = (await second.json()) as { commitments: Commitment[] | null };
+      commitments = d2.commitments ?? [];
+    }
   }
-  return { goal: (goal as Goal | null) ?? null, commitments: (commitments as Commitment[] | null) || [] };
+  return { goal: goal ?? null, commitments };
 }
 
 export async function saveGoalFields(agentId: string, fields: Partial<Goal>): Promise<Goal | null> {
-  const { data } = await supabase.from('goals').update(fields).eq('agent_id', agentId).select().single();
-  return (data as Goal | null) ?? null;
+  const res = await workerFetch('/data/coach/goal', {
+    method: 'POST', body: JSON.stringify({ agentId, fields }),
+  });
+  if (!res.ok) return null;
+  return ((await res.json()) as { goal: Goal | null }).goal;
 }
 export async function setQuarter(agentId: string, quarter: string): Promise<Goal | null> {
   return saveGoalFields(agentId, { quarter });
 }
 export async function toggleCommitment(id: string, done: boolean): Promise<void> {
-  await supabase.from('commitments').update({ done }).eq('id', id);
+  await workerFetch('/data/coach/commitment', {
+    method: 'POST', body: JSON.stringify({ action: 'toggle', id, fields: { done } }),
+  });
 }
 export async function clearCommitments(agentId: string): Promise<void> {
-  const { error } = await supabase.from('commitments').delete().eq('agent_id', agentId);
-  if (error) throw error;
+  const res = await workerFetch('/data/coach/commitments-clear', {
+    method: 'POST', body: JSON.stringify({ agentId }),
+  });
+  if (!res.ok) throw new Error('Could not clear these commitments.');
 }
 export async function addCommitment(
   agentId: string,
@@ -646,35 +669,45 @@ export async function addCommitment(
   source: string,
   text: string,
 ): Promise<Commitment | null> {
-  const { data } = await supabase.from('commitments')
-    .insert({ agent_id: agentId, team_id: teamId, source, text, is_custom: true, done: false })
-    .select().single();
-  return (data as Commitment | null) ?? null;
+  const res = await workerFetch('/data/coach/commitment', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'add', agentId,
+      row: { agent_id: agentId, team_id: teamId, source, text, is_custom: true, done: false },
+    }),
+  });
+  if (!res.ok) return null;
+  return ((await res.json()) as { commitment: Commitment | null }).commitment;
 }
 // Edit a saved commitment in place; mark it custom so a later goal change won't
 // overwrite the leader's hand-edit.
 export async function updateCommitment(id: string, fields: Partial<Commitment>): Promise<Commitment | null> {
-  const { data } = await supabase.from('commitments')
-    .update({ ...fields, is_custom: true }).eq('id', id)
-    .select().single();
-  return (data as Commitment | null) ?? null;
+  const res = await workerFetch('/data/coach/commitment', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'update', id, fields: { ...fields, is_custom: true } }),
+  });
+  if (!res.ok) return null;
+  return ((await res.json()) as { commitment: Commitment | null }).commitment;
 }
 export async function deleteCommitment(id: string): Promise<void> {
-  const { error } = await supabase.from('commitments').delete().eq('id', id);
-  if (error) throw error;
+  const res = await workerFetch('/data/coach/commitment', {
+    method: 'POST', body: JSON.stringify({ action: 'delete', id }),
+  });
+  if (!res.ok) throw new Error('Could not delete this commitment.');
 }
 
 export async function loadCommitments(agentId: string): Promise<Commitment[]> {
-  const { data } = await supabase.from('commitments').select('*').eq('agent_id', agentId);
-  return (data as Commitment[] | null) || [];
+  const res = await workerFetch(`/data/coach/commitments?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) return [];
+  return ((await res.json()) as { commitments: Commitment[] | null }).commitments ?? [];
 }
 
 export async function loadCheckins(agentId: string): Promise<Checkin[]> {
   // Demo/preview: seeded 1:1 history, no backend — mirrors loadRoster's demo path.
   if (isDemo) return demoCheckinRows()[agentId] || [];
-  const { data } = await supabase.from('checkins')
-    .select('*').eq('agent_id', agentId).order('created_at', { ascending: false });
-  return (data as Checkin[] | null) || [];
+  const res = await workerFetch(`/data/coach/checkins?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) return [];
+  return ((await res.json()) as { checkins: Checkin[] | null }).checkins ?? [];
 }
 
 /* Demo 1:1 history (Sample Realty) — feeds the "Past 1:1s" read-back view in
@@ -858,20 +891,20 @@ function demoStructuredData(): Record<string, DemoStructured> {
 // detail AND Block 4c's agent recap both build on. Never returns leader data.
 export async function loadCheckinItems(checkinId: string): Promise<CheckinItem[]> {
   if (isDemo) return (demoStructuredData()[checkinId]?.items || []).slice();
-  const { data, error } = await supabase
-    .from('checkin_items').select('*').eq('checkin_id', checkinId).order('position', { ascending: true });
-  if (error) throw error;
-  return (data || []).map(mapCheckinItemRow);
+  const res = await workerFetch(`/data/coach/checkin-items?checkinId=${encodeURIComponent(checkinId)}`);
+  if (!res.ok) throw new Error('Could not load this session.');
+  const { items } = (await res.json()) as { items: CheckinItemRow[] | null };
+  return (items || []).map(mapCheckinItemRow);
 }
 
 // checkin_leader — LEADER-ONLY. Only ever call this from leader-side code
 // (Block 4b's Past 1:1s detail). Block 4c's agent recap must never call this.
 export async function loadCheckinLeader(checkinId: string): Promise<CheckinLeader | null> {
   if (isDemo) return demoStructuredData()[checkinId]?.leader ?? null;
-  const { data, error } = await supabase
-    .from('checkin_leader').select('*').eq('checkin_id', checkinId).maybeSingle();
-  if (error) throw error;
-  return data ? mapCheckinLeaderRow(data) : null;
+  const res = await workerFetch(`/data/coach/checkin-leader?checkinId=${encodeURIComponent(checkinId)}`);
+  if (!res.ok) throw new Error('Could not load this session.');
+  const { leader } = (await res.json()) as { leader: CheckinLeaderRow | null };
+  return leader ? mapCheckinLeaderRow(leader) : null;
 }
 
 // The agent's unreviewed commitments across ALL prior sessions (design §1b:
@@ -885,11 +918,9 @@ export async function loadOpenCommitments(agentId: string): Promise<CheckinItem[
       .filter((i) => i.agentId === agentId && i.kind === 'commitment' && i.status === null)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
-  const { data, error } = await supabase
-    .from('checkin_items').select('*')
-    .eq('agent_id', agentId).eq('kind', 'commitment').is('status', null)
-    .order('created_at', { ascending: true });
-  if (error) throw error;
+  const res = await workerFetch(`/data/coach/open-commitments?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) throw new Error('Could not load open commitments.');
+  const { items: data } = (await res.json()) as { items: CheckinItemRow[] | null };
   return (data || []).map(mapCheckinItemRow);
 }
 
@@ -909,22 +940,22 @@ export async function loadCheckinBundle(agentId: string): Promise<CheckinBundle[
     }));
   }
   if (base.length === 0) return [];
-  const ids = base.map((c) => c.id);
-  const [itemsRes, leaderRes] = await Promise.all([
-    supabase.from('checkin_items').select('*').in('checkin_id', ids).order('position', { ascending: true }),
-    supabase.from('checkin_leader').select('*').in('checkin_id', ids),
-  ]);
-  if (itemsRes.error) throw itemsRes.error;
-  if (leaderRes.error) throw leaderRes.error;
+  // One call: the same route that returned the check-ins also returns their children,
+  // so the leader view costs one round trip instead of three.
+  const res = await workerFetch(`/data/coach/checkins?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) throw new Error('Could not load these sessions.');
+  const bundle = (await res.json()) as {
+    items: CheckinItemRow[] | null; leader: CheckinLeaderRow[] | null;
+  };
   const itemsByCheckin = new Map<string, CheckinItem[]>();
-  (itemsRes.data || []).forEach((row: CheckinItemRow) => {
+  (bundle.items || []).forEach((row: CheckinItemRow) => {
     const mapped = mapCheckinItemRow(row);
     const list = itemsByCheckin.get(mapped.checkinId) || [];
     list.push(mapped);
     itemsByCheckin.set(mapped.checkinId, list);
   });
   const leaderByCheckin = new Map<string, CheckinLeader>();
-  (leaderRes.data || []).forEach((row: CheckinLeaderRow) => {
+  (bundle.leader || []).forEach((row: CheckinLeaderRow) => {
     const mapped = mapCheckinLeaderRow(row);
     leaderByCheckin.set(mapped.checkinId, mapped);
   });
@@ -997,17 +1028,15 @@ function normMet(v: unknown): MetStatus | null {
 // child rows) come back with empty wins/commitments and render as a plain line.
 export async function loadMyOneOnOnes(agentId: string): Promise<MyOneOnOne[]> {
   if (isDemo) return demoMyOneOnOnes(agentId);
-  const base = await loadCheckins(agentId); // agent-readable via checkins_agent_self
+  // AGENT-SAFE: a route that never names checkin_leader at all, so the agent recap
+  // cannot pull the leader's private note even if a policy is loosened later.
+  const res = await workerFetch(`/data/coach/my-one-on-ones?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) return [];
+  const payload = (await res.json()) as { checkins: Checkin[] | null; items: CheckinItemRow[] | null };
+  const base = payload.checkins ?? [];
   if (base.length === 0) return [];
-  const ids = base.map((c) => c.id);
-  // AGENT-SAFE: checkin_items only. RLS (checkin_items_agent_read) already
-  // restricts these to the caller's own rows; we scope by their checkin ids too.
-  const { data, error } = await supabase
-    .from('checkin_items').select('*').in('checkin_id', ids)
-    .order('position', { ascending: true });
-  if (error) throw error;
   const byCheckin = new Map<string, CheckinItem[]>();
-  (data || []).forEach((row: CheckinItemRow) => {
+  (payload.items || []).forEach((row: CheckinItemRow) => {
     const m = mapCheckinItemRow(row);
     const list = byCheckin.get(m.checkinId) || [];
     list.push(m);
@@ -1082,14 +1111,19 @@ export interface SaveCheckinArgs {
 export async function saveCheckin({
   agentId, teamId, loggedBy, met, leads, convos, win, focus, createdAt,
 }: SaveCheckinArgs): Promise<Checkin | null> {
-  const { data } = await supabase.from('checkins')
-    .insert({
-      agent_id: agentId, team_id: teamId, logged_by: loggedBy ?? null,
-      met, leads: leads ?? null, convos: convos ?? null, win: win ?? null, focus: focus ?? null,
-      ...(createdAt ? { created_at: createdAt } : {}),
-    })
-    .select().single();
-  return (data as Checkin | null) ?? null;
+  const res = await workerFetch('/data/coach/checkin-simple', {
+    method: 'POST',
+    body: JSON.stringify({
+      agentId,
+      row: {
+        agent_id: agentId, team_id: teamId, logged_by: loggedBy ?? null,
+        met, leads: leads ?? null, convos: convos ?? null, win: win ?? null, focus: focus ?? null,
+        ...(createdAt ? { created_at: createdAt } : {}),
+      },
+    }),
+  });
+  if (!res.ok) return null;
+  return ((await res.json()) as { checkin: Checkin | null }).checkin;
 }
 
 // Structured 1:1 save (Block 4a writer for the Block 4b form) — calls the
@@ -1115,19 +1149,25 @@ export async function saveStructuredCheckin(args: SaveStructuredCheckinArgs): Pr
     // No-op: demo is read-only/preview-only, exactly like every other Coach write path.
     return { checkinId: `demo-structured-${Date.now()}` };
   }
-  const { data, error } = await supabase.rpc('log_structured_checkin', {
-    p_agent_id: args.agentId,
-    p_team_id: args.teamId,
-    p_met: args.met,
-    p_created_at: args.createdAt ?? null,
-    p_wins: args.wins,
-    p_commitments: args.commitments,
-    p_reviews: args.reviews.map((r) => ({ item_id: r.itemId, status: r.status })),
-    p_checklist: args.checklist,
-    p_private_note: args.privateNote ?? null,
+  const res = await workerFetch('/data/coach/checkin', {
+    method: 'POST',
+    body: JSON.stringify({
+      args: {
+        p_agent_id: args.agentId,
+        p_team_id: args.teamId,
+        p_met: args.met,
+        p_created_at: args.createdAt ?? null,
+        p_wins: args.wins,
+        p_commitments: args.commitments,
+        p_reviews: args.reviews.map((r) => ({ item_id: r.itemId, status: r.status })),
+        p_checklist: args.checklist,
+        p_private_note: args.privateNote ?? null,
+      },
+    }),
   });
-  if (error) throw error;
-  return data ? { checkinId: data as string } : null;
+  if (!res.ok) throw new Error('Could not save this 1:1.');
+  const { result } = (await res.json()) as { result: string | null };
+  return result ? { checkinId: result } : null;
 }
 
 /* ============================================================
@@ -1144,11 +1184,9 @@ export function writeCoachCache(orgId: string, roster: RosterAgent[]): void {
 
 export async function loadFullRoster(): Promise<{ id: string; name: string; coaching_enabled: boolean; hasAssessment: boolean }[]> {
   if (isDemo) return [];
-  const { data, error } = await supabase
-    .from('agents')
-    .select('id, name, coaching_enabled, assessments(code)')
-    .order('name', { ascending: true });
-  if (error) throw error;
+  const res = await workerFetch('/data/coach/full-roster');
+  if (!res.ok) throw new Error('Could not load your agents.');
+  const { agents: data } = (await res.json()) as { agents: any[] | null };
   return (data ?? []).map((a: any) => ({
     id: a.id, name: a.name, coaching_enabled: !!a.coaching_enabled,
     hasAssessment: Array.isArray(a.assessments) && a.assessments.length > 0,
@@ -1161,11 +1199,9 @@ export async function loadFullRoster(): Promise<{ id: string; name: string; coac
 export interface TeamLink { teamId: string; name: string; joinToken: string }
 export async function loadTeamLinks(): Promise<TeamLink[]> {
   if (isDemo) return [];
-  const { data, error } = await supabase
-    .from('teams')
-    .select('id, name, join_token')
-    .order('name', { ascending: true });
-  if (error) throw error;
+  const res = await workerFetch('/data/coach/team-links');
+  if (!res.ok) throw new Error('Could not load your team links.');
+  const { teams: data } = (await res.json()) as { teams: any[] | null };
   return (data ?? [])
     .filter((t: any) => !!t.join_token)
     .map((t: any) => ({ teamId: t.id, name: t.name, joinToken: t.join_token }));
