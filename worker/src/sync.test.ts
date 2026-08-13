@@ -171,6 +171,37 @@ describe('syncPeople — stage-progression log', () => {
     expect(hit.changed_at).toBe('2026-06-30T05:00:00.000Z');
   });
 
+  // FUB's dealCloseDate is the PROJECTED close while a deal is still open, so it can
+  // be in the future. Dating a hit forward hides it from every current window until
+  // that day, then resurfaces the lead as a fresh closing — even if the deal fell
+  // through. A forecast is not an achievement date.
+  it('refuses a close date in the future and dates the hit live instead', async () => {
+    const s = stubDb({ priorHits: [{ fub_person_id: 99, stage: 'Nurture' }] });
+    const future = new Date(Date.now() + 21 * 86400_000).toISOString();
+    await syncPeople(env, s.db, TEAM, 'k', [person({ stage: 'Closed', dealCloseDate: future })]);
+    const hit = s.stageRows()[0];
+    expect(hit.date_source).toBe('live');
+    expect(Date.parse(hit.changed_at as string)).toBeLessThanOrEqual(Date.now());
+  });
+
+  it('still refuses a future close date on the seed sync, rather than seeding it forward', async () => {
+    const s = stubDb({ priorHits: [] });
+    const future = new Date(Date.now() + 5 * 86400_000).toISOString();
+    await syncPeople(env, s.db, TEAM, 'k', [person({ stage: 'Closed', dealCloseDate: future })]);
+    const hit = s.stageRows()[0];
+    expect(hit.date_source).toBe('seed');
+    expect(hit.changed_at).toBeNull();
+  });
+
+  it('still accepts a close date that has already happened', async () => {
+    const s = stubDb({ priorHits: [{ fub_person_id: 99, stage: 'Nurture' }] });
+    const past = new Date(Date.now() - 3 * 86400_000).toISOString();
+    await syncPeople(env, s.db, TEAM, 'k', [person({ stage: 'Closed', dealCloseDate: past })]);
+    const hit = s.stageRows()[0];
+    expect(hit.date_source).toBe('deal_close_date');
+    expect(hit.changed_at).toBe(past);
+  });
+
   it('dates a newly-seen hit live once the log is established', async () => {
     const s = stubDb({ priorHits: [{ fub_person_id: 99, stage: 'Nurture' }] });
     await syncPeople(env, s.db, TEAM, 'k', [person({ id: 1, stage: 'Offer Made' })]);

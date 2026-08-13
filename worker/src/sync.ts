@@ -121,8 +121,17 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
       hitSeen.add(hitKey);
       let changedAt: string | null;
       let dateSource: string;
-      if (sc === 'closed' && dealDateIso(p.dealCloseDate)) {
-        changedAt = dealDateIso(p.dealCloseDate); dateSource = 'deal_close_date';
+      // A closing is dated by the deal's close date, which is the real achievement
+      // date rather than whenever we happened to notice. But FUB's dealCloseDate is
+      // the PROJECTED close while a deal is still open, so it can sit in the future —
+      // and a forecast is not an achievement. Dating a hit forward parks it outside
+      // every current window until that day arrives, at which point the lead resurfaces
+      // as a fresh closing even if the deal fell through or already moved backwards.
+      // Seen once for real: a lead read as "Closed" and then "Under Contract" ten
+      // seconds later in the same pass, stamped three weeks out.
+      const dealIso = sc === 'closed' ? dealDateIso(p.dealCloseDate) : null;
+      if (dealIso && Date.parse(dealIso) <= Date.parse(nowIso)) {
+        changedAt = dealIso; dateSource = 'deal_close_date';
       } else if (isInitialSeed) {
         changedAt = null; dateSource = 'seed';
       } else {
