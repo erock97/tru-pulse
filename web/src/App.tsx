@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { onAuthChange, onPasswordRecovery, exchangeLink, type AuthState } from './lib/auth';
-import { isCookieAuth } from './lib/authClient';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
@@ -45,25 +44,23 @@ export default function App() {
 
   useEffect(() => {
     if (isDemo) return;
-    // An invite or reset link lands with a one-time token in the URL hash. In token
-    // mode supabase-js swallows it on load and fires PASSWORD_RECOVERY. Cookie mode
-    // has to redeem it explicitly — the Worker swallows it instead, so the token
-    // becomes a server-side session and never becomes something this page holds.
-    if (isCookieAuth) {
-      // Supabase puts these in the query string on some link types and in the hash on
-      // others, so read both rather than betting on one and silently dropping invites.
-      const hash = new URLSearchParams(window.location.hash.replace(/^#\/?/, ''));
-      const query = new URLSearchParams(window.location.search);
-      const tokenHash = query.get('token_hash') ?? hash.get('token_hash');
-      const type = query.get('type') ?? hash.get('type');
-      if (tokenHash && type) {
-        // Strip it from the address bar first: a one-time token sitting in history
-        // (or in a shared screenshot) outlives the moment it was meant for.
-        history.replaceState(null, '', window.location.pathname);
-        setRecovery(type === 'recovery' || type === 'invite');
-        exchangeLink(tokenHash, type)
-          .catch(() => { /* an expired link just leaves them on the login screen */ });
-      }
+    // An invite or reset link lands with a one-time token in the URL. We redeem it
+    // explicitly against the Worker, which swallows it and turns it into a server-side
+    // session — so the token never becomes something this page holds.
+    //
+    // Supabase puts these in the query string on some link types and in the hash on
+    // others, so read both rather than betting on one and silently dropping invites.
+    const hash = new URLSearchParams(window.location.hash.replace(/^#\/?/, ''));
+    const query = new URLSearchParams(window.location.search);
+    const tokenHash = query.get('token_hash') ?? hash.get('token_hash');
+    const type = query.get('type') ?? hash.get('type');
+    if (tokenHash && type) {
+      // Strip it from the address bar first: a one-time token sitting in history
+      // (or in a shared screenshot) outlives the moment it was meant for.
+      history.replaceState(null, '', window.location.pathname);
+      setRecovery(type === 'recovery' || type === 'invite');
+      exchangeLink(tokenHash, type)
+        .catch(() => { /* an expired link just leaves them on the login screen */ });
     }
     const unsubscribe = onAuthChange((s) => {
       // Only publish the session when the PERSON changed. Tab-focus token

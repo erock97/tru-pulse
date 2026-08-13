@@ -1,8 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
-import { supabase } from '../lib/supabase';
-import { isCookieAuth } from '../lib/authClient';
 import { adminActAs, isDemo, signOutClean, type AdminLeader } from '../lib/api';
-import { TruLogo } from '../components/TruLogo';
 import { FubConnect } from '../components/FubConnect';
 import { AdminConnections } from '../components/AdminConnections';
 import { AdminIntake } from '../components/AdminIntake';
@@ -141,71 +138,19 @@ export default function Home({
     }
   }
 
-  // Coach is now a NATIVE in-app tab — navigate by hash, no SSO redirect. The
-  // openCoach() SSO bridge below is kept as a fallback but is no longer wired to
-  // the Coach tile/button/sidebar.
+  // Coach is a NATIVE in-app tab — a hash navigation on the session the user already
+  // has. There is no second login and no handoff to another site.
+  //
+  // This used to sit beside an SSO bridge that shipped the user's access token to
+  // trucoaching.co to mint a session there. That bridge was already unwired from every
+  // button, and it could not work once the browser stopped holding a token at all.
   const openCoachInApp = () => { window.location.hash = '/coach'; };
-  // Crossing to Coach = session handoff + a full page load. Show an instant
-  // branded beat on click so the button always responds immediately.
-  const [leaving, setLeaving] = useState(false);
-  // One-login bridge: hand the signed-in HQ session across to Coach so there's no
-  // second login. Falls back to Coach's own login if the bridge can't mint a session.
-  // Retained as a fallback; no longer the default Coach nav.
-  async function openCoach() {
-    setLeaving(true);
-    const fallback = 'https://trucoaching.co';
-    try {
-      // Cookie mode has no token to hand across, by design. This bridge is a retained
-      // fallback rather than the default Coach nav, so it drops to Coach's own login
-      // instead of growing a second server-side handoff for a path nobody takes.
-      if (isCookieAuth) { window.location.href = fallback; return; }
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) {
-        window.location.href = fallback;
-        return;
-      }
-      const res = await fetch('https://trucoaching.co/api/sso', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      const j = (await res.json().catch(() => ({}))) as { link?: string };
-      window.location.href = res.ok && j.link ? j.link : fallback;
-    } catch {
-      window.location.href = fallback;
-    }
-  }
-  // Retained fallback (Coach now opens in-app). Kept referenced so the SSO bridge
-  // stays available without tripping noUnusedLocals.
-  void openCoach;
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
-  useReveal([leaving, !!adminLeaders], canvasRef.current);
+  useReveal([!!adminLeaders], canvasRef.current);
 
-  if (leaving) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 18,
-          color: '#f2e8d5',
-          background:
-            'radial-gradient(900px 450px at 80% -10%, #4a3a24 0%, rgba(74,58,36,0) 60%), linear-gradient(160deg,#33281a 0%,#211a10 100%)',
-        }}
-      >
-        <TruLogo size={44} wordSize={30} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 800, letterSpacing: '1.8px', color: '#c9baa0' }}>
-          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, margin: 0 }} />
-          OPENING COACH
-        </div>
-      </div>
-    );
-  }
+  // The full-screen "OPENING COACH" splash that used to sit here covered a page load
+  // to another site. Coach is a tab now, so there is nothing to cover.
 
   return (
     <div className="tru-dark">
