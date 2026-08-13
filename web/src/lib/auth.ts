@@ -9,6 +9,7 @@
 // could hand a token to other code, we would have rebuilt the exact problem this
 // design exists to remove.
 import * as cookieAuth from './authClient';
+import { clearLegacyTokens } from './clearLegacyTokens';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -94,10 +95,9 @@ export async function exchangeLink(tokenHash: string, type: string): Promise<voi
 }
 
 export async function signOut(): Promise<void> {
-  // Clears the last remnant of the retired token path: an owner access AND refresh
-  // token that acting-as used to stash in localStorage. Harmless if absent, and worth
-  // keeping for a while so anyone still carrying one from before the cutover loses it.
-  try { localStorage.removeItem('hq_admin_return'); } catch { /* private mode */ }
+  // Belt and braces: main.tsx already does this on every load. Repeating it here means
+  // a session that started before that shipped still ends clean.
+  clearLegacyTokens();
   await cookieAuth.logout().catch(() => undefined);
   canReturn = false;
   await refreshAuth();

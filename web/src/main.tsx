@@ -1,7 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { clearLegacyTokens } from './lib/clearLegacyTokens';
 import './styles.css';
+
+// Before anything renders, and on every load rather than only on sign-out — a user who
+// never signs out is exactly the one still carrying a pre-cutover token.
+clearLegacyTokens();
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
