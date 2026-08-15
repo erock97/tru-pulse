@@ -29,60 +29,88 @@ const STAGES = [
 type Pack = {
   subline: string;
   title: string;
+  /** One short paragraph. What happened. Nothing else. */
   situation: string;
-  /** Plain, numbered, no jargon — and never naming the stage they should pick.
-   *  The id lets the panel tick each one off as the learner actually does it. */
+  /** Named controls and clicks. The id ticks each one off as it is really done. */
   steps: Array<{ id: 'stage' | 'note' | 'task' | 'deal'; text: string }>;
+  /** Wording to copy into the note box, while writing notes is still new. */
+  noteToCopy?: string;
   startStage: string;
 };
 
+// One new skill at a time, stacking — and never a skill the slides have not
+// taught yet. The first draft asked for notes and tasks on the card that comes
+// straight after the STAGES slides, then repeated the same three moves three
+// times with the story changed. That teaches nothing and reads as busywork.
+//
+//   after the stage slides   → stage only
+//   after the notes slide    → stage + note, with the wording handed to them
+//   after the tasks slide    → stage + note + task
+//   after the review         → all three, unaided
+//   after the deals card     → all three plus the deal
 export const PACKS: Record<string, Pack> = {
-  // A scenario has to give them something that ACTUALLY HAPPENED to record.
-  // The first draft of this said "nothing has happened yet, keep the record
-  // honest" — which is a no-op: if nothing happened, the right move is to change
-  // nothing. Eric caught it. So the lead was called, and nobody picked up.
-  'avery-new': {
-    subline: 'No communication yet',
-    title: 'You called and nobody picked up',
-    situation: 'Avery Morgan came in from Zillow this morning. You called at 9:10 AM and it rang out — you left a voicemail. You have not spoken to them.',
+  // 1. Stages only.
+  'set-appointment': {
+    subline: 'Last Communication 5 minutes ago',
+    title: 'You set an appointment',
+    situation: 'You just got off the phone with Avery and booked Saturday at 11:00 AM to see 406 Juniper Ln.',
     steps: [
-      { id: 'stage', text: 'Change the stage to match a call nobody answered, then click the green check to save it.' },
-      { id: 'note', text: 'Write a note saying you called and left a voicemail, then click Create Note.' },
-      { id: 'task', text: 'Add a task to call Avery again, and put a date on it.' },
-    ],
-    startStage: 'Lead',
-  },
-  'avery-spoke': {
-    subline: 'Last Communication 4 minutes ago',
-    title: 'This time they picked up',
-    situation: 'You tried Avery again and got them. They are buying with their sister, want Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. Nobody mentioned meeting up, so nothing is booked.',
-    steps: [
-      { id: 'stage', text: 'Change the stage to match a real conversation where nothing was booked, then save it with the green check.' },
-      { id: 'note', text: 'Write a note with what Avery told you, then click Create Note.' },
-      { id: 'task', text: 'Add a task to send the two options you promised, and put a date on it.' },
-    ],
-    startStage: 'Attempted contact',
-  },
-  'avery-appointment': {
-    subline: 'Last Communication 6 minutes ago',
-    title: 'They booked a time',
-    situation: 'You followed up on the two homes you sent. Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln, two adults coming, and asked you for the access details beforehand.',
-    steps: [
-      { id: 'stage', text: 'Change the stage to match a confirmed day and time, then save it with the green check.' },
-      { id: 'note', text: 'Write a note with the day, the time and who is coming, then click Create Note.' },
-      { id: 'task', text: 'Add a task to send the access details, and put a date on it.' },
+      { id: 'stage', text: 'Click the stage, pick the one that matches a booked appointment, then click the green check to save it.' },
     ],
     startStage: 'Spoke with customer',
   },
+
+  // 2. Stages + notes. The note is handed to them — writing one from scratch is
+  //    a separate skill and this screen is about where the note goes.
+  'spoke-note': {
+    subline: 'Last Communication 3 minutes ago',
+    title: 'You spoke with the client',
+    situation: 'Avery answered. They are buying with their sister, want Olympia or Lacey, 3 bedrooms or more, before November, and asked you to send a couple of options. No meeting was discussed.',
+    steps: [
+      { id: 'stage', text: 'Update the stage to match a real conversation with nothing booked, and save it with the green check.' },
+      { id: 'note', text: 'Copy the note below, paste it into the note box at the top of the record, and click Create Note.' },
+    ],
+    noteToCopy: 'Spoke with Avery. Buying with their sister, wants Olympia or Lacey, 3+ bedrooms, before November. Next: send two options by Thursday.',
+    startStage: 'Attempted contact',
+  },
+
+  // 3. Stages + notes + tasks.
+  'noanswer-task': {
+    subline: 'No communication yet',
+    title: 'You called and they did not pick up',
+    situation: 'Avery came in from Zillow this morning. You called at 9:10 AM, it rang out, and you left a voicemail.',
+    steps: [
+      { id: 'stage', text: 'Update the stage to match a call that was not answered, and save it with the green check.' },
+      { id: 'note', text: 'Copy the note below, paste it into the note box, and click Create Note.' },
+      { id: 'task', text: 'Click the + on the Tasks panel, name the task, give it a date, and save it.' },
+    ],
+    noteToCopy: 'Called Avery at 9:10 AM, no answer. Left a voicemail. Next: try again tomorrow morning.',
+    startStage: 'Lead',
+  },
+
+  // 4. All three, unaided. No wording handed over this time.
+  'full-record': {
+    subline: 'Last Communication 2 minutes ago',
+    title: 'Now do all three on your own',
+    situation: 'Avery called you back. They have seen 406 Juniper Ln and want to see 422 as well, and they asked you to send both listings side by side before the weekend. No time was agreed.',
+    steps: [
+      { id: 'stage', text: 'Update the stage and save it.' },
+      { id: 'note', text: 'Write your own note this time, then click Create Note.' },
+      { id: 'task', text: 'Add a task for what you promised, with a date on it.' },
+    ],
+    startStage: 'Appointment set',
+  },
+
+  // 5. The deal, which Follow Up Boss never asks you for.
   'avery-contract': {
     subline: 'Last Communication yesterday',
     title: 'The offer was accepted',
-    situation: 'Weeks later, Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
+    situation: 'Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
     steps: [
-      { id: 'stage', text: 'Change the stage to match an accepted offer, then save it with the green check.' },
+      { id: 'stage', text: 'Update the stage to match an accepted offer, and save it.' },
       { id: 'note', text: 'Write a note with the price and the closing date, then click Create Note.' },
-      { id: 'task', text: 'Add a task for whatever this contract needs next, and put a date on it.' },
-      { id: 'deal', text: 'Add the deal using the + on the Deals panel. Give it a name, a price and a close date. Follow Up Boss will never prompt you for this.' },
+      { id: 'task', text: 'Add a task for what this contract needs next, with a date on it.' },
+      { id: 'deal', text: 'Click the + on the Deals panel and add the deal, with a name, a price and a close date.' },
     ],
     startStage: 'Submitting offers',
   },
@@ -137,6 +165,7 @@ export function PracticeRecord({
   const [deals, setDeals] = useState<Array<{ name: string; price: string; close: string }>>([]);
   const [log, setLog] = useState<Entry[]>([]);
   const [hint, setHint] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [grade, setGrade] = useState<RecordGrade | null>(null);
@@ -225,7 +254,7 @@ export function PracticeRecord({
     <div className="pr">
       <div className="pr-brief">
         <h3 className="pr-brieftitle">{pack.title}</h3>
-        <p className="pr-situation"><b>What just happened:</b> {pack.situation}</p>
+        <p className="pr-situation">{pack.situation}</p>
       </div>
 
       {/* The job list STAYS ON SCREEN. The record is taller than a viewport, so a
@@ -238,7 +267,22 @@ export function PracticeRecord({
           {pack.steps.map((step, i) => (
             <li key={step.id} className={done[i] ? 'is-done' : ''}>
               <span className="pr-tick">{done[i] ? '✓' : i + 1}</span>
-              <span>{step.text}</span>
+              <div>
+                <span>{step.text}</span>
+                {step.id === 'note' && pack.noteToCopy && (
+                  <div className="pr-copy">
+                    <p>{pack.noteToCopy}</p>
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(pack.noteToCopy!).then(
+                          () => setCopied(true),
+                          () => setCopied(false),
+                        );
+                      }}
+                    >{copied ? 'Copied ✓' : 'Copy'}</button>
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ol>

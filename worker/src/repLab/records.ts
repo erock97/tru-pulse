@@ -55,33 +55,43 @@ type Scenario = {
 };
 
 export const SCENARIOS: Record<string, Scenario> = {
-  // Called, no answer. NOT "nothing has happened" — a scenario that asks a
-  // learner to record nothing is a no-op and teaches them nothing. The lesson
-  // here is that trying is not talking.
-  'avery-new': {
-    id: 'avery-new',
+  // One new skill at a time, matching the order the slides teach them. Asking
+  // for a note on the card that follows the STAGES slides — before notes have
+  // been taught — is why this had to be rebuilt.
+
+  // 1. Stages only.
+  'set-appointment': {
+    id: 'set-appointment',
+    stage: ['appointment set'],
+    stageMiss: 'A booked day and time changes what this record should say.',
+    requireNote: false, requireTask: false, requireDeal: false,
+  },
+
+  // 2. Stages + notes.
+  'spoke-note': {
+    id: 'spoke-note',
+    stage: ['spoke with customer', 'spoke with'],
+    stageMiss: 'You had a real conversation but nothing was booked. The stage should match that exactly.',
+    requireNote: true, requireTask: false, requireDeal: false,
+  },
+
+  // 3. Stages + notes + tasks.
+  'noanswer-task': {
+    id: 'noanswer-task',
     stage: ['attempted contact'],
     stageMiss: 'You tried to reach them and did not get through. The stage should say exactly that, and no more.',
     requireNote: true, requireTask: true, requireDeal: false,
   },
 
-  // A real conversation, nothing booked. The classic over-promotion.
-  'avery-spoke': {
-    id: 'avery-spoke',
+  // 4. All three, unaided.
+  'full-record': {
+    id: 'full-record',
     stage: ['spoke with customer', 'spoke with'],
-    stageMiss: 'You learned something real, but nothing was booked. The stage should match that exactly.',
+    stageMiss: 'They called and told you something, but no time was agreed. The stage should match that.',
     requireNote: true, requireTask: true, requireDeal: false,
   },
 
-  // A confirmed date and time.
-  'avery-appointment': {
-    id: 'avery-appointment',
-    stage: ['appointment set'],
-    stageMiss: 'A confirmed date and time changes what this record should say.',
-    requireNote: true, requireTask: true, requireDeal: false,
-  },
-
-  // The offer was accepted — and Follow Up Boss never asks you for the deal.
+  // 5. The deal Follow Up Boss never asks you for.
   'avery-contract': {
     id: 'avery-contract',
     stage: ['under contract'],

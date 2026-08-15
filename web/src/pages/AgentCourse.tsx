@@ -684,12 +684,13 @@ function Card({ card, pick, onPick, onLabPassed }: {
     return <SlideView deck={card.deck ?? 'zillow-day1'} n={card.slide ?? 1} />;
   }
   if (card.t === 'practice') {
-    const sc = (card.scenario ?? 'avery-new') as PracticeScenario;
+    const sc = (card.scenario ?? 'set-appointment') as PracticeScenario;
     if (!PRACTICE_PACKS[sc]) return null;
+    // No title or body here. The exercise renders its own heading and its one
+    // paragraph — printing the card's copy too showed the title twice with two
+    // competing explanations under it.
     return (
       <div className="ac-labcard fu">
-        {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
-        {card.body && <p className="ac-labcard-body">{card.body}</p>}
         <PracticeRecord scenario={sc} onPassed={onLabPassed} />
       </div>
     );
