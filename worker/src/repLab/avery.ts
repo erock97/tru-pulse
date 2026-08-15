@@ -1,4 +1,19 @@
-/** Avery Morgan — Day 1 repair lab. Expected values stay on the server. */
+/** Avery Morgan — the Day 1 repair exercise, diagnosis half.
+ *
+ * This file used to grade the repair as well, by looking for "Thursday", "3 bed"
+ * and "Juniper" in the note. That is exactly the marking-on-phrasing that
+ * records.ts exists to avoid, and it failed correct work: a learner who wrote a
+ * perfectly good note in their own words was told it was wrong. The repair half
+ * now goes through gradeRecord like every other exercise, which marks what is
+ * true of the RECORD and leaves the prose alone.
+ *
+ * What is left here is the half that genuinely has a right answer: before the
+ * record can be edited, the learner has to say what is wrong with it. Naming the
+ * faults is the skill — the repair is mechanical once you have seen them.
+ *
+ * The expected set stays on the server. The browser is told which of its own
+ * boxes were wrong, never which ones it should have ticked.
+ */
 
 export const AVERY_ID = 'avery-repair';
 
@@ -35,39 +50,12 @@ export interface LabGrade {
   max?: number;
 }
 
-const STAGE_OK = ['spoke with customer', 'spoke with'];
-const CONTACT_OK = ['avery morgan', 'avery'];
-
-const NOTE_REQUIRED: Array<{ id: string; needles: string[]; missing: string }> = [
-  { id: 'note_reached', needles: ['reached', 'spoke', 'talked'], missing: 'what happened on the call' },
-  { id: 'note_need', needles: ['3 bed', 'three bed', '3-bed', 'bedroom'], missing: 'what the buyer needs' },
-  { id: 'note_next', needles: ['comparison', '406', '422', 'juniper'], missing: 'the next action' },
-  { id: 'note_when', needles: ['thu', 'thursday', '10', '8/13', 'aug 13'], missing: 'when the next action is due' },
-];
-
-const NOTE_FORBIDDEN: Array<{ id: string; needles: string[]; missing: string }> = [
-  {
-    id: 'note_excludes_claims',
-    needles: ['ready to buy', 'must be serious', 'proves she is ready', 'views mean she', 'activity proves'],
-    missing: 'a claim that Home Activity proves intent',
-  },
-];
-
 function norm(s: string | undefined): string {
   return (s ?? '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
 }
 
-function hasAny(hay: string, needles: string[]): boolean {
-  return needles.some((n) => hay.includes(n));
-}
-
+/** Diagnosis only. All four planted faults have to be named before editing opens. */
 export function gradeAvery(sub: LabSubmission): LabGrade {
-  const phase = sub.phase === 'repair' ? 'repair' : 'audit';
-  if (phase === 'audit') return gradeAudit(sub);
-  return gradeRepair(sub);
-}
-
-function gradeAudit(sub: LabSubmission): LabGrade {
   const named = new Set((sub.risks ?? []).map((r) => norm(r).replace(/\s+/g, '_')));
   const checks: LabCheck[] = AVERY_RISKS.map((id) => {
     const pass = named.has(id);
@@ -79,84 +67,21 @@ function gradeAudit(sub: LabSubmission): LabGrade {
       critical: false,
     };
   });
-  const contact = contactCheck(sub.contactName);
-  checks.unshift(contact);
-  return wrap('audit', checks);
-}
 
-function gradeRepair(sub: LabSubmission): LabGrade {
-  const checks: LabCheck[] = [contactCheck(sub.contactName)];
-
-  const stage = norm(sub.stage);
-  const stageOk = STAGE_OK.includes(stage);
-  const appointment = stage.includes('appointment');
-  checks.push({
-    id: 'stage',
-    pass: stageOk,
-    message: stageOk
-      ? 'Stage matches what happened.'
-      : appointment
-        ? 'That stage needs a confirmed date and time. This call did not have one.'
-        : 'The stage does not match what actually happened.',
-    required: true,
-    critical: appointment || (!stageOk && !!stage),
-  });
-
-  const note = norm(sub.note);
-  for (const req of NOTE_REQUIRED) {
-    const pass = hasAny(note, req.needles);
+  // Ticking all four boxes without reading is not diagnosis. There are more boxes
+  // on screen than there are faults, so a full sweep is a wrong answer here.
+  const overreach = [...named].filter((r) => !AVERY_RISKS.includes(r as AveryRisk));
+  if (overreach.length) {
     checks.push({
-      id: req.id,
-      pass,
-      message: pass ? 'Present in the note.' : `The note is missing ${req.missing}.`,
+      id: 'overreach',
+      pass: false,
+      message: 'You have flagged something this record does not actually get wrong. Ticking everything is not a diagnosis.',
       required: true,
       critical: false,
     });
   }
-  for (const ban of NOTE_FORBIDDEN) {
-    const hit = hasAny(note, ban.needles);
-    checks.push({
-      id: ban.id,
-      pass: !hit,
-      message: hit
-        ? 'The note treats a visible signal as proof. Keep activity as context only.'
-        : 'No unsupported claim in the note.',
-      required: true,
-      critical: hit,
-    });
-  }
 
-  const title = norm(sub.task?.title);
-  const due = norm(sub.task?.due);
-  const owner = norm(sub.task?.owner);
-  const taskOk = hasAny(title, ['comparison', 'juniper', 'avery']) && !!due && !!owner;
-  checks.push({
-    id: 'task',
-    pass: taskOk,
-    message: taskOk
-      ? 'Task has an action, an owner, and a time.'
-      : 'The task needs a concrete action, an owner, and a date and time.',
-    required: true,
-    critical: false,
-  });
-
-  return wrap('repair', checks);
-}
-
-function contactCheck(name: string | undefined): LabCheck {
-  const n = norm(name);
-  const pass = !!n && CONTACT_OK.some((ok) => n.includes(ok));
-  return {
-    id: 'contact',
-    pass,
-    message: pass ? 'Correct record.' : 'This is not the assigned practice contact.',
-    required: true,
-    critical: !pass,
-  };
-}
-
-function wrap(phase: LabPhase, checks: LabCheck[]): LabGrade {
   const critical = checks.some((c) => c.critical && !c.pass);
   const requiredFail = checks.some((c) => c.required && !c.pass);
-  return { passed: !critical && !requiredFail, phase, checks, critical };
+  return { passed: !critical && !requiredFail, phase: 'audit', checks, critical };
 }

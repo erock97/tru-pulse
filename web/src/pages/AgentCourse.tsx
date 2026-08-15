@@ -696,15 +696,13 @@ function Card({ card, pick, onPick, onLabPassed }: {
     );
   }
   if (card.t === 'lab') {
+    // Avery's repair moved onto the real record surface and is a `practice` card
+    // now, so Elena is all this renders. No title or body printed here, for the
+    // same reason the practice card dropped them: the exercise prints its own
+    // heading, and printing the card's as well showed it twice.
     return (
       <div className="ac-labcard fu">
-        {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
-        {card.body && <p className="ac-labcard-body">{card.body}</p>}
-        <LabExercise
-          scenario={(card.scenario === 'elena-homework' ? 'elena-homework' : 'avery-repair')}
-          compact
-          onPassed={onLabPassed}
-        />
+        <LabExercise scenario="elena-homework" compact onPassed={onLabPassed} />
       </div>
     );
   }

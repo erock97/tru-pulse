@@ -54,11 +54,19 @@ type Scenario = {
   requireDeal: boolean;
 };
 
+// One new skill at a time, matching the order the slides teach them. Asking for a
+// note on the card that follows the STAGES slides — before notes have been taught —
+// is why this had to be rebuilt.
+//
+// The first three climb on VOLUME: one move, then two, then three. Each of them
+// states the outcome plainly, because the skill being drilled is operating the
+// controls, not reading a situation.
+//
+// The last two climb on JUDGEMENT instead, which is the only axis left worth
+// climbing. Nothing tells the learner which stage is right; the situation has to be
+// read for it, and in both cases the obvious answer is the wrong one. Making them
+// merely longer would have been a fourth and fifth lap of the same three moves.
 export const SCENARIOS: Record<string, Scenario> = {
-  // One new skill at a time, matching the order the slides teach them. Asking
-  // for a note on the card that follows the STAGES slides — before notes have
-  // been taught — is why this had to be rebuilt.
-
   // 1. Stages only.
   'set-appointment': {
     id: 'set-appointment',
@@ -83,19 +91,24 @@ export const SCENARIOS: Record<string, Scenario> = {
     requireNote: true, requireTask: true, requireDeal: false,
   },
 
-  // 4. All three, unaided.
-  'full-record': {
-    id: 'full-record',
+  // 4. The repair. The record ALREADY claims an appointment, and the call it came
+  //    from produced a plan the buyer never confirmed. "Thursday morning" said out
+  //    loud is not a booking, so the honest move here is backwards down the ladder —
+  //    the only exercise in the module that asks for that.
+  'avery-repair': {
+    id: 'avery-repair',
     stage: ['spoke with customer', 'spoke with'],
-    stageMiss: 'They called and told you something, but no time was agreed. The stage should match that.',
+    stageMiss: 'Read what was actually agreed. A time somebody mentioned is not a time anybody confirmed, and this record is currently claiming more than the call earned.',
     requireNote: true, requireTask: true, requireDeal: false,
   },
 
-  // 5. The deal Follow Up Boss never asks you for.
-  'avery-contract': {
-    id: 'avery-contract',
+  // 5. The deal Follow Up Boss never asks you for. The stage is deliberately not
+  //    named in the situation, and "the inspection is booked" is there to pull an
+  //    unwary learner toward an appointment stage.
+  'offer-accepted': {
+    id: 'offer-accepted',
     stage: ['under contract'],
-    stageMiss: 'An accepted offer changes what this record should say.',
+    stageMiss: 'A signed contract outranks anything scheduled around it. The stage should say where the deal is, not what is on the calendar.',
     requireNote: true, requireTask: true, requireDeal: true,
   },
 };

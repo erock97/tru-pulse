@@ -14,14 +14,28 @@
 //   after the Notes slide    -> spoke-note      : stage + note, wording handed over,
 //                               because WHERE the note goes is the skill here
 //   after the Tasks slide    -> noanswer-task   : stage + note + task
-//   after the recap text     -> full-record     : all three, unaided, nothing handed over
-//   after the deals text     -> avery-contract  : all three plus the deal
+//   after the Repair slide   -> avery-repair    : diagnose the record, THEN all three
+//   after the deals text     -> offer-accepted  : all three plus the deal
+//
+// The first three climb on volume — one move, two, three — and each of them states
+// the outcome plainly, because the skill there is working the controls. The last
+// two climb on judgement instead: nothing names the stage, and in both the obvious
+// answer is wrong. Once someone can drive the screen, longer is not harder.
+//
+// CUT, and worth knowing why so it does not come back:
+//   - a "What you have just learned" text card between the four-checks slide and
+//     the last two exercises. It restated the slide immediately before it, and in
+//     a module made of slides it read as a leftover from the old text-only version.
+//   - a "now do all three on your own" exercise. It was the THIRD consecutive lap
+//     of stage-note-task with only the story changed. The repair before it and the
+//     deal after it both already do all three, and both add something.
 //
 // Deals get a `text` card because the deck has no slide for them, and nothing is
 // asked for before it has been taught.
 //
-// The scenario ids above are defined in web/src/pages/PracticeRecord.tsx and graded in
-// worker/src/repLab/records.ts. The 'avery-repair' lab lives in worker/src/repLab/avery.ts.
+// The scenario ids above are defined in web/src/pages/PracticeRecord.tsx and graded
+// in worker/src/repLab/records.ts. avery-repair is graded in two halves: its
+// diagnosis step by worker/src/repLab/avery.ts, its repair by records.ts like the rest.
 //
 // Production controls carried over from the facilitator script and honoured here:
 //   - no target numbers for any performance category (the applicable standard is
@@ -74,23 +88,13 @@ export const CARDS = [
   slide(14, 'Tasks'),
   { t: 'practice', scenario: 'noanswer-task' },
 
-  // ── Avery's record is wrong on purpose ──
+  // ── Avery's record is wrong on purpose. The slide sets it up; the exercise IS
+  //    the slide's exercise, so it prints no title or body of its own. ──
   slide(15, 'Repair Avery'),
-  {
-    t: 'lab',
-    scenario: 'avery-repair',
-    title: "Repair Avery's record",
-    body: 'The exercise from the slide before this one. The record is wrong on purpose — name every problem first, then fix it.',
-  },
+  { t: 'practice', scenario: 'avery-repair' },
 
-  // ── Recap, then the same three moves with no help at all ──
+  // ── The four checks, straight from the deck ──
   slide(16, 'Four checks'),
-  {
-    t: 'text',
-    k: 'What you have just learned',
-    body: 'Three moves, and every record you leave gets all three.\n\nTHE STAGE says where this person actually is. Choosing it is not saving it — the green check is.\n\nTHE NOTE says what happened, written for whoever opens the record tomorrow.\n\nTHE TASK says what you will do next, and when. A promise with no date is not a next step.',
-  },
-  { t: 'practice', scenario: 'full-record' },
 
   // ── Deals: taught here because the deck has no slide for them ──
   {
@@ -98,7 +102,7 @@ export const CARDS = [
     k: 'One more thing: deals',
     body: 'When an offer is accepted, moving the stage to Under contract is only half of it. Follow Up Boss does NOT prompt you to create the deal — it will sit there under contract with no deal attached, and it will not appear in anyone’s pipeline or commission numbers.\n\nThe deal lives in its own panel on the right of the record. It needs a name, a price and a close date.',
   },
-  { t: 'practice', scenario: 'avery-contract' },
+  { t: 'practice', scenario: 'offer-accepted' },
 
   // ── Close ──
   slide(17, 'Way back tomorrow'),

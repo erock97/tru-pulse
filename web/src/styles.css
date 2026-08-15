@@ -940,6 +940,18 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .pr-hintbtn{ background:none; border:0; padding:0; color:var(--gold); font:inherit; font-weight:700;
   text-decoration:underline; cursor:pointer; }
 
+/* Diagnosis, which replaces the job list rather than sitting beside it — showing
+   the fix list while asking what is broken hands over the answer. */
+.pr-auditprompt{ margin:0 0 14px; font-size:15px; line-height:1.55; color:var(--ac-text); max-width:64ch; }
+.pr-faults{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:7px; }
+.pr-faults label{ display:flex; align-items:flex-start; gap:11px; cursor:pointer;
+  font-size:15px; line-height:1.5; padding:11px 13px; border-radius:9px;
+  border:1px solid var(--ac-border-soft); }
+.pr-faults label:hover{ border-color:var(--gold); }
+.pr-faults input{ flex-shrink:0; margin-top:3px; }
+.pr-audit .pr-checks{ margin-bottom:16px; }
+.pr-locked{ font-size:13.5px; color:var(--ac-text-60); margin:0; }
+
 .fub{ position:relative; width:100%; border-radius:12px; overflow:hidden;
   border:1px solid var(--ac-border-soft); background:#fff; line-height:1.35;
   color:#2f3d4a; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
@@ -953,6 +965,25 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 /* the header subline, so the record reflects this situation */
 .fub-sub{ left:5%; top:6.3%; width:18%; height:2.4%; background:#fff;
   font-size:calc(13px * var(--k)); color:#8a99a8; display:flex; align-items:center; }
+
+/* Renaming the contact. The capture is 1810x869 and the panel behind all four of
+   these is white, so a box in the panel's own colour repaints cleanly. Each one
+   starts AFTER the icon or label on its row — cover those and it stops looking
+   like Follow Up Boss. */
+.fub-av{ left:1.38%; top:3.22%; width:3.04%; height:6.33%; border-radius:50%;
+  background:#b98d85; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:calc(19px * var(--k)); font-weight:600; letter-spacing:.02em; }
+.fub-name{ left:5%; top:2.9%; width:16%; height:3.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(22px * var(--k));
+  font-weight:600; color:#2f3d4a; }
+.fub-email{ left:3%; top:15.3%; width:15%; height:2.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(14px * var(--k)); color:#1877d2; }
+.fub-social{ left:4.5%; top:92.3%; width:17%; height:2.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(14px * var(--k)); color:#1877d2; }
+
+/* Read-only while the learner is still diagnosing. The record has to stay fully
+   legible — reading it IS the exercise — so this dims nothing and only stops clicks. */
+.fub.is-locked .fub-hot{ pointer-events:none; }
 
 /* Stage — reading state, then FUB's bordered edit field with green/red */
 .fub-stageread{ left:3.6%; top:37.4%; width:14.5%; height:2.9%; display:flex; align-items:center;

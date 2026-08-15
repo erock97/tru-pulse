@@ -1,54 +1,40 @@
 import { describe, it, expect } from 'vitest';
 import { gradeAvery } from './avery.js';
 
-const repairOk = {
-  phase: 'repair' as const,
-  contactName: 'Avery Morgan — L03',
-  stage: 'Spoke with customer',
-  note: 'Tue 8/11 at 7:41 PM — Reached Avery. Comparing Puyallup homes with spouse; needs at least 3 bedrooms. Requested a Thu morning comparison of 406 and 422 Juniper Ln. Repeat views are context, not proof. Next: send the two-home comparison by 10:00 AM Thu 8/13.',
-  task: { title: 'Send Avery Juniper Ln comparison', owner: 'learner', due: 'Thu Aug 13, 2026 at 10:00 AM PT' },
-};
+const ALL_FOUR = ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'];
 
-describe('gradeAvery', () => {
-  it('passes audit only when all four planted risks are named', () => {
-    const miss = gradeAvery({ phase: 'audit', contactName: 'Avery Morgan', risks: ['wrong_stage', 'weak_note'] });
+describe('gradeAvery — the diagnosis half', () => {
+  it('passes only when all four planted faults are named', () => {
+    const miss = gradeAvery({ phase: 'audit', risks: ['wrong_stage', 'weak_note'] });
     expect(miss.passed).toBe(false);
     expect(miss.checks.filter((c) => !c.pass).map((c) => c.id)).toEqual([
       'risk_missing_task',
       'risk_ignored_activity',
     ]);
 
-    const ok = gradeAvery({
-      phase: 'audit',
-      contactName: 'Avery Morgan',
-      risks: ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'],
-    });
-    expect(ok.passed).toBe(true);
+    expect(gradeAvery({ phase: 'audit', risks: ALL_FOUR }).passed).toBe(true);
   });
 
-  it('passes a complete repair and fails Appointment Set as a critical miss', () => {
-    expect(gradeAvery(repairOk).passed).toBe(true);
-    const bad = gradeAvery({ ...repairOk, stage: 'Appointment set' });
-    expect(bad.passed).toBe(false);
-    expect(bad.critical).toBe(true);
-    expect(bad.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
+  it('fails a learner who ticks every box instead of reading', () => {
+    const sweep = gradeAvery({ phase: 'audit', risks: [...ALL_FOUR, 'no_owner', 'no_source'] });
+    expect(sweep.passed).toBe(false);
+    expect(sweep.checks.find((c) => c.id === 'overreach')?.pass).toBe(false);
   });
 
-  it('fails invented intent and never returns the expected record', () => {
-    const bad = gradeAvery({
-      ...repairOk,
-      note: repairOk.note + ' Activity proves she is ready to buy.',
-    });
-    expect(bad.passed).toBe(false);
-    expect(bad.checks.find((c) => c.id === 'note_excludes_claims')?.pass).toBe(false);
-    const dumped = JSON.stringify(bad);
-    expect(dumped.toLowerCase()).not.toContain('appointment set');
-    expect(dumped).not.toContain('Talked. Interested.');
+  it('fails one wrong tick even when all four real faults are named', () => {
+    expect(gradeAvery({ phase: 'audit', risks: [...ALL_FOUR, 'no_source'] }).passed).toBe(false);
   });
 
-  it('fails the wrong contact as critical', () => {
-    const bad = gradeAvery({ ...repairOk, contactName: 'Maya Torres — L03' });
-    expect(bad.passed).toBe(false);
-    expect(bad.critical).toBe(true);
+  it('never returns the expected record or the planted note', () => {
+    const dumped = JSON.stringify(gradeAvery({ phase: 'audit', risks: [] })).toLowerCase();
+    expect(dumped).not.toContain('appointment set');
+    expect(dumped).not.toContain('spoke with customer');
+    expect(dumped).not.toContain('talked. interested.');
+  });
+
+  it('grades diagnosis no matter what else the browser sends', () => {
+    const g = gradeAvery({ phase: 'repair', risks: ALL_FOUR, stage: 'Appointment set', note: 'anything' });
+    expect(g.phase).toBe('audit');
+    expect(g.passed).toBe(true);
   });
 });
