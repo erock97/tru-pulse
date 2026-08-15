@@ -7,6 +7,7 @@ import {
   type LibraryData,
 } from '../lib/api';
 import LibraryHome from './LibraryHome';
+import { SlideView } from './SlideDeck';
 import { isCoreModule } from '../lib/repCore';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
@@ -24,7 +25,7 @@ function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'lab') return '🗂 Work the record';
-  if (c.t === 'deck') return `🎞 ${c.title ?? 'The slides'}`;
+  if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
   if (c.t === 'video') return `🎬 ${c.title ?? 'Watch'}`;
@@ -663,26 +664,8 @@ function Card({ card, pick, onPick, onLabPassed }: {
   card: LessonCard; pick?: number; onPick: (ci: number) => void; onLabPassed?: () => void;
 }) {
   if (!card) return null;
-  if (card.t === 'deck') {
-    return (
-      <div className="ac-deck fu">
-        {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
-        {card.body && <p className="ac-labcard-body">{card.body}</p>}
-        <div className="ac-deck-frame">
-          {/* First-party asset from our own /public — allow-same-origin is what
-              lets the bundle load its own component chunks. */}
-          <iframe
-            src={card.src}
-            title={card.title ?? 'Slides'}
-            sandbox="allow-scripts allow-same-origin allow-popups"
-            allowFullScreen
-          />
-        </div>
-        <a className="ac-deck-open" href={card.src} target="_blank" rel="noreferrer">
-          Open the slides full screen ↗
-        </a>
-      </div>
-    );
+  if (card.t === 'slide') {
+    return <SlideView deck={card.deck ?? 'zillow-day1'} n={card.slide ?? 1} />;
   }
   if (card.t === 'lab') {
     return (
