@@ -174,7 +174,7 @@ export interface LessonCard {
   steps?: string[];      // steps — a pipeline/stage ladder
   // lab (t:'lab') — a graded practice record embedded IN the lesson, at the point
   // in the training it belongs to. `scenario` names the pack in RepLab.tsx.
-  scenario?: 'avery-repair' | 'elena-homework';
+  scenario?: 'avery-repair' | 'elena-homework' | 'avery-new' | 'avery-spoke' | 'avery-appointment';
   // slide (t:'slide') — ONE slide of a named deck under /public/decks, rendered
   // natively. `deck` is the json basename, `slide` the 1-based slide number.
   // (`n` is already taken above by the section card's part label.)
@@ -314,6 +314,28 @@ export async function loadLibrary(): Promise<LibraryData> {
   const res = await workerFetch('/data/rep/library');
   if (!res.ok) throw new Error('Could not load the training library.');
   return (await res.json()) as LibraryData;
+}
+
+// ── Practice records — the interactive CRM exercises ────────────────────────
+export interface RecordCheck { id: string; label: string; pass: boolean; message: string }
+export interface RecordGrade { passed: boolean; score: number; max: number; checks: RecordCheck[] }
+
+/** Grade one practice record. Expected values live on the server, never here. */
+export async function gradeRecordPractice(
+  scenarioId: string,
+  submission: {
+    stage?: string; stageSaved?: boolean; note?: string;
+    task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+  },
+  opts: { record?: boolean } = {},
+): Promise<RecordGrade> {
+  const res = await workerFetch('/rep/record/grade', {
+    method: 'POST',
+    body: JSON.stringify({ scenarioId, submission, record: opts.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as RecordGrade & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not check this record');
+  return body;
 }
 
 /** Leader/admin: assign a track to one or more learners with an optional due date.

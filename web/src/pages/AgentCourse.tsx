@@ -8,6 +8,7 @@ import {
 } from '../lib/api';
 import LibraryHome from './LibraryHome';
 import { SlideView } from './SlideDeck';
+import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
@@ -26,6 +27,7 @@ function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'lab') return '🗂 Work the record';
   if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
+  if (c.t === 'practice') return `🖥 ${c.title ?? 'Work the record'}`;
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
   if (c.t === 'video') return `🎬 ${c.title ?? 'Watch'}`;
@@ -565,7 +567,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module
   const card = cards[i];
   const last = i >= cards.length - 1;
   const isDrill = card?.t === 'drill';
-  const isLab = card?.t === 'lab';
+  const isLab = card?.t === 'lab' || card?.t === 'practice';
   // A lab gates the same way a drill does: you do not move on until it passes.
   const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
   const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
@@ -667,13 +669,24 @@ function Card({ card, pick, onPick, onLabPassed }: {
   if (card.t === 'slide') {
     return <SlideView deck={card.deck ?? 'zillow-day1'} n={card.slide ?? 1} />;
   }
+  if (card.t === 'practice') {
+    const sc = (card.scenario ?? 'avery-new') as PracticeScenario;
+    if (!PRACTICE_PACKS[sc]) return null;
+    return (
+      <div className="ac-labcard fu">
+        {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
+        {card.body && <p className="ac-labcard-body">{card.body}</p>}
+        <PracticeRecord scenario={sc} onPassed={onLabPassed} />
+      </div>
+    );
+  }
   if (card.t === 'lab') {
     return (
       <div className="ac-labcard fu">
         {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
         {card.body && <p className="ac-labcard-body">{card.body}</p>}
         <LabExercise
-          scenario={card.scenario ?? 'avery-repair'}
+          scenario={(card.scenario === 'elena-homework' ? 'elena-homework' : 'avery-repair')}
           compact
           onPassed={onLabPassed}
         />
