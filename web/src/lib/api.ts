@@ -1,5 +1,6 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
+import type { TrackView, TrackModuleRow, ProgressRow } from '../../../shared/repLibrary.js';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -257,6 +258,32 @@ export async function archiveRepModule(moduleId: string): Promise<void> {
 export async function myOrgRole(_orgId: string): Promise<string | null> {
   if (isDemo) return 'admin';
   return (await me()).role;
+}
+
+// ── TRU Rep — the library shelf (Phase 1) ───────────────────────────────────
+// The shelf is one round trip: tracks already rolled up by the Worker using the
+// same pure functions the tests cover, so the browser never recomputes "how far
+// along am I" a second, slightly different way.
+export type { TrackView, TrackModuleRow, ProgressRow };
+
+export interface LibraryModule extends Omit<RepModule, 'questions'> {
+  kind: string; duration_min: number | null; level: string | null;
+  tags: string[]; cover: string | null;
+}
+export interface LibraryData {
+  learner: { id: string; kind: 'agent' | 'member'; org_id: string };
+  tracks: TrackView[];
+  modules: LibraryModule[];
+  trackModules: TrackModuleRow[];
+  progress: ProgressRow[];
+  certificates: Array<{ track_id: string; issued_at: string }>;
+}
+
+/** The whole shelf for whoever is signed in — one round trip, RLS-scoped. */
+export async function loadLibrary(): Promise<LibraryData> {
+  const res = await workerFetch('/data/rep/library');
+  if (!res.ok) throw new Error('Could not load the training library.');
+  return (await res.json()) as LibraryData;
 }
 
 /** Leader/admin: this org's own authored modules (source='custom'), at ANY status —
