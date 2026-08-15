@@ -1,73 +1,49 @@
-// A safe, working contact record the learner actually operates.
+// A practice contact record built ON the real Follow Up Boss screen.
 //
-// The point is muscle memory, not recall: pick a stage and save it, write a
-// note, schedule a dated task, and watch the record change the way a real one
-// would. Nothing here can break anything, so there is no reason to be careful.
+// Eric's rule: no fabricated UI. A learner has to recognise the product when
+// they open it for real, so the background here is the actual FUB screenshot
+// from the training account and the controls sit exactly where FUB puts them —
+// the stage in the Details panel, the note composer at the top, the Tasks panel
+// on the right. Everything is a real control; nothing writes anywhere real.
 //
-// The grading is server-side (POST /rep/record/grade) — the expected stage,
-// note and task never reach the browser, so the answer cannot be read out of
-// the page.
+// Hotspots are percentages of the screenshot's own 1810×869, so the whole thing
+// scales with the image and stays aligned at any width.
 import { useState } from 'react';
 import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
 
-// The full ladder from slide 10. Offering only the plausible few would make the
-// honest answer easier to guess than it is in the real product.
+const SHOT = '/rep-lab/detail-full.png';
+
+// The ladder from slide 10 of the Day 1 deck.
 const STAGES = [
   'Lead', 'Attempted Contact', 'Spoke with Customer', 'Appointment Set',
   'Met with Customer', 'Showing Homes', 'Submitting Offers', 'Under Contract', 'Closed',
 ];
-
-type Fact = [string, string];
 
 type Pack = {
   title: string;
   brief: string;
   situation: string;
   startStage: string;
-  startNote?: string;
-  facts: Fact[];
-  activity: string[];
 };
 
 export const PACKS: Record<string, Pack> = {
   'avery-new': {
     title: 'A new lead just landed',
-    brief: 'Avery Morgan has just arrived from Zillow. Nobody has spoken to them. Leave the record honest, and leave yourself a way back to it.',
-    situation: 'You have not contacted Avery yet. It is 9:10 AM.',
+    brief: 'Avery Morgan just arrived from Zillow and nobody has spoken to them. Leave the record honest, and leave yourself a way back to it.',
+    situation: 'It is 9:10 AM. You have not contacted Avery yet.',
     startStage: 'Lead',
-    facts: [
-      ['Contact', 'Avery Morgan'],
-      ['Source', 'Zillow property inquiry'],
-      ['Property', '406 Juniper Ln'],
-      ['Arrived', 'Today, 9:04 AM'],
-    ],
-    activity: ['9:04 AM — Lead created from Zillow property inquiry'],
   },
   'avery-spoke': {
     title: 'You just got off the phone',
-    brief: 'You reached Avery and learned what they are looking for. Nothing is booked. Leave a record another agent could pick up.',
-    situation: 'Call ended 2 minutes ago. Avery is buying with their sister, wants Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. No appointment was discussed.',
+    brief: 'You reached Avery and learned what they are looking for. Nothing is booked.',
+    situation: 'Avery is buying with their sister, wants Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. No appointment was discussed.',
     startStage: 'Lead',
-    facts: [
-      ['Contact', 'Avery Morgan'],
-      ['Source', 'Zillow property inquiry'],
-      ['Property', '406 Juniper Ln'],
-      ['Reached', 'Today, 4:46 PM'],
-    ],
-    activity: ['4:46 PM — Outgoing call, 6 min', '9:04 AM — Lead created from Zillow property inquiry'],
   },
   'avery-appointment': {
     title: 'You booked the appointment',
     brief: 'Avery confirmed a time. Make the record say so — and leave the thing you owe them before you meet.',
-    situation: 'You spoke with Avery and confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln. Two adults are coming. They asked for access details beforehand.',
+    situation: 'Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln. Two adults are coming. They asked for access details beforehand.',
     startStage: 'Spoke with Customer',
-    facts: [
-      ['Contact', 'Avery Morgan'],
-      ['Source', 'Zillow property inquiry'],
-      ['Property', '406 Juniper Ln'],
-      ['Confirmed', 'Saturday, 11:00 AM'],
-    ],
-    activity: ['6:18 PM — Outgoing call, 9 min', '4:46 PM — Outgoing call, 6 min', '9:04 AM — Lead created'],
   },
 };
 
@@ -75,8 +51,7 @@ export type PracticeScenario = keyof typeof PACKS;
 
 type Entry = { when: string; text: string; kind: 'stage' | 'note' | 'task' };
 
-const stamp = () =>
-  new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const stamp = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
 export function PracticeRecord({
   scenario, onPassed, record = true,
@@ -88,8 +63,11 @@ export function PracticeRecord({
   const pack = PACKS[scenario];
   const [stage, setStage] = useState(pack.startStage);
   const [savedStage, setSavedStage] = useState(pack.startStage);
+  const [stageOpen, setStageOpen] = useState(false);
+  const [everSaved, setEverSaved] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
   const [note, setNote] = useState('');
+  const [taskOpen, setTaskOpen] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDate, setTaskDate] = useState('');
   const [taskTime, setTaskTime] = useState('');
@@ -103,6 +81,7 @@ export function PracticeRecord({
 
   const saveStage = () => {
     setSavedStage(stage);
+    setEverSaved(true);
     setLog((l) => [{ when: stamp(), text: `Stage changed to ${stage}`, kind: 'stage' }, ...l]);
   };
 
@@ -123,7 +102,7 @@ export function PracticeRecord({
       text: `Task created — ${t}${taskDate ? ` · due ${taskDate}${taskTime ? ` ${taskTime}` : ''}` : ''}`,
       kind: 'task',
     }, ...l]);
-    setTaskTitle(''); setTaskDate(''); setTaskTime('');
+    setTaskTitle(''); setTaskDate(''); setTaskTime(''); setTaskOpen(false);
   };
 
   const check = async () => {
@@ -132,7 +111,7 @@ export function PracticeRecord({
     try {
       const g = await gradeRecordPractice(scenario, {
         stage: savedStage,
-        stageSaved: !dirty && log.some((e) => e.kind === 'stage'),
+        stageSaved: everSaved && !dirty,
         note,
         task: tasks.length
           ? { title: tasks[0].title, dueDate: tasks[0].date, dueTime: tasks[0].time }
@@ -153,109 +132,103 @@ export function PracticeRecord({
         <h3 className="pr-brieftitle">{pack.title}</h3>
         <p>{pack.brief}</p>
         <div className="pr-situation"><b>What just happened:</b> {pack.situation}</div>
+        <p className="pr-safe">
+          This is the real Follow Up Boss screen. Everything on it works, and nothing you do here
+          touches a real contact — so click around.
+        </p>
       </div>
 
-      <div className="pr-grid">
-        {/* ── the record ── */}
-        <section className="pr-record">
-          <header className="pr-head">
-            <div className="pr-avatar">AM</div>
-            <div className="pr-who">
-              <div className="pr-name">Avery Morgan</div>
-              <div className="pr-src">Zillow property inquiry · Training Source</div>
-            </div>
-            <span className={`pr-stagepill${dirty ? ' dirty' : ''}`}>{savedStage}</span>
-          </header>
+      <div className="fub">
+        <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
 
-          <div className="pr-details">
-            {pack.facts.map(([k, v]) => (
-              <div key={k}><span>{k}</span><b>{v}</b></div>
-            ))}
-          </div>
-
-          {tasks.length > 0 && (
-            <div className="pr-tasks">
-              <h4>Tasks</h4>
-              {tasks.map((t, i) => (
-                <div key={i} className="pr-task">
-                  <span className="pr-taskdot" />
-                  <span className="pr-tasktitle">{t.title}</span>
-                  <span className="pr-taskdue">{t.date ? `${t.date}${t.time ? ` · ${t.time}` : ''}` : 'no date'}</span>
-                </div>
-              ))}
-            </div>
+        {/* ── Stage, in the Details panel where FUB keeps it ── */}
+        <div className="fub-hot fub-stage">
+          <button className="fub-stageval" onClick={() => setStageOpen((o) => !o)}>
+            {stage}<span className="fub-caret">▾</span>
+          </button>
+          {dirty && (
+            <button className="fub-check" onClick={saveStage} title="Save the stage">✓</button>
           )}
-
-          <div className="pr-timeline">
-            <h4>Activity</h4>
-            {log.map((e, i) => (
-              <div key={i} className={`pr-event is-${e.kind}`}>
-                <span className="pr-when">{e.when}</span>
-                <span className="pr-what">{e.text}</span>
-              </div>
-            ))}
-            {pack.activity.map((a) => (
-              <div key={a} className="pr-event is-old"><span className="pr-what">{a}</span></div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── the controls ── */}
-        <section className="pr-work">
-          <div className="pr-block">
-            <h4>Stage</h4>
-            <div className="pr-stagerow">
-              <select value={stage} onChange={(e) => setStage(e.target.value)}>
-                {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <button className={`pr-save${dirty ? ' on' : ''}`} onClick={saveStage} disabled={!dirty}>
-                ✓ Save
-              </button>
-            </div>
-            {dirty && <p className="pr-warn">Not saved yet — choosing a stage does not save it.</p>}
-          </div>
-
-          <div className="pr-block">
-            <h4>Create note</h4>
-            <textarea
-              value={noteDraft}
-              onChange={(e) => setNoteDraft(e.target.value)}
-              rows={6}
-              placeholder="Start with your initials. What happened, what they need, what happens next and when."
-            />
-            <button className="pr-btn" onClick={addNote} disabled={!noteDraft.trim()}>Create note</button>
-          </div>
-
-          <div className="pr-block">
-            <h4>Create task</h4>
-            <input
-              value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
-              placeholder="Your initials — then what you will do"
-            />
-            <div className="pr-taskrow">
-              <label>Due date<input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} /></label>
-              <label>Time<input type="time" value={taskTime} onChange={(e) => setTaskTime(e.target.value)} /></label>
-            </div>
-            <button className="pr-btn" onClick={addTask} disabled={!taskTitle.trim()}>Create task</button>
-          </div>
-
-          {grade && (
-            <ul className="pr-checks">
-              {grade.checks.map((c) => (
-                <li key={c.id} className={c.pass ? 'ok' : 'no'}>
-                  <b>{c.label}</b> — {c.message}
+          {stageOpen && (
+            <ul className="fub-menu">
+              {STAGES.map((s) => (
+                <li key={s}>
+                  <button
+                    className={s === stage ? 'on' : ''}
+                    onClick={() => { setStage(s); setStageOpen(false); }}
+                  >{s}</button>
                 </li>
               ))}
             </ul>
           )}
-          {grade?.passed && <p className="lab-ok">That is a record someone else could pick up. {grade.score}/{grade.max}.</p>}
-          {err && <div className="err">{err}</div>}
+        </div>
+        {dirty && <div className="fub-hot fub-unsaved">Not saved yet</div>}
 
-          <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>
-            {busy ? 'Checking…' : grade?.passed ? 'Check again' : 'Check my record'}
-          </button>
-        </section>
+        {/* ── The note composer at the top of the record ── */}
+        <textarea
+          className="fub-hot fub-note"
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="Add notes or type @name to notify"
+        />
+        <button className="fub-hot fub-notebtn" onClick={addNote} disabled={!noteDraft.trim()}>
+          Create Note
+        </button>
+
+        {/* ── The Tasks panel on the right ── */}
+        <button className="fub-hot fub-taskadd" onClick={() => setTaskOpen((o) => !o)} title="Add a task">+</button>
+        <div className="fub-hot fub-tasklist">
+          {tasks.length === 0 ? (
+            <span className="fub-empty">No upcoming tasks</span>
+          ) : tasks.map((t, i) => (
+            <div key={i} className="fub-taskrow">
+              <span className="fub-taskname">{t.title}</span>
+              <span className="fub-taskdue">{t.date ? `${t.date}${t.time ? ` · ${t.time}` : ''}` : 'no date'}</span>
+            </div>
+          ))}
+        </div>
+        {taskOpen && (
+          <div className="fub-hot fub-taskform">
+            <label>Task<input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Your initials — then what you will do" /></label>
+            <div className="fub-taskrow2">
+              <label>Due<input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} /></label>
+              <label>Time<input type="time" value={taskTime} onChange={(e) => setTaskTime(e.target.value)} /></label>
+            </div>
+            <div className="fub-taskbtns">
+              <button className="fub-ghost" onClick={() => setTaskOpen(false)}>Cancel</button>
+              <button className="fub-primary" onClick={addTask} disabled={!taskTitle.trim()}>Save task</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── What you did, in the record's own timeline ── */}
+        {log.length > 0 && (
+          <div className="fub-hot fub-log">
+            {log.map((e, i) => (
+              <div key={i} className={`fub-logrow is-${e.kind}`}>
+                <span className="fub-logwhen">{e.when}</span>
+                <span className="fub-logtext">{e.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pr-after">
+        {grade && (
+          <ul className="pr-checks">
+            {grade.checks.map((c) => (
+              <li key={c.id} className={c.pass ? 'ok' : 'no'}>
+                <b>{c.label}</b> — {c.message}
+              </li>
+            ))}
+          </ul>
+        )}
+        {grade?.passed && <p className="lab-ok">That is a record someone else could pick up. {grade.score}/{grade.max}.</p>}
+        {err && <div className="err">{err}</div>}
+        <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>
+          {busy ? 'Checking…' : grade?.passed ? 'Check again' : 'Check my record'}
+        </button>
       </div>
     </div>
   );
