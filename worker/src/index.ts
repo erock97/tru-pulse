@@ -1215,6 +1215,47 @@ export default {
       }
     }
 
+    // Leader/admin assigns a track to one or more learners, with an optional due
+    // date. Upserts on (learner_id, track_id) so re-assigning the same track just
+    // moves the date rather than stacking duplicate rows on someone's shelf.
+    if (url.pathname === '/rep/assignments' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const orgId = String(body?.org_id ?? '').trim();
+      const trackId = String(body?.track_id ?? '').trim();
+      const learnerIds: string[] = Array.isArray(body?.learner_ids) ? body.learner_ids.map(String) : [];
+      const dueAt = body?.due_at ? String(body.due_at) : null;
+      if (!isUuid(orgId) || !isUuid(trackId)) return json({ error: 'invalid id' }, 422);
+      if (!learnerIds.length || !learnerIds.every(isUuid)) return json({ error: 'learner_ids[] required' }, 422);
+      if (!(await isOrgLeaderOrAdmin(database, userId, orgId))) return json({ error: 'forbidden' }, 403);
+
+      // The track must be this org's own or a shared TRU track — never another
+      // brokerage's custom track, even with a valid id.
+      const tracks = await database.select('rep_tracks', `id=eq.${trackId}&select=id,org_id`);
+      if (!tracks.length) return json({ error: 'track not found' }, 404);
+      const trackOrg = (tracks[0] as { org_id: string | null }).org_id;
+      if (trackOrg !== null && trackOrg !== orgId) return json({ error: 'forbidden' }, 403);
+
+      // Every learner must belong to THIS org — a forged id can't cross a tenant
+      // line. Deduped before the read so the row count is a real comparison.
+      const uniqueIds = [...new Set(learnerIds)];
+      const owned = await database.select(
+        'rep_learners', `id=in.(${uniqueIds.join(',')})&select=id,org_id`);
+      if (owned.length !== uniqueIds.length || owned.some((l: any) => l.org_id !== orgId)) {
+        return json({ error: 'forbidden' }, 403);
+      }
+      await database.upsert(
+        'rep_assignments',
+        uniqueIds.map((id) => ({
+          org_id: orgId, learner_id: id, track_id: trackId,
+          due_at: dueAt, assigned_by: userId, assigned_at: new Date().toISOString(),
+        })),
+        'learner_id,track_id',
+      );
+      return json({ count: uniqueIds.length });
+    }
+
     // Create OR update a source='custom' module for the caller's org. Update
     // requires the existing row to already be source='custom' AND in that
     // org — a leader can never touch another org's rows or a system module.
