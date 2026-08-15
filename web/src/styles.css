@@ -916,12 +916,26 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .pr{ display:flex; flex-direction:column; gap:18px; }
 .pr-brieftitle{ font-family:Georgia,serif; font-size:23px; font-weight:800; color:var(--ac-text); margin:0 0 10px; }
 .pr-situation{ font-size:16px; line-height:1.65; color:var(--ac-text); margin:0 0 16px; max-width:78ch; }
-.pr-jobs{ background:color-mix(in srgb, var(--gold) 8%, transparent);
-  border:1px solid color-mix(in srgb, var(--gold) 28%, transparent); border-radius:12px; padding:16px 20px; }
-.pr-jobs h4{ margin:0 0 10px; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+/* The job list sticks to the top of the viewport while they work. The record is
+   taller than a screen, so a list that scrolls away leaves someone staring at a
+   contact with no idea what was asked of them — which is exactly what happened.
+   It also ticks itself off, so "what is left" is never a guess. */
+.pr-jobs{ position:sticky; top:8px; z-index:12;
+  background:color-mix(in srgb, var(--gold) 11%, #17110A);
+  border:1px solid color-mix(in srgb, var(--gold) 34%, transparent); border-radius:12px;
+  padding:15px 20px; box-shadow:0 14px 30px -18px rgba(0,0,0,.9); }
+.pr-jobs h4{ margin:0 0 11px; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--gold); font-weight:800; }
-.pr-jobs ol{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; }
-.pr-jobs li{ font-size:15.5px; line-height:1.55; color:var(--ac-text); }
+.pr-jobs ol{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px; }
+.pr-jobs li{ display:flex; gap:11px; align-items:flex-start;
+  font-size:15.5px; line-height:1.5; color:var(--ac-text); }
+.pr-jobs li.is-done{ color:var(--ac-text-60); text-decoration:line-through;
+  text-decoration-color:color-mix(in srgb, var(--green) 60%, transparent); }
+.pr-tick{ flex-shrink:0; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+  font-size:12px; font-weight:800; border:1.5px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  color:var(--gold); margin-top:1px; }
+.pr-jobs li.is-done .pr-tick{ background:var(--green, #3fa06c); border-color:var(--green, #3fa06c); color:#fff; }
+.lab-jobs{ grid-column:1 / -1; }
 .pr-safe{ font-size:13.5px; color:var(--ac-text-60); margin:14px 0 0; }
 .pr-hintbtn{ background:none; border:0; padding:0; color:var(--gold); font:inherit; font-weight:700;
   text-decoration:underline; cursor:pointer; }
