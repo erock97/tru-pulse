@@ -10,10 +10,10 @@ import LibraryHome from './LibraryHome';
 import { isCoreModule } from '../lib/repCore';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
-import { LabView } from './RepLab';
+import { LabExercise } from './RepLab';
 import '../truHqDark.css';
 
-type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim' | 'lab';
+type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim';
 
 // Per-module accent — gold, blue, sea-green, terracotta (cycles past 4).
 const ACCENTS = ['#e0a340', '#4f8fd6', '#3fa06c', '#d9694c'];
@@ -23,6 +23,7 @@ const accentOf = (idx: number) => ACCENTS[(idx - 1) % ACCENTS.length];
 function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
   if (c.t === 'drill') return '⚡ Practice rep';
+  if (c.t === 'lab') return '🗂 Work the record';
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
   if (c.t === 'video') return `🎬 ${c.title ?? 'Watch'}`;
@@ -60,9 +61,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [simConfigured, setSimConfigured] = useState(false);
   const [attempts, setAttempts] = useState<SimAttempt[]>([]);
   const [sessionSimPass, setSessionSimPass] = useState(false);
-  const [labPassed, setLabPassed] = useState(false);
-  const [elenaPassed, setElenaPassed] = useState(false);
-  const [labScenario, setLabScenario] = useState<'priya-repair' | 'elena-homework'>('priya-repair');
   const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
   const [ackErr, setAckErr] = useState('');
 
@@ -142,32 +140,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
             mods={mods}
             onOpen={openModule}
             extras={<div className="ac-modlist lib-extras">
-            <button
-              className={`ac-modcard fu${labPassed ? ' done' : ''}`}
-              style={{ ['--mac' as string]: '#3fa06c', animationDelay: `${0.07 * mods.length}s` }}
-              onClick={() => { setLabScenario('priya-repair'); setView('lab'); }}
-            >
-              <span className="ac-modbar" />
-              <span className={`ac-modnum${labPassed ? ' done' : ''}`}>{labPassed ? '✓' : '✎'}</span>
-              <span className="ac-modmeta">
-                <span className="ac-modtitle">Keep a lead · Priya’s record</span>
-                <span className="ac-modsub">{labPassed ? 'Passed' : 'Find what is broken, then repair the record. Not part of certification.'}</span>
-              </span>
-              <span className="ac-modgo">{labPassed ? 'Again' : 'Start'}</span>
-            </button>
-            <button
-              className={`ac-modcard fu${elenaPassed ? ' done' : ''}`}
-              style={{ ['--mac' as string]: '#4f8fd6', animationDelay: `${0.07 * (mods.length + 1)}s` }}
-              onClick={() => { setLabScenario('elena-homework'); setView('lab'); }}
-            >
-              <span className="ac-modbar" />
-              <span className={`ac-modnum${elenaPassed ? ' done' : ''}`}>{elenaPassed ? '✓' : '8'}</span>
-              <span className="ac-modmeta">
-                <span className="ac-modtitle">Keep a lead · Elena’s closer</span>
-                <span className="ac-modsub">{elenaPassed ? 'Passed' : 'Complete the record. 8 of 10, no critical miss.'}</span>
-              </span>
-              <span className="ac-modgo">{elenaPassed ? 'Again' : 'Start'}</span>
-            </button>
             {/* The final: a live, graded roleplay call */}
             <button
               className={`ac-modcard ac-simcard fu${simPassed ? ' done' : ''}${allMods && !simPassed ? ' next' : ''}`}
@@ -194,17 +166,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
           {oneOnOnes && <MyOneOnOnes list={oneOnOnes} />}
         </main>
       </div>
-    );
-  }
-
-  if (view === 'lab') {
-    return (
-      <LabView
-        scenario={labScenario}
-        record
-        onBack={() => setView('home')}
-        onPassed={() => { if (labScenario === 'priya-repair') setLabPassed(true); else setElenaPassed(true); }}
-      />
     );
   }
 
@@ -602,7 +563,10 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module
   const card = cards[i];
   const last = i >= cards.length - 1;
   const isDrill = card?.t === 'drill';
-  const answered = !isDrill || picks[i] !== undefined;
+  const isLab = card?.t === 'lab';
+  // A lab gates the same way a drill does: you do not move on until it passes.
+  const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
+  const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
   const go = (n: number) => { setI(n); setSeen((s) => Math.max(s, n)); };
 
   const rail = (
@@ -630,12 +594,17 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module
       <h2 className="ac-lessontitle ac-mob">{m.title}</h2>
       <div className="ac-progress"><div className="ac-progress-fill" style={{ width: `${((i + 1) / cards.length) * 100}%` }} /></div>
       <div className="ac-cardzone" key={i}>
-        <Card card={card} pick={picks[i]} onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))} />
+        <Card
+          card={card}
+          pick={picks[i]}
+          onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))}
+          onLabPassed={() => setLabsPassed((l) => ({ ...l, [i]: true }))}
+        />
       </div>
       <div className="ac-nav">
         {i > 0 && <button className="btn ghost" onClick={() => setI(i - 1)}>Back</button>}
         {!last
-          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : 'Next'}</button>
+          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
           : <button className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
       </div>
       {error && <div className="err" style={{ marginTop: 12 }}>{error}</div>}
@@ -689,8 +658,23 @@ function MediaCard({ card }: { card: LessonCard }) {
   );
 }
 
-function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
+function Card({ card, pick, onPick, onLabPassed }: {
+  card: LessonCard; pick?: number; onPick: (ci: number) => void; onLabPassed?: () => void;
+}) {
   if (!card) return null;
+  if (card.t === 'lab') {
+    return (
+      <div className="ac-labcard fu">
+        {card.title && <h3 className="ac-labcard-title">{card.title}</h3>}
+        {card.body && <p className="ac-labcard-body">{card.body}</p>}
+        <LabExercise
+          scenario={card.scenario ?? 'priya-repair'}
+          compact
+          onPassed={onLabPassed}
+        />
+      </div>
+    );
+  }
   if (card.t === 'section') {
     return (
       <div className="ac-sect fu">

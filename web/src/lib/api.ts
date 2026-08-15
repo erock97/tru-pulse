@@ -172,6 +172,9 @@ export interface LessonCard {
   bad?: string[];        // compare — DON'T column
   url?: string;          // video — Loom share/embed URL (empty = "coming soon" placeholder)
   steps?: string[];      // steps — a pipeline/stage ladder
+  // lab (t:'lab') — a graded practice record embedded IN the lesson, at the point
+  // in the training it belongs to. `scenario` names the pack in RepLab.tsx.
+  scenario?: 'priya-repair' | 'elena-homework';
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status

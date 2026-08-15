@@ -1,3 +1,14 @@
+// The practice-record exercises from Day 1 — Priya (Section 9, slide 34) and
+// Elena (the pre-Day-2 homework, slide 36).
+//
+// These are NOT standalone activities. `LabExercise` renders with no page chrome
+// so it can sit inside a lesson at the point in the training where it belongs;
+// `LabView` is the thin full-page wrapper kept for the leader's test drive.
+//
+// Layout is deliberately ONE column. The earlier two-column split put a
+// full-width Follow Up Boss screenshot into roughly 290px of a 600px page, which
+// is unreadable — the whole point of using the real screen is that you can read
+// it. Screenshots open full size in a new tab.
 import { useState } from 'react';
 import { gradeLab, isDemo, type LabGrade } from '../lib/api';
 
@@ -45,13 +56,19 @@ const PACKS = {
   },
 };
 
-export function LabView({
-  onBack, onPassed, record = true, scenario = 'priya-repair',
+export type LabScenario = keyof typeof PACKS;
+
+/** The exercise itself, with no page chrome — embeddable inside a lesson. */
+export function LabExercise({
+  scenario = 'priya-repair', record = true, onPassed, onDone, compact = false,
 }: {
-  onBack: () => void;
-  onPassed?: () => void;
+  scenario?: LabScenario;
   record?: boolean;
-  scenario?: keyof typeof PACKS;
+  onPassed?: () => void;
+  /** Called by the finish button when the exercise is standalone. */
+  onDone?: () => void;
+  /** Inside a lesson: drop the big title block, the lesson already framed it. */
+  compact?: boolean;
 }) {
   const pack = PACKS[scenario];
   const [phase, setPhase] = useState<'audit' | 'repair'>(pack.audit ? 'audit' : 'repair');
@@ -102,139 +119,167 @@ export function LabView({
   const nextDead = phase === 'repair' && !(grade?.passed && grade.phase === 'repair');
 
   return (
-    <div className="ac">
-      <header className="ac-top">
-        <button className="link small" onClick={onBack}>‹ All modules</button>
-      </header>
-      <main className="ac-main ac-lab">
-        <div className="ac-lab-head">
-          <div className="ac-hero2-ey">Library · keep a lead</div>
+    <div className="lab">
+      {!compact && (
+        <div className="lab-head">
+          <div className="ac-hero2-ey">Practice · keep a lead</div>
           <h1>{pack.title}</h1>
           <p>{pack.blurb}</p>
         </div>
+      )}
 
-        <div className="ac-lab-split">
-          <section className="ac-lab-record">
-            <h2>The real screen</h2>
-            <p className="ac-lab-hint">Training-account Follow Up Boss. The name in the shot is not the lab person. Use the facts below.</p>
-            <div className="ac-lab-shots">
-              <figure>
-                <img src="/rep-lab/detail-full.png" alt="Follow Up Boss contact record from the training account" />
-                <figcaption>Contact record</figcaption>
-              </figure>
-              <figure>
-                <img src="/rep-lab/detail-note-composer.png" alt="Follow Up Boss create-note composer" />
-                <figcaption>Note</figcaption>
-              </figure>
-            </div>
-            <h2>Facts for this lab</h2>
-            <dl>
-              {pack.facts.map(([k, v]) => (
-                <div key={k}>
-                  <dt>{k}</dt>
-                  <dd>{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          <section className="ac-lab-work">
-            {pack.audit && (
-              <div className="ac-lab-phases">
-                <button className={phase === 'audit' ? 'on' : ''} onClick={() => { setPhase('audit'); setGrade(null); }}>1. Find the problems</button>
-                <button className={phase === 'repair' ? 'on' : ''} disabled={!auditDone} onClick={() => { setPhase('repair'); setGrade(null); }}>2. Repair the record</button>
-              </div>
-            )}
-
-            {phase === 'audit' ? (
-              <>
-                <label>
-                  Whose record is this?
-                  <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder={pack.contactHint} />
-                </label>
-                <p className="ac-lab-hint">Check every problem you can see. Editing stays locked until this passes.</p>
-                <ul className="ac-lab-risks">
-                  {RISKS.map((r) => (
-                    <li key={r.id}>
-                      <label>
-                        <input type="checkbox" checked={risks.includes(r.id)} onChange={() => toggleRisk(r.id)} />
-                        {r.label}
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <>
-                <label>
-                  Whose record is this?
-                  <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder={pack.contactHint} />
-                </label>
-                {scenario === 'elena-homework' && (
-                  <label>
-                    Channel used
-                    <input value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="Phone, or name the practice substitute" />
-                  </label>
-                )}
-                <label>
-                  Stage
-                  <select value={stage} onChange={(e) => setStage(e.target.value)} disabled={!canRepair}>
-                    {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </label>
-                <label>
-                  Note
-                  <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={7} disabled={!canRepair} />
-                </label>
-                <label>
-                  Task
-                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What will you do?" disabled={!canRepair} />
-                </label>
-                <div className="ac-lab-row">
-                  <label>
-                    Owner
-                    <input value={owner} onChange={(e) => setOwner(e.target.value)} disabled={!canRepair} />
-                  </label>
-                  <label>
-                    Due
-                    <input value={due} onChange={(e) => setDue(e.target.value)} placeholder="Date and time" disabled={!canRepair} />
-                  </label>
-                </div>
-              </>
-            )}
-
-            {failed.length > 0 && (
-              <ul className="ac-lab-fail">
-                {failed.map((c) => <li key={c.id}>{c.message}</li>)}
-              </ul>
-            )}
-            {grade?.passed && phase === 'audit' && (
-              <p className="ac-lab-ok">You found the problems. Repair the record next.</p>
-            )}
-            {grade?.passed && phase === 'repair' && (
-              <p className="ac-lab-ok">
-                Record would let a teammate take over.
-                {grade.score != null && grade.max != null ? ` ${grade.score}/${grade.max}.` : ' That’s the standard.'}
-              </p>
-            )}
-            {err && <div className="err">{err}</div>}
-
-            <button
-              className="btn ac-btn"
-              disabled={busy}
-              onClick={() => {
-                if (phase === 'repair' && grade?.passed) { onBack(); return; }
-                if (phase === 'audit' && grade?.passed) { setPhase('repair'); setGrade(null); return; }
-                void submit();
-              }}
-            >
-              {busy ? 'Checking…' : phase === 'audit' ? (grade?.passed ? 'Repair the record' : 'Check my diagnosis') : (grade?.passed ? 'Done' : 'Check the record')}
-            </button>
-            {phase === 'repair' && nextDead && !busy && (
-              <p className="ac-lab-hint">Next stays locked until the stage, note, and dated task all pass.</p>
-            )}
-          </section>
+      <section className="lab-record">
+        <h3>The real screen</h3>
+        <p className="lab-hint">
+          Follow Up Boss from the training account. The name in the shot is not the person in this
+          exercise — work from the facts underneath. Click a screenshot to open it full size.
+        </p>
+        <div className="lab-shots">
+          <figure>
+            <a href="/rep-lab/detail-full.png" target="_blank" rel="noreferrer">
+              <img src="/rep-lab/detail-full.png" alt="Follow Up Boss contact record from the training account" />
+            </a>
+            <figcaption>The contact record ↗</figcaption>
+          </figure>
+          <figure>
+            <a href="/rep-lab/detail-note-composer.png" target="_blank" rel="noreferrer">
+              <img src="/rep-lab/detail-note-composer.png" alt="Follow Up Boss create-note composer" />
+            </a>
+            <figcaption>The note composer ↗</figcaption>
+          </figure>
         </div>
+
+        <h3>What you know</h3>
+        <dl className="lab-facts">
+          {pack.facts.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="lab-work">
+        {pack.audit && (
+          <div className="lab-phases">
+            <button className={phase === 'audit' ? 'on' : ''} onClick={() => { setPhase('audit'); setGrade(null); }}>
+              1. Find the problems
+            </button>
+            <button className={phase === 'repair' ? 'on' : ''} disabled={!auditDone} onClick={() => { setPhase('repair'); setGrade(null); }}>
+              2. Repair the record
+            </button>
+          </div>
+        )}
+
+        {phase === 'audit' ? (
+          <>
+            <label>
+              Whose record is this?
+              <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder={pack.contactHint} />
+            </label>
+            <p className="lab-hint">Check every problem you can see. Editing stays locked until this passes.</p>
+            <ul className="lab-risks">
+              {RISKS.map((r) => (
+                <li key={r.id}>
+                  <label>
+                    <input type="checkbox" checked={risks.includes(r.id)} onChange={() => toggleRisk(r.id)} />
+                    {r.label}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <label>
+              Whose record is this?
+              <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder={pack.contactHint} />
+            </label>
+            {scenario === 'elena-homework' && (
+              <label>
+                Channel used
+                <input value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="Phone, or name the practice substitute" />
+              </label>
+            )}
+            <label>
+              Stage
+              <select value={stage} onChange={(e) => setStage(e.target.value)} disabled={!canRepair}>
+                {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label>
+              Note — what happened, what they need, what is next and when
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={8} disabled={!canRepair} />
+            </label>
+            <label>
+              Task
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What will you do?" disabled={!canRepair} />
+            </label>
+            <div className="lab-row">
+              <label>
+                Owner
+                <input value={owner} onChange={(e) => setOwner(e.target.value)} disabled={!canRepair} />
+              </label>
+              <label>
+                Due
+                <input value={due} onChange={(e) => setDue(e.target.value)} placeholder="Date and time" disabled={!canRepair} />
+              </label>
+            </div>
+          </>
+        )}
+
+        {failed.length > 0 && (
+          <ul className="lab-fail">
+            {failed.map((c) => <li key={c.id}>{c.message}</li>)}
+          </ul>
+        )}
+        {grade?.passed && phase === 'audit' && (
+          <p className="lab-ok">You found the problems. Repair the record next.</p>
+        )}
+        {grade?.passed && phase === 'repair' && (
+          <p className="lab-ok">
+            This record would let a teammate take over.
+            {grade.score != null && grade.max != null ? ` ${grade.score}/${grade.max}.` : ' That’s the standard.'}
+          </p>
+        )}
+        {err && <div className="err">{err}</div>}
+
+        <button
+          className="btn ac-btn"
+          disabled={busy}
+          onClick={() => {
+            if (phase === 'repair' && grade?.passed) { onDone?.(); return; }
+            if (phase === 'audit' && grade?.passed) { setPhase('repair'); setGrade(null); return; }
+            void submit();
+          }}
+        >
+          {busy ? 'Checking…' : phase === 'audit' ? (grade?.passed ? 'Repair the record' : 'Check my diagnosis') : (grade?.passed ? 'Done' : 'Check the record')}
+        </button>
+        {phase === 'repair' && nextDead && !busy && (
+          <p className="lab-hint">The stage, note, and dated task all have to pass before this counts.</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/** Full-page wrapper — the leader's test drive from the Rep dashboard. */
+export function LabView({
+  onBack, onPassed, record = true, scenario = 'priya-repair',
+}: {
+  onBack: () => void;
+  onPassed?: () => void;
+  record?: boolean;
+  scenario?: LabScenario;
+}) {
+  return (
+    <div className="ac">
+      <header className="ac-top">
+        <button className="link small" onClick={onBack}>‹ Back</button>
+      </header>
+      <main className="ac-main ac-main-wide">
+        <LabExercise scenario={scenario} record={record} onPassed={onPassed} onDone={onBack} />
       </main>
     </div>
   );
