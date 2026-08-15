@@ -138,6 +138,21 @@ export function LabExercise({
   const canRepair = auditDone && phase === 'repair';
   const nextDead = phase === 'repair' && !(grade?.passed && grade.phase === 'repair');
 
+  // Spelled out, and ticked off as they go. Someone landing on a contact record
+  // should never have to guess what is being asked of them.
+  const jobs = pack.audit
+    ? [
+        { text: 'Tick every problem you can see with this record. You cannot edit anything until this passes.', done: auditDone },
+        { text: 'Change the stage to the one that matches what actually happened.', done: canRepair && stage !== pack.startStage },
+        { text: 'Replace the note so a teammate could pick this up tomorrow.', done: canRepair && note.trim() !== pack.startNote },
+        { text: 'Add a task with an owner and a date on it.', done: !!title.trim() && !!due.trim() },
+      ]
+    : [
+        { text: 'Choose the stage that matches what actually happened.', done: stage !== pack.startStage },
+        { text: 'Write the note.', done: note.trim().length > 0 },
+        { text: 'Add a task with an owner and a date on it.', done: !!title.trim() && !!due.trim() },
+      ];
+
   return (
     <div className="lab">
       {!compact && (
@@ -147,6 +162,18 @@ export function LabExercise({
           <p>{pack.blurb}</p>
         </div>
       )}
+
+      <div className="pr-jobs lab-jobs">
+        <h4>Your job — {jobs.filter((j) => j.done).length} of {jobs.length} done</h4>
+        <ol>
+          {jobs.map((j, i) => (
+            <li key={j.text} className={j.done ? 'is-done' : ''}>
+              <span className="pr-tick">{j.done ? '✓' : i + 1}</span>
+              <span>{j.text}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       <section className="lab-record">
         <h3>The real screen</h3>

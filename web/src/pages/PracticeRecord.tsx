@@ -30,8 +30,9 @@ type Pack = {
   subline: string;
   title: string;
   situation: string;
-  /** Plain, numbered, no jargon — and never naming the stage they should pick. */
-  steps: string[];
+  /** Plain, numbered, no jargon — and never naming the stage they should pick.
+   *  The id lets the panel tick each one off as the learner actually does it. */
+  steps: Array<{ id: 'stage' | 'note' | 'task' | 'deal'; text: string }>;
   startStage: string;
 };
 
@@ -45,9 +46,9 @@ export const PACKS: Record<string, Pack> = {
     title: 'You called and nobody picked up',
     situation: 'Avery Morgan came in from Zillow this morning. You called at 9:10 AM and it rang out — you left a voicemail. You have not spoken to them.',
     steps: [
-      'Set the stage to match a call that was not answered, and save it with the green check.',
-      'Leave a note saying what you did.',
-      'Create a task to try again, with a date on it.',
+      { id: 'stage', text: 'Change the stage to match a call nobody answered, then click the green check to save it.' },
+      { id: 'note', text: 'Write a note saying you called and left a voicemail, then click Create Note.' },
+      { id: 'task', text: 'Add a task to call Avery again, and put a date on it.' },
     ],
     startStage: 'Lead',
   },
@@ -56,9 +57,9 @@ export const PACKS: Record<string, Pack> = {
     title: 'This time they picked up',
     situation: 'You tried Avery again and got them. They are buying with their sister, want Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. Nobody mentioned meeting up, so nothing is booked.',
     steps: [
-      'Set the stage to match a real conversation with nothing booked, and save it.',
-      'Leave a note saying what they told you.',
-      'Create a task for the options you promised, with a date on it.',
+      { id: 'stage', text: 'Change the stage to match a real conversation where nothing was booked, then save it with the green check.' },
+      { id: 'note', text: 'Write a note with what Avery told you, then click Create Note.' },
+      { id: 'task', text: 'Add a task to send the two options you promised, and put a date on it.' },
     ],
     startStage: 'Attempted contact',
   },
@@ -67,9 +68,9 @@ export const PACKS: Record<string, Pack> = {
     title: 'They booked a time',
     situation: 'You followed up on the two homes you sent. Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln, two adults coming, and asked you for the access details beforehand.',
     steps: [
-      'Set the stage to match a confirmed day and time, and save it.',
-      'Leave a note saying what was agreed.',
-      'Create a task for the access details, with a date on it.',
+      { id: 'stage', text: 'Change the stage to match a confirmed day and time, then save it with the green check.' },
+      { id: 'note', text: 'Write a note with the day, the time and who is coming, then click Create Note.' },
+      { id: 'task', text: 'Add a task to send the access details, and put a date on it.' },
     ],
     startStage: 'Spoke with customer',
   },
@@ -78,10 +79,10 @@ export const PACKS: Record<string, Pack> = {
     title: 'The offer was accepted',
     situation: 'Weeks later, Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
     steps: [
-      'Set the stage to match an accepted offer, and save it.',
-      'Leave a note saying what was agreed.',
-      'Create a task for whatever this contract needs next, with a date on it.',
-      'Add the deal in the Deals panel. Follow Up Boss will not prompt you for it, and it needs a price and a close date.',
+      { id: 'stage', text: 'Change the stage to match an accepted offer, then save it with the green check.' },
+      { id: 'note', text: 'Write a note with the price and the closing date, then click Create Note.' },
+      { id: 'task', text: 'Add a task for whatever this contract needs next, and put a date on it.' },
+      { id: 'deal', text: 'Add the deal using the + on the Deals panel. Give it a name, a price and a close date. Follow Up Boss will never prompt you for this.' },
     ],
     startStage: 'Submitting offers',
   },
@@ -157,6 +158,15 @@ export function PracticeRecord({
   const dirty = stage !== savedStage;
   const shownStages = STAGES.filter((s) => s.toLowerCase().includes(stageQuery.toLowerCase()));
 
+  // Whether each instruction has actually been carried out. This drives the
+  // ticks, not the grade — being right about the stage is checked on the server.
+  const done = pack.steps.map((step) => {
+    if (step.id === 'stage') return everSaved && !dirty;
+    if (step.id === 'note') return note.trim().length > 0;
+    if (step.id === 'task') return tasks.length > 0 && !!tasks[0].date;
+    return deals.length > 0 && !!deals[0].name && !!deals[0].price && !!deals[0].close;
+  });
+
   const commitStage = () => {
     setEditing(false); setStageOpen(false); setStageQuery('');
     if (stage === savedStage) return;
@@ -215,14 +225,25 @@ export function PracticeRecord({
     <div className="pr">
       <div className="pr-brief">
         <h3 className="pr-brieftitle">{pack.title}</h3>
-        <p className="pr-situation">{pack.situation}</p>
-        <div className="pr-jobs">
-          <h4>Your job</h4>
-          <ol>{pack.steps.map((s) => <li key={s}>{s}</li>)}</ol>
-        </div>
+        <p className="pr-situation"><b>What just happened:</b> {pack.situation}</p>
+      </div>
+
+      {/* The job list STAYS ON SCREEN. The record is taller than a viewport, so a
+          list that scrolls away leaves someone staring at a contact with no idea
+          what was asked of them. It also ticks itself off as they work, so
+          "what is left to do" is never a guess. */}
+      <div className="pr-jobs">
+        <h4>Your job — {done.filter(Boolean).length} of {pack.steps.length} done</h4>
+        <ol>
+          {pack.steps.map((step, i) => (
+            <li key={step.id} className={done[i] ? 'is-done' : ''}>
+              <span className="pr-tick">{done[i] ? '✓' : i + 1}</span>
+              <span>{step.text}</span>
+            </li>
+          ))}
+        </ol>
         <p className="pr-safe">
-          This is the record as it opens in Follow Up Boss — find what you need on it. Nothing here
-          touches a real contact.{' '}
+          Everything on the screen below works. Nothing here touches a real contact, so click around.{' '}
           <button className="pr-hintbtn" onClick={() => setHint((h) => !h)}>
             {hint ? 'Hide the hints' : 'Stuck? Show me where'}
           </button>
