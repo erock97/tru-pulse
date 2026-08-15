@@ -1,6 +1,6 @@
 /** Elena Brooks — Day 1 closer. 8/10, no critical miss. Keys stay on the server. */
 
-import type { LabCheck, LabGrade, LabSubmission } from './priya.js';
+import type { LabCheck, LabGrade, LabSubmission } from './avery.js';
 
 export const ELENA_ID = 'elena-homework';
 

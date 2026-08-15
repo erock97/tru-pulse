@@ -174,7 +174,10 @@ export interface LessonCard {
   steps?: string[];      // steps — a pipeline/stage ladder
   // lab (t:'lab') — a graded practice record embedded IN the lesson, at the point
   // in the training it belongs to. `scenario` names the pack in RepLab.tsx.
-  scenario?: 'priya-repair' | 'elena-homework';
+  scenario?: 'avery-repair' | 'elena-homework';
+  // deck (t:'deck') — a self-contained slide deck served from /public/decks.
+  // Kept whole rather than split per slide so its transitions still run.
+  // (Reuses the existing `src` field above, which stat cards use for a source line.)
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
@@ -996,7 +999,7 @@ function demoDashboard(): DashboardData {
     ['Trevor Holland', 62, 8, 12, 42, 4],
     ['Jordan Blake', 58, 6, 14, 38, 3],
     ['Dana Cole', 71, 5, 9, 57, 2],
-    ['Priya Nair', 49, 2, 6, 41, 1],
+    ['Avery Nair', 49, 2, 6, 41, 1],
     ['Marcus Delgado', 55, 0, 8, 47, 1],
     ['Maria Lopez', 44, 0, 3, 41, 0],
     ['Sam Whitfield', 38, 0, 2, 36, 0],
@@ -1047,7 +1050,7 @@ function demoDashboard(): DashboardData {
   // Demo deals: 27 closings (16 closed + 11 UC) off 543 leads ≈ 1:20, and
   // 54 offer-or-beyond ≈ 10% offer rate — the numbers the pitch tells.
   const deals: DealRow[] = [];
-  const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Priya Nair', 'Marcus Delgado', 'Maria Lopez'];
+  const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Avery Nair', 'Marcus Delgado', 'Maria Lopez'];
   const dealSrcCycle = ['Zillow', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
   // Section 1 (accuracy): a matching stageLog hit per deal, so the ?demo=1 preview has
   // something for shared/metrics.ts to chew on once Block 3 wires it up. fub_person_id

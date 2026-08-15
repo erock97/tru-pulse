@@ -18,7 +18,7 @@ import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, s
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
-import { gradePriya, PRIYA_ID, type LabSubmission } from './repLab/priya.js';
+import { gradeAvery, AVERY_ID, type LabSubmission } from './repLab/avery.js';
 import { gradeElena, ELENA_ID } from './repLab/elena.js';
 import { resolveLearner } from './repLearner.js';
 import { maybeIssueCertificates } from './repCertificates.js';
@@ -1050,7 +1050,7 @@ export default {
       const body = (await req.json().catch(() => null)) as any;
       const scenarioId = String(body?.scenarioId ?? '').trim();
       const record = body?.record !== false;
-      if (scenarioId !== PRIYA_ID && scenarioId !== ELENA_ID) return json({ error: 'unknown scenario' }, 404);
+      if (scenarioId !== AVERY_ID && scenarioId !== ELENA_ID) return json({ error: 'unknown scenario' }, 404);
       const sub: LabSubmission = {
         phase: body?.phase === 'repair' ? 'repair' : 'audit',
         contactName: body?.submission?.contactName,
@@ -1060,7 +1060,7 @@ export default {
         task: body?.submission?.task,
         channel: body?.submission?.channel,
       };
-      const grade = scenarioId === ELENA_ID ? gradeElena(sub) : gradePriya(sub);
+      const grade = scenarioId === ELENA_ID ? gradeElena(sub) : gradeAvery(sub);
       const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
       const isLeader = await callerLeadsModule(database, userId, { org_id: (arows[0]?.org_id as string | null) ?? null });
       if (record && !arows.length) return json({ error: 'not an agent' }, 403);
