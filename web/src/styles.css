@@ -785,12 +785,18 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   .ac-qprompt{ font-size:38px; }
 }
 
-/* ── Practice record labs (Priya / Elena) ────────────────────────────────────
-   ONE column, always. The previous two-column split squeezed a full-width
-   Follow Up Boss screenshot into ~290px and nobody could read it. Works both
-   standalone and embedded inside a lesson card. */
-.ac-main-wide{ max-width:1100px; }
-.lab{ display:flex; flex-direction:column; gap:20px; }
+/* ── Practice record labs ────────────────────────────────────────────────────
+   The record you work FROM has to stay legible while you work. The earlier
+   version made you expand the screenshot, read it, close it, and type from
+   memory. So on a wide screen the record pins itself beside the form and stays
+   put while you scroll; on a narrow one it stacks, still full width. Nothing
+   here is ever a thumbnail. */
+.lab{ display:grid; grid-template-columns:1fr; gap:22px; align-items:start; }
+@media(min-width:1100px){
+  .lab{ grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); }
+  .lab-head{ grid-column:1 / -1; }
+  .lab-record{ position:sticky; top:18px; max-height:calc(100vh - 36px); overflow-y:auto; }
+}
 .lab-head{ margin:0; }
 .lab-head h1{ font-size:30px; line-height:1.15; margin:8px 0 10px; }
 .lab-head p{ color:var(--ac-text-60); max-width:62ch; }
@@ -799,17 +805,18 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   border-radius:16px; padding:22px 22px 24px;
 }
 .lab-record h3, .lab-work h3{ font-size:13px; letter-spacing:.09em; text-transform:uppercase; color:var(--ac-text-60); margin:0 0 10px; font-weight:800; }
-.lab-record h3 + p + .lab-shots{ margin-top:14px; }
 .lab-record h3:not(:first-child){ margin-top:26px; }
 
-/* screenshots: readable by default, full size in a new tab */
+/* screenshots: large by default, zoom in place, full size in a new tab */
 .lab-shots{ display:grid; grid-template-columns:1fr; gap:16px; margin:0 0 4px; }
-@media(min-width:820px){ .lab-shots{ grid-template-columns:1fr 1fr; } }
 .lab-shots figure{ margin:0; }
-.lab-shots a{ display:block; border-radius:10px; overflow:hidden; border:1px solid var(--ac-border-soft); background:#fff; transition:border-color .18s, transform .18s; }
-.lab-shots a:hover{ border-color:var(--gold); transform:translateY(-2px); }
-.lab-shots img{ display:block; width:100%; height:auto; }
-.lab-shots figcaption{ font-size:12.5px; color:var(--ac-text-60); margin-top:6px; font-weight:600; }
+.lab-shot{ display:block; width:100%; padding:0; border-radius:10px; overflow:hidden;
+  border:1px solid var(--ac-border-soft); background:#fff; cursor:zoom-in; }
+.lab-shot img{ display:block; width:100%; height:auto; }
+.lab-shot.zoomed{ cursor:zoom-out; overflow:auto; max-height:72vh; }
+.lab-shot.zoomed img{ width:190%; max-width:none; }
+.lab-shots figcaption{ display:flex; gap:12px; align-items:baseline; font-size:12.5px; color:var(--ac-text-60); margin-top:6px; font-weight:600; }
+.lab-shots figcaption a{ color:var(--gold); font-weight:700; }
 
 .lab-facts{ margin:0; }
 .lab-facts > div{ padding:11px 0; border-bottom:1px solid var(--ac-border-soft); }
@@ -845,57 +852,6 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .lab-fail{ margin:0 0 14px; padding-left:20px; color:#e08a7a; font-size:14px; line-height:1.6; }
 .lab-ok{ color:#7fbf94; font-weight:700; font-size:14.5px; margin:0 0 14px; }
 
-/* ── TRU Rep library shelf (Phase 1) ─────────────────────────────────────────
-   Reuses the ac- token family so a track card and a module card read as one
-   surface. Sections never move on their own — expanding a track is the
-   learner's choice and stays that way until they change it. */
-.lib-sec{ margin-top:30px; }
-.lib-h{ font-family:Georgia,serif; font-weight:800; font-size:20px; color:var(--ac-text); margin:0 4px 13px; }
-.lib-hrow{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin:0 4px 13px; flex-wrap:wrap; }
-.lib-hrow .lib-h{ margin:0; }
-.lib-search{ flex:0 1 260px; min-width:170px; background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:20px; padding:8px 15px; font-size:13px; color:var(--ac-text); }
-.lib-search::placeholder{ color:var(--ac-text-40); }
-.lib-search:focus{ outline:none; border-color:var(--gold); }
-.lib-cards{ display:flex; flex-direction:column; gap:13px; }
-.lib-empty{ font-size:13px; color:var(--ac-text-60); margin:6px 4px; }
-
-/* assigned-to-you */
-.lib-assign{ background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:16px; padding:16px 18px; }
-.lib-assign.overdue{ border-color:color-mix(in srgb, var(--terracotta) 55%, transparent); }
-.lib-assign-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.lib-assign-title{ font-family:Georgia,serif; font-weight:800; font-size:15.5px; color:var(--ac-text); }
-.lib-assign-sub{ font-size:12.5px; color:var(--ac-text-60); margin-top:8px; }
-.lib-chip{ flex-shrink:0; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:3px 10px; border-radius:999px; background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold); border:1px solid color-mix(in srgb, var(--gold) 38%, transparent); }
-.lib-chip-late{ background:rgba(192,107,79,.14); color:var(--terracotta); border-color:rgba(192,107,79,.45); }
-.lib-chip-done{ margin-left:9px; background:color-mix(in srgb, var(--green) 18%, transparent); color:#7fbf94; border-color:color-mix(in srgb, var(--green) 40%, transparent); }
-
-/* progress bars */
-.lib-bar{ display:block; height:6px; border-radius:999px; background:var(--ac-border-soft); overflow:hidden; margin-top:11px; }
-.lib-bar > span{ display:block; height:100%; border-radius:999px; background:var(--gold); transition:width .35s ease; }
-.lib-bar.sm{ height:5px; margin-top:9px; }
-
-/* earned badges */
-.lib-badge{ display:flex; align-items:center; gap:13px; background:var(--ac-card-flat); border:1px solid color-mix(in srgb, var(--gold) 32%, var(--ac-border-soft)); border-radius:16px; padding:15px 18px; }
-.lib-badge-seal{ font-size:22px; }
-.lib-badge-title{ flex:1; font-family:Georgia,serif; font-weight:800; font-size:15px; color:var(--ac-text); }
-.lib-badge-date{ font-size:12px; color:var(--ac-text-60); }
-
-/* a track and its module list */
-.lib-track{ margin-bottom:16px; }
-.lib-track-head{ display:grid; grid-template-columns:1fr auto; grid-template-areas:"title caret" "sub caret" "bar bar"; gap:2px 14px; width:100%; text-align:left; background:transparent; border:0; border-bottom:1px solid var(--ac-border-soft); padding:10px 4px 13px; cursor:pointer; margin-bottom:13px; }
-.lib-track-head:hover .lib-track-title{ color:var(--gold); }
-.lib-track-title{ grid-area:title; font-family:Georgia,serif; font-weight:800; font-size:17px; color:var(--ac-text); transition:color .18s; }
-.lib-track-sub{ grid-area:sub; font-size:12.5px; color:var(--ac-text-60); }
-.lib-track-head .lib-bar{ grid-area:bar; }
-.lib-caret{ grid-area:caret; align-self:center; color:var(--ac-text-40); font-size:19px; font-weight:700; }
-
-/* a module you have not unlocked yet */
-.ac-modcard.lib-locked{ opacity:.5; }
-.ac-modcard.lib-locked .ac-modnum{ background:transparent; border-style:dashed; }
-
-/* the module that just completed a track */
-.ac-track-earned{ margin-top:14px; font-size:13.5px; font-weight:700; color:#7fbf94; background:color-mix(in srgb, var(--green) 14%, transparent); border:1px solid color-mix(in srgb, var(--green) 34%, transparent); border-radius:12px; padding:10px 14px; }
-
 /* a lab living inside a lesson */
 .ac-labcard{ }
 .ac-labcard-title{ font-family:Georgia,serif; font-size:24px; font-weight:800; color:var(--ac-text); margin:0 0 10px; line-height:1.2; }
@@ -906,12 +862,22 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
    column. Its type is remapped to the app's self-hosted brand fonts: the export
    referenced Archivo and Source Serif through bundle-internal font files that do
    not exist outside it, and the CSP forbids fetching webfonts. */
+/* Slides run as wide as the stage allows. Small is never right for a deck. */
 .deck-slide{ width:100%; }
+.deck-fullbtn{ display:inline-block; margin-top:14px; font-size:13px; font-weight:800; letter-spacing:.03em;
+  color:var(--gold); padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--gold) 42%, transparent);
+  background:color-mix(in srgb, var(--gold) 10%, transparent); }
+.deck-fullbtn:hover{ background:color-mix(in srgb, var(--gold) 20%, transparent); border-color:var(--gold); }
+.deck-fullwrap{ position:fixed; inset:0; z-index:9999; background:#0B0805;
+  display:flex; align-items:center; justify-content:center; padding:24px; }
+.deck-fullwrap .deck-box{ border-radius:12px; }
+.deck-fullbtn.is-out{ position:fixed; top:18px; right:20px; margin:0; z-index:10000; }
 .deck-box{ position:relative; width:100%; overflow:hidden; border-radius:16px;
   border:1px solid var(--ac-border-soft); background:#180F08;
   box-shadow:0 26px 64px -36px rgba(0,0,0,.95); }
 .deck-scale{ position:absolute; top:0; left:0; transform-origin:top left; }
-.deck-scale section{ width:1920px; height:1080px; position:relative; }
+.deck-scale section{ width:1920px; min-height:1080px; height:auto; position:relative; }
 .deck-scale img{ max-width:none; }
 .deck-scale section{ font-family:"Hanken Grotesk", system-ui, sans-serif; }
 
@@ -930,4 +896,12 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .deck-scale [data-a="9"],.deck-scale [data-w="9"]{ animation-delay:.70s }
 @media (prefers-reduced-motion: reduce){
   .deck-scale [data-a], .deck-scale [data-w]{ animation:none; opacity:1; transform:none; }
+}
+
+/* Slides and the record lab get the whole stage, not the reading column. The
+   watermark is dropped there too — it was sitting on top of slide content. */
+@media(min-width:1000px){
+  .ac-shell-wide .ac-stage-inner{ max-width:1560px; }
+  .ac-shell-wide .ac-watermark{ display:none; }
+  .ac-shell-wide .ac-cardzone{ padding:18px 0; }
 }

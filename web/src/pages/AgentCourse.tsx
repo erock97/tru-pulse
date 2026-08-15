@@ -523,9 +523,9 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 }
 
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
-function Shell({ accent, num, rail, children }: { accent: string; num: number; rail: ReactNode; children: ReactNode }) {
+function Shell({ accent, num, rail, children, wide }: { accent: string; num: number; rail: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="ac ac-shell tru-dark" style={{ ['--mac' as string]: accent }}>
+    <div className={`ac ac-shell tru-dark${wide ? ' ac-shell-wide' : ''}`} style={{ ['--mac' as string]: accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>
@@ -587,7 +587,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module
   );
 
   return (
-    <Shell accent={ac} num={m.idx} rail={rail}>
+    <Shell accent={ac} num={m.idx} rail={rail} wide={card?.t === 'slide' || card?.t === 'lab'}>
       <button className="ac-back ac-mob" onClick={onBack}>‹ All modules</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Module {m.idx}</span>
