@@ -89,7 +89,7 @@ export interface RepModule {
 export interface RepProgressRow { agent_id: string; module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at?: string | null }
 export interface RepAgent { id: string; name: string; email: string | null; invited: boolean }
 export interface RepPracticeRow { agent_id: string; scenario: string; status: string; score: number | null; passed: boolean | null; created_at: string }
-export interface RepData { modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[]; leaderPriyaPassed?: boolean }
+export interface RepData { modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[] }
 
 export async function loadRep(): Promise<RepData> {
   if (isDemo) return demoRep();
@@ -112,7 +112,6 @@ export async function loadRep(): Promise<RepData> {
   const d = (await res.json()) as {
     modules: Omit<RepModule, 'questions'>[]; questions: Array<{ module_id: string }>;
     progress: RepProgressRow[]; agents: AgentRow[]; practice: RepPracticeRow[];
-    leaderPriyaPassed?: boolean;
   };
   [mods, qs, prog, agentRows, prac] = [d.modules ?? [], d.questions ?? [], d.progress ?? [], d.agents ?? [], d.practice ?? []];
 
@@ -123,7 +122,6 @@ export async function loadRep(): Promise<RepData> {
     progress: prog,
     agents: agentRows.map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
     practice: prac,
-    leaderPriyaPassed: d.leaderPriyaPassed !== false,
   };
 }
 
@@ -697,7 +695,7 @@ function demoRep(): RepData {
     { agent_id: 'a1', scenario: 'first_timer', status: 'graded', score: 86, passed: true, created_at: '2026-06-28' },
     { agent_id: 'a1', scenario: 'early_browser', status: 'graded', score: 71, passed: false, created_at: '2026-06-27' },
   ];
-  return { modules, progress, agents, practice, leaderPriyaPassed: true };
+  return { modules, progress, agents, practice };
 }
 
 // ── Platform-owner console (the HQ "act as a team" tile) ────────────────────

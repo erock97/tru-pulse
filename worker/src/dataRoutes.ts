@@ -214,17 +214,7 @@ export async function handleDataRoutes(
       db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
       db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
     ]);
-    let leaderPriyaPassed = true;
-    try {
-      const priya = await db.select<{ id: string }>(
-        'rep_lab_attempts',
-        `select=id&user_id=eq.${db.userId}&scenario_id=eq.priya-repair&phase=eq.repair&passed=eq.true&limit=1`,
-      );
-      leaderPriyaPassed = priya.length > 0;
-    } catch {
-      // Table not applied yet — do not blank the board.
-    }
-    return json({ modules, questions, progress, agents, practice, leaderPriyaPassed }, 200, cors);
+    return json({ modules, questions, progress, agents, practice }, 200, cors);
   }
 
   // ── Rep: one agent's own course view (loadCourse). ──
@@ -439,15 +429,10 @@ export async function handleDataRoutes(
     if (url.pathname === '/data/rep/sign-off') {
       const agentId = String(body.agentId ?? '');
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
-      try {
-        const priya = await db.select<{ id: string }>(
-          'rep_lab_attempts',
-          `select=id&user_id=eq.${db.userId}&scenario_id=eq.priya-repair&phase=eq.repair&passed=eq.true&limit=1`,
-        );
-        if (!priya.length) return json({ error: 'Pass the Priya repair lab before you sign anyone off.' }, 403, cors);
-      } catch {
-        // Table not applied yet — keep existing sign-off working.
-      }
+      // No lab gate on sign-off. Requiring a leader to complete the practice
+      // exercise before they may sign anyone off locks out every existing
+      // leader the day it ships, and leaders will not do it. The lab stays
+      // available to them; it is not a prerequisite. Eric's call, 2026-08-14.
       const who = String(body.who ?? 'team leader').slice(0, 200);
       const rows = await db.update(
         'rep_progress',
