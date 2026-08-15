@@ -5,7 +5,10 @@ import {
   type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario, type LessonCard,
   type CourseQuestion, type GradeResult,
 } from '../lib/api';
+import { buildTrackViews } from '../../../shared/repLibrary.js';
+import type { TrackView } from '../../../shared/repLibrary.js';
 import { Lesson, Quiz, Result, SimView } from './AgentCourse';
+import RepAssign from './RepAssign';
 import { LabView } from './RepLab';
 import { isCoreModule } from '../lib/repCore';
 import { HqShell } from '../components/hqShell';
@@ -121,6 +124,8 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const [q, setQ] = useState('');
   const [role, setRole] = useState<string | null>(null);
   const [manage, setManage] = useState(false);
+  // null = closed; a string (possibly empty) = open, pre-checking that learner.
+  const [assignFor, setAssignFor] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = () => loadRep().then(setData);
@@ -142,6 +147,26 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   // authoring write. A plain 'coach' member never sees the entry point,
   // though the Worker is still the real authority if this check is bypassed.
   const canAuthor = role === 'admin' || role === 'leader';
+
+  // agent row -> learner row. Assignments key on the learner spine, which covers
+  // leaders too; the roster only lists agents, so this is the bridge.
+  const learnerOf = (agentId: string): string | null =>
+    data?.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+
+  // Every assigned track for one learner, rolled up by the same pure functions
+  // the learner's own shelf uses — percentages are never recomputed here.
+  const tracksFor = (agentId: string) => {
+    if (!data) return [];
+    const learnerId = data.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+    if (!learnerId) return [];
+    const progress = data.progress
+      .filter((p) => p.agent_id === agentId)
+      .map((p) => ({ module_id: p.module_id, status: p.status, score: p.score, passed_at: p.passed_at }));
+    const mine = data.assignments.filter((a) => a.learner_id === learnerId);
+    if (mine.length === 0) return [];
+    return buildTrackViews(data.tracks, data.trackModules, progress, mine, new Date())
+      .filter((t) => t.assigned);
+  };
 
   if (!data) {
     return (
@@ -344,6 +369,15 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                       🛠 Manage modules
                     </button>
                   )}
+                  {canAuthor && data.tracks.length > 0 && (
+                    <button
+                      className="rp-preview"
+                      onClick={() => setAssignFor('')}
+                      title="Give a track to agents or leaders, with an optional due date"
+                    >
+                      📋 Assign a track
+                    </button>
+                  )}
                 </div>
               </div>
             </article>
@@ -482,13 +516,23 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                             <ProgressDots statuses={statuses} />
                             <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
                             <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
-                            <span onClick={(e) => e.stopPropagation()}>
+                            <span onClick={(e) => e.stopPropagation()} className="rp-agent-acts">
+                              {canAuthor && data.tracks.length > 0 && learnerOf(a.id) && (
+                                <button
+                                  className="rp-preview sm"
+                                  onClick={() => setAssignFor(learnerOf(a.id)!)}
+                                  title={`Assign a track to ${a.name}`}
+                                >
+                                  Assign
+                                </button>
+                              )}
                               <InviteCell agent={a} />
                             </span>
                           </div>
                           {isOpen && (
                             <AgentDrill
                               agent={a}
+                              assigned={tracksFor(a.id)}
                               modules={coreModules}
                               row={row}
                               pct={p}
@@ -534,6 +578,16 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
           onPreview={(m) => setPreview(m)}
         />
       )}
+
+      {assignFor !== null && canAuthor && (
+        <RepAssign
+          org={org}
+          data={data}
+          preselect={assignFor || null}
+          onClose={() => setAssignFor(null)}
+          onAssigned={() => void refresh()}
+        />
+      )}
     </div>
   );
 }
@@ -542,8 +596,10 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
    AGENT DRILL — module-by-module drill-down + the certification
    sign-off. Same real data + signOffAgent() behavior as before.
    ============================================================ */
-function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
+function AgentDrill({ agent, assigned, modules, row, pct, signed, sim, onSigned }: {
   agent: RepAgent;
+  /** Assigned tracks, already rolled up by shared/repLibrary.ts. */
+  assigned: TrackView[];
   modules: RepData['modules'];
   row: (agentId: string, moduleId: string) => RepProgressRow | undefined;
   pct: number;
@@ -591,6 +647,18 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
           </div>
         </div>
       </div>
+      {assigned.length > 0 && (
+        <div className="rp-drill-tracks">
+          {assigned.map((t) => (
+            <div key={t.id} className={`rp-drill-track${t.overdue ? ' late' : ''}`}>
+              {t.title} · {t.passed}/{t.total}
+              {t.dueAt && <> · {t.overdue ? 'overdue ' : 'due '}
+                {new Date(t.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}
+              {t.complete && ' · complete'}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="rp-drill-foot">
         {signed
           ? <span className="rp-signed">Certification signed off ✓</span>
