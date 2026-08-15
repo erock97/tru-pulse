@@ -58,8 +58,13 @@ update rep_progress p
  where l.agent_id = p.agent_id
    and p.learner_id is null;
 
+-- NOT partial. PostgREST's on_conflict=learner_id,module_id emits a bare
+-- ON CONFLICT (learner_id, module_id); Postgres can only infer a PARTIAL index
+-- when the statement repeats its WHERE clause, so a partial index here would
+-- make every /rep/grade upsert fail. Postgres treats NULLs as distinct, so
+-- legacy rows with a null learner_id still never collide.
 create unique index if not exists rep_progress_learner_module_uk
-  on rep_progress (learner_id, module_id) where learner_id is not null;
+  on rep_progress (learner_id, module_id);
 
 -- ── RLS ──────────────────────────────────────────────────────────────────────
 alter table rep_learners enable row level security;
