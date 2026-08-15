@@ -55,12 +55,14 @@ type Scenario = {
 };
 
 export const SCENARIOS: Record<string, Scenario> = {
-  // Nothing has happened yet. The temptation is to move the stage anyway.
+  // Called, no answer. NOT "nothing has happened" — a scenario that asks a
+  // learner to record nothing is a no-op and teaches them nothing. The lesson
+  // here is that trying is not talking.
   'avery-new': {
     id: 'avery-new',
-    stage: ['lead'],
-    stageMiss: 'Nothing has happened on this record yet. The stage should say so.',
-    requireNote: false, requireTask: true, requireDeal: false,
+    stage: ['attempted contact'],
+    stageMiss: 'You tried to reach them and did not get through. The stage should say exactly that, and no more.',
+    requireNote: true, requireTask: true, requireDeal: false,
   },
 
   // A real conversation, nothing booked. The classic over-promotion.

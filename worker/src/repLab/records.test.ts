@@ -39,19 +39,26 @@ describe('gradeRecord — marks the record, never the prose', () => {
     expect(g.checks.find((c) => c.id === 'stage_saved')?.pass).toBe(false);
   });
 
-  it('rejects promoting a brand-new record past Lead', () => {
+  it('rejects claiming a conversation when the call was not answered', () => {
     const g = gradeRecord('avery-new', {
-      stage: 'Spoke with customer', stageSaved: true, task: { title: 'x', dueDate: '2026-08-16' },
+      stage: 'Spoke with customer', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
   });
 
-  it('accepts a new record left at Lead with a dated task, and asks for no note', () => {
+  it('rejects leaving it at Lead — the attempt did happen', () => {
     const g = gradeRecord('avery-new', {
-      stage: 'Lead', stageSaved: true, task: { title: 'x', dueDate: '2026-08-16' },
+      stage: 'Lead', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
+    });
+    expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
+  });
+
+  it('accepts an unanswered call recorded as an attempt', () => {
+    const g = gradeRecord('avery-new', {
+      stage: 'Attempted contact', stageSaved: true, note: 'left a voicemail',
+      task: { title: 'try again', dueDate: '2026-08-16' },
     });
     expect(g.passed).toBe(true);
-    expect(g.checks.some((c) => c.id === 'note')).toBe(false);
   });
 
   it('is case- and spacing-insensitive about the stage', () => {
@@ -96,7 +103,7 @@ describe('the contract scenario', () => {
 
   it('asks for no deal on the scenarios that have none', () => {
     const g = gradeRecord('avery-new', {
-      stage: 'Lead', stageSaved: true, task: { title: 'x', dueDate: '2026-08-16' },
+      stage: 'Attempted contact', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.some((c) => c.id.startsWith('deal'))).toBe(false);
   });
