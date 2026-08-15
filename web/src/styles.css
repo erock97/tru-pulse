@@ -907,10 +907,12 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 }
 
 /* ── Practice record: the REAL Follow Up Boss screen, made interactive ───────
-   Eric's rule is no fabricated UI — a learner has to recognise the product when
-   they open it for real. So the background is the actual FUB screenshot and the
-   controls sit on top at the coordinates FUB puts them, expressed as
-   percentages of the shot's own 1810x869 so everything scales together. */
+   Two rules. No fabricated UI — the background is the actual FUB screenshot.
+   And never crop to the control being practised: the learner sees the whole
+   record and has to find the note box, the stage, the Tasks panel themselves,
+   because "I opened a contact, now where do I go" is the actual problem.
+   Nothing is highlighted unless they ask for a hint.
+   Coordinates are percentages of the screenshot's own 1810x869. */
 .pr{ display:flex; flex-direction:column; gap:18px; }
 .pr-brief h3{ font-family:Georgia,serif; font-size:23px; font-weight:800; color:var(--ac-text); margin:0 0 8px; }
 .pr-brief p{ font-size:16px; line-height:1.6; color:var(--ac-text-60); margin:0 0 12px; max-width:70ch; }
@@ -918,26 +920,36 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   background:color-mix(in srgb, var(--gold) 8%, transparent);
   border:1px solid color-mix(in srgb, var(--gold) 26%, transparent); border-radius:12px; padding:14px 16px; }
 .pr-safe{ font-size:13.5px; color:var(--ac-text-60); margin:12px 0 0 !important; }
+.pr-hintbtn{ background:none; border:0; padding:0; color:var(--gold); font:inherit; font-weight:700;
+  text-decoration:underline; cursor:pointer; }
 
-/* the screen itself */
 .fub{ position:relative; width:100%; border-radius:12px; overflow:hidden;
   border:1px solid var(--ac-border-soft); background:#fff; line-height:1.3; }
 .fub-shot{ display:block; width:100%; height:auto; }
-.fub-hot{ position:absolute; box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+.fub-hot{ position:absolute; box-sizing:border-box;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
 
-/* Stage — Details panel. Reading state is just the value; clicking it turns the
-   row into FUB's bordered field with a chevron, plus the green check and red X.
-   Traced from rep-lab/stage-save-check.png, which is the real control. */
-.fub-stageread{ left:3.6%; top:37.5%; height:2.7%; display:flex; align-items:center; padding:0 5px;
+/* opt-in hints, off by default so finding things is the exercise */
+.fub.show-hints .hintable{ box-shadow:0 0 0 2px #1a9cf0, 0 0 0 7px rgba(26,156,240,.22); border-radius:5px; }
+
+/* the person — patched over the baked-in name so each scenario is someone else */
+.fub-avatar{ left:1.5%; top:3.4%; width:2.9%; height:6.1%; border-radius:50%; background:#b9938c; color:#fff;
+  display:grid; place-items:center; font-size:clamp(9px,.95vw,17px); font-weight:600; }
+.fub-who{ left:4.9%; top:3.2%; width:19%; height:6.4%; background:#fff; display:flex; flex-direction:column;
+  justify-content:center; gap:.25vw; }
+.fub-name{ font-size:clamp(11px,1.15vw,21px); font-weight:600; color:#2f3d4a; line-height:1.05; }
+.fub-sub{ font-size:clamp(7px,.72vw,13px); color:#8a99a8; }
+
+/* Stage — reading state, then FUB's bordered edit field with green/red */
+.fub-stageread{ left:3.6%; top:37.3%; width:14.5%; height:3%; display:flex; align-items:center; padding:0 5px;
   background:#fff; border:1px solid transparent; border-radius:3px; cursor:pointer;
   font-size:clamp(9px,.83vw,15px); color:#2f3d4a; font-weight:500; white-space:nowrap; }
 .fub-stageread:hover{ border-color:#c3ced8; }
-.fub-stageedit{ left:0.9%; top:36.3%; width:24%; height:4.2%; display:flex; align-items:center; gap:.5%;
-  background:#fff; }
+.fub-stageedit{ left:0.9%; top:36.3%; width:24%; height:4.2%; display:flex; align-items:center; gap:.5%; background:#fff; }
 .fub-stagefield{ flex:1; height:100%; display:flex; align-items:center; gap:.5vw; padding:0 .55vw;
   background:#fff; border:1px solid #c3ced8; border-radius:5px; cursor:pointer; min-width:0;
   font-size:clamp(8px,.8vw,14px); color:#2f3d4a; }
-.fub-stagefield b{ color:#2f3d4a; font-weight:700; flex-shrink:0; }
+.fub-stagefield b{ font-weight:700; flex-shrink:0; }
 .fub-stagepick{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .fub-caret{ color:#8a99a8; flex-shrink:0; }
 .fub-ok, .fub-cancel{ flex-shrink:0; width:1.55vw; height:1.55vw; min-width:17px; min-height:17px;
@@ -945,14 +957,18 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   font-size:clamp(8px,.8vw,14px); line-height:1; }
 .fub-ok{ background:#34c47c; }
 .fub-cancel{ background:#f4675f; }
-.fub-menu{ position:absolute; top:104%; left:0; z-index:6; margin:0; padding:4px; list-style:none; min-width:190px;
-  background:#fff; border:1px solid #d7dee5; border-radius:6px; box-shadow:0 12px 28px rgba(19,41,63,.22); }
-.fub-menu button{ display:block; width:100%; text-align:left; padding:7px 10px; font-size:13px; color:#2f3d4a;
-  background:none; border:0; border-radius:4px; cursor:pointer; }
-.fub-menu button:hover{ background:#eef4fb; }
-.fub-menu button.on{ color:#1877d2; font-weight:700; }
+.fub-menu{ position:absolute; top:104%; left:0; z-index:6; width:200px; background:#fff;
+  border:1px solid #d7dee5; border-radius:6px; box-shadow:0 12px 28px rgba(19,41,63,.22); overflow:hidden; }
+.fub-menusearch{ width:calc(100% - 16px); margin:8px; padding:5px 8px; font-size:12.5px;
+  border:1px solid #c3ced8; border-radius:4px; color:#2f3d4a; }
+.fub-menu ul{ list-style:none; margin:0; padding:0 0 4px; max-height:230px; overflow-y:auto; }
+.fub-menuhead{ padding:6px 12px; font-size:12.5px; color:#8a99a8; }
+.fub-menu li button{ display:block; width:100%; text-align:left; padding:7px 12px; font-size:12.5px;
+  color:#2f3d4a; background:none; border:0; border-top:1px solid #f0f3f6; cursor:pointer; }
+.fub-menu li button:hover{ background:#eef4fb; }
+.fub-menu li button.on{ background:#eef4fb; font-weight:700; }
 
-/* Note composer — top of the record */
+/* the note composer */
 .fub-note{ left:26.7%; top:8.7%; width:47.1%; height:14.8%; resize:none; border:0; outline:0;
   background:#fdfaf0; color:#3d4852; padding:.6vw .8vw; font-size:clamp(9px,.86vw,16px); border-radius:3px; }
 .fub-note::placeholder{ color:#a9b3bd; }
@@ -960,31 +976,64 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   background:#eab863; color:#fff; font-size:clamp(8px,.72vw,13px); font-weight:600; }
 .fub-notebtn:disabled{ background:#f0d9ae; cursor:default; }
 
-/* Tasks panel — right column */
+/* Tasks and Deals panels on the right */
 .fub-taskadd{ left:96.1%; top:6.7%; width:1.5%; height:2.7%; border-radius:50%; border:0; cursor:pointer;
   background:#1a9cf0; color:#fff; font-size:clamp(8px,.75vw,14px); font-weight:700; line-height:1; }
-.fub-tasklist{ left:76%; top:11%; width:22%; min-height:2.4%; background:#fff; padding-top:.1%; }
+.fub-dealadd{ left:96.1%; top:38.1%; width:1.5%; height:2.7%; border-radius:50%; border:0; cursor:pointer;
+  background:#1a9cf0; color:#fff; font-size:clamp(8px,.75vw,14px); font-weight:700; line-height:1; }
+.fub-tasklist{ left:76%; top:11%; width:22%; background:#fff; }
+.fub-deallist{ left:76%; top:42.4%; width:22%; background:#fff; }
 .fub-empty{ font-size:clamp(8px,.78vw,14px); color:#8a99a8; }
-.fub-taskrow{ display:flex; justify-content:space-between; gap:8px; padding:2px 0; font-size:clamp(8px,.74vw,13px); }
-.fub-taskname{ color:#2f3d4a; font-weight:600; }
-.fub-taskdue{ color:#1877d2; white-space:nowrap; }
-.fub-taskform{ left:74%; top:15%; width:24%; z-index:7; background:#fff; border:1px solid #d7dee5;
-  border-radius:8px; box-shadow:0 16px 34px rgba(19,41,63,.24); padding:12px; }
-.fub-taskform label{ display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:#5b6b7a; margin-bottom:8px; }
-.fub-taskform input{ border:1px solid #d7dee5; border-radius:5px; padding:6px 8px; font-size:12.5px; color:#2f3d4a; width:100%; }
-.fub-taskrow2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.fub-taskbtns{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
-.fub-ghost{ background:none; border:1px solid #d7dee5; color:#5b6b7a; border-radius:5px; padding:6px 11px; font-size:12px; cursor:pointer; }
-.fub-primary{ background:#1a9cf0; border:0; color:#fff; border-radius:5px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; }
-.fub-primary:disabled{ background:#a9d6f5; cursor:default; }
+.fub-taskitem{ display:flex; gap:.5vw; align-items:flex-start; }
+.fub-taskbox{ flex-shrink:0; width:.85vw; height:.85vw; min-width:10px; min-height:10px; margin-top:.15vw;
+  border:1px solid #c3ced8; border-radius:2px; }
+.fub-taskname{ font-size:clamp(8px,.76vw,13px); color:#e8833a; font-weight:600; }
+.fub-taskmeta{ font-size:clamp(7px,.68vw,12px); color:#8a99a8; margin-top:.1vw; }
+.fub-dealitem{ display:flex; flex-direction:column; }
+.fub-dealname{ font-size:clamp(8px,.76vw,13px); color:#1877d2; font-weight:600; }
+.fub-dealmeta{ font-size:clamp(7px,.68vw,12px); color:#8a99a8; }
 
-/* What you did, in the record's own timeline */
-.fub-log{ left:26%; top:56%; width:48.5%; background:#fff; }
-.fub-logrow{ display:flex; gap:.7vw; padding:.45vw .6vw; border-bottom:1px solid #edf1f5; font-size:clamp(8px,.78vw,14px); }
-.fub-logwhen{ color:#8a99a8; flex-shrink:0; font-size:.9em; }
-.fub-logtext{ color:#2f3d4a; }
-.fub-logrow.is-stage .fub-logtext{ color:#1e8e3e; font-weight:700; }
-.fub-logrow.is-note{ border-left:2px solid #eab863; }
+/* what you did, on the record's own timeline */
+.fub-log{ left:24.5%; top:55%; width:50%; background:#fff; }
+.fub-item{ display:flex; gap:.7vw; padding:.5vw 0 .6vw; }
+.fub-pin{ flex-shrink:0; width:1.5vw; height:1.5vw; min-width:16px; min-height:16px; border-radius:50%;
+  background:#eab863; margin-top:.15vw; }
+.fub-item.is-stage .fub-pin{ background:#34c47c; }
+.fub-item.is-deal .fub-pin{ background:#1a9cf0; }
+.fub-itembody{ flex:1; min-width:0; }
+.fub-itemhead{ display:flex; align-items:center; gap:.45vw; padding-bottom:.35vw; border-bottom:1px solid #edf1f5; }
+.fub-itemav{ width:1.5vw; height:1.5vw; min-width:16px; min-height:16px; border-radius:50%; background:#d4614f;
+  color:#fff; display:grid; place-items:center; font-size:clamp(6px,.6vw,11px); font-weight:700; }
+.fub-itemwho{ font-size:clamp(8px,.76vw,13px); font-weight:700; color:#2f3d4a; }
+.fub-itemwhen{ font-size:clamp(7px,.68vw,12px); color:#8a99a8; }
+.fub-itemtext{ font-size:clamp(8px,.78vw,14px); color:#2f3d4a; padding-top:.4vw; }
+
+/* FUB's own modals */
+.fub-modalwrap{ position:absolute; inset:0; z-index:20; background:rgba(19,41,63,.45);
+  display:flex; align-items:flex-start; justify-content:center; padding-top:6%; }
+.fub-modal{ width:46%; min-width:280px; background:#fff; border-radius:8px; padding:1.2vw;
+  box-shadow:0 26px 60px rgba(19,41,63,.4); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+.fub-modal.wide{ width:56%; max-height:76%; overflow-y:auto; }
+.fub-modalhead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:1vw;
+  font-size:clamp(10px,.95vw,17px); color:#2f3d4a; font-weight:600; }
+.fub-modalhead button{ background:none; border:0; color:#8a99a8; cursor:pointer; font-size:clamp(10px,.9vw,16px); }
+.fub-modal input, .fub-modal select{ border:1px solid #d7dee5; border-radius:5px; padding:.5vw .6vw;
+  font-size:clamp(9px,.82vw,14px); color:#2f3d4a; width:100%; background:#fff; }
+.fub-full{ margin-bottom:.8vw; }
+.fub-two{ display:grid; grid-template-columns:1fr 1fr; gap:.8vw; margin-bottom:.8vw; }
+.fub-modalfoot{ display:flex; justify-content:flex-end; align-items:center; gap:1vw; margin-top:.6vw; }
+.fub-link{ background:none; border:0; color:#5b6b7a; cursor:pointer; font-size:clamp(9px,.82vw,14px); }
+.fub-blue{ background:#1a9cf0; border:0; color:#fff; border-radius:5px; padding:.55vw 1vw;
+  font-size:clamp(9px,.82vw,14px); font-weight:600; cursor:pointer; }
+.fub-blue:disabled{ background:#a9d6f5; cursor:default; }
+.fub-dealnamerow{ display:flex; align-items:center; gap:.5vw; margin-bottom:.5vw; }
+.fub-dealnamerow input{ flex:1; }
+.fub-crumb{ font-size:clamp(8px,.75vw,13px); color:#5b6b7a; margin-bottom:1vw; }
+.fub-dealgrid{ display:grid; grid-template-columns:1fr 1fr; gap:.9vw 1.4vw; }
+.fub-dealgrid label, .fub-dealgrid span{ display:flex; flex-direction:column; gap:.3vw;
+  font-size:clamp(7px,.66vw,11px); letter-spacing:.05em; text-transform:uppercase; color:#8a99a8; font-weight:700; }
+.fub-dealgrid i{ font-style:normal; color:#1877d2; font-size:clamp(8px,.78vw,13px);
+  text-transform:none; letter-spacing:0; font-weight:400; }
 
 .pr-after{ display:flex; flex-direction:column; gap:12px; }
 .pr-checks{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:7px; }

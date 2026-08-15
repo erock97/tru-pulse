@@ -13,6 +13,7 @@ export type RecordSubmission = {
   stageSaved?: boolean;
   note?: string;
   task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+  deal?: { name?: string; price?: string; closeDate?: string };
 };
 
 export type RecordCheck = {
@@ -44,6 +45,8 @@ type Scenario = {
   taskMiss: string;
   requireTask: boolean;
   requireNote: boolean;
+  /** Under contract means a deal has to exist. FUB does not prompt for it. */
+  requireDeal?: boolean;
 };
 
 export const SCENARIOS: Record<string, Scenario> = {
@@ -89,6 +92,23 @@ export const SCENARIOS: Record<string, Scenario> = {
     taskNeedles: ['send', 'call', 'follow', 'avery', 'option', 'home'],
     taskMiss: 'The task should name the thing you promised them.',
     requireTask: true,
+  },
+
+  // 4. The offer was accepted. The stage is the easy half; the deal is the half
+  //    FUB never asks you for.
+  'avery-contract': {
+    id: 'avery-contract',
+    stage: ['under contract'],
+    stageMiss: 'An accepted offer changes what this record should say.',
+    note: [
+      { id: 'note_happened', label: 'What happened', needles: ['accept', 'offer', 'contract', 'under'], missing: 'that the offer was accepted' },
+      { id: 'note_terms', label: 'The terms', needles: ['265', '456 oak', 'oak st', 'sept', '9/30', 'close'], missing: 'the price or the closing date' },
+    ],
+    requireNote: true,
+    taskNeedles: ['inspection', 'earnest', 'deposit', 'lender', 'avery', 'schedule', 'order', 'confirm'],
+    taskMiss: 'The task should name the next thing this contract needs.',
+    requireTask: true,
+    requireDeal: true,
   },
 };
 
@@ -152,6 +172,27 @@ export function gradeRecord(scenarioId: string, sub: RecordSubmission): RecordGr
       message: startsWithInitials(title)
         ? 'Signed.'
         : 'Start the task with your initials too.',
+    });
+  }
+
+  // ── the deal ──
+  if (sc.requireDeal) {
+    const named = !!norm(sub.deal?.name);
+    checks.push({
+      id: 'deal_created', label: 'A deal on the record', pass: named,
+      message: named
+        ? 'Logged.'
+        : 'Moving the stage does not create the deal. Follow Up Boss will not ask you for it.',
+    });
+    const priced = !!sub.deal?.price && /\d/.test(String(sub.deal.price));
+    checks.push({
+      id: 'deal_price', label: 'The price', pass: priced,
+      message: priced ? 'Recorded.' : 'The deal has no price on it.',
+    });
+    const closes = !!sub.deal?.closeDate;
+    checks.push({
+      id: 'deal_close', label: 'A close date', pass: closes,
+      message: closes ? 'Dated.' : 'The deal has no close date, so it cannot be forecast.',
     });
   }
 

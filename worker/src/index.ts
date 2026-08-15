@@ -1052,6 +1052,7 @@ export default {
         stageSaved: !!sub.stageSaved,
         note: sub.note,
         task: sub.task,
+        deal: sub.deal,
       });
       const record = body?.record !== false;
       if (record) {
