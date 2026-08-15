@@ -86,3 +86,35 @@ describe('gradeRecord', () => {
     }
   });
 });
+
+describe('the deal scenario', () => {
+  const done = {
+    stage: 'Under contract', stageSaved: true,
+    note: 'EG — offer accepted on 456 Oak St at $265,000, closing Sept 30.',
+    task: { title: 'EG order the inspection', dueDate: '2026-08-20' },
+    deal: { name: '456 Oak St — Casey Brooks', price: '265000', closeDate: '2026-09-30' },
+  };
+
+  it('passes a contract with the deal logged', () => {
+    expect(gradeRecord('avery-contract', done).passed).toBe(true);
+  });
+
+  it('fails when the stage moved but no deal was added', () => {
+    const g = gradeRecord('avery-contract', { ...done, deal: undefined });
+    expect(g.passed).toBe(false);
+    expect(g.checks.find((c) => c.id === 'deal_created')?.pass).toBe(false);
+  });
+
+  it('wants a price and a close date on the deal', () => {
+    const g = gradeRecord('avery-contract', { ...done, deal: { name: '456 Oak St' } });
+    expect(g.checks.find((c) => c.id === 'deal_price')?.pass).toBe(false);
+    expect(g.checks.find((c) => c.id === 'deal_close')?.pass).toBe(false);
+  });
+
+  it('asks for no deal on the scenarios that have none', () => {
+    const g = gradeRecord('avery-new', {
+      stage: 'Lead', stageSaved: true, task: { title: 'EG call Avery', dueDate: '2026-08-16' },
+    });
+    expect(g.checks.some((c) => c.id.startsWith('deal_'))).toBe(false);
+  });
+});

@@ -326,6 +326,7 @@ export async function gradeRecordPractice(
   submission: {
     stage?: string; stageSaved?: boolean; note?: string;
     task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+    deal?: { name?: string; price?: string; closeDate?: string };
   },
   opts: { record?: boolean } = {},
 ): Promise<RecordGrade> {
