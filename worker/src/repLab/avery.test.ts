@@ -1,41 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { gradePriya } from './priya.js';
+import { gradeAvery } from './avery.js';
 
 const repairOk = {
   phase: 'repair' as const,
-  contactName: 'Priya Shah — L03',
+  contactName: 'Avery Morgan — L03',
   stage: 'Spoke with customer',
-  note: 'Tue 8/11 at 7:41 PM — Reached Priya. Comparing Puyallup homes with spouse; needs at least 3 bedrooms. Requested a Thu morning comparison of 406 and 422 Juniper Ln. Repeat views are context, not proof. Next: send the two-home comparison by 10:00 AM Thu 8/13.',
-  task: { title: 'Send Priya Juniper Ln comparison', owner: 'learner', due: 'Thu Aug 13, 2026 at 10:00 AM PT' },
+  note: 'Tue 8/11 at 7:41 PM — Reached Avery. Comparing Puyallup homes with spouse; needs at least 3 bedrooms. Requested a Thu morning comparison of 406 and 422 Juniper Ln. Repeat views are context, not proof. Next: send the two-home comparison by 10:00 AM Thu 8/13.',
+  task: { title: 'Send Avery Juniper Ln comparison', owner: 'learner', due: 'Thu Aug 13, 2026 at 10:00 AM PT' },
 };
 
-describe('gradePriya', () => {
+describe('gradeAvery', () => {
   it('passes audit only when all four planted risks are named', () => {
-    const miss = gradePriya({ phase: 'audit', contactName: 'Priya Shah', risks: ['wrong_stage', 'weak_note'] });
+    const miss = gradeAvery({ phase: 'audit', contactName: 'Avery Morgan', risks: ['wrong_stage', 'weak_note'] });
     expect(miss.passed).toBe(false);
     expect(miss.checks.filter((c) => !c.pass).map((c) => c.id)).toEqual([
       'risk_missing_task',
       'risk_ignored_activity',
     ]);
 
-    const ok = gradePriya({
+    const ok = gradeAvery({
       phase: 'audit',
-      contactName: 'Priya Shah',
+      contactName: 'Avery Morgan',
       risks: ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'],
     });
     expect(ok.passed).toBe(true);
   });
 
   it('passes a complete repair and fails Appointment Set as a critical miss', () => {
-    expect(gradePriya(repairOk).passed).toBe(true);
-    const bad = gradePriya({ ...repairOk, stage: 'Appointment set' });
+    expect(gradeAvery(repairOk).passed).toBe(true);
+    const bad = gradeAvery({ ...repairOk, stage: 'Appointment set' });
     expect(bad.passed).toBe(false);
     expect(bad.critical).toBe(true);
     expect(bad.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
   });
 
   it('fails invented intent and never returns the expected record', () => {
-    const bad = gradePriya({
+    const bad = gradeAvery({
       ...repairOk,
       note: repairOk.note + ' Activity proves she is ready to buy.',
     });
@@ -47,7 +47,7 @@ describe('gradePriya', () => {
   });
 
   it('fails the wrong contact as critical', () => {
-    const bad = gradePriya({ ...repairOk, contactName: 'Maya Torres — L03' });
+    const bad = gradeAvery({ ...repairOk, contactName: 'Maya Torres — L03' });
     expect(bad.passed).toBe(false);
     expect(bad.critical).toBe(true);
   });

@@ -36,8 +36,8 @@ const TOKEN_ORG: Record<string, string> = { 'at-acme': 'acme', 'at-globex': 'glo
 // Practice-lab attempts. Sign-off does NOT depend on these — mutable only so a
 // test can prove a leader who has never touched the lab can still sign off.
 const LAB_PASSED: Record<string, Array<{ id: string }>> = {
-  acme: [{ id: 'acme-priya-pass' }],
-  globex: [{ id: 'globex-priya-pass' }],
+  acme: [{ id: 'acme-avery-pass' }],
+  globex: [{ id: 'globex-avery-pass' }],
 };
 
 /** Which org owns each test agent — the fake resolves write targets through this. */

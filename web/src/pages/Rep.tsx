@@ -119,7 +119,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const [previewResult, setPreviewResult] = useState<GradeResult | null>(null);
   const [simTest, setSimTest] = useState(false);
   const [labTest, setLabTest] = useState(false);
-  const [labScenario, setLabScenario] = useState<'priya-repair' | 'elena-homework'>('priya-repair');
+  const [labScenario, setLabScenario] = useState<'avery-repair' | 'elena-homework'>('avery-repair');
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
   const [q, setQ] = useState('');
   const [role, setRole] = useState<string | null>(null);
@@ -362,10 +362,10 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                   </button>
                   <button
                     className="rp-preview"
-                    onClick={() => { setLabScenario('priya-repair'); setLabTest(true); }}
-                    title="Take the Priya repair lab — graded, nothing written to the agent roster"
+                    onClick={() => { setLabScenario('avery-repair'); setLabTest(true); }}
+                    title="Take the Avery repair lab — graded, nothing written to the agent roster"
                   >
-                    ✎ Take Priya
+                    ✎ Take Avery
                   </button>
                   <button
                     className="rp-preview"

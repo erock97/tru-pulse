@@ -900,3 +900,12 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-labcard{ }
 .ac-labcard-title{ font-family:Georgia,serif; font-size:24px; font-weight:800; color:var(--ac-text); margin:0 0 10px; line-height:1.2; }
 .ac-labcard-body{ font-size:16px; line-height:1.6; color:var(--ac-text-80, var(--ac-text)); margin:0 0 22px; max-width:62ch; }
+
+/* the Day 1 deck, embedded in the lesson */
+.ac-deck-frame{ position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden;
+  border:1px solid var(--ac-border-soft); background:#180F08; box-shadow:0 24px 60px -34px rgba(0,0,0,.95); }
+.ac-deck-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
+.ac-deck-open{ display:inline-block; margin-top:14px; font-size:13.5px; font-weight:800; color:var(--gold);
+  padding:9px 16px; border:1px solid color-mix(in srgb, var(--gold) 42%, transparent); border-radius:999px;
+  background:color-mix(in srgb, var(--gold) 10%, transparent); transition:background .18s, border-color .18s; }
+.ac-deck-open:hover{ background:color-mix(in srgb, var(--gold) 18%, transparent); border-color:var(--gold); }

@@ -1,9 +1,9 @@
-/** Priya Shah — Day 1 repair lab. Expected values stay on the server. */
+/** Avery Morgan — Day 1 repair lab. Expected values stay on the server. */
 
-export const PRIYA_ID = 'priya-repair';
+export const AVERY_ID = 'avery-repair';
 
-export const PRIYA_RISKS = ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'] as const;
-export type PriyaRisk = (typeof PRIYA_RISKS)[number];
+export const AVERY_RISKS = ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'] as const;
+export type AveryRisk = (typeof AVERY_RISKS)[number];
 
 export type LabPhase = 'audit' | 'repair';
 
@@ -36,7 +36,7 @@ export interface LabGrade {
 }
 
 const STAGE_OK = ['spoke with customer', 'spoke with'];
-const CONTACT_OK = ['priya shah', 'priya'];
+const CONTACT_OK = ['avery morgan', 'avery'];
 
 const NOTE_REQUIRED: Array<{ id: string; needles: string[]; missing: string }> = [
   { id: 'note_reached', needles: ['reached', 'spoke', 'talked'], missing: 'what happened on the call' },
@@ -61,7 +61,7 @@ function hasAny(hay: string, needles: string[]): boolean {
   return needles.some((n) => hay.includes(n));
 }
 
-export function gradePriya(sub: LabSubmission): LabGrade {
+export function gradeAvery(sub: LabSubmission): LabGrade {
   const phase = sub.phase === 'repair' ? 'repair' : 'audit';
   if (phase === 'audit') return gradeAudit(sub);
   return gradeRepair(sub);
@@ -69,7 +69,7 @@ export function gradePriya(sub: LabSubmission): LabGrade {
 
 function gradeAudit(sub: LabSubmission): LabGrade {
   const named = new Set((sub.risks ?? []).map((r) => norm(r).replace(/\s+/g, '_')));
-  const checks: LabCheck[] = PRIYA_RISKS.map((id) => {
+  const checks: LabCheck[] = AVERY_RISKS.map((id) => {
     const pass = named.has(id);
     return {
       id: `risk_${id}`,
@@ -129,7 +129,7 @@ function gradeRepair(sub: LabSubmission): LabGrade {
   const title = norm(sub.task?.title);
   const due = norm(sub.task?.due);
   const owner = norm(sub.task?.owner);
-  const taskOk = hasAny(title, ['comparison', 'juniper', 'priya']) && !!due && !!owner;
+  const taskOk = hasAny(title, ['comparison', 'juniper', 'avery']) && !!due && !!owner;
   checks.push({
     id: 'task',
     pass: taskOk,

@@ -1,5 +1,5 @@
-// The practice-record exercises from Day 1 — Priya (Section 9, slide 34) and
-// Elena (the pre-Day-2 homework, slide 36).
+// The practice-record exercises from Day 1 — Avery (slide 15 of the deck, the
+// main exercise) and Elena (an extra record, not part of the Day 1 deck).
 //
 // These are NOT standalone activities. `LabExercise` renders with no page chrome
 // so it can sit inside a lesson at the point in the training where it belongs;
@@ -19,24 +19,35 @@ const RISKS: Array<{ id: string; label: string }> = [
   { id: 'ignored_activity', label: 'Visible home activity is not used as context' },
 ];
 
-const STAGES = ['Lead', 'Spoke with customer', 'Appointment set'];
+// The full ladder as taught on slide 10 of the Day 1 deck. Showing only the
+// first three would make the honest answer easier to guess than it should be.
+const STAGES = [
+  'Lead',
+  'Attempted Contact',
+  'Spoke with Customer',
+  'Appointment Set',
+  'Met with Customer',
+  'Showing Homes',
+  'Submitting Offers',
+  'Under Contract',
+  'Closed',
+];
 
 const PACKS = {
-  'priya-repair': {
-    title: 'Priya’s record looks finished. It isn’t.',
-    blurb: 'Find what is wrong before you edit. Then leave a record a teammate could work tomorrow.',
+  'avery-repair': {
+    title: 'Repair Avery’s record.',
+    blurb: 'Avery is the shared training contact, and the record is wrong on purpose. Fix it, and put your initials on your work.',
     audit: true,
-    contactHint: 'Priya Shah — L03',
-    startStage: 'Appointment set',
+    contactHint: 'Avery Morgan',
+    startStage: 'Appointment Set',
     startNote: 'Talked. Interested. Follow up later.',
     facts: [
-      ['Contact', 'Priya Shah — L03'],
-      ['Source', 'Zillow property inquiry · 406 Juniper Ln, Puyallup, WA'],
+      ['Contact', 'Avery Morgan — the shared training record'],
+      ['Source', 'Zillow property inquiry · 406 Juniper Ln'],
       ['Home Activity', 'Viewed 406 Juniper Ln 4 times. Saved 422 Juniper Ln. Viewed 510 Pinecrest Ct.'],
-      ['What actually happened', 'Reached Tue Aug 11 at 7:41 PM. Comparing Puyallup homes with her spouse. Needs at least 3 bedrooms. No appointment date or time. She asked for a Thursday-morning comparison of 406 and 422 Juniper Ln.'],
-      ['Saved stage', 'Appointment set'],
-      ['Note', 'Talked. Interested. Follow up later.'],
-      ['Task', 'None'],
+      ['What the record says now', 'Stage: Appointment Set · Note: “Talked. Interested. Follow up later.” · Tasks: none'],
+      ['What Avery actually told you', 'Avery called back. They want to compare 406 and 422 Juniper Ln, and asked to see both on Thursday morning. Nothing has been booked. No appointment was ever set.'],
+      ['You are done when', 'Your instructor can open Avery and see your note and your dated task, both with your initials on them.'],
     ] as Array<[string, string]>,
   },
   'elena-homework': {
@@ -60,7 +71,7 @@ export type LabScenario = keyof typeof PACKS;
 
 /** The exercise itself, with no page chrome — embeddable inside a lesson. */
 export function LabExercise({
-  scenario = 'priya-repair', record = true, onPassed, onDone, compact = false,
+  scenario = 'avery-repair', record = true, onPassed, onDone, compact = false,
 }: {
   scenario?: LabScenario;
   record?: boolean;
@@ -209,7 +220,7 @@ export function LabExercise({
               </select>
             </label>
             <label>
-              Note — what happened, what they need, what is next and when
+              Note — start with your initials, then what happened, what they need, what is next and when
               <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={8} disabled={!canRepair} />
             </label>
             <label>
@@ -266,7 +277,7 @@ export function LabExercise({
 
 /** Full-page wrapper — the leader's test drive from the Rep dashboard. */
 export function LabView({
-  onBack, onPassed, record = true, scenario = 'priya-repair',
+  onBack, onPassed, record = true, scenario = 'avery-repair',
 }: {
   onBack: () => void;
   onPassed?: () => void;

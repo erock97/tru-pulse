@@ -25,7 +25,7 @@ describe('gradeElena', () => {
   });
 
   it('fails the wrong contact as critical', () => {
-    const g = gradeElena({ ...ok, contactName: 'Priya Shah' });
+    const g = gradeElena({ ...ok, contactName: 'Avery Morgan' });
     expect(g.passed).toBe(false);
     expect(g.critical).toBe(true);
   });
