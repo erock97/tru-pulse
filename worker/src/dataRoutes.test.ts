@@ -33,6 +33,13 @@ function fakeKV() {
 /** Which org each user's token belongs to, i.e. what RLS would let them see. */
 const TOKEN_ORG: Record<string, string> = { 'at-acme': 'acme', 'at-globex': 'globex' };
 
+// A leader has to pass the Priya repair lab before they can sign anyone off.
+// Mutable so a test can put a leader on the wrong side of that gate.
+const LAB_PASSED: Record<string, Array<{ id: string }>> = {
+  acme: [{ id: 'acme-priya-pass' }],
+  globex: [{ id: 'globex-priya-pass' }],
+};
+
 /** Which org owns each test agent — the fake resolves write targets through this. */
 const AGENT_ORG: Record<string, string> = {
   'aaaaaaaa-1111-4111-8111-111111111111': 'acme',
@@ -109,6 +116,7 @@ beforeEach(() => {
       if (table === 'leads') return ok(LEADS[org]);
       if (table === 'teams') return ok([{ id: `${org}-t1`, name: org, fub_subdomain: null }]);
       if (table === 'org_settings') return ok([{ org_id: org, avg_gci: 5000 }]);
+      if (table === 'rep_lab_attempts') return ok(LAB_PASSED[org] ?? []);
       return ok([]);
     }
     return ok({});
@@ -562,6 +570,20 @@ describe('the routes the cutover added', () => {
     const res = await post('/data/rep/sign-off', sid,
       { agentId: 'aaaaaaaa-1111-4111-8111-111111111111', who: 'acme lead' });
     expect(res.status).toBe(200);
+  });
+
+  it('refuses a sign-off from a leader who has not passed the Priya repair lab', async () => {
+    const had = LAB_PASSED.acme;
+    LAB_PASSED.acme = [];
+    try {
+      const sid = await signIn('acme@test.com');
+      const res = await post('/data/rep/sign-off', sid,
+        { agentId: 'aaaaaaaa-1111-4111-8111-111111111111', who: 'acme lead' });
+      expect(res.status).toBe(403);
+      expect(JSON.stringify(await res.json())).toContain('Priya repair lab');
+    } finally {
+      LAB_PASSED.acme = had;
+    }
   });
 
   it('refuses a sign-off from an origin we do not recognise', async () => {
