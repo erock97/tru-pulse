@@ -209,7 +209,7 @@ export async function handleDataRoutes(
 
   // ── Rep: the leader's certification board (loadRep). ──
   if (url.pathname === '/data/rep/board' && req.method === 'GET') {
-    const [modules, questions, progress, agents, practice, learners, tracks, trackModules, assignments] = await Promise.all([
+    const [modules, questions, progress, agents, practice, learners, tracks, trackModules, assignments, certificates] = await Promise.all([
       // `active` is the runtime switch, `status` the authoring lifecycle — both must
       // read live, same belt-and-suspenders filter the browser used.
       db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
@@ -223,10 +223,11 @@ export async function handleDataRoutes(
       db.select('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
       db.select('rep_track_modules', 'select=track_id,module_id,idx,required'),
       db.select('rep_assignments', 'select=learner_id,track_id,due_at,completed_at'),
+      db.select('rep_certificates', 'select=learner_id,track_id,issued_at'),
     ]);
     return json({
       modules, questions, progress, agents, practice,
-      learners, tracks, trackModules, assignments,
+      learners, tracks, trackModules, assignments, certificates,
     }, 200, cors);
   }
 

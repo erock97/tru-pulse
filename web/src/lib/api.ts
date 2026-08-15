@@ -97,7 +97,9 @@ export interface RepData {
   // The shelf, leader-side: who can be assigned, what can be assigned to them,
   // and what already is. Empty until the tracks are seeded.
   learners: RepLearner[]; tracks: RepTrackRow[]; trackModules: TrackModuleRow[]; assignments: RepAssignmentRow[];
+  certificates: RepCertificateRow[];
 }
+export interface RepCertificateRow { learner_id: string; track_id: string; issued_at: string }
 export interface RepTrackRow { id: string; slug: string; title: string; subtitle: string | null; cover: string | null; order_idx: number }
 
 export async function loadRep(): Promise<RepData> {
@@ -123,6 +125,7 @@ export async function loadRep(): Promise<RepData> {
     progress: RepProgressRow[]; agents: AgentRow[]; practice: RepPracticeRow[];
     learners?: RepLearner[]; tracks?: RepTrackRow[];
     trackModules?: TrackModuleRow[]; assignments?: RepAssignmentRow[];
+    certificates?: RepCertificateRow[];
   };
   [mods, qs, prog, agentRows, prac] = [d.modules ?? [], d.questions ?? [], d.progress ?? [], d.agents ?? [], d.practice ?? []];
 
@@ -137,6 +140,7 @@ export async function loadRep(): Promise<RepData> {
     tracks: d.tracks ?? [],
     trackModules: d.trackModules ?? [],
     assignments: d.assignments ?? [],
+    certificates: d.certificates ?? [],
   };
 }
 
@@ -175,7 +179,11 @@ export interface LessonCard {
 // deliberately overridden rather than reused.
 export interface CourseModule extends Omit<RepModule, 'status'> { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
 export interface GradeReview { idx: number; your: number; correct_index: number; is_correct: boolean; explain: string | null }
-export interface GradeResult { score: number; passed: boolean; correct: number; total: number; review: GradeReview[] }
+export interface GradeResult {
+  score: number; passed: boolean; correct: number; total: number; review: GradeReview[];
+  /** Track ids certified BY this pass — the module that completed a track. */
+  certified?: string[];
+}
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {
@@ -754,7 +762,7 @@ function demoRep(): RepData {
     { agent_id: 'a1', scenario: 'early_browser', status: 'graded', score: 71, passed: false, created_at: '2026-06-27' },
   ];
   // The demo has no shelf — assignment is a real write, so it stays out.
-  return { modules, progress, agents, practice, learners: [], tracks: [], trackModules: [], assignments: [] };
+  return { modules, progress, agents, practice, learners: [], tracks: [], trackModules: [], assignments: [], certificates: [] };
 }
 
 // ── Platform-owner console (the HQ "act as a team" tile) ────────────────────
