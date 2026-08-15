@@ -208,13 +208,23 @@ export async function handleDataRoutes(
     const [modules, questions, progress, agents, practice] = await Promise.all([
       // `active` is the runtime switch, `status` the authoring lifecycle — both must
       // read live, same belt-and-suspenders filter the browser used.
-      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
       db.select('rep_questions_public', 'select=module_id'),
       db.select('rep_progress', 'select=agent_id,module_id,status,score,passed_at,signed_off_at'),
       db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
       db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
     ]);
-    return json({ modules, questions, progress, agents, practice }, 200, cors);
+    let leaderPriyaPassed = true;
+    try {
+      const priya = await db.select<{ id: string }>(
+        'rep_lab_attempts',
+        `select=id&user_id=eq.${db.userId}&scenario_id=eq.priya-repair&phase=eq.repair&passed=eq.true&limit=1`,
+      );
+      leaderPriyaPassed = priya.length > 0;
+    } catch {
+      // Table not applied yet — do not blank the board.
+    }
+    return json({ modules, questions, progress, agents, practice, leaderPriyaPassed }, 200, cors);
   }
 
   // ── Rep: one agent's own course view (loadCourse). ──
@@ -224,7 +234,7 @@ export async function handleDataRoutes(
     const agentId = url.searchParams.get('agentId') ?? '';
     if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
     const [modules, questions, progress, practice] = await Promise.all([
-      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
       db.select('rep_questions_public', 'select=id,module_id,idx,prompt,choices&order=idx.asc'),
       db.select('rep_progress', `select=module_id,status,score,passed_at,signed_off_at&agent_id=eq.${agentId}`),
       db.select('rep_practice', `select=scenario,status,score,passed,created_at&agent_id=eq.${agentId}&order=created_at.desc`),
@@ -265,7 +275,7 @@ export async function handleDataRoutes(
     if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 422, cors);
     const modules = await db.select(
       'rep_modules',
-      `select=id,idx,title,summary,body,pass_pct,cards,author_id,source,status&org_id=eq.${orgId}` +
+      `select=id,idx,title,summary,body,pass_pct,cards,core,author_id,source,status&org_id=eq.${orgId}` +
       '&source=eq.custom&order=idx.asc',
     );
     return json({ modules }, 200, cors);
@@ -429,6 +439,15 @@ export async function handleDataRoutes(
     if (url.pathname === '/data/rep/sign-off') {
       const agentId = String(body.agentId ?? '');
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      try {
+        const priya = await db.select<{ id: string }>(
+          'rep_lab_attempts',
+          `select=id&user_id=eq.${db.userId}&scenario_id=eq.priya-repair&phase=eq.repair&passed=eq.true&limit=1`,
+        );
+        if (!priya.length) return json({ error: 'Pass the Priya repair lab before you sign anyone off.' }, 403, cors);
+      } catch {
+        // Table not applied yet — keep existing sign-off working.
+      }
       const who = String(body.who ?? 'team leader').slice(0, 200);
       const rows = await db.update(
         'rep_progress',

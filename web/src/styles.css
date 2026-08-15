@@ -784,3 +784,42 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   .ac-drill-q{ font-size:28px; }
   .ac-qprompt{ font-size:38px; }
 }
+
+.ac-lab-head{ margin: 0 0 28px; }
+.ac-lab-head h1{ font-size: 32px; line-height: 1.15; margin: 8px 0 10px; }
+.ac-lab-head p{ color: var(--ac-muted, #8A7F70); max-width: 58ch; }
+.ac-lab-split{ display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+@media(max-width: 860px){ .ac-lab-split{ grid-template-columns: 1fr; } }
+.ac-lab-record, .ac-lab-work{
+  background: var(--ac-card-flat, #1B150D);
+  border: 1px solid var(--ac-border-soft, rgba(243,236,224,.14));
+  border-radius: 16px;
+  padding: 22px 22px 24px;
+}
+.ac-lab-record h2{ font-size: 15px; margin: 0 0 14px; }
+.ac-lab-shots{ display: flex; flex-direction: column; gap: 12px; margin: 0 0 18px; }
+.ac-lab-shots figure{ margin: 0; }
+.ac-lab-shots img{ width: 100%; border-radius: 8px; border: 1px solid var(--ac-border-soft, rgba(243,236,224,.14)); background: #fff; }
+.ac-lab-shots figcaption{ font-size: 12px; color: var(--ac-muted, #8A7F70); margin-top: 4px; }
+.ac-lab-record dl{ margin: 0; }
+.ac-lab-record dt{ font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ac-muted, #8A7F70); margin-top: 12px; }
+.ac-lab-record dd{ margin: 4px 0 0; font-size: 15px; line-height: 1.45; }
+.ac-lab-phases{ display: flex; gap: 8px; margin-bottom: 16px; }
+.ac-lab-phases button{
+  flex: 1; background: transparent; color: inherit; border: 1px solid var(--ac-border-soft, rgba(243,236,224,.14));
+  border-radius: 10px; padding: 8px 10px; font-size: 13px; cursor: pointer;
+}
+.ac-lab-phases button.on{ border-color: var(--ac-gold, #e0a340); }
+.ac-lab-phases button:disabled{ opacity: .4; cursor: default; }
+.ac-lab-work label{ display: flex; flex-direction: column; gap: 6px; font-size: 13px; margin-bottom: 12px; }
+.ac-lab-work input, .ac-lab-work select, .ac-lab-work textarea{
+  background: #0C0A08; color: inherit; border: 1px solid var(--ac-border-soft, rgba(243,236,224,.14));
+  border-radius: 8px; padding: 10px 12px; font: inherit;
+}
+.ac-lab-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ac-lab-risks{ list-style: none; padding: 0; margin: 0 0 16px; }
+.ac-lab-risks li{ margin: 0 0 8px; }
+.ac-lab-risks label{ flex-direction: row; align-items: flex-start; gap: 8px; font-size: 14px; }
+.ac-lab-hint{ font-size: 13px; color: var(--ac-muted, #8A7F70); margin: 8px 0 16px; }
+.ac-lab-fail{ margin: 0 0 14px; padding-left: 18px; color: #e08a7a; }
+.ac-lab-ok{ color: #7fbf94; font-weight: 600; }
