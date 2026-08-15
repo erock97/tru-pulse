@@ -90,7 +90,15 @@ export interface RepModule {
 export interface RepProgressRow { agent_id: string; module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at?: string | null }
 export interface RepAgent { id: string; name: string; email: string | null; invited: boolean }
 export interface RepPracticeRow { agent_id: string; scenario: string; status: string; score: number | null; passed: boolean | null; created_at: string }
-export interface RepData { modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[] }
+export interface RepLearner { id: string; kind: 'agent' | 'member'; agent_id: string | null; user_id: string | null; name: string; email: string | null }
+export interface RepAssignmentRow { learner_id: string; track_id: string; due_at: string | null; completed_at: string | null }
+export interface RepData {
+  modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[];
+  // The shelf, leader-side: who can be assigned, what can be assigned to them,
+  // and what already is. Empty until the tracks are seeded.
+  learners: RepLearner[]; tracks: RepTrackRow[]; trackModules: TrackModuleRow[]; assignments: RepAssignmentRow[];
+}
+export interface RepTrackRow { id: string; slug: string; title: string; subtitle: string | null; cover: string | null; order_idx: number }
 
 export async function loadRep(): Promise<RepData> {
   if (isDemo) return demoRep();
@@ -113,6 +121,8 @@ export async function loadRep(): Promise<RepData> {
   const d = (await res.json()) as {
     modules: Omit<RepModule, 'questions'>[]; questions: Array<{ module_id: string }>;
     progress: RepProgressRow[]; agents: AgentRow[]; practice: RepPracticeRow[];
+    learners?: RepLearner[]; tracks?: RepTrackRow[];
+    trackModules?: TrackModuleRow[]; assignments?: RepAssignmentRow[];
   };
   [mods, qs, prog, agentRows, prac] = [d.modules ?? [], d.questions ?? [], d.progress ?? [], d.agents ?? [], d.practice ?? []];
 
@@ -123,6 +133,10 @@ export async function loadRep(): Promise<RepData> {
     progress: prog,
     agents: agentRows.map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
     practice: prac,
+    learners: d.learners ?? [],
+    tracks: d.tracks ?? [],
+    trackModules: d.trackModules ?? [],
+    assignments: d.assignments ?? [],
   };
 }
 
@@ -284,6 +298,23 @@ export async function loadLibrary(): Promise<LibraryData> {
   const res = await workerFetch('/data/rep/library');
   if (!res.ok) throw new Error('Could not load the training library.');
   return (await res.json()) as LibraryData;
+}
+
+/** Leader/admin: assign a track to one or more learners with an optional due date.
+ *  Re-assigning the same track moves the due date rather than duplicating it. */
+export async function assignTrack(input: {
+  orgId: string; trackId: string; learnerIds: string[]; dueAt: string | null;
+}): Promise<{ count: number }> {
+  const res = await workerFetch('/rep/assignments', {
+    method: 'POST',
+    body: JSON.stringify({
+      org_id: input.orgId, track_id: input.trackId,
+      learner_ids: input.learnerIds, due_at: input.dueAt,
+    }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+  if (!res.ok) throw new Error(body.error ?? 'Could not assign this track');
+  return { count: body.count ?? 0 };
 }
 
 /** Leader/admin: this org's own authored modules (source='custom'), at ANY status —
@@ -722,7 +753,8 @@ function demoRep(): RepData {
     { agent_id: 'a1', scenario: 'first_timer', status: 'graded', score: 86, passed: true, created_at: '2026-06-28' },
     { agent_id: 'a1', scenario: 'early_browser', status: 'graded', score: 71, passed: false, created_at: '2026-06-27' },
   ];
-  return { modules, progress, agents, practice };
+  // The demo has no shelf — assignment is a real write, so it stays out.
+  return { modules, progress, agents, practice, learners: [], tracks: [], trackModules: [], assignments: [] };
 }
 
 // ── Platform-owner console (the HQ "act as a team" tile) ────────────────────

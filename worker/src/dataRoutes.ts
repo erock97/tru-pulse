@@ -209,7 +209,7 @@ export async function handleDataRoutes(
 
   // ── Rep: the leader's certification board (loadRep). ──
   if (url.pathname === '/data/rep/board' && req.method === 'GET') {
-    const [modules, questions, progress, agents, practice] = await Promise.all([
+    const [modules, questions, progress, agents, practice, learners, tracks, trackModules, assignments] = await Promise.all([
       // `active` is the runtime switch, `status` the authoring lifecycle — both must
       // read live, same belt-and-suspenders filter the browser used.
       db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
@@ -217,8 +217,17 @@ export async function handleDataRoutes(
       db.select('rep_progress', 'select=agent_id,module_id,status,score,passed_at,signed_off_at'),
       db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
       db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
+      // The learner spine, so the leader can assign a track to an agent OR to
+      // another leader. RLS returns this org's rows only (rep_learners_org_read).
+      db.select('rep_learners', 'select=id,kind,agent_id,user_id,name,email&order=name.asc'),
+      db.select('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select('rep_track_modules', 'select=track_id,module_id,idx,required'),
+      db.select('rep_assignments', 'select=learner_id,track_id,due_at,completed_at'),
     ]);
-    return json({ modules, questions, progress, agents, practice }, 200, cors);
+    return json({
+      modules, questions, progress, agents, practice,
+      learners, tracks, trackModules, assignments,
+    }, 200, cors);
   }
 
   // ── Rep: one agent's own course view (loadCourse). ──
