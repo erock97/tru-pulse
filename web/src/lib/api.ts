@@ -332,6 +332,9 @@ export interface RecordGrade { passed: boolean; score: number; max: number; chec
 export async function gradeRecordPractice(
   scenarioId: string,
   submission: {
+    /** 'audit' grades the fault checklist; anything else grades the record itself. */
+    phase?: 'audit';
+    faults?: string[];
     stage?: string; stageSaved?: boolean; note?: string;
     task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
     deal?: { name?: string; price?: string; closeDate?: string };

@@ -1,5 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { gradeRecord, SCENARIOS } from './records.js';
+import { gradeRecord, gradeFaults, SCENARIOS } from './records.js';
+
+const ALL_FOUR = ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'];
+
+describe('gradeFaults — the diagnosis half of the repair', () => {
+  it('passes only when every real fault is named', () => {
+    expect(gradeFaults('avery-repair', ALL_FOUR).passed).toBe(true);
+    expect(gradeFaults('avery-repair', ['wrong_stage', 'weak_note']).passed).toBe(false);
+  });
+
+  it('fails a learner who ticks every box instead of reading', () => {
+    const sweep = gradeFaults('avery-repair', [...ALL_FOUR, 'no_owner', 'no_source']);
+    expect(sweep.passed).toBe(false);
+    expect(sweep.checks.find((c) => c.id === 'faults_precise')?.pass).toBe(false);
+  });
+
+  it('fails one wrong tick even when all four real faults are named', () => {
+    expect(gradeFaults('avery-repair', [...ALL_FOUR, 'no_source']).passed).toBe(false);
+  });
+
+  it('never names the faults the learner missed', () => {
+    const dumped = JSON.stringify(gradeFaults('avery-repair', [])).toLowerCase();
+    for (const f of ALL_FOUR) expect(dumped).not.toContain(f);
+  });
+
+  it('returns an empty grade for a scenario with no fault set', () => {
+    expect(gradeFaults('spoke-note', ALL_FOUR)).toMatchObject({ passed: false, max: 0 });
+  });
+});
 
 describe('gradeRecord — marks the record, never the prose', () => {
   const spoke = {

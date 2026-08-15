@@ -113,6 +113,50 @@ export const SCENARIOS: Record<string, Scenario> = {
   },
 };
 
+/**
+ * The diagnosis half of the repair: what is actually wrong with the record.
+ *
+ * This is the one place a practice record has a right answer beyond the stage,
+ * and it lives here — with the rest of the grading and behind the same
+ * permission check — because it used to live on the live-sim endpoint instead.
+ * That endpoint 403s anyone who is not an enrolled agent, so a leader walking
+ * their own training got a silent failure and a gate that would not open.
+ *
+ * The browser is told which of ITS ticks were wrong, never which ones it missed.
+ */
+export const FAULT_SETS: Record<string, readonly string[]> = {
+  'avery-repair': ['wrong_stage', 'weak_note', 'missing_task', 'ignored_activity'],
+};
+
+export function gradeFaults(scenarioId: string, picked: string[]): RecordGrade {
+  const want = FAULT_SETS[scenarioId];
+  if (!want) return { passed: false, score: 0, max: 0, checks: [] };
+
+  const named = new Set(picked.map((r) => norm(r).replace(/\s+/g, '_')));
+  const checks: RecordCheck[] = [{
+    id: 'faults_found',
+    label: 'Every real fault named',
+    pass: want.every((w) => named.has(w)),
+    message: want.every((w) => named.has(w))
+      ? 'You found them all.'
+      : 'Something wrong with this record is still unticked. Read it again before you change it.',
+  }];
+
+  // More boxes than faults, on purpose. A full sweep is not a diagnosis.
+  const extra = [...named].filter((r) => !want.includes(r));
+  checks.push({
+    id: 'faults_precise',
+    label: 'Nothing flagged that is actually fine',
+    pass: extra.length === 0,
+    message: extra.length === 0
+      ? 'Nothing over-flagged.'
+      : 'You have flagged something this record does not get wrong. Ticking everything is not a diagnosis.',
+  });
+
+  const score = checks.filter((c) => c.pass).length;
+  return { passed: score === checks.length, score, max: checks.length, checks };
+}
+
 const norm = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 const filled = (s?: string) => norm(s).length > 0;
 

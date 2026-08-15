@@ -945,10 +945,14 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .pr-auditprompt{ margin:0 0 14px; font-size:15px; line-height:1.55; color:var(--ac-text); max-width:64ch; }
 .pr-faults{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:7px; }
 .pr-faults label{ display:flex; align-items:flex-start; gap:11px; cursor:pointer;
-  font-size:15px; line-height:1.5; padding:11px 13px; border-radius:9px;
-  border:1px solid var(--ac-border-soft); }
+  font-size:15px; font-weight:500; line-height:1.5; margin:0;
+  padding:11px 13px; border-radius:9px; border:1px solid var(--ac-border-soft); }
 .pr-faults label:hover{ border-color:var(--gold); }
-.pr-faults input{ flex-shrink:0; margin-top:3px; }
+/* width:auto is load-bearing. The global `input{width:100%}` up at the top of this
+   file stretches a bare checkbox to the full width of its row, which shoves the
+   text outside the label and wraps it one word per line. `.lab-risks input` has
+   always countered it; this rule did not, and that is exactly what it looked like. */
+.pr-faults input{ width:auto; flex-shrink:0; margin-top:3px; }
 .pr-audit .pr-checks{ margin-bottom:16px; }
 .pr-locked{ font-size:13.5px; color:var(--ac-text-60); margin:0; }
 
@@ -984,6 +988,23 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 /* Read-only while the learner is still diagnosing. The record has to stay fully
    legible — reading it IS the exercise — so this dims nothing and only stops clicks. */
 .fub.is-locked .fub-hot{ pointer-events:none; }
+
+/* The mocked Follow Up Boss dialogs are a WHITE product UI sitting inside our dark
+   app, and truHqDark.css paints every input dark with !important — which beats even
+   an inline style. Both mock scopes opt back out, or the Create Task and Create Deal
+   dialogs render as black boxes and stop looking like the product being taught. */
+.fub-modal input, .fub-modal select,
+.deck-mock input, .deck-mock select{
+  background:#fff !important; color:#2f3d4a !important;
+  border:1px solid #d7dee5 !important; border-radius:5px !important;
+}
+.fub-modal input::placeholder, .deck-mock input::placeholder{ color:#a9b3bd !important; }
+
+/* The mock has to paint above its siblings on the slide. The deck's entrance
+   animation puts a transform on every [data-a], and a transform makes its own
+   stacking context — so the takeaway line below was showing straight through the
+   open dialog. */
+.deck-mock{ position:relative; z-index:20; }
 
 /* Stage — reading state, then FUB's bordered edit field with green/red */
 .fub-stageread{ left:3.6%; top:37.4%; width:14.5%; height:2.9%; display:flex; align-items:center;
