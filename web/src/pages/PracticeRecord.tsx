@@ -36,47 +36,52 @@ type Pack = {
 };
 
 export const PACKS: Record<string, Pack> = {
+  // A scenario has to give them something that ACTUALLY HAPPENED to record.
+  // The first draft of this said "nothing has happened yet, keep the record
+  // honest" — which is a no-op: if nothing happened, the right move is to change
+  // nothing. Eric caught it. So the lead was called, and nobody picked up.
   'avery-new': {
     subline: 'No communication yet',
-    title: 'A new lead just landed',
-    situation: 'It is 9:10 AM. Avery Morgan just came in from Zillow and nobody has contacted them yet.',
+    title: 'You called and nobody picked up',
+    situation: 'Avery Morgan came in from Zillow this morning. You called at 9:10 AM and it rang out — you left a voicemail. You have not spoken to them.',
     steps: [
-      'Set the stage so it matches what has actually happened so far, and save it.',
-      'Create a task so this lead comes back to you, with a date on it.',
+      'Set the stage to match a call that was not answered, and save it with the green check.',
+      'Leave a note saying what you did.',
+      'Create a task to try again, with a date on it.',
     ],
     startStage: 'Lead',
   },
   'avery-spoke': {
     subline: 'Last Communication 4 minutes ago',
-    title: 'You just got off the phone',
-    situation: 'You reached Avery. They are buying with their sister, want Olympia or Lacey, at least 3 bedrooms, before November, and asked you to send a couple of options. Nothing was booked.',
+    title: 'This time they picked up',
+    situation: 'You tried Avery again and got them. They are buying with their sister, want Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. Nobody mentioned meeting up, so nothing is booked.',
     steps: [
-      'Set the stage to match what happened on that call, and save it.',
-      'Leave a note for whoever opens this record next.',
-      'Create a task for what you promised, with a date on it.',
+      'Set the stage to match a real conversation with nothing booked, and save it.',
+      'Leave a note saying what they told you.',
+      'Create a task for the options you promised, with a date on it.',
     ],
-    startStage: 'Lead',
+    startStage: 'Attempted contact',
   },
   'avery-appointment': {
     subline: 'Last Communication 6 minutes ago',
-    title: 'You booked the appointment',
-    situation: 'Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln. Two adults are coming, and they asked for access details beforehand.',
+    title: 'They booked a time',
+    situation: 'You followed up on the two homes you sent. Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln, two adults coming, and asked you for the access details beforehand.',
     steps: [
-      'Set the stage to match a confirmed date and time, and save it.',
-      'Leave a note.',
-      'Create a task for what you owe them before Saturday, with a date on it.',
+      'Set the stage to match a confirmed day and time, and save it.',
+      'Leave a note saying what was agreed.',
+      'Create a task for the access details, with a date on it.',
     ],
     startStage: 'Spoke with customer',
   },
   'avery-contract': {
     subline: 'Last Communication yesterday',
     title: 'The offer was accepted',
-    situation: 'Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
+    situation: 'Weeks later, Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
     steps: [
       'Set the stage to match an accepted offer, and save it.',
-      'Leave a note.',
-      'Create a task with a date on it.',
-      'Add the deal — Follow Up Boss will not prompt you for it. Give it a price and a close date.',
+      'Leave a note saying what was agreed.',
+      'Create a task for whatever this contract needs next, with a date on it.',
+      'Add the deal in the Deals panel. Follow Up Boss will not prompt you for it, and it needs a price and a close date.',
     ],
     startStage: 'Submitting offers',
   },
