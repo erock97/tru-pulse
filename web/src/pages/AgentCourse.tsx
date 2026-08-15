@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
-  loadCourse, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
+  loadCourse, loadLibrary, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
   signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
+  type LibraryData,
 } from '../lib/api';
+import LibraryHome from './LibraryHome';
 import { isCoreModule } from '../lib/repCore';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
@@ -39,13 +41,18 @@ function embedUrl(u: string): string {
   return m ? `https://www.loom.com/embed/${m[1]}` : u;
 }
 
-// Honest time estimate for a module (reading + drills + quiz).
-function estMinutes(m: CourseModule): number {
-  return Math.max(5, Math.round(m.cards.length * 0.8 + m.qs.length * 0.5));
-}
+// What the shelf falls back to when /data/rep/library is unavailable or an org
+// has no tracks seeded yet: no tracks, which LibraryHome renders as one
+// ungrouped list of the learner's modules. A failure here must never blank the
+// course.
+const emptyLibrary: LibraryData = {
+  learner: { id: '', kind: 'agent', org_id: '' },
+  tracks: [], modules: [], trackModules: [], progress: [], certificates: [],
+};
 
 export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [mods, setMods] = useState<CourseModule[] | null>(null);
+  const [lib, setLib] = useState<LibraryData | null>(null);
   const [view, setView] = useState<View>('home');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [result, setResult] = useState<GradeResult | null>(null);
@@ -59,7 +66,12 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
   const [ackErr, setAckErr] = useState('');
 
-  const refresh = () => loadCourse(agent.id).then(setMods);
+  const refresh = () => Promise.all([
+    loadCourse(agent.id).then(setMods),
+    // The shelf is additive: if it fails (or the tracks aren't seeded yet) the
+    // course still renders from loadCourse, ungrouped.
+    loadLibrary().then(setLib).catch(() => setLib(null)),
+  ]).then(() => undefined);
   useEffect(() => {
     void refresh();
     void simScenarios().then((s) => { setScenarios(s.scenarios); setSimConfigured(s.configured); });
@@ -83,7 +95,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const simPassed = sessionSimPass || attempts.some((a) => a.passed);
   const bestSim = attempts.reduce<number | null>((b, a) => (a.score != null && (b == null || a.score > b) ? a.score : b), null);
   const certified = allMods && simPassed;
-  const nextMod = mods.find((m) => m.status !== 'passed' && ((m.cards?.length ?? 0) > 0 || m.qs.length > 0)) ?? null;
   const openModule = (m: CourseModule) => {
     const hasLesson = (m.cards?.length ?? 0) > 0;
     const hasQuiz = m.qs.length > 0;
@@ -126,29 +137,11 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               </div>
             </div>
           )}
-          <div className="ac-modlist">
-            {mods.map((m, i) => {
-              const done = m.status === 'passed';
-              const isNext = nextMod?.id === m.id;
-              const ac = accentOf(m.idx);
-              return (
-                <button
-                  key={m.id}
-                  className={`ac-modcard fu${done ? ' done' : ''}${isNext ? ' next' : ''}`}
-                  style={{ ['--mac' as string]: ac, animationDelay: `${0.07 * i}s` }}
-                  onClick={() => openModule(m)}
-                  disabled={!m.cards.length && !m.qs.length}
-                >
-                  <span className="ac-modbar" />
-                  <span className={`ac-modnum${done ? ' done' : ''}`}>{done ? '✓' : m.idx}</span>
-                  <span className="ac-modmeta">
-                    <span className="ac-modtitle">{m.title}</span>
-                    <span className="ac-modsub">{done ? `Passed · ${m.score != null ? `${m.score}%` : 'Done'}` : `≈ ${estMinutes(m)} min · ${m.cards.length} screens${m.qs.length ? ` · ${m.qs.length}-question quiz` : ''}`}</span>
-                  </span>
-                  {isNext ? <span className="ac-modstart">Start</span> : <span className="ac-modgo">{done ? 'Review' : '›'}</span>}
-                </button>
-              );
-            })}
+          <LibraryHome
+            data={lib ?? emptyLibrary}
+            mods={mods}
+            onOpen={openModule}
+            extras={<div className="ac-modlist lib-extras">
             <button
               className={`ac-modcard fu${labPassed ? ' done' : ''}`}
               style={{ ['--mac' as string]: '#3fa06c', animationDelay: `${0.07 * mods.length}s` }}
@@ -196,7 +189,8 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               </span>
               {simUnlocked && !simPassed ? <span className="ac-modstart">Take the call</span> : <span className="ac-modgo">{simPassed ? 'Again' : '›'}</span>}
             </button>
-          </div>
+            </div>}
+          />
           {oneOnOnes && <MyOneOnOnes list={oneOnOnes} />}
         </main>
       </div>
