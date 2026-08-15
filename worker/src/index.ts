@@ -22,6 +22,7 @@ import { gradeAvery, AVERY_ID, type LabSubmission } from './repLab/avery.js';
 import { gradeElena, ELENA_ID } from './repLab/elena.js';
 import { resolveLearner } from './repLearner.js';
 import { maybeIssueCertificates } from './repCertificates.js';
+import { gradeRecord, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -1034,6 +1035,43 @@ export default {
       // issued here rather than waiting for the next page load.
       const certified = passed ? await maybeIssueCertificates(database, learner) : [];
       return json({ score, passed, correct, total, review, certified });
+    }
+
+    // Practice records: the learner operates a CRM record rather than answering
+    // a question about one. Graded here so the expected stage, note and task
+    // never reach the browser.
+    if (url.pathname === '/rep/record/grade' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const scenarioId = String(body?.scenarioId ?? '').trim();
+      if (!RECORD_SCENARIOS[scenarioId]) return json({ error: 'unknown scenario' }, 404);
+      const sub = body?.submission ?? {};
+      const grade = gradeRecord(scenarioId, {
+        stage: sub.stage,
+        stageSaved: !!sub.stageSaved,
+        note: sub.note,
+        task: sub.task,
+      });
+      const record = body?.record !== false;
+      if (record) {
+        const learner = await resolveLearner(database, userId);
+        try {
+          await database.insert('rep_lab_attempts', {
+            org_id: learner?.org_id ?? null,
+            agent_id: learner?.agent_id ?? null,
+            user_id: userId,
+            scenario_id: scenarioId,
+            phase: 'record',
+            passed: grade.passed,
+            critical: false,
+            checks: grade.checks,
+          });
+        } catch {
+          // An attempt we could not log must not cost the learner their grade.
+        }
+      }
+      return json(grade);
     }
 
     // Day 1 lab: learner-visible facts only. Expected records stay on the server.
