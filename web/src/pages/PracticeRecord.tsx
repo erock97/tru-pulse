@@ -1,26 +1,23 @@
 // A practice contact record built ON the real Follow Up Boss screen.
 //
-// Two rules from Eric, and they drive everything here:
+// Three rules, all of them Eric's, all of them learned the hard way:
 //
 // 1. No fabricated UI. The background is the actual FUB screenshot from the
-//    training account, and every control sits exactly where FUB puts it.
-// 2. NEVER crop to the control being practised. If the task is "leave a note",
-//    the learner sees the WHOLE record and has to find the note composer. What a
-//    new agent actually struggles with is "I opened a contact — now where do I
-//    go?" Handing them a cropped note box teaches none of that.
-//
-// So nothing is highlighted by default. "Show me where" is opt-in, for someone
-// genuinely stuck.
-//
-// Traced from the live product on 2026-08-15: the stage row becomes a bordered
-// field with a chevron plus a green check and a red X; the stage list is
-// searchable and sentence-case; Create task is a MODAL, not an inline panel; a
-// posted note carries author, time and a pinned marker on the timeline; and
-// going Under contract does NOT prompt you for a deal — you have to add it.
-import { useState } from 'react';
+//    training account and every control sits where FUB puts it.
+// 2. Never crop to the control being practised. "I opened a contact — now where
+//    do I go?" is the real problem, so the whole record is always on screen and
+//    nothing is highlighted unless the learner asks.
+// 3. EVERYTHING SCALES WITH THE SCREENSHOT, not with the browser window. The
+//    first version sized the overlay in vw units, so on a wide monitor the stage
+//    text and the save buttons rendered enormous over a small image and the
+//    whole thing looked painted on. One measured factor, --k, drives every size
+//    here: --k is (rendered image width / 1810), so a 13px control in Follow Up
+//    Boss is 13px here at any width.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
 
 const SHOT = '/rep-lab/detail-full.png';
+const SHOT_W = 1810;
 
 // The real Signature Realty ladder, in the product's own order and casing.
 const STAGES = [
@@ -30,42 +27,57 @@ const STAGES = [
 ];
 
 type Pack = {
-  who: string;
-  initials: string;
   subline: string;
   title: string;
-  brief: string;
   situation: string;
+  /** Plain, numbered, no jargon — and never naming the stage they should pick. */
+  steps: string[];
   startStage: string;
 };
 
 export const PACKS: Record<string, Pack> = {
   'avery-new': {
-    who: 'Avery Morgan', initials: 'AM', subline: 'No communication yet',
+    subline: 'No communication yet',
     title: 'A new lead just landed',
-    brief: 'Avery just arrived from Zillow and nobody has spoken to them yet.',
-    situation: 'It is 9:10 AM. You have not contacted Avery. Leave the record honest, and leave yourself a way back to it.',
+    situation: 'It is 9:10 AM. Avery Morgan just came in from Zillow and nobody has contacted them yet.',
+    steps: [
+      'Set the stage so it matches what has actually happened so far, and save it.',
+      'Create a task so this lead comes back to you, with a date on it.',
+    ],
     startStage: 'Lead',
   },
   'avery-spoke': {
-    who: 'Avery Morgan', initials: 'AM', subline: 'Last Communication 4 minutes ago',
+    subline: 'Last Communication 4 minutes ago',
     title: 'You just got off the phone',
-    brief: 'You reached Avery and learned what they are looking for. Nothing is booked.',
-    situation: 'Avery is buying with their sister, wants Olympia or Lacey, at least 3 bedrooms, before November. They asked you to send a couple of options. No appointment was discussed.',
+    situation: 'You reached Avery. They are buying with their sister, want Olympia or Lacey, at least 3 bedrooms, before November, and asked you to send a couple of options. Nothing was booked.',
+    steps: [
+      'Set the stage to match what happened on that call, and save it.',
+      'Leave a note for whoever opens this record next.',
+      'Create a task for what you promised, with a date on it.',
+    ],
     startStage: 'Lead',
   },
   'avery-appointment': {
-    who: 'Avery Morgan', initials: 'AM', subline: 'Last Communication 6 minutes ago',
+    subline: 'Last Communication 6 minutes ago',
     title: 'You booked the appointment',
-    brief: 'Avery confirmed a time. Make the record say so, and leave what you owe them before you meet.',
     situation: 'Avery confirmed Saturday at 11:00 AM to walk 406 and 422 Juniper Ln. Two adults are coming, and they asked for access details beforehand.',
+    steps: [
+      'Set the stage to match a confirmed date and time, and save it.',
+      'Leave a note.',
+      'Create a task for what you owe them before Saturday, with a date on it.',
+    ],
     startStage: 'Spoke with customer',
   },
   'avery-contract': {
-    who: 'Avery Morgan', initials: 'AM', subline: 'Last Communication yesterday',
+    subline: 'Last Communication yesterday',
     title: 'The offer was accepted',
-    brief: 'Avery is under contract. Moving the stage is only half the job.',
-    situation: 'Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th. Follow Up Boss will not prompt you for anything else — the deal is yours to add.',
+    situation: 'Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
+    steps: [
+      'Set the stage to match an accepted offer, and save it.',
+      'Leave a note.',
+      'Create a task with a date on it.',
+      'Add the deal — Follow Up Boss will not prompt you for it. Give it a price and a close date.',
+    ],
     startStage: 'Submitting offers',
   },
 };
@@ -83,7 +95,8 @@ function longDate(d: string): string {
   const [y, m, day] = d.split('-').map(Number);
   const dt = new Date(y, (m || 1) - 1, day || 1);
   const n = dt.getDate();
-  const suffix = n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th';
+  const suffix = n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd'
+    : n % 10 === 3 && n !== 13 ? 'rd' : 'th';
   return `${dt.toLocaleDateString('en-US', { month: 'short' })} ${n}${suffix} ${dt.getFullYear()}`;
 }
 
@@ -95,6 +108,9 @@ export function PracticeRecord({
   record?: boolean;
 }) {
   const pack = PACKS[scenario];
+  const shotRef = useRef<HTMLDivElement | null>(null);
+  const [k, setK] = useState(0);
+
   const [stage, setStage] = useState(pack.startStage);
   const [savedStage, setSavedStage] = useState(pack.startStage);
   const [editing, setEditing] = useState(false);
@@ -118,6 +134,20 @@ export function PracticeRecord({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [grade, setGrade] = useState<RecordGrade | null>(null);
+
+  // One measured factor. Every size in the overlay is px * var(--k).
+  const measure = useCallback(() => {
+    const el = shotRef.current;
+    if (el) setK(el.clientWidth / SHOT_W);
+  }, []);
+  useEffect(() => {
+    measure();
+    const el = shotRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
 
   const dirty = stage !== savedStage;
   const shownStages = STAGES.filter((s) => s.toLowerCase().includes(stageQuery.toLowerCase()));
@@ -180,167 +210,169 @@ export function PracticeRecord({
     <div className="pr">
       <div className="pr-brief">
         <h3 className="pr-brieftitle">{pack.title}</h3>
-        <p>{pack.brief}</p>
-        <div className="pr-situation"><b>What just happened:</b> {pack.situation}</div>
+        <p className="pr-situation">{pack.situation}</p>
+        <div className="pr-jobs">
+          <h4>Your job</h4>
+          <ol>{pack.steps.map((s) => <li key={s}>{s}</li>)}</ol>
+        </div>
         <p className="pr-safe">
-          This is the record exactly as it opens in Follow Up Boss — find what you need on it.
-          Nothing here touches a real contact, so nothing you click can break anything.{' '}
+          This is the record as it opens in Follow Up Boss — find what you need on it. Nothing here
+          touches a real contact.{' '}
           <button className="pr-hintbtn" onClick={() => setHint((h) => !h)}>
             {hint ? 'Hide the hints' : 'Stuck? Show me where'}
           </button>
         </p>
       </div>
 
-      <div className={`fub${hint ? ' show-hints' : ''}`}>
-        <img className="fub-shot" src={SHOT} alt={`A Follow Up Boss contact record for ${pack.who}`} />
+      <div
+        className={`fub${hint ? ' show-hints' : ''}`}
+        ref={shotRef}
+        style={{ ['--k' as string]: String(k) }}
+      >
+        <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
 
-        {/* the person — patched over the baked-in name so each scenario is someone else */}
-        <div className="fub-hot fub-avatar">{pack.initials}</div>
-        <div className="fub-hot fub-who">
-          <span className="fub-name">{pack.who}</span>
-          <span className="fub-sub">{pack.subline}</span>
-        </div>
+        {k > 0 && (
+          <>
+            {/* the header line, so the record reflects this situation */}
+            <div className="fub-hot fub-sub">{pack.subline}</div>
 
-        {/* Stage, in the Details panel */}
-        {!editing ? (
-          <button className="fub-hot fub-stageread hintable" onClick={() => { setEditing(true); setStageOpen(true); }}>
-            {savedStage}
-          </button>
-        ) : (
-          <div className="fub-hot fub-stageedit">
-            <button className="fub-stagefield" onClick={() => setStageOpen((o) => !o)}>
-              <b>Stage</b><span className="fub-stagepick">{stage}</span><span className="fub-caret">⌄</span>
-            </button>
-            <button className="fub-ok" onClick={commitStage} title="Save">✓</button>
-            <button className="fub-cancel" onClick={cancelStage} title="Cancel">✕</button>
-            {stageOpen && (
-              <div className="fub-menu">
-                <input
-                  className="fub-menusearch" autoFocus placeholder="Search"
-                  value={stageQuery} onChange={(e) => setStageQuery(e.target.value)}
-                />
-                <ul>
-                  <li className="fub-menuhead">Select an Option</li>
-                  {shownStages.map((s) => (
-                    <li key={s}>
-                      <button className={s === stage ? 'on' : ''} onClick={() => { setStage(s); setStageOpen(false); }}>
-                        {s}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+            {/* Stage — in the Details panel, edited the way FUB edits it */}
+            {!editing ? (
+              <button className="fub-hot fub-stageread hintable" onClick={() => { setEditing(true); setStageOpen(true); }}>
+                {savedStage}
+              </button>
+            ) : (
+              <div className="fub-hot fub-stageedit">
+                <button className="fub-stagefield" onClick={() => setStageOpen((o) => !o)}>
+                  <b>Stage</b><span className="fub-stagepick">{stage}</span><span className="fub-caret">⌄</span>
+                </button>
+                <button className="fub-ok" onClick={commitStage} title="Save">✓</button>
+                <button className="fub-cancel" onClick={cancelStage} title="Cancel">✕</button>
+                {stageOpen && (
+                  <div className="fub-menu">
+                    <input
+                      className="fub-menusearch" autoFocus placeholder="Search"
+                      value={stageQuery} onChange={(e) => setStageQuery(e.target.value)}
+                    />
+                    <ul>
+                      <li className="fub-menuhead">Select an Option</li>
+                      {shownStages.map((s) => (
+                        <li key={s}>
+                          <button className={s === stage ? 'on' : ''} onClick={() => { setStage(s); setStageOpen(false); }}>
+                            {s}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* the note composer */}
-        <textarea
-          className="fub-hot fub-note hintable"
-          value={noteDraft}
-          onChange={(e) => setNoteDraft(e.target.value)}
-          placeholder="Add notes or type @name to notify"
-        />
-        <button className="fub-hot fub-notebtn" onClick={addNote} disabled={!noteDraft.trim()}>Create Note</button>
+            {/* the note composer */}
+            <textarea
+              className="fub-hot fub-note hintable"
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Add notes or type @name to notify"
+            />
+            <button className="fub-hot fub-notebtn" onClick={addNote} disabled={!noteDraft.trim()}>
+              Create Note
+            </button>
 
-        {/* Tasks panel */}
-        <button className="fub-hot fub-taskadd hintable" onClick={() => setTaskModal(true)} title="Add a task">+</button>
-        <div className="fub-hot fub-tasklist">
-          {tasks.length === 0 ? <span className="fub-empty">No upcoming tasks</span> : tasks.map((t, i) => (
-            <div key={i} className="fub-taskitem">
-              <span className="fub-taskbox" />
-              <div>
-                <div className="fub-taskname">{t.title}</div>
-                <div className="fub-taskmeta">{longDate(t.date) || 'no date'}{t.time ? ` at ${t.time}` : ''}</div>
-                <div className="fub-taskmeta">Adam Terrason</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Deals panel */}
-        <button className="fub-hot fub-dealadd hintable" onClick={() => setDealModal(true)} title="Add a deal">+</button>
-        <div className="fub-hot fub-deallist">
-          {deals.length === 0 ? <span className="fub-empty">No deals yet</span> : deals.map((d, i) => (
-            <div key={i} className="fub-dealitem">
-              <span className="fub-dealname">{d.name}</span>
-              <span className="fub-dealmeta">
-                {d.price ? `$${d.price}` : 'no price'}{d.close ? ` · closes ${d.close}` : ''}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* what you did, on the record's own timeline */}
-        {log.length > 0 && (
-          <div className="fub-hot fub-log">
-            {log.map((e, i) => (
-              <div key={i} className={`fub-item is-${e.kind}`}>
-                <span className="fub-pin" />
-                <div className="fub-itembody">
-                  <div className="fub-itemhead">
-                    <span className="fub-itemav">AT</span>
-                    <span className="fub-itemwho">Adam Terrason</span>
-                    <span className="fub-itemwhen">{e.when}</span>
+            {/* Tasks panel */}
+            <button className="fub-hot fub-taskadd hintable" onClick={() => setTaskModal(true)} title="Add a task">+</button>
+            <div className="fub-hot fub-tasklist">
+              {tasks.length === 0 ? <span className="fub-empty">No upcoming tasks</span> : tasks.map((t, i) => (
+                <div key={i} className="fub-taskitem">
+                  <span className="fub-taskbox" />
+                  <div>
+                    <div className="fub-taskname">{t.title}</div>
+                    <div className="fub-taskmeta">{longDate(t.date) || 'no date'}{t.time ? ` at ${t.time}` : ''}</div>
                   </div>
-                  <div className="fub-itemtext">{e.text}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Deals panel */}
+            <button className="fub-hot fub-dealadd hintable" onClick={() => setDealModal(true)} title="Add a deal">+</button>
+            <div className="fub-hot fub-deallist">
+              {deals.length === 0 ? <span className="fub-empty">No deals yet</span> : deals.map((d, i) => (
+                <div key={i} className="fub-dealitem">
+                  <span className="fub-dealname">{d.name}</span>
+                  <span className="fub-dealmeta">
+                    {d.price ? `$${d.price}` : 'no price'}{d.close ? ` · closes ${d.close}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* what you did, on the record's own timeline */}
+            {log.length > 0 && (
+              <div className="fub-hot fub-log">
+                {log.map((e, i) => (
+                  <div key={i} className={`fub-item is-${e.kind}`}>
+                    <span className="fub-pin" />
+                    <div className="fub-itembody">
+                      <div className="fub-itemhead">
+                        <span className="fub-itemav">AT</span>
+                        <span className="fub-itemwho">Adam Terrason</span>
+                        <span className="fub-itemwhen">{e.when}</span>
+                      </div>
+                      <div className="fub-itemtext">{e.text}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Create task — a modal, the way FUB does it */}
+            {taskModal && (
+              <div className="fub-modalwrap" onClick={() => setTaskModal(false)}>
+                <div className="fub-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="fub-modalhead">
+                    <span>Create task</span>
+                    <button onClick={() => setTaskModal(false)}>✕</button>
+                  </div>
+                  <input className="fub-full" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Task Name" />
+                  <div className="fub-two">
+                    <select defaultValue="Follow Up"><option>Follow Up</option><option>Call</option><option>Email</option></select>
+                    <select defaultValue="Adam Terrason"><option>Adam Terrason</option></select>
+                  </div>
+                  <div className="fub-two">
+                    <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
+                    <input type="time" value={taskTime} onChange={(e) => setTaskTime(e.target.value)} />
+                  </div>
+                  <div className="fub-modalfoot">
+                    <button className="fub-link" onClick={() => setTaskModal(false)}>Cancel</button>
+                    <button className="fub-blue" onClick={addTask} disabled={!taskTitle.trim()}>Create task</button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* Create task — a modal, the way FUB does it */}
-        {taskModal && (
-          <div className="fub-modalwrap" onClick={() => setTaskModal(false)}>
-            <div className="fub-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="fub-modalhead">
-                <span>Create task</span>
-                <button onClick={() => setTaskModal(false)}>✕</button>
+            {/* Create deal */}
+            {dealModal && (
+              <div className="fub-modalwrap" onClick={() => setDealModal(false)}>
+                <div className="fub-modal wide" onClick={(e) => e.stopPropagation()}>
+                  <div className="fub-modalhead">
+                    <span>Create deal</span>
+                    <button onClick={() => setDealModal(false)}>✕</button>
+                  </div>
+                  <input className="fub-full" value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="Add name" />
+                  <div className="fub-crumb">Buyers › Start (temp stage)</div>
+                  <div className="fub-two">
+                    <label>Price<input value={dealPrice} onChange={(e) => setDealPrice(e.target.value)} placeholder="Add price" /></label>
+                    <label>Close date<input type="date" value={dealClose} onChange={(e) => setDealClose(e.target.value)} /></label>
+                  </div>
+                  <div className="fub-modalfoot">
+                    <button className="fub-link" onClick={() => setDealModal(false)}>Cancel</button>
+                    <button className="fub-blue" onClick={addDeal} disabled={!dealName.trim()}>Create Deal</button>
+                  </div>
+                </div>
               </div>
-              <input className="fub-full" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Task Name" />
-              <div className="fub-two">
-                <select defaultValue="Follow Up"><option>Follow Up</option><option>Call</option><option>Email</option></select>
-                <select defaultValue="Adam Terrason"><option>Adam Terrason</option></select>
-              </div>
-              <div className="fub-two narrow">
-                <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
-                <input type="time" value={taskTime} onChange={(e) => setTaskTime(e.target.value)} />
-              </div>
-              <div className="fub-modalfoot">
-                <button className="fub-link" onClick={() => setTaskModal(false)}>Cancel</button>
-                <button className="fub-blue" onClick={addTask} disabled={!taskTitle.trim()}>Create task</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Create deal — same green/red confirm pattern on the name */}
-        {dealModal && (
-          <div className="fub-modalwrap" onClick={() => setDealModal(false)}>
-            <div className="fub-modal wide" onClick={(e) => e.stopPropagation()}>
-              <div className="fub-dealnamerow">
-                <input value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="Add name" />
-                <span className="fub-ok" aria-hidden>✓</span>
-                <button className="fub-cancel" onClick={() => setDealName('')} title="Clear the name">✕</button>
-              </div>
-              <div className="fub-crumb">Buyers › Start (temp stage)</div>
-              <div className="fub-dealgrid">
-                <label>Price<input value={dealPrice} onChange={(e) => setDealPrice(e.target.value)} placeholder="Add price" /></label>
-                <label>Close date<input type="date" value={dealClose} onChange={(e) => setDealClose(e.target.value)} /></label>
-                <span>Earnest money due<i>Add earnest money due date</i></span>
-                <span>Mutual acceptance<i>Add mutual acceptance date</i></span>
-                <span>Due diligence<i>Add due diligence date</i></span>
-                <span>Final walk through<i>Add final walk through date</i></span>
-                <span>Commission<i>Add commission</i></span>
-                <span>Splits<i>Add agent split</i></span>
-              </div>
-              <div className="fub-modalfoot">
-                <button className="fub-link" onClick={() => setDealModal(false)}>Cancel</button>
-                <button className="fub-blue" onClick={addDeal} disabled={!dealName.trim()}>Create Deal</button>
-              </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -348,11 +380,14 @@ export function PracticeRecord({
         {grade && (
           <ul className="pr-checks">
             {grade.checks.map((c) => (
-              <li key={c.id} className={c.pass ? 'ok' : 'no'}><b>{c.label}</b> — {c.message}</li>
+              <li key={c.id} className={c.pass ? 'ok' : 'no'}>
+                <b>{c.pass ? '✓' : '✕'} {c.label}</b>
+                {c.pass ? '' : ` — ${c.message}`}
+              </li>
             ))}
           </ul>
         )}
-        {grade?.passed && <p className="lab-ok">That is a record someone else could pick up. {grade.score}/{grade.max}.</p>}
+        {grade?.passed && <p className="lab-ok">Done — that is a record someone else could pick up.</p>}
         {err && <div className="err">{err}</div>}
         <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>
           {busy ? 'Checking…' : grade?.passed ? 'Check again' : 'Check my record'}

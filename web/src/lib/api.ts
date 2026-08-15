@@ -285,6 +285,14 @@ export async function archiveRepModule(moduleId: string): Promise<void> {
  *  null if they aren't a member. Mirrors the Worker's own isOrgLeaderOrAdmin() gate
  *  (memberships.role in ('admin','leader')) — used client-side ONLY to decide whether
  *  to show the authoring UI; the Worker re-checks on every write regardless. */
+/** True for an admin or team leader — the people who need to walk a module in
+ *  front of someone without being trapped by a gate meant for a learner. */
+export async function canSkipGates(): Promise<boolean> {
+  if (isDemo) return true;
+  const r = (await me()).role;
+  return r === 'admin' || r === 'leader';
+}
+
 export async function myOrgRole(_orgId: string): Promise<string | null> {
   if (isDemo) return 'admin';
   return (await me()).role;

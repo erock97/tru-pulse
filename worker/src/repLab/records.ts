@@ -1,11 +1,23 @@
 /** Practice-record scenarios: several small situations on one shared contact.
  *
- * The learner does not answer a multiple-choice question about the CRM — they
- * operate a record: pick a stage and SAVE it, write a note, schedule a dated
- * task. The point is to build the muscle without fear of breaking anything, so
- * every scenario is graded on the same three things a real record is judged on.
+ * The learner operates a record rather than answering questions about one: pick
+ * a stage and SAVE it, write a note, schedule a dated task, log a deal.
  *
- * Expected values live here, on the server, and never travel to the browser.
+ * GRADING IS DELIBERATELY DUMB, and that is Eric's call: if someone types one
+ * letter in the note, it passes. We do not read their words and judge them.
+ * Keyword matching on a note or a task title fails good work constantly — it
+ * marks people on phrasing rather than on the thing being taught — and a learner
+ * who cannot get past a screen they answered correctly simply stops.
+ *
+ * So we check only what is objectively true of the RECORD:
+ *   - is the stage the honest one for what happened
+ *   - was it actually saved (choosing is not saving)
+ *   - is there a note at all
+ *   - is there a task, and does it carry a date
+ *   - for a contract: is there a deal, with a price and a close date
+ *
+ * What makes a note useful is taught in the slides, where it belongs. Expected
+ * stages stay here on the server and never reach the browser.
  */
 
 export type RecordSubmission = {
@@ -31,168 +43,110 @@ export type RecordGrade = {
   checks: RecordCheck[];
 };
 
-type NoteRule = { id: string; label: string; needles: string[]; missing: string };
-
 type Scenario = {
   id: string;
   /** Lower-cased stage labels that count as honest here. */
   stage: string[];
-  /** Shown when the stage is wrong, without naming the right one. */
+  /** Shown when the stage is wrong, WITHOUT naming the right one. */
   stageMiss: string;
-  note: NoteRule[];
-  /** Words that make a task title specific enough to act on. */
-  taskNeedles: string[];
-  taskMiss: string;
-  requireTask: boolean;
   requireNote: boolean;
-  /** Under contract means a deal has to exist. FUB does not prompt for it. */
-  requireDeal?: boolean;
+  requireTask: boolean;
+  requireDeal: boolean;
 };
 
 export const SCENARIOS: Record<string, Scenario> = {
-  // 1. Nothing has happened yet. The temptation is to move the stage anyway.
+  // Nothing has happened yet. The temptation is to move the stage anyway.
   'avery-new': {
     id: 'avery-new',
     stage: ['lead'],
     stageMiss: 'Nothing has happened on this record yet. The stage should say so.',
-    note: [],
-    requireNote: false,
-    taskNeedles: ['call', 'reach', 'contact', 'avery', 'ring', 'phone'],
-    taskMiss: 'The task should name the first attempt you are going to make.',
-    requireTask: true,
+    requireNote: false, requireTask: true, requireDeal: false,
   },
 
-  // 2. A real conversation, and a confirmed date and time.
-  'avery-appointment': {
-    id: 'avery-appointment',
-    stage: ['appointment set'],
-    stageMiss: 'A confirmed date and time changes what this record should say.',
-    note: [
-      { id: 'note_happened', label: 'What happened', needles: ['spoke', 'talked', 'called', 'reached', 'confirmed'], missing: 'what actually happened on the call' },
-      { id: 'note_when', label: 'The date and time', needles: ['sat', 'saturday', '11', '11:00'], missing: 'the confirmed day and time' },
-      { id: 'note_next', label: 'What happens next', needles: ['next', 'send', 'confirm', 'prep', 'bring', 'meet'], missing: 'what you will do before the appointment' },
-    ],
-    requireNote: true,
-    taskNeedles: ['confirm', 'prep', 'send', 'avery', 'appointment', 'remind'],
-    taskMiss: 'The task should name what you will do before the appointment.',
-    requireTask: true,
-  },
-
-  // 3. A real conversation, no appointment. The classic over-promotion.
+  // A real conversation, nothing booked. The classic over-promotion.
   'avery-spoke': {
     id: 'avery-spoke',
     stage: ['spoke with customer', 'spoke with'],
     stageMiss: 'You learned something real, but nothing was booked. The stage should match that exactly.',
-    note: [
-      { id: 'note_happened', label: 'What happened', needles: ['spoke', 'talked', 'called', 'reached'], missing: 'what actually happened on the call' },
-      { id: 'note_need', label: 'What they need', needles: ['bed', 'olympia', 'lacey', 'budget', 'school', 'garage', 'want'], missing: 'what the buyer told you they need' },
-      { id: 'note_next', label: 'What happens next', needles: ['next', 'send', 'follow', 'call'], missing: 'what you committed to do next' },
-    ],
-    requireNote: true,
-    taskNeedles: ['send', 'call', 'follow', 'avery', 'option', 'home'],
-    taskMiss: 'The task should name the thing you promised them.',
-    requireTask: true,
+    requireNote: true, requireTask: true, requireDeal: false,
   },
 
-  // 4. The offer was accepted. The stage is the easy half; the deal is the half
-  //    FUB never asks you for.
+  // A confirmed date and time.
+  'avery-appointment': {
+    id: 'avery-appointment',
+    stage: ['appointment set'],
+    stageMiss: 'A confirmed date and time changes what this record should say.',
+    requireNote: true, requireTask: true, requireDeal: false,
+  },
+
+  // The offer was accepted — and Follow Up Boss never asks you for the deal.
   'avery-contract': {
     id: 'avery-contract',
     stage: ['under contract'],
     stageMiss: 'An accepted offer changes what this record should say.',
-    note: [
-      { id: 'note_happened', label: 'What happened', needles: ['accept', 'offer', 'contract', 'under'], missing: 'that the offer was accepted' },
-      { id: 'note_terms', label: 'The terms', needles: ['265', '456 oak', 'oak st', 'sept', '9/30', 'close'], missing: 'the price or the closing date' },
-    ],
-    requireNote: true,
-    taskNeedles: ['inspection', 'earnest', 'deposit', 'lender', 'avery', 'schedule', 'order', 'confirm'],
-    taskMiss: 'The task should name the next thing this contract needs.',
-    requireTask: true,
-    requireDeal: true,
+    requireNote: true, requireTask: true, requireDeal: true,
   },
 };
 
-const norm = (s?: string) => (s ?? '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim();
-const hasAny = (hay: string, needles: string[]) => needles.some((n) => hay.includes(n));
-
-/** Initials, loosely: a leading "AB", "A.B.", "ab —" and so on. */
-const startsWithInitials = (s: string) => /^[a-z]\.?\s?[a-z]\.?\b/i.test(s.trim());
+const norm = (s?: string) => (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+const filled = (s?: string) => norm(s).length > 0;
 
 export function gradeRecord(scenarioId: string, sub: RecordSubmission): RecordGrade {
   const sc = SCENARIOS[scenarioId];
   if (!sc) return { passed: false, score: 0, max: 0, checks: [] };
 
   const checks: RecordCheck[] = [];
-  const stage = norm(sub.stage);
-  const note = norm(sub.note);
-  const title = norm(sub.task?.title);
 
   // ── the stage, and the step everyone misses: saving it ──
-  const stageOk = sc.stage.includes(stage);
+  const stageOk = sc.stage.includes(norm(sub.stage));
   checks.push({
-    id: 'stage', label: 'Honest stage', pass: stageOk,
-    message: stageOk ? 'The stage matches what happened.' : sc.stageMiss,
+    id: 'stage', label: 'The stage matches what happened', pass: stageOk,
+    message: stageOk ? 'Right.' : sc.stageMiss,
   });
   checks.push({
-    id: 'stage_saved', label: 'Stage actually saved', pass: !!sub.stageSaved,
-    message: sub.stageSaved ? 'Saved, and it stuck.' : 'Choosing a stage is not saving it.',
+    id: 'stage_saved', label: 'The stage was saved', pass: !!sub.stageSaved,
+    message: sub.stageSaved ? 'Saved, and it stuck.' : 'Choosing a stage is not saving it — use the green check.',
   });
 
-  // ── the note ──
+  // ── a note exists. Its contents are not ours to mark. ──
   if (sc.requireNote) {
-    for (const rule of sc.note) {
-      const ok = hasAny(note, rule.needles);
-      checks.push({
-        id: rule.id, label: rule.label, pass: ok,
-        message: ok ? 'Covered.' : `The note does not say ${rule.missing}.`,
-      });
-    }
+    const has = filled(sub.note);
     checks.push({
-      id: 'note_initials', label: 'Your initials on the note', pass: startsWithInitials(note),
-      message: startsWithInitials(note)
-        ? 'Signed.'
-        : 'Start the note with your initials so the team knows whose work it is.',
+      id: 'note', label: 'A note is on the record', pass: has,
+      message: has ? 'Left for the next person.' : 'There is no note on this record yet.',
     });
   }
 
-  // ── the task ──
+  // ── a task exists, and carries a date ──
   if (sc.requireTask) {
-    const titled = !!title && hasAny(title, sc.taskNeedles);
+    const has = filled(sub.task?.title);
     checks.push({
-      id: 'task_title', label: 'A specific task', pass: titled,
-      message: titled ? 'Specific enough to act on.' : sc.taskMiss,
+      id: 'task', label: 'A task is on the record', pass: has,
+      message: has ? 'Scheduled.' : 'There is no task on this record yet.',
     });
     const dated = !!sub.task?.dueDate;
     checks.push({
-      id: 'task_date', label: 'A real date on it', pass: dated,
+      id: 'task_date', label: 'The task has a date', pass: dated,
       message: dated ? 'Dated.' : 'A promise with no date is not a next step.',
-    });
-    checks.push({
-      id: 'task_initials', label: 'Your initials on the task', pass: startsWithInitials(title),
-      message: startsWithInitials(title)
-        ? 'Signed.'
-        : 'Start the task with your initials too.',
     });
   }
 
-  // ── the deal ──
+  // ── the deal FUB will never prompt you for ──
   if (sc.requireDeal) {
-    const named = !!norm(sub.deal?.name);
+    const named = filled(sub.deal?.name);
     checks.push({
-      id: 'deal_created', label: 'A deal on the record', pass: named,
-      message: named
-        ? 'Logged.'
-        : 'Moving the stage does not create the deal. Follow Up Boss will not ask you for it.',
+      id: 'deal', label: 'A deal is on the record', pass: named,
+      message: named ? 'Logged.' : 'Moving the stage does not create the deal. Follow Up Boss will not ask you for it.',
     });
-    const priced = !!sub.deal?.price && /\d/.test(String(sub.deal.price));
+    const priced = filled(sub.deal?.price);
     checks.push({
-      id: 'deal_price', label: 'The price', pass: priced,
+      id: 'deal_price', label: 'The deal has a price', pass: priced,
       message: priced ? 'Recorded.' : 'The deal has no price on it.',
     });
     const closes = !!sub.deal?.closeDate;
     checks.push({
-      id: 'deal_close', label: 'A close date', pass: closes,
-      message: closes ? 'Dated.' : 'The deal has no close date, so it cannot be forecast.',
+      id: 'deal_close', label: 'The deal has a close date', pass: closes,
+      message: closes ? 'Dated.' : 'Without a close date the deal cannot be forecast.',
     });
   }
 
