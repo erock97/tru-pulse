@@ -247,7 +247,16 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
       onGraded={(r) => { setResult(r); void refresh(); setView('result'); }}
     />
   ) : result ? (
-    <Result module={active} result={result} onRetry={() => setView('quiz')} onReview={() => setView('lesson')} onHome={() => setView('home')} />
+    <Result
+      module={active}
+      result={result}
+      trackTitles={(result.certified ?? [])
+        .map((id) => lib?.tracks.find((t) => t.id === id)?.title)
+        .filter((t): t is string => !!t)}
+      onRetry={() => setView('quiz')}
+      onReview={() => setView('lesson')}
+      onHome={() => setView('home')}
+    />
   ) : null;
 }
 
@@ -900,8 +909,10 @@ export function Quiz({ module: m, onExit, onGraded, record = true }: { module: C
 }
 
 // ── Result: celebration on pass, warm review + unlimited retries on miss ────
-export function Result({ module: m, result, onRetry, onReview, onHome }: {
+export function Result({ module: m, result, trackTitles, onRetry, onReview, onHome }: {
   module: CourseModule; result: GradeResult; onRetry: () => void; onReview: () => void; onHome: () => void;
+  /** Titles of any tracks this pass just completed, for the seal below. */
+  trackTitles?: string[];
 }) {
   const byIdx = new Map(m.qs.map((q) => [q.idx, q]));
   const ac = accentOf(m.idx);
@@ -938,6 +949,11 @@ export function Result({ module: m, result, onRetry, onReview, onHome }: {
         <p>{result.passed
           ? `${m.title} — ${result.correct} of ${result.total} correct. That’s the standard.`
           : `${result.correct} of ${result.total}. You need ${m.pass_pct}%. Check the misses below and run it back — unlimited retries.`}</p>
+        {result.passed && (trackTitles?.length ?? 0) > 0 && (
+          <div className="ac-track-earned">
+            🏆 Track complete — {trackTitles!.join(' and ')}. Your certificate is on your library home.
+          </div>
+        )}
         <div className="ac-nav center">
           {result.passed
             ? <button className="btn ac-btn" onClick={onHome}>Next module →</button>

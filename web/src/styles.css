@@ -871,3 +871,6 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 /* a module you have not unlocked yet */
 .ac-modcard.lib-locked{ opacity:.5; }
 .ac-modcard.lib-locked .ac-modnum{ background:transparent; border-style:dashed; }
+
+/* the module that just completed a track */
+.ac-track-earned{ margin-top:14px; font-size:13.5px; font-weight:700; color:#7fbf94; background:color-mix(in srgb, var(--green) 14%, transparent); border:1px solid color-mix(in srgb, var(--green) 34%, transparent); border-radius:12px; padding:10px 14px; }

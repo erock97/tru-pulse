@@ -21,6 +21,7 @@ import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.
 import { gradePriya, PRIYA_ID, type LabSubmission } from './repLab/priya.js';
 import { gradeElena, ELENA_ID } from './repLab/elena.js';
 import { resolveLearner } from './repLearner.js';
+import { maybeIssueCertificates } from './repCertificates.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -1029,7 +1030,10 @@ export default {
         }],
         'learner_id,module_id',
       );
-      return json({ score, passed, correct, total, review });
+      // A track finishes on the module that completes it, so the certificate is
+      // issued here rather than waiting for the next page load.
+      const certified = passed ? await maybeIssueCertificates(database, learner) : [];
+      return json({ score, passed, correct, total, review, certified });
     }
 
     // Day 1 lab: learner-visible facts only. Expected records stay on the server.
@@ -1115,7 +1119,8 @@ export default {
         }],
         'learner_id,module_id',
       );
-      return json({ ok: true });
+      const certified = await maybeIssueCertificates(database, learner);
+      return json({ ok: true, certified });
     }
 
     // Mint a SHORT-LIVED signed DOWNLOAD url for a private rep-media object so a

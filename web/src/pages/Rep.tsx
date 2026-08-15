@@ -168,6 +168,20 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
       .filter((t) => t.assigned);
   };
 
+  /** Tracks this agent has actually earned, newest first. */
+  const certsFor = (agentId: string): Array<{ title: string; issued_at: string }> => {
+    if (!data) return [];
+    const learnerId = data.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+    if (!learnerId) return [];
+    return data.certificates
+      .filter((c) => c.learner_id === learnerId)
+      .map((c) => ({
+        title: data.tracks.find((t) => t.id === c.track_id)?.title ?? 'Track',
+        issued_at: c.issued_at,
+      }))
+      .sort((a, b) => b.issued_at.localeCompare(a.issued_at));
+  };
+
   if (!data) {
     return (
       <div className="tru-dark">
@@ -533,6 +547,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                             <AgentDrill
                               agent={a}
                               assigned={tracksFor(a.id)}
+                              certified={certsFor(a.id)}
                               modules={coreModules}
                               row={row}
                               pct={p}
@@ -596,10 +611,11 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
    AGENT DRILL — module-by-module drill-down + the certification
    sign-off. Same real data + signOffAgent() behavior as before.
    ============================================================ */
-function AgentDrill({ agent, assigned, modules, row, pct, signed, sim, onSigned }: {
+function AgentDrill({ agent, assigned, certified, modules, row, pct, signed, sim, onSigned }: {
   agent: RepAgent;
   /** Assigned tracks, already rolled up by shared/repLibrary.ts. */
   assigned: TrackView[];
+  certified: Array<{ title: string; issued_at: string }>;
   modules: RepData['modules'];
   row: (agentId: string, moduleId: string) => RepProgressRow | undefined;
   pct: number;
@@ -647,6 +663,15 @@ function AgentDrill({ agent, assigned, modules, row, pct, signed, sim, onSigned 
           </div>
         </div>
       </div>
+      {certified.length > 0 && (
+        <div className="rp-drill-tracks">
+          {certified.map((c) => (
+            <div key={c.title + c.issued_at} className="rp-drill-track earned">
+              Certified · {c.title} · {fmtDate(c.issued_at)}
+            </div>
+          ))}
+        </div>
+      )}
       {assigned.length > 0 && (
         <div className="rp-drill-tracks">
           {assigned.map((t) => (
