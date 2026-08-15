@@ -151,7 +151,13 @@ begin
     'id', v_row.id, 'org_id', v_row.org_id, 'kind', v_row.kind, 'agent_id', v_row.agent_id);
 end $$;
 
+-- Supabase's default privileges re-grant EXECUTE to anon and authenticated when
+-- the function is created, so the revoke has to come AFTER the grant and name
+-- anon explicitly. The function is keyed on auth.uid() and returns null for a
+-- signed-out caller either way, but a definer function should not be reachable
+-- by anon at all.
 revoke all on function rep_ensure_learner(uuid) from public;
 grant execute on function rep_ensure_learner(uuid) to authenticated;
+revoke execute on function rep_ensure_learner(uuid) from anon;
 
 notify pgrst, 'reload schema';
