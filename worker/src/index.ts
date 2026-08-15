@@ -20,6 +20,7 @@ import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simCon
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
 import { gradePriya, PRIYA_ID, type LabSubmission } from './repLab/priya.js';
 import { gradeElena, ELENA_ID } from './repLab/elena.js';
+import { resolveLearner } from './repLearner.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -1007,23 +1008,26 @@ export default {
         return json({ score, passed, correct, total, review });
       }
 
-      const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
-      if (!arows.length) return json({ error: 'not an agent' }, 403);
-      const agent = arows[0] as any;
+      // A leader takes the same modules as their agents (spec §3.5), so progress
+      // keys on the learner spine rather than the agent roster. agent_id is
+      // dual-written for one release while the leader board still joins on it.
+      const learner = await resolveLearner(database, userId, body?.orgId ? String(body.orgId) : undefined);
+      if (!learner) return json({ error: 'not enrolled' }, 403);
       const prior = await database.select(
         'rep_progress',
-        `agent_id=eq.${agent.id}&module_id=eq.${moduleId}&select=attempts,passed_at`,
+        `learner_id=eq.${learner.id}&module_id=eq.${moduleId}&select=attempts,passed_at`,
       );
       const attempts = ((prior[0]?.attempts as number) ?? 0) + 1;
       const passed_at = passed ? ((prior[0]?.passed_at as string) ?? new Date().toISOString()) : ((prior[0]?.passed_at as string) ?? null);
       await database.upsert(
         'rep_progress',
         [{
-          agent_id: agent.id, org_id: agent.org_id, module_id: moduleId,
+          learner_id: learner.id, agent_id: learner.agent_id, org_id: learner.org_id,
+          module_id: moduleId,
           status: passed ? 'passed' : 'in_progress', score, attempts,
           passed_at, updated_at: new Date().toISOString(),
         }],
-        'agent_id,module_id',
+        'learner_id,module_id',
       );
       return json({ score, passed, correct, total, review });
     }
@@ -1094,22 +1098,22 @@ export default {
         }
         return json({ ok: true });
       }
-      const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
-      if (!arows.length) return json({ error: 'not an agent' }, 403);
-      const agent = arows[0] as any;
+      const learner = await resolveLearner(database, userId, body?.orgId ? String(body.orgId) : undefined);
+      if (!learner) return json({ error: 'not enrolled' }, 403);
       const now = new Date().toISOString();
       const prior = await database.select(
         'rep_progress',
-        `agent_id=eq.${agent.id}&module_id=eq.${moduleId}&select=passed_at`,
+        `learner_id=eq.${learner.id}&module_id=eq.${moduleId}&select=passed_at`,
       );
       await database.upsert(
         'rep_progress',
         [{
-          agent_id: agent.id, org_id: agent.org_id, module_id: moduleId,
+          learner_id: learner.id, agent_id: learner.agent_id, org_id: learner.org_id,
+          module_id: moduleId,
           status: 'passed', score: 100, attempts: 1,
           passed_at: (prior[0]?.passed_at as string) ?? now, updated_at: now,
         }],
-        'agent_id,module_id',
+        'learner_id,module_id',
       );
       return json({ ok: true });
     }
