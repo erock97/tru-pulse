@@ -925,22 +925,32 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .fub-shot{ display:block; width:100%; height:auto; }
 .fub-hot{ position:absolute; box-sizing:border-box; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
 
-/* Stage — Details panel, left column */
-.fub-stage{ left:3.5%; top:37.4%; width:16%; height:2.9%; display:flex; align-items:center; gap:.4vw; background:#fff; }
-.fub-stageval{ font-size:clamp(9px,.83vw,15px); color:#2f3d4a; background:#fff; border:1px solid transparent;
-  border-radius:4px; padding:1px 5px; cursor:pointer; white-space:nowrap; font-weight:500; }
-.fub-stageval:hover{ border-color:#2b8cff; }
-.fub-caret{ color:#8a99a8; margin-left:4px; font-size:.7em; }
-.fub-check{ width:1.35vw; height:1.35vw; min-width:15px; min-height:15px; border-radius:50%; border:0;
-  background:#37b24d; color:#fff; font-size:clamp(8px,.72vw,13px); cursor:pointer; display:grid; place-items:center; }
-.fub-menu{ position:absolute; top:105%; left:0; z-index:6; margin:0; padding:4px; list-style:none; min-width:180px;
+/* Stage — Details panel. Reading state is just the value; clicking it turns the
+   row into FUB's bordered field with a chevron, plus the green check and red X.
+   Traced from rep-lab/stage-save-check.png, which is the real control. */
+.fub-stageread{ left:3.6%; top:37.5%; height:2.7%; display:flex; align-items:center; padding:0 5px;
+  background:#fff; border:1px solid transparent; border-radius:3px; cursor:pointer;
+  font-size:clamp(9px,.83vw,15px); color:#2f3d4a; font-weight:500; white-space:nowrap; }
+.fub-stageread:hover{ border-color:#c3ced8; }
+.fub-stageedit{ left:0.9%; top:36.3%; width:24%; height:4.2%; display:flex; align-items:center; gap:.5%;
+  background:#fff; }
+.fub-stagefield{ flex:1; height:100%; display:flex; align-items:center; gap:.5vw; padding:0 .55vw;
+  background:#fff; border:1px solid #c3ced8; border-radius:5px; cursor:pointer; min-width:0;
+  font-size:clamp(8px,.8vw,14px); color:#2f3d4a; }
+.fub-stagefield b{ color:#2f3d4a; font-weight:700; flex-shrink:0; }
+.fub-stagepick{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fub-caret{ color:#8a99a8; flex-shrink:0; }
+.fub-ok, .fub-cancel{ flex-shrink:0; width:1.55vw; height:1.55vw; min-width:17px; min-height:17px;
+  border-radius:50%; border:0; color:#fff; cursor:pointer; display:grid; place-items:center;
+  font-size:clamp(8px,.8vw,14px); line-height:1; }
+.fub-ok{ background:#34c47c; }
+.fub-cancel{ background:#f4675f; }
+.fub-menu{ position:absolute; top:104%; left:0; z-index:6; margin:0; padding:4px; list-style:none; min-width:190px;
   background:#fff; border:1px solid #d7dee5; border-radius:6px; box-shadow:0 12px 28px rgba(19,41,63,.22); }
 .fub-menu button{ display:block; width:100%; text-align:left; padding:7px 10px; font-size:13px; color:#2f3d4a;
   background:none; border:0; border-radius:4px; cursor:pointer; }
 .fub-menu button:hover{ background:#eef4fb; }
 .fub-menu button.on{ color:#1877d2; font-weight:700; }
-.fub-unsaved{ left:14.2%; top:37.6%; height:2.6%; display:flex; align-items:center;
-  font-size:clamp(7px,.66vw,11px); color:#c0392b; font-weight:700; background:#fff; padding:0 4px; white-space:nowrap; }
 
 /* Note composer — top of the record */
 .fub-note{ left:26.7%; top:8.7%; width:47.1%; height:14.8%; resize:none; border:0; outline:0;

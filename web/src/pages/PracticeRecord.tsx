@@ -64,6 +64,7 @@ export function PracticeRecord({
   const [stage, setStage] = useState(pack.startStage);
   const [savedStage, setSavedStage] = useState(pack.startStage);
   const [stageOpen, setStageOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [everSaved, setEverSaved] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
   const [note, setNote] = useState('');
@@ -79,10 +80,20 @@ export function PracticeRecord({
 
   const dirty = stage !== savedStage;
 
-  const saveStage = () => {
+  // Green check commits. Red X throws the change away, exactly as it does in FUB.
+  const commitStage = () => {
+    setEditing(false);
+    setStageOpen(false);
+    if (stage === savedStage) return;
     setSavedStage(stage);
     setEverSaved(true);
     setLog((l) => [{ when: stamp(), text: `Stage changed to ${stage}`, kind: 'stage' }, ...l]);
+  };
+
+  const cancelStage = () => {
+    setStage(savedStage);
+    setEditing(false);
+    setStageOpen(false);
   };
 
   const addNote = () => {
@@ -141,28 +152,36 @@ export function PracticeRecord({
       <div className="fub">
         <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
 
-        {/* ── Stage, in the Details panel where FUB keeps it ── */}
-        <div className="fub-hot fub-stage">
-          <button className="fub-stageval" onClick={() => setStageOpen((o) => !o)}>
-            {stage}<span className="fub-caret">▾</span>
+        {/* ── Stage, in the Details panel, editing exactly the way FUB does it:
+             the row turns into a bordered field with a chevron, and a green
+             check and a red X appear beside it. Nothing is committed until the
+             green check — which is the mistake the deck says everyone makes. ── */}
+        {!editing ? (
+          <button className="fub-hot fub-stageread" onClick={() => { setEditing(true); setStageOpen(true); }}>
+            {savedStage}
           </button>
-          {dirty && (
-            <button className="fub-check" onClick={saveStage} title="Save the stage">✓</button>
-          )}
-          {stageOpen && (
-            <ul className="fub-menu">
-              {STAGES.map((s) => (
-                <li key={s}>
-                  <button
-                    className={s === stage ? 'on' : ''}
-                    onClick={() => { setStage(s); setStageOpen(false); }}
-                  >{s}</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        {dirty && <div className="fub-hot fub-unsaved">Not saved yet</div>}
+        ) : (
+          <div className="fub-hot fub-stageedit">
+            <button className="fub-stagefield" onClick={() => setStageOpen((o) => !o)}>
+              <b>Stage</b><span className="fub-stagepick">{stage}</span>
+              <span className="fub-caret">⌄</span>
+            </button>
+            <button className="fub-ok" onClick={commitStage} title="Save">✓</button>
+            <button className="fub-cancel" onClick={cancelStage} title="Cancel">✕</button>
+            {stageOpen && (
+              <ul className="fub-menu">
+                {STAGES.map((s) => (
+                  <li key={s}>
+                    <button
+                      className={s === stage ? 'on' : ''}
+                      onClick={() => { setStage(s); setStageOpen(false); }}
+                    >{s}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* ── The note composer at the top of the record ── */}
         <textarea
