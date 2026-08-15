@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
-  loadCourse, loadLibrary, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
+  loadCourse, loadLibrary, canSkipGates, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
   signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
   type LibraryData,
@@ -66,6 +66,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [attempts, setAttempts] = useState<SimAttempt[]>([]);
   const [sessionSimPass, setSessionSimPass] = useState(false);
   const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
+  const [canSkip, setCanSkip] = useState(false);
   const [ackErr, setAckErr] = useState('');
 
   const refresh = () => Promise.all([
@@ -81,6 +82,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
     // Agent-side 1:1 recap (Block 4c). Agent-safe by construction (checkin_items
     // only, never checkin_leader). A failure here must never blank the course.
     void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
+    void canSkipGates().then(setCanSkip).catch(() => setCanSkip(false));
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
@@ -194,6 +196,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
     <Lesson
       key={active.id}
       module={active}
+      canSkip={canSkip}
       doneLabel={active.qs.length ? undefined : 'Mark as done'}
       error={ackErr}
       onDone={() => {
@@ -558,7 +561,13 @@ function RailFoot() {
 
 // ── Lesson: typed cards on the big stage; rail = the outline ────────────────
 // Exported so the leader Rep tab can open any module as a full preview.
-export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string; error?: string }) {
+export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }: {
+  module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string; error?: string;
+  /** Admins and team leaders can step past a gated card. They are demonstrating
+   *  the module, not being assessed by it, and getting stuck mid-demo is worse
+   *  than skipping a check. */
+  canSkip?: boolean;
+}) {
   const cards = m.cards;
   const [i, setI] = useState(0);
   const [seen, setSeen] = useState(0);
@@ -610,6 +619,11 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error }: { module
         {!last
           ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
           : <button className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
+        {canSkip && !answered && (
+          <button className="btn ghost ac-skip" onClick={() => (last ? onDone() : go(i + 1))}>
+            Skip this step
+          </button>
+        )}
       </div>
       {error && <div className="err" style={{ marginTop: 12 }}>{error}</div>}
     </Shell>

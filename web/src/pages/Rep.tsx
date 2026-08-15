@@ -254,6 +254,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     return (
       <Lesson
         module={asCourse}
+        canSkip
         onBack={closePreview}
         onDone={() => {
           if (asCourse.qs.length) setPreviewView('quiz');
