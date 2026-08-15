@@ -901,11 +901,33 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-labcard-title{ font-family:Georgia,serif; font-size:24px; font-weight:800; color:var(--ac-text); margin:0 0 10px; line-height:1.2; }
 .ac-labcard-body{ font-size:16px; line-height:1.6; color:var(--ac-text-80, var(--ac-text)); margin:0 0 22px; max-width:62ch; }
 
-/* the Day 1 deck, embedded in the lesson */
-.ac-deck-frame{ position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden;
-  border:1px solid var(--ac-border-soft); background:#180F08; box-shadow:0 24px 60px -34px rgba(0,0,0,.95); }
-.ac-deck-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
-.ac-deck-open{ display:inline-block; margin-top:14px; font-size:13.5px; font-weight:800; color:var(--gold);
-  padding:9px 16px; border:1px solid color-mix(in srgb, var(--gold) 42%, transparent); border-radius:999px;
-  background:color-mix(in srgb, var(--gold) 10%, transparent); transition:background .18s, border-color .18s; }
-.ac-deck-open:hover{ background:color-mix(in srgb, var(--gold) 18%, transparent); border-color:var(--gold); }
+/* ── Native slide rendering (Day 1 deck) ─────────────────────────────────────
+   Each slide is the deck's own 1920x1080 markup, scaled to fit the lesson
+   column. Its type is remapped to the app's self-hosted brand fonts: the export
+   referenced Archivo and Source Serif through bundle-internal font files that do
+   not exist outside it, and the CSP forbids fetching webfonts. */
+.deck-slide{ width:100%; }
+.deck-box{ position:relative; width:100%; overflow:hidden; border-radius:16px;
+  border:1px solid var(--ac-border-soft); background:#180F08;
+  box-shadow:0 26px 64px -36px rgba(0,0,0,.95); }
+.deck-scale{ position:absolute; top:0; left:0; transform-origin:top left; }
+.deck-scale section{ width:1920px; height:1080px; position:relative; }
+.deck-scale img{ max-width:none; }
+.deck-scale section{ font-family:"Hanken Grotesk", system-ui, sans-serif; }
+
+/* The export staggers entrance animation with data-a / data-w indexes. Kept, so
+   a slide still assembles itself the way Eric built it. */
+@keyframes deck-rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+.deck-scale [data-a], .deck-scale [data-w]{ animation:deck-rise .52s cubic-bezier(.22,.61,.36,1) both; }
+.deck-scale [data-a="1"],.deck-scale [data-w="1"]{ animation-delay:.06s }
+.deck-scale [data-a="2"],.deck-scale [data-w="2"]{ animation-delay:.14s }
+.deck-scale [data-a="3"],.deck-scale [data-w="3"]{ animation-delay:.22s }
+.deck-scale [data-a="4"],.deck-scale [data-w="4"]{ animation-delay:.30s }
+.deck-scale [data-a="5"],.deck-scale [data-w="5"]{ animation-delay:.38s }
+.deck-scale [data-a="6"],.deck-scale [data-w="6"]{ animation-delay:.46s }
+.deck-scale [data-a="7"],.deck-scale [data-w="7"]{ animation-delay:.54s }
+.deck-scale [data-a="8"],.deck-scale [data-w="8"]{ animation-delay:.62s }
+.deck-scale [data-a="9"],.deck-scale [data-w="9"]{ animation-delay:.70s }
+@media (prefers-reduced-motion: reduce){
+  .deck-scale [data-a], .deck-scale [data-w]{ animation:none; opacity:1; transform:none; }
+}

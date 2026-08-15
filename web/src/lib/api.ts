@@ -175,9 +175,11 @@ export interface LessonCard {
   // lab (t:'lab') — a graded practice record embedded IN the lesson, at the point
   // in the training it belongs to. `scenario` names the pack in RepLab.tsx.
   scenario?: 'avery-repair' | 'elena-homework';
-  // deck (t:'deck') — a self-contained slide deck served from /public/decks.
-  // Kept whole rather than split per slide so its transitions still run.
-  // (Reuses the existing `src` field above, which stat cards use for a source line.)
+  // slide (t:'slide') — ONE slide of a named deck under /public/decks, rendered
+  // natively. `deck` is the json basename, `slide` the 1-based slide number.
+  // (`n` is already taken above by the section card's part label.)
+  deck?: string;
+  slide?: number;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
