@@ -101,17 +101,17 @@ describe('the contract scenario', () => {
   };
 
   it('passes a contract with the deal logged', () => {
-    expect(gradeRecord('avery-contract', done).passed).toBe(true);
+    expect(gradeRecord('offer-accepted', done).passed).toBe(true);
   });
 
   it('fails when the stage moved but no deal was added', () => {
-    const g = gradeRecord('avery-contract', { ...done, deal: undefined });
+    const g = gradeRecord('offer-accepted', { ...done, deal: undefined });
     expect(g.passed).toBe(false);
     expect(g.checks.find((c) => c.id === 'deal')?.pass).toBe(false);
   });
 
   it('wants a price and a close date on the deal', () => {
-    const g = gradeRecord('avery-contract', { ...done, deal: { name: '456 Oak St' } });
+    const g = gradeRecord('offer-accepted', { ...done, deal: { name: '456 Oak St' } });
     expect(g.checks.find((c) => c.id === 'deal_price')?.pass).toBe(false);
     expect(g.checks.find((c) => c.id === 'deal_close')?.pass).toBe(false);
   });
@@ -121,5 +121,42 @@ describe('the contract scenario', () => {
       stage: 'Attempted contact', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.some((c) => c.id.startsWith('deal'))).toBe(false);
+  });
+});
+
+// The last two exercises are the only ones where the situation does not name the
+// stage. Both bait the learner toward a stage the facts do not support, so the
+// bait failing is the thing worth locking down.
+describe('the two judgement scenarios', () => {
+  const worked = { stageSaved: true, note: 'x', task: { title: 'y', dueDate: '2026-08-20' } };
+
+  it('repair: accepts moving the stage BACK when the call did not earn it', () => {
+    expect(gradeRecord('avery-repair', { ...worked, stage: 'Spoke with customer' }).passed).toBe(true);
+  });
+
+  it('repair: rejects leaving the appointment the record already wrongly claims', () => {
+    const g = gradeRecord('avery-repair', { ...worked, stage: 'Appointment set' });
+    expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
+  });
+
+  it('repair: rejects over-correcting all the way down to a bare attempt', () => {
+    const g = gradeRecord('avery-repair', { ...worked, stage: 'Attempted contact' });
+    expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
+  });
+
+  it('offer: rejects the booked inspection as the stage', () => {
+    const g = gradeRecord('offer-accepted', {
+      ...worked, stage: 'Appointment set',
+      deal: { name: '456 Oak St', price: '265000', closeDate: '2026-09-30' },
+    });
+    expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
+  });
+
+  it('neither failure message hands over the stage it wanted', () => {
+    for (const id of ['avery-repair', 'offer-accepted']) {
+      const g = gradeRecord(id, { ...worked, stage: 'Lead' });
+      const miss = g.checks.find((c) => c.id === 'stage')!.message.toLowerCase();
+      for (const s of SCENARIOS[id].stage) expect(miss).not.toContain(s);
+    }
   });
 });

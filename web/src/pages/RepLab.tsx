@@ -19,15 +19,16 @@ const RISKS: Array<{ id: string; label: string }> = [
   { id: 'ignored_activity', label: 'Visible home activity is not used as context' },
 ];
 
-// The full ladder as taught on slide 10 of the Day 1 deck. Showing only the
-// first three would make the honest answer easier to guess than it should be.
+// One shot, not two. The separate close-up of the note composer was noise: the
+// composer is already visible on the record, and a second image of it made the
+// record itself smaller, which is the opposite of the point.
 const SHOTS = [
   { src: '/rep-lab/detail-full.png', cap: 'The contact record',
     alt: 'Follow Up Boss contact record from the training account' },
-  { src: '/rep-lab/detail-note-composer.png', cap: 'The note composer',
-    alt: 'Follow Up Boss create-note composer' },
 ];
 
+// The full ladder as taught on slide 10 of the Day 1 deck. Showing only the
+// first three would make the honest answer easier to guess than it should be.
 const STAGES = [
   'Lead',
   'Attempted Contact',
@@ -40,23 +41,11 @@ const STAGES = [
   'Closed',
 ];
 
+// Avery's repair used to live here. It moved onto the practice-record surface —
+// the full-width Follow Up Boss screen the rest of Day 1 uses — because a
+// full-width record squeezed into a lesson column is unreadable, and because
+// grading her note on whether it contained the word "Thursday" failed correct work.
 const PACKS = {
-  'avery-repair': {
-    title: 'Repair Avery’s record.',
-    blurb: 'Avery is the shared training contact, and the record is wrong on purpose. Fix it, and put your initials on your work.',
-    audit: true,
-    contactHint: 'Avery Morgan',
-    startStage: 'Appointment Set',
-    startNote: 'Talked. Interested. Follow up later.',
-    facts: [
-      ['Contact', 'Avery Morgan — the shared training record'],
-      ['Source', 'Zillow property inquiry · 406 Juniper Ln'],
-      ['Home Activity', 'Viewed 406 Juniper Ln 4 times. Saved 422 Juniper Ln. Viewed 510 Pinecrest Ct.'],
-      ['What the record says now', 'Stage: Appointment Set · Note: “Talked. Interested. Follow up later.” · Tasks: none'],
-      ['What Avery actually told you', 'Avery called back. They want to compare 406 and 422 Juniper Ln, and asked to see both on Thursday morning. Nothing has been booked. No appointment was ever set.'],
-      ['You are done when', 'Your instructor can open Avery and see your note and your dated task, both with your initials on them.'],
-    ] as Array<[string, string]>,
-  },
   'elena-homework': {
     title: 'Elena asked for a next step. Leave the proof.',
     blurb: 'Complete the record from the facts. 8 out of 10, no critical miss.',
@@ -78,7 +67,7 @@ export type LabScenario = keyof typeof PACKS;
 
 /** The exercise itself, with no page chrome — embeddable inside a lesson. */
 export function LabExercise({
-  scenario = 'avery-repair', record = true, onPassed, onDone, compact = false,
+  scenario = 'elena-homework', record = true, onPassed, onDone, compact = false,
 }: {
   scenario?: LabScenario;
   record?: boolean;
@@ -318,7 +307,7 @@ export function LabExercise({
 
 /** Full-page wrapper — the leader's test drive from the Rep dashboard. */
 export function LabView({
-  onBack, onPassed, record = true, scenario = 'avery-repair',
+  onBack, onPassed, record = true, scenario = 'elena-homework',
 }: {
   onBack: () => void;
   onPassed?: () => void;

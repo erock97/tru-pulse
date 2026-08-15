@@ -14,7 +14,7 @@
 //    here: --k is (rendered image width / 1810), so a 13px control in Follow Up
 //    Boss is 13px here at any width.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
+import { gradeLab, gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
 
 const SHOT = '/rep-lab/detail-full.png';
 const SHOT_W = 1810;
@@ -26,6 +26,9 @@ const STAGES = [
   'Submitting offers', 'Under contract', 'Nurture', 'Closed', 'Trash',
 ];
 
+/** Whose record this is. Omitted means Avery, who is baked into the screenshot. */
+type Contact = { name: string; initials: string; email: string };
+
 type Pack = {
   subline: string;
   title: string;
@@ -36,18 +39,46 @@ type Pack = {
   /** Wording to copy into the note box, while writing notes is still new. */
   noteToCopy?: string;
   startStage: string;
+  /** Overlaid on the screenshot so one capture can be more than one person. */
+  contact?: Contact;
+  /** Already on the record when the learner arrives — the mess they inherit. */
+  seedLog?: Array<{ when: string; who: string; text: string }>;
+  /**
+   * Diagnosis gate. The record is read-only until every real fault is named and
+   * nothing else is. Only the repair uses this; expected answers live on the server.
+   */
+  audit?: { prompt: string; options: Array<{ id: string; label: string }> };
 };
 
+// More boxes than there are faults, on purpose. Ticking all six fails, so the
+// learner has to actually read the record rather than sweep it.
+const AVERY_FAULTS = [
+  { id: 'wrong_stage', label: 'The stage claims more than the call actually produced' },
+  { id: 'weak_note', label: 'The note would not let a teammate take this over' },
+  { id: 'missing_task', label: 'There is no next action with a date on it' },
+  { id: 'ignored_activity', label: 'What they looked at is on the record but unused' },
+  { id: 'no_owner', label: 'Nobody is assigned to this record' },
+  { id: 'no_source', label: 'You cannot tell where this lead came from' },
+];
+
 // One new skill at a time, stacking — and never a skill the slides have not
-// taught yet. The first draft asked for notes and tasks on the card that comes
-// straight after the STAGES slides, then repeated the same three moves three
-// times with the story changed. That teaches nothing and reads as busywork.
+// taught yet.
 //
 //   after the stage slides   → stage only
 //   after the notes slide    → stage + note, with the wording handed to them
 //   after the tasks slide    → stage + note + task
-//   after the review         → all three, unaided
-//   after the deals card     → all three plus the deal
+//   after the repair slide   → all three, but diagnose it first, and the record lies
+//   after the deals card     → all three plus the deal, and the facts are in a message
+//
+// There used to be a sixth, "now do all three on your own", sitting between the
+// last two. It was the third consecutive lap of stage-note-task with only the
+// story changed, and it is gone.
+//
+// Note what the last two do INSTEAD of being longer. Exercises 1–3 state the
+// outcome plainly — "you booked Saturday at 11" — because the skill there is
+// working the controls. From 4 on, nothing names the stage: it has to be read out
+// of the situation, and in both cases the obvious answer is wrong. That is the
+// only axis left worth climbing once someone can already drive the screen.
 export const PACKS: Record<string, Pack> = {
   // 1. Stages only.
   'set-appointment': {
@@ -88,31 +119,48 @@ export const PACKS: Record<string, Pack> = {
     startStage: 'Lead',
   },
 
-  // 4. All three, unaided. No wording handed over this time.
-  'full-record': {
-    subline: 'Last Communication 2 minutes ago',
-    title: 'Now do all three on your own',
-    situation: 'Avery called you back. They have seen 406 Juniper Ln and want to see 422 as well, and they asked you to send both listings side by side before the weekend. No time was agreed.',
+  // 4. The repair. The first exercise that does NOT tell them the answer: the
+  //    record already claims an appointment, and the call behind it never earned
+  //    one. They diagnose before they may edit, then move the stage BACKWARDS —
+  //    which nothing before this has asked of them.
+  'avery-repair': {
+    subline: 'Last Communication yesterday',
+    title: 'Repair the record',
+    situation: 'Avery called back about 406 and 422 Juniper Ln and said, “let’s plan on Thursday morning — I’ll confirm once I’ve checked with my sister.” Whoever took that call set the stage to Appointment set and left the note below. Nothing has been booked.',
     steps: [
-      { id: 'stage', text: 'Update the stage and save it.' },
-      { id: 'note', text: 'Write your own note this time, then click Create Note.' },
-      { id: 'task', text: 'Add a task for what you promised, with a date on it.' },
+      { id: 'stage', text: 'Set the stage to the one this call actually earned, and save it with the green check.' },
+      { id: 'note', text: 'Write a note that would let someone else pick this up cold, then click Create Note.' },
+      { id: 'task', text: 'Add the next action, with a date on it.' },
     ],
     startStage: 'Appointment set',
+    seedLog: [
+      { when: 'yesterday', who: 'Alex Rivera', text: 'Talked. Interested. Follow up later.' },
+    ],
+    audit: {
+      prompt: 'Before you change anything: what is wrong with this record? Tick only what is actually wrong — ticking everything is not a diagnosis.',
+      options: AVERY_FAULTS,
+    },
   },
 
-  // 5. The deal, which Follow Up Boss never asks you for.
-  'avery-contract': {
-    subline: 'Last Communication yesterday',
-    title: 'The offer was accepted',
-    situation: 'Avery’s offer on 456 Oak St was accepted last night at $265,000, closing September 30th.',
+  // 5. The deal Follow Up Boss never asks you for — and a booked inspection sitting
+  //    in the way, to see whether they reach for the calendar or the contract.
+  //    The price and the close date are in the message, not in the instructions.
+  'offer-accepted': {
+    subline: 'Last Communication 20 minutes ago',
+    title: 'The offer went through',
+    situation: 'The listing agent just emailed you: “Sellers signed this morning — $265,000 as offered, closing 30 September. I’ve booked the inspection for Tuesday at 9am.”',
     steps: [
-      { id: 'stage', text: 'Update the stage to match an accepted offer, and save it.' },
-      { id: 'note', text: 'Write a note with the price and the closing date, then click Create Note.' },
+      { id: 'stage', text: 'Set the stage to where this deal actually is now, and save it.' },
+      { id: 'note', text: 'Write a note carrying what was agreed, then click Create Note.' },
       { id: 'task', text: 'Add a task for what this contract needs next, with a date on it.' },
-      { id: 'deal', text: 'Click the + on the Deals panel and add the deal, with a name, a price and a close date.' },
+      { id: 'deal', text: 'Click the + on the Deals panel and add the deal — the price and the close date are in the email above.' },
     ],
     startStage: 'Submitting offers',
+    contact: {
+      name: 'Elena Brooks',
+      initials: 'EB',
+      email: 'elena.brooks@example.test',
+    },
   },
 };
 
@@ -169,6 +217,12 @@ export function PracticeRecord({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [grade, setGrade] = useState<RecordGrade | null>(null);
+
+  // Diagnosis gate. Nothing on the record may be touched until the faults are named.
+  const [faults, setFaults] = useState<string[]>([]);
+  const [diagnosed, setDiagnosed] = useState(!pack.audit);
+  const [auditMiss, setAuditMiss] = useState<string[]>([]);
+  const locked = !diagnosed;
 
   // One measured factor. Every size in the overlay is px * var(--k).
   const measure = useCallback(() => {
@@ -230,6 +284,22 @@ export function PracticeRecord({
     setDealName(''); setDealPrice(''); setDealClose(''); setDealModal(false);
   };
 
+  // The faults are marked on the server so the expected set never ships to the
+  // browser. We are told which boxes were wrong, never which ones were right.
+  const checkDiagnosis = async () => {
+    if (isDemo) { setErr('This grades on the server. Sign in to submit.'); return; }
+    setBusy(true); setErr('');
+    try {
+      const g = await gradeLab(scenario, { phase: 'audit', risks: faults }, { record });
+      setAuditMiss(g.checks.filter((c) => !c.pass).map((c) => c.message));
+      if (g.passed) { setDiagnosed(true); setAuditMiss([]); }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Could not check this. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const check = async () => {
     if (isDemo) { setErr('This grades on the server. Sign in to submit.'); return; }
     setBusy(true); setErr('');
@@ -257,10 +327,45 @@ export function PracticeRecord({
         <p className="pr-situation">{pack.situation}</p>
       </div>
 
+      {/* Diagnosis comes before repair, and replaces the job list while it runs.
+          Showing someone the fix list while asking them what is broken hands them
+          the answer. */}
+      {pack.audit && !diagnosed && (
+        <div className="pr-jobs pr-audit">
+          <h4>First — read the record</h4>
+          <p className="pr-auditprompt">{pack.audit.prompt}</p>
+          <ul className="pr-faults">
+            {pack.audit.options.map((o) => (
+              <li key={o.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={faults.includes(o.id)}
+                    onChange={() => setFaults((f) =>
+                      f.includes(o.id) ? f.filter((x) => x !== o.id) : [...f, o.id])}
+                  />
+                  <span>{o.label}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          {auditMiss.length > 0 && (
+            <ul className="pr-checks">
+              {auditMiss.map((m, i) => <li key={i} className="no">{m}</li>)}
+            </ul>
+          )}
+          {err && <div className="err">{err}</div>}
+          <button className="btn ac-btn" onClick={() => void checkDiagnosis()} disabled={busy || !faults.length}>
+            {busy ? 'Checking…' : 'Check my diagnosis'}
+          </button>
+        </div>
+      )}
+
       {/* The job list STAYS ON SCREEN. The record is taller than a viewport, so a
           list that scrolls away leaves someone staring at a contact with no idea
           what was asked of them. It also ticks itself off as they work, so
           "what is left to do" is never a guess. */}
+      {diagnosed && (
       <div className="pr-jobs">
         <h4>Your job — {done.filter(Boolean).length} of {pack.steps.length} done</h4>
         <ol>
@@ -293,9 +398,10 @@ export function PracticeRecord({
           </button>
         </p>
       </div>
+      )}
 
       <div
-        className={`fub${hint ? ' show-hints' : ''}`}
+        className={`fub${hint ? ' show-hints' : ''}${locked ? ' is-locked' : ''}`}
         ref={shotRef}
         style={{ ['--k' as string]: String(k) }}
       >
@@ -305,6 +411,20 @@ export function PracticeRecord({
           <>
             {/* the header line, so the record reflects this situation */}
             <div className="fub-hot fub-sub">{pack.subline}</div>
+
+            {/* One screenshot, more than one person. Re-capturing the whole record
+                for every exercise is not worth it, and five exercises on the same
+                contact is the thing that made this feel like a drill. The three
+                places the name is legible get painted over in the panel's own
+                white; everything else on the record is impersonal. */}
+            {pack.contact && (
+              <>
+                <div className="fub-hot fub-av">{pack.contact.initials}</div>
+                <div className="fub-hot fub-name">{pack.contact.name}</div>
+                <div className="fub-hot fub-email">{pack.contact.email}</div>
+                <div className="fub-hot fub-social">Search {pack.contact.name}</div>
+              </>
+            )}
 
             {/* Stage — in the Details panel, edited the way FUB edits it */}
             {!editing ? (
@@ -377,8 +497,10 @@ export function PracticeRecord({
               ))}
             </div>
 
-            {/* what you did, on the record's own timeline */}
-            {log.length > 0 && (
+            {/* The record's timeline: what you did, above what you inherited. The
+                seeded entry is the weak note the repair exercise is about — it has
+                to be READ to be judged, so it lives on the record, not in the brief. */}
+            {(log.length > 0 || pack.seedLog?.length) && (
               <div className="fub-hot fub-log">
                 {log.map((e, i) => (
                   <div key={i} className={`fub-item is-${e.kind}`}>
@@ -387,6 +509,19 @@ export function PracticeRecord({
                       <div className="fub-itemhead">
                         <span className="fub-itemav">AT</span>
                         <span className="fub-itemwho">Adam Terrason</span>
+                        <span className="fub-itemwhen">{e.when}</span>
+                      </div>
+                      <div className="fub-itemtext">{e.text}</div>
+                    </div>
+                  </div>
+                ))}
+                {pack.seedLog?.map((e, i) => (
+                  <div key={`seed-${i}`} className="fub-item is-note">
+                    <span className="fub-pin" />
+                    <div className="fub-itembody">
+                      <div className="fub-itemhead">
+                        <span className="fub-itemav">AR</span>
+                        <span className="fub-itemwho">{e.who}</span>
                         <span className="fub-itemwhen">{e.when}</span>
                       </div>
                       <div className="fub-itemtext">{e.text}</div>
@@ -447,6 +582,7 @@ export function PracticeRecord({
       </div>
 
       <div className="pr-after">
+        {locked && <p className="pr-locked">The record is read-only until your diagnosis is right.</p>}
         {grade && (
           <ul className="pr-checks">
             {grade.checks.map((c) => (
@@ -458,10 +594,12 @@ export function PracticeRecord({
           </ul>
         )}
         {grade?.passed && <p className="lab-ok">Done — that is a record someone else could pick up.</p>}
-        {err && <div className="err">{err}</div>}
-        <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>
-          {busy ? 'Checking…' : grade?.passed ? 'Check again' : 'Check my record'}
-        </button>
+        {err && !locked && <div className="err">{err}</div>}
+        {!locked && (
+          <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>
+            {busy ? 'Checking…' : grade?.passed ? 'Check again' : 'Check my record'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import type { TrackView } from '../../../shared/repLibrary.js';
 import { Lesson, Quiz, Result, SimView } from './AgentCourse';
 import RepAssign from './RepAssign';
 import { LabView } from './RepLab';
+import { PracticeRecord } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
 import { HqShell } from '../components/hqShell';
 import { Icon, Ring, Avatar } from '../components/hqUi';
@@ -198,6 +199,20 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   }
 
   if (labTest) {
+    // Avery's repair runs on the practice-record surface now; Elena is still the
+    // older screenshot-and-form exercise, so each gets the wrapper it needs.
+    if (labScenario === 'avery-repair') {
+      return (
+        <div className="ac">
+          <header className="ac-top">
+            <button className="link small" onClick={() => setLabTest(false)}>‹ Back</button>
+          </header>
+          <main className="ac-main ac-main-wide">
+            <PracticeRecord scenario="avery-repair" record={false} />
+          </main>
+        </div>
+      );
+    }
     return <LabView scenario={labScenario} record={false} onBack={() => setLabTest(false)} />;
   }
 
