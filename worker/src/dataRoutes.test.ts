@@ -33,8 +33,8 @@ function fakeKV() {
 /** Which org each user's token belongs to, i.e. what RLS would let them see. */
 const TOKEN_ORG: Record<string, string> = { 'at-acme': 'acme', 'at-globex': 'globex' };
 
-// A leader has to pass the Priya repair lab before they can sign anyone off.
-// Mutable so a test can put a leader on the wrong side of that gate.
+// Practice-lab attempts. Sign-off does NOT depend on these — mutable only so a
+// test can prove a leader who has never touched the lab can still sign off.
 const LAB_PASSED: Record<string, Array<{ id: string }>> = {
   acme: [{ id: 'acme-priya-pass' }],
   globex: [{ id: 'globex-priya-pass' }],
