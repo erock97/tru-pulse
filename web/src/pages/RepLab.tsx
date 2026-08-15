@@ -21,6 +21,13 @@ const RISKS: Array<{ id: string; label: string }> = [
 
 // The full ladder as taught on slide 10 of the Day 1 deck. Showing only the
 // first three would make the honest answer easier to guess than it should be.
+const SHOTS = [
+  { src: '/rep-lab/detail-full.png', cap: 'The contact record',
+    alt: 'Follow Up Boss contact record from the training account' },
+  { src: '/rep-lab/detail-note-composer.png', cap: 'The note composer',
+    alt: 'Follow Up Boss create-note composer' },
+];
+
 const STAGES = [
   'Lead',
   'Attempted Contact',
@@ -95,6 +102,8 @@ export function LabExercise({
   const [err, setErr] = useState('');
   const [grade, setGrade] = useState<LabGrade | null>(null);
   const [auditDone, setAuditDone] = useState(!pack.audit);
+  // Zoom happens IN PLACE. The record has to stay on screen while you type.
+  const [zoom, setZoom] = useState<string | null>(null);
 
   function toggleRisk(id: string) {
     setRisks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -143,21 +152,26 @@ export function LabExercise({
         <h3>The real screen</h3>
         <p className="lab-hint">
           Follow Up Boss from the training account. The name in the shot is not the person in this
-          exercise — work from the facts underneath. Click a screenshot to open it full size.
+          exercise — work from the facts underneath. Click a shot to zoom it without losing your place.
         </p>
         <div className="lab-shots">
-          <figure>
-            <a href="/rep-lab/detail-full.png" target="_blank" rel="noreferrer">
-              <img src="/rep-lab/detail-full.png" alt="Follow Up Boss contact record from the training account" />
-            </a>
-            <figcaption>The contact record ↗</figcaption>
-          </figure>
-          <figure>
-            <a href="/rep-lab/detail-note-composer.png" target="_blank" rel="noreferrer">
-              <img src="/rep-lab/detail-note-composer.png" alt="Follow Up Boss create-note composer" />
-            </a>
-            <figcaption>The note composer ↗</figcaption>
-          </figure>
+          {SHOTS.map((shot) => (
+            <figure key={shot.src}>
+              <button
+                type="button"
+                className={`lab-shot${zoom === shot.src ? ' zoomed' : ''}`}
+                onClick={() => setZoom(zoom === shot.src ? null : shot.src)}
+                aria-label={zoom === shot.src ? `Shrink ${shot.cap}` : `Enlarge ${shot.cap}`}
+              >
+                <img src={shot.src} alt={shot.alt} />
+              </button>
+              <figcaption>
+                <span>{shot.cap}</span>
+                <span>{zoom === shot.src ? 'Click to shrink' : 'Click to zoom'}</span>
+                <a href={shot.src} target="_blank" rel="noreferrer">Open full size ↗</a>
+              </figcaption>
+            </figure>
+          ))}
         </div>
 
         <h3>What you know</h3>
