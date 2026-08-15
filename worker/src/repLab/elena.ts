@@ -1,6 +1,37 @@
-/** Elena Brooks — Day 1 closer. 8/10, no critical miss. Keys stay on the server. */
+/** Elena Brooks — Day 1 closer. 8/10, no critical miss. Keys stay on the server.
+ *
+ * Elena is not part of the Day 1 module; she is the leader's extra test drive.
+ * These types used to live in avery.ts, which is gone — Avery's repair moved onto
+ * the practice-record surface and is graded by records.ts like everything else.
+ */
 
-import type { LabCheck, LabGrade, LabSubmission } from './avery.js';
+export interface LabSubmission {
+  phase: 'audit' | 'repair';
+  contactName?: string;
+  risks?: string[];
+  stage?: string;
+  note?: string;
+  task?: { title?: string; owner?: string; due?: string };
+  channel?: string;
+}
+
+export interface LabCheck {
+  id: string;
+  pass: boolean;
+  /** Names the missing element. Must never contain the expected answer. */
+  message: string;
+  required: boolean;
+  critical: boolean;
+}
+
+export interface LabGrade {
+  passed: boolean;
+  phase: 'audit' | 'repair';
+  checks: LabCheck[];
+  critical: boolean;
+  score?: number;
+  max?: number;
+}
 
 export const ELENA_ID = 'elena-homework';
 

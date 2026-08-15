@@ -14,7 +14,7 @@
 //    here: --k is (rendered image width / 1810), so a 13px control in Follow Up
 //    Boss is 13px here at any width.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { gradeLab, gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
+import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
 
 const SHOT = '/rep-lab/detail-full.png';
 const SHOT_W = 1810;
@@ -286,11 +286,13 @@ export function PracticeRecord({
 
   // The faults are marked on the server so the expected set never ships to the
   // browser. We are told which boxes were wrong, never which ones were right.
+  // Same endpoint as the repair below: the live-sim one 403s anyone who is not an
+  // enrolled agent, which silently jammed this gate shut for leaders.
   const checkDiagnosis = async () => {
     if (isDemo) { setErr('This grades on the server. Sign in to submit.'); return; }
     setBusy(true); setErr('');
     try {
-      const g = await gradeLab(scenario, { phase: 'audit', risks: faults }, { record });
+      const g = await gradeRecordPractice(scenario, { phase: 'audit', faults }, { record });
       setAuditMiss(g.checks.filter((c) => !c.pass).map((c) => c.message));
       if (g.passed) { setDiagnosed(true); setAuditMiss([]); }
     } catch (e) {

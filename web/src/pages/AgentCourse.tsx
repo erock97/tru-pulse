@@ -8,6 +8,7 @@ import {
 } from '../lib/api';
 import LibraryHome from './LibraryHome';
 import { SlideView } from './SlideDeck';
+import { DealSlide } from './DealSlide';
 import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
@@ -27,6 +28,7 @@ function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'lab') return '🗂 Work the record';
   if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
+  if (c.t === 'dealslide') return 'Deals';
   if (c.t === 'practice') return `🖥 ${c.title ?? 'Work the record'}`;
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
@@ -597,8 +599,16 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
     </>
   );
 
+  // `wide` gives the full stage instead of the reading column. `practice` was
+  // missing from this list, which is why the Follow Up Boss record — the widest
+  // thing in the whole module — was squeezed into a text-width column.
   return (
-    <Shell accent={ac} num={m.idx} rail={rail} wide={card?.t === 'slide' || card?.t === 'lab'}>
+    <Shell
+      accent={ac}
+      num={m.idx}
+      rail={rail}
+      wide={card?.t === 'slide' || card?.t === 'dealslide' || card?.t === 'lab' || card?.t === 'practice'}
+    >
       <button className="ac-back ac-mob" onClick={onBack}>‹ All modules</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Module {m.idx}</span>
@@ -682,6 +692,11 @@ function Card({ card, pick, onPick, onLabPassed }: {
   if (!card) return null;
   if (card.t === 'slide') {
     return <SlideView deck={card.deck ?? 'zillow-day1'} n={card.slide ?? 1} />;
+  }
+  // A slide the exported deck does not contain, authored in the deck's own look
+  // because deals need a dialog you can actually press. See DealSlide.tsx.
+  if (card.t === 'dealslide') {
+    return <DealSlide />;
   }
   if (card.t === 'practice') {
     const sc = (card.scenario ?? 'set-appointment') as PracticeScenario;

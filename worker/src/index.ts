@@ -18,11 +18,11 @@ import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, s
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
-import { gradeAvery, AVERY_ID, type LabSubmission } from './repLab/avery.js';
+import { type LabSubmission } from './repLab/elena.js';
 import { gradeElena, ELENA_ID } from './repLab/elena.js';
 import { resolveLearner } from './repLearner.js';
 import { maybeIssueCertificates } from './repCertificates.js';
-import { gradeRecord, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
+import { gradeRecord, gradeFaults, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -1047,13 +1047,18 @@ export default {
       const scenarioId = String(body?.scenarioId ?? '').trim();
       if (!RECORD_SCENARIOS[scenarioId]) return json({ error: 'unknown scenario' }, 404);
       const sub = body?.submission ?? {};
-      const grade = gradeRecord(scenarioId, {
-        stage: sub.stage,
-        stageSaved: !!sub.stageSaved,
-        note: sub.note,
-        task: sub.task,
-        deal: sub.deal,
-      });
+      // Two halves of the same exercise, one route: naming the faults, then
+      // repairing them. Keeping the diagnosis on the live-sim route instead meant
+      // it was gated to enrolled agents while the repair beside it was not.
+      const grade = sub.phase === 'audit'
+        ? gradeFaults(scenarioId, Array.isArray(sub.faults) ? sub.faults : [])
+        : gradeRecord(scenarioId, {
+          stage: sub.stage,
+          stageSaved: !!sub.stageSaved,
+          note: sub.note,
+          task: sub.task,
+          deal: sub.deal,
+        });
       const record = body?.record !== false;
       if (record) {
         const learner = await resolveLearner(database, userId);
@@ -1063,7 +1068,7 @@ export default {
             agent_id: learner?.agent_id ?? null,
             user_id: userId,
             scenario_id: scenarioId,
-            phase: 'record',
+            phase: sub.phase === 'audit' ? 'audit' : 'record',
             passed: grade.passed,
             critical: false,
             checks: grade.checks,
@@ -1089,7 +1094,7 @@ export default {
       const body = (await req.json().catch(() => null)) as any;
       const scenarioId = String(body?.scenarioId ?? '').trim();
       const record = body?.record !== false;
-      if (scenarioId !== AVERY_ID && scenarioId !== ELENA_ID) return json({ error: 'unknown scenario' }, 404);
+      if (scenarioId !== ELENA_ID) return json({ error: 'unknown scenario' }, 404);
       const sub: LabSubmission = {
         phase: body?.phase === 'repair' ? 'repair' : 'audit',
         contactName: body?.submission?.contactName,
@@ -1099,7 +1104,7 @@ export default {
         task: body?.submission?.task,
         channel: body?.submission?.channel,
       };
-      const grade = scenarioId === ELENA_ID ? gradeElena(sub) : gradeAvery(sub);
+      const grade = gradeElena(sub);
       const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
       const isLeader = await callerLeadsModule(database, userId, { org_id: (arows[0]?.org_id as string | null) ?? null });
       if (record && !arows.length) return json({ error: 'not an agent' }, 403);

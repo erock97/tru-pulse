@@ -96,12 +96,11 @@ export const CARDS = [
   // ── The four checks, straight from the deck ──
   slide(16, 'Four checks'),
 
-  // ── Deals: taught here because the deck has no slide for them ──
-  {
-    t: 'text',
-    k: 'One more thing: deals',
-    body: 'When an offer is accepted, moving the stage to Under contract is only half of it. Follow Up Boss does NOT prompt you to create the deal — it will sit there under contract with no deal attached, and it will not appear in anyone’s pipeline or commission numbers.\n\nThe deal lives in its own panel on the right of the record. It needs a name, a price and a close date.',
-  },
+  // ── Deals. The deck has no slide for them, so this one is authored in the app
+  //    in the deck's own look — and it is clickable, because nobody has ever seen
+  //    the Create Deal dialog and describing a dialog does not teach it.
+  //    Rendered by web/src/pages/DealSlide.tsx. ──
+  { t: 'dealslide' },
   { t: 'practice', scenario: 'offer-accepted' },
 
   // ── Close ──
