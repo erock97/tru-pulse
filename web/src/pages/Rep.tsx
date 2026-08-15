@@ -490,7 +490,6 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                             <AgentDrill
                               agent={a}
                               modules={coreModules}
-                              leaderPriyaPassed={data.leaderPriyaPassed !== false}
                               row={row}
                               pct={p}
                               signed={isSigned(a.id)}
@@ -543,7 +542,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
    AGENT DRILL — module-by-module drill-down + the certification
    sign-off. Same real data + signOffAgent() behavior as before.
    ============================================================ */
-function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned, leaderPriyaPassed }: {
+function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
   agent: RepAgent;
   modules: RepData['modules'];
   row: (agentId: string, moduleId: string) => RepProgressRow | undefined;
@@ -551,9 +550,8 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned, leaderPri
   signed: boolean;
   sim: { best: number | null; passed: boolean; tries: number };
   onSigned: () => void;
-  leaderPriyaPassed: boolean;
 }) {
-  const certReady = pct === 100 && sim.passed && leaderPriyaPassed;
+  const certReady = pct === 100 && sim.passed;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   async function signOff() {
@@ -601,9 +599,9 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned, leaderPri
               className="rp-signoff"
               disabled={!certReady || busy}
               onClick={signOff}
-              title={!leaderPriyaPassed ? 'Pass the Priya repair lab before you sign anyone off' : !certReady ? 'Enabled once every core module AND the Live Sim are passed' : ''}
+              title={!certReady ? 'Enabled once every core module AND the Live Sim are passed' : ''}
             >
-              {busy ? 'Signing…' : certReady ? 'Sign off certification' : !leaderPriyaPassed ? 'Sign off (pass Priya first)' : pct === 100 ? 'Sign off (Live Sim pending)' : `Sign off (at ${pct}%)`}
+              {busy ? 'Signing…' : certReady ? 'Sign off certification' : pct === 100 ? 'Sign off (Live Sim pending)' : `Sign off (at ${pct}%)`}
             </button>
           )}
         {err && <span className="rp-err">{err}</span>}

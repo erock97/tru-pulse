@@ -572,15 +572,16 @@ describe('the routes the cutover added', () => {
     expect(res.status).toBe(200);
   });
 
-  it('refuses a sign-off from a leader who has not passed the Priya repair lab', async () => {
+  it('signs off a leader who has never touched the practice lab', async () => {
+    // The lab is available to leaders; it is not a prerequisite. Gating sign-off
+    // on it locked out every existing leader the day it shipped. Eric's call.
     const had = LAB_PASSED.acme;
     LAB_PASSED.acme = [];
     try {
       const sid = await signIn('acme@test.com');
       const res = await post('/data/rep/sign-off', sid,
         { agentId: 'aaaaaaaa-1111-4111-8111-111111111111', who: 'acme lead' });
-      expect(res.status).toBe(403);
-      expect(JSON.stringify(await res.json())).toContain('Priya repair lab');
+      expect(res.status).toBe(200);
     } finally {
       LAB_PASSED.acme = had;
     }
