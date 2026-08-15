@@ -88,4 +88,70 @@ create policy rep_progress_learner_self on rep_progress for select to authentica
      where user_id = auth.uid()
         or agent_id in (select id from agents where auth_id = auth.uid())));
 
+-- ── rep_ensure_learner() ─────────────────────────────────────────────────────
+-- The /data/* routes read AS THE USER and never hold the service-role key
+-- (worker/src/asUser.ts), but a first-time learner has no rep_learners row yet
+-- and there is deliberately no client INSERT policy on the table. This is the
+-- one sanctioned way to create it: SECURITY DEFINER, keyed strictly on
+-- auth.uid(), so a caller can only ever mint their OWN learner row.
+--
+-- Mirrors worker/src/repLearner.ts exactly, including agent-identity-wins.
+create or replace function rep_ensure_learner(p_org uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_uid   uuid := auth.uid();
+  v_agent record;
+  v_org   uuid;
+  v_row   rep_learners;
+  v_name  text;
+  v_email text;
+begin
+  if v_uid is null then return null; end if;
+
+  -- ── Agent path ─────────────────────────────────────────────────────────────
+  select a.id, a.org_id, a.name, a.email into v_agent
+    from agents a where a.auth_id = v_uid and a.org_id is not null limit 1;
+
+  if found then
+    select * into v_row from rep_learners where agent_id = v_agent.id limit 1;
+    if not found then
+      insert into rep_learners (org_id, kind, agent_id, name, email)
+      values (v_agent.org_id, 'agent', v_agent.id, v_agent.name, v_agent.email)
+      returning * into v_row;
+    end if;
+    return jsonb_build_object(
+      'id', v_row.id, 'org_id', v_row.org_id, 'kind', v_row.kind, 'agent_id', v_row.agent_id);
+  end if;
+
+  -- ── Member path ────────────────────────────────────────────────────────────
+  -- Ordered so a multi-org leader with no hint lands on the same org every call.
+  select m.org_id into v_org
+    from memberships m
+   where m.user_id = v_uid and (p_org is null or m.org_id = p_org)
+   order by m.org_id limit 1;
+  if v_org is null then
+    select m.org_id into v_org
+      from memberships m where m.user_id = v_uid order by m.org_id limit 1;
+  end if;
+  if v_org is null then return null; end if;
+
+  select * into v_row from rep_learners
+   where user_id = v_uid and org_id = v_org limit 1;
+  if not found then
+    select l.name, l.email into v_name, v_email from leaders l where l.id = v_uid limit 1;
+    insert into rep_learners (org_id, kind, user_id, name, email)
+    values (v_org, 'member', v_uid, coalesce(v_name, v_email, 'Team leader'), v_email)
+    returning * into v_row;
+  end if;
+  return jsonb_build_object(
+    'id', v_row.id, 'org_id', v_row.org_id, 'kind', v_row.kind, 'agent_id', v_row.agent_id);
+end $$;
+
+revoke all on function rep_ensure_learner(uuid) from public;
+grant execute on function rep_ensure_learner(uuid) to authenticated;
+
 notify pgrst, 'reload schema';
