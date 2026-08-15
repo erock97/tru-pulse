@@ -823,3 +823,51 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-lab-hint{ font-size: 13px; color: var(--ac-muted, #8A7F70); margin: 8px 0 16px; }
 .ac-lab-fail{ margin: 0 0 14px; padding-left: 18px; color: #e08a7a; }
 .ac-lab-ok{ color: #7fbf94; font-weight: 600; }
+
+/* ── TRU Rep library shelf (Phase 1) ─────────────────────────────────────────
+   Reuses the ac- token family so a track card and a module card read as one
+   surface. Sections never move on their own — expanding a track is the
+   learner's choice and stays that way until they change it. */
+.lib-sec{ margin-top:30px; }
+.lib-h{ font-family:Georgia,serif; font-weight:800; font-size:20px; color:var(--ac-text); margin:0 4px 13px; }
+.lib-hrow{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin:0 4px 13px; flex-wrap:wrap; }
+.lib-hrow .lib-h{ margin:0; }
+.lib-search{ flex:0 1 260px; min-width:170px; background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:20px; padding:8px 15px; font-size:13px; color:var(--ac-text); }
+.lib-search::placeholder{ color:var(--ac-text-40); }
+.lib-search:focus{ outline:none; border-color:var(--gold); }
+.lib-cards{ display:flex; flex-direction:column; gap:13px; }
+.lib-empty{ font-size:13px; color:var(--ac-text-60); margin:6px 4px; }
+
+/* assigned-to-you */
+.lib-assign{ background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:16px; padding:16px 18px; }
+.lib-assign.overdue{ border-color:color-mix(in srgb, var(--terracotta) 55%, transparent); }
+.lib-assign-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.lib-assign-title{ font-family:Georgia,serif; font-weight:800; font-size:15.5px; color:var(--ac-text); }
+.lib-assign-sub{ font-size:12.5px; color:var(--ac-text-60); margin-top:8px; }
+.lib-chip{ flex-shrink:0; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:3px 10px; border-radius:999px; background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold); border:1px solid color-mix(in srgb, var(--gold) 38%, transparent); }
+.lib-chip-late{ background:rgba(192,107,79,.14); color:var(--terracotta); border-color:rgba(192,107,79,.45); }
+.lib-chip-done{ margin-left:9px; background:color-mix(in srgb, var(--green) 18%, transparent); color:#7fbf94; border-color:color-mix(in srgb, var(--green) 40%, transparent); }
+
+/* progress bars */
+.lib-bar{ display:block; height:6px; border-radius:999px; background:var(--ac-border-soft); overflow:hidden; margin-top:11px; }
+.lib-bar > span{ display:block; height:100%; border-radius:999px; background:var(--gold); transition:width .35s ease; }
+.lib-bar.sm{ height:5px; margin-top:9px; }
+
+/* earned badges */
+.lib-badge{ display:flex; align-items:center; gap:13px; background:var(--ac-card-flat); border:1px solid color-mix(in srgb, var(--gold) 32%, var(--ac-border-soft)); border-radius:16px; padding:15px 18px; }
+.lib-badge-seal{ font-size:22px; }
+.lib-badge-title{ flex:1; font-family:Georgia,serif; font-weight:800; font-size:15px; color:var(--ac-text); }
+.lib-badge-date{ font-size:12px; color:var(--ac-text-60); }
+
+/* a track and its module list */
+.lib-track{ margin-bottom:16px; }
+.lib-track-head{ display:grid; grid-template-columns:1fr auto; grid-template-areas:"title caret" "sub caret" "bar bar"; gap:2px 14px; width:100%; text-align:left; background:transparent; border:0; border-bottom:1px solid var(--ac-border-soft); padding:10px 4px 13px; cursor:pointer; margin-bottom:13px; }
+.lib-track-head:hover .lib-track-title{ color:var(--gold); }
+.lib-track-title{ grid-area:title; font-family:Georgia,serif; font-weight:800; font-size:17px; color:var(--ac-text); transition:color .18s; }
+.lib-track-sub{ grid-area:sub; font-size:12.5px; color:var(--ac-text-60); }
+.lib-track-head .lib-bar{ grid-area:bar; }
+.lib-caret{ grid-area:caret; align-self:center; color:var(--ac-text-40); font-size:19px; font-weight:700; }
+
+/* a module you have not unlocked yet */
+.ac-modcard.lib-locked{ opacity:.5; }
+.ac-modcard.lib-locked .ac-modnum{ background:transparent; border-style:dashed; }
