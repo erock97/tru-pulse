@@ -6,6 +6,10 @@
 import type { Env } from './env.js';
 import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
+import { buildTrackViews } from '../../shared/repLibrary.js';
+import type {
+  TrackRow, TrackModuleRow, ProgressRow, AssignmentRow,
+} from '../../shared/repLibrary.js';
 
 // Ids come from the query string, so validate the shape before it reaches a
 // PostgREST filter. Filters AND together so an id can't be widened to another
@@ -230,6 +234,37 @@ export async function handleDataRoutes(
       db.select('rep_practice', `select=scenario,status,score,passed,created_at&agent_id=eq.${agentId}&order=created_at.desc`),
     ]);
     return json({ modules, questions, progress, practice }, 200, cors);
+  }
+
+  // ── Rep: the whole library shelf for whoever is signed in, in one round trip. ──
+  // The learner spine is resolved through rep_ensure_learner(), a SECURITY DEFINER
+  // function keyed on auth.uid() — a first-time learner has no rep_learners row and
+  // there is deliberately no client INSERT policy on that table, so this is the one
+  // sanctioned way to mint it without reaching for the service role in this file.
+  // Every read below is RLS-scoped: a track belonging to another org simply is not
+  // returned, so no org filter is written by hand here.
+  if (url.pathname === '/data/rep/library' && req.method === 'GET') {
+    const orgHint = url.searchParams.get('org');
+    if (orgHint && !UUID_RE.test(orgHint)) return json({ error: 'invalid org' }, 422, cors);
+    const { data: learner } = await db.rpc<{
+      id: string; org_id: string; kind: 'agent' | 'member'; agent_id: string | null;
+    }>('rep_ensure_learner', { p_org: orgHint });
+    if (!learner?.id) return json({ error: 'not enrolled' }, 403, cors);
+
+    const [tracks, trackModules, modules, progress, assignments, certificates] = await Promise.all([
+      db.select<TrackRow>('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select<TrackModuleRow>('rep_track_modules', 'select=track_id,module_id,idx,required'),
+      db.select('rep_modules', 'select=id,idx,title,summary,pass_pct,core,kind,duration_min,level,tags,cover&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select<ProgressRow>('rep_progress', `select=module_id,status,score,passed_at&learner_id=eq.${learner.id}`),
+      db.select<AssignmentRow>('rep_assignments', `select=track_id,due_at,completed_at&learner_id=eq.${learner.id}`),
+      db.select('rep_certificates', `select=track_id,issued_at&learner_id=eq.${learner.id}`),
+    ]);
+
+    return json({
+      learner: { id: learner.id, kind: learner.kind, org_id: learner.org_id },
+      tracks: buildTrackViews(tracks, trackModules, progress, assignments, new Date()),
+      modules, trackModules, progress, certificates,
+    }, 200, cors);
   }
 
   // ── Who this person is, in one round trip. ──
