@@ -9,52 +9,67 @@ describe('gradeRecord — marks the record, never the prose', () => {
   };
 
   it('passes a one-letter note', () => {
-    expect(gradeRecord('avery-spoke', spoke).passed).toBe(true);
+    expect(gradeRecord('spoke-note', spoke).passed).toBe(true);
   });
 
   it('accepts any task title, however terse', () => {
-    const g = gradeRecord('avery-spoke', { ...spoke, task: { title: 'y', dueDate: '2026-08-20' } });
+    const g = gradeRecord('noanswer-task', {
+      stage: 'Attempted contact', stageSaved: true, note: 'x', task: { title: 'y', dueDate: '2026-08-20' },
+    });
     expect(g.checks.find((c) => c.id === 'task')?.pass).toBe(true);
   });
 
+  it('asks for no task on the stage-and-note scenario', () => {
+    const g = gradeRecord('spoke-note', spoke);
+    expect(g.checks.some((c) => c.id === 'task')).toBe(false);
+  });
+
+  it('asks for nothing but the stage on the first scenario', () => {
+    const g = gradeRecord('set-appointment', { stage: 'Appointment set', stageSaved: true });
+    expect(g.passed).toBe(true);
+    expect(g.checks).toHaveLength(2);
+  });
+
   it('never marks a note or a task on its wording', () => {
-    const odd = gradeRecord('avery-spoke', {
+    const odd = gradeRecord('spoke-note', {
       ...spoke, note: 'zzzz', task: { title: 'zzzz', dueDate: '2026-08-20' },
     });
     expect(odd.passed).toBe(true);
   });
 
   it('still fails an empty note', () => {
-    const g = gradeRecord('avery-spoke', { ...spoke, note: '   ' });
+    const g = gradeRecord('spoke-note', { ...spoke, note: '   ' });
     expect(g.checks.find((c) => c.id === 'note')?.pass).toBe(false);
   });
 
   it('still fails a task with no date', () => {
-    const g = gradeRecord('avery-spoke', { ...spoke, task: { title: 'y' } });
+    const g = gradeRecord('noanswer-task', {
+      stage: 'Attempted contact', stageSaved: true, note: 'x', task: { title: 'y' },
+    });
     expect(g.checks.find((c) => c.id === 'task_date')?.pass).toBe(false);
   });
 
   it('fails a stage that was chosen but never saved', () => {
-    const g = gradeRecord('avery-spoke', { ...spoke, stageSaved: false });
+    const g = gradeRecord('spoke-note', { ...spoke, stageSaved: false });
     expect(g.checks.find((c) => c.id === 'stage_saved')?.pass).toBe(false);
   });
 
   it('rejects claiming a conversation when the call was not answered', () => {
-    const g = gradeRecord('avery-new', {
+    const g = gradeRecord('noanswer-task', {
       stage: 'Spoke with customer', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
   });
 
   it('rejects leaving it at Lead — the attempt did happen', () => {
-    const g = gradeRecord('avery-new', {
+    const g = gradeRecord('noanswer-task', {
       stage: 'Lead', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(false);
   });
 
   it('accepts an unanswered call recorded as an attempt', () => {
-    const g = gradeRecord('avery-new', {
+    const g = gradeRecord('noanswer-task', {
       stage: 'Attempted contact', stageSaved: true, note: 'left a voicemail',
       task: { title: 'try again', dueDate: '2026-08-16' },
     });
@@ -62,7 +77,7 @@ describe('gradeRecord — marks the record, never the prose', () => {
   });
 
   it('is case- and spacing-insensitive about the stage', () => {
-    const g = gradeRecord('avery-spoke', { ...spoke, stage: '  SPOKE   WITH CUSTOMER ' });
+    const g = gradeRecord('spoke-note', { ...spoke, stage: '  SPOKE   WITH CUSTOMER ' });
     expect(g.checks.find((c) => c.id === 'stage')?.pass).toBe(true);
   });
 
@@ -102,7 +117,7 @@ describe('the contract scenario', () => {
   });
 
   it('asks for no deal on the scenarios that have none', () => {
-    const g = gradeRecord('avery-new', {
+    const g = gradeRecord('noanswer-task', {
       stage: 'Attempted contact', stageSaved: true, note: 'x', task: { title: 'x', dueDate: '2026-08-16' },
     });
     expect(g.checks.some((c) => c.id.startsWith('deal'))).toBe(false);
