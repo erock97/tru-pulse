@@ -24,6 +24,7 @@ export default function SiteHeader({ current }: { current: PublicRoute }) {
     <nav className="nav" id="nav"><div className="wrap">
       <a className="brand" href="/" aria-label={`${BUSINESS.brandFull} home`}>T<span className="r">RU</span></a>
       <div className="nlinks">
+        {link('/services', 'Services')}
         {link('/about', 'About')}
       </div>
       <div className="nright">

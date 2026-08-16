@@ -3,11 +3,23 @@ import type { PublicRoute } from '../lib/routes';
 import { applyHead, type PageMeta } from '../lib/head';
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
+import Home from './pages/Home';
+import Services from './pages/Services';
 import About from './pages/About';
 import '../pages/Landing.css';
 import './site.css';
 
 export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
+  '/': {
+    title: 'TRU — Fractional sales management for real estate teams',
+    description:
+      'We take sales management off the team owner’s plate — agent accountability, pipeline oversight, Zillow Preferred conversion, and the daily operating rhythm — without adding a full-time hire.',
+  },
+  '/services': {
+    title: 'Services & engagement model — TRU',
+    description:
+      'Seven things we own for you, four packages scaled to your team size, and exactly how an engagement starts.',
+  },
   '/about': {
     title: 'About — TRU',
     description:
@@ -20,7 +32,7 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
 
   useEffect(() => {
     applyHead({ ...META[route], path: route });
-    window.scrollTo(0, 0);
+    if (route !== '/') window.scrollTo(0, 0);
   }, [route]);
 
   // The reveal-on-scroll machinery belongs to every marketing page. `.ready`
@@ -80,6 +92,8 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
       <div className="grain"></div>
       <SiteHeader current={route} />
       <main id="main">
+        {route === '/' && <Home />}
+        {route === '/services' && <Services />}
         {route === '/about' && <About />}
       </main>
       <SiteFooter />
