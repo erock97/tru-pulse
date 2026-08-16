@@ -26,10 +26,11 @@ describe('index.html icon and share tags', () => {
     expect(indexHtml).toMatch(/<link[^>]+rel="apple-touch-icon"[^>]+href="\/apple-touch-icon\.png"/);
   });
 
-  it('declares og:image and twitter:image at the existing 512 icon', () => {
-    expect(indexHtml).toMatch(/property="og:image"[^>]+content="https:\/\/truhq\.co\/icon-512\.png"/);
-    expect(indexHtml).toMatch(/name="twitter:image"[^>]+content="https:\/\/truhq\.co\/icon-512\.png"/);
+  it('declares og:image and twitter:image as root-relative so the serving host wins', () => {
+    expect(indexHtml).toMatch(/property="og:image"[^>]+content="\/icon-512\.png"/);
+    expect(indexHtml).toMatch(/name="twitter:image"[^>]+content="\/icon-512\.png"/);
     expect(indexHtml).toMatch(/name="twitter:card"[^>]+content="summary_large_image"/);
+    expect(indexHtml).not.toMatch(/https:\/\/truhq\.co\/icon-512\.png/);
   });
 });
 

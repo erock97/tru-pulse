@@ -7,12 +7,13 @@ import type { PublicRoute } from './routes';
 
 export type PageMeta = { title: string; description: string; path: PublicRoute };
 
-// Existing brand PNG in public/. Absolute so crawlers and twitter:card
-// unfurls do not resolve a relative path against the wrong host.
+// Existing brand PNG in public/. Built from the host serving this page so a
+// Pages preview unfurl hits that preview's /icon-512.png, not live truhq.co
+// (which still serves HTML for that path until this ships).
 export const SHARE_IMAGE_PATH = '/icon-512.png';
 
-export function shareImageUrl(siteUrl: string = BUSINESS.siteUrl): string {
-  return `${siteUrl}${SHARE_IMAGE_PATH}`;
+export function shareImageUrl(origin: string = location.origin): string {
+  return `${origin}${SHARE_IMAGE_PATH}`;
 }
 
 function upsertMeta(selector: string, attrs: Record<string, string>) {

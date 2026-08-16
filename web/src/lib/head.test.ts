@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { applyHead, shareImageUrl } from './head';
-import { BUSINESS } from '../config/business';
 
 // applyHead talks to document.head. The suite stays on node, so this is a
 // small stand-in — same idea as clearLegacyTokens.test.ts.
@@ -55,19 +54,35 @@ function installFakeDocument() {
   return { document, nodes };
 }
 
+const PREVIEW_ORIGIN = 'https://feat-block4-marketing-icons.tru-pulse-app.pages.dev';
+
 describe('shareImageUrl', () => {
-  it('points at the existing 512 icon on the public site origin', () => {
-    expect(shareImageUrl()).toBe('https://truhq.co/icon-512.png');
-    expect(shareImageUrl()).toBe(`${BUSINESS.siteUrl}/icon-512.png`);
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the serving origin so a preview card does not point at live truhq.co', () => {
+    vi.stubGlobal('location', { origin: PREVIEW_ORIGIN });
+    expect(shareImageUrl()).toBe(`${PREVIEW_ORIGIN}/icon-512.png`);
+    expect(shareImageUrl()).not.toBe('https://truhq.co/icon-512.png');
+  });
+
+  it('becomes the production URL when that is the origin, with no code change', () => {
+    expect(shareImageUrl('https://truhq.co')).toBe('https://truhq.co/icon-512.png');
   });
 });
 
 describe('applyHead', () => {
   beforeEach(() => {
     installFakeDocument();
+    vi.stubGlobal('location', { origin: PREVIEW_ORIGIN });
   });
 
-  it('sets og:image and twitter:image to a real PNG, not a marketing path', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sets og:image and twitter:image to the current origin plus the 512 icon', () => {
     applyHead({
       title: 'About — TRU',
       description: 'Who you’d actually be working with.',
@@ -78,8 +93,8 @@ describe('applyHead', () => {
     const tw = document.head.querySelector('meta[name="twitter:image"]') as FakeEl | null;
     const card = document.head.querySelector('meta[name="twitter:card"]') as FakeEl | null;
 
-    expect(og?.attrs.content).toBe('https://truhq.co/icon-512.png');
-    expect(tw?.attrs.content).toBe('https://truhq.co/icon-512.png');
+    expect(og?.attrs.content).toBe(`${PREVIEW_ORIGIN}/icon-512.png`);
+    expect(tw?.attrs.content).toBe(`${PREVIEW_ORIGIN}/icon-512.png`);
     expect(card?.attrs.content).toBe('summary_large_image');
   });
 });
