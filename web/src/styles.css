@@ -443,7 +443,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-lessontitle{ font-size:23px; margin:2px 0 12px; color:var(--ac-text); }
 .ac-progress{ height:9px; background:var(--ac-card); border-radius:20px; overflow:hidden; margin-bottom:20px; }
 .ac-progress-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg, var(--mac), color-mix(in srgb, var(--mac) 65%, #fff)); transition:width .45s cubic-bezier(.4,0,.2,1); box-shadow:0 0 8px color-mix(in srgb, var(--mac) 55%, transparent); }
-.ac-cardzone{ min-height:240px; }
+.ac-cardzone{ min-height:240px; overflow:hidden; }
 
 /* text card */
 .ac-card{ background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:18px; padding:26px 24px; }
@@ -531,7 +531,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-choice.wrong .ac-choice-mark{ background:var(--terra); color:#fff; }
 
 /* nav */
-.ac-nav{ display:flex; gap:12px; margin-top:20px; }
+.ac-nav{ display:flex; gap:12px; margin-top:20px; position:relative; z-index:2; }
 .ac-nav.center{ justify-content:center; }
 .ac-nav .btn{ flex:1; padding:14px 18px; font-size:15px; border-radius:12px; }
 .ac-nav.center .btn{ flex:0 1 auto; min-width:160px; }
@@ -681,7 +681,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
      The zone centers what's left, so a lesson sits in the optical middle of the
      page. .ac-nav stays pinned near the bottom since the zone still absorbs the
      remaining flex space. */
-  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px 0; min-height:0; }
+  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px 0; min-height:0; overflow:hidden; }
   .ac-lessonhead{ margin-bottom:12px; }
   .ac-count{ font-size:15px; }
   .ac-nav{ margin-top:8px; }

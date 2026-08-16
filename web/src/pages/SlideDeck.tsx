@@ -11,6 +11,7 @@
 // The HTML comes from a static file we author and review in git — never from the
 // database — so a leader authoring a custom module can never inject markup here.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { findDeckSlide } from '../lib/lessonNav';
 
 export type DeckSlide = { n: number; label: string; notes: string; html: string };
 export type DeckData = { width: number; height: number; vars: string; slides: DeckSlide[] };
@@ -111,7 +112,7 @@ export function SlideCanvas({
   }, [full]);
 
   const style = data
-    ? { width: data.width, height: natural || data.height, transform: `scale(${scale})`, ...varsOf(data.vars) }
+    ? { width: data.width, height: natural || data.height, transform: `scale(${scale || 0})`, visibility: scale ? 'visible' : 'hidden', ...varsOf(data.vars) }
     : undefined;
 
   const body = (
@@ -124,7 +125,7 @@ export function SlideCanvas({
   );
 
   return (
-    <div className={`deck-slide fu${full ? ' is-full' : ''}`}>
+    <div className={`deck-slide${full ? ' is-full' : ''}`}>
       {full ? (
         <div className="deck-fullwrap" role="dialog" aria-label={label ?? 'Slide'}>
           {body}
@@ -140,7 +141,7 @@ export function SlideCanvas({
   );
 }
 
-export function SlideView({ deck, n }: { deck: string; n: number }) {
+export function SlideView({ deck, n }: { deck: string; n: number | string }) {
   const [data, setData] = useState<DeckData | null>(null);
   const [err, setErr] = useState('');
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -157,7 +158,7 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
     return () => { alive = false; };
   }, [deck]);
 
-  const slide = data?.slides.find((s) => s.n === n) ?? null;
+  const slide = data ? findDeckSlide(data.slides, n) : null;
 
   // Measure the slide at its true design width, then fit it to the box.
   useLayoutEffect(() => {
@@ -199,7 +200,7 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
   }, [full]);
 
   const style = data
-    ? { width: data.width, height: natural || data.height, transform: `scale(${scale})`, ...varsOf(data.vars) }
+    ? { width: data.width, height: natural || data.height, transform: `scale(${scale || 0})`, visibility: scale ? 'visible' : 'hidden', ...varsOf(data.vars) }
     : undefined;
 
   const body = (
@@ -218,7 +219,7 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
   );
 
   return (
-    <div className={`deck-slide fu${full ? ' is-full' : ''}`}>
+    <div className={`deck-slide${full ? ' is-full' : ''}`}>
       {full ? (
         <div className="deck-fullwrap" role="dialog" aria-label={slide?.label ?? 'Slide'}>
           {body}

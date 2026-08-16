@@ -132,15 +132,20 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const refresh = () => loadRep().then(setData);
   useEffect(() => { void refresh(); void simScenarios().then(setSims); }, []);
   useEffect(() => { void myOrgRole(org.id).then(setRole); }, [org.id]);
+  const previewId = preview?.id ?? null;
   useEffect(() => {
-    if (!preview) { setPreviewQs([]); setPreviewView('lesson'); setPreviewResult(null); return; }
+    if (!previewId) { setPreviewQs([]); setPreviewView('lesson'); setPreviewResult(null); return; }
     setPreviewView('lesson');
     setPreviewResult(null);
-    setPreviewQs([]);
-    if (preview.questions) {
-      void loadRepQuestionsMasked(preview.id).then(setPreviewQs).catch(() => setPreviewQs([]));
+    // Depend on id, not the module object. A new object for the same module
+    // used to clear previewQs, which swapped Lesson for a spinner and remounted
+    // it at step 1 — wiping the counter and every sidebar checkmark.
+    if (preview?.questions) {
+      void loadRepQuestionsMasked(previewId).then(setPreviewQs).catch(() => setPreviewQs([]));
+    } else {
+      setPreviewQs([]);
     }
-  }, [preview]);
+  }, [previewId, preview?.questions]);
   useReveal([data, simTest, preview], canvasRef.current);
 
   // "Manage modules" — reuses the memberships.role signal, the exact same
@@ -268,6 +273,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     }
     return (
       <Lesson
+        key={preview.id}
         module={asCourse}
         canSkip
         onBack={closePreview}

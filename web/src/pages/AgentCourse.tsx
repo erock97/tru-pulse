@@ -11,6 +11,7 @@ import { SlideView } from './SlideDeck';
 import { DealSlide } from './DealSlide';
 import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
+import { applyLessonNav, createNavGate, type LessonNavIntent, type LessonNavState } from '../lib/lessonNav';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { LabExercise } from './RepLab';
@@ -571,8 +572,14 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
   canSkip?: boolean;
 }) {
   const cards = m.cards;
-  const [i, setI] = useState(0);
-  const [seen, setSeen] = useState(0);
+  const [nav, setNav] = useState<LessonNavState>({ index: 0, seen: 0 });
+  const gate = useRef(createNavGate(300));
+  useEffect(() => {
+    setNav({ index: 0, seen: 0 });
+    gate.current.reset();
+  }, [m.id]);
+  const i = nav.index;
+  const seen = nav.seen;
   const [picks, setPicks] = useState<Record<number, number>>({});
   const ac = accentOf(m.idx);
   const card = cards[i];
@@ -582,14 +589,17 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
   // A lab gates the same way a drill does: you do not move on until it passes.
   const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
   const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
-  const go = (n: number) => { setI(n); setSeen((s) => Math.max(s, n)); };
+  const move = (intent: LessonNavIntent) => {
+    if (!gate.current.allow()) return;
+    setNav((s) => applyLessonNav(s, intent, cards.length));
+  };
 
   const rail = (
     <>
       <RailHead module={m} onBack={onBack} />
       <div className="ac-rail-steps">
         {cards.map((c, k) => (
-          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => go(k)}>
+          <button type="button" key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => move({ type: 'goto', index: k })}>
             {c.t !== 'section' && <span className="ac-step-dot">{k < i ? '✓' : k + 1}</span>}
             <span className="ac-step-label">{cardLabel(c, k)}</span>
           </button>
@@ -625,12 +635,12 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
         />
       </div>
       <div className="ac-nav">
-        {i > 0 && <button className="btn ghost" onClick={() => setI(i - 1)}>Back</button>}
+        {i > 0 && <button type="button" className="btn ghost" onClick={() => move({ type: 'back' })}>Back</button>}
         {!last
-          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
-          : <button className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
+          ? <button type="button" className="btn ac-btn" disabled={!answered} onClick={() => move({ type: 'next' })}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
+          : <button type="button" className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
         {canSkip && !answered && (
-          <button className="btn ghost ac-skip" onClick={() => (last ? onDone() : go(i + 1))}>
+          <button type="button" className="btn ghost ac-skip" onClick={() => (last ? onDone() : move({ type: 'next' }))}>
             Skip this step
           </button>
         )}
