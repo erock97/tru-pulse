@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { matchPublicRoute, PUBLIC_ROUTES } from './routes';
 
 describe('matchPublicRoute', () => {
-  it('matches /about and ignores a trailing slash or case', () => {
+  it('matches /about and /services and ignores a trailing slash or case', () => {
     expect(matchPublicRoute('/about', '')).toBe('/about');
     expect(matchPublicRoute('/about/', '')).toBe('/about');
     expect(matchPublicRoute('/About', '')).toBe('/about');
+    expect(matchPublicRoute('/services', '')).toBe('/services');
+    expect(matchPublicRoute('/services/', '')).toBe('/services');
+    expect(matchPublicRoute('/Services', '')).toBe('/services');
   });
 
-  it('never claims the root path — that is the product', () => {
+  it('never claims the root path — logged-in HQ stays at /', () => {
     expect(matchPublicRoute('/', '')).toBeNull();
     expect(matchPublicRoute('', '')).toBeNull();
     expect(matchPublicRoute('/', '#/pulse')).toBeNull();
@@ -16,19 +19,21 @@ describe('matchPublicRoute', () => {
 
   it('yields to the product when an app hash route is present', () => {
     expect(matchPublicRoute('/about', '#/pulse')).toBeNull();
-    expect(matchPublicRoute('/about', '#/login')).toBeNull();
+    expect(matchPublicRoute('/services', '#/login')).toBeNull();
   });
 
   it('still matches when the hash is an in-page anchor', () => {
     expect(matchPublicRoute('/about', '#cta')).toBe('/about');
+    expect(matchPublicRoute('/services', '#packages')).toBe('/services');
   });
 
-  it('returns null for anything unknown', () => {
-    expect(matchPublicRoute('/services', '')).toBeNull();
+  it('returns null for anything unknown — Work, Apply, and legal stay off this branch', () => {
+    expect(matchPublicRoute('/work', '')).toBeNull();
+    expect(matchPublicRoute('/apply', '')).toBeNull();
     expect(matchPublicRoute('/insights', '')).toBeNull();
   });
 
-  it('exposes only the about path until the rest of the marketing site lands on main', () => {
-    expect(PUBLIC_ROUTES).toEqual(['/about']);
+  it('lists root first so PublicSite can render the marketing home, then the sub-routes on this branch', () => {
+    expect(PUBLIC_ROUTES).toEqual(['/', '/services', '/about']);
   });
 });

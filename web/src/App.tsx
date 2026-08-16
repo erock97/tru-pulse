@@ -4,6 +4,7 @@ import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, typ
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
 import Login from './pages/Login';
+import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -150,7 +151,13 @@ export default function App() {
   if (session === undefined || (session && org === undefined)) {
     return <div className="center-wrap"><div className="spinner" /></div>;
   }
-  if (!session) return <Login />;
+  if (!session) {
+    if (route === '/login') return <Login />;
+    // Marketing home. Only reached when signed out, so a signed-in visitor
+    // at "/" still gets HQ. /services and /about never reach App — main.tsx
+    // routes them (see routes.ts). Login stays at #/login.
+    return <PublicSite route="/" />;
+  }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
