@@ -7,6 +7,15 @@ import type { PublicRoute } from './routes';
 
 export type PageMeta = { title: string; description: string; path: PublicRoute };
 
+// Existing brand PNG in public/. Built from the host serving this page so a
+// Pages preview unfurl hits that preview's /icon-512.png, not live truhq.co
+// (which still serves HTML for that path until this ships).
+export const SHARE_IMAGE_PATH = '/icon-512.png';
+
+export function shareImageUrl(origin: string = location.origin): string {
+  return `${origin}${SHARE_IMAGE_PATH}`;
+}
+
 function upsertMeta(selector: string, attrs: Record<string, string>) {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
   if (!el) {
@@ -26,7 +35,9 @@ export function applyHead({ title, description, path }: PageMeta): void {
   upsertMeta('meta[property="og:url"]', { property: 'og:url', content: url });
   upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
   upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: BUSINESS.brandFull });
+  upsertMeta('meta[property="og:image"]', { property: 'og:image', content: shareImageUrl() });
   upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
+  upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: shareImageUrl() });
 
   let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   if (!link) {

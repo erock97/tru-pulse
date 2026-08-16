@@ -30,3 +30,18 @@
   #   <object> from signed Supabase URLs — 'none' here would break the document viewer.
   # frame-ancestors: nobody may embed us.
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://api.truhq.co https://*.supabase.co https://cloudflareinsights.com; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; font-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-src 'self' https://www.loom.com https://*.supabase.co; object-src 'self' https://*.supabase.co; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# Icon and share-image paths. nosniff is on /* above, so these must be
+# image/* — never the HTML the SPA fallback used to return for /favicon.ico.
+/favicon.ico
+  Content-Type: image/x-icon
+/favicon.svg
+  Content-Type: image/svg+xml
+/apple-touch-icon.png
+  Content-Type: image/png
+/icon-192.png
+  Content-Type: image/png
+/icon-512.png
+  Content-Type: image/png
+/icon-maskable-512.png
+  Content-Type: image/png
