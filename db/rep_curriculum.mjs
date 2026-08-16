@@ -24,8 +24,10 @@ const MODULES = [
     idx: 1,
     summary: 'The program standards — and the pipeline that keeps you in it.',
     body: 'Three numbers Zillow holds you to, and the stages that must be used.',
+    // Keep Module 1 cards in sync with web/src/lib/welcomePreferred.ts (demo + tests).
+    // Do not run this file against a live project as a side effect of a polish PR.
     cards: [
-      { t: 'video', title: 'A welcome from your team leader', url: '', body: 'Two minutes from the person who built this team — why you’re here, and what the standard looks like.' },
+      { t: 'intro', title: 'A welcome from your team leader', body: 'From the person who built this team — why you’re here, and what the standard looks like.' },
       { t: 'text', k: 'Welcome to Preferred', body: 'You’ve been handed something most agents grind for years to earn: a seat on a Zillow Preferred team. Buyers come to you — live transfers, warm handoffs, real people actively looking at homes today.\n\nThe seat isn’t free. Zillow holds every agent on this team to three numbers, and the team holds itself to a pipeline discipline that keeps those numbers visible. This module walks you through both — the standards and the stages — so nothing in this program ever surprises you.\n\nRead it slowly. Everything else in this course builds on what’s in here.' },
       { t: 'section', n: 'Part 1 of 2', title: 'The standards', body: 'Three numbers Zillow holds YOU to — from day one.' },
       { t: 'stat', big: '25%', label: 'minimum Pickup Rate — answering the INITIAL connection call and accepting the lead. Yours, not the team’s.', src: 'Zillow Preferred agent standard' },

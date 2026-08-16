@@ -18,6 +18,7 @@ const accentOf = (idx: number) => ACCENTS[(idx - 1) % ACCENTS.length];
 // Short sidebar label for each lesson screen.
 function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
+  if (c.t === 'intro') return c.title ?? 'Welcome';
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
@@ -495,7 +496,7 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
 function Shell({ accent, num, rail, children }: { accent: string; num: number; rail: ReactNode; children: ReactNode }) {
   return (
-    <div className="ac ac-shell tru-dark" style={{ ['--mac' as string]: accent }}>
+    <div className="ac ac-shell tru-dark" data-module={num} style={{ ['--mac' as string]: accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>
@@ -621,8 +622,21 @@ function MediaCard({ card }: { card: LessonCard }) {
   );
 }
 
+function WelcomeIntro({ title, body }: { title?: string; body?: string }) {
+  return (
+    <div className="ac-intro fu">
+      <div className="ac-intro-tag">From your team leader</div>
+      {title && <h2 className="ac-intro-title">{title}</h2>}
+      {body && <p className="ac-intro-body">{body}</p>}
+    </div>
+  );
+}
+
 function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
   if (!card) return null;
+  if (card.t === 'intro') {
+    return <WelcomeIntro title={card.title} body={card.body} />;
+  }
   if (card.t === 'section') {
     return (
       <div className="ac-sect fu">
@@ -682,20 +696,14 @@ function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick:
     );
   }
   if (card.t === 'video') {
+    if (!card.url) return <WelcomeIntro title={card.title} body={card.body} />;
     return (
       <div className="ac-video fu">
         <div className="ac-video-tag">🎬 Watch</div>
         {card.title && <div className="ac-video-title">{card.title}</div>}
-        {card.url ? (
-          <div className="ac-video-frame">
-            <iframe src={embedUrl(card.url)} allowFullScreen title={card.title ?? 'Lesson video'} />
-          </div>
-        ) : (
-          <div className="ac-video-soon">
-            <span className="ac-video-play">▶</span>
-            <span>A personal welcome from your team leader — video coming soon.</span>
-          </div>
-        )}
+        <div className="ac-video-frame">
+          <iframe src={embedUrl(card.url)} allowFullScreen title={card.title ?? 'Lesson video'} />
+        </div>
         {card.body && <p className="ac-video-note">{card.body}</p>}
       </div>
     );
@@ -746,7 +754,8 @@ function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick:
             }
             return (
               <button key={ci} className={cls} disabled={answered} onClick={() => onPick(ci)}>
-                <span className="ac-choice-mark">{answered && ci === card.answer ? '✓' : answered && ci === pick ? '✗' : String.fromCharCode(65 + ci)}</span>{c}
+                <span className="ac-choice-mark">{answered && ci === card.answer ? '✓' : answered && ci === pick ? '✗' : String.fromCharCode(65 + ci)}</span>
+                <span className="ac-choice-txt">{c}</span>
               </button>
             );
           })}
@@ -824,7 +833,8 @@ function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: (
         <div className="ac-choices">
           {q.choices.map((c, ci) => (
             <button key={ci} className={`ac-choice${chosen === ci ? ' on' : ''}`} onClick={() => pick(ci)}>
-              <span className="ac-choice-mark">{String.fromCharCode(65 + ci)}</span>{c}
+              <span className="ac-choice-mark">{String.fromCharCode(65 + ci)}</span>
+              <span className="ac-choice-txt">{c}</span>
             </button>
           ))}
         </div>

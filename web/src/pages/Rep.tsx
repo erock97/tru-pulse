@@ -1000,6 +1000,15 @@ function CardEditorRow({ card, onChange, onRemove, onMove, canMoveUp, canMoveDow
       </div>
     );
   }
+  if (card.t === 'intro') {
+    return (
+      <div className="rp-cardrow">
+        {head}
+        <input type="text" value={card.title ?? ''} onChange={(e) => onChange({ title: e.target.value })} placeholder="Title" />
+        <textarea value={card.body ?? ''} onChange={(e) => onChange({ body: e.target.value })} placeholder="Welcome note" rows={3} />
+      </div>
+    );
+  }
   if (card.t === 'callout') {
     return (
       <div className="rp-cardrow">
