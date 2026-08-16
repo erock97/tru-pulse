@@ -154,8 +154,8 @@ export default function App() {
   if (!session) {
     if (route === '/login') return <Login />;
     // Marketing home. Only reached when signed out, so a signed-in visitor
-    // at "/" still gets HQ. /services and /about never reach App — main.tsx
-    // routes them (see routes.ts). Login stays at #/login.
+    // at "/" still gets HQ. /services, /about, and /apply never reach App —
+    // main.tsx routes them (see routes.ts). Login stays at #/login.
     return <PublicSite route="/" />;
   }
   if (!org) {

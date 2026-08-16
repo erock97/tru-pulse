@@ -10,10 +10,10 @@ import './styles.css';
 // never signs out is exactly the one still carrying a pre-cutover token.
 clearLegacyTokens();
 
-// /services and /about are marketing paths. Resolve them before App mounts so
-// they never flash a login screen. "/" stays the product for signed-in users
-// — matchPublicRoute never claims it. App renders the marketing home itself
-// when signed out.
+// /services, /about, and /apply are marketing paths. Resolve them before App
+// mounts so they never flash a login screen. "/" stays the product for
+// signed-in users — matchPublicRoute never claims it. App renders the
+// marketing home itself when signed out.
 const publicRoute = matchPublicRoute(window.location.pathname, window.location.hash);
 
 createRoot(document.getElementById('root')!).render(
