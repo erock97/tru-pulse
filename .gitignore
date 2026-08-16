@@ -10,3 +10,4 @@ dist/
 .DS_Store
 .gstack/
 graphify-out/
+.env.development.local

@@ -443,7 +443,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-lessontitle{ font-size:23px; margin:2px 0 12px; color:var(--ac-text); }
 .ac-progress{ height:9px; background:var(--ac-card); border-radius:20px; overflow:hidden; margin-bottom:20px; }
 .ac-progress-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg, var(--mac), color-mix(in srgb, var(--mac) 65%, #fff)); transition:width .45s cubic-bezier(.4,0,.2,1); box-shadow:0 0 8px color-mix(in srgb, var(--mac) 55%, transparent); }
-.ac-cardzone{ min-height:240px; }
+.ac-cardzone{ min-height:240px; overflow:hidden; }
 
 /* text card */
 .ac-card{ background:var(--ac-card-flat); border:1px solid var(--ac-border-soft); border-radius:18px; padding:26px 24px; }
@@ -531,7 +531,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ac-choice.wrong .ac-choice-mark{ background:var(--terra); color:#fff; }
 
 /* nav */
-.ac-nav{ display:flex; gap:12px; margin-top:20px; }
+.ac-nav{ display:flex; gap:12px; margin-top:20px; position:relative; z-index:2; }
 .ac-nav.center{ justify-content:center; }
 .ac-nav .btn{ flex:1; padding:14px 18px; font-size:15px; border-radius:12px; }
 .ac-nav.center .btn{ flex:0 1 auto; min-width:160px; }
@@ -681,7 +681,7 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
      The zone centers what's left, so a lesson sits in the optical middle of the
      page. .ac-nav stays pinned near the bottom since the zone still absorbs the
      remaining flex space. */
-  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px 0; min-height:0; }
+  .ac-cardzone{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:30px 0; min-height:0; overflow:hidden; }
   .ac-lessonhead{ margin-bottom:12px; }
   .ac-count{ font-size:15px; }
   .ac-nav{ margin-top:8px; }
@@ -784,3 +784,349 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   .ac-drill-q{ font-size:28px; }
   .ac-qprompt{ font-size:38px; }
 }
+
+/* ── Practice record labs ────────────────────────────────────────────────────
+   The record you work FROM has to stay legible while you work. The earlier
+   version made you expand the screenshot, read it, close it, and type from
+   memory. So on a wide screen the record pins itself beside the form and stays
+   put while you scroll; on a narrow one it stacks, still full width. Nothing
+   here is ever a thumbnail. */
+.lab{ display:grid; grid-template-columns:1fr; gap:22px; align-items:start; }
+@media(min-width:1100px){
+  .lab{ grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); }
+  .lab-head{ grid-column:1 / -1; }
+  .lab-record{ position:sticky; top:18px; max-height:calc(100vh - 36px); overflow-y:auto; }
+}
+.lab-head{ margin:0; }
+.lab-head h1{ font-size:30px; line-height:1.15; margin:8px 0 10px; }
+.lab-head p{ color:var(--ac-text-60); max-width:62ch; }
+.lab-record, .lab-work{
+  background:var(--ac-card-flat); border:1px solid var(--ac-border-soft);
+  border-radius:16px; padding:22px 22px 24px;
+}
+.lab-record h3, .lab-work h3{ font-size:13px; letter-spacing:.09em; text-transform:uppercase; color:var(--ac-text-60); margin:0 0 10px; font-weight:800; }
+.lab-record h3:not(:first-child){ margin-top:26px; }
+
+/* screenshots: large by default, zoom in place, full size in a new tab */
+.lab-shots{ display:grid; grid-template-columns:1fr; gap:16px; margin:0 0 4px; }
+.lab-shots figure{ margin:0; }
+.lab-shot{ display:block; width:100%; padding:0; border-radius:10px; overflow:hidden;
+  border:1px solid var(--ac-border-soft); background:#fff; cursor:zoom-in; }
+.lab-shot img{ display:block; width:100%; height:auto; }
+.lab-shot.zoomed{ cursor:zoom-out; overflow:auto; max-height:72vh; }
+.lab-shot.zoomed img{ width:190%; max-width:none; }
+.lab-shots figcaption{ display:flex; gap:12px; align-items:baseline; font-size:12.5px; color:var(--ac-text-60); margin-top:6px; font-weight:600; }
+.lab-shots figcaption a{ color:var(--gold); font-weight:700; }
+
+.lab-facts{ margin:0; }
+.lab-facts > div{ padding:11px 0; border-bottom:1px solid var(--ac-border-soft); }
+.lab-facts > div:last-child{ border-bottom:0; padding-bottom:0; }
+.lab-facts dt{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ac-text-60); font-weight:800; }
+.lab-facts dd{ margin:5px 0 0; font-size:15.5px; line-height:1.55; color:var(--ac-text); }
+
+.lab-phases{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+.lab-phases button{
+  flex:1 1 180px; padding:10px 14px; border-radius:10px; font-size:13.5px; font-weight:700;
+  background:transparent; color:var(--ac-text); border:1px solid var(--ac-border-soft); cursor:pointer;
+}
+.lab-phases button.on{ border-color:var(--gold); color:var(--gold); background:color-mix(in srgb, var(--gold) 10%, transparent); }
+.lab-phases button:disabled{ opacity:.4; cursor:default; }
+
+.lab-work label{ display:flex; flex-direction:column; gap:7px; font-size:13.5px; font-weight:600; margin-bottom:15px; color:var(--ac-text); }
+.lab-work input, .lab-work select, .lab-work textarea{
+  background:#0C0A08; color:var(--ac-text); border:1px solid var(--ac-border-soft);
+  border-radius:9px; padding:12px 13px; font:inherit; font-size:15px; line-height:1.5; width:100%;
+}
+.lab-work textarea{ resize:vertical; min-height:150px; }
+.lab-work input:focus, .lab-work select:focus, .lab-work textarea:focus{ outline:none; border-color:var(--gold); }
+.lab-work input:disabled, .lab-work select:disabled, .lab-work textarea:disabled{ opacity:.5; }
+.lab-row{ display:grid; grid-template-columns:1fr; gap:12px; }
+@media(min-width:640px){ .lab-row{ grid-template-columns:1fr 1fr; } }
+.lab-risks{ list-style:none; padding:0; margin:0 0 18px; }
+.lab-risks li{ margin:0 0 4px; }
+.lab-risks label{ flex-direction:row; align-items:flex-start; gap:11px; font-size:15px; font-weight:500;
+  padding:11px 13px; border:1px solid var(--ac-border-soft); border-radius:10px; margin:0; cursor:pointer; }
+.lab-risks label:hover{ border-color:var(--gold); }
+.lab-risks input{ width:auto; flex-shrink:0; margin-top:2px; }
+.lab-hint{ font-size:13.5px; color:var(--ac-text-60); margin:8px 0 16px; line-height:1.55; }
+.lab-fail{ margin:0 0 14px; padding-left:20px; color:#e08a7a; font-size:14px; line-height:1.6; }
+.lab-ok{ color:#7fbf94; font-weight:700; font-size:14.5px; margin:0 0 14px; }
+
+/* a lab living inside a lesson */
+.ac-labcard{ }
+.ac-labcard-title{ font-family:Georgia,serif; font-size:24px; font-weight:800; color:var(--ac-text); margin:0 0 10px; line-height:1.2; }
+.ac-labcard-body{ font-size:16px; line-height:1.6; color:var(--ac-text-80, var(--ac-text)); margin:0 0 22px; max-width:62ch; }
+
+/* ── Native slide rendering (Day 1 deck) ─────────────────────────────────────
+   Each slide is the deck's own 1920x1080 markup, scaled to fit the lesson
+   column. Its type is remapped to the app's self-hosted brand fonts: the export
+   referenced Archivo and Source Serif through bundle-internal font files that do
+   not exist outside it, and the CSP forbids fetching webfonts. */
+/* Slides run as wide as the stage allows. Small is never right for a deck. */
+.deck-slide{ width:100%; }
+.deck-fullbtn{ display:inline-block; margin-top:14px; font-size:13px; font-weight:800; letter-spacing:.03em;
+  color:var(--gold); padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--gold) 42%, transparent);
+  background:color-mix(in srgb, var(--gold) 10%, transparent); }
+.deck-fullbtn:hover{ background:color-mix(in srgb, var(--gold) 20%, transparent); border-color:var(--gold); }
+.deck-fullwrap{ position:fixed; inset:0; z-index:9999; background:#0B0805;
+  display:flex; align-items:center; justify-content:center; padding:24px; }
+.deck-fullwrap .deck-box{ border-radius:12px; }
+.deck-fullbtn.is-out{ position:fixed; top:18px; right:20px; margin:0; z-index:10000; }
+.deck-box{ position:relative; width:100%; overflow:hidden; border-radius:16px;
+  border:1px solid var(--ac-border-soft); background:#180F08;
+  box-shadow:0 26px 64px -36px rgba(0,0,0,.95); }
+.deck-scale{ position:absolute; top:0; left:0; transform-origin:top left; }
+.deck-scale section{ width:1920px; min-height:1080px; height:auto; position:relative; }
+.deck-scale img{ max-width:none; }
+.deck-scale section{ font-family:"Hanken Grotesk", system-ui, sans-serif; }
+
+/* The export staggers entrance animation with data-a / data-w indexes. Kept, so
+   a slide still assembles itself the way Eric built it. */
+@keyframes deck-rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+.deck-scale [data-a], .deck-scale [data-w]{ animation:deck-rise .52s cubic-bezier(.22,.61,.36,1) both; }
+.deck-scale [data-a="1"],.deck-scale [data-w="1"]{ animation-delay:.06s }
+.deck-scale [data-a="2"],.deck-scale [data-w="2"]{ animation-delay:.14s }
+.deck-scale [data-a="3"],.deck-scale [data-w="3"]{ animation-delay:.22s }
+.deck-scale [data-a="4"],.deck-scale [data-w="4"]{ animation-delay:.30s }
+.deck-scale [data-a="5"],.deck-scale [data-w="5"]{ animation-delay:.38s }
+.deck-scale [data-a="6"],.deck-scale [data-w="6"]{ animation-delay:.46s }
+.deck-scale [data-a="7"],.deck-scale [data-w="7"]{ animation-delay:.54s }
+.deck-scale [data-a="8"],.deck-scale [data-w="8"]{ animation-delay:.62s }
+.deck-scale [data-a="9"],.deck-scale [data-w="9"]{ animation-delay:.70s }
+@media (prefers-reduced-motion: reduce){
+  .deck-scale [data-a], .deck-scale [data-w]{ animation:none; opacity:1; transform:none; }
+}
+
+/* Slides and the record lab get the whole stage, not the reading column. The
+   watermark is dropped there too — it was sitting on top of slide content. */
+@media(min-width:1000px){
+  .ac-shell-wide .ac-stage-inner{ max-width:1560px; }
+  .ac-shell-wide .ac-watermark{ display:none; }
+  .ac-shell-wide .ac-cardzone{ padding:18px 0; }
+}
+
+/* ── Practice record: the REAL Follow Up Boss screen, made interactive ───────
+   Positions are percentages of the screenshot's 1810x869. SIZES ARE NOT.
+   Every font size, radius and control here is written as calc(Npx * var(--k)),
+   where --k is (rendered image width / 1810), measured by the component. That
+   is the whole trick: a 13px control in Follow Up Boss renders at 13px here at
+   any container width. Sizing in vw was what made the earlier build look like
+   giant text painted over a small screenshot. */
+.pr{ display:flex; flex-direction:column; gap:18px; }
+.pr-brieftitle{ font-family:Georgia,serif; font-size:23px; font-weight:800; color:var(--ac-text); margin:0 0 10px; }
+.pr-situation{ font-size:16px; line-height:1.65; color:var(--ac-text); margin:0 0 16px; max-width:78ch; }
+/* The job list sticks to the top of the viewport while they work. The record is
+   taller than a screen, so a list that scrolls away leaves someone staring at a
+   contact with no idea what was asked of them — which is exactly what happened.
+   It also ticks itself off, so "what is left" is never a guess. */
+.pr-jobs{ position:sticky; top:8px; z-index:12;
+  background:color-mix(in srgb, var(--gold) 11%, #17110A);
+  border:1px solid color-mix(in srgb, var(--gold) 34%, transparent); border-radius:12px;
+  padding:15px 20px; box-shadow:0 14px 30px -18px rgba(0,0,0,.9); }
+.pr-jobs h4{ margin:0 0 11px; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--gold); font-weight:800; }
+.pr-jobs ol{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px; }
+.pr-jobs li{ display:flex; gap:11px; align-items:flex-start;
+  font-size:15.5px; line-height:1.5; color:var(--ac-text); }
+.pr-jobs li.is-done{ color:var(--ac-text-60); text-decoration:line-through;
+  text-decoration-color:color-mix(in srgb, var(--green) 60%, transparent); }
+.pr-tick{ flex-shrink:0; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+  font-size:12px; font-weight:800; border:1.5px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  color:var(--gold); margin-top:1px; }
+.pr-jobs li.is-done .pr-tick{ background:var(--green, #3fa06c); border-color:var(--green, #3fa06c); color:#fff; }
+.lab-jobs{ grid-column:1 / -1; }
+.pr-safe{ font-size:13.5px; color:var(--ac-text-60); margin:14px 0 0; }
+.pr-hintbtn{ background:none; border:0; padding:0; color:var(--gold); font:inherit; font-weight:700;
+  text-decoration:underline; cursor:pointer; }
+
+/* Diagnosis, which replaces the job list rather than sitting beside it — showing
+   the fix list while asking what is broken hands over the answer. */
+.pr-auditprompt{ margin:0 0 14px; font-size:15px; line-height:1.55; color:var(--ac-text); max-width:64ch; }
+.pr-faults{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:7px; }
+.pr-faults label{ display:flex; align-items:flex-start; gap:11px; cursor:pointer;
+  font-size:15px; font-weight:500; line-height:1.5; margin:0;
+  padding:11px 13px; border-radius:9px; border:1px solid var(--ac-border-soft); }
+.pr-faults label:hover{ border-color:var(--gold); }
+/* width:auto is load-bearing. The global `input{width:100%}` up at the top of this
+   file stretches a bare checkbox to the full width of its row, which shoves the
+   text outside the label and wraps it one word per line. `.lab-risks input` has
+   always countered it; this rule did not, and that is exactly what it looked like. */
+.pr-faults input{ width:auto; flex-shrink:0; margin-top:3px; }
+.pr-audit .pr-checks{ margin-bottom:16px; }
+.pr-locked{ font-size:13.5px; color:var(--ac-text-60); margin:0; }
+
+.fub{ position:relative; width:100%; border-radius:12px; overflow:hidden;
+  border:1px solid var(--ac-border-soft); background:#fff; line-height:1.35;
+  color:#2f3d4a; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+.fub-shot{ display:block; width:100%; height:auto; }
+.fub-hot{ position:absolute; box-sizing:border-box; }
+
+/* opt-in hints, off by default: finding things IS the exercise */
+.fub.show-hints .hintable{ outline:calc(2px * var(--k)) solid #1a9cf0;
+  outline-offset:calc(2px * var(--k)); border-radius:calc(4px * var(--k)); }
+
+/* the header subline, so the record reflects this situation */
+.fub-sub{ left:5%; top:6.3%; width:18%; height:2.4%; background:#fff;
+  font-size:calc(13px * var(--k)); color:#8a99a8; display:flex; align-items:center; }
+
+/* Renaming the contact. The capture is 1810x869 and the panel behind all four of
+   these is white, so a box in the panel's own colour repaints cleanly. Each one
+   starts AFTER the icon or label on its row — cover those and it stops looking
+   like Follow Up Boss. */
+.fub-av{ left:1.38%; top:3.22%; width:3.04%; height:6.33%; border-radius:50%;
+  background:#b98d85; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:calc(19px * var(--k)); font-weight:600; letter-spacing:.02em; }
+.fub-name{ left:5%; top:2.9%; width:16%; height:3.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(22px * var(--k));
+  font-weight:600; color:#2f3d4a; }
+.fub-email{ left:3%; top:15.3%; width:15%; height:2.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(14px * var(--k)); color:#1877d2; }
+.fub-social{ left:4.5%; top:92.3%; width:17%; height:2.5%; background:#fff;
+  display:flex; align-items:center; font-size:calc(14px * var(--k)); color:#1877d2; }
+
+/* Read-only while the learner is still diagnosing. The record has to stay fully
+   legible — reading it IS the exercise — so this dims nothing and only stops clicks. */
+.fub.is-locked .fub-hot{ pointer-events:none; }
+
+/* The mocked Follow Up Boss dialogs are a WHITE product UI sitting inside our dark
+   app, and truHqDark.css paints every input dark with !important — which beats even
+   an inline style. Both mock scopes opt back out, or the Create Task and Create Deal
+   dialogs render as black boxes and stop looking like the product being taught. */
+.fub-modal input, .fub-modal select,
+.deck-mock input, .deck-mock select{
+  background:#fff !important; color:#2f3d4a !important;
+  border:1px solid #d7dee5 !important; border-radius:5px !important;
+}
+.fub-modal input::placeholder, .deck-mock input::placeholder{ color:#a9b3bd !important; }
+
+/* The mock has to paint above its siblings on the slide. The deck's entrance
+   animation puts a transform on every [data-a], and a transform makes its own
+   stacking context — so the takeaway line below was showing straight through the
+   open dialog. */
+.deck-mock{ position:relative; z-index:20; }
+
+/* Stage — reading state, then FUB's bordered edit field with green/red */
+.fub-stageread{ left:3.6%; top:37.4%; width:14.5%; height:2.9%; display:flex; align-items:center;
+  padding:0 calc(4px * var(--k)); background:#fff; border:1px solid transparent;
+  border-radius:calc(3px * var(--k)); cursor:pointer; font-size:calc(14px * var(--k));
+  color:#2f3d4a; white-space:nowrap; }
+.fub-stageread:hover{ border-color:#c3ced8; }
+.fub-stageedit{ left:1%; top:36.2%; width:23.6%; height:4.3%; display:flex; align-items:center;
+  gap:calc(7px * var(--k)); background:#fff; }
+.fub-stagefield{ flex:1; height:100%; display:flex; align-items:center; gap:calc(7px * var(--k));
+  padding:0 calc(9px * var(--k)); background:#fff; border:1px solid #c3ced8;
+  border-radius:calc(4px * var(--k)); cursor:pointer; min-width:0; font-size:calc(14px * var(--k)); }
+.fub-stagefield b{ font-weight:700; flex-shrink:0; }
+.fub-stagepick{ flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fub-caret{ color:#8a99a8; flex-shrink:0; font-size:calc(12px * var(--k)); }
+.fub-ok, .fub-cancel{ flex-shrink:0; width:calc(26px * var(--k)); height:calc(26px * var(--k));
+  border-radius:50%; border:0; color:#fff; cursor:pointer; display:grid; place-items:center;
+  font-size:calc(13px * var(--k)); line-height:1; padding:0; }
+.fub-ok{ background:#34c47c; }
+.fub-cancel{ background:#f4675f; }
+.fub-menu{ position:absolute; top:104%; left:0; z-index:6; width:calc(260px * var(--k)); background:#fff;
+  border:1px solid #d7dee5; border-radius:calc(5px * var(--k));
+  box-shadow:0 calc(12px * var(--k)) calc(28px * var(--k)) rgba(19,41,63,.22); overflow:hidden; }
+.fub-menusearch{ width:calc(100% - (16px * var(--k))); margin:calc(8px * var(--k));
+  padding:calc(5px * var(--k)) calc(8px * var(--k)); font-size:calc(13px * var(--k));
+  border:1px solid #c3ced8; border-radius:calc(4px * var(--k)); color:#2f3d4a; }
+.fub-menu ul{ list-style:none; margin:0; padding:0 0 calc(4px * var(--k));
+  max-height:calc(300px * var(--k)); overflow-y:auto; }
+.fub-menuhead{ padding:calc(6px * var(--k)) calc(12px * var(--k)); font-size:calc(13px * var(--k)); color:#8a99a8; }
+.fub-menu li button{ display:block; width:100%; text-align:left;
+  padding:calc(7px * var(--k)) calc(12px * var(--k)); font-size:calc(13px * var(--k));
+  color:#2f3d4a; background:none; border:0; border-top:1px solid #f0f3f6; cursor:pointer; }
+.fub-menu li button:hover{ background:#eef4fb; }
+.fub-menu li button.on{ background:#eef4fb; font-weight:700; }
+
+/* the note composer */
+.fub-note{ left:26.7%; top:8.7%; width:47.1%; height:14.8%; resize:none; border:0; outline:0;
+  background:#fdfaf0; color:#3d4852; padding:calc(10px * var(--k)) calc(14px * var(--k));
+  font-size:calc(15px * var(--k)); border-radius:calc(3px * var(--k)); font-family:inherit; }
+.fub-note::placeholder{ color:#a9b3bd; }
+.fub-notebtn{ left:68%; top:25.3%; width:5.8%; height:3.8%; border:0; border-radius:calc(20px * var(--k));
+  cursor:pointer; background:#eab863; color:#fff; font-size:calc(13px * var(--k)); font-weight:600; padding:0; }
+.fub-notebtn:disabled{ background:#f0d9ae; cursor:default; }
+
+/* Tasks and Deals panels */
+.fub-taskadd{ left:96.1%; top:6.7%; width:1.5%; height:2.7%; }
+.fub-dealadd{ left:96.1%; top:38.1%; width:1.5%; height:2.7%; }
+.fub-taskadd, .fub-dealadd{ border-radius:50%; border:0; cursor:pointer; background:#1a9cf0; color:#fff;
+  font-size:calc(15px * var(--k)); font-weight:700; line-height:1; padding:0; }
+.fub-tasklist{ left:76%; top:11%; width:22%; background:#fff; }
+.fub-deallist{ left:76%; top:42.4%; width:22%; background:#fff; }
+.fub-empty{ font-size:calc(14px * var(--k)); color:#8a99a8; }
+.fub-taskitem{ display:flex; gap:calc(9px * var(--k)); align-items:flex-start; }
+.fub-taskbox{ flex-shrink:0; width:calc(14px * var(--k)); height:calc(14px * var(--k));
+  margin-top:calc(2px * var(--k)); border:1px solid #c3ced8; border-radius:calc(2px * var(--k)); }
+.fub-taskname{ font-size:calc(14px * var(--k)); color:#e8833a; font-weight:600; }
+.fub-taskmeta{ font-size:calc(12.5px * var(--k)); color:#8a99a8; margin-top:calc(2px * var(--k)); }
+.fub-dealitem{ display:flex; flex-direction:column; gap:calc(2px * var(--k)); }
+.fub-dealname{ font-size:calc(14px * var(--k)); color:#1877d2; font-weight:600; }
+.fub-dealmeta{ font-size:calc(12.5px * var(--k)); color:#8a99a8; }
+
+/* what you did, on the record's own timeline */
+.fub-log{ left:24.5%; top:55%; width:50%; background:#fff; }
+.fub-item{ display:flex; gap:calc(13px * var(--k)); padding:calc(9px * var(--k)) 0 calc(11px * var(--k)); }
+.fub-pin{ flex-shrink:0; width:calc(26px * var(--k)); height:calc(26px * var(--k)); border-radius:50%;
+  background:#eab863; margin-top:calc(2px * var(--k)); }
+.fub-item.is-stage .fub-pin{ background:#34c47c; }
+.fub-item.is-deal .fub-pin{ background:#1a9cf0; }
+.fub-itembody{ flex:1; min-width:0; }
+.fub-itemhead{ display:flex; align-items:center; gap:calc(8px * var(--k));
+  padding-bottom:calc(6px * var(--k)); border-bottom:1px solid #edf1f5; }
+.fub-itemav{ width:calc(26px * var(--k)); height:calc(26px * var(--k)); border-radius:50%;
+  background:#d4614f; color:#fff; display:grid; place-items:center;
+  font-size:calc(11px * var(--k)); font-weight:700; }
+.fub-itemwho{ font-size:calc(14px * var(--k)); font-weight:700; color:#2f3d4a; }
+.fub-itemwhen{ font-size:calc(12.5px * var(--k)); color:#8a99a8; }
+.fub-itemtext{ font-size:calc(14px * var(--k)); color:#2f3d4a; padding-top:calc(7px * var(--k)); }
+
+/* FUB's own modals */
+.fub-modalwrap{ position:absolute; inset:0; z-index:20; background:rgba(19,41,63,.45);
+  display:flex; align-items:flex-start; justify-content:center; padding-top:6%; }
+.fub-modal{ width:46%; background:#fff; border-radius:calc(8px * var(--k)); padding:calc(22px * var(--k));
+  box-shadow:0 calc(26px * var(--k)) calc(60px * var(--k)) rgba(19,41,63,.4); }
+.fub-modal.wide{ width:54%; }
+.fub-modalhead{ display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:calc(18px * var(--k)); font-size:calc(17px * var(--k)); color:#2f3d4a; font-weight:600; }
+.fub-modalhead button{ background:none; border:0; color:#8a99a8; cursor:pointer;
+  font-size:calc(16px * var(--k)); padding:0; }
+.fub-modal input, .fub-modal select{ border:1px solid #d7dee5; border-radius:calc(5px * var(--k));
+  padding:calc(9px * var(--k)) calc(11px * var(--k)); font-size:calc(14px * var(--k));
+  color:#2f3d4a; width:100%; background:#fff; font-family:inherit; }
+.fub-full{ margin-bottom:calc(14px * var(--k)); }
+.fub-two{ display:grid; grid-template-columns:1fr 1fr; gap:calc(14px * var(--k));
+  margin-bottom:calc(14px * var(--k)); }
+.fub-two label{ display:flex; flex-direction:column; gap:calc(5px * var(--k));
+  font-size:calc(12px * var(--k)); font-weight:700; color:#5b6b7a; }
+.fub-crumb{ font-size:calc(13px * var(--k)); color:#5b6b7a; margin-bottom:calc(16px * var(--k)); }
+.fub-modalfoot{ display:flex; justify-content:flex-end; align-items:center; gap:calc(18px * var(--k)); }
+.fub-link{ background:none; border:0; color:#5b6b7a; cursor:pointer; font-size:calc(14px * var(--k)); padding:0; }
+.fub-blue{ background:#1a9cf0; border:0; color:#fff; border-radius:calc(5px * var(--k));
+  padding:calc(9px * var(--k)) calc(18px * var(--k)); font-size:calc(14px * var(--k));
+  font-weight:600; cursor:pointer; }
+.fub-blue:disabled{ background:#a9d6f5; cursor:default; }
+
+.pr-after{ display:flex; flex-direction:column; gap:12px; align-items:flex-start; }
+.pr-checks{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:7px; width:100%; }
+.pr-checks li{ font-size:14px; line-height:1.5; padding:10px 13px; border-radius:9px;
+  border:1px solid var(--ac-border-soft); color:var(--ac-text-60); }
+.pr-checks li b{ font-weight:700; }
+.pr-checks li.ok{ color:#7fbf94; border-color:color-mix(in srgb, var(--green) 34%, transparent); }
+.pr-checks li.no{ color:#e08a7a; border-color:rgba(224,138,122,.4); }
+
+/* Leaders and admins walking a module in front of someone are demonstrating it,
+   not being assessed by it — so a gate never traps them mid-demo. */
+.ac-skip{ font-size:13px; opacity:.75; }
+
+/* Wording handed over while writing notes is still a new skill — they paste it
+   into the real note box rather than composing from nothing. */
+.pr-copy{ display:flex; align-items:flex-start; gap:12px; margin-top:9px; padding:11px 13px;
+  background:rgba(0,0,0,.28); border:1px solid var(--ac-border-soft); border-radius:9px; }
+.pr-copy p{ flex:1; margin:0; font-size:14px; line-height:1.5; color:var(--ac-text); }
+.pr-copy button{ flex-shrink:0; padding:7px 14px; border-radius:7px; cursor:pointer; font-size:12.5px;
+  font-weight:800; color:var(--gold); background:color-mix(in srgb, var(--gold) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--gold) 40%, transparent); }
+.pr-jobs li.is-done .pr-copy{ display:none; }

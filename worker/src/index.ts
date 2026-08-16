@@ -18,6 +18,11 @@ import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, s
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
+import { type LabSubmission } from './repLab/elena.js';
+import { gradeElena, ELENA_ID } from './repLab/elena.js';
+import { resolveLearner } from './repLearner.js';
+import { maybeIssueCertificates } from './repCertificates.js';
+import { gradeRecord, gradeFaults, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -97,6 +102,20 @@ function isAdmin(req: Request, env: Env): boolean {
 // leaderEmails(); service-role read, so it's RLS-independent by design.
 async function isOrgLeaderOrAdmin(database: ReturnType<typeof db>, userId: string, orgId: string): Promise<boolean> {
   const rows = await database.select('memberships', `org_id=eq.${orgId}&user_id=eq.${userId}&role=in.(admin,leader)&select=user_id`);
+  return rows.length > 0;
+}
+
+/** Leader take: org-owned modules require that org; global curriculum any leader. */
+async function callerLeadsModule(
+  database: ReturnType<typeof db>,
+  userId: string,
+  mod: { org_id: string | null },
+): Promise<boolean> {
+  if (mod.org_id) return isOrgLeaderOrAdmin(database, userId, mod.org_id);
+  const rows = await database.select(
+    'memberships',
+    `user_id=eq.${userId}&role=in.(admin,leader)&select=org_id&limit=1`,
+  );
   return rows.length > 0;
 }
 
@@ -956,20 +975,18 @@ export default {
     }
 
     // Grade a module quiz server-side (so a pass can't be forged in the browser).
-    // Caller must be the logged-in agent; answers are matched to the questions the
-    // agent never received the correct index for.
+    // Default writes progress for the logged-in agent. record=false grades for an
+    // org leader without touching the agent roster.
     if (url.pathname === '/rep/grade' && req.method === 'POST') {
       const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
       if (!userId) return json({ error: 'unauthorized' }, 401);
       const body = (await req.json().catch(() => null)) as any;
       const moduleId = String(body?.moduleId ?? '').trim();
       const answers = Array.isArray(body?.answers) ? (body.answers as unknown[]) : null;
+      const record = body?.record !== false;
       if (!moduleId || !answers) return json({ error: 'moduleId and answers[] required' }, 422);
-      const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
-      if (!arows.length) return json({ error: 'not an agent' }, 403);
-      const agent = arows[0] as any;
       const [mods, qs] = await Promise.all([
-        database.select('rep_modules', `id=eq.${moduleId}&select=id,pass_pct,active`),
+        database.select('rep_modules', `id=eq.${moduleId}&select=id,org_id,pass_pct,active`),
         database.select('rep_questions', `module_id=eq.${moduleId}&select=idx,answer,explain&order=idx`),
       ]);
       if (!mods.length || !mods[0].active) return json({ error: 'module not found' }, 404);
@@ -985,22 +1002,169 @@ export default {
       const total = qs.length;
       const score = Math.round((correct / total) * 100);
       const passed = score >= passPct;
+
+      if (!record) {
+        if (!(await callerLeadsModule(database, userId, mods[0] as { org_id: string | null }))) {
+          return json({ error: 'forbidden' }, 403);
+        }
+        return json({ score, passed, correct, total, review });
+      }
+
+      // A leader takes the same modules as their agents (spec §3.5), so progress
+      // keys on the learner spine rather than the agent roster. agent_id is
+      // dual-written for one release while the leader board still joins on it.
+      const learner = await resolveLearner(database, userId, body?.orgId ? String(body.orgId) : undefined);
+      if (!learner) return json({ error: 'not enrolled' }, 403);
       const prior = await database.select(
         'rep_progress',
-        `agent_id=eq.${agent.id}&module_id=eq.${moduleId}&select=attempts,passed_at`,
+        `learner_id=eq.${learner.id}&module_id=eq.${moduleId}&select=attempts,passed_at`,
       );
       const attempts = ((prior[0]?.attempts as number) ?? 0) + 1;
       const passed_at = passed ? ((prior[0]?.passed_at as string) ?? new Date().toISOString()) : ((prior[0]?.passed_at as string) ?? null);
       await database.upsert(
         'rep_progress',
         [{
-          agent_id: agent.id, org_id: agent.org_id, module_id: moduleId,
+          learner_id: learner.id, agent_id: learner.agent_id, org_id: learner.org_id,
+          module_id: moduleId,
           status: passed ? 'passed' : 'in_progress', score, attempts,
           passed_at, updated_at: new Date().toISOString(),
         }],
-        'agent_id,module_id',
+        'learner_id,module_id',
       );
-      return json({ score, passed, correct, total, review });
+      // A track finishes on the module that completes it, so the certificate is
+      // issued here rather than waiting for the next page load.
+      const certified = passed ? await maybeIssueCertificates(database, learner) : [];
+      return json({ score, passed, correct, total, review, certified });
+    }
+
+    // Practice records: the learner operates a CRM record rather than answering
+    // a question about one. Graded here so the expected stage, note and task
+    // never reach the browser.
+    if (url.pathname === '/rep/record/grade' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const scenarioId = String(body?.scenarioId ?? '').trim();
+      if (!RECORD_SCENARIOS[scenarioId]) return json({ error: 'unknown scenario' }, 404);
+      const sub = body?.submission ?? {};
+      // Two halves of the same exercise, one route: naming the faults, then
+      // repairing them. Keeping the diagnosis on the live-sim route instead meant
+      // it was gated to enrolled agents while the repair beside it was not.
+      const grade = sub.phase === 'audit'
+        ? gradeFaults(scenarioId, Array.isArray(sub.faults) ? sub.faults : [])
+        : gradeRecord(scenarioId, {
+          stage: sub.stage,
+          stageSaved: !!sub.stageSaved,
+          note: sub.note,
+          task: sub.task,
+          deal: sub.deal,
+        });
+      const record = body?.record !== false;
+      if (record) {
+        const learner = await resolveLearner(database, userId);
+        try {
+          await database.insert('rep_lab_attempts', {
+            org_id: learner?.org_id ?? null,
+            agent_id: learner?.agent_id ?? null,
+            user_id: userId,
+            scenario_id: scenarioId,
+            phase: sub.phase === 'audit' ? 'audit' : 'record',
+            passed: grade.passed,
+            critical: false,
+            checks: grade.checks,
+          });
+        } catch {
+          // An attempt we could not log must not cost the learner their grade.
+        }
+      }
+      return json(grade);
+    }
+
+    // Day 1 lab: learner-visible facts only. Expected records stay on the server.
+    if (url.pathname === '/rep/sim/scenarios' && req.method === 'GET') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const rows = await database.select('rep_scenarios', 'select=id,title,kind,facts&active=eq.true&order=id');
+      return json({ scenarios: rows });
+    }
+
+    if (url.pathname === '/rep/sim/grade' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const scenarioId = String(body?.scenarioId ?? '').trim();
+      const record = body?.record !== false;
+      if (scenarioId !== ELENA_ID) return json({ error: 'unknown scenario' }, 404);
+      const sub: LabSubmission = {
+        phase: body?.phase === 'repair' ? 'repair' : 'audit',
+        contactName: body?.submission?.contactName,
+        risks: Array.isArray(body?.submission?.risks) ? body.submission.risks : [],
+        stage: body?.submission?.stage,
+        note: body?.submission?.note,
+        task: body?.submission?.task,
+        channel: body?.submission?.channel,
+      };
+      const grade = gradeElena(sub);
+      const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
+      const isLeader = await callerLeadsModule(database, userId, { org_id: (arows[0]?.org_id as string | null) ?? null });
+      if (record && !arows.length) return json({ error: 'not an agent' }, 403);
+      if (!record && !isLeader) return json({ error: 'forbidden' }, 403);
+      try {
+        await database.insert('rep_lab_attempts', {
+          org_id: arows[0]?.org_id ?? null,
+          agent_id: record ? arows[0]?.id ?? null : null,
+          user_id: userId,
+          scenario_id: scenarioId,
+          phase: grade.phase,
+          passed: grade.passed,
+          critical: grade.critical,
+          checks: grade.checks,
+        });
+      } catch {
+        // Table may not be applied yet; still return the grade.
+      }
+      return json(grade);
+    }
+
+    // Mark a no-quiz module complete. Same record flag as /rep/grade.
+    if (url.pathname === '/rep/ack' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const moduleId = String(body?.moduleId ?? '').trim();
+      const record = body?.record !== false;
+      if (!moduleId || !isUuid(moduleId)) return json({ error: 'moduleId required' }, 422);
+      const [mods, qs] = await Promise.all([
+        database.select('rep_modules', `id=eq.${moduleId}&select=id,org_id,active`),
+        database.select('rep_questions', `module_id=eq.${moduleId}&select=id`),
+      ]);
+      if (!mods.length || !mods[0].active) return json({ error: 'module not found' }, 404);
+      if (qs.length) return json({ error: 'module has a quiz' }, 422);
+      if (!record) {
+        if (!(await callerLeadsModule(database, userId, mods[0] as { org_id: string | null }))) {
+          return json({ error: 'forbidden' }, 403);
+        }
+        return json({ ok: true });
+      }
+      const learner = await resolveLearner(database, userId, body?.orgId ? String(body.orgId) : undefined);
+      if (!learner) return json({ error: 'not enrolled' }, 403);
+      const now = new Date().toISOString();
+      const prior = await database.select(
+        'rep_progress',
+        `learner_id=eq.${learner.id}&module_id=eq.${moduleId}&select=passed_at`,
+      );
+      await database.upsert(
+        'rep_progress',
+        [{
+          learner_id: learner.id, agent_id: learner.agent_id, org_id: learner.org_id,
+          module_id: moduleId,
+          status: 'passed', score: 100, attempts: 1,
+          passed_at: (prior[0]?.passed_at as string) ?? now, updated_at: now,
+        }],
+        'learner_id,module_id',
+      );
+      const certified = await maybeIssueCertificates(database, learner);
+      return json({ ok: true, certified });
     }
 
     // Mint a SHORT-LIVED signed DOWNLOAD url for a private rep-media object so a
@@ -1100,6 +1264,47 @@ export default {
       }
     }
 
+    // Leader/admin assigns a track to one or more learners, with an optional due
+    // date. Upserts on (learner_id, track_id) so re-assigning the same track just
+    // moves the date rather than stacking duplicate rows on someone's shelf.
+    if (url.pathname === '/rep/assignments' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const orgId = String(body?.org_id ?? '').trim();
+      const trackId = String(body?.track_id ?? '').trim();
+      const learnerIds: string[] = Array.isArray(body?.learner_ids) ? body.learner_ids.map(String) : [];
+      const dueAt = body?.due_at ? String(body.due_at) : null;
+      if (!isUuid(orgId) || !isUuid(trackId)) return json({ error: 'invalid id' }, 422);
+      if (!learnerIds.length || !learnerIds.every(isUuid)) return json({ error: 'learner_ids[] required' }, 422);
+      if (!(await isOrgLeaderOrAdmin(database, userId, orgId))) return json({ error: 'forbidden' }, 403);
+
+      // The track must be this org's own or a shared TRU track — never another
+      // brokerage's custom track, even with a valid id.
+      const tracks = await database.select('rep_tracks', `id=eq.${trackId}&select=id,org_id`);
+      if (!tracks.length) return json({ error: 'track not found' }, 404);
+      const trackOrg = (tracks[0] as { org_id: string | null }).org_id;
+      if (trackOrg !== null && trackOrg !== orgId) return json({ error: 'forbidden' }, 403);
+
+      // Every learner must belong to THIS org — a forged id can't cross a tenant
+      // line. Deduped before the read so the row count is a real comparison.
+      const uniqueIds = [...new Set(learnerIds)];
+      const owned = await database.select(
+        'rep_learners', `id=in.(${uniqueIds.join(',')})&select=id,org_id`);
+      if (owned.length !== uniqueIds.length || owned.some((l: any) => l.org_id !== orgId)) {
+        return json({ error: 'forbidden' }, 403);
+      }
+      await database.upsert(
+        'rep_assignments',
+        uniqueIds.map((id) => ({
+          org_id: orgId, learner_id: id, track_id: trackId,
+          due_at: dueAt, assigned_by: userId, assigned_at: new Date().toISOString(),
+        })),
+        'learner_id,track_id',
+      );
+      return json({ count: uniqueIds.length });
+    }
+
     // Create OR update a source='custom' module for the caller's org. Update
     // requires the existing row to already be source='custom' AND in that
     // org — a leader can never touch another org's rows or a system module.
@@ -1140,6 +1345,11 @@ export default {
           return json(rows[0]);
         }
         const createStatus = (patch.status as string) ?? 'draft';
+        const siblings = await database.select(
+          'rep_modules',
+          `select=idx&or=(org_id.is.null,org_id.eq.${orgId})&order=idx.desc&limit=1`,
+        );
+        const nextIdx = (Number((siblings[0] as { idx?: number } | undefined)?.idx) || 0) + 1;
         const row = await database.insert('rep_modules', {
           ...patch,
           org_id: orgId,
@@ -1147,6 +1357,8 @@ export default {
           author_id: userId,
           status: createStatus,
           active: createStatus === 'published',
+          core: false,
+          idx: nextIdx,
         });
         return json(row);
       } catch (e) {

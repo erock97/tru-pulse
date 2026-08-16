@@ -1,12 +1,20 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
-  loadCourse, gradeQuiz, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
+  loadCourse, loadLibrary, canSkipGates, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
   signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
+  type LibraryData,
 } from '../lib/api';
+import LibraryHome from './LibraryHome';
+import { SlideView } from './SlideDeck';
+import { DealSlide } from './DealSlide';
+import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
+import { isCoreModule } from '../lib/repCore';
+import { applyLessonNav, createNavGesture, type LessonNavIntent, type LessonNavState } from '../lib/lessonNav';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
+import { LabExercise } from './RepLab';
 import '../truHqDark.css';
 
 type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim';
@@ -19,6 +27,10 @@ const accentOf = (idx: number) => ACCENTS[(idx - 1) % ACCENTS.length];
 function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
   if (c.t === 'drill') return '⚡ Practice rep';
+  if (c.t === 'lab') return '🗂 Work the record';
+  if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
+  if (c.t === 'dealslide') return 'Deals';
+  if (c.t === 'practice') return `🖥 ${c.title ?? 'Work the record'}`;
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
   if (c.t === 'video') return `🎬 ${c.title ?? 'Watch'}`;
@@ -37,13 +49,18 @@ function embedUrl(u: string): string {
   return m ? `https://www.loom.com/embed/${m[1]}` : u;
 }
 
-// Honest time estimate for a module (reading + drills + quiz).
-function estMinutes(m: CourseModule): number {
-  return Math.max(5, Math.round(m.cards.length * 0.8 + m.qs.length * 0.5));
-}
+// What the shelf falls back to when /data/rep/library is unavailable or an org
+// has no tracks seeded yet: no tracks, which LibraryHome renders as one
+// ungrouped list of the learner's modules. A failure here must never blank the
+// course.
+const emptyLibrary: LibraryData = {
+  learner: { id: '', kind: 'agent', org_id: '' },
+  tracks: [], modules: [], trackModules: [], progress: [], certificates: [],
+};
 
 export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [mods, setMods] = useState<CourseModule[] | null>(null);
+  const [lib, setLib] = useState<LibraryData | null>(null);
   const [view, setView] = useState<View>('home');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [result, setResult] = useState<GradeResult | null>(null);
@@ -52,8 +69,15 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [attempts, setAttempts] = useState<SimAttempt[]>([]);
   const [sessionSimPass, setSessionSimPass] = useState(false);
   const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
+  const [canSkip, setCanSkip] = useState(false);
+  const [ackErr, setAckErr] = useState('');
 
-  const refresh = () => loadCourse(agent.id).then(setMods);
+  const refresh = () => Promise.all([
+    loadCourse(agent.id).then(setMods),
+    // The shelf is additive: if it fails (or the tracks aren't seeded yet) the
+    // course still renders from loadCourse, ungrouped.
+    loadLibrary().then(setLib).catch(() => setLib(null)),
+  ]).then(() => undefined);
   useEffect(() => {
     void refresh();
     void simScenarios().then((s) => { setScenarios(s.scenarios); setSimConfigured(s.configured); });
@@ -61,6 +85,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
     // Agent-side 1:1 recap (Block 4c). Agent-safe by construction (checkin_items
     // only, never checkin_leader). A failure here must never blank the course.
     void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
+    void canSkipGates().then(setCanSkip).catch(() => setCanSkip(false));
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
@@ -69,15 +94,23 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
 
   if (!mods) return <div className="center-wrap"><div className="spinner" /></div>;
 
-  const passed = mods.filter((m) => m.status === 'passed').length;
-  const total = mods.length;
+  const core = mods.filter(isCoreModule);
+  const passed = core.filter((m) => m.status === 'passed').length;
+  const total = core.length;
   const allMods = passed === total && total > 0;
   const simUnlocked = allMods || isDemo; // demo: the sim is always walkable
   const simPassed = sessionSimPass || attempts.some((a) => a.passed);
   const bestSim = attempts.reduce<number | null>((b, a) => (a.score != null && (b == null || a.score > b) ? a.score : b), null);
   const certified = allMods && simPassed;
-  const nextMod = mods.find((m) => m.status !== 'passed') ?? null;
-  const openModule = (m: CourseModule) => { setActiveId(m.id); setResult(null); setView(m.qs.length ? 'lesson' : 'home'); };
+  const openModule = (m: CourseModule) => {
+    const hasLesson = (m.cards?.length ?? 0) > 0;
+    const hasQuiz = m.qs.length > 0;
+    if (!hasLesson && !hasQuiz) return;
+    setActiveId(m.id);
+    setResult(null);
+    setAckErr('');
+    setView(hasLesson ? 'lesson' : 'quiz');
+  };
 
   if (view === 'home') {
     return (
@@ -94,8 +127,8 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               <p>{certified
                 ? 'Fully certified — modules and the Live Sim. This is the standard; keep living it.'
                 : allMods
-                  ? 'All five modules down. One thing left: pass the Live Sim — a real call, out loud.'
-                  : 'Master the TRU way — real numbers, real scripts, real reps. Pass every module, then prove it out loud in the Live Sim.'}</p>
+                  ? `All ${total} core module${total === 1 ? '' : 's'} down. One thing left: pass the Live Sim — a real call, out loud.`
+                  : 'Master the TRU way — real numbers, real scripts, real reps. Pass every core module, then prove it out loud in the Live Sim.'}</p>
             </div>
             <Ring passed={passed} total={total} />
           </div>
@@ -111,29 +144,11 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               </div>
             </div>
           )}
-          <div className="ac-modlist">
-            {mods.map((m, i) => {
-              const done = m.status === 'passed';
-              const isNext = nextMod?.id === m.id;
-              const ac = accentOf(m.idx);
-              return (
-                <button
-                  key={m.id}
-                  className={`ac-modcard fu${done ? ' done' : ''}${isNext ? ' next' : ''}`}
-                  style={{ ['--mac' as string]: ac, animationDelay: `${0.07 * i}s` }}
-                  onClick={() => openModule(m)}
-                  disabled={!m.qs.length}
-                >
-                  <span className="ac-modbar" />
-                  <span className={`ac-modnum${done ? ' done' : ''}`}>{done ? '✓' : m.idx}</span>
-                  <span className="ac-modmeta">
-                    <span className="ac-modtitle">{m.title}</span>
-                    <span className="ac-modsub">{done ? `Passed · ${m.score}%` : `≈ ${estMinutes(m)} min · ${m.cards.length} screens · ${m.qs.length}-question quiz`}</span>
-                  </span>
-                  {isNext ? <span className="ac-modstart">Start</span> : <span className="ac-modgo">{done ? 'Review' : '›'}</span>}
-                </button>
-              );
-            })}
+          <LibraryHome
+            data={lib ?? emptyLibrary}
+            mods={mods}
+            onOpen={openModule}
+            extras={<div className="ac-modlist lib-extras">
             {/* The final: a live, graded roleplay call */}
             <button
               className={`ac-modcard ac-simcard fu${simPassed ? ' done' : ''}${allMods && !simPassed ? ' next' : ''}`}
@@ -150,12 +165,13 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
                     ? `Passed · ${bestSim}%`
                     : simUnlocked
                       ? 'A real call with an AI buyer, graded on ALMS — score 80+ to certify'
-                      : `🔒 Pass all ${total} modules to unlock`}
+                      : `🔒 Pass all ${total} core module${total === 1 ? '' : 's'} to unlock`}
                 </span>
               </span>
               {simUnlocked && !simPassed ? <span className="ac-modstart">Take the call</span> : <span className="ac-modgo">{simPassed ? 'Again' : '›'}</span>}
             </button>
-          </div>
+            </div>}
+          />
           {oneOnOnes && <MyOneOnOnes list={oneOnOnes} />}
         </main>
       </div>
@@ -180,7 +196,20 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   if (!active) return null;
 
   return view === 'lesson' ? (
-    <Lesson key={active.id} module={active} onDone={() => setView('quiz')} onBack={() => setView('home')} />
+    <Lesson
+      key={active.id}
+      module={active}
+      canSkip={canSkip}
+      doneLabel={active.qs.length ? undefined : 'Mark as done'}
+      error={ackErr}
+      onDone={() => {
+        if (active.qs.length) { setView('quiz'); return; }
+        void ackModule(active.id).then(() => { setAckErr(''); void refresh(); setView('home'); }).catch((e) => {
+          setAckErr(e instanceof Error ? e.message : 'Could not mark this done. Try again.');
+        });
+      }}
+      onBack={() => setView('home')}
+    />
   ) : view === 'quiz' ? (
     <Quiz
       key={active.id + ':' + (result ? 'retry' : 'first')}
@@ -189,7 +218,16 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
       onGraded={(r) => { setResult(r); void refresh(); setView('result'); }}
     />
   ) : result ? (
-    <Result module={active} result={result} onRetry={() => setView('quiz')} onReview={() => setView('lesson')} onHome={() => setView('home')} />
+    <Result
+      module={active}
+      result={result}
+      trackTitles={(result.certified ?? [])
+        .map((id) => lib?.tracks.find((t) => t.id === id)?.title)
+        .filter((t): t is string => !!t)}
+      onRetry={() => setView('quiz')}
+      onReview={() => setView('lesson')}
+      onHome={() => setView('home')}
+    />
   ) : null;
 }
 
@@ -493,9 +531,9 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 }
 
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
-function Shell({ accent, num, rail, children }: { accent: string; num: number; rail: ReactNode; children: ReactNode }) {
+function Shell({ accent, num, rail, children, wide }: { accent: string; num: number; rail: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="ac ac-shell tru-dark" style={{ ['--mac' as string]: accent }}>
+    <div className={`ac ac-shell tru-dark${wide ? ' ac-shell-wide' : ''}`} style={{ ['--mac' as string]: accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>
@@ -526,24 +564,84 @@ function RailFoot() {
 
 // ── Lesson: typed cards on the big stage; rail = the outline ────────────────
 // Exported so the leader Rep tab can open any module as a full preview.
-export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string }) {
+export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }: {
+  module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string; error?: string;
+  /** Admins and team leaders can step past a gated card. They are demonstrating
+   *  the module, not being assessed by it, and getting stuck mid-demo is worse
+   *  than skipping a check. */
+  canSkip?: boolean;
+}) {
   const cards = m.cards;
-  const [i, setI] = useState(0);
-  const [seen, setSeen] = useState(0);
+  const [nav, setNav] = useState<LessonNavState>({ index: 0, seen: 0 });
+  const gesture = useRef(createNavGesture());
+  useEffect(() => {
+    setNav({ index: 0, seen: 0 });
+    gesture.current.reset();
+  }, [m.id]);
+  useEffect(() => {
+    const finish = () => {
+      gesture.current.finish();
+      // Leftover click after remount arrives after pointerup. Keep it blocked
+      // for two frames so it cannot take another step.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => gesture.current.releaseClicks());
+      });
+    };
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+    window.addEventListener('keyup', finish);
+    return () => {
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      window.removeEventListener('keyup', finish);
+    };
+  }, []);
+  const i = nav.index;
+  const seen = nav.seen;
   const [picks, setPicks] = useState<Record<number, number>>({});
   const ac = accentOf(m.idx);
   const card = cards[i];
   const last = i >= cards.length - 1;
   const isDrill = card?.t === 'drill';
-  const answered = !isDrill || picks[i] !== undefined;
-  const go = (n: number) => { setI(n); setSeen((s) => Math.max(s, n)); };
+  const isLab = card?.t === 'lab' || card?.t === 'practice';
+  // A lab gates the same way a drill does: you do not move on until it passes.
+  const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
+  const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
+  const move = (intent: LessonNavIntent, opts?: { repeat?: boolean; from?: 'pointer' | 'click' | 'key' }) => {
+    if (!gesture.current.start(opts)) return false;
+    setNav((s) => applyLessonNav(s, intent, cards.length));
+    // A focused Next + held Space/Enter is what walked the live deck by itself.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    return true;
+  };
+  const bindNav = (intent: LessonNavIntent) => ({
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      move(intent, { from: 'pointer' });
+    },
+    onClick: (e: MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      // Mouse already moved on pointerdown. A leftover click after remount
+      // is blocked. Keyboard/SR click has no pointerdown and is allowed once.
+      if (move(intent, { from: 'click' })) {
+        gesture.current.finish();
+        gesture.current.releaseClicks();
+      }
+    },
+    onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      move(intent, { from: 'key', repeat: e.repeat });
+    },
+  });
 
   const rail = (
     <>
       <RailHead module={m} onBack={onBack} />
       <div className="ac-rail-steps">
         {cards.map((c, k) => (
-          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => go(k)}>
+          <button type="button" key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} {...bindNav({ type: 'goto', index: k })}>
             {c.t !== 'section' && <span className="ac-step-dot">{k < i ? '✓' : k + 1}</span>}
             <span className="ac-step-label">{cardLabel(c, k)}</span>
           </button>
@@ -553,8 +651,16 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
     </>
   );
 
+  // `wide` gives the full stage instead of the reading column. `practice` was
+  // missing from this list, which is why the Follow Up Boss record — the widest
+  // thing in the whole module — was squeezed into a text-width column.
   return (
-    <Shell accent={ac} num={m.idx} rail={rail}>
+    <Shell
+      accent={ac}
+      num={m.idx}
+      rail={rail}
+      wide={card?.t === 'slide' || card?.t === 'dealslide' || card?.t === 'lab' || card?.t === 'practice'}
+    >
       <button className="ac-back ac-mob" onClick={onBack}>‹ All modules</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Module {m.idx}</span>
@@ -562,15 +668,27 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
       </div>
       <h2 className="ac-lessontitle ac-mob">{m.title}</h2>
       <div className="ac-progress"><div className="ac-progress-fill" style={{ width: `${((i + 1) / cards.length) * 100}%` }} /></div>
-      <div className="ac-cardzone" key={i}>
-        <Card card={card} pick={picks[i]} onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))} />
+      <div className="ac-cardzone">
+        <Card
+          key={i}
+          card={card}
+          pick={picks[i]}
+          onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))}
+          onLabPassed={() => setLabsPassed((l) => ({ ...l, [i]: true }))}
+        />
       </div>
       <div className="ac-nav">
-        {i > 0 && <button className="btn ghost" onClick={() => setI(i - 1)}>Back</button>}
+        <button type="button" className="btn ghost" disabled={i === 0} style={i === 0 ? { visibility: 'hidden' } : undefined} {...bindNav({ type: 'back' })}>Back</button>
         {!last
-          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : 'Next'}</button>
-          : <button className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
+          ? <button type="button" className="btn ac-btn" disabled={!answered} {...bindNav({ type: 'next' })}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
+          : <button type="button" className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
+        {canSkip && !answered && (
+          last
+            ? <button type="button" className="btn ghost ac-skip" onClick={onDone}>Skip this step</button>
+            : <button type="button" className="btn ghost ac-skip" {...bindNav({ type: 'next' })}>Skip this step</button>
+        )}
       </div>
+      {error && <div className="err" style={{ marginTop: 12 }}>{error}</div>}
     </Shell>
   );
 }
@@ -621,8 +739,41 @@ function MediaCard({ card }: { card: LessonCard }) {
   );
 }
 
-function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
+function Card({ card, pick, onPick, onLabPassed }: {
+  card: LessonCard; pick?: number; onPick: (ci: number) => void; onLabPassed?: () => void;
+}) {
   if (!card) return null;
+  if (card.t === 'slide') {
+    return <SlideView deck={card.deck ?? 'zillow-day1'} n={card.slide ?? 1} />;
+  }
+  // A slide the exported deck does not contain, authored in the deck's own look
+  // because deals need a dialog you can actually press. See DealSlide.tsx.
+  if (card.t === 'dealslide') {
+    return <DealSlide />;
+  }
+  if (card.t === 'practice') {
+    const sc = (card.scenario ?? 'set-appointment') as PracticeScenario;
+    if (!PRACTICE_PACKS[sc]) return null;
+    // No title or body here. The exercise renders its own heading and its one
+    // paragraph — printing the card's copy too showed the title twice with two
+    // competing explanations under it.
+    return (
+      <div className="ac-labcard fu">
+        <PracticeRecord scenario={sc} onPassed={onLabPassed} />
+      </div>
+    );
+  }
+  if (card.t === 'lab') {
+    // Avery's repair moved onto the real record surface and is a `practice` card
+    // now, so Elena is all this renders. No title or body printed here, for the
+    // same reason the practice card dropped them: the exercise prints its own
+    // heading, and printing the card's as well showed it twice.
+    return (
+      <div className="ac-labcard fu">
+        <LabExercise scenario="elena-homework" compact onPassed={onLabPassed} />
+      </div>
+    );
+  }
   if (card.t === 'section') {
     return (
       <div className="ac-sect fu">
@@ -771,7 +922,7 @@ function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick:
 }
 
 // ── Quiz: one question per screen; rail = the question list ─────────────────
-function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: () => void; onGraded: (r: GradeResult) => void }) {
+export function Quiz({ module: m, onExit, onGraded, record = true }: { module: CourseModule; onExit: () => void; onGraded: (r: GradeResult) => void; record?: boolean }) {
   const [qi, setQi] = useState(0);
   const [maxQ, setMaxQ] = useState(0);
   const [answers, setAnswers] = useState<number[]>(() => m.qs.map(() => -1));
@@ -789,7 +940,7 @@ function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: (
   async function submit() {
     setBusy(true); setErr('');
     try {
-      onGraded(await gradeQuiz(m.id, answers));
+      onGraded(await gradeQuiz(m.id, answers, { record }));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Could not submit. Try again.');
       setBusy(false);
@@ -841,8 +992,10 @@ function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: (
 }
 
 // ── Result: celebration on pass, warm review + unlimited retries on miss ────
-function Result({ module: m, result, onRetry, onReview, onHome }: {
+export function Result({ module: m, result, trackTitles, onRetry, onReview, onHome }: {
   module: CourseModule; result: GradeResult; onRetry: () => void; onReview: () => void; onHome: () => void;
+  /** Titles of any tracks this pass just completed, for the seal below. */
+  trackTitles?: string[];
 }) {
   const byIdx = new Map(m.qs.map((q) => [q.idx, q]));
   const ac = accentOf(m.idx);
@@ -879,6 +1032,11 @@ function Result({ module: m, result, onRetry, onReview, onHome }: {
         <p>{result.passed
           ? `${m.title} — ${result.correct} of ${result.total} correct. That’s the standard.`
           : `${result.correct} of ${result.total}. You need ${m.pass_pct}%. Check the misses below and run it back — unlimited retries.`}</p>
+        {result.passed && (trackTitles?.length ?? 0) > 0 && (
+          <div className="ac-track-earned">
+            🏆 Track complete — {trackTitles!.join(' and ')}. Your certificate is on your library home.
+          </div>
+        )}
         <div className="ac-nav center">
           {result.passed
             ? <button className="btn ac-btn" onClick={onHome}>Next module →</button>

@@ -6,6 +6,10 @@
 import type { Env } from './env.js';
 import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
+import { buildTrackViews } from '../../shared/repLibrary.js';
+import type {
+  TrackRow, TrackModuleRow, ProgressRow, AssignmentRow,
+} from '../../shared/repLibrary.js';
 
 // Ids come from the query string, so validate the shape before it reaches a
 // PostgREST filter. Filters AND together so an id can't be widened to another
@@ -205,16 +209,26 @@ export async function handleDataRoutes(
 
   // ── Rep: the leader's certification board (loadRep). ──
   if (url.pathname === '/data/rep/board' && req.method === 'GET') {
-    const [modules, questions, progress, agents, practice] = await Promise.all([
+    const [modules, questions, progress, agents, practice, learners, tracks, trackModules, assignments, certificates] = await Promise.all([
       // `active` is the runtime switch, `status` the authoring lifecycle — both must
       // read live, same belt-and-suspenders filter the browser used.
-      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
       db.select('rep_questions_public', 'select=module_id'),
       db.select('rep_progress', 'select=agent_id,module_id,status,score,passed_at,signed_off_at'),
       db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
       db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
+      // The learner spine, so the leader can assign a track to an agent OR to
+      // another leader. RLS returns this org's rows only (rep_learners_org_read).
+      db.select('rep_learners', 'select=id,kind,agent_id,user_id,name,email&order=name.asc'),
+      db.select('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select('rep_track_modules', 'select=track_id,module_id,idx,required'),
+      db.select('rep_assignments', 'select=learner_id,track_id,due_at,completed_at'),
+      db.select('rep_certificates', 'select=learner_id,track_id,issued_at'),
     ]);
-    return json({ modules, questions, progress, agents, practice }, 200, cors);
+    return json({
+      modules, questions, progress, agents, practice,
+      learners, tracks, trackModules, assignments, certificates,
+    }, 200, cors);
   }
 
   // ── Rep: one agent's own course view (loadCourse). ──
@@ -224,12 +238,43 @@ export async function handleDataRoutes(
     const agentId = url.searchParams.get('agentId') ?? '';
     if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
     const [modules, questions, progress, practice] = await Promise.all([
-      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select('rep_modules', 'select=id,idx,title,summary,body,pass_pct,cards,core&active=eq.true&status=eq.published&order=idx.asc'),
       db.select('rep_questions_public', 'select=id,module_id,idx,prompt,choices&order=idx.asc'),
       db.select('rep_progress', `select=module_id,status,score,passed_at,signed_off_at&agent_id=eq.${agentId}`),
       db.select('rep_practice', `select=scenario,status,score,passed,created_at&agent_id=eq.${agentId}&order=created_at.desc`),
     ]);
     return json({ modules, questions, progress, practice }, 200, cors);
+  }
+
+  // ── Rep: the whole library shelf for whoever is signed in, in one round trip. ──
+  // The learner spine is resolved through rep_ensure_learner(), a SECURITY DEFINER
+  // function keyed on auth.uid() — a first-time learner has no rep_learners row and
+  // there is deliberately no client INSERT policy on that table, so this is the one
+  // sanctioned way to mint it without reaching for the service role in this file.
+  // Every read below is RLS-scoped: a track belonging to another org simply is not
+  // returned, so no org filter is written by hand here.
+  if (url.pathname === '/data/rep/library' && req.method === 'GET') {
+    const orgHint = url.searchParams.get('org');
+    if (orgHint && !UUID_RE.test(orgHint)) return json({ error: 'invalid org' }, 422, cors);
+    const { data: learner } = await db.rpc<{
+      id: string; org_id: string; kind: 'agent' | 'member'; agent_id: string | null;
+    }>('rep_ensure_learner', { p_org: orgHint });
+    if (!learner?.id) return json({ error: 'not enrolled' }, 403, cors);
+
+    const [tracks, trackModules, modules, progress, assignments, certificates] = await Promise.all([
+      db.select<TrackRow>('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select<TrackModuleRow>('rep_track_modules', 'select=track_id,module_id,idx,required'),
+      db.select('rep_modules', 'select=id,idx,title,summary,pass_pct,core,kind,duration_min,level,tags,cover&active=eq.true&status=eq.published&order=idx.asc'),
+      db.select<ProgressRow>('rep_progress', `select=module_id,status,score,passed_at&learner_id=eq.${learner.id}`),
+      db.select<AssignmentRow>('rep_assignments', `select=track_id,due_at,completed_at&learner_id=eq.${learner.id}`),
+      db.select('rep_certificates', `select=track_id,issued_at&learner_id=eq.${learner.id}`),
+    ]);
+
+    return json({
+      learner: { id: learner.id, kind: learner.kind, org_id: learner.org_id },
+      tracks: buildTrackViews(tracks, trackModules, progress, assignments, new Date()),
+      modules, trackModules, progress, certificates,
+    }, 200, cors);
   }
 
   // ── Who this person is, in one round trip. ──
@@ -265,7 +310,7 @@ export async function handleDataRoutes(
     if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 422, cors);
     const modules = await db.select(
       'rep_modules',
-      `select=id,idx,title,summary,body,pass_pct,cards,author_id,source,status&org_id=eq.${orgId}` +
+      `select=id,idx,title,summary,body,pass_pct,cards,core,author_id,source,status&org_id=eq.${orgId}` +
       '&source=eq.custom&order=idx.asc',
     );
     return json({ modules }, 200, cors);
@@ -429,6 +474,10 @@ export async function handleDataRoutes(
     if (url.pathname === '/data/rep/sign-off') {
       const agentId = String(body.agentId ?? '');
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      // No lab gate on sign-off. Requiring a leader to complete the practice
+      // exercise before they may sign anyone off locks out every existing
+      // leader the day it ships, and leaders will not do it. The lab stays
+      // available to them; it is not a prerequisite. Eric's call, 2026-08-14.
       const who = String(body.who ?? 'team leader').slice(0, 200);
       const rows = await db.update(
         'rep_progress',

@@ -234,7 +234,7 @@ function demoAgentRows(): AgentRow[] {
   return [
     mk('demo-c1', 'Trevor Holland', 'P-Pro-R-D', 42, 2, 'Speed-to-lead on every Zillow connect'),
     mk('demo-c2', 'Dana Cole', 'T-Pro-V-I', 58, 9, 'Move pre-approval earlier in the call'),
-    mk('demo-c3', 'Priya Nair', 'P-Rec-R-I', 31, 17, 'Rebuild the daily follow-up cadence'),
+    mk('demo-c3', 'Avery Nair', 'P-Rec-R-I', 31, 17, 'Rebuild the daily follow-up cadence'),
     mk('demo-c4', 'Marcus Delgado', 'P-Pro-V-I', 76, 4, 'Run ALMS on every first conversation'),
     mk('demo-c5', 'Maria Lopez', 'T-Pro-R-I', 21, null, 'First check-in — set the baseline'),
     mk('demo-c6', 'Sam Whitfield', 'P-Rec-V-D', 95, 24, 'Reset the standard, hold the line'),
@@ -745,7 +745,7 @@ function demoCheckinRows(): Record<string, Checkin[]> {
       mk('demo-c2', 37, 'yes', 10, 6, 'Great sphere outreach week.', 'Start asking for pre-approval up front'),
       mk('demo-c2', 51, 'no', 4, 2, null, 'Rebuild consistency after a slow month'),
     ],
-    // Priya Nair — matches roster's "17d ago · Rebuild the daily follow-up cadence".
+    // Avery Nair — matches roster's "17d ago · Rebuild the daily follow-up cadence".
     'demo-c3': [
       mk('demo-c3', 17, 'partial', 7, 3, 'Cadence restarted after the gap.', 'Rebuild the daily follow-up cadence'),
       mk('demo-c3', 45, 'no', 3, 1, null, 'Get back to a daily follow-up habit'),
@@ -777,7 +777,7 @@ function demoCheckinRows(): Record<string, Checkin[]> {
        set has since been reviewed by the following session, and the latest
        session sets none — the contrast "fully reviewed, nothing pending"
        empty state.
-   Priya Nair (demo-c3), Marcus Delgado (demo-c4), Sam Whitfield (demo-c6) are
+   Avery Nair (demo-c3), Marcus Delgado (demo-c4), Sam Whitfield (demo-c6) are
    left legacy-only (no rows here) so the "old record, no structured detail"
    rendering is previewable. Maria Lopez (demo-c5) has no check-ins at all
    already (demoCheckinRows), so she keeps the empty state untouched.

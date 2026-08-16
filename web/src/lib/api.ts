@@ -1,5 +1,6 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
+import type { TrackView, TrackModuleRow, ProgressRow } from '../../../shared/repLibrary.js';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -83,11 +84,23 @@ export interface RepModule {
   questions: number; cards?: LessonCard[] | null;
   // Authoring (Block 2) — undefined for rows fetched before these columns existed at the callsite.
   author_id?: string | null; source?: 'system' | 'custom'; status?: 'draft' | 'published' | 'archived';
+  // Block A — undefined/true counts toward certification; false is library-only.
+  core?: boolean;
 }
 export interface RepProgressRow { agent_id: string; module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at?: string | null }
 export interface RepAgent { id: string; name: string; email: string | null; invited: boolean }
 export interface RepPracticeRow { agent_id: string; scenario: string; status: string; score: number | null; passed: boolean | null; created_at: string }
-export interface RepData { modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[] }
+export interface RepLearner { id: string; kind: 'agent' | 'member'; agent_id: string | null; user_id: string | null; name: string; email: string | null }
+export interface RepAssignmentRow { learner_id: string; track_id: string; due_at: string | null; completed_at: string | null }
+export interface RepData {
+  modules: RepModule[]; progress: RepProgressRow[]; agents: RepAgent[]; practice: RepPracticeRow[];
+  // The shelf, leader-side: who can be assigned, what can be assigned to them,
+  // and what already is. Empty until the tracks are seeded.
+  learners: RepLearner[]; tracks: RepTrackRow[]; trackModules: TrackModuleRow[]; assignments: RepAssignmentRow[];
+  certificates: RepCertificateRow[];
+}
+export interface RepCertificateRow { learner_id: string; track_id: string; issued_at: string }
+export interface RepTrackRow { id: string; slug: string; title: string; subtitle: string | null; cover: string | null; order_idx: number }
 
 export async function loadRep(): Promise<RepData> {
   if (isDemo) return demoRep();
@@ -110,6 +123,9 @@ export async function loadRep(): Promise<RepData> {
   const d = (await res.json()) as {
     modules: Omit<RepModule, 'questions'>[]; questions: Array<{ module_id: string }>;
     progress: RepProgressRow[]; agents: AgentRow[]; practice: RepPracticeRow[];
+    learners?: RepLearner[]; tracks?: RepTrackRow[];
+    trackModules?: TrackModuleRow[]; assignments?: RepAssignmentRow[];
+    certificates?: RepCertificateRow[];
   };
   [mods, qs, prog, agentRows, prac] = [d.modules ?? [], d.questions ?? [], d.progress ?? [], d.agents ?? [], d.practice ?? []];
 
@@ -120,6 +136,11 @@ export async function loadRep(): Promise<RepData> {
     progress: prog,
     agents: agentRows.map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
     practice: prac,
+    learners: d.learners ?? [],
+    tracks: d.tracks ?? [],
+    trackModules: d.trackModules ?? [],
+    assignments: d.assignments ?? [],
+    certificates: d.certificates ?? [],
   };
 }
 
@@ -151,6 +172,14 @@ export interface LessonCard {
   bad?: string[];        // compare — DON'T column
   url?: string;          // video — Loom share/embed URL (empty = "coming soon" placeholder)
   steps?: string[];      // steps — a pipeline/stage ladder
+  // lab (t:'lab') — a graded practice record embedded IN the lesson, at the point
+  // in the training it belongs to. `scenario` names the pack in RepLab.tsx.
+  scenario?: 'avery-repair' | 'elena-homework' | 'avery-new' | 'avery-spoke' | 'avery-appointment';
+  // slide (t:'slide') — ONE slide of a named deck under /public/decks, rendered
+  // natively. `deck` is the json basename, `slide` the 1-based slide number.
+  // (`n` is already taken above by the section card's part label.)
+  deck?: string;
+  slide?: number;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
@@ -158,7 +187,11 @@ export interface LessonCard {
 // deliberately overridden rather than reused.
 export interface CourseModule extends Omit<RepModule, 'status'> { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
 export interface GradeReview { idx: number; your: number; correct_index: number; is_correct: boolean; explain: string | null }
-export interface GradeResult { score: number; passed: boolean; correct: number; total: number; review: GradeReview[] }
+export interface GradeResult {
+  score: number; passed: boolean; correct: number; total: number; review: GradeReview[];
+  /** Track ids certified BY this pass — the module that completed a track. */
+  certified?: string[];
+}
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {
@@ -179,7 +212,8 @@ export async function signOffAgent(agentId: string): Promise<void> {
   const res = await workerFetch('/data/rep/sign-off', {
     method: 'POST', body: JSON.stringify({ agentId, who }),
   });
-  if (!res.ok) throw new Error('Could not sign this agent off.');
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not sign this agent off.');
 }
 
 /** Leader/admin: mint an invite (or re-invite) link for an agent. */
@@ -251,9 +285,86 @@ export async function archiveRepModule(moduleId: string): Promise<void> {
  *  null if they aren't a member. Mirrors the Worker's own isOrgLeaderOrAdmin() gate
  *  (memberships.role in ('admin','leader')) — used client-side ONLY to decide whether
  *  to show the authoring UI; the Worker re-checks on every write regardless. */
+/** True for an admin or team leader — the people who need to walk a module in
+ *  front of someone without being trapped by a gate meant for a learner. */
+export async function canSkipGates(): Promise<boolean> {
+  if (isDemo) return true;
+  const r = (await me()).role;
+  return r === 'admin' || r === 'leader';
+}
+
 export async function myOrgRole(_orgId: string): Promise<string | null> {
   if (isDemo) return 'admin';
   return (await me()).role;
+}
+
+// ── TRU Rep — the library shelf (Phase 1) ───────────────────────────────────
+// The shelf is one round trip: tracks already rolled up by the Worker using the
+// same pure functions the tests cover, so the browser never recomputes "how far
+// along am I" a second, slightly different way.
+export type { TrackView, TrackModuleRow, ProgressRow };
+
+export interface LibraryModule extends Omit<RepModule, 'questions'> {
+  kind: string; duration_min: number | null; level: string | null;
+  tags: string[]; cover: string | null;
+}
+export interface LibraryData {
+  learner: { id: string; kind: 'agent' | 'member'; org_id: string };
+  tracks: TrackView[];
+  modules: LibraryModule[];
+  trackModules: TrackModuleRow[];
+  progress: ProgressRow[];
+  certificates: Array<{ track_id: string; issued_at: string }>;
+}
+
+/** The whole shelf for whoever is signed in — one round trip, RLS-scoped. */
+export async function loadLibrary(): Promise<LibraryData> {
+  const res = await workerFetch('/data/rep/library');
+  if (!res.ok) throw new Error('Could not load the training library.');
+  return (await res.json()) as LibraryData;
+}
+
+// ── Practice records — the interactive CRM exercises ────────────────────────
+export interface RecordCheck { id: string; label: string; pass: boolean; message: string }
+export interface RecordGrade { passed: boolean; score: number; max: number; checks: RecordCheck[] }
+
+/** Grade one practice record. Expected values live on the server, never here. */
+export async function gradeRecordPractice(
+  scenarioId: string,
+  submission: {
+    /** 'audit' grades the fault checklist; anything else grades the record itself. */
+    phase?: 'audit';
+    faults?: string[];
+    stage?: string; stageSaved?: boolean; note?: string;
+    task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+    deal?: { name?: string; price?: string; closeDate?: string };
+  },
+  opts: { record?: boolean } = {},
+): Promise<RecordGrade> {
+  const res = await workerFetch('/rep/record/grade', {
+    method: 'POST',
+    body: JSON.stringify({ scenarioId, submission, record: opts.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as RecordGrade & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not check this record');
+  return body;
+}
+
+/** Leader/admin: assign a track to one or more learners with an optional due date.
+ *  Re-assigning the same track moves the due date rather than duplicating it. */
+export async function assignTrack(input: {
+  orgId: string; trackId: string; learnerIds: string[]; dueAt: string | null;
+}): Promise<{ count: number }> {
+  const res = await workerFetch('/rep/assignments', {
+    method: 'POST',
+    body: JSON.stringify({
+      org_id: input.orgId, track_id: input.trackId,
+      learner_ids: input.learnerIds, due_at: input.dueAt,
+    }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
+  if (!res.ok) throw new Error(body.error ?? 'Could not assign this track');
+  return { count: body.count ?? 0 };
 }
 
 /** Leader/admin: this org's own authored modules (source='custom'), at ANY status —
@@ -570,8 +681,13 @@ export async function mySimAttempts(agentId: string): Promise<SimAttempt[]> {
   return ((await res.json()) as { practice: SimAttempt[] | null }).practice ?? [];
 }
 
-/** Submit a module's answers for server-side grading. */
-export async function gradeQuiz(moduleId: string, answers: number[]): Promise<GradeResult> {
+/** Submit a module's answers for server-side grading.
+ *  `record: false` grades without writing agent progress — leaders taking a lab. */
+export async function gradeQuiz(
+  moduleId: string,
+  answers: number[],
+  opts?: { record?: boolean },
+): Promise<GradeResult> {
   if (isDemo) {
     const m = DEMO_COURSE.find((d) => d.id === moduleId);
     const key = m?.answers ?? [];
@@ -594,26 +710,69 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
   }
   const res = await workerFetch('/rep/grade', {
     method: 'POST',
-    body: JSON.stringify({ moduleId, answers }),
+    body: JSON.stringify({ moduleId, answers, record: opts?.record !== false }),
   });
   const body = (await res.json().catch(() => ({}))) as GradeResult & { error?: string };
   if (!res.ok) throw new Error(body.error ?? 'Could not grade quiz');
   return body;
 }
 
+export interface LabCheck { id: string; pass: boolean; message: string; required: boolean; critical: boolean }
+export interface LabGrade { passed: boolean; phase: 'audit' | 'repair'; checks: LabCheck[]; critical: boolean; score?: number; max?: number }
+
+export async function listLabScenarios(): Promise<Array<{ id: string; title: string; kind: string; facts: unknown }>> {
+  if (isDemo) return [];
+  const res = await workerFetch('/rep/sim/scenarios');
+  if (!res.ok) throw new Error('Could not load practice scenarios.');
+  return ((await res.json()) as { scenarios: Array<{ id: string; title: string; kind: string; facts: unknown }> }).scenarios ?? [];
+}
+
+export async function gradeLab(
+  scenarioId: string,
+  submission: { phase: 'audit' | 'repair'; contactName?: string; risks?: string[]; stage?: string; note?: string; task?: { title?: string; owner?: string; due?: string }; channel?: string },
+  opts?: { record?: boolean },
+): Promise<LabGrade> {
+  const res = await workerFetch('/rep/sim/grade', {
+    method: 'POST',
+    body: JSON.stringify({ scenarioId, phase: submission.phase, submission, record: opts?.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as LabGrade & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not grade this practice');
+  return body;
+}
+
+/** Mark a no-quiz module complete. `record: false` is a leader take — no progress write. */
+export async function ackModule(moduleId: string, opts?: { record?: boolean }): Promise<void> {
+  if (isDemo) {
+    const m = DEMO_COURSE.find((d) => d.id === moduleId);
+    if (m && opts?.record !== false) {
+      m.status = 'passed';
+      m.passed_at = m.passed_at ?? new Date().toISOString();
+      m.score = m.score ?? 100;
+    }
+    return;
+  }
+  const res = await workerFetch('/rep/ack', {
+    method: 'POST',
+    body: JSON.stringify({ moduleId, record: opts?.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not mark this module done');
+}
+
 function demoRep(): RepData {
   const modules: RepModule[] = [
-    { id: 'm0', idx: 1, title: 'Welcome to Preferred', summary: 'The program standards — and the pipeline that keeps you in it.', body: 'Three numbers Zillow holds you to.', pass_pct: 80, questions: 7, cards: DEMO_COURSE[0].cards },
-    { id: 'm1', idx: 2, title: 'The TRU Way: Speed to Lead', summary: 'Why the first five minutes decide the deal.', body: 'A paid lead is a stopwatch, not a to-do…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[1].cards },
-    { id: 'm2', idx: 3, title: 'The ALMS Call Framework', summary: 'Appointment, Location, Motivation, Summarize.', body: 'ALMS is the spine of every first call…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[2].cards },
-    { id: 'm3', idx: 4, title: 'Working a Paid Lead End to End', summary: 'What "worked" actually means.', body: 'A lead counts as WORKED when…', pass_pct: 80, questions: 7, cards: [
+    { id: 'm0', idx: 1, title: 'Welcome to Preferred', summary: 'The program standards — and the pipeline that keeps you in it.', body: 'Three numbers Zillow holds you to.', pass_pct: 80, questions: 7, core: true, cards: DEMO_COURSE[0].cards },
+    { id: 'm1', idx: 2, title: 'The TRU Way: Speed to Lead', summary: 'Why the first five minutes decide the deal.', body: 'A paid lead is a stopwatch, not a to-do…', pass_pct: 80, questions: 8, core: true, cards: DEMO_COURSE[1].cards },
+    { id: 'm2', idx: 3, title: 'The ALMS Call Framework', summary: 'Appointment, Location, Motivation, Summarize.', body: 'ALMS is the spine of every first call…', pass_pct: 80, questions: 8, core: true, cards: DEMO_COURSE[2].cards },
+    { id: 'm3', idx: 4, title: 'Working a Paid Lead End to End', summary: 'What "worked" actually means.', body: 'A lead counts as WORKED when…', pass_pct: 80, questions: 7, core: true, cards: [
       { t: 'section', n: 'The one word', title: 'What "worked" means', body: 'A lead is worked when a real person actually tried to reach them — not when the CRM fired an autotext.' },
       { t: 'text', k: 'Worked is a verb', body: 'A paid lead counts as WORKED the moment you personally try to reach a real human — a live call, a real voicemail, a text you actually typed. An automated drip going out under your name is not you working the lead. It’s the system holding the door while you decide whether to walk through it.\n\nEvery lead sits in one of three states on your Pulse board: worked, stuck, or zero-contact. The whole job is keeping leads out of the bottom two — not by gaming the stage, but by doing the thing the stage is supposed to mean.' },
       { t: 'steps', title: 'Working a lead, start to finish', steps: ['Speed: first personal touch inside the window', 'Double-dial, voicemail, then a text you actually typed', 'Set the next step — a real time on the calendar', 'Log the honest stage in Follow Up Boss', 'Keep following up until they answer, book, or clearly say no'] },
       { t: 'drill', prompt: 'An autotext went out to a new lead an hour ago. No human has called. Is this lead "worked"?', choices: ['Yes — a touch is a touch', 'No — automated ≠ worked; it still needs a real attempt', 'Only if they replied', 'Yes, after 24 hours'], answer: 1, explain: 'Automation keeps the lead warm; it doesn’t count as you working it. Until a person tries to reach them, the lead is still zero-contact.' },
       { t: 'callout', body: 'Worked, stuck, or zero-contact — every lead is one of the three. The whole program is just keeping more of them in the first bucket.' },
     ] },
-    { id: 'm4', idx: 5, title: 'Follow-Up Discipline & the CRM', summary: 'The system only works if the CRM tells the truth.', body: 'Your CRM is the single source of truth…', pass_pct: 80, questions: 7, cards: [
+    { id: 'm4', idx: 5, title: 'Follow-Up Discipline & the CRM', summary: 'The system only works if the CRM tells the truth.', body: 'Your CRM is the single source of truth…', pass_pct: 80, questions: 7, core: true, cards: [
       { t: 'section', n: 'The scoreboard', title: 'The CRM tells the truth', body: 'Zillow and your leader read your whole funnel out of Follow Up Boss. If it’s wrong, your best work is invisible.' },
       { t: 'text', k: 'If it’s not in the CRM, it didn’t happen', body: 'You can make the perfect call, set the perfect appointment, and sit down with a buyer who’s ready — and if the stage in Follow Up Boss never moves, none of it shows up. The system doesn’t see effort. It sees stages.\n\nThat cuts both ways. A CRM that tells the truth protects you: it’s the record that the lead was answered, the consult happened, the deal is real. Keep it honest and it works for you. Let it drift and your pipeline lies about you.' },
       { t: 'steps', title: 'A simple follow-up cadence', steps: ['Day 1: multiple touches — call, voicemail, text', 'Days 2–7: a touch a day while intent is high', 'Weeks 2–4: every few days, mix call and text', 'Then a steady long-game rhythm until they act or opt out'] },
@@ -644,7 +803,8 @@ function demoRep(): RepData {
     { agent_id: 'a1', scenario: 'first_timer', status: 'graded', score: 86, passed: true, created_at: '2026-06-28' },
     { agent_id: 'a1', scenario: 'early_browser', status: 'graded', score: 71, passed: false, created_at: '2026-06-27' },
   ];
-  return { modules, progress, agents, practice };
+  // The demo has no shelf — assignment is a real write, so it stays out.
+  return { modules, progress, agents, practice, learners: [], tracks: [], trackModules: [], assignments: [], certificates: [] };
 }
 
 // ── Platform-owner console (the HQ "act as a team" tile) ────────────────────
@@ -875,7 +1035,7 @@ function demoDashboard(): DashboardData {
     ['Trevor Holland', 62, 8, 12, 42, 4],
     ['Jordan Blake', 58, 6, 14, 38, 3],
     ['Dana Cole', 71, 5, 9, 57, 2],
-    ['Priya Nair', 49, 2, 6, 41, 1],
+    ['Avery Nair', 49, 2, 6, 41, 1],
     ['Marcus Delgado', 55, 0, 8, 47, 1],
     ['Maria Lopez', 44, 0, 3, 41, 0],
     ['Sam Whitfield', 38, 0, 2, 36, 0],
@@ -926,7 +1086,7 @@ function demoDashboard(): DashboardData {
   // Demo deals: 27 closings (16 closed + 11 UC) off 543 leads ≈ 1:20, and
   // 54 offer-or-beyond ≈ 10% offer rate — the numbers the pitch tells.
   const deals: DealRow[] = [];
-  const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Priya Nair', 'Marcus Delgado', 'Maria Lopez'];
+  const dealAgents = ['Trevor Holland', 'Jordan Blake', 'Dana Cole', 'Avery Nair', 'Marcus Delgado', 'Maria Lopez'];
   const dealSrcCycle = ['Zillow', 'Realtor.com', 'Homes.com', 'Facebook', 'Google', 'Referrals'];
   // Section 1 (accuracy): a matching stageLog hit per deal, so the ?demo=1 preview has
   // something for shared/metrics.ts to chew on once Block 3 wires it up. fub_person_id

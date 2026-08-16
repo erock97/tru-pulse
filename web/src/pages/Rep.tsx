@@ -3,8 +3,15 @@ import {
   loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole,
   loadRepCustomModules, loadRepQuestionsMasked, loadRepQuestionsForEdit, uploadRepMedia, saveRepModule, saveRepQuestions, archiveRepModule,
   type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario, type LessonCard,
+  type CourseQuestion, type GradeResult,
 } from '../lib/api';
-import { Lesson, SimView } from './AgentCourse';
+import { buildTrackViews } from '../../../shared/repLibrary.js';
+import type { TrackView } from '../../../shared/repLibrary.js';
+import { Lesson, Quiz, Result, SimView } from './AgentCourse';
+import RepAssign from './RepAssign';
+import { LabView } from './RepLab';
+import { PracticeRecord } from './PracticeRecord';
+import { isCoreModule } from '../lib/repCore';
 import { HqShell } from '../components/hqShell';
 import { Icon, Ring, Avatar } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -24,18 +31,6 @@ import '../truHqDark.css';
 
 const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-
-/* ---- Preview-only card coercion: an uploaded `t:'media'` asset renders for
-   real in the learner course (Block 4 — signed playback/PDF/slide viewer).
-   Until that ships, the leader's preview here degrades it to a plain chip so
-   the walkthrough never shows a blank screen or crashes on an unknown type. ---- */
-function previewCards(cards: LessonCard[] | null | undefined): LessonCard[] {
-  return (cards ?? []).map((c) => {
-    if (c.t !== 'media') return c;
-    const kindLabel = c.kind ? c.kind.toUpperCase() : 'FILE';
-    return { t: 'callout', body: `📎 ${kindLabel} attached — “${c.title || c.path || 'untitled'}”. Renders for agents once the media player ships.` };
-  });
-}
 
 /* ---- satellite count-up tile (varied sizes) ---- */
 function Satellite({ value, label }: { value: number; label: string }) {
@@ -120,16 +115,37 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const [data, setData] = useState<RepData | null>(null);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [preview, setPreview] = useState<RepModule | null>(null);
+  const [previewQs, setPreviewQs] = useState<CourseQuestion[]>([]);
+  const [previewView, setPreviewView] = useState<'lesson' | 'quiz' | 'result'>('lesson');
+  const [previewResult, setPreviewResult] = useState<GradeResult | null>(null);
   const [simTest, setSimTest] = useState(false);
+  const [labTest, setLabTest] = useState(false);
+  const [labScenario, setLabScenario] = useState<'avery-repair' | 'elena-homework'>('avery-repair');
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
   const [q, setQ] = useState('');
   const [role, setRole] = useState<string | null>(null);
   const [manage, setManage] = useState(false);
+  // null = closed; a string (possibly empty) = open, pre-checking that learner.
+  const [assignFor, setAssignFor] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = () => loadRep().then(setData);
   useEffect(() => { void refresh(); void simScenarios().then(setSims); }, []);
   useEffect(() => { void myOrgRole(org.id).then(setRole); }, [org.id]);
+  const previewId = preview?.id ?? null;
+  useEffect(() => {
+    if (!previewId) { setPreviewQs([]); setPreviewView('lesson'); setPreviewResult(null); return; }
+    setPreviewView('lesson');
+    setPreviewResult(null);
+    // Depend on id, not the module object. A new object for the same module
+    // used to clear previewQs, which swapped Lesson for a spinner and remounted
+    // it at step 1 — wiping the counter and every sidebar checkmark.
+    if (preview?.questions) {
+      void loadRepQuestionsMasked(previewId).then(setPreviewQs).catch(() => setPreviewQs([]));
+    } else {
+      setPreviewQs([]);
+    }
+  }, [previewId, preview?.questions]);
   useReveal([data, simTest, preview], canvasRef.current);
 
   // "Manage modules" — reuses the memberships.role signal, the exact same
@@ -137,6 +153,40 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   // authoring write. A plain 'coach' member never sees the entry point,
   // though the Worker is still the real authority if this check is bypassed.
   const canAuthor = role === 'admin' || role === 'leader';
+
+  // agent row -> learner row. Assignments key on the learner spine, which covers
+  // leaders too; the roster only lists agents, so this is the bridge.
+  const learnerOf = (agentId: string): string | null =>
+    data?.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+
+  // Every assigned track for one learner, rolled up by the same pure functions
+  // the learner's own shelf uses — percentages are never recomputed here.
+  const tracksFor = (agentId: string) => {
+    if (!data) return [];
+    const learnerId = data.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+    if (!learnerId) return [];
+    const progress = data.progress
+      .filter((p) => p.agent_id === agentId)
+      .map((p) => ({ module_id: p.module_id, status: p.status, score: p.score, passed_at: p.passed_at }));
+    const mine = data.assignments.filter((a) => a.learner_id === learnerId);
+    if (mine.length === 0) return [];
+    return buildTrackViews(data.tracks, data.trackModules, progress, mine, new Date())
+      .filter((t) => t.assigned);
+  };
+
+  /** Tracks this agent has actually earned, newest first. */
+  const certsFor = (agentId: string): Array<{ title: string; issued_at: string }> => {
+    if (!data) return [];
+    const learnerId = data.learners.find((l) => l.agent_id === agentId)?.id ?? null;
+    if (!learnerId) return [];
+    return data.certificates
+      .filter((c) => c.learner_id === learnerId)
+      .map((c) => ({
+        title: data.tracks.find((t) => t.id === c.track_id)?.title ?? 'Track',
+        issued_at: c.issued_at,
+      }))
+      .sort((a, b) => b.issued_at.localeCompare(a.issued_at));
+  };
 
   if (!data) {
     return (
@@ -153,15 +203,87 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     return <SimView scenarios={sims.scenarios} configured={sims.configured} attempts={[]} onBack={() => setSimTest(false)} onGraded={() => {}} />;
   }
 
-  // Full course preview — the leader walks the exact module the agents get.
+  if (labTest) {
+    // Avery's repair runs on the practice-record surface now; Elena is still the
+    // older screenshot-and-form exercise, so each gets the wrapper it needs.
+    if (labScenario === 'avery-repair') {
+      return (
+        <div className="ac">
+          <header className="ac-top">
+            <button className="link small" onClick={() => setLabTest(false)}>‹ Back</button>
+          </header>
+          <main className="ac-main ac-main-wide">
+            <PracticeRecord scenario="avery-repair" record={false} />
+          </main>
+        </div>
+      );
+    }
+    return <LabView scenario={labScenario} record={false} onBack={() => setLabTest(false)} />;
+  }
+
+  // Leader take — real cards and quiz, nothing written to the agent roster.
   if (preview) {
+    if (preview.questions > 0 && previewQs.length === 0) {
+      return (
+        <div className="tru-dark">
+          <div className="center-wrap" style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
+            <div className="spinner" />
+          </div>
+        </div>
+      );
+    }
     const asCourse: CourseModule = {
       ...preview,
-      cards: previewCards(preview.cards),
-      qs: [],
+      cards: preview.cards ?? [],
+      qs: previewQs,
       status: 'not_started', score: null, passed_at: null, signed: false,
     };
-    return <Lesson module={asCourse} onBack={() => setPreview(null)} onDone={() => setPreview(null)} doneLabel={`End of module · ${preview.questions}-question quiz follows ✓`} />;
+    const closePreview = () => setPreview(null);
+    if (previewView === 'quiz') {
+      return (
+        <Quiz
+          module={asCourse}
+          record={false}
+          onExit={() => setPreviewView('lesson')}
+          onGraded={(r) => { setPreviewResult(r); setPreviewView('result'); }}
+        />
+      );
+    }
+    if (previewView === 'result' && previewResult) {
+      return (
+        <Result
+          module={asCourse}
+          result={previewResult}
+          onRetry={() => setPreviewView('quiz')}
+          onReview={() => setPreviewView('lesson')}
+          onHome={closePreview}
+        />
+      );
+    }
+    const hasLesson = (asCourse.cards?.length ?? 0) > 0;
+    if (!hasLesson && asCourse.qs.length && previewView === 'lesson') {
+      return (
+        <Quiz
+          module={asCourse}
+          record={false}
+          onExit={closePreview}
+          onGraded={(r) => { setPreviewResult(r); setPreviewView('result'); }}
+        />
+      );
+    }
+    return (
+      <Lesson
+        key={preview.id}
+        module={asCourse}
+        canSkip
+        onBack={closePreview}
+        onDone={() => {
+          if (asCourse.qs.length) setPreviewView('quiz');
+          else closePreview();
+        }}
+        doneLabel={asCourse.qs.length ? undefined : 'End of module'}
+      />
+    );
   }
 
   // ── REAL DATA (unchanged pipeline) ──────────────────────────────────────────
@@ -173,12 +295,14 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const row = (agentId: string, moduleId: string): RepProgressRow | undefined =>
     progress.find((p) => p.agent_id === agentId && p.module_id === moduleId);
   const stat = (agentId: string, moduleId: string) => row(agentId, moduleId)?.status ?? 'not_started';
+  const coreModules = modules.filter(isCoreModule);
   const pct = (agentId: string) => {
-    const passed = modules.filter((m) => stat(agentId, m.id) === 'passed').length;
-    return modules.length ? Math.round((passed / modules.length) * 100) : 0;
+    const passed = coreModules.filter((m) => stat(agentId, m.id) === 'passed').length;
+    return coreModules.length ? Math.round((passed / coreModules.length) * 100) : 0;
   };
   const isSigned = (agentId: string) => {
-    const passedRows = progress.filter((p) => p.agent_id === agentId && p.status === 'passed');
+    const coreIds = new Set(coreModules.map((m) => m.id));
+    const passedRows = progress.filter((p) => p.agent_id === agentId && p.status === 'passed' && coreIds.has(p.module_id));
     return pct(agentId) === 100 && passedRows.length > 0 && passedRows.every((p) => p.signed_off_at);
   };
   const certifiedCount = agents.filter((a) => pct(a.id) === 100).length;
@@ -258,6 +382,20 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                   >
                     🎙 Test the Live Sim
                   </button>
+                  <button
+                    className="rp-preview"
+                    onClick={() => { setLabScenario('avery-repair'); setLabTest(true); }}
+                    title="Take the Avery repair lab — graded, nothing written to the agent roster"
+                  >
+                    ✎ Take Avery
+                  </button>
+                  <button
+                    className="rp-preview"
+                    onClick={() => { setLabScenario('elena-homework'); setLabTest(true); }}
+                    title="Take the Elena closer — graded, nothing written to the agent roster"
+                  >
+                    8 Take Elena
+                  </button>
                   {canAuthor && (
                     <button
                       className="rp-preview"
@@ -265,6 +403,15 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                       title="Author, publish, or archive your org's own training modules"
                     >
                       🛠 Manage modules
+                    </button>
+                  )}
+                  {canAuthor && data.tracks.length > 0 && (
+                    <button
+                      className="rp-preview"
+                      onClick={() => setAssignFor('')}
+                      title="Give a track to agents or leaders, with an optional due date"
+                    >
+                      📋 Assign a track
                     </button>
                   )}
                 </div>
@@ -392,7 +539,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                   <div className="rp-roster-list">
                     {shown.map((a) => {
                       const p = pct(a.id);
-                      const statuses = modules.map((m) => stat(a.id, m.id));
+                      const statuses = coreModules.map((m) => stat(a.id, m.id));
                       const isOpen = openAgent === a.id;
                       return (
                         <div key={a.id}>
@@ -405,14 +552,25 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                             <ProgressDots statuses={statuses} />
                             <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
                             <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
-                            <span onClick={(e) => e.stopPropagation()}>
+                            <span onClick={(e) => e.stopPropagation()} className="rp-agent-acts">
+                              {canAuthor && data.tracks.length > 0 && learnerOf(a.id) && (
+                                <button
+                                  className="rp-preview sm"
+                                  onClick={() => setAssignFor(learnerOf(a.id)!)}
+                                  title={`Assign a track to ${a.name}`}
+                                >
+                                  Assign
+                                </button>
+                              )}
                               <InviteCell agent={a} />
                             </span>
                           </div>
                           {isOpen && (
                             <AgentDrill
                               agent={a}
-                              modules={modules}
+                              assigned={tracksFor(a.id)}
+                              certified={certsFor(a.id)}
+                              modules={coreModules}
                               row={row}
                               pct={p}
                               signed={isSigned(a.id)}
@@ -457,6 +615,16 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
           onPreview={(m) => setPreview(m)}
         />
       )}
+
+      {assignFor !== null && canAuthor && (
+        <RepAssign
+          org={org}
+          data={data}
+          preselect={assignFor || null}
+          onClose={() => setAssignFor(null)}
+          onAssigned={() => void refresh()}
+        />
+      )}
     </div>
   );
 }
@@ -465,8 +633,11 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
    AGENT DRILL — module-by-module drill-down + the certification
    sign-off. Same real data + signOffAgent() behavior as before.
    ============================================================ */
-function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
+function AgentDrill({ agent, assigned, certified, modules, row, pct, signed, sim, onSigned }: {
   agent: RepAgent;
+  /** Assigned tracks, already rolled up by shared/repLibrary.ts. */
+  assigned: TrackView[];
+  certified: Array<{ title: string; issued_at: string }>;
   modules: RepData['modules'];
   row: (agentId: string, moduleId: string) => RepProgressRow | undefined;
   pct: number;
@@ -514,11 +685,37 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
           </div>
         </div>
       </div>
+      {certified.length > 0 && (
+        <div className="rp-drill-tracks">
+          {certified.map((c) => (
+            <div key={c.title + c.issued_at} className="rp-drill-track earned">
+              Certified · {c.title} · {fmtDate(c.issued_at)}
+            </div>
+          ))}
+        </div>
+      )}
+      {assigned.length > 0 && (
+        <div className="rp-drill-tracks">
+          {assigned.map((t) => (
+            <div key={t.id} className={`rp-drill-track${t.overdue ? ' late' : ''}`}>
+              {t.title} · {t.passed}/{t.total}
+              {t.dueAt && <> · {t.overdue ? 'overdue ' : 'due '}
+                {new Date(t.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}
+              {t.complete && ' · complete'}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="rp-drill-foot">
         {signed
           ? <span className="rp-signed">Certification signed off ✓</span>
           : (
-            <button className="rp-signoff" disabled={!certReady || busy} onClick={signOff} title={!certReady ? 'Enabled once every module AND the Live Sim are passed' : ''}>
+            <button
+              className="rp-signoff"
+              disabled={!certReady || busy}
+              onClick={signOff}
+              title={!certReady ? 'Enabled once every core module AND the Live Sim are passed' : ''}
+            >
               {busy ? 'Signing…' : certReady ? 'Sign off certification' : pct === 100 ? 'Sign off (Live Sim pending)' : `Sign off (at ${pct}%)`}
             </button>
           )}
@@ -842,7 +1039,7 @@ function ModuleEditor({ orgId, module, onClose, onSaved }: {
     const draft: CourseModule = {
       id: module?.id ?? 'draft', idx: module?.idx ?? 0, title: title || 'Untitled module',
       summary: summary || null, body: null, pass_pct: passPct, questions: questions.length,
-      cards: previewCards(cards), qs: [], status: 'not_started', score: null, passed_at: null, signed: false,
+      cards, qs: [], status: 'not_started', score: null, passed_at: null, signed: false,
     };
     return <Lesson module={draft} onBack={() => setPreviewing(false)} onDone={() => setPreviewing(false)} doneLabel="End of module preview" />;
   }
