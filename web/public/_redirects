@@ -2,16 +2,20 @@
 # fallback: /favicon.ico /favicon.svg /apple-touch-icon.png /icon-192.png
 # /icon-512.png /icon-maskable-512.png /book/ and any other real file.
 #
-# Known marketing paths keep a 200 SPA shell. Everything else that is not
-# a real file used to be `/* /index.html 200`, which made guessed URLs
-# look like a successful homepage load. Serve those as 404; the client
-# still gets index.html and renders the NotFound view.
+# Do not rewrite a no-slash marketing path to /index.html. Pages pretty-URLs
+# treat that destination as the root document and 308s it to `/`, so
+# /services /about /apply all land on the homepage. The trailing-slash
+# forms already 200 with the SPA shell; send the no-slash forms there.
+#
+# Unknown paths that are not a real file get the SPA shell as 404 so the
+# client can render NotFound instead of looking like a successful home load.
 
-/services     /index.html   200
+/services     /services/    308
+/about        /about/       308
+/apply        /apply/       308
+
 /services/    /index.html   200
-/about        /index.html   200
 /about/       /index.html   200
-/apply        /index.html   200
 /apply/       /index.html   200
 
 /*            /index.html   404

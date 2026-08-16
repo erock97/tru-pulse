@@ -27,10 +27,22 @@ describe('unknown marketing paths render a real not-found page', () => {
 });
 
 describe('Pages fallback does not disguise unknown paths as a 200 homepage', () => {
-  it('keeps real marketing routes on a 200 SPA shell', () => {
-    expect(redirects).toMatch(/\/services\/?\s+\/index\.html\s+200/);
-    expect(redirects).toMatch(/\/about\/?\s+\/index\.html\s+200/);
-    expect(redirects).toMatch(/\/apply\/?\s+\/index\.html\s+200/);
+  it('sends no-slash marketing paths to the trailing-slash URL, not to /', () => {
+    // `/services /index.html 200` is rewritten to the root document, and
+    // Pages pretty-URLs then 308 that to `/`. 308 to `/services/` is fine.
+    expect(redirects).toMatch(/^\s*\/services\s+\/services\/\s+308\s*$/m);
+    expect(redirects).toMatch(/^\s*\/about\s+\/about\/\s+308\s*$/m);
+    expect(redirects).toMatch(/^\s*\/apply\s+\/apply\/\s+308\s*$/m);
+    expect(redirects).not.toMatch(/^\s*\/services\s+\/index\.html\b/m);
+    expect(redirects).not.toMatch(/^\s*\/about\s+\/index\.html\b/m);
+    expect(redirects).not.toMatch(/^\s*\/apply\s+\/index\.html\b/m);
+    expect(redirects).not.toMatch(/^\s*\/(?:services|about|apply)\s+\/\s+/m);
+  });
+
+  it('keeps trailing-slash marketing routes on a 200 SPA shell', () => {
+    expect(redirects).toMatch(/^\s*\/services\/\s+\/index\.html\s+200\s*$/m);
+    expect(redirects).toMatch(/^\s*\/about\/\s+\/index\.html\s+200\s*$/m);
+    expect(redirects).toMatch(/^\s*\/apply\/\s+\/index\.html\s+200\s*$/m);
   });
 
   it('serves the SPA shell as 404 for anything that is not a real file or route', () => {
