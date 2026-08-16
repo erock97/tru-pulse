@@ -55,9 +55,11 @@
   /* published=true means "this type is active for its owner", not "show this
    * on the public book page". Eric's 1:1s, intro, leadership sync, and strategy
    * session are published so they work for him; they are not for strangers.
-   * meeting_types has no public/internal column. Until one exists, only these
-   * slugs may appear to a visitor. Do not fall back to the full published
-   * list — that is how internal types leaked on bare /book/. */
+   * db/meeting_types_public_read.sql adds the real gate (is_public + tighter
+   * anon RLS). Until that is applied, PostgREST still returns every published
+   * row to anyone with the publishable key. This allowlist stays as defense
+   * in depth after that lands. Do not query a column that is not live yet,
+   * and do not fall back to the full published list. */
   var PUBLIC_SLUGS = ["client-consultation-call"];
 
   function isPublicSlug(slug) {
