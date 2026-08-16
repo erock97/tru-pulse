@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { PublicRoute } from '../lib/routes';
+import type { PublicRoute, PublicView } from '../lib/routes';
 import { applyHead, type PageMeta } from '../lib/head';
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Services from './pages/Services';
 import About from './pages/About';
 import Apply from './pages/Apply';
+import NotFound from './pages/NotFound';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -33,11 +34,21 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
   },
 };
 
-export default function PublicSite({ route }: { route: PublicRoute }) {
+const NOT_FOUND_META: Omit<PageMeta, 'path'> = {
+  title: 'Page not found — TRU',
+  description: 'This page does not exist.',
+  robots: 'noindex',
+};
+
+export default function PublicSite({ route }: { route: PublicView }) {
   const shellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    applyHead({ ...META[route], path: route });
+    if (route === 'not-found') {
+      applyHead({ ...NOT_FOUND_META, path: window.location.pathname });
+    } else {
+      applyHead({ ...META[route], path: route });
+    }
     if (route !== '/') window.scrollTo(0, 0);
   }, [route]);
 
@@ -102,6 +113,7 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
         {route === '/services' && <Services />}
         {route === '/about' && <About />}
         {route === '/apply' && <Apply />}
+        {route === 'not-found' && <NotFound />}
       </main>
       <SiteFooter />
     </div>

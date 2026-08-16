@@ -1,4 +1,17 @@
 # Static files in this directory are served as-is and never hit the SPA
 # fallback: /favicon.ico /favicon.svg /apple-touch-icon.png /icon-192.png
-# /icon-512.png /icon-maskable-512.png
-/*    /index.html   200
+# /icon-512.png /icon-maskable-512.png /book/ and any other real file.
+#
+# Known marketing paths keep a 200 SPA shell. Everything else that is not
+# a real file used to be `/* /index.html 200`, which made guessed URLs
+# look like a successful homepage load. Serve those as 404; the client
+# still gets index.html and renders the NotFound view.
+
+/services     /index.html   200
+/services/    /index.html   200
+/about        /index.html   200
+/about/       /index.html   200
+/apply        /index.html   200
+/apply/       /index.html   200
+
+/*            /index.html   404

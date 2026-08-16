@@ -3,9 +3,13 @@
 // bundle's static <title>, which used to read "TRU Pulse" — wrong brand, wrong
 // page, on every marketing URL.
 import { BUSINESS } from '../config/business';
-import type { PublicRoute } from './routes';
 
-export type PageMeta = { title: string; description: string; path: PublicRoute };
+export type PageMeta = {
+  title: string;
+  description: string;
+  path: string;
+  robots?: 'noindex';
+};
 
 // Existing brand PNG in public/. Built from the host serving this page so a
 // Pages preview unfurl hits that preview's /icon-512.png, not live truhq.co
@@ -25,11 +29,14 @@ function upsertMeta(selector: string, attrs: Record<string, string>) {
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
 }
 
-export function applyHead({ title, description, path }: PageMeta): void {
-  const url = `${BUSINESS.siteUrl}${path}`;
+export function applyHead({ title, description, path, robots }: PageMeta): void {
+  const url = `${BUSINESS.siteUrl}${path === 'not-found' ? '/' : path}`;
   document.title = title;
 
   upsertMeta('meta[name="description"]', { name: 'description', content: description });
+  if (robots) {
+    upsertMeta('meta[name="robots"]', { name: 'robots', content: robots });
+  }
   upsertMeta('meta[property="og:title"]', { property: 'og:title', content: title });
   upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
   upsertMeta('meta[property="og:url"]', { property: 'og:url', content: url });

@@ -97,4 +97,19 @@ describe('applyHead', () => {
     expect(tw?.attrs.content).toBe(`${PREVIEW_ORIGIN}/icon-512.png`);
     expect(card?.attrs.content).toBe('summary_large_image');
   });
+
+  it('marks a not-found page noindex without inventing a /not-found canonical', () => {
+    applyHead({
+      title: 'Page not found — TRU',
+      description: 'This page does not exist.',
+      path: '/engagement',
+      robots: 'noindex',
+    });
+
+    const robots = document.head.querySelector('meta[name="robots"]') as FakeEl | null;
+    const ogUrl = document.head.querySelector('meta[property="og:url"]') as FakeEl | null;
+    expect(robots?.attrs.content).toBe('noindex');
+    expect(ogUrl?.attrs.content).toMatch(/\/engagement$/);
+    expect(ogUrl?.attrs.content).not.toMatch(/\/not-found$/);
+  });
 });

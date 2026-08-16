@@ -30,10 +30,27 @@ describe('matchPublicRoute', () => {
     expect(matchPublicRoute('/services', '#packages')).toBe('/services');
   });
 
-  it('returns null for anything unknown — Work and legal stay off this branch', () => {
-    expect(matchPublicRoute('/work', '')).toBeNull();
-    expect(matchPublicRoute('/insights', '')).toBeNull();
-    expect(matchPublicRoute('/privacy', '')).toBeNull();
+  it('returns not-found for unknown paths so they cannot fall through to Home', () => {
+    expect(matchPublicRoute('/work', '')).toBe('not-found');
+    expect(matchPublicRoute('/insights', '')).toBe('not-found');
+    expect(matchPublicRoute('/privacy', '')).toBe('not-found');
+    expect(matchPublicRoute('/terms', '')).toBe('not-found');
+    expect(matchPublicRoute('/refund-policy', '')).toBe('not-found');
+    expect(matchPublicRoute('/engagement', '')).toBe('not-found');
+    expect(matchPublicRoute('/engagement/', '')).toBe('not-found');
+    expect(matchPublicRoute('/this-is-not-a-page', '')).toBe('not-found');
+    expect(matchPublicRoute('/tru-rep', '')).toBe('not-found');
+    expect(matchPublicRoute('/training', '')).toBe('not-found');
+    expect(matchPublicRoute('/tru-pulse', '')).toBe('not-found');
+  });
+
+  it('still yields to the product when an app hash sits on an unknown path', () => {
+    expect(matchPublicRoute('/engagement', '#/login')).toBeNull();
+    expect(matchPublicRoute('/this-is-not-a-page', '#/rep')).toBeNull();
+  });
+
+  it('treats a bare in-page hash on an unknown path as not-found, not Home', () => {
+    expect(matchPublicRoute('/engagement', '#cta')).toBe('not-found');
   });
 
   it('lists root first so PublicSite can render the marketing home, then the sub-routes on this branch', () => {
