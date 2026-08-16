@@ -1,6 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import PublicSite from './site/PublicSite';
+import { matchPublicRoute } from './lib/routes';
 import { clearLegacyTokens } from './lib/clearLegacyTokens';
 import './styles.css';
 
@@ -8,9 +10,13 @@ import './styles.css';
 // never signs out is exactly the one still carrying a pre-cutover token.
 clearLegacyTokens();
 
+// /about is a marketing path. Resolve it before App mounts so it never flashes
+// a login screen. "/" stays the product — matchPublicRoute never claims it.
+const publicRoute = matchPublicRoute(window.location.pathname, window.location.hash);
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    {publicRoute ? <PublicSite route={publicRoute} /> : <App />}
   </React.StrictMode>,
 );
 
