@@ -147,6 +147,15 @@ html.intro-lock .truland .skiplink { opacity: 0; pointer-events: none; }
   margin-top: 1.8rem; max-width: 62ch;
 }
 
+/* The 404 page's only action. Marketing chrome inherits `a { color: inherit;
+   text-decoration: none }`, which would hide a "back to home" link in the
+   body copy. Gold + underline so it reads as a link, not a sales CTA. */
+.truland a.nf-home {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 /* Long-form legal pages. Readable measure, nothing decorative. */
 .legal { max-width: 46rem; padding: 8rem 0 2rem; }
 .legal h1 { font-size: clamp(2rem, 4vw, 2.9rem); margin: 0 0 .4rem; line-height: 1.1; }

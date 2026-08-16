@@ -13,7 +13,9 @@ clearLegacyTokens();
 // /services, /about, and /apply are marketing paths. Resolve them before App
 // mounts so they never flash a login screen. "/" stays the product for
 // signed-in users — matchPublicRoute never claims it. App renders the
-// marketing home itself when signed out.
+// marketing home itself when signed out. Unknown paths come back as
+// 'not-found' (truthy) so PublicSite can render a real 404 instead of
+// dropping into App, which would show the homepage.
 const publicRoute = matchPublicRoute(window.location.pathname, window.location.hash);
 
 createRoot(document.getElementById('root')!).render(

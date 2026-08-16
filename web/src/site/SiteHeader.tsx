@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { BUSINESS } from '../config/business';
-import type { PublicRoute } from '../lib/routes';
+import type { PublicRoute, PublicView } from '../lib/routes';
 
 // Reuses the existing .nav / .brand / .nlinks / .cta classes from Landing.css.
-export default function SiteHeader({ current }: { current: PublicRoute }) {
+export default function SiteHeader({ current }: { current: PublicView }) {
   useEffect(() => {
     const nav = document.getElementById('nav');
     const onScroll = () => {
