@@ -1,12 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-
-const bookPage = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), '../../public/book/index.html'),
-  'utf8',
-);
+import bookPage from '../../public/book/index.html?raw';
 
 const INTERNAL_SLUGS = [
   '1-1-with-eric',
