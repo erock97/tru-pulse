@@ -184,12 +184,14 @@ describe('createNavGesture', () => {
     expect(titleAt(s.index)).toBe('Two things');
   });
 
-  it('does not re-arm until the pointer or key is released', () => {
+  it('does not re-arm on finish — only after the pointer stayed up', () => {
     const g = createNavGesture();
     expect(g.start()).toBe(true);
     expect(g.start()).toBe(false);
-    expect(g.start()).toBe(false);
     g.finish();
+    // Remount fires pointerup (finish) then pointerdown on the new Next.
+    expect(g.start()).toBe(false);
+    g.releaseClicks();
     expect(g.start()).toBe(true);
   });
 
@@ -198,6 +200,7 @@ describe('createNavGesture', () => {
     expect(g.start()).toBe(true);
     g.finish();
     expect(g.start({ repeat: true })).toBe(false);
+    g.releaseClicks();
     expect(g.start()).toBe(true);
   });
 
@@ -214,6 +217,56 @@ describe('createNavGesture', () => {
     expect(g.start({ from: 'click' })).toBe(true);
   });
 
+  it('a remounted Next under a held press cannot walk 1 → 11', () => {
+    const g = createNavGesture();
+    let s = start();
+    expect(g.start({ from: 'pointer' })).toBe(true);
+    s = applyLessonNav(s, { type: 'next' }, LEN);
+    // Live sequence: each remount fires pointerup then pointerdown on Next.
+    for (let n = 0; n < 10; n++) {
+      g.finish();
+      if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    }
+    expect(s.index).toBe(1);
+    expect(titleAt(s.index)).toBe('Two things');
+    g.releaseClicks();
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    expect(s.index).toBe(2);
+    expect(titleAt(s.index)).toBe('Four days');
+  });
+
+  it('does not auto-advance 4 → 5 → 6 → 7 or 10 → 11 from remount pointerups', () => {
+    const g = createNavGesture();
+    let s = at(3);
+    expect(titleAt(s.index)).toBe('How a lead reaches you');
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    g.finish();
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    g.finish();
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    expect(s.index).toBe(4);
+    expect(titleAt(s.index)).toBe('People');
+
+    g.releaseClicks();
+    s = at(9);
+    expect(titleAt(s.index)).toBe('Stage truth');
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    g.finish();
+    if (g.start({ from: 'pointer' })) s = applyLessonNav(s, { type: 'next' }, LEN);
+    expect(s.index).toBe(10);
+    expect(titleAt(s.index)).toBe('Your turn stages');
+  });
+
+  it('does not unlock while the pointer is still down', () => {
+    const g = createNavGesture();
+    expect(g.start({ from: 'pointer' })).toBe(true);
+    g.finish();
+    g.releaseClicks({ pointerDown: true });
+    expect(g.start({ from: 'pointer' })).toBe(false);
+    g.releaseClicks({ pointerDown: false });
+    expect(g.start({ from: 'pointer' })).toBe(true);
+  });
+
   it('a finished gesture is required before the next real step', () => {
     const g = createNavGesture();
     let s = at(3);
@@ -223,6 +276,7 @@ describe('createNavGesture', () => {
     expect(s.index).toBe(4);
     expect(titleAt(s.index)).toBe('People');
     g.finish();
+    g.releaseClicks();
     if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
     expect(s.index).toBe(5);
     expect(titleAt(s.index)).toBe('Demo find the lead');

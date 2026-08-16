@@ -574,26 +574,34 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
   const cards = m.cards;
   const [nav, setNav] = useState<LessonNavState>({ index: 0, seen: 0 });
   const gesture = useRef(createNavGesture());
+  const pointerDown = useRef(false);
   useEffect(() => {
     setNav({ index: 0, seen: 0 });
     gesture.current.reset();
   }, [m.id]);
   useEffect(() => {
-    const finish = () => {
+    const onDown = () => { pointerDown.current = true; };
+    const unlock = () => {
       gesture.current.finish();
-      // Leftover click after remount arrives after pointerup. Keep it blocked
-      // for two frames so it cannot take another step.
+      // Remount fires pointerup then pointerdown on the new Next. Unlocking
+      // on pointerup is what walked 1→11 and auto-advanced 4→5→6→7. Wait
+      // two frames and only unlock if the pointer stayed up.
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => gesture.current.releaseClicks());
+        requestAnimationFrame(() => {
+          gesture.current.releaseClicks({ pointerDown: pointerDown.current });
+        });
       });
     };
-    window.addEventListener('pointerup', finish);
-    window.addEventListener('pointercancel', finish);
-    window.addEventListener('keyup', finish);
+    const onUp = () => { pointerDown.current = false; unlock(); };
+    window.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('pointerup', onUp, true);
+    window.addEventListener('pointercancel', onUp, true);
+    window.addEventListener('keyup', unlock);
     return () => {
-      window.removeEventListener('pointerup', finish);
-      window.removeEventListener('pointercancel', finish);
-      window.removeEventListener('keyup', finish);
+      window.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('pointerup', onUp, true);
+      window.removeEventListener('pointercancel', onUp, true);
+      window.removeEventListener('keyup', unlock);
     };
   }, []);
   const i = nav.index;

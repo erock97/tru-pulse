@@ -39,7 +39,7 @@ export function applyLessonNav(
   if (intent.type === 'back') {
     const prev = clampIndex(index - 1, length);
     // Intentional back: later steps re-lock. Accidental jumps are stopped
-    // before they get here (createNavGate + rail only accepts seen steps).
+    // before they get here (createNavGesture + rail only accepts seen steps).
     return { index: prev, seen: prev };
   }
 
@@ -55,14 +55,17 @@ export type NavGestureFrom = 'pointer' | 'click' | 'key';
  *
  *  A time window is the wrong lock: the live deck remounts on every step, and
  *  a held click or Space/Enter repeat keeps firing after 300ms — one Next
- *  walked ~10 steps, and the deck advanced on its own while someone held the
- *  slide. The gesture stays closed until finish() (pointerup / keyup).
- *  Clicks that follow a pointer (the leftover click after remount) stay
- *  blocked until releaseClicks(). */
+ *  walked ~10 steps (1→11), and the deck advanced on its own (4→5→6→7,
+ *  10→11) while someone only took snapshots.
+ *
+ *  finish() means the physical pointer/key went up. It must NOT re-arm.
+ *  Remounting Next fires pointerup then another pointerdown on the new
+ *  button; unlocking there is what walked the deck with no second click.
+ *  releaseClicks() is the unlock, and only after the pointer stayed up. */
 export function createNavGesture(): {
   start: (opts?: { repeat?: boolean; from?: NavGestureFrom }) => boolean;
   finish: () => void;
-  releaseClicks: () => void;
+  releaseClicks: (opts?: { pointerDown?: boolean }) => void;
   reset: () => void;
 } {
   let held = false;
@@ -77,9 +80,12 @@ export function createNavGesture(): {
       return true;
     },
     finish() {
-      held = false;
+      // Physical release only. Re-arming here lets a remounted Next take
+      // another step from the same held press.
     },
-    releaseClicks() {
+    releaseClicks(opts) {
+      if (opts?.pointerDown) return;
+      held = false;
       blockClick = false;
     },
     reset() {
