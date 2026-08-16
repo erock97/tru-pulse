@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Book a time — TRU</title>
+<meta name="description" content="Choose a time that suits you." />
+<meta name="robots" content="noindex" />
+<style>
+/*
+  TruHQ's palette, written out rather than inherited: this page is served to
+  strangers without the app bundle, so its CSS variables do not exist here.
+  The values are copied from the app's own tokens so the two match, and dark
+  mode mirrors the app's dark set.
+*/
+:root{
+  --base:#fbf7f0; --card:#ffffff; --panel:#f4eee3; --text:#33281a;
+  --muted:rgba(51,40,26,.62); --accent:#E9A23B; --gold-dk:#C77E1F;
+  --border:#e0d3bd; --line:#ece2d2; --soft:rgba(233,162,59,.15);
+  --sea:#4a7c6f; --terra:#c06b4f;
+  --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Playfair Display",Georgia,"Times New Roman",serif;
+  --r-card:14px; --r-btn:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --base:#0C0A08; --card:#1B150D; --panel:#141009; --text:#F3ECE0;
+    --muted:rgba(243,236,224,.6); --accent:#F2C079; --gold-dk:#E9A23B;
+    --border:rgba(243,236,224,.14); --line:rgba(243,236,224,.07);
+    --soft:rgba(233,162,59,.15);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--base);color:var(--text);font:16px/1.55 var(--sans);
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding:44px 20px 80px}
+header{margin-bottom:28px}
+h1{font-family:var(--serif);font-weight:600;font-size:2rem;margin:0 0 6px;letter-spacing:.005em}
+.sub{color:var(--muted);margin:0;font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(51,40,26,.05)}
+button{font:inherit;cursor:pointer}
+.type{display:block;width:100%;text-align:left;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--r-card);padding:18px;margin-bottom:12px;
+  color:var(--text);transition:border-color .15s,transform .15s}
+.type:hover{border-color:var(--accent);transform:translateY(-1px)}
+.type h2{font-family:var(--serif);font-size:1.15rem;margin:0 0 4px;font-weight:600}
+.type .len{color:var(--gold-dk);font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;
+  font-weight:700}
+.type p{margin:6px 0 0;color:var(--muted);font-size:.9rem}
+.day{margin:22px 0 10px;font-family:var(--serif);font-size:1.05rem;font-weight:600}
+.day:first-of-type{margin-top:6px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.slot{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-btn);
+  padding:11px 8px;color:var(--text);text-align:center;font-variant-numeric:tabular-nums}
+.slot:hover{border-color:var(--accent);background:var(--soft)}
+.slot[aria-pressed=true]{background:var(--gold-dk);border-color:var(--gold-dk);color:#fffdf8}
+label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 5px}
+input,textarea{width:100%;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-btn);padding:11px 12px;color:var(--text);font:inherit}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+textarea{min-height:82px;resize:vertical}
+.primary{background:var(--gold-dk);color:#fffdf8;border:0;border-radius:var(--r-btn);
+  padding:13px 24px;font-weight:600;margin-top:18px;width:100%}
+.primary:hover:not(:disabled){background:var(--accent)}
+.primary:disabled{opacity:.5;cursor:default}
+.ghost{background:transparent;border:1px solid var(--border);color:var(--muted);
+  border-radius:var(--r-btn);padding:8px 14px;font-size:.85rem;margin-bottom:18px}
+.ghost:hover{color:var(--text);border-color:var(--accent)}
+.note{color:var(--muted);font-size:.85rem;margin-top:14px}
+.err{color:var(--terra)}
+.ok{color:var(--sea)}
+.big{font-family:var(--serif);font-size:1.4rem;margin:0 0 8px;font-weight:600}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--border);
+  border-top-color:var(--gold-dk);border-radius:50%;animation:t .7s linear infinite;
+  vertical-align:-2px;margin-right:7px}
+@keyframes t{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.type:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Book a time</h1>
+    <p class="sub" id="sub">Pick whichever suits you.</p>
+  </header>
+  <main id="view" aria-live="polite"></main>
+</div>
+
+<script src="book.js"></script>
+</body>
+</html>
