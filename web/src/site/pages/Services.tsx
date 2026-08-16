@@ -1,4 +1,5 @@
 import { BUSINESS } from '../../config/business';
+import { TEAM_BANDS } from '../teamBands';
 
 // The seven services. Same list as the home page, in full. Verbatim from the old
 // marketing site's services page (see the site archive under docs/ § /services).
@@ -19,29 +20,32 @@ const SERVICES = [
     body: 'Regular meetings with leadership to review team performance, agent execution, conversion trends, ZHL adoption, and what’s next on the operating roadmap.' },
 ] as const;
 
-// Four packages, banded by active agent count. Structure from the June 2026
-// pricing flier; descriptions from the old services page.
+// Four packages, banded by active agent count. Labels come from teamBands.ts
+// so /apply and /services cannot drift. Structure from the June 2026 pricing
+// flier; descriptions from the old services page.
 //
 // NO DOLLAR FIGURES. Pricing is a conversation, not a web page — the retainer
 // and the per-deal payout are described in words under "Investment" below.
-const PACKAGES = [
-  {
-    band: 'Up to 10 agents', name: 'Essentials', featured: false,
+const PACKAGE_COPY = {
+  Essentials: {
+    featured: false,
     blurb: 'Foundational sales management for teams putting their first real operating cadence in place. The full universal rhythm — leadership meetings, pipeline huddles, CRM oversight, accountability management, and performance monitoring — included.',
   },
-  {
-    band: '10 to 20 agents', name: 'Performance', featured: true, tag: 'Most common',
+  Performance: {
+    featured: true, tag: 'Most common',
     blurb: 'Our most popular engagement — chosen by teams ready to compound their existing lead flow into closings. Deeper coaching presence, sharper accountability, and tighter management coverage across the roster.',
   },
-  {
-    band: '20 to 40 agents', name: 'Performance+', featured: false,
+  'Performance+': {
+    featured: false,
     blurb: 'For teams with larger rosters where individual coaching capacity is the binding constraint. Expanded one-on-one presence and management bandwidth so no agent gets coached on a lag.',
   },
-  {
-    band: '40+ agents', name: 'Mega Team', featured: false,
+  'Mega Team': {
+    featured: false,
     blurb: 'One-on-one coaching capacity scoped to your roster. Custom commercial structure designed around the size and complexity of your operation.',
   },
-] as const;
+} as const;
+
+const PACKAGES = TEAM_BANDS.map((b) => ({ ...b, ...PACKAGE_COPY[b.name] }));
 
 const OUTCOMES = [
   'Increase lead conversion',

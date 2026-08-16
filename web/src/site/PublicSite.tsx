@@ -6,6 +6,7 @@ import SiteFooter from './SiteFooter';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import About from './pages/About';
+import Apply from './pages/Apply';
 import '../pages/Landing.css';
 import './site.css';
 
@@ -24,6 +25,11 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
     title: 'About — TRU',
     description:
       'Who you’d actually be working with. Twelve years in sales, eight of them in real estate prop tech at Zillow — recruiting, agent development, leadership training, KPIs and SOPs, and lead flow for some of the largest brokerages and teams in the country.',
+  },
+  '/apply': {
+    title: 'Apply to work with us — TRU',
+    description:
+      'Five short questions about your team. We review every application personally and reply within two business days.',
   },
 };
 
@@ -95,6 +101,7 @@ export default function PublicSite({ route }: { route: PublicRoute }) {
         {route === '/' && <Home />}
         {route === '/services' && <Services />}
         {route === '/about' && <About />}
+        {route === '/apply' && <Apply />}
       </main>
       <SiteFooter />
     </div>

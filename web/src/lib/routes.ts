@@ -1,4 +1,5 @@
 // Public marketing paths that render outside the logged-in product.
+// /apply is the intake form; Work and the legal pages stay off this branch.
 //
 // "/" is listed so PublicSite can render the marketing home, but
 // matchPublicRoute never claims it. The product lives at "/" plus a hash
@@ -9,7 +10,7 @@
 // A "#/" hash is an app route and also yields. A bare "#anchor" is an
 // in-page link on a marketing page and is fine.
 
-export const PUBLIC_ROUTES = ['/', '/services', '/about'] as const;
+export const PUBLIC_ROUTES = ['/', '/services', '/about', '/apply'] as const;
 
 export type PublicRoute = (typeof PUBLIC_ROUTES)[number];
 export type PublicSubRoute = Exclude<PublicRoute, '/'>;

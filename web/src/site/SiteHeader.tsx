@@ -26,6 +26,7 @@ export default function SiteHeader({ current }: { current: PublicRoute }) {
       <div className="nlinks">
         {link('/services', 'Services')}
         {link('/about', 'About')}
+        {link('/apply', 'Apply')}
       </div>
       <div className="nright">
         <a href={BUSINESS.appUrl} className="login">Client log in</a>
