@@ -49,20 +49,42 @@ export function applyLessonNav(
   return { index: target, seen: Math.max(seen, target) };
 }
 
-/** Ignore a second activation while the first click's layout is still settling.
- *  The live viewer remounts the slide on every step (`key={i}`), and a tall
- *  slide changing height moves Next/Back/sidebar under the still-down pointer. */
-export function createNavGate(lockMs = 300): { allow: () => boolean; reset: () => void } {
-  let lockedUntil = 0;
+export type NavGestureFrom = 'pointer' | 'click' | 'key';
+
+/** One navigation per pointer/key gesture.
+ *
+ *  A time window is the wrong lock: the live deck remounts on every step, and
+ *  a held click or Space/Enter repeat keeps firing after 300ms — one Next
+ *  walked ~10 steps, and the deck advanced on its own while someone held the
+ *  slide. The gesture stays closed until finish() (pointerup / keyup).
+ *  Clicks that follow a pointer (the leftover click after remount) stay
+ *  blocked until releaseClicks(). */
+export function createNavGesture(): {
+  start: (opts?: { repeat?: boolean; from?: NavGestureFrom }) => boolean;
+  finish: () => void;
+  releaseClicks: () => void;
+  reset: () => void;
+} {
+  let held = false;
+  let blockClick = false;
   return {
-    allow() {
-      const now = Date.now();
-      if (now < lockedUntil) return false;
-      lockedUntil = now + lockMs;
+    start(opts) {
+      if (opts?.repeat) return false;
+      if (opts?.from === 'click' && blockClick) return false;
+      if (held) return false;
+      held = true;
+      if (opts?.from === 'pointer') blockClick = true;
       return true;
     },
+    finish() {
+      held = false;
+    },
+    releaseClicks() {
+      blockClick = false;
+    },
     reset() {
-      lockedUntil = 0;
+      held = false;
+      blockClick = false;
     },
   };
 }

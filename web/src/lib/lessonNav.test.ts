@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   applyLessonNav,
   clampIndex,
-  createNavGate,
+  createNavGesture,
   findDeckSlide,
   resolveDeckSlideNo,
   type LessonNavState,
@@ -172,17 +172,60 @@ describe('clampIndex', () => {
   });
 });
 
-describe('createNavGate', () => {
-  it('drops a second Next that arrives while the first click is still settling', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(1_000);
-    const gate = createNavGate(300);
-    expect(gate.allow()).toBe(true);
-    vi.setSystemTime(1_100);
-    expect(gate.allow()).toBe(false);
-    vi.setSystemTime(1_300);
-    expect(gate.allow()).toBe(true);
-    vi.useRealTimers();
+describe('createNavGesture', () => {
+  it('one gesture applies exactly one Next — a burst does not walk the deck', () => {
+    const g = createNavGesture();
+    let s = start();
+    // Live bug: one Next from slide 1 jumped to 11/24 (~10 activations).
+    for (let n = 0; n < 10; n++) {
+      if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
+    }
+    expect(s.index).toBe(1);
+    expect(titleAt(s.index)).toBe('Two things');
+  });
+
+  it('does not re-arm until the pointer or key is released', () => {
+    const g = createNavGesture();
+    expect(g.start()).toBe(true);
+    expect(g.start()).toBe(false);
+    expect(g.start()).toBe(false);
+    g.finish();
+    expect(g.start()).toBe(true);
+  });
+
+  it('ignores key repeat so a held Space/Enter cannot auto-advance', () => {
+    const g = createNavGesture();
+    expect(g.start()).toBe(true);
+    g.finish();
+    expect(g.start({ repeat: true })).toBe(false);
+    expect(g.start()).toBe(true);
+  });
+
+  it('a leftover click after a pointer Next cannot take another step', () => {
+    const g = createNavGesture();
+    let s = start();
+    expect(g.start({ from: 'pointer' })).toBe(true);
+    s = applyLessonNav(s, { type: 'next' }, LEN);
+    g.finish();
+    // pointerup already happened; the remounted Next still receives click
+    expect(g.start({ from: 'click' })).toBe(false);
+    expect(s.index).toBe(1);
+    g.releaseClicks();
+    expect(g.start({ from: 'click' })).toBe(true);
+  });
+
+  it('a finished gesture is required before the next real step', () => {
+    const g = createNavGesture();
+    let s = at(3);
+    if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
+    if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
+    if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
+    expect(s.index).toBe(4);
+    expect(titleAt(s.index)).toBe('People');
+    g.finish();
+    if (g.start()) s = applyLessonNav(s, { type: 'next' }, LEN);
+    expect(s.index).toBe(5);
+    expect(titleAt(s.index)).toBe('Demo find the lead');
   });
 });
 

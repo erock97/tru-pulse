@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
   loadCourse, loadLibrary, canSkipGates, gradeQuiz, ackModule, isDemo, simScenarios, simStart, simFinish, demoSimResult, mySimAttempts, signOutClean,
@@ -11,7 +11,7 @@ import { SlideView } from './SlideDeck';
 import { DealSlide } from './DealSlide';
 import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
-import { applyLessonNav, createNavGate, type LessonNavIntent, type LessonNavState } from '../lib/lessonNav';
+import { applyLessonNav, createNavGesture, type LessonNavIntent, type LessonNavState } from '../lib/lessonNav';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { LabExercise } from './RepLab';
@@ -573,11 +573,29 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
 }) {
   const cards = m.cards;
   const [nav, setNav] = useState<LessonNavState>({ index: 0, seen: 0 });
-  const gate = useRef(createNavGate(300));
+  const gesture = useRef(createNavGesture());
   useEffect(() => {
     setNav({ index: 0, seen: 0 });
-    gate.current.reset();
+    gesture.current.reset();
   }, [m.id]);
+  useEffect(() => {
+    const finish = () => {
+      gesture.current.finish();
+      // Leftover click after remount arrives after pointerup. Keep it blocked
+      // for two frames so it cannot take another step.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => gesture.current.releaseClicks());
+      });
+    };
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+    window.addEventListener('keyup', finish);
+    return () => {
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      window.removeEventListener('keyup', finish);
+    };
+  }, []);
   const i = nav.index;
   const seen = nav.seen;
   const [picks, setPicks] = useState<Record<number, number>>({});
@@ -589,17 +607,41 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
   // A lab gates the same way a drill does: you do not move on until it passes.
   const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
   const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
-  const move = (intent: LessonNavIntent) => {
-    if (!gate.current.allow()) return;
+  const move = (intent: LessonNavIntent, opts?: { repeat?: boolean; from?: 'pointer' | 'click' | 'key' }) => {
+    if (!gesture.current.start(opts)) return false;
     setNav((s) => applyLessonNav(s, intent, cards.length));
+    // A focused Next + held Space/Enter is what walked the live deck by itself.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    return true;
   };
+  const bindNav = (intent: LessonNavIntent) => ({
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      move(intent, { from: 'pointer' });
+    },
+    onClick: (e: MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      // Mouse already moved on pointerdown. A leftover click after remount
+      // is blocked. Keyboard/SR click has no pointerdown and is allowed once.
+      if (move(intent, { from: 'click' })) {
+        gesture.current.finish();
+        gesture.current.releaseClicks();
+      }
+    },
+    onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      move(intent, { from: 'key', repeat: e.repeat });
+    },
+  });
 
   const rail = (
     <>
       <RailHead module={m} onBack={onBack} />
       <div className="ac-rail-steps">
         {cards.map((c, k) => (
-          <button type="button" key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => move({ type: 'goto', index: k })}>
+          <button type="button" key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} {...bindNav({ type: 'goto', index: k })}>
             {c.t !== 'section' && <span className="ac-step-dot">{k < i ? '✓' : k + 1}</span>}
             <span className="ac-step-label">{cardLabel(c, k)}</span>
           </button>
@@ -626,8 +668,9 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
       </div>
       <h2 className="ac-lessontitle ac-mob">{m.title}</h2>
       <div className="ac-progress"><div className="ac-progress-fill" style={{ width: `${((i + 1) / cards.length) * 100}%` }} /></div>
-      <div className="ac-cardzone" key={i}>
+      <div className="ac-cardzone">
         <Card
+          key={i}
           card={card}
           pick={picks[i]}
           onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))}
@@ -635,14 +678,14 @@ export function Lesson({ module: m, onDone, onBack, doneLabel, error, canSkip }:
         />
       </div>
       <div className="ac-nav">
-        {i > 0 && <button type="button" className="btn ghost" onClick={() => move({ type: 'back' })}>Back</button>}
+        <button type="button" className="btn ghost" disabled={i === 0} style={i === 0 ? { visibility: 'hidden' } : undefined} {...bindNav({ type: 'back' })}>Back</button>
         {!last
-          ? <button type="button" className="btn ac-btn" disabled={!answered} onClick={() => move({ type: 'next' })}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
+          ? <button type="button" className="btn ac-btn" disabled={!answered} {...bindNav({ type: 'next' })}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
           : <button type="button" className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
         {canSkip && !answered && (
-          <button type="button" className="btn ghost ac-skip" onClick={() => (last ? onDone() : move({ type: 'next' }))}>
-            Skip this step
-          </button>
+          last
+            ? <button type="button" className="btn ghost ac-skip" onClick={onDone}>Skip this step</button>
+            : <button type="button" className="btn ghost ac-skip" {...bindNav({ type: 'next' })}>Skip this step</button>
         )}
       </div>
       {error && <div className="err" style={{ marginTop: 12 }}>{error}</div>}
