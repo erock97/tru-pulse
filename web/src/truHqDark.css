@@ -46,8 +46,8 @@
   --text-strong: #ffffff;
   --on-hero: #F8F2E8;
   --on-hero-60: rgba(243, 236, 224, 0.64);
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, #2a1e0e 0%, #21190f 22%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #2a1e0e 0%, #21190f 22%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
   --hero-border: var(--accent-line);
   --hover-fill: rgba(255, 255, 255, 0.04);
   --avatar-ring: rgba(255, 255, 255, 0.08);
