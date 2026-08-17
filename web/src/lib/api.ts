@@ -1,6 +1,13 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
 import {
+  OFFICIAL_TRAINING_ANSWERS,
+  OFFICIAL_TRAINING_CARDS,
+  OFFICIAL_TRAINING_ID,
+  OFFICIAL_TRAINING_QS,
+  OFFICIAL_TRAINING_TITLE,
+} from './officialTraining';
+import {
   SHOW_LIKE_A_PRO_ANSWERS,
   SHOW_LIKE_A_PRO_CARDS,
   SHOW_LIKE_A_PRO_ID,
@@ -170,6 +177,8 @@ export interface LessonCard {
   // (`n` is already taken above by the section card's part label.)
   deck?: string;
   slide?: number;
+  // practice (t:'practice') / lab (t:'lab') — names the pack in PracticeRecord.
+  scenario?: string;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
@@ -178,6 +187,35 @@ export interface LessonCard {
 export interface CourseModule extends Omit<RepModule, 'status'> { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
 export interface GradeReview { idx: number; your: number; correct_index: number; is_correct: boolean; explain: string | null }
 export interface GradeResult { score: number; passed: boolean; correct: number; total: number; review: GradeReview[] }
+
+// ── Practice records — the interactive CRM exercises ────────────────────────
+export interface RecordCheck { id: string; label: string; pass: boolean; message: string }
+export interface RecordGrade { passed: boolean; score: number; max: number; checks: RecordCheck[] }
+
+/** Grade one practice record. Expected values live on the server, never here. */
+export async function gradeRecordPractice(
+  scenarioId: string,
+  submission: {
+    /** 'audit' grades the fault checklist; anything else grades the record itself. */
+    phase?: 'audit';
+    faults?: string[];
+    stage?: string; stageSaved?: boolean; note?: string;
+    task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+    deal?: { name?: string; price?: string; closeDate?: string };
+  },
+  opts: { record?: boolean } = {},
+): Promise<RecordGrade> {
+  if (isDemo) {
+    return { passed: true, score: 1, max: 1, checks: [] };
+  }
+  const res = await workerFetch('/rep/record/grade', {
+    method: 'POST',
+    body: JSON.stringify({ scenarioId, submission, record: opts.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as RecordGrade & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not check this record');
+  return body;
+}
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {
@@ -354,13 +392,29 @@ export async function uploadRepMedia(file: File, orgId: string): Promise<string>
 }
 
 // Self-contained course for ?demo=1 (previews + sales demos).
-// July modules are hidden. This catalog is Winning the First Conversation
-// (Day 2) and Show Like a Pro (Day 3). Opening either hits SlideView.
-// Official Training is omitted: zillow-day1.json is not on this branch.
+// July modules are hidden. Catalog is Official Training (Day 1, with
+// practice + dealslide cards), Winning the First Conversation (Day 2),
+// and Show Like a Pro (Day 3).
 const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   {
-    id: WINNING_FIRST_CONVERSATION_ID,
+    id: OFFICIAL_TRAINING_ID,
     idx: 1,
+    title: OFFICIAL_TRAINING_TITLE,
+    summary: 'Find, read, update and document the record. Practice screens work the Follow Up Boss record.',
+    body: 'Day 1 of Zillow Preferred onboarding — Official Training. Slides plus practice and dealslide.',
+    pass_pct: 80,
+    questions: OFFICIAL_TRAINING_QS.length,
+    status: 'not_started',
+    score: null,
+    passed_at: null,
+    signed: false,
+    answers: OFFICIAL_TRAINING_ANSWERS,
+    cards: OFFICIAL_TRAINING_CARDS,
+    qs: OFFICIAL_TRAINING_QS,
+  },
+  {
+    id: WINNING_FIRST_CONVERSATION_ID,
+    idx: 2,
     title: WINNING_FIRST_CONVERSATION_TITLE,
     summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
     body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
@@ -376,7 +430,7 @@ const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   },
   {
     id: SHOW_LIKE_A_PRO_ID,
-    idx: 2,
+    idx: 3,
     title: SHOW_LIKE_A_PRO_TITLE,
     summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
     body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
@@ -535,8 +589,18 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
 function demoRep(): RepData {
   const modules: RepModule[] = [
     {
-      id: WINNING_FIRST_CONVERSATION_ID,
+      id: OFFICIAL_TRAINING_ID,
       idx: 1,
+      title: OFFICIAL_TRAINING_TITLE,
+      summary: 'Find, read, update and document the record. Practice screens work the Follow Up Boss record.',
+      body: 'Day 1 of Zillow Preferred onboarding — Official Training. Slides plus practice and dealslide.',
+      pass_pct: 80,
+      questions: OFFICIAL_TRAINING_QS.length,
+      cards: OFFICIAL_TRAINING_CARDS,
+    },
+    {
+      id: WINNING_FIRST_CONVERSATION_ID,
+      idx: 2,
       title: WINNING_FIRST_CONVERSATION_TITLE,
       summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
       body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
@@ -546,7 +610,7 @@ function demoRep(): RepData {
     },
     {
       id: SHOW_LIKE_A_PRO_ID,
-      idx: 2,
+      idx: 3,
       title: SHOW_LIKE_A_PRO_TITLE,
       summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
       body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',

@@ -8,6 +8,8 @@ import {
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { SlideView } from './SlideDeck';
+import { DealSlide } from './DealSlide';
+import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import '../truHqDark.css';
 
 type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim';
@@ -21,6 +23,8 @@ function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
   if (c.t === 'intro') return c.title ?? 'Welcome';
   if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
+  if (c.t === 'dealslide') return 'Deals';
+  if (c.t === 'practice') return `🖥 ${c.title ?? 'Work the record'}`;
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
@@ -538,7 +542,9 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
   const card = cards[i];
   const last = i >= cards.length - 1;
   const isDrill = card?.t === 'drill';
-  const answered = !isDrill || picks[i] !== undefined;
+  const isLab = card?.t === 'practice';
+  const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
+  const answered = isDemo ? true : isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
   const go = (n: number) => { setI(n); setSeen((s) => Math.max(s, n)); };
 
   const rail = (
@@ -546,7 +552,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
       <RailHead module={m} onBack={onBack} />
       <div className="ac-rail-steps">
         {cards.map((c, k) => (
-          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => go(k)}>
+          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={isDemo ? false : k > seen} onClick={() => go(k)}>
             {c.t !== 'section' && <span className="ac-step-dot">{k < i ? '✓' : k + 1}</span>}
             <span className="ac-step-label">{cardLabel(c, k)}</span>
           </button>
@@ -557,7 +563,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
   );
 
   return (
-    <Shell accent={ac} num={m.idx} rail={rail} wide={card?.t === 'slide'}>
+    <Shell accent={ac} num={m.idx} rail={rail} wide={card?.t === 'slide' || card?.t === 'dealslide' || card?.t === 'practice'}>
       <button className="ac-back ac-mob" onClick={onBack}>‹ All modules</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Module {m.idx}</span>
@@ -566,12 +572,17 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
       <h2 className="ac-lessontitle ac-mob">{m.title}</h2>
       <div className="ac-progress"><div className="ac-progress-fill" style={{ width: `${((i + 1) / cards.length) * 100}%` }} /></div>
       <div className="ac-cardzone" key={i}>
-        <Card card={card} pick={picks[i]} onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))} />
+        <Card
+          card={card}
+          pick={picks[i]}
+          onPick={(ci) => setPicks((p) => ({ ...p, [i]: ci }))}
+          onLabPassed={() => setLabsPassed((l) => ({ ...l, [i]: true }))}
+        />
       </div>
       <div className="ac-nav">
         {i > 0 && <button className="btn ghost" onClick={() => setI(i - 1)}>Back</button>}
         {!last
-          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : 'Next'}</button>
+          ? <button className="btn ac-btn" disabled={!answered} onClick={() => go(i + 1)}>{isDrill && !answered ? 'Pick an answer' : isLab && !answered ? 'Finish the record' : 'Next'}</button>
           : <button className="btn ac-btn" disabled={!answered} onClick={onDone}>{doneLabel ?? 'Take the quiz →'}</button>}
       </div>
     </Shell>
@@ -634,10 +645,24 @@ function WelcomeIntro({ title, body }: { title?: string; body?: string }) {
   );
 }
 
-function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
+function Card({ card, pick, onPick, onLabPassed }: {
+  card: LessonCard; pick?: number; onPick: (ci: number) => void; onLabPassed?: () => void;
+}) {
   if (!card) return null;
   if (card.t === 'slide') {
     return <SlideView deck={card.deck ?? ''} n={card.slide ?? 1} />;
+  }
+  if (card.t === 'dealslide') {
+    return <DealSlide />;
+  }
+  if (card.t === 'practice') {
+    const sc = (card.scenario ?? 'set-appointment') as PracticeScenario;
+    if (!PRACTICE_PACKS[sc]) return null;
+    return (
+      <div className="ac-labcard fu">
+        <PracticeRecord scenario={sc} onPassed={onLabPassed} />
+      </div>
+    );
   }
   if (card.t === 'intro') {
     return <WelcomeIntro title={card.title} body={card.body} />;
