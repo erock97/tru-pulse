@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { demoCatalogTitles } from './api';
 import type { DeckData } from './deck';
@@ -11,6 +13,17 @@ async function loadDeck(name: 'zillow-day1' | 'zillow-day2' | 'zillow-day3'): Pr
     return import('../../public/decks/zillow-day2.json').then((m) => m.default as DeckData);
   }
   return import('../../public/decks/zillow-day3.json').then((m) => m.default as DeckData);
+}
+
+function loadOriginDeck(name: 'zillow-day1' | 'zillow-day2' | 'zillow-day3'): DeckData {
+  const raw = execFileSync('git', ['show', `origin/main:web/public/decks/${name}.json`], {
+    encoding: 'utf8',
+  });
+  return JSON.parse(raw) as DeckData;
+}
+
+function htmlHash(html: string): string {
+  return createHash('sha256').update(html).digest('hex');
 }
 
 describe('Zillow Preferred deck files on main', () => {
@@ -44,5 +57,41 @@ describe('Zillow Preferred deck files on main', () => {
     expect(titles).not.toContain('Working a Paid Lead End to End');
     expect(titles).not.toContain('Follow-Up Discipline & the CRM');
     expect(titles).not.toContain('Official Training');
+  });
+
+  it('replaces Day 1 slide 18 homework with a Follow Up Boss closer', async () => {
+    const day1 = await loadDeck('zillow-day1');
+    const close = day1.slides[17];
+    expect(close.n).toBe(18);
+    expect(close.label).toBe('Close');
+
+    const text = `${close.notes}\n${close.html}`;
+    expect(text).not.toMatch(/homework/i);
+    expect(text).not.toMatch(/Avery/i);
+    expect(text).not.toMatch(/initials/i);
+    expect(text).not.toMatch(/instructor/i);
+
+    expect(text).toContain('Follow Up Boss');
+    expect(text).toContain('Open People');
+    expect(text).toContain('Day 2');
+    expect(text).toContain('first conversation');
+  });
+
+  it('leaves Day 1 slides 1–17 labels and HTML unchanged vs origin/main', async () => {
+    const current = await loadDeck('zillow-day1');
+    const origin = loadOriginDeck('zillow-day1');
+
+    for (let i = 0; i < 17; i++) {
+      expect(current.slides[i].n).toBe(origin.slides[i].n);
+      expect(current.slides[i].label).toBe(origin.slides[i].label);
+      expect(htmlHash(current.slides[i].html)).toBe(htmlHash(origin.slides[i].html));
+    }
+  });
+
+  it('does not change Day 2 or Day 3 JSON vs origin/main', async () => {
+    const day2 = await loadDeck('zillow-day2');
+    const day3 = await loadDeck('zillow-day3');
+    expect(day2).toEqual(loadOriginDeck('zillow-day2'));
+    expect(day3).toEqual(loadOriginDeck('zillow-day3'));
   });
 });
