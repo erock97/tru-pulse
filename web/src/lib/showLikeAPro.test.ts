@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { demoCatalogTitles } from './api';
 import { deckInjectedCss, deckSlideMarkup, type DeckData } from './deck';
+import { parseDeckRoute } from './deckRoute';
+import { SHOW_LIKE_A_PRO_CARDS, SHOW_LIKE_A_PRO_TITLE, SHOW_LIKE_A_PRO_TITLES } from './showLikeAPro';
 
 const OFFICIAL_TRAINING_ID = 'a6666666-6666-6666-6666-666666666666';
 const DAY3_ID = 'a7777777-7777-7777-7777-777777777777';
@@ -122,5 +125,29 @@ describe('Show Like a Pro (Day 3)', () => {
     const first = deckSlideMarkup(deck.css, deck.slides[0].html);
     expect(first.startsWith('<style>')).toBe(true);
     expect(first).toContain(deck.slides[0].html);
+  });
+
+  it('parses #/deck/zillow-day3/1 and lands on The showing.', () => {
+    expect(parseDeckRoute('/deck/zillow-day3/1')).toEqual({ deck: 'zillow-day3', n: 1 });
+    expect(parseDeckRoute('#/deck/zillow-day3/1')).toEqual({ deck: 'zillow-day3', n: 1 });
+    expect(parseDeckRoute('/deck/zillow-day3')).toEqual({ deck: 'zillow-day3', n: 1 });
+    expect(parseDeckRoute('/deck/zillow-day3/31')).toEqual({ deck: 'zillow-day3', n: 31 });
+    expect(parseDeckRoute('/learn')).toBeNull();
+    expect(SHOW_LIKE_A_PRO_TITLES[0]).toBe('The showing.');
+    expect(SHOW_LIKE_A_PRO_CARDS[0]).toEqual({
+      t: 'slide', deck: 'zillow-day3', slide: 1, title: 'The showing.',
+    });
+  });
+
+  it('puts only Show Like a Pro in the demo catalog', () => {
+    const titles = demoCatalogTitles();
+    expect(titles).toEqual([SHOW_LIKE_A_PRO_TITLE]);
+    expect(titles).not.toContain('Welcome to Preferred');
+    expect(titles).not.toContain('The ALMS Call Framework');
+    expect(titles).not.toContain('The TRU Way: Speed to Lead');
+    expect(titles).not.toContain('Working a Paid Lead End to End');
+    expect(titles).not.toContain('Follow-Up Discipline & the CRM');
+    expect(SHOW_LIKE_A_PRO_CARDS).toHaveLength(31);
+    expect(SHOW_LIKE_A_PRO_CARDS.every((c) => c.t === 'slide' && c.deck === 'zillow-day3')).toBe(true);
   });
 });
