@@ -1,6 +1,13 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
 import {
+  OFFICIAL_TRAINING_ANSWERS,
+  OFFICIAL_TRAINING_CARDS,
+  OFFICIAL_TRAINING_ID,
+  OFFICIAL_TRAINING_QS,
+  OFFICIAL_TRAINING_TITLE,
+} from './officialTraining';
+import {
   SHOW_LIKE_A_PRO_ANSWERS,
   SHOW_LIKE_A_PRO_CARDS,
   SHOW_LIKE_A_PRO_ID,
@@ -198,6 +205,9 @@ export async function gradeRecordPractice(
   },
   opts: { record?: boolean } = {},
 ): Promise<RecordGrade> {
+  if (isDemo) {
+    return { passed: true, score: 1, max: 1, checks: [] };
+  }
   const res = await workerFetch('/rep/record/grade', {
     method: 'POST',
     body: JSON.stringify({ scenarioId, submission, record: opts.record !== false }),
@@ -382,13 +392,29 @@ export async function uploadRepMedia(file: File, orgId: string): Promise<string>
 }
 
 // Self-contained course for ?demo=1 (previews + sales demos).
-// July modules are hidden. This catalog is Winning the First Conversation
-// (Day 2) and Show Like a Pro (Day 3). Opening either hits SlideView.
-// Official Training is omitted: zillow-day1.json is not on this branch.
+// July modules are hidden. Catalog is Official Training (Day 1, with
+// practice + dealslide cards), Winning the First Conversation (Day 2),
+// and Show Like a Pro (Day 3).
 const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   {
-    id: WINNING_FIRST_CONVERSATION_ID,
+    id: OFFICIAL_TRAINING_ID,
     idx: 1,
+    title: OFFICIAL_TRAINING_TITLE,
+    summary: 'Find, read, update and document the record. Practice screens work the Follow Up Boss record.',
+    body: 'Day 1 of Zillow Preferred onboarding — Official Training. Slides plus practice and dealslide.',
+    pass_pct: 80,
+    questions: OFFICIAL_TRAINING_QS.length,
+    status: 'not_started',
+    score: null,
+    passed_at: null,
+    signed: false,
+    answers: OFFICIAL_TRAINING_ANSWERS,
+    cards: OFFICIAL_TRAINING_CARDS,
+    qs: OFFICIAL_TRAINING_QS,
+  },
+  {
+    id: WINNING_FIRST_CONVERSATION_ID,
+    idx: 2,
     title: WINNING_FIRST_CONVERSATION_TITLE,
     summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
     body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
@@ -404,7 +430,7 @@ const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   },
   {
     id: SHOW_LIKE_A_PRO_ID,
-    idx: 2,
+    idx: 3,
     title: SHOW_LIKE_A_PRO_TITLE,
     summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
     body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
@@ -563,8 +589,18 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
 function demoRep(): RepData {
   const modules: RepModule[] = [
     {
-      id: WINNING_FIRST_CONVERSATION_ID,
+      id: OFFICIAL_TRAINING_ID,
       idx: 1,
+      title: OFFICIAL_TRAINING_TITLE,
+      summary: 'Find, read, update and document the record. Practice screens work the Follow Up Boss record.',
+      body: 'Day 1 of Zillow Preferred onboarding — Official Training. Slides plus practice and dealslide.',
+      pass_pct: 80,
+      questions: OFFICIAL_TRAINING_QS.length,
+      cards: OFFICIAL_TRAINING_CARDS,
+    },
+    {
+      id: WINNING_FIRST_CONVERSATION_ID,
+      idx: 2,
       title: WINNING_FIRST_CONVERSATION_TITLE,
       summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
       body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
@@ -574,7 +610,7 @@ function demoRep(): RepData {
     },
     {
       id: SHOW_LIKE_A_PRO_ID,
-      idx: 2,
+      idx: 3,
       title: SHOW_LIKE_A_PRO_TITLE,
       summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
       body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',

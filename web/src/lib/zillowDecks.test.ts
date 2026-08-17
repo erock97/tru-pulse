@@ -75,7 +75,9 @@ describe('Zillow Preferred deck files on main', () => {
     expect(titles).not.toContain('The TRU Way: Speed to Lead');
     expect(titles).not.toContain('Working a Paid Lead End to End');
     expect(titles).not.toContain('Follow-Up Discipline & the CRM');
-    expect(titles).not.toContain('Official Training');
+    expect(titles).toContain('Official Training');
+    expect(titles).toContain('Winning the First Conversation');
+    expect(titles).toContain('Show Like a Pro');
   });
 
   it('replaces Day 1 slide 18 homework with a Follow Up Boss closer', async () => {
