@@ -19,16 +19,16 @@
 /* ---- Tokens live on the wrapper, NOT :root, so nothing leaks out ---- */
 .tru-dark {
   --base: #0C0A08;
-  --panel: #141009;
-  --card: #1B150D;
-  --card-flat: #14110A;
-  --border: rgba(243, 236, 224, 0.14);
-  --border-soft: rgba(243, 236, 224, 0.07);
+  --panel: #151310;
+  --card: #1C1915;
+  --card-flat: #171410;
+  --border: rgba(243, 236, 224, 0.18);
+  --border-soft: rgba(243, 236, 224, 0.10);
 
   --text: #F3ECE0;
-  --text-60: #A79C8D;
-  --text-50: #8A7F70;
-  --text-40: #6A6053;
+  --text-60: #BDB3A6;
+  --text-50: #9D9285;
+  --text-40: #7C7165;
 
   --accent: #E9A23B;
   --accent-hi: #F2C079;
@@ -46,19 +46,19 @@
   --text-strong: #ffffff;
   --on-hero: #F8F2E8;
   --on-hero-60: rgba(243, 236, 224, 0.64);
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, #2a1e0e 0%, transparent 52%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #2a1e0e 0%, transparent 52%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
   --hero-border: var(--accent-line);
   --hover-fill: rgba(255, 255, 255, 0.04);
   --avatar-ring: rgba(255, 255, 255, 0.08);
   --stat-grad: linear-gradient(180deg, #F8F2E8, var(--accent-hi));
   --card-shadow: none;
   --card-hover-shadow: 0 22px 50px -30px rgba(0, 0, 0, 0.9);
-  --track-fill: #2a2a2a;
-  --track-fill-2: #242424;
-  --track-hairline: #1e1e1e;
-  --track-outer: #222222;
-  --dot-empty: #2c2c2c;
+  --track-fill: #2B2824;
+  --track-fill-2: #24211E;
+  --track-hairline: #1E1C19;
+  --track-outer: #22201C;
+  --dot-empty: #2C2925;
   --hover-fill-soft: rgba(255, 255, 255, 0.03);
 
   --r-card: 14px;
@@ -379,50 +379,6 @@ html[data-theme="warm"] .tru-dark {
 }
 .tru-dark .topbar-ctx { display: flex; align-items: center; gap: 12px; }
 
-/* ---------- Theme toggle ---------- */
-.tru-dark .theme-toggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: var(--r-pill);
-  background: var(--panel);
-  border: 1px solid var(--border-soft);
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease);
-}
-.tru-dark .theme-toggle:hover { border-color: var(--accent-line); }
-.tru-dark .theme-opt {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  border-radius: var(--r-pill);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-50);
-  transition: color 0.25s var(--ease);
-  white-space: nowrap;
-}
-.tru-dark .theme-opt.on { color: var(--text-strong); }
-.tru-dark .theme-knob {
-  position: absolute;
-  z-index: 0;
-  top: 4px;
-  left: 4px;
-  bottom: 4px;
-  width: calc(50% - 4px);
-  border-radius: var(--r-pill);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-line);
-  box-shadow: 0 0 12px -4px var(--accent);
-  transition: transform 0.28s var(--ease), background 0.25s var(--ease);
-}
-.tru-dark .theme-knob.warm { transform: translateX(100%); }
-
 /* ---------- Buttons (scoped so global .btn is untouched) ---------- */
 .tru-dark .hqbtn {
   display: inline-flex;
@@ -461,7 +417,7 @@ html[data-theme="warm"] .tru-dark {
 
 /* ---------- Card (scoped: global .card differs) ---------- */
 .tru-dark .hqcard {
-  background: var(--card-flat);
+  background: var(--card);
   border: 1px solid var(--border-soft);
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
@@ -976,7 +932,7 @@ html[data-theme="warm"] .tru-dark {
 
 /* base card + panel head + shared bits the ps-* rules rely on */
 .tru-dark .card {
-  background: var(--card-flat);
+  background: var(--card);
   border: 1px solid var(--border-soft);
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
@@ -1405,12 +1361,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   height: 860px;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(620px 420px at 12% 2%, var(--accent-soft), transparent 60%),
-    radial-gradient(560px 380px at 94% 18%, rgba(192, 107, 79, 0.10), transparent 62%),
-    radial-gradient(700px 500px at 58% 80%, var(--sea-soft), transparent 66%);
+  background: radial-gradient(620px 420px at 18% 8%, rgba(233, 162, 59, 0.08), transparent 62%);
 }
 .tru-dark .rp-canvas > *:not(.rp-ambient) { position: relative; z-index: 1; }
+/* Same wave language as Home/Pulse, quieter so it does not haze the journey. */
+.tru-dark .rp-canvas .ps-divider {
+  height: 34px;
+  margin: 2px 0 8px;
+  opacity: 0.4;
+}
 
 /* ---------- Hero bento ---------- */
 .tru-dark .rp-bento {
@@ -1437,9 +1396,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(460px 320px at 8% -18%, var(--accent-soft), transparent 58%),
-    radial-gradient(420px 300px at 104% 120%, rgba(201, 150, 47, 0.18), transparent 60%);
+  background: radial-gradient(460px 320px at 8% -18%, rgba(233, 162, 59, 0.08), transparent 58%);
 }
 .tru-dark .rp-hero-inner {
   position: relative;
@@ -1457,7 +1414,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   line-height: 1.04;
 }
 .tru-dark .rp-hero-sub {
-  color: var(--on-hero-60);
+  color: rgba(248, 242, 232, 0.76);
   font-size: clamp(15px, 1.5vw, 18px);
   max-width: 48ch;
 }
@@ -2620,14 +2577,11 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .rp-roster-head { flex-wrap: wrap; gap: 8px; min-width: 0; }
 
   /* ---- Reclaim the top of the screen. Before this, the logo row, eyebrow, a
-     two-line title, the window pills and the theme switch ate ~440px — half a
-     phone — before the first number. Eric's brief was numbers first. ---- */
+     two-line title and the window pills ate ~440px — half a phone — before the
+     first number. Eric's brief was numbers first. ---- */
   .tru-shell .topbar { padding-top: 6px; padding-bottom: 4px; gap: 8px; }
   .tru-shell .topbar h1 { font-size: 21px; letter-spacing: -0.01em; }
   .tru-shell .main-eyebrow { font-size: 10px; letter-spacing: 0.1em; }
-  /* Keep the theme switch (it's a real preference) but shrink it so it sits beside
-     the window pills instead of claiming a row of its own. */
-  .tru-dark .theme-toggle { transform: scale(0.86); transform-origin: left center; }
   .tru-dark .ps-subnav { margin-bottom: 10px !important; }
   .tru-dark .pulse-canvas { padding-top: 4px; }
 

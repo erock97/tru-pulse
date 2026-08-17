@@ -93,33 +93,40 @@ export function useCountUp(target: number, durationMs = 1400) {
   return { ref, val };
 }
 
-export type HqTheme = 'dark' | 'warm';
-const THEME_KEY = 'tru-hq-theme';
+export const HQ_THEME_KEY = 'tru-hq-theme';
 
-/** Reads/writes the HQ dark/warm theme onto <html data-theme>. Defaults to dark.
- *  Only the .tru-dark subtree reacts to data-theme, so this can't repaint the
- *  not-yet-reskinned pages. */
-export function useHqTheme(): [HqTheme, () => void] {
-  const read = (): HqTheme => {
-    try {
-      return localStorage.getItem(THEME_KEY) === 'warm' ? 'warm' : 'dark';
-    } catch {
-      return 'dark';
-    }
-  };
-  const [theme, setTheme] = useState<HqTheme>(read);
+type ThemeStore = Pick<Storage, 'getItem' | 'setItem'>;
+type ThemeRoot = Pick<Element, 'removeAttribute'>;
+
+/** HQ is Dark only. A leftover Warm preference (localStorage or
+ *  <html data-theme="warm">) must not re-skin the shell. Store and root are
+ *  injectable so this stays testable in the node vitest environment. */
+export function forceHqDarkTheme(
+  store: ThemeStore | null = typeof localStorage === 'undefined' ? null : localStorage,
+  root: ThemeRoot | null = typeof document === 'undefined' ? null : document.documentElement,
+): void {
+  try {
+    if (store?.getItem(HQ_THEME_KEY) === 'warm') store.setItem(HQ_THEME_KEY, 'dark');
+  } catch {
+    /* private mode / quota — nothing to persist */
+  }
+  try {
+    root?.removeAttribute('data-theme');
+  } catch {
+    /* no document */
+  }
+}
+
+/** Pin the HQ shell to Dark on every mount, including stale Warm storage. */
+export function useForceHqDark() {
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'warm') root.setAttribute('data-theme', 'warm');
-    else root.removeAttribute('data-theme');
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch {
-      /* ignore */
-    }
-  }, [theme]);
-  // Clean up the html attribute when the dark Home unmounts so it can't affect
-  // other routes that might one day read data-theme.
-  useEffect(() => () => document.documentElement.removeAttribute('data-theme'), []);
-  return [theme, () => setTheme((t) => (t === 'warm' ? 'dark' : 'warm'))];
+    forceHqDarkTheme();
+    return () => {
+      try {
+        document.documentElement.removeAttribute('data-theme');
+      } catch {
+        /* no document */
+      }
+    };
+  }, []);
 }
