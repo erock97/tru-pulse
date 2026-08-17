@@ -544,7 +544,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
   const isDrill = card?.t === 'drill';
   const isLab = card?.t === 'practice';
   const [labsPassed, setLabsPassed] = useState<Record<number, boolean>>({});
-  const answered = isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
+  const answered = isDemo ? true : isDrill ? picks[i] !== undefined : isLab ? !!labsPassed[i] : true;
   const go = (n: number) => { setI(n); setSeen((s) => Math.max(s, n)); };
 
   const rail = (
@@ -552,7 +552,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
       <RailHead module={m} onBack={onBack} />
       <div className="ac-rail-steps">
         {cards.map((c, k) => (
-          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={k > seen} onClick={() => go(k)}>
+          <button key={k} className={`ac-step${c.t === 'section' ? ' sect' : ''}${k === i ? ' on' : ''}${k < i ? ' done' : ''}`} disabled={isDemo ? false : k > seen} onClick={() => go(k)}>
             {c.t !== 'section' && <span className="ac-step-dot">{k < i ? '✓' : k + 1}</span>}
             <span className="ac-step-label">{cardLabel(c, k)}</span>
           </button>
