@@ -17,3 +17,8 @@ export type DeckData = {
 export function deckInjectedCss(data: Pick<DeckData, 'css'>): string | null {
   return data.css ? data.css : null;
 }
+
+/** Slide markup plus optional keyframes. Day 1 decks pass no css and stay plain HTML. */
+export function deckSlideMarkup(css: string | undefined, html: string): string {
+  return (css ? `<style>${css}</style>` : '') + html;
+}

@@ -11,7 +11,7 @@
 // The HTML comes from a static file we author and review in git — never from the
 // database — so a leader authoring a custom module can never inject markup here.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { deckInjectedCss, type DeckData, type DeckSlide } from '../lib/deck';
+import { deckSlideMarkup, type DeckData, type DeckSlide } from '../lib/deck';
 
 export type { DeckData, DeckSlide };
 
@@ -66,7 +66,6 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
   }, [deck]);
 
   const slide = data?.slides.find((s) => s.n === n) ?? null;
-  const injected = data ? deckInjectedCss(data) : null;
 
   // Measure the slide at its true design width, then fit it to the box.
   useLayoutEffect(() => {
@@ -120,7 +119,8 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
           ref={secRef}
           style={style as React.CSSProperties}
           // Static, in-repo markup — see the note at the top of this file.
-          dangerouslySetInnerHTML={{ __html: slide.html }}
+          // Optional `css` (keyframes) is prepended; Day 1 decks omit it.
+          dangerouslySetInnerHTML={{ __html: deckSlideMarkup(data?.css, slide.html) }}
         />
       )}
     </div>
@@ -128,7 +128,6 @@ export function SlideView({ deck, n }: { deck: string; n: number }) {
 
   return (
     <div className={`deck-slide fu${full ? ' is-full' : ''}`}>
-      {injected ? <style data-deck-css="">{injected}</style> : null}
       {full ? (
         <div className="deck-fullwrap" role="dialog" aria-label={slide?.label ?? 'Slide'}>
           {body}

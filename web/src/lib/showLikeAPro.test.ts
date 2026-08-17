@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deckInjectedCss, type DeckData } from './deck';
+import { deckInjectedCss, deckSlideMarkup, type DeckData } from './deck';
 
 const OFFICIAL_TRAINING_ID = 'a6666666-6666-6666-6666-666666666666';
 const DAY3_ID = 'a7777777-7777-7777-7777-777777777777';
@@ -108,13 +108,19 @@ describe('Show Like a Pro (Day 3)', () => {
     // Day 1 decks have no css field. The player must not require one.
     expect(deckInjectedCss({})).toBeNull();
     expect(deckInjectedCss({ css: undefined })).toBeNull();
+    expect(deckSlideMarkup(undefined, '<section>hi</section>')).toBe('<section>hi</section>');
     const sample = '@keyframes riseIn{} @keyframes fadeIn{} @keyframes wipeIn{} @keyframes kenburns{}';
     expect(deckInjectedCss({ css: sample })).toBe(sample);
+    expect(deckSlideMarkup(sample, '<section>hi</section>')).toBe(`<style>${sample}</style><section>hi</section>`);
 
-    if (deck.css) {
-      for (const name of ['riseIn', 'fadeIn', 'wipeIn', 'kenburns']) {
-        expect(deck.css).toContain(name);
-      }
+    expect(deck.css).toBeTruthy();
+    for (const name of ['riseIn', 'fadeIn', 'wipeIn', 'kenburns']) {
+      expect(deck.css).toContain(name);
     }
+    expect(deck.css).toContain('.deck-scale');
+    expect(deck.css).toContain('data-deck-active');
+    const first = deckSlideMarkup(deck.css, deck.slides[0].html);
+    expect(first.startsWith('<style>')).toBe(true);
+    expect(first).toContain(deck.slides[0].html);
   });
 });
