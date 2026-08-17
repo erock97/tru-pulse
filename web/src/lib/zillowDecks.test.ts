@@ -23,25 +23,26 @@ function htmlHash(html: string): string {
   return `${(h >>> 0).toString(16).padStart(8, '0')}:${html.length}`;
 }
 
-// Labels + HTML hashes of Day 1 slides 1–17 on origin/main @ b58d7bb.
+// Labels + HTML hashes of Day 1 slides. 1–4, 11–12, 16 locked vs origin/main;
+// 5–10, 13–15, 17 reflowed (overflow:hidden dropped; 13/14 FUB panel fit).
 const ORIGIN_MAIN_DAY1_SLIDES_1_TO_17 = [
   { n: 1, label: 'Title', hash: 'a7f82d37:3004' },
   { n: 2, label: 'Two things', hash: 'edffaac4:3644' },
   { n: 3, label: 'Four days', hash: '22cc5141:4608' },
   { n: 4, label: 'How a lead reaches you', hash: '601d4e19:4340' },
-  { n: 5, label: 'People', hash: '1529cf12:4454' },
-  { n: 6, label: 'Demo find the lead', hash: '71445539:5016' },
-  { n: 7, label: 'Four questions', hash: '1161496e:3219' },
-  { n: 8, label: 'Details panel', hash: '092223eb:3400' },
-  { n: 9, label: 'Context not story', hash: '277caf46:4209' },
-  { n: 10, label: 'Stage truth', hash: 'fb37832c:7290' },
+  { n: 5, label: 'People', hash: '42269a91:4438' },
+  { n: 6, label: 'Demo find the lead', hash: '0430bfc6:5000' },
+  { n: 7, label: 'Four questions', hash: 'b7ec60bf:3203' },
+  { n: 8, label: 'Details panel', hash: 'bd98b350:3384' },
+  { n: 9, label: 'Context not story', hash: 'd8795595:4193' },
+  { n: 10, label: 'Stage truth', hash: 'd970b28f:7274' },
   { n: 11, label: 'Your turn stages', hash: '133f9152:4304' },
   { n: 12, label: 'The answers', hash: 'dacf7c04:4534' },
-  { n: 13, label: 'Notes', hash: '44eec71e:4761' },
-  { n: 14, label: 'Tasks', hash: '3f159e55:4731' },
-  { n: 15, label: 'Repair Avery', hash: 'f08b1f1a:5281' },
+  { n: 13, label: 'Notes', hash: '8cc4cb4e:4800' },
+  { n: 14, label: 'Tasks', hash: '8eaf6722:4778' },
+  { n: 15, label: 'Repair Avery', hash: '96189925:5265' },
   { n: 16, label: 'Four checks', hash: 'b4fdf5b0:4441' },
-  { n: 17, label: 'Way back tomorrow', hash: '79013091:3255' },
+  { n: 17, label: 'Way back tomorrow', hash: 'cc0a5656:3239' },
 ] as const;
 
 describe('Zillow Preferred deck files on main', () => {
@@ -95,7 +96,7 @@ describe('Zillow Preferred deck files on main', () => {
     expect(text).toContain('first conversation');
   });
 
-  it('leaves Day 1 slides 1–17 labels and HTML unchanged vs origin/main', async () => {
+  it('locks Day 1 slide labels and HTML hashes (1–4, 11–12, 16 untouched; 5–10, 13–15, 17 reflowed)', async () => {
     const current = await loadDeck('zillow-day1');
 
     for (let i = 0; i < 17; i++) {

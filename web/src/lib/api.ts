@@ -170,6 +170,8 @@ export interface LessonCard {
   // (`n` is already taken above by the section card's part label.)
   deck?: string;
   slide?: number;
+  // practice (t:'practice') / lab (t:'lab') — names the pack in PracticeRecord.
+  scenario?: string;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
@@ -178,6 +180,32 @@ export interface LessonCard {
 export interface CourseModule extends Omit<RepModule, 'status'> { qs: CourseQuestion[]; cards: LessonCard[]; status: string; score: number | null; passed_at: string | null; signed: boolean }
 export interface GradeReview { idx: number; your: number; correct_index: number; is_correct: boolean; explain: string | null }
 export interface GradeResult { score: number; passed: boolean; correct: number; total: number; review: GradeReview[] }
+
+// ── Practice records — the interactive CRM exercises ────────────────────────
+export interface RecordCheck { id: string; label: string; pass: boolean; message: string }
+export interface RecordGrade { passed: boolean; score: number; max: number; checks: RecordCheck[] }
+
+/** Grade one practice record. Expected values live on the server, never here. */
+export async function gradeRecordPractice(
+  scenarioId: string,
+  submission: {
+    /** 'audit' grades the fault checklist; anything else grades the record itself. */
+    phase?: 'audit';
+    faults?: string[];
+    stage?: string; stageSaved?: boolean; note?: string;
+    task?: { title?: string; owner?: string; dueDate?: string; dueTime?: string };
+    deal?: { name?: string; price?: string; closeDate?: string };
+  },
+  opts: { record?: boolean } = {},
+): Promise<RecordGrade> {
+  const res = await workerFetch('/rep/record/grade', {
+    method: 'POST',
+    body: JSON.stringify({ scenarioId, submission, record: opts.record !== false }),
+  });
+  const body = (await res.json().catch(() => ({}))) as RecordGrade & { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not check this record');
+  return body;
+}
 
 /** The logged-in user's agent row (null if they're not an agent). */
 export async function myAgent(): Promise<AgentIdentity | null> {

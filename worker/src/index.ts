@@ -17,6 +17,7 @@ import { sendWeeklyBriefs } from './brief.js';
 import { importEncKey, decryptKey, encryptKey, fubSignature, teamWebhookToken, secretsMatch } from './crypto.js';
 import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.js';
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
+import { gradeRecord, gradeFaults, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
@@ -1001,6 +1002,28 @@ export default {
         'agent_id,module_id',
       );
       return json({ score, passed, correct, total, review });
+    }
+
+    // Practice records: the learner operates a CRM record rather than answering
+    // a question about one. Graded here so the expected stage, note and task
+    // never reach the browser.
+    if (url.pathname === '/rep/record/grade' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const scenarioId = String(body?.scenarioId ?? '').trim();
+      if (!RECORD_SCENARIOS[scenarioId]) return json({ error: 'unknown scenario' }, 404);
+      const sub = body?.submission ?? {};
+      const grade = sub.phase === 'audit'
+        ? gradeFaults(scenarioId, Array.isArray(sub.faults) ? sub.faults : [])
+        : gradeRecord(scenarioId, {
+          stage: sub.stage,
+          stageSaved: !!sub.stageSaved,
+          note: sub.note,
+          task: sub.task,
+          deal: sub.deal,
+        });
+      return json(grade);
     }
 
     // Mint a SHORT-LIVED signed DOWNLOAD url for a private rep-media object so a
