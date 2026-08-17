@@ -806,3 +806,52 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
   .ac-drill-q{ font-size:28px; }
   .ac-qprompt{ font-size:clamp(28px, 2vw, 34px); }
 }
+
+/* ── Native slide rendering ──────────────────────────────────────────────────
+   Each slide is the deck's own 1920x1080 markup, scaled to fit the lesson
+   column. Its type is remapped to the app's self-hosted brand fonts: the export
+   referenced bundle-internal font files that do not exist outside it, and the
+   CSP forbids fetching webfonts. Day 3 keyframes (riseIn, fadeIn, wipeIn,
+   kenburns) live on the deck JSON `css` field and are injected by SlideView. */
+.deck-slide{ width:100%; }
+.deck-fullbtn{ display:inline-block; margin-top:14px; font-size:13px; font-weight:800; letter-spacing:.03em;
+  color:var(--gold); padding:9px 16px; border-radius:999px; cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--gold) 42%, transparent);
+  background:color-mix(in srgb, var(--gold) 10%, transparent); }
+.deck-fullbtn:hover{ background:color-mix(in srgb, var(--gold) 20%, transparent); border-color:var(--gold); }
+.deck-fullwrap{ position:fixed; inset:0; z-index:9999; background:#0B0805;
+  display:flex; align-items:center; justify-content:center; padding:24px; }
+.deck-fullwrap .deck-box{ border-radius:12px; }
+.deck-fullbtn.is-out{ position:fixed; top:18px; right:20px; margin:0; z-index:10000; }
+.deck-box{ position:relative; width:100%; overflow:hidden; border-radius:16px;
+  border:1px solid var(--ac-border-soft); background:#180F08;
+  box-shadow:0 26px 64px -36px rgba(0,0,0,.95); }
+.deck-scale{ position:absolute; top:0; left:0; transform-origin:top left; }
+.deck-scale section{ width:1920px; min-height:1080px; height:auto; position:relative; }
+.deck-scale img{ max-width:none; }
+.deck-scale section{ font-family:"Hanken Grotesk", system-ui, sans-serif; }
+
+/* The export staggers entrance animation with data-a / data-w indexes. Kept, so
+   a slide still assembles itself the way Eric built it. */
+@keyframes deck-rise{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+.deck-scale [data-a], .deck-scale [data-w]{ animation:deck-rise .52s cubic-bezier(.22,.61,.36,1) both; }
+.deck-scale [data-a="1"],.deck-scale [data-w="1"]{ animation-delay:.06s }
+.deck-scale [data-a="2"],.deck-scale [data-w="2"]{ animation-delay:.14s }
+.deck-scale [data-a="3"],.deck-scale [data-w="3"]{ animation-delay:.22s }
+.deck-scale [data-a="4"],.deck-scale [data-w="4"]{ animation-delay:.30s }
+.deck-scale [data-a="5"],.deck-scale [data-w="5"]{ animation-delay:.38s }
+.deck-scale [data-a="6"],.deck-scale [data-w="6"]{ animation-delay:.46s }
+.deck-scale [data-a="7"],.deck-scale [data-w="7"]{ animation-delay:.54s }
+.deck-scale [data-a="8"],.deck-scale [data-w="8"]{ animation-delay:.62s }
+.deck-scale [data-a="9"],.deck-scale [data-w="9"]{ animation-delay:.70s }
+@media (prefers-reduced-motion: reduce){
+  .deck-scale [data-a], .deck-scale [data-w]{ animation:none; opacity:1; transform:none; }
+}
+
+/* Slides get the whole stage, not the reading column. The watermark is dropped
+   there too — it was sitting on top of slide content. */
+@media(min-width:1000px){
+  .ac-shell-wide .ac-stage-inner{ max-width:1560px; }
+  .ac-shell-wide .ac-watermark{ display:none; }
+  .ac-shell-wide .ac-cardzone{ padding:18px 0; }
+}

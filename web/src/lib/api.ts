@@ -1,6 +1,12 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
-import { WELCOME_PREFERRED_CARDS, WELCOME_PREFERRED_QS } from './welcomePreferred';
+import {
+  SHOW_LIKE_A_PRO_ANSWERS,
+  SHOW_LIKE_A_PRO_CARDS,
+  SHOW_LIKE_A_PRO_ID,
+  SHOW_LIKE_A_PRO_QS,
+  SHOW_LIKE_A_PRO_TITLE,
+} from './showLikeAPro';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -152,6 +158,11 @@ export interface LessonCard {
   bad?: string[];        // compare — DON'T column
   url?: string;          // video — Loom share/embed URL (empty renders the intro treatment, not a dead player)
   steps?: string[];      // steps — a pipeline/stage ladder
+  // slide (t:'slide') — ONE slide of a named deck under /public/decks, rendered
+  // natively. `deck` is the json basename, `slide` the 1-based slide number.
+  // (`n` is already taken above by the section card's part label.)
+  deck?: string;
+  slide?: number;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
@@ -335,113 +346,31 @@ export async function uploadRepMedia(file: File, orgId: string): Promise<string>
   return path;
 }
 
-// Self-contained course for ?demo=1 (previews + sales demos) — mirrors the real
-// seeded curriculum's first two modules. Answer keys live only in this closure.
+// Self-contained course for ?demo=1 (previews + sales demos).
+// July modules are hidden. This catalog is Show Like a Pro only — opening it
+// hits SlideView. Official Training is omitted: zillow-day1.json is not on this branch.
 const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   {
-    id: 'm0', idx: 1, title: 'Welcome to Preferred', summary: 'The program standards — and the pipeline that keeps you in it.',
-    body: 'Three numbers Zillow holds you to, and the stages that must be used.',
-    pass_pct: 80, questions: 7, status: 'in_progress', score: null, passed_at: null, signed: false, answers: [1, 2, 1, 1, 2, 2, 0],
-    cards: WELCOME_PREFERRED_CARDS,
-    qs: WELCOME_PREFERRED_QS,
-  },
-  {
-    id: 'm1', idx: 2, title: 'The TRU Way: Speed to Lead', summary: 'Why the first five minutes decide the deal.',
-    body: 'The first five minutes decide the deal.',
-    pass_pct: 80, questions: 8, status: 'not_started', score: null, passed_at: null, signed: false, answers: [2, 1, 3, 2, 1, 2, 2, 1],
-    cards: [
-      { t: 'section', n: 'Part 1 of 3', title: 'Why speed wins', body: 'The perishable window — and the research behind it.' },
-      { t: 'text', k: 'The mindset', body: 'A paid lead is not a to-do item — it’s a stopwatch that’s already running. Somewhere out there, a real person just spent twenty minutes on Zillow looking at kitchens, imagined their kids in the backyard, and then did something most people never do: they handed a stranger their phone number and asked to talk.\n\nThink about what happened before that form was submitted. They toured nine listings from their couch. They ran a mortgage calculator. They pictured the drive to work. By the time your phone buzzes, they are the most motivated they will ever be — and every minute afterward, ordinary life starts pulling them back. Dinner. A text from a friend. A second thought about the down payment.\n\nThat moment of intent is the most expensive, most perishable thing your team buys. It doesn’t age like wine. It ages like milk — and the clock started before you even saw the notification.' },
-      { t: 'text', k: 'What the research actually measured', body: 'The obsession with response time isn’t folklore — it’s one of the most replicated findings in sales research. MIT and InsideSales.com audited millions of lead-response records and timed what happened when companies called back at minute one, minute five, minute thirty, and beyond.\n\nThe results weren’t a gentle slope. They were a cliff. The odds of ever reaching a lead — and of that lead becoming a client — collapse inside the first half hour, and almost all of the value sits inside the first five minutes.\n\nThree numbers from that research are worth taping to your monitor. Here they come.' },
-      { t: 'stat', big: '21x', label: 'more likely to QUALIFY a lead when you call within 5 minutes instead of 30.', src: 'MIT / InsideSales.com Lead Response study' },
-      { t: 'stat', big: '100x', label: 'more likely to actually CONNECT at minute 5 than at minute 30. After that the odds fall off a cliff.', src: 'Same study — response decay curve' },
-      { t: 'stat', big: '78%', label: 'of buyers end up working with whoever responds FIRST. Second place gets a voicemail log.', src: 'Lead response industry research' },
-      { t: 'text', k: 'What “fast” means in a real week', body: 'Nobody answers 100% of connection calls. You have showings, closings, a life. The standard isn’t perfection — it’s urgency as a default: when you can answer, you do. When you truly can’t, the lead gets a callback in minutes, not hours.\n\nThis is also why coverage matters. Walking into a listing appointment? Say so in the team chat, so calls route around you. A connection that rings three agents and reaches the fourth still counts as answered — the team’s number doesn’t care who picked up, only that someone did.\n\nTreat speed like a habit, not an event: notifications on, phone face-up, CRM app on the home screen. The agents who win at this aren’t faster humans. They’ve just removed every step between the buzz and the hello.' },
-      { t: 'section', n: 'Part 2 of 3', title: 'The live-connect', body: 'Answering the call Zillow literally scores you on.' },
-      { t: 'text', k: 'You are measured on this — personally', body: 'This isn’t just a habit your leader wants to see. Zillow scores YOUR Pickup Rate — answering the initial connection call and accepting the lead — and the agent bar is 25%. Miss it consistently and the connections stop routing to you, no matter how good you are once you’re in a conversation.\n\nIt stacks upward too: every agent’s pickups feed the team’s overall answer rate, the number Zillow uses to decide how many connections the whole team deserves. One agent screening calls drags everyone’s pipeline.\n\nOne more detail that surprises every new agent: the live call itself may never write to the CRM. Answering and staying on the line IS the record of your work. If you’re breathing, you pick up.', src: 'Zillow Preferred agent standard — 25% pickup rate' },
-      { t: 'dialogue', title: 'The first 30 seconds — a live-connect done right', turns: [
-        { who: 'agent', say: 'Hi, this is Jordan with the Costigan Group — I see you were just looking at the house on Sycamore. Great pick. What caught your eye?' },
-        { who: 'lead', say: 'Oh — that was fast. Yeah, we liked the backyard, honestly. We’ve been renting and just started looking.' },
-        { who: 'agent', say: 'Then you’re looking at the right time. I can get you into Sycamore this week — would Thursday at 5 work, or is Saturday morning better?' },
-      ] },
-      { t: 'text', k: 'Why that call worked', body: 'Play it back. “I see you were just looking at the house on Sycamore” — no interrogation, just proof he’s paying attention. “Great pick — what caught your eye?” — a compliment plus an easy question. The lead relaxes and starts talking about the backyard, which is motivation surfacing on its own, unprompted.\n\nThen the close: “I can get you into Sycamore this week — Thursday at 5, or Saturday morning?” No pause to qualify. No résumé. No “tell me about your financing.” Thirty seconds in, the buyer has what they wanted — momentum — and the agent has what he wanted: a time on the calendar.\n\nThat’s the whole trick. You don’t win the call by sounding impressive. You win it by making the next step feel easy.' },
-      { t: 'drill', prompt: 'It’s 7:42pm and you’re mid-dinner. A Zillow live-connect rings. What do you do?', choices: ['Let it ring — call back within the hour', 'Answer it — step away and take the call', 'Text them tomorrow morning', 'Screenshot it and ask your team lead'], answer: 1, explain: 'A live-connect is a buyer standing in the doorway. At minute 30 you’re 100x less likely to ever reach them — and the missed ring hits YOUR 25% pickup rate. Dinner can wait five minutes.' },
-      { t: 'section', n: 'Part 3 of 3', title: 'When they don’t pick up', body: 'Most leads won’t answer. The pros plan for it.' },
-      { t: 'text', k: 'Expect the voicemail', body: 'Here’s what nobody tells new agents: most paid leads won’t answer your first call. Everyone screens unknown numbers now. That’s not failure — that’s the game. The difference between a pro and an amateur is that the pro has the next move loaded before the first ring.\n\nThe play is the double-dial: call, and if it rings out, call again immediately. A repeated call signals a real human with something time-sensitive — connect rates jump meaningfully on the second attempt. Then voicemail. Then an immediate text.\n\nAnd understand the voicemail’s real job: it isn’t the callback — it’s getting your text read. A voicemail from “Jordan, about the Sycamore house” turns your text from a stranger’s spam into a message they were expecting.' },
-      { t: 'script', title: 'If they don’t pick up — say and send this', lines: [
-        '“Hi, this is Jordan with the Costigan Group — you were just asking about the home on Sycamore. I’m around all evening, call or text me back at this number and I’ll get you in to see it this week.”',
-        'Then text, immediately: “Hi, it’s Jordan — just left you a voicemail about the Sycamore house. Want me to line up a time to see it Thursday or Saturday?”',
-      ] },
-      { t: 'drill', prompt: 'A Realtor.com lead landed 3 minutes ago while you’re prepping a listing packet. First move?', choices: ['Finish the packet, then call tonight', 'Add them to tomorrow’s call block', 'Send a quick email so a touch is logged', 'Call right now — the prep can pause'], answer: 3, explain: 'Three minutes in, you’re still inside the 21x window. And an email isn’t a touch — it’s a receipt.' },
-      { t: 'drill', prompt: 'You double-dialed at 9am, left a voicemail, texted. It’s 7pm — silence. What’s the move?', choices: ['Nothing — the ball’s in their court', 'One more call or text this evening — day one gets multiple touches', 'Mark the lead dead', 'Wait a week so you don’t seem desperate'], answer: 1, explain: 'Day one IS the window — and evenings are when buyers are back on their phones. One respectful evening touch doubles your shot at a connection without a whiff of desperation.' },
-      { t: 'callout', body: 'Your team PAID for this lead. Realtor.com money is already spent; Zillow takes its cut at close. Every silent minute is you paying full price for a colder lead.' },
-    ],
-    qs: [
-      { id: 'q1', idx: 1, prompt: 'Calling a new lead within 5 minutes instead of 30 makes you how much more likely to QUALIFY them?', choices: ['Twice as likely', 'About the same', 'About 21x more likely', '10% more likely'] },
-      { id: 'q2', idx: 2, prompt: 'What share of buyers end up working with whoever responds FIRST?', choices: ['Around 10%', 'Around 78%', 'Around 40%', 'Around 25%'] },
-      { id: 'q3', idx: 3, prompt: 'Why does answering a Zillow live-connect matter so much?', choices: ['It counts as two texts', 'It skips the appointment', 'It pays extra commission', 'It may never log in the CRM — the connect IS your proof of work'] },
-      { id: 'q4', idx: 4, prompt: 'Zillow’s Pickup Rate standard for YOU as an agent is…', choices: ['There is no individual bar', '60%', '25% — answer the initial call and accept the lead', '90%'] },
-      { id: 'q5', idx: 5, prompt: 'The goal of the very first touch is to…', choices: ['Fully qualify their finances', 'Be human, be fast, and set the next step', 'Pitch three listings', 'Ask who their agent is'] },
-      { id: 'q6', idx: 6, prompt: 'A new paid lead lands while you’re prepping a listing packet. Best move?', choices: ['Finish the packet, call tonight', 'Add them to tomorrow’s call block', 'Pause the prep and call right now', 'Send an email so a touch is logged'] },
-      { id: 'q7', idx: 7, prompt: 'Between minute 5 and minute 30, your odds of CONNECTING with a new lead…', choices: ['Improve as they settle in', 'Dip slightly', 'Collapse — roughly a 100x drop', 'Hold steady until 24 hours'] },
-      { id: 'q8', idx: 8, prompt: 'They don’t answer your first call. The day-one play is…', choices: ['One voicemail is plenty', 'Double-dial, voicemail, then an immediate text with two showing times', 'Try again next week', 'Email and wait'] },
-    ],
-  },
-  {
-    id: 'm2', idx: 3, title: 'The ALMS Call Framework', summary: 'Appointment, Location, Motivation, Summarize — the whole call.',
-    body: 'Four beats. One booked appointment.',
-    pass_pct: 80, questions: 8, status: 'not_started', score: null, passed_at: null, signed: false, answers: [0, 1, 3, 1, 1, 2, 1, 1],
-    cards: [
-      { t: 'section', n: 'Part 1 of 3', title: 'The framework', body: 'Where ALMS comes from — and why frameworks beat winging it.' },
-      { t: 'text', k: 'Where this comes from', body: 'ALMS isn’t something we invented on a whiteboard. Zillow built the ALM framework — Appointment, Location, Motivation — from listening to thousands of connection calls and measuring which ones turned into closings. We added the S, Summarize, because a call that ends without a playback is a call the buyer forgets by morning.\n\nThis is also a scored behavior: Zillow’s program standard is that 80% or more of your connection calls include a real appointment conversation. This framework is how you clear that bar without ever sounding like you’re reading one.\n\nFrameworks matter for one more reason: consistency is coachable. When every agent runs the same four beats, your leader can hear one call, point at one beat, and make you measurably better at it. Freestyle can’t be coached — it can only be admired or cringed at.' },
-      { t: 'stat', big: '3x', label: 'more likely to TRANSACT when the buyer and agent confirm an appointment on the very first connection call.', src: 'Zillow Premier Agent performance data' },
-      { t: 'text', k: 'Why the appointment is the whole game', body: 'An interested buyer with no appointment is a browser. An appointment converts interest into commitment — a time, a place, a person they’d feel bad canceling on. That’s basic psychology working in your favor: people keep appointments they’d have to break.\n\nIt also changes what you are to them. Without a meeting, you’re a search portal with a pulse — they’ll happily take listings from you and buy with whoever’s standing at the open house. With a meeting on the calendar, you’re their agent.' },
-      { t: 'section', n: 'Part 2 of 3', title: 'The four beats', body: 'A, L, M, S — each with the exact words that work.' },
-      { t: 'text', k: 'A — Appointment', body: 'The single goal of the call. You’re not selling a house tonight — you’re selling the next 20 minutes of their home search. Zillow’s own recommended line is disarmingly simple: “Great — when would you like to see 123 Main Street?”\n\nNotice it assumes the showing is happening; the only question is when. Give an either/or with two concrete times. “Sometime” is where appointments go to die.' },
-      { t: 'script', title: 'The appointment ask — steal this', lines: [
-        '“Great — when would you like to see the Sycamore house? I can do Thursday at 5, or Saturday morning if that’s easier.”',
-        'If they hesitate: “Tell you what — let’s pencil Saturday at 10. If the week gets away from you, moving it is a ten-second text.”',
-      ] },
-      { t: 'text', k: 'L — Location', body: 'Zillow’s line: “In addition to 123 Main Street, what other properties in the area would you like to see?”\n\nThis one question quietly changes what you are to them. You stop being the agent for one listing and become the agent for their whole search — and it fills the showing appointment with more than one home, which Zillow’s data says helps buyers decide with confidence.\n\nLocation also surfaces the shape of the move: do they own where they are now? Do they need to sell first? Are they crossing school districts, or crossing the country? Each answer changes the plan you’ll build.' },
-      { t: 'text', k: 'M — Motivation', body: 'The real driver. “What’s got you looking now?” A first-time buyer, a family relocating for a job, and an investor hunting a duplex will all answer that question completely differently — and each answer tells you the speed and the stakes of their move.\n\nWhen they volunteer something personal — a baby, a divorce, a job they just landed — give it a genuine beat of empathy before you move on. People book with agents who heard them.' },
-      { t: 'dialogue', title: 'Motivation, done right', turns: [
-        { who: 'agent', say: 'So what’s got you two looking right now?' },
-        { who: 'lead', say: 'Honestly? We just found out we’re having twins. The apartment’s already too small.' },
-        { who: 'agent', say: 'Twins — congratulations! Okay, so more space just became the mission, and the timeline’s real. Let’s find you a house before you need the second crib.' },
-        { who: 'lead', say: 'Ha — yes. Exactly.' },
-      ] },
-      { t: 'text', k: 'Reading the motivation types', body: 'First-time buyers need education and reassurance — slow the call down, explain what happens next, treat the milestone like the big deal it is. Relocating families are on a clock — lead with logistics: school calendars, virtual tours, how fast you can line up a weekend of showings. Speed IS the service.\n\nInvestors want numbers, not narratives — rents, cap rates, days on market. Skip the backyard poetry. And downsizers are often leaving a family home of thirty years — the motivation is emotional, the timeline is theirs, and pushing it collapses the trust.\n\nSame four beats every time. Four completely different songs. Motivation tells you which one you’re playing.' },
-      { t: 'text', k: 'S — Summarize', body: 'Play the whole call back in one breath: “So you’re hoping to be in Maple Grove before the school year, you’ll want three beds now that the twins are coming, and we’re meeting Thursday at 5 — I’ll have Sycamore plus two more lined up.”\n\nThey feel heard. The plan is locked. And you sound like the only organized person in their whole home search.' },
-      { t: 'stat', big: '2+', label: 'minutes on the first call is where success rates climb. Rushing to hang up is how appointments evaporate.', src: 'Zillow Premier Agent call data' },
-      { t: 'section', n: 'Part 3 of 3', title: 'Putting it together', body: 'A full call, the do/don’t list, and your reps.' },
-      { t: 'dialogue', title: 'A full ALMS call — 90 seconds, condensed', turns: [
-        { who: 'agent', say: 'Hi, this is Jordan with the Costigan Group — you asked about 214 Birchwood. What caught your eye?' },
-        { who: 'lead', say: 'The garage, honestly. We need the storage. We’re renting over in Riverside right now.' },
-        { who: 'agent', say: 'Riverside’s a quick hop. Besides Birchwood, anything else in that area you’ve been watching?' },
-        { who: 'lead', say: 'There was one on Kessler we liked too.' },
-        { who: 'agent', say: 'I’ll line up both. And what’s got you two making the move now?' },
-        { who: 'lead', say: 'Lease is up in October, and we’re done paying rent.' },
-        { who: 'agent', say: 'So: the garage matters, Birchwood and Kessler, in the new place before October. Thursday at 5 or Saturday at 10 — which works to see them both?' },
-      ] },
-      { t: 'compare', good: ['Answer fast, sound glad they called', 'Ask what caught their eye about the house', 'Offer two concrete showing times', 'Widen to the whole search (“what else would you like to see?”)', 'Summarize the plan before hanging up'], bad: ['Open with “are you pre-approved?”', 'Ask “do you already have an agent?”', 'Interrogate through a 20-question checklist', 'End with “call me whenever you’re ready”', 'Hang up without a booked next step'] },
-      { t: 'drill', prompt: 'Which is the strongest MOTIVATION question?', choices: ['“How much do you have for a down payment?”', '“What’s got you thinking about a move right now?”', '“Do you already have an agent?”', '“What’s your credit score?”'], answer: 1, explain: 'Motivation opens their story. The other three slam the door — money and agent questions kill first-call trust.' },
-      { t: 'drill', prompt: 'The lead says: “We just found out we’re having twins.” Best response?', choices: ['“OK. What’s your budget?”', '“Twins — congratulations! So more space just became the mission.”', '“Noted. Which zip codes?”', 'Skip it and go straight to booking'], answer: 1, explain: 'A beat of real empathy, then bridge it straight into the move. People book with agents who heard them.' },
-      { t: 'drill', prompt: 'Which appointment ask actually gets on the calendar?', choices: ['“Call me whenever works”', '“Want to meet sometime?”', '“Are you free Thursday at 5, or is Saturday morning better?”', '“I’ll email you some times eventually”'], answer: 2, explain: 'Either/or with two concrete times — and it assumes the showing is happening. “Sometime” is where appointments go to die.' },
-      { t: 'drill', prompt: 'The lead says: “Oh, we’re just looking — super early.” Best response?', choices: ['“Call me back when you’re serious.”', '“Totally fine — most great clients start early. Want a no-pressure look at two homes this weekend, just to calibrate?”', '“I’ll put you on my newsletter.”', '“Zillow said you wanted to talk to an agent.”'], answer: 1, explain: '“Early” is not a no — it’s a buyer without urgency yet. A zero-pressure tour builds the relationship months before the competition even calls back.' },
-      { t: 'callout', body: 'Confirm the appointment on the first call and the odds of a closing triple. That’s not a coaching opinion — it’s Zillow’s own transaction data.' },
-    ],
-    qs: [
-      { id: 'q9', idx: 1, prompt: 'Confirming an appointment on the very first connection call makes a transaction…', choices: ['3x more likely', 'Slightly more likely', 'Less likely — it’s pushy', 'No different'] },
-      { id: 'q10', idx: 2, prompt: 'Which of these does NOT belong on an ALMS call?', choices: ['Asking what’s motivating the move', 'Asking if they already have an agent', 'Asking where they’re looking', 'Summarizing and locking the next step'] },
-      { id: 'q11', idx: 3, prompt: 'Zillow’s recommended LOCATION question does what?', choices: ['Gets their home address', 'Confirms their zip code', 'Checks how far they’ll commute', 'Expands one listing into their whole home search — making you their agent, not the listing’s'] },
-      { id: 'q12', idx: 4, prompt: 'The strongest appointment ask is…', choices: ['“Want to meet sometime?”', '“Are you free Thursday at 5, or is Saturday morning better?”', '“Call me whenever works”', '“I’ll email some times”'] },
-      { id: 'q13', idx: 5, prompt: 'How long should a good first connection call run?', choices: ['Under 30 seconds — respect their time', 'Two minutes or more — that’s where success rates climb', 'At least 20 minutes', 'Length doesn’t matter'] },
-      { id: 'q14', idx: 6, prompt: 'The point of Summarize is to…', choices: ['Recap your credentials', 'List every home in their range', 'Play it back so they feel heard and the plan is locked', 'Confirm their credit score'] },
-      { id: 'q15', idx: 7, prompt: 'A relocating family differs from a first-time buyer mainly in…', choices: ['Nothing — buyers are buyers', 'The clock — relocators need speed and logistics; first-timers need education and reassurance', 'Credit score', 'Which portal they use'] },
-      { id: 'q16', idx: 8, prompt: 'The lead says they’re “just looking, super early.” You…', choices: ['Tell them to call back when serious', 'Offer a no-pressure look at two homes to calibrate — early buyers become loyal clients', 'Add them to a newsletter and move on', 'Push for pre-approval first'] },
-    ],
+    id: SHOW_LIKE_A_PRO_ID,
+    idx: 1,
+    title: SHOW_LIKE_A_PRO_TITLE,
+    summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
+    body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
+    pass_pct: 80,
+    questions: SHOW_LIKE_A_PRO_QS.length,
+    status: 'not_started',
+    score: null,
+    passed_at: null,
+    signed: false,
+    answers: SHOW_LIKE_A_PRO_ANSWERS,
+    cards: SHOW_LIKE_A_PRO_CARDS,
+    qs: SHOW_LIKE_A_PRO_QS,
   },
 ];
+
+export function demoCatalogTitles(): string[] {
+  return DEMO_COURSE.map((m) => m.title);
+}
 
 /** Agent's own view: every module with its questions (answer-less) + own progress. */
 export async function loadCourse(agentId: string): Promise<CourseModule[]> {
@@ -581,23 +510,16 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
 
 function demoRep(): RepData {
   const modules: RepModule[] = [
-    { id: 'm0', idx: 1, title: 'Welcome to Preferred', summary: 'The program standards — and the pipeline that keeps you in it.', body: 'Three numbers Zillow holds you to.', pass_pct: 80, questions: 7, cards: DEMO_COURSE[0].cards },
-    { id: 'm1', idx: 2, title: 'The TRU Way: Speed to Lead', summary: 'Why the first five minutes decide the deal.', body: 'A paid lead is a stopwatch, not a to-do…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[1].cards },
-    { id: 'm2', idx: 3, title: 'The ALMS Call Framework', summary: 'Appointment, Location, Motivation, Summarize.', body: 'ALMS is the spine of every first call…', pass_pct: 80, questions: 8, cards: DEMO_COURSE[2].cards },
-    { id: 'm3', idx: 4, title: 'Working a Paid Lead End to End', summary: 'What "worked" actually means.', body: 'A lead counts as WORKED when…', pass_pct: 80, questions: 7, cards: [
-      { t: 'section', n: 'The one word', title: 'What "worked" means', body: 'A lead is worked when a real person actually tried to reach them — not when the CRM fired an autotext.' },
-      { t: 'text', k: 'Worked is a verb', body: 'A paid lead counts as WORKED the moment you personally try to reach a real human — a live call, a real voicemail, a text you actually typed. An automated drip going out under your name is not you working the lead. It’s the system holding the door while you decide whether to walk through it.\n\nEvery lead sits in one of three states on your Pulse board: worked, stuck, or zero-contact. The whole job is keeping leads out of the bottom two — not by gaming the stage, but by doing the thing the stage is supposed to mean.' },
-      { t: 'steps', title: 'Working a lead, start to finish', steps: ['Speed: first personal touch inside the window', 'Double-dial, voicemail, then a text you actually typed', 'Set the next step — a real time on the calendar', 'Log the honest stage in Follow Up Boss', 'Keep following up until they answer, book, or clearly say no'] },
-      { t: 'drill', prompt: 'An autotext went out to a new lead an hour ago. No human has called. Is this lead "worked"?', choices: ['Yes — a touch is a touch', 'No — automated ≠ worked; it still needs a real attempt', 'Only if they replied', 'Yes, after 24 hours'], answer: 1, explain: 'Automation keeps the lead warm; it doesn’t count as you working it. Until a person tries to reach them, the lead is still zero-contact.' },
-      { t: 'callout', body: 'Worked, stuck, or zero-contact — every lead is one of the three. The whole program is just keeping more of them in the first bucket.' },
-    ] },
-    { id: 'm4', idx: 5, title: 'Follow-Up Discipline & the CRM', summary: 'The system only works if the CRM tells the truth.', body: 'Your CRM is the single source of truth…', pass_pct: 80, questions: 7, cards: [
-      { t: 'section', n: 'The scoreboard', title: 'The CRM tells the truth', body: 'Zillow and your leader read your whole funnel out of Follow Up Boss. If it’s wrong, your best work is invisible.' },
-      { t: 'text', k: 'If it’s not in the CRM, it didn’t happen', body: 'You can make the perfect call, set the perfect appointment, and sit down with a buyer who’s ready — and if the stage in Follow Up Boss never moves, none of it shows up. The system doesn’t see effort. It sees stages.\n\nThat cuts both ways. A CRM that tells the truth protects you: it’s the record that the lead was answered, the consult happened, the deal is real. Keep it honest and it works for you. Let it drift and your pipeline lies about you.' },
-      { t: 'steps', title: 'A simple follow-up cadence', steps: ['Day 1: multiple touches — call, voicemail, text', 'Days 2–7: a touch a day while intent is high', 'Weeks 2–4: every few days, mix call and text', 'Then a steady long-game rhythm until they act or opt out'] },
-      { t: 'drill', prompt: 'You met with a buyer today but never updated their stage. What does the system show?', choices: ['Met With', 'An abandoned lead — your consult is invisible', 'Under Contract', 'It updates itself'], answer: 1, explain: 'The funnel is only as true as you keep it. An un-updated stage reads as a lead nobody worked — even though you did the work.' },
-      { t: 'callout', body: 'The CRM isn’t paperwork. It’s the scoreboard the whole program is keeping — make sure it’s telling your story straight.' },
-    ] },
+    {
+      id: SHOW_LIKE_A_PRO_ID,
+      idx: 1,
+      title: SHOW_LIKE_A_PRO_TITLE,
+      summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
+      body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
+      pass_pct: 80,
+      questions: SHOW_LIKE_A_PRO_QS.length,
+      cards: SHOW_LIKE_A_PRO_CARDS,
+    },
   ];
   const agents: RepAgent[] = [
     { id: 'a1', name: 'Maria Lopez', email: 'maria@example.com', invited: true },
@@ -605,18 +527,8 @@ function demoRep(): RepData {
     { id: 'a3', name: 'Dana Cole', email: 'dana@example.com', invited: false },
   ];
   const progress: RepProgressRow[] = [
-    // Maria (a1) — fully certified: passed all 5 modules, so the gauge reads alive
-    // (1 of 3 · ~33%) instead of a flat 0%. certifiedCount counts agents at 100%.
-    { agent_id: 'a1', module_id: 'm0', status: 'passed', score: 100, passed_at: '2026-06-18' },
-    { agent_id: 'a1', module_id: 'm1', status: 'passed', score: 100, passed_at: '2026-06-20' },
-    { agent_id: 'a1', module_id: 'm2', status: 'passed', score: 90, passed_at: '2026-06-22' },
-    { agent_id: 'a1', module_id: 'm3', status: 'passed', score: 90, passed_at: '2026-06-24' },
-    { agent_id: 'a1', module_id: 'm4', status: 'passed', score: 80, passed_at: '2026-06-26' },
-    // Sam (a2) — mid-program (started, not certified).
-    { agent_id: 'a2', module_id: 'm0', status: 'passed', score: 90, passed_at: '2026-06-23' },
-    { agent_id: 'a2', module_id: 'm1', status: 'passed', score: 80, passed_at: '2026-06-25' },
-    { agent_id: 'a2', module_id: 'm2', status: 'in_progress', score: null, passed_at: null },
-    // Dana (a3) — invited, not started.
+    { agent_id: 'a1', module_id: SHOW_LIKE_A_PRO_ID, status: 'passed', score: 100, passed_at: '2026-06-18' },
+    { agent_id: 'a2', module_id: SHOW_LIKE_A_PRO_ID, status: 'in_progress', score: null, passed_at: null },
   ];
   const practice: RepPracticeRow[] = [
     { agent_id: 'a1', scenario: 'first_timer', status: 'graded', score: 86, passed: true, created_at: '2026-06-28' },

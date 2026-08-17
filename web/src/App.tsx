@@ -11,8 +11,10 @@ import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
 import AgentCourse from './pages/AgentCourse';
+import DeckPreview from './pages/DeckPreview';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
+import { parseDeckRoute } from './lib/deckRoute';
 
 type Org = { id: string; name: string; plan?: string };
 
@@ -132,6 +134,12 @@ export default function App() {
   })();
   if (route.startsWith('/assess')) {
     return <Assess token={assessToken ?? ''} />;
+  }
+
+  // Public native-slide look: ?demo=1#/deck/zillow-day3/1 (no auth).
+  const deck = parseDeckRoute(route);
+  if (deck) {
+    return <DeckPreview deck={deck.deck} n={deck.n} />;
   }
 
   if (isDemo && route === '/learn') {
