@@ -7,6 +7,7 @@ import {
 } from '../lib/api';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
+import { SlideView } from './SlideDeck';
 import '../truHqDark.css';
 
 type View = 'home' | 'lesson' | 'quiz' | 'result' | 'sim';
@@ -19,6 +20,7 @@ const accentOf = (idx: number) => ACCENTS[(idx - 1) % ACCENTS.length];
 function cardLabel(c: LessonCard, i: number): string {
   if (c.t === 'section') return c.title ?? `Part`;
   if (c.t === 'intro') return c.title ?? 'Welcome';
+  if (c.t === 'slide') return c.title ?? `Slide ${c.slide ?? ''}`;
   if (c.t === 'drill') return '⚡ Practice rep';
   if (c.t === 'script') return '📋 Steal this script';
   if (c.t === 'dialogue') return '🎧 Live example';
@@ -494,9 +496,9 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 }
 
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
-function Shell({ accent, num, rail, children }: { accent: string; num: number; rail: ReactNode; children: ReactNode }) {
+function Shell({ accent, num, rail, children, wide }: { accent: string; num: number; rail: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="ac ac-shell tru-dark" data-module={num} style={{ ['--mac' as string]: accent }}>
+    <div className={`ac ac-shell tru-dark${wide ? ' ac-shell-wide' : ''}`} data-module={num} style={{ ['--mac' as string]: accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>
@@ -555,7 +557,7 @@ export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: Cours
   );
 
   return (
-    <Shell accent={ac} num={m.idx} rail={rail}>
+    <Shell accent={ac} num={m.idx} rail={rail} wide={card?.t === 'slide'}>
       <button className="ac-back ac-mob" onClick={onBack}>‹ All modules</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Module {m.idx}</span>
@@ -634,6 +636,9 @@ function WelcomeIntro({ title, body }: { title?: string; body?: string }) {
 
 function Card({ card, pick, onPick }: { card: LessonCard; pick?: number; onPick: (ci: number) => void }) {
   if (!card) return null;
+  if (card.t === 'slide') {
+    return <SlideView deck={card.deck ?? ''} n={card.slide ?? 1} />;
+  }
   if (card.t === 'intro') {
     return <WelcomeIntro title={card.title} body={card.body} />;
   }

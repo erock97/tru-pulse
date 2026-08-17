@@ -152,6 +152,11 @@ export interface LessonCard {
   bad?: string[];        // compare — DON'T column
   url?: string;          // video — Loom share/embed URL (empty renders the intro treatment, not a dead player)
   steps?: string[];      // steps — a pipeline/stage ladder
+  // slide (t:'slide') — ONE slide of a named deck under /public/decks, rendered
+  // natively. `deck` is the json basename, `slide` the 1-based slide number.
+  // (`n` is already taken above by the section card's part label.)
+  deck?: string;
+  slide?: number;
 }
 // Omit<'status'>: RepModule.status is the authoring lifecycle (draft/published/
 // archived); CourseModule.status below is the learner's progress status
