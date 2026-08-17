@@ -136,7 +136,7 @@ export default function App() {
     return <Assess token={assessToken ?? ''} />;
   }
 
-  // Public native-slide look: ?demo=1#/deck/zillow-day3/1 (no auth).
+  // Public native-slide look: ?demo=1#/deck/zillow-day2/1 (no auth).
   const deck = parseDeckRoute(route);
   if (deck) {
     return <DeckPreview deck={deck.deck} n={deck.n} />;

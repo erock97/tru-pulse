@@ -139,9 +139,9 @@ describe('Show Like a Pro (Day 3)', () => {
     });
   });
 
-  it('puts only Show Like a Pro in the demo catalog', () => {
+  it('puts Show Like a Pro in the demo catalog without July modules', () => {
     const titles = demoCatalogTitles();
-    expect(titles).toEqual([SHOW_LIKE_A_PRO_TITLE]);
+    expect(titles).toContain(SHOW_LIKE_A_PRO_TITLE);
     expect(titles).not.toContain('Welcome to Preferred');
     expect(titles).not.toContain('The ALMS Call Framework');
     expect(titles).not.toContain('The TRU Way: Speed to Lead');

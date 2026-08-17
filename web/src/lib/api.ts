@@ -7,6 +7,13 @@ import {
   SHOW_LIKE_A_PRO_QS,
   SHOW_LIKE_A_PRO_TITLE,
 } from './showLikeAPro';
+import {
+  WINNING_FIRST_CONVERSATION_ANSWERS,
+  WINNING_FIRST_CONVERSATION_CARDS,
+  WINNING_FIRST_CONVERSATION_ID,
+  WINNING_FIRST_CONVERSATION_QS,
+  WINNING_FIRST_CONVERSATION_TITLE,
+} from './winningFirstConversation';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string;
 
@@ -347,12 +354,29 @@ export async function uploadRepMedia(file: File, orgId: string): Promise<string>
 }
 
 // Self-contained course for ?demo=1 (previews + sales demos).
-// July modules are hidden. This catalog is Show Like a Pro only — opening it
-// hits SlideView. Official Training is omitted: zillow-day1.json is not on this branch.
+// July modules are hidden. This catalog is Winning the First Conversation
+// (Day 2) and Show Like a Pro (Day 3). Opening either hits SlideView.
+// Official Training is omitted: zillow-day1.json is not on this branch.
 const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   {
-    id: SHOW_LIKE_A_PRO_ID,
+    id: WINNING_FIRST_CONVERSATION_ID,
     idx: 1,
+    title: WINNING_FIRST_CONVERSATION_TITLE,
+    summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
+    body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
+    pass_pct: 80,
+    questions: WINNING_FIRST_CONVERSATION_QS.length,
+    status: 'not_started',
+    score: null,
+    passed_at: null,
+    signed: false,
+    answers: WINNING_FIRST_CONVERSATION_ANSWERS,
+    cards: WINNING_FIRST_CONVERSATION_CARDS,
+    qs: WINNING_FIRST_CONVERSATION_QS,
+  },
+  {
+    id: SHOW_LIKE_A_PRO_ID,
+    idx: 2,
     title: SHOW_LIKE_A_PRO_TITLE,
     summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
     body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
@@ -511,8 +535,18 @@ export async function gradeQuiz(moduleId: string, answers: number[]): Promise<Gr
 function demoRep(): RepData {
   const modules: RepModule[] = [
     {
-      id: SHOW_LIKE_A_PRO_ID,
+      id: WINNING_FIRST_CONVERSATION_ID,
       idx: 1,
+      title: WINNING_FIRST_CONVERSATION_TITLE,
+      summary: 'The first conversation, advocate not gatekeeper, four beats (LEAD), appointment on the first call, follow-up when they don’t pick up.',
+      body: 'Day 2 of Zillow Preferred onboarding — Winning the First Conversation. Thirty-one slides.',
+      pass_pct: 80,
+      questions: WINNING_FIRST_CONVERSATION_QS.length,
+      cards: WINNING_FIRST_CONVERSATION_CARDS,
+    },
+    {
+      id: SHOW_LIKE_A_PRO_ID,
+      idx: 2,
       title: SHOW_LIKE_A_PRO_TITLE,
       summary: 'The showing, touring agreement before you go, two or three homes never one, sidewalk five questions, leave with an appointment.',
       body: 'Day 3 of Zillow Preferred onboarding — Show Like a Pro. Thirty-one slides.',
@@ -527,7 +561,9 @@ function demoRep(): RepData {
     { id: 'a3', name: 'Dana Cole', email: 'dana@example.com', invited: false },
   ];
   const progress: RepProgressRow[] = [
+    { agent_id: 'a1', module_id: WINNING_FIRST_CONVERSATION_ID, status: 'passed', score: 100, passed_at: '2026-06-17' },
     { agent_id: 'a1', module_id: SHOW_LIKE_A_PRO_ID, status: 'passed', score: 100, passed_at: '2026-06-18' },
+    { agent_id: 'a2', module_id: WINNING_FIRST_CONVERSATION_ID, status: 'in_progress', score: null, passed_at: null },
     { agent_id: 'a2', module_id: SHOW_LIKE_A_PRO_ID, status: 'in_progress', score: null, passed_at: null },
   ];
   const practice: RepPracticeRow[] = [
