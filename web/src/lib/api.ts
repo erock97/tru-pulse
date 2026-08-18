@@ -1,6 +1,6 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
-import { withOpenableOfficialTraining } from './agentHq';
+import { isOfficialTraining, withOpenableOfficialTraining } from './agentHq';
 import {
   OFFICIAL_TRAINING_ANSWERS,
   OFFICIAL_TRAINING_CARDS,
@@ -138,7 +138,13 @@ export async function loadRep(): Promise<RepData> {
   const qcount = new Map<string, number>();
   qs.forEach((q) => qcount.set(q.module_id, (qcount.get(q.module_id) ?? 0) + 1));
   return {
-    modules: mods.map((m) => ({ ...m, questions: qcount.get(m.id) ?? 0 })),
+    modules: mods.map((m) => {
+      const n = qcount.get(m.id) ?? 0;
+      return {
+        ...m,
+        questions: n || (isOfficialTraining(m) ? OFFICIAL_TRAINING_QS.length : 0),
+      };
+    }),
     progress: prog,
     agents: agentRows.map((a) => ({ id: a.id, name: a.name, email: a.email, invited: !!a.auth_id })),
     practice: prac,
