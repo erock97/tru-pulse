@@ -263,6 +263,18 @@ html[data-theme="warm"] .tru-dark {
   min-width: 0;
 }
 
+/* Centered information stage. Do not put 1440 on `.main` — that recreates the
+   old half-page column and clips ambient / hero glow. Ambient layers stay
+   full-bleed; Home / Pulse / Coach / Rep content sits in one 1440 row. */
+.tru-dark .hh-canvas > *:not(.hh-ambient),
+.tru-dark .pulse-canvas > *:not(.pulse-ambient),
+.tru-dark .coach-canvas > *:not(.coach-ambient),
+.tru-dark .rp-canvas > *:not(.rp-ambient) {
+  max-width: 1440px;
+  width: 100%;
+  margin-inline: auto;
+}
+
 /* ---------- Login (dark split) ---------- */
 .tru-login {
   min-height: 100vh;
@@ -1326,7 +1338,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ps-src-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .tru-dark .ps-src-opt { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; margin: 0; cursor: pointer; color: var(--text); }
 .tru-dark .ps-src-opt input { width: 16px; height: 16px; margin: 0; }
-.tru-dark .ps-emptyview { padding: 48px 32px; text-align: center; max-width: 560px; margin: 0 auto; }
+.tru-dark .ps-emptyview { padding: 48px 32px; text-align: center; max-width: none; width: 100%; margin: 0 auto; }
 .tru-dark .ps-emptyview h3 { font-size: 22px; font-weight: 700; color: var(--text-strong); margin-bottom: 10px; }
 .tru-dark .ps-emptyview p { color: var(--text-60); font-size: 15px; line-height: 1.6; margin-bottom: 18px; }
 
