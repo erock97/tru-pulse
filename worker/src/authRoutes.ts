@@ -312,7 +312,12 @@ export async function handleAuthRoutes(
   if (url.pathname === '/auth/set-password' && req.method === 'POST') {
     const sess = sid ? await withFreshToken(env, sid) : null;
     if (!sess) return json({ error: 'not signed in' }, 401, cors);
-    const b = (await req.json().catch(() => null)) as { password?: string } | null;
+    const b = (await req.json().catch(() => null)) as { password?: string; email?: unknown } | null;
+    // Invite claim is email-match. This route only sets a password on the minted
+    // user — never a different address.
+    if (b && 'email' in b && b.email != null) {
+      return json({ error: 'email cannot be changed here' }, 422, cors);
+    }
     const password = String(b?.password ?? '');
     if (password.length < 8) return json({ error: 'use at least 8 characters' }, 422, cors);
 

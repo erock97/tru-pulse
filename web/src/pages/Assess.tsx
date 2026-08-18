@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { resolveCohortRoster, submitCohortAssessment, claimAgent } from '../lib/api';
+import { resolveCohortRoster, submitCohortAssessment, submitOwnAssessment, claimAgent, myAgent } from '../lib/api';
 import { signUp } from '../lib/auth';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
@@ -9,7 +9,13 @@ import {
 import '../truHqDark.css';
 import './assess.css';
 
-type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done';
+type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done'|'save';
+
+function isSelfHash(): boolean {
+  if (typeof window === 'undefined') return false;
+  const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  return q.get('self') === '1';
+}
 
 const AXIS_LABEL: Record<Axis, string> = {
   energy: 'Energy', approach: 'Approach', deal: 'Deal Style', decision: 'Decisions',
@@ -29,12 +35,13 @@ function isPreviewHash(): boolean {
 
 export default function Assess({ token }: { token: string }) {
   const preview = isPreviewHash();
+  const self = isSelfHash();
   const [roster, setRoster] = useState<{ id: string; name: string }[] | null>(null);
   const [err, setErr] = useState('');
   const [agent, setAgent] = useState<{ id: string; name: string } | null>(
     preview ? { id: 'preview', name: 'Preview' } : null
   );
-  const [stage, setStage] = useState<Stage>(preview ? 'intro' : 'pick');
+  const [stage, setStage] = useState<Stage>(preview || self ? 'intro' : 'pick');
 
   // Lifted so Task 7's register/done stages can read the finished results.
   const [pAns, setPAns] = useState<number[]>(() => Array(PERSONAL_QUESTIONS.length).fill(0));
@@ -44,14 +51,26 @@ export default function Assess({ token }: { token: string }) {
 
   useEffect(() => {
     if (preview) return; // dev preview: no roster fetch, no DB call.
+    if (self) {
+      myAgent().then((a) => {
+        if (!a) { setErr('Sign in to take your assessment, then come back here.'); return; }
+        setAgent({ id: a.id, name: a.name });
+        setStage('intro');
+      }).catch(() => setErr('Sign in to take your assessment, then come back here.'));
+      return;
+    }
     setErr('');
     if (!token) { setErr('This link is missing its team code. Ask your team lead for a fresh link.'); return; }
     resolveCohortRoster(token).then(setRoster).catch(() => setErr('This team link could not be opened. Ask your team lead for a fresh link.'));
-  }, [token, preview]);
+  }, [token, preview, self]);
 
-  if (!preview) {
+  if (!preview && !self) {
     if (err) return <div className="asx-shell tru-dark"><div className="asx-card asx-msg">{err}</div></div>;
     if (!roster) return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
+  }
+  if (self) {
+    if (err) return <div className="asx-shell tru-dark"><div className="asx-card asx-msg">{err}</div></div>;
+    if (!agent) return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
   }
 
   if (stage === 'pick') {
@@ -69,6 +88,18 @@ export default function Assess({ token }: { token: string }) {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (stage === 'save') {
+    return (
+      <SaveOwnFlow
+        agent={agent!}
+        personalResult={personalResult!}
+        proResult={proResult!}
+        pAns={pAns}
+        bAns={bAns}
+      />
     );
   }
 
@@ -95,6 +126,7 @@ export default function Assess({ token }: { token: string }) {
       agent={agent!}
       stage={stage}
       setStage={setStage}
+      afterPro={self ? 'save' : 'register'}
       pAns={pAns} setPAns={setPAns}
       bAns={bAns} setBAns={setBAns}
       personalResult={personalResult} setPersonalResult={setPersonalResult}
@@ -104,7 +136,7 @@ export default function Assess({ token }: { token: string }) {
 }
 
 function AssessFlow({
-  agent, stage, setStage,
+  agent, stage, setStage, afterPro = 'register',
   pAns, setPAns, bAns, setBAns,
   personalResult, setPersonalResult,
   proResult, setProResult,
@@ -112,6 +144,7 @@ function AssessFlow({
   agent: { id: string; name: string };
   stage: Stage;
   setStage: (s: Stage) => void;
+  afterPro?: 'register' | 'save';
   pAns: number[]; setPAns: (a: number[]) => void;
   bAns: number[]; setBAns: (a: number[]) => void;
   personalResult: AxisResult | null; setPersonalResult: (r: AxisResult) => void;
@@ -276,12 +309,56 @@ function AssessFlow({
               ))}
             </div>
           )}
-          <button className="asx-cta" onClick={() => setStage('register')}>See your full result →</button>
+          <button className="asx-cta" onClick={() => setStage(afterPro)}>See your full result →</button>
         </div>
       </div>
     );
   }
 
+  return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
+}
+
+function SaveOwnFlow({
+  agent, personalResult, proResult, pAns, bAns,
+}: {
+  agent: { id: string; name: string };
+  personalResult: AxisResult;
+  proResult: AxisResult;
+  pAns: number[];
+  bAns: number[];
+}) {
+  const submitted = useRef(false);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    if (submitted.current) return;
+    submitted.current = true;
+    const tallies = {
+      energy_p: proResult.axes.energy.letter === 'P' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
+      energy_t: proResult.axes.energy.letter === 'T' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
+      approach_pro: proResult.axes.approach.letter === 'Pro' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
+      approach_rec: proResult.axes.approach.letter === 'Rec' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
+      deal_r: proResult.axes.deal.letter === 'R' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
+      deal_v: proResult.axes.deal.letter === 'V' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
+      decision_d: proResult.axes.decision.letter === 'D' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
+      decision_i: proResult.axes.decision.letter === 'I' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
+    };
+    submitOwnAssessment({
+      agentId: agent.id,
+      personalCode: personalResult.code,
+      personalAxes: personalResult.axes,
+      businessCode: proResult.code,
+      tallies,
+      answers: { personal: pAns, pro: bAns },
+    }).then(() => { window.location.hash = '/coach'; })
+      .catch(() => setErr('Your result didn’t save — try again from Coach.'));
+  }, []);
+  if (err) {
+    return (
+      <div className="asx-shell tru-dark">
+        <div className="asx-card asx-msg">{err}</div>
+      </div>
+    );
+  }
   return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
 }
 

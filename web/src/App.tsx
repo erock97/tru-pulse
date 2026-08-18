@@ -10,7 +10,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
-import AgentCourse from './pages/AgentCourse';
+import AgentHq from './pages/AgentHq';
 import DeckPreview from './pages/DeckPreview';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
@@ -142,8 +142,8 @@ export default function App() {
     return <DeckPreview deck={deck.deck} n={deck.n} />;
   }
 
-  if (isDemo && route === '/learn') {
-    return <AgentCourse agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
+  if (isDemo && (route === '/learn' || route.startsWith('/learn/'))) {
+    return <AgentHq agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
   }
   if (isDemo) return shell({ id: 'demo', name: 'Sample Realty' });
   if (recovery) {
@@ -170,7 +170,7 @@ export default function App() {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
     if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
-    if (agent) return <AgentCourse agent={agent} />;
+    if (agent) return <AgentHq agent={agent} />;
     return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
   }
   // Impersonated session → the shell's sidebar carries the "Exit — switch teams"

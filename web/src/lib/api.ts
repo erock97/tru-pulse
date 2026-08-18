@@ -1,5 +1,6 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
+import { withOpenableOfficialTraining } from './agentHq';
 import {
   OFFICIAL_TRAINING_ANSWERS,
   OFFICIAL_TRAINING_CARDS,
@@ -239,15 +240,15 @@ export async function signOffAgent(agentId: string): Promise<void> {
   if (!res.ok) throw new Error('Could not sign this agent off.');
 }
 
-/** Leader/admin: mint an invite (or re-invite) link for an agent. */
-export async function inviteAgent(agentId: string): Promise<{ link: string; email: string; reinvite: boolean }> {
+/** Leader/admin: email an agent a set-password invite (same Resend path as Coach). */
+export async function inviteAgent(agentId: string): Promise<{ emailed: boolean; email: string; reinvite: boolean }> {
   const res = await workerFetch('/rep/invite', {
     method: 'POST',
     body: JSON.stringify({ agentId }),
   });
-  const body = (await res.json().catch(() => ({}))) as { error?: string; link?: string; email?: string; reinvite?: boolean };
-  if (!res.ok || !body.link) throw new Error(body.error ?? 'Could not create invite');
-  return { link: body.link, email: body.email ?? '', reinvite: !!body.reinvite };
+  const body = (await res.json().catch(() => ({}))) as { error?: string; emailed?: boolean; email?: string; reinvite?: boolean };
+  if (!res.ok || !body.emailed) throw new Error(body.error ?? 'Could not send invite');
+  return { emailed: true, email: body.email ?? '', reinvite: !!body.reinvite };
 }
 
 // ── TRU Rep — authoring (Block 2: Worker endpoints only; UI is Block 3) ─────
@@ -452,7 +453,7 @@ export function demoCatalogTitles(): string[] {
 
 /** Agent's own view: every module with its questions (answer-less) + own progress. */
 export async function loadCourse(agentId: string): Promise<CourseModule[]> {
-  if (isDemo) return DEMO_COURSE.map(({ answers, ...m }) => { void answers; return m; });
+  if (isDemo) return withOpenableOfficialTraining(DEMO_COURSE.map(({ answers, ...m }) => { void answers; return m; }));
   // Same belt-and-suspenders status filter as loadRep() above — see its comment.
   type ModRow = Omit<RepModule, 'questions'> & { cards: LessonCard[] | null };
   type ProgRow = { module_id: string; status: string; score: number | null; passed_at: string | null; signed_off_at: string | null };
@@ -474,7 +475,7 @@ export async function loadCourse(agentId: string): Promise<CourseModule[]> {
     byMod.set(q.module_id, arr);
   });
   const progByMod = new Map(progRows.map((p) => [p.module_id, p]));
-  return modRows.map((m) => {
+  const built = modRows.map((m) => {
     const qlist = byMod.get(m.id) ?? [];
     const p = progByMod.get(m.id);
     // No structured cards yet → fall back to the body as plain text cards.
@@ -483,6 +484,7 @@ export async function loadCourse(agentId: string): Promise<CourseModule[]> {
       : (m.body ?? '').split(/(?<=[.!?])\s+/).reduce<string[]>((acc, s, i) => { const k = Math.floor(i / 2); acc[k] = acc[k] ? acc[k] + ' ' + s : s; return acc; }, []).map((body) => ({ t: 'text', body }));
     return { ...m, questions: qlist.length, qs: qlist, cards, status: p?.status ?? 'not_started', score: p?.score ?? null, passed_at: p?.passed_at ?? null, signed: !!p?.signed_off_at };
   });
+  return withOpenableOfficialTraining(built);
 }
 
 // ── The Live Sim — audio practice calls ─────────────────────────────────────
@@ -981,6 +983,17 @@ export async function resolveCohortRoster(token: string): Promise<{ id: string; 
   if (!res.ok) throw new Error('This team link could not be opened.');
   const d = (await res.json()) as { data?: { id: string; name: string }[] };
   return d.data ?? [];
+}
+
+export async function submitOwnAssessment(input: {
+  agentId: string; personalCode: string; personalAxes: unknown;
+  businessCode: string; tallies: Record<string, number>; answers: unknown;
+}): Promise<void> {
+  const res = await workerFetch('/data/coach/submit-own', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error('Could not save your assessment.');
 }
 
 export async function submitCohortAssessment(input: {

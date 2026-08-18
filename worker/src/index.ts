@@ -774,33 +774,36 @@ export default {
       const body = (await req.json().catch(() => null)) as any;
       const agentId = String(body?.agentId ?? '').trim();
       if (!agentId) return json({ error: 'agentId required' }, 422);
-      const rows = await database.select('agents', `id=eq.${agentId}&select=id,org_id,email,auth_id`);
+      const rows = await database.select('agents', `id=eq.${agentId}&select=id,org_id,email,auth_id,name`);
       if (!rows.length) return json({ error: 'agent not found' }, 404);
       const agent = rows[0] as any;
-      if (!agent.email) return json({ error: 'agent has no email on file' }, 422);
+      if (!agent.email) {
+        return json({ error: 'This agent has no email on file. Add an email before inviting — the invite is sent there.' }, 422);
+      }
       if (!admin) {
         const orgs = await userOrgIds(database, userId as string);
         if (!orgs.includes(agent.org_id)) return json({ error: 'forbidden' }, 403);
       }
       const linkType = agent.auth_id ? 'recovery' : 'invite';
-      const res = await fetch(env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/admin/generate_link', {
-        method: 'POST',
-        headers: {
-          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: linkType, email: agent.email, redirect_to: 'https://app.truhq.co' }),
-      });
-      const gl = (await res.json().catch(() => null)) as any;
-      const props = gl?.properties ?? gl;
-      const link = props?.action_link;
-      if (!res.ok || !link) return json({ error: 'could not mint invite' }, 502);
-      const newUserId = gl?.user?.id ?? gl?.id;
+      const { link, userId: mintedUserId } = await mintAuthLink(env, agent.email, linkType).catch(() => ({ link: '', userId: null }));
+      if (!link) return json({ error: 'could not mint invite' }, 502);
+      const newUserId = mintedUserId;
       if (!agent.auth_id && newUserId) {
         await database.update('agents', `id=eq.${agentId}`, { auth_id: newUserId });
       }
-      return json({ link, email: agent.email, reinvite: !!agent.auth_id });
+      const orgRows = await database.select('orgs', `id=eq.${agent.org_id}&select=name`);
+      const orgName = String((orgRows[0] as { name?: string } | undefined)?.name ?? '').trim() || 'your team';
+      const sent = await sendInviteEmail(env, {
+        to: agent.email,
+        name: String(agent.name ?? '').trim() || agent.email,
+        orgName,
+        link,
+        kind: 'agent',
+      });
+      if (!sent) {
+        return json({ error: 'Could not send the invite email. Try again, or check the address.' }, 502);
+      }
+      return json({ emailed: true, email: agent.email, reinvite: !!agent.auth_id });
     }
 
     // ── TRU Rep — the Live Sim (practice calls) ─────────────────────────────

@@ -362,6 +362,49 @@ export async function handleDataRoutes(
       return json({ checkin: rows[0] ?? null }, 200, cors);
     }
 
+    // Agent ticks a 1:1 commitment on their own checkin_items row.
+    if (url.pathname === '/data/coach/checkin-item') {
+      const id = String(body.id ?? '');
+      if (!UUID_RE.test(id)) return json({ error: 'invalid id' }, 422, cors);
+      const raw = body.status;
+      const status = raw === 'done' || raw === 'partial' || raw === 'missed' ? raw : null;
+      const rows = await db.update('checkin_items', `id=eq.${id}`, { status });
+      if (!rows) return json({ error: 'not allowed' }, 403, cors);
+      return json({ item: rows[0] ?? null }, 200, cors);
+    }
+
+    // Signed-in agent finishes the existing Assess flow and returns to their Coach tab.
+    if (url.pathname === '/data/coach/submit-own') {
+      const agentId = String(body.agentId ?? '');
+      if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+      const mine = await db.select<{ id: string; org_id: string; team_id: string }>(
+        'agents', `select=id,org_id,team_id&id=eq.${agentId}&auth_id=eq.${db.userId}&limit=1`,
+      );
+      if (!mine[0]) return json({ error: 'not allowed' }, 403, cors);
+      const tallies = (body.tallies ?? {}) as Record<string, number>;
+      const created = await db.insert('assessments', {
+        org_id: mine[0].org_id,
+        team_id: mine[0].team_id,
+        agent_id: agentId,
+        code: body.businessCode,
+        answers: body.answers ?? null,
+        energy_p: tallies.energy_p ?? null,
+        energy_t: tallies.energy_t ?? null,
+        approach_pro: tallies.approach_pro ?? null,
+        approach_rec: tallies.approach_rec ?? null,
+        deal_r: tallies.deal_r ?? null,
+        deal_v: tallies.deal_v ?? null,
+        decision_d: tallies.decision_d ?? null,
+        decision_i: tallies.decision_i ?? null,
+      });
+      if (!created) return json({ error: 'not allowed' }, 403, cors);
+      await db.update('agents', `id=eq.${agentId}`, {
+        personal_code: body.personalCode ?? null,
+        personal_axes: body.personalAxes ?? null,
+      });
+      return json({ ok: true }, 200, cors);
+    }
+
     // Add / update / toggle / delete a commitment.
     if (url.pathname === '/data/coach/commitment') {
       const action = String(body.action ?? '');

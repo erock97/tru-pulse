@@ -528,7 +528,7 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
   );
 }
 
-/* ---- Per-agent access control: mint an invite/re-invite login link and copy it. ---- */
+/* ---- Per-agent access: email a set-password invite (Resend, same path as Coach). ---- */
 function InviteCell({ agent }: { agent: RepAgent }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -536,15 +536,14 @@ function InviteCell({ agent }: { agent: RepAgent }) {
     if (busy || !agent.email) return;
     setBusy(true); setMsg('');
     try {
-      const { link } = await inviteAgent(agent.id);
-      try { await navigator.clipboard.writeText(link); setMsg('Link copied'); }
-      catch { setMsg('Link ready'); window.prompt('Copy this invite link:', link); }
+      await inviteAgent(agent.id);
+      setMsg('Email sent');
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : 'Failed');
+      setMsg(e instanceof Error ? e.message : 'Could not send invite');
     }
     setBusy(false);
   }
-  if (!agent.email) return <span className="rp-invite-msg">no email</span>;
+  if (!agent.email) return <span className="rp-invite-msg">Add an email first — the invite is sent there.</span>;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
       <button className={`rp-invite${agent.invited ? ' ok' : ''}`} onClick={go} disabled={busy}>
