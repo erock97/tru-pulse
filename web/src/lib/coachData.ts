@@ -276,6 +276,29 @@ interface AssessmentRow {
   decision_d?: number; decision_i?: number;
 }
 
+export async function loadOwnProfile(agentId: string): Promise<{ profile: Profile | null; assessed: boolean }> {
+  if (isDemo) {
+    const demoAgent = demoAgentRows().find((a) => a.id === 'demo-c1');
+    const rows: AssessmentRow[] = (demoAgent?.assessments || []).map((a) => ({ code: a.code, taken_at: a.taken_at }));
+    return { profile: deriveProfile(rows, null, null), assessed: rows.length > 0 };
+  }
+  const res = await workerFetch(`/data/coach/profile?agentId=${encodeURIComponent(agentId)}`);
+  if (!res.ok) return { profile: null, assessed: false };
+  const payload = (await res.json()) as {
+    assessments: AssessmentRow[] | null;
+    personal: { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null } | null;
+  };
+  const data = payload.assessments ?? [];
+  if (data.length === 0) return { profile: null, assessed: false };
+  let personalCode: string | null = null;
+  let personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null;
+  if (payload.personal) {
+    personalCode = payload.personal.personal_code ?? null;
+    personalAxes = payload.personal.personal_axes ?? null;
+  }
+  return { profile: deriveProfile(data, personalCode, personalAxes), assessed: true };
+}
+
 export async function loadProfile(agentId: string): Promise<Profile> {
   // Demo/preview: loadRoster's demo path never touches Supabase, but this
   // function previously always did — for a fake demo-cN id that Supabase
@@ -656,6 +679,16 @@ export async function toggleCommitment(id: string, done: boolean): Promise<void>
   await workerFetch('/data/coach/commitment', {
     method: 'POST', body: JSON.stringify({ action: 'toggle', id, fields: { done } }),
   });
+}
+
+/** Agent ticks a 1:1 commitment (checkin_items). Own-row RLS must allow the update. */
+export async function toggleCheckinCommitment(id: string, done: boolean): Promise<void> {
+  if (isDemo) return;
+  const res = await workerFetch('/data/coach/checkin-item', {
+    method: 'POST',
+    body: JSON.stringify({ id, status: done ? 'done' : null }),
+  });
+  if (!res.ok) throw new Error('Could not update this commitment.');
 }
 export async function clearCommitments(agentId: string): Promise<void> {
   const res = await workerFetch('/data/coach/commitments-clear', {

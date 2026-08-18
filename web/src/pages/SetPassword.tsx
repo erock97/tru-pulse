@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { setPassword as savePassword } from '../lib/auth';
+import { SET_PASSWORD_SUB, SET_PASSWORD_TITLE } from '../lib/agentHq';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
@@ -36,8 +37,8 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
       <div className="tru-auth-scrim" aria-hidden />
       <div className="tru-auth-card">
         <div className="tru-auth-logo"><TruLogo size={28} wordSize={20} sub="HQ" /></div>
-        <h1 className="tru-auth-title">Set your password to finish setting up.</h1>
-        <p className="tru-auth-sub">One login for your whole TRU HQ — Pulse and Coach, in one place.</p>
+        <h1 className="tru-auth-title">{SET_PASSWORD_TITLE}</h1>
+        <p className="tru-auth-sub">{SET_PASSWORD_SUB}</p>
         <form onSubmit={submit}>
           <label>New password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" />

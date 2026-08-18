@@ -409,6 +409,8 @@ describe('Coach write endpoints', () => {
     const sid = await signIn('acme@test.com');
     expect((await write('/data/coach/goal', { agentId: 'nope', fields: {} }, sid)).status).toBe(422);
     expect((await write('/data/coach/commitment', { action: 'update', id: 'x&y' }, sid)).status).toBe(422);
+    expect((await write('/data/coach/checkin-item', { id: 'not-a-uuid', status: 'done' }, sid)).status).toBe(422);
+    expect((await write('/data/coach/submit-own', { agentId: 'nope' }, sid)).status).toBe(422);
   });
 
   it('rejects an unknown commitment action rather than guessing', async () => {

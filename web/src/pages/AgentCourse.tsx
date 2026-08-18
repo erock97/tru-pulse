@@ -5,6 +5,7 @@ import {
   signRepMediaDownload,
   type AgentIdentity, type CourseModule, type GradeResult, type LessonCard, type SimScenario, type SimResult, type SimAttempt,
 } from '../lib/api';
+import { canOpenModule } from '../lib/agentHq';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { SlideView } from './SlideDeck';
@@ -84,7 +85,12 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const bestSim = attempts.reduce<number | null>((b, a) => (a.score != null && (b == null || a.score > b) ? a.score : b), null);
   const certified = allMods && simPassed;
   const nextMod = mods.find((m) => m.status !== 'passed') ?? null;
-  const openModule = (m: CourseModule) => { setActiveId(m.id); setResult(null); setView(m.qs.length ? 'lesson' : 'home'); };
+  const openModule = (m: CourseModule) => {
+    if (!canOpenModule(m)) return;
+    setActiveId(m.id);
+    setResult(null);
+    setView('lesson');
+  };
 
   if (view === 'home') {
     return (
@@ -129,7 +135,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
                   className={`ac-modcard fu${done ? ' done' : ''}${isNext ? ' next' : ''}`}
                   style={{ ['--mac' as string]: ac, animationDelay: `${0.07 * i}s` }}
                   onClick={() => openModule(m)}
-                  disabled={!m.qs.length}
+                  disabled={!canOpenModule(m)}
                 >
                   <span className="ac-modbar" />
                   <span className={`ac-modnum${done ? ' done' : ''}`}>{done ? '✓' : m.idx}</span>
@@ -187,7 +193,12 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   if (!active) return null;
 
   return view === 'lesson' ? (
-    <Lesson key={active.id} module={active} onDone={() => setView('quiz')} onBack={() => setView('home')} />
+    <Lesson
+      key={active.id}
+      module={active}
+      onDone={() => setView(active.qs.length ? 'quiz' : 'home')}
+      onBack={() => setView('home')}
+    />
   ) : view === 'quiz' ? (
     <Quiz
       key={active.id + ':' + (result ? 'retry' : 'first')}
@@ -810,7 +821,7 @@ function Card({ card, pick, onPick, onLabPassed }: {
 }
 
 // ── Quiz: one question per screen; rail = the question list ─────────────────
-function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: () => void; onGraded: (r: GradeResult) => void }) {
+export function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: () => void; onGraded: (r: GradeResult) => void }) {
   const [qi, setQi] = useState(0);
   const [maxQ, setMaxQ] = useState(0);
   const [answers, setAnswers] = useState<number[]>(() => m.qs.map(() => -1));
@@ -881,7 +892,7 @@ function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; onExit: (
 }
 
 // ── Result: celebration on pass, warm review + unlimited retries on miss ────
-function Result({ module: m, result, onRetry, onReview, onHome }: {
+export function Result({ module: m, result, onRetry, onReview, onHome }: {
   module: CourseModule; result: GradeResult; onRetry: () => void; onReview: () => void; onHome: () => void;
 }) {
   const byIdx = new Map(m.qs.map((q) => [q.idx, q]));
