@@ -1,8 +1,15 @@
+import {
+  OFFICIAL_TRAINING_ID as SHARED_OFFICIAL_TRAINING_ID,
+  OFFICIAL_TRAINING_PASS_PCT,
+  OFFICIAL_TRAINING_QUIZ,
+  scoreOfficialTraining,
+} from '../../../shared/officialTrainingQuiz';
 import type { CourseQuestion, LessonCard } from './api';
 
-export const OFFICIAL_TRAINING_ID = 'a6666666-6666-6666-6666-666666666666';
+export const OFFICIAL_TRAINING_ID = SHARED_OFFICIAL_TRAINING_ID;
 export const OFFICIAL_TRAINING_TITLE = 'Official Training';
 export const OFFICIAL_TRAINING_DECK = 'zillow-day1';
+export { OFFICIAL_TRAINING_PASS_PCT, scoreOfficialTraining };
 
 const SLIDE_TITLES = [
   'Title',
@@ -46,5 +53,11 @@ export const OFFICIAL_TRAINING_CARDS: LessonCard[] = [
   slide(18),
 ];
 
-export const OFFICIAL_TRAINING_QS: CourseQuestion[] = [];
-export const OFFICIAL_TRAINING_ANSWERS: number[] = [];
+export const OFFICIAL_TRAINING_QS: CourseQuestion[] = OFFICIAL_TRAINING_QUIZ.map((q, i) => ({
+  id: `d1-q${i + 1}`,
+  idx: i + 1,
+  prompt: q.prompt,
+  choices: q.choices,
+}));
+
+export const OFFICIAL_TRAINING_ANSWERS = OFFICIAL_TRAINING_QUIZ.map((q) => q.answer);

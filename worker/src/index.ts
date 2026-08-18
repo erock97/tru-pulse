@@ -19,6 +19,7 @@ import { registerWebhooks, validateKey, fubGet, DEFAULT_X_SYSTEM } from './fub.j
 import { PERSONAS, personaByKey, createWebCall, getCall, gradeTranscript, simConfigured, agentFromAuth, setupPersonaAgents, agentIdForPersona } from './practice.js';
 import { gradeRecord, gradeFaults, SCENARIOS as RECORD_SCENARIOS } from './repLab/records.js';
 import { validateApplication, hashIp, recentlySubmitted, notify } from './apply.js';
+import { officialTrainingGradeQuestions } from '../../shared/officialTrainingQuiz.js';
 
 // CORS — the browser (app.truhq.co / Pages) calls this Worker cross-origin, because
 // the app and the Worker live at different addresses.
@@ -972,11 +973,19 @@ export default {
       const arows = await database.select('agents', `auth_id=eq.${userId}&select=id,org_id`);
       if (!arows.length) return json({ error: 'not an agent' }, 403);
       const agent = arows[0] as any;
-      const [mods, qs] = await Promise.all([
+      const [mods, dbQs] = await Promise.all([
         database.select('rep_modules', `id=eq.${moduleId}&select=id,pass_pct,active`),
         database.select('rep_questions', `module_id=eq.${moduleId}&select=idx,answer,explain&order=idx`),
       ]);
       if (!mods.length || !mods[0].active) return json({ error: 'module not found' }, 404);
+      const qs = officialTrainingGradeQuestions(
+        moduleId,
+        (dbQs as Array<{ idx: number; answer: number; explain?: string | null }>).map((q) => ({
+          idx: q.idx,
+          answer: q.answer,
+          explain: q.explain ?? null,
+        })),
+      );
       if (!qs.length) return json({ error: 'module has no questions' }, 422);
       const passPct = Number(mods[0].pass_pct ?? 80);
       let correct = 0;

@@ -6,6 +6,7 @@ import { AG, PERSONAL_TYPES } from './assessmentData';
 import {
   OFFICIAL_TRAINING_CARDS,
   OFFICIAL_TRAINING_ID,
+  OFFICIAL_TRAINING_QS,
   OFFICIAL_TRAINING_TITLE,
 } from './officialTraining';
 import {
@@ -16,7 +17,7 @@ import {
   WINNING_FIRST_CONVERSATION_ID,
   WINNING_FIRST_CONVERSATION_TITLE,
 } from './winningFirstConversation';
-import type { CourseModule, LessonCard } from './api';
+import type { CourseModule, CourseQuestion, LessonCard } from './api';
 
 export const AGENT_SHELL_TABS = ['Home', 'Coach', 'Training'] as const;
 export const LEADER_SHELL_TABS = ['Home', 'Pulse', 'Coach', 'Rep'] as const;
@@ -150,6 +151,13 @@ export function courseCardsFor(m: { id: string; title?: string | null; cards?: L
   return m.cards ?? [];
 }
 
+/** Empty live qs still get the in-repo Day 1 quiz — same fallback as cards. */
+export function courseQuestionsFor(m: { id: string; title?: string | null; qs?: CourseQuestion[] | null }): CourseQuestion[] {
+  if (m.qs?.length) return m.qs;
+  if (isOfficialTraining(m)) return OFFICIAL_TRAINING_QS;
+  return m.qs ?? [];
+}
+
 export interface TrainingSection<T> {
   label: string;
   modules: T[];
@@ -213,6 +221,7 @@ export const AGENT_HQ_EMPTY =
 export function withOpenableOfficialTraining(mods: CourseModule[]): CourseModule[] {
   return mods.map((m) => {
     if (!isOfficialTraining(m)) return m;
-    return { ...m, cards: courseCardsFor(m) };
+    const qs = courseQuestionsFor(m);
+    return { ...m, cards: courseCardsFor(m), qs, questions: qs.length };
   });
 }

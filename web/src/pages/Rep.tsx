@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole,
   loadRepCustomModules, loadRepQuestionsMasked, loadRepQuestionsForEdit, uploadRepMedia, saveRepModule, saveRepQuestions, archiveRepModule,
-  type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario, type LessonCard,
+  type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type GradeResult, type SimScenario, type LessonCard,
 } from '../lib/api';
-import { Lesson, SimView } from './AgentCourse';
+import { Lesson, Quiz, Result, SimView } from './AgentCourse';
+import { courseCardsFor, courseQuestionsFor } from '../lib/agentHq';
 import { HqShell } from '../components/hqShell';
 import { Icon, Ring, Avatar } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
@@ -120,6 +121,8 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const [data, setData] = useState<RepData | null>(null);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [preview, setPreview] = useState<RepModule | null>(null);
+  const [previewView, setPreviewView] = useState<'lesson' | 'quiz' | 'result'>('lesson');
+  const [previewGrade, setPreviewGrade] = useState<GradeResult | null>(null);
   const [simTest, setSimTest] = useState(false);
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
   const [q, setQ] = useState('');
@@ -130,7 +133,18 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const refresh = () => loadRep().then(setData);
   useEffect(() => { void refresh(); void simScenarios().then(setSims); }, []);
   useEffect(() => { void myOrgRole(org.id).then(setRole); }, [org.id]);
-  useReveal([data, simTest, preview], canvasRef.current);
+  useReveal([data, simTest, preview, previewView], canvasRef.current);
+
+  const openPreview = (m: RepModule) => {
+    setPreviewView('lesson');
+    setPreviewGrade(null);
+    setPreview(m);
+  };
+  const closePreview = () => {
+    setPreview(null);
+    setPreviewView('lesson');
+    setPreviewGrade(null);
+  };
 
   // "Manage modules" — reuses the memberships.role signal, the exact same
   // gate the Worker enforces server-side (isOrgLeaderOrAdmin) on every
@@ -153,15 +167,47 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     return <SimView scenarios={sims.scenarios} configured={sims.configured} attempts={[]} onBack={() => setSimTest(false)} onGraded={() => {}} />;
   }
 
-  // Full course preview — the leader walks the exact module the agents get.
+  // Full course preview — the leader walks the exact module the agents get,
+  // including the quiz when Official Training (or any module) has questions.
   if (preview) {
+    const qs = courseQuestionsFor({ id: preview.id, title: preview.title, qs: [] });
     const asCourse: CourseModule = {
       ...preview,
-      cards: previewCards(preview.cards),
-      qs: [],
+      cards: previewCards(courseCardsFor(preview)),
+      qs,
+      questions: qs.length || preview.questions,
       status: 'not_started', score: null, passed_at: null, signed: false,
     };
-    return <Lesson module={asCourse} onBack={() => setPreview(null)} onDone={() => setPreview(null)} doneLabel={`End of module · ${preview.questions}-question quiz follows ✓`} />;
+    if (previewView === 'quiz') {
+      return (
+        <Quiz
+          module={asCourse}
+          onExit={() => setPreviewView('lesson')}
+          onGraded={(r) => { setPreviewGrade(r); setPreviewView('result'); }}
+        />
+      );
+    }
+    if (previewView === 'result' && previewGrade) {
+      return (
+        <Result
+          module={asCourse}
+          result={previewGrade}
+          onRetry={() => setPreviewView('quiz')}
+          onReview={() => setPreviewView('lesson')}
+          onHome={closePreview}
+        />
+      );
+    }
+    return (
+      <Lesson
+        module={asCourse}
+        onBack={closePreview}
+        onDone={() => { qs.length ? setPreviewView('quiz') : closePreview(); }}
+        doneLabel={qs.length
+          ? `Continue to quiz · ${qs.length} questions · pass ${asCourse.pass_pct}%`
+          : `End of module · ${preview.questions}-question quiz follows ✓`}
+      />
+    );
   }
 
   // ── REAL DATA (unchanged pipeline) ──────────────────────────────────────────
@@ -324,7 +370,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                     key={m.id}
                     className={`rp-step reveal state-${state}${openable ? ' is-open' : ''}`}
                     data-delay={i * 70}
-                    onClick={() => openable && setPreview(m)}
+                    onClick={() => openable && openPreview(m)}
                   >
                     <span className="rp-node"><span className="rp-node-n">{m.idx}</span></span>
                     <div className="rp-step-body">
@@ -341,7 +387,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                     <button
                       className="rp-preview"
                       disabled={!openable}
-                      onClick={(e) => { e.stopPropagation(); if (openable) setPreview(m); }}
+                      onClick={(e) => { e.stopPropagation(); if (openable) openPreview(m); }}
                       title={openable ? 'Walk the exact module your agents get' : 'No preview screens on this module yet'}
                     >
                       <Icon name="play" size={15} /> Preview
@@ -454,7 +500,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
         <ModuleManager
           org={org}
           onClose={() => setManage(false)}
-          onPreview={(m) => setPreview(m)}
+          onPreview={(m) => openPreview(m)}
         />
       )}
     </div>
