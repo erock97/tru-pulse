@@ -5,6 +5,7 @@ import {
 import {
   AGENT_COACH_HEADINGS,
   AGENT_HQ_EMPTY,
+  agentCoachCopy,
   attentionItems,
   canOpenModule,
   isZillowOnboarding,
@@ -12,7 +13,7 @@ import {
   trainingBay,
   type AgentHqTab,
 } from '../lib/agentHq';
-import { AG, ARCH } from '../lib/assessmentData';
+import { ARCH } from '../lib/assessmentData';
 import {
   loadCommitments,
   loadMyOneOnOnes,
@@ -209,8 +210,8 @@ function CoachTab({
   }
 
   const arch = ARCH[profile.code];
-  const ag = AG[profile.code];
   const personal = profile.personalType;
+  const copy = agentCoachCopy({ workCode: profile.code, personalCode: profile.personalCode });
 
   return (
     <div className="ah-coach">
@@ -227,24 +228,24 @@ function CoachTab({
         )}
       </section>
 
-      {ag && (
+      {copy && (
         <>
           <section className="ah-block reveal">
             <h3>{AGENT_COACH_HEADINGS.best}</h3>
-            <p>{ag.sup}</p>
-            {personal?.strengths?.length ? (
-              <ul>{personal.strengths.map((s) => <li key={s}>{s}</li>)}</ul>
+            <p>{copy.best.work}</p>
+            {copy.best.personal.length ? (
+              <ul>{copy.best.personal.map((s) => <li key={s}>{s}</li>)}</ul>
             ) : null}
           </section>
           <section className="ah-block reveal">
             <h3>{AGENT_COACH_HEADINGS.worst}</h3>
-            <p>{ag.watch}</p>
-            {personal?.watch ? <p className="ah-watch">{personal.watch}</p> : null}
+            <p>{copy.worst.work}</p>
+            {copy.worst.personal ? <p className="ah-watch">{copy.worst.personal}</p> : null}
           </section>
           <section className="ah-block reveal">
             <h3>{AGENT_COACH_HEADINGS.strongest}</h3>
-            <p>{ag.edge}</p>
-            <p>{ag.challenge}</p>
+            <p>{copy.strongest.edge}</p>
+            <p>{copy.strongest.challenge}</p>
           </section>
         </>
       )}

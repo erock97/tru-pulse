@@ -357,6 +357,8 @@ html[data-theme="warm"] .tru-dark {
 .tru-auth-logo { margin-bottom: 20px; }
 .tru-auth-title { font-family: var(--hq-serif); font-size: clamp(23px, 3vw, 31px); font-weight: 700; letter-spacing: -0.02em; color: var(--text-strong); line-height: 1.1; }
 .tru-auth-sub { color: var(--text-60); font-size: 14.5px; margin-top: 8px; line-height: 1.5; }
+.tru-auth-email-note { color: var(--text-50); font-size: 12.5px; margin: 6px 0 0; line-height: 1.45; }
+.tru-auth input[readonly] { opacity: 0.88; cursor: default; }
 .tru-auth form { margin-top: 22px; }
 .tru-auth label { display: block; font-size: 13px; font-weight: 700; color: var(--text-strong); margin: 14px 0 6px; }
 .tru-auth .row2 { display: flex; gap: 12px; }

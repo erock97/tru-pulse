@@ -2,6 +2,7 @@
 // Pure helpers so the invite / password / shell / Official Training contracts
 // can be locked in tests without mounting the app.
 
+import { AG, PERSONAL_TYPES } from './assessmentData';
 import {
   OFFICIAL_TRAINING_CARDS,
   OFFICIAL_TRAINING_ID,
@@ -24,12 +25,51 @@ export type AgentHqTab = 'home' | 'coach' | 'training';
 
 export const SET_PASSWORD_TITLE = 'Set your password to finish setting up.';
 export const SET_PASSWORD_SUB = 'One login for your HQ — training and Coach, in one place.';
+export const SET_PASSWORD_EMAIL_NOTE =
+  'This is the address your invite was sent to. Use it — a different one will not connect to your HQ.';
+
+/** Session email on the invite link. Empty / missing means claim cannot stick. */
+export function lockedInviteEmail(sessionEmail: string | null | undefined): string | null {
+  const email = String(sessionEmail ?? '').trim();
+  return email.includes('@') ? email : null;
+}
+
+/** claim_agent() matches lower(agents.email) to the JWT email. */
+export function claimEmailsMatch(inviteEmail: string, registerEmail: string): boolean {
+  return inviteEmail.trim().toLowerCase() === registerEmail.trim().toLowerCase();
+}
 
 export const AGENT_COACH_HEADINGS = {
   best: 'At your best',
   worst: 'At your worst',
   strongest: 'Strongest when you show up correctly / take care of yourself',
 } as const;
+
+export interface AgentCoachCopy {
+  best: { work: string; personal: string[] };
+  worst: { work: string; personal: string };
+  strongest: { edge: string; challenge: string };
+}
+
+/** Same GET the leader Coach drill-in uses. AgentCourse never called this. */
+export function coachProfilePath(agentId: string): string {
+  return `/data/coach/profile?agentId=${encodeURIComponent(agentId)}`;
+}
+
+/** Existing AG / PERSONAL_TYPES copy only. Headings stay first-person; no new archetype text. */
+export function agentCoachCopy(input: {
+  workCode: string;
+  personalCode?: string | null;
+}): AgentCoachCopy | null {
+  const ag = AG[input.workCode];
+  if (!ag) return null;
+  const personal = input.personalCode ? (PERSONAL_TYPES[input.personalCode] ?? null) : null;
+  return {
+    best: { work: ag.sup, personal: personal?.strengths ?? [] },
+    worst: { work: ag.watch, personal: personal?.watch ?? '' },
+    strongest: { edge: ag.edge, challenge: ag.challenge },
+  };
+}
 
 export const TRAINING_SECTION_LABELS = {
   newAgents: 'New agents',

@@ -5,18 +5,24 @@ import {
   WINNING_FIRST_CONVERSATION_ID,
   WINNING_FIRST_CONVERSATION_TITLE,
 } from './winningFirstConversation';
+import { AG, PERSONAL_TYPES } from './assessmentData';
 import {
   AGENT_COACH_HEADINGS,
   AGENT_HQ_EMPTY,
   AGENT_SHELL_TABS,
   LEADER_SHELL_TABS,
+  SET_PASSWORD_EMAIL_NOTE,
   SET_PASSWORD_SUB,
   SET_PASSWORD_TITLE,
   TRAINING_SECTION_LABELS,
+  agentCoachCopy,
   attentionItems,
   canOpenModule,
+  claimEmailsMatch,
+  coachProfilePath,
   courseCardsFor,
   homeAfterPassword,
+  lockedInviteEmail,
   parseAgentHqTab,
   shellTabsFor,
   signedInKind,
@@ -39,6 +45,16 @@ describe('invite / password landing', () => {
     expect(SET_PASSWORD_SUB).toMatch(/your HQ/i);
     expect(SET_PASSWORD_SUB).not.toMatch(/Pulse/);
     expect(SET_PASSWORD_SUB).not.toMatch(/Pulse and Coach/);
+  });
+
+  it('locks the invite email from the session — they cannot type a different address', () => {
+    expect(lockedInviteEmail('Jordan@Sample.com')).toBe('Jordan@Sample.com');
+    expect(lockedInviteEmail('  ')).toBeNull();
+    expect(lockedInviteEmail(null)).toBeNull();
+    expect(claimEmailsMatch('jordan@sample.com', 'Jordan@Sample.com')).toBe(true);
+    expect(claimEmailsMatch('jordan@sample.com', 'other@sample.com')).toBe(false);
+    expect(SET_PASSWORD_EMAIL_NOTE.toLowerCase()).toMatch(/invite was sent/);
+    expect(SET_PASSWORD_EMAIL_NOTE.toLowerCase()).toMatch(/different/);
   });
 });
 
@@ -156,5 +172,23 @@ describe('Coach headings Eric locked', () => {
     expect(AGENT_COACH_HEADINGS.strongest).toBe(
       'Strongest when you show up correctly / take care of yourself',
     );
+  });
+
+  it('maps those headings onto AG + PERSONAL_TYPES — no invented archetype text', () => {
+    const work = 'P-Pro-R-D';
+    const personal = 'P-Rec-R-I';
+    const copy = agentCoachCopy({ workCode: work, personalCode: personal });
+    expect(copy).not.toBeNull();
+    expect(copy?.best.work).toBe(AG[work].sup);
+    expect(copy?.worst.work).toBe(AG[work].watch);
+    expect(copy?.strongest.edge).toBe(AG[work].edge);
+    expect(copy?.strongest.challenge).toBe(AG[work].challenge);
+    expect(copy?.best.personal).toEqual(PERSONAL_TYPES[personal].strengths);
+    expect(copy?.worst.personal).toBe(PERSONAL_TYPES[personal].watch);
+  });
+
+  it('wires the Coach tab through GET /data/coach/profile?agentId=', () => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    expect(coachProfilePath(id)).toBe(`/data/coach/profile?agentId=${id}`);
   });
 });

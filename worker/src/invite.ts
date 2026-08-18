@@ -21,16 +21,19 @@ function escapeHtml(s: string): string {
 }
 
 /** Warm gold on near-black, matching the TRU HQ auth screens. */
-export function inviteEmailHtml(o: { name: string; orgName: string; link: string; kind?: InviteKind }): string {
+export function inviteEmailHtml(o: { name: string; orgName: string; link: string; kind?: InviteKind; email?: string }): string {
   const name = escapeHtml(o.name.split(' ')[0] || o.name);
   const org = escapeHtml(o.orgName);
   const link = escapeHtml(o.link);
   const kind = o.kind ?? 'leader';
+  const email = o.email ? escapeHtml(o.email) : '';
   const headline = kind === 'agent'
     ? `${name}, your training and your Coach are ready.`
     : `${name}, your ${org} account is ready.`;
   const body = kind === 'agent'
-    ? `Set your login and password. You&rsquo;ll land in your own HQ &mdash; training, your Coach, and the work ahead.`
+    ? (email
+      ? `Set your login and password for ${email}. That is the address this HQ is tied to &mdash; a different one will not connect. You&rsquo;ll land in your own HQ &mdash; training, your Coach, and the work ahead.`
+      : `Set your login and password. You&rsquo;ll land in your own HQ &mdash; training, your Coach, and the work ahead.`)
     : `Set your password and you&rsquo;re in &mdash; Pulse and Coach, your whole team in one place.`;
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#111014;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
@@ -98,7 +101,7 @@ export async function sendInviteEmail(
         from: env.INVITE_FROM,
         to: o.to,
         subject: inviteEmailSubject(o.orgName, kind),
-        html: inviteEmailHtml({ name: o.name, orgName: o.orgName, link: o.link, kind }),
+        html: inviteEmailHtml({ name: o.name, orgName: o.orgName, link: o.link, kind, email: o.to }),
       }),
     });
     return res.ok;

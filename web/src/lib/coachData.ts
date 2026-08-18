@@ -20,6 +20,7 @@
 // same row-level policies apply and the answer belongs to the person asking.
 
 import { isDemo, workerFetch } from './api';
+import { coachProfilePath } from './agentHq';
 import {
   PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS, divergence,
   ARCH, LL, TRAIT_LABELS,
@@ -276,27 +277,36 @@ interface AssessmentRow {
   decision_d?: number; decision_i?: number;
 }
 
+async function fetchCoachProfile(agentId: string): Promise<{
+  assessments: AssessmentRow[];
+  personalCode: string | null;
+  personalAxes: Record<Axis, { letter: Pole; pct: number }> | null;
+} | null> {
+  const res = await workerFetch(coachProfilePath(agentId));
+  if (!res.ok) return null;
+  const payload = (await res.json()) as {
+    assessments: AssessmentRow[] | null;
+    personal: { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null } | null;
+  };
+  return {
+    assessments: payload.assessments ?? [],
+    personalCode: payload.personal?.personal_code ?? null,
+    personalAxes: payload.personal?.personal_axes ?? null,
+  };
+}
+
 export async function loadOwnProfile(agentId: string): Promise<{ profile: Profile | null; assessed: boolean }> {
   if (isDemo) {
     const demoAgent = demoAgentRows().find((a) => a.id === 'demo-c1');
     const rows: AssessmentRow[] = (demoAgent?.assessments || []).map((a) => ({ code: a.code, taken_at: a.taken_at }));
     return { profile: deriveProfile(rows, null, null), assessed: rows.length > 0 };
   }
-  const res = await workerFetch(`/data/coach/profile?agentId=${encodeURIComponent(agentId)}`);
-  if (!res.ok) return { profile: null, assessed: false };
-  const payload = (await res.json()) as {
-    assessments: AssessmentRow[] | null;
-    personal: { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null } | null;
+  const fetched = await fetchCoachProfile(agentId);
+  if (!fetched || fetched.assessments.length === 0) return { profile: null, assessed: false };
+  return {
+    profile: deriveProfile(fetched.assessments, fetched.personalCode, fetched.personalAxes),
+    assessed: true,
   };
-  const data = payload.assessments ?? [];
-  if (data.length === 0) return { profile: null, assessed: false };
-  let personalCode: string | null = null;
-  let personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null;
-  if (payload.personal) {
-    personalCode = payload.personal.personal_code ?? null;
-    personalAxes = payload.personal.personal_axes ?? null;
-  }
-  return { profile: deriveProfile(data, personalCode, personalAxes), assessed: true };
 }
 
 export async function loadProfile(agentId: string): Promise<Profile> {
@@ -311,26 +321,12 @@ export async function loadProfile(agentId: string): Promise<Profile> {
     const rows: AssessmentRow[] = (demoAgent?.assessments || []).map((a) => ({ code: a.code, taken_at: a.taken_at }));
     return deriveProfile(rows, null, null);
   }
-  const res = await workerFetch(`/data/coach/profile?agentId=${encodeURIComponent(agentId)}`);
-  if (!res.ok) throw new Error('Could not load this agent’s profile.');
-  const payload = (await res.json()) as {
-    assessments: AssessmentRow[] | null;
-    personal: { personal_code: string | null; personal_axes: Record<Axis, { letter: Pole; pct: number }> | null } | null;
-  };
-  const data = payload.assessments ?? [];
-
+  const fetched = await fetchCoachProfile(agentId);
+  if (!fetched) throw new Error('Could not load this agent’s profile.');
   // Best-effort: the personal (baseline) profile. Agents assessed on the old
   // site (business-only) have no personal_code/personal_axes — the columns
   // or the row itself may come back empty. Degrade to null, never throw.
-  let personalCode: string | null = null;
-  let personalAxes: Record<Axis, { letter: Pole; pct: number }> | null = null;
-  if (payload.personal) {
-    const row = payload.personal;
-    personalCode = row.personal_code ?? null;
-    personalAxes = row.personal_axes ?? null;
-  }
-
-  return deriveProfile((data as AssessmentRow[] | null) || [], personalCode, personalAxes);
+  return deriveProfile(fetched.assessments, fetched.personalCode, fetched.personalAxes);
 }
 
 // AXIS_ORDER mirrors assessmentData.ts's (private) axis order — the 4-letter

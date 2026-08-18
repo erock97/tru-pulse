@@ -19,6 +19,7 @@ describe('agent invite email', () => {
     orgName: 'Sample Realty',
     link: 'https://app.truhq.co/#invite',
     kind: 'agent',
+    email: 'jordan@sample.com',
   });
 
   it('asks them to set a login and password for their HQ', () => {
@@ -28,6 +29,11 @@ describe('agent invite email', () => {
     expect(html).toContain('https://app.truhq.co/#invite');
     expect(html.toLowerCase()).toMatch(/training/);
     expect(html).toMatch(/Coach/);
+  });
+
+  it('names the invite email so they cannot register a different address', () => {
+    expect(html).toContain('jordan@sample.com');
+    expect(html.toLowerCase()).toMatch(/different one will not connect/);
   });
 
   it('does not say Pulse or that they are joining a leader dashboard', () => {

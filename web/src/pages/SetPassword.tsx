@@ -1,20 +1,37 @@
-import { useState, type FormEvent } from 'react';
-import { setPassword as savePassword } from '../lib/auth';
-import { SET_PASSWORD_SUB, SET_PASSWORD_TITLE } from '../lib/agentHq';
+import { useEffect, useState, type FormEvent } from 'react';
+import { onAuthChange, setPassword as savePassword } from '../lib/auth';
+import {
+  lockedInviteEmail,
+  SET_PASSWORD_EMAIL_NOTE,
+  SET_PASSWORD_SUB,
+  SET_PASSWORD_TITLE,
+} from '../lib/agentHq';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
 // Shown when the user arrives via an invite or password-reset link (the URL hash
 // carries a recovery/invite token that Supabase turns into a session). They set
 // their own password here — we never mint or see it. AUTH LOGIC UNCHANGED — dark reskin.
+//
+// The invite minted this login at agents.email. claim_agent() only sticks when the
+// JWT email matches that row, so this screen shows the session email locked — they
+// cannot register a different address here.
 export default function SetPassword({ onDone }: { onDone: () => void }) {
+  const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    return onAuthChange((s) => {
+      setEmail(lockedInviteEmail(s?.user.email));
+    });
+  }, []);
+
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!email) { setError('This invite did not attach an email. Ask for a fresh invite.'); return; }
     if (password.length < 8) { setError('Use at least 8 characters.'); return; }
     if (password !== confirm) { setError('Those passwords do not match.'); return; }
     setBusy(true);
@@ -40,12 +57,22 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
         <h1 className="tru-auth-title">{SET_PASSWORD_TITLE}</h1>
         <p className="tru-auth-sub">{SET_PASSWORD_SUB}</p>
         <form onSubmit={submit}>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email ?? ''}
+            readOnly
+            disabled={!email}
+            autoComplete="username"
+            aria-readonly="true"
+          />
+          <p className="tru-auth-email-note">{SET_PASSWORD_EMAIL_NOTE}</p>
           <label>New password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" />
           <label>Confirm password</label>
           <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
           {error && <div className="err">{error}</div>}
-          <button className="btn full" disabled={busy} type="submit">
+          <button className="btn full" disabled={busy || !email} type="submit">
             {busy ? '…' : 'Set password & continue'}
           </button>
         </form>

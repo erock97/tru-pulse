@@ -232,6 +232,20 @@ describe('POST /auth/set-password', () => {
     const res = await post('/auth/set-password', { password: 'password123' }, { cookie: `${COOKIE_NAME}=${sid}` });
     expect((await res.json() as any).error).toContain('data breach');
   });
+
+  it('refuses an email change — invite claim is email-match', async () => {
+    supabase = { ok: true, body: goodSession };
+    const sid = sidFrom(await post('/auth/login', { email: 'd@a.com', password: 'pw12345678' }));
+    const before = calls.length;
+    const res = await post(
+      '/auth/set-password',
+      { password: 'longenough1', email: 'other@sample.com' },
+      { cookie: `${COOKIE_NAME}=${sid}` },
+    );
+    expect(res.status).toBe(422);
+    expect((await res.json() as { error: string }).error).toMatch(/email cannot be changed/i);
+    expect(calls.slice(before).some((c) => c.method === 'PUT' && String(c.url).includes('/auth/v1/user'))).toBe(false);
+  });
 });
 
 describe('POST /auth/reset-request', () => {
