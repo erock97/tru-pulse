@@ -76,7 +76,7 @@ export function AgentHqShell({
       </aside>
 
       <main className="main">
-        <header className="topbar reveal">
+        <header className="topbar">
           <div>
             {eyebrow && <div className="main-eyebrow">{eyebrow}</div>}
             <h1>{title}</h1>

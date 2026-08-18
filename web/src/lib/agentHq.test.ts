@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import agentHqPage from '../pages/AgentHq.tsx?raw';
+import agentHqShell from '../components/agentHqShell.tsx?raw';
 import { OFFICIAL_TRAINING_CARDS, OFFICIAL_TRAINING_ID, OFFICIAL_TRAINING_TITLE } from './officialTraining';
 import { SHOW_LIKE_A_PRO_ID, SHOW_LIKE_A_PRO_TITLE } from './showLikeAPro';
 import {
@@ -190,5 +192,18 @@ describe('Coach headings Eric locked', () => {
   it('wires the Coach tab through GET /data/coach/profile?agentId=', () => {
     const id = '11111111-1111-4111-8111-111111111111';
     expect(coachProfilePath(id)).toBe(`/data/coach/profile?agentId=${id}`);
+  });
+});
+
+describe('Agent HQ visibility', () => {
+  function classNamesWithReveal(src: string): string[] {
+    return [...src.matchAll(/className=\{?[`'"]([^`'"]*)[`'"]/g)]
+      .map((m) => m[1])
+      .filter((c) => /\breveal\b/.test(c));
+  }
+
+  it('does not apply .reveal, so content starts at opacity 1 without the leader observer', () => {
+    expect(classNamesWithReveal(agentHqPage)).toEqual([]);
+    expect(classNamesWithReveal(agentHqShell)).toEqual([]);
   });
 });

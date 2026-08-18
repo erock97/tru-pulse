@@ -161,7 +161,7 @@ function HomeTab({
 }) {
   if (items.length === 0) {
     return (
-      <section className="ah-empty reveal">
+      <section className="ah-empty">
         <div className="ah-empty-ey">All clear</div>
         <h2>{AGENT_HQ_EMPTY}</h2>
       </section>
@@ -172,7 +172,7 @@ function HomeTab({
       {items.map((item, i) => (
         <button
           key={item.key}
-          className="ah-card reveal"
+          className="ah-card"
           style={{ animationDelay: `${0.06 * i}s` }}
           onClick={() => onGo(item.tab, item.key.startsWith('training-') ? item.key.slice('training-'.length) : undefined)}
         >
@@ -198,7 +198,7 @@ function CoachTab({
 }) {
   if (!assessed || !profile) {
     return (
-      <section className="ah-cta reveal">
+      <section className="ah-cta">
         <div className="ah-empty-ey">Your Coach</div>
         <h2>Start with who you are.</h2>
         <p>Two short parts — you as a person, then how you work. When you finish, you land back here.</p>
@@ -215,7 +215,7 @@ function CoachTab({
 
   return (
     <div className="ah-coach">
-      <section className="ah-hero reveal">
+      <section className="ah-hero">
         <div className="ah-empty-ey">How you work</div>
         <h2>{arch?.emoji} {profile.archName}</h2>
         <p>{profile.tagline}</p>
@@ -230,19 +230,19 @@ function CoachTab({
 
       {copy && (
         <>
-          <section className="ah-block reveal">
+          <section className="ah-block">
             <h3>{AGENT_COACH_HEADINGS.best}</h3>
             <p>{copy.best.work}</p>
             {copy.best.personal.length ? (
               <ul>{copy.best.personal.map((s) => <li key={s}>{s}</li>)}</ul>
             ) : null}
           </section>
-          <section className="ah-block reveal">
+          <section className="ah-block">
             <h3>{AGENT_COACH_HEADINGS.worst}</h3>
             <p>{copy.worst.work}</p>
             {copy.worst.personal ? <p className="ah-watch">{copy.worst.personal}</p> : null}
           </section>
-          <section className="ah-block reveal">
+          <section className="ah-block">
             <h3>{AGENT_COACH_HEADINGS.strongest}</h3>
             <p>{copy.strongest.edge}</p>
             <p>{copy.strongest.challenge}</p>
@@ -250,7 +250,7 @@ function CoachTab({
         </>
       )}
 
-      <section className="ah-block reveal">
+      <section className="ah-block">
         <h3>Your commitments</h3>
         {openCommitments.length === 0 ? (
           <p className="ah-muted">Nothing open. When your next 1:1 sets one, it lands here.</p>
@@ -285,7 +285,7 @@ function TrainingTab({
   return (
     <div className="ah-bay">
       {bay.map((section) => (
-        <section key={section.label} className="ah-section reveal">
+        <section key={section.label} className="ah-section">
           <h2>{section.label}</h2>
           {section.modules.length === 0 ? (
             <p className="ah-muted">Nothing in this bay yet.</p>
