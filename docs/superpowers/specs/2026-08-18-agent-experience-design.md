@@ -64,8 +64,8 @@ session and come back. It resolves the target by email and is guarded server-sid
 
 **The assessment — exists, but detached.** `Assess.tsx` (391 lines) runs off a public
 `#/assess?t=<join_token>` link with no auth. Its `RegisterFlow` ends by offering to create an
-account so the person can revisit their result. So there are already two ways into the platform,
-and they do not currently meet.
+account so the person can revisit their result. So there are two ways into the platform today and
+they do not meet — §3.4 closes the second one.
 
 ---
 
@@ -100,14 +100,19 @@ onboarding copy is worse than none.
 The personality assessment becomes the first and only thing a new agent can do. Home, Coach and
 Rep are all visible but locked behind it. This is a hard gate: no skip, no dismiss.
 
-The public emailed link stays alive, because Eric assesses people who are not yet on a roster. So
-the assessment has two entrances and they must land in the same place:
+**One front door.** The invite is the only way in. The public `#/assess?t=<join_token>` link and
+the account-creation step at the end of `RegisterFlow` are retired as an *entrance* — the
+assessment is taken inside the account, the result attaches to the agent's existing row, and the
+gate lifts. Nobody arrives at this platform by any route other than an invite from their lead or
+from TRU.
 
-- **Invited agent** — takes it inside their account; the result attaches to their existing
-  `agents` row and the gate lifts.
-- **Public link** — unchanged; `RegisterFlow` still offers account creation at the end. If that
-  person is later invited by a lead under the same email, they must resolve to the same agent and
-  the gate must already read as satisfied, not send them through it twice.
+The consequence, stated so it is not a surprise later: someone who is not yet on a team roster
+can no longer take the assessment. If Eric wants to assess a prospect, that person gets added and
+invited first. Retiring the second entrance is the point — two doors is how you end up with
+duplicate agents, orphaned results, and a gate that fires on someone who already did the work.
+
+Existing assessment results taken through the old public link stay valid and satisfy the gate for
+whoever they belong to.
 
 **Existing agents are not gated.** Anyone with an account today keeps working as they do now. The
 gate applies to accounts created from this point forward.
@@ -194,7 +199,8 @@ to start. A lead seeing an agent's view is a trust question, not a technical one
 | Risk | Consequence | Mitigation |
 |---|---|---|
 | One-on-one commitments not entered | Home screen is permanently empty; the whole flow feels dead | Honest empty state; leads' roster view shows which agents have no commitments |
-| Two assessment entrances | Duplicate agent rows, or a gate that re-fires on someone who already took it | Resolve by verified email at claim time; treat a stored result as satisfying the gate regardless of which entrance produced it |
+| Retiring the public assessment link | Eric loses the ability to assess someone who isn't on a roster yet | Accepted — one front door is the decision. Assess a prospect by adding and inviting them first |
+| Old public-link results | A gate that re-fires on someone who already did the assessment | Treat any stored result for that agent as satisfying the gate, whichever entrance produced it |
 | Welcome copy never written | Blocks the onboarding sequence | Build the walkthrough shell to take content; ship the rest without it if needed |
 | Hard gate on day one | An agent bounces before ever seeing the product | Accepted by Eric; the assessment is short and produces something they immediately get value from |
 
