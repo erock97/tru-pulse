@@ -16,23 +16,24 @@ const ALLOWED: Record<string, string[]> = {
   'resolve-join-token':   ['p_token'],
   'resolve-cohort-roster':['p_token'],
   'resolve-invite-token': ['p_token'],
-  'get-agent-home':       ['p_token'],
-  'enroll-agent':         ['p_token', 'p_name', 'p_email', 'p_phone', 'p_code', 'p_answers', 'p_tallies'],
   'submit-assessment':    ['p_token', 'p_agent_id', 'p_personal_code', 'p_personal_axes', 'p_business_code', 'p_tallies', 'p_answers'],
-  'save-checkin':         ['p_token', 'p_met', 'p_leads', 'p_convos', 'p_win', 'p_focus'],
-  'toggle-commitment':    ['p_token', 'p_commitment_id', 'p_done'],
 };
 
-/** URL segment → database function name. Kept explicit so a typo can't reach anything. */
+/** URL segment → database function name. Kept explicit so a typo can't reach anything.
+ *
+ *  Four actions were removed here: get-agent-home, enroll-agent, save-checkin and
+ *  toggle-commitment. They backed the old token-URL agent portal — an agent's whole
+ *  coaching record, and writes to it, reachable by anyone holding a UUID that
+ *  travelled in a URL, with no login at all. Nothing in the app has called them
+ *  since Agent HQ; their database grants are revoked, so leaving the routes would
+ *  only turn a 404 into a 500.
+ *
+ *  What remains is the public assessment link, which creates no accounts. */
 const FN: Record<string, string> = {
   'resolve-join-token': 'resolve_join_token',
   'resolve-cohort-roster': 'resolve_cohort_roster',
   'resolve-invite-token': 'resolve_invite_token',
-  'get-agent-home': 'get_agent_home',
-  'enroll-agent': 'enroll_agent',
   'submit-assessment': 'submit_cohort_assessment',
-  'save-checkin': 'agent_save_checkin',
-  'toggle-commitment': 'agent_toggle_commitment',
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
