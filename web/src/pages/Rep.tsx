@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole, adminLeaders, adminActAs,
+  loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole, adminLeaders, adminActAs, setTrackRequired,
   loadRepCustomModules, loadRepQuestionsMasked, loadRepQuestionsForEdit, uploadRepMedia, saveRepModule, saveRepQuestions, archiveRepModule,
   type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario, type LessonCard,
-  type CourseQuestion, type GradeResult,
+  type CourseQuestion, type GradeResult, type RepTrackRow,
 } from '../lib/api';
 import { buildTrackViews } from '../../../shared/repLibrary.js';
 import type { TrackView } from '../../../shared/repLibrary.js';
@@ -412,6 +412,9 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                       📋 Assign a track
                     </button>
                   )}
+                  {canAuthor && data.tracks.length > 0 && (
+                    <RequiredTracks tracks={data.tracks} isAdmin={isPlatformAdmin} onSaved={() => void refresh()} />
+                  )}
                 </div>
               </div>
             </article>
@@ -696,7 +699,8 @@ function AgentDrill({ agent, assigned, certified, modules, row, pct, signed, sim
       {assigned.length > 0 && (
         <div className="rp-drill-tracks">
           {assigned.map((t) => (
-            <div key={t.id} className={`rp-drill-track${t.overdue ? ' late' : ''}`}>
+            <div key={t.id} className={`rp-drill-track${t.overdue ? ' late' : ''}${t.requiredToLaunch ? ' req' : ''}`}>
+              {t.requiredToLaunch && <span className="rp-req-dot" title="Required before this agent takes leads">🚦 </span>}
               {t.title} · {t.passed}/{t.total}
               {t.dueAt && <> · {t.overdue ? 'overdue ' : 'due '}
                 {new Date(t.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}
@@ -729,6 +733,77 @@ function AgentDrill({ agent, assigned, certified, modules, row, pct, signed, sim
    `invited` is really "has an auth account" (api.ts:137 maps it from auth_id) — the
    Worker refuses anyone without one, so the button is disabled rather than left to
    fail. Exit is the shell's existing "Exit — switch teams" control. */
+/* Which tracks an agent should finish before they take leads. Display only — the
+   product gates nothing on it; eligibility is settled between Eric and the lead
+   off-platform. Shared TRU tracks are Eric's to designate, so a team lead sees the
+   state but can only change their org's own. */
+function RequiredTracks({ tracks, isAdmin, onSaved }: {
+  tracks: RepTrackRow[];
+  isAdmin: boolean;
+  onSaved: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState('');
+
+  async function toggle(t: RepTrackRow) {
+    setBusy(t.id); setErr('');
+    try {
+      await setTrackRequired(t.id, !t.required_to_launch);
+      onSaved();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Could not change that track.');
+    }
+    setBusy(null);
+  }
+
+  if (!open) {
+    return (
+      <button
+        className="rp-preview"
+        onClick={() => setOpen(true)}
+        title="Mark which training an agent should finish before they take leads"
+      >
+        🚦 Required to launch
+      </button>
+    );
+  }
+
+  return (
+    <div className="rp-req-panel">
+      <div className="rp-req-head">
+        <strong>Required before an agent takes leads</strong>
+        <button className="link small" onClick={() => setOpen(false)}>Done</button>
+      </div>
+      <ul className="rp-req-list">
+        {tracks.map((t) => {
+          const shared = t.org_id == null;   // TRU curriculum, not this org's own
+          const locked = shared && !isAdmin;
+          return (
+            <li key={t.id}>
+              <label className={locked ? 'is-locked' : ''}>
+                <input
+                  type="checkbox"
+                  checked={!!t.required_to_launch}
+                  disabled={locked || busy === t.id}
+                  onChange={() => void toggle(t)}
+                />
+                <span>{t.title}</span>
+                {locked && <em>TRU curriculum</em>}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="rp-req-note">
+        This is a label, not a lock. Agents can still open anything, and nothing here
+        stops leads being routed to them.
+      </p>
+      {err && <div className="rp-invite-msg">{err}</div>}
+    </div>
+  );
+}
+
 function ViewAsCell({ agent }: { agent: RepAgent }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');

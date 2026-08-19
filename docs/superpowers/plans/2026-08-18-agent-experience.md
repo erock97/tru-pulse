@@ -896,27 +896,27 @@ git commit -m "feat(agent): one front door — retire self-serve signup and the 
 - Consumes: `rep_modules`, `rep_progress`, and the track grouping from the training-library work.
 - Produces: nothing downstream.
 
-- [ ] **Step 1: Decide where the flag lives**
+- [x] **Step 1: Decide where the flag lives** — THE TRACK. `rep_tracks` already groups the Zillow Preferred set as a unit, and `rep_track_modules` already has a `required` column meaning 'required within this track'. A module-level column would collide with that name while meaning something else. New: `rep_tracks.required_to_launch`, seeded true for `zillow-preferred-onboarding`.
 
 Spec §6 leaves this open. Read `db/hq_rep_library.sql` and `db/rep_tracks_seed.mjs` first: if tracks already group the Zillow Preferred set as a unit, mark the **track** required and do not add a per-module column. Only fall back to `alter table rep_modules add column if not exists required boolean not null default false;` if tracks cannot express it. Write the decision and the reason into the migration's header comment.
 
-- [ ] **Step 2: Authoring toggle**
+- [x] **Step 2: Authoring toggle** — a 'Required to launch' panel in Rep, behind `set_track_required()` run AS THE USER (not the service role, which would bypass its own authorisation). Shared TRU tracks are admin-only to re-designate; a lead owns their org's own.
 
 In the module manager in `Rep.tsx`, add a "Required to launch" toggle wherever the chosen flag lives. Eric sets this himself.
 
-- [ ] **Step 3: The agent-side badge**
+- [x] **Step 3: The agent-side badge** — a chip on the track header. Nothing locked, nothing reordered. Also gave `.lib-chip` actual styles: it had none, so the existing 'Certified' chip had been rendering as bare text.
 
 In the `AgentCourse` shelf, badge required modules. Do not lock anything, do not reorder, do not gate the sim on them — display only, per spec §3.7. Everything stays browsable.
 
-- [ ] **Step 4: Confirm the roster**
+- [x] **Step 4: Confirm the roster** — it already answers who finished what and their scores; required tracks are now marked in the per-agent drill-down so a lead can tell the two apart.
 
 Open the leader roster in `Rep.tsx` as a lead and check it answers: who finished what, who has stalled, and their scores. It largely does today. If required modules are not distinguishable from optional ones in that view, add the distinction — that is the one thing the flag exists to make visible to a lead.
 
-- [ ] **Step 5: Verify by hand**
+- [ ] **Step 5: Verify by hand — NEEDS ERIC, after deploy**
 
-Mark the Zillow Preferred set required. As an agent: the badge shows and nothing is locked. As a lead: the roster separates required from optional progress.
+Zillow Preferred is already marked required. As an agent: the badge shows and nothing is locked. As a lead: the roster separates required from optional progress.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A

@@ -9,6 +9,7 @@ import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handleAgentRoutes } from './agentRoutes.js';
+import { supabaseAsUser } from './asUser.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { readCookie, withFreshToken } from './session.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
@@ -1275,6 +1276,28 @@ export default {
       } catch (e) {
         return json({ error: String(e) }, 502);
       }
+    }
+
+    // Mark a track "required to launch" — Eric's designation that an agent should
+    // finish it before taking leads. DISPLAY ONLY: nothing in the product gates on
+    // it, because eligibility is decided by Eric and the team lead off-platform.
+    //
+    // The authorisation lives in set_track_required(), which refuses a shared TRU
+    // track unless the caller is a platform admin. Running it as the USER rather
+    // than the service role is the point — the service role would bypass that.
+    if (url.pathname === '/rep/tracks/required' && req.method === 'POST') {
+      const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
+      if (!userId) return json({ error: 'unauthorized' }, 401);
+      const body = (await req.json().catch(() => null)) as any;
+      const trackId = String(body?.track_id ?? '').trim();
+      if (!isUuid(trackId)) return json({ error: 'invalid id' }, 422);
+      const asUser = await supabaseAsUser(env, readCookie(req));
+      if (!asUser) return json({ error: 'not signed in' }, 401);
+      const { ok } = await asUser.rpc('set_track_required', {
+        p_track_id: trackId, p_on: !!body?.on,
+      });
+      if (!ok) return json({ error: 'You can’t change that track.' }, 403);
+      return json({ ok: true });
     }
 
     // Leader/admin assigns a track to one or more learners, with an optional due

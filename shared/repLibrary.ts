@@ -4,8 +4,12 @@
 // vitest config (web/vitest.config.ts includes ../shared/**/*.test.ts).
 
 export type TrackRow = {
-  id: string; slug: string; title: string;
+  id: string; org_id?: string | null; slug: string; title: string;
   subtitle: string | null; cover: string | null; order_idx: number;
+  /** Eric's designation: this track is required before an agent takes leads.
+   *  DISPLAY ONLY — nothing in the product gates on it. Snake-cased to match the
+   *  row as PostgREST returns it, like order_idx above. */
+  required_to_launch?: boolean;
 };
 export type TrackModuleRow = { track_id: string; module_id: string; idx: number; required: boolean };
 export type ProgressRow = { module_id: string; status: string; score: number | null; passed_at: string | null };
@@ -20,6 +24,7 @@ export type TrackView = {
   total: number; passed: number; pct: number; complete: boolean;
   nextModuleId: string | null;
   assigned: boolean; dueAt: string | null; overdue: boolean;
+  requiredToLaunch: boolean;
 };
 
 const passedIds = (progress: ProgressRow[]) =>
@@ -55,6 +60,7 @@ export function buildTrackViews(
       const overdue = !!(a && a.due_at && !a.completed_at && new Date(a.due_at) < now);
       return {
         id: t.id, slug: t.slug, title: t.title, subtitle: t.subtitle, cover: t.cover,
+        requiredToLaunch: !!t.required_to_launch,
         total, passed,
         pct: total ? Math.round((passed / total) * 100) : 0,
         complete,

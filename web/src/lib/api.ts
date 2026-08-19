@@ -100,7 +100,7 @@ export interface RepData {
   certificates: RepCertificateRow[];
 }
 export interface RepCertificateRow { learner_id: string; track_id: string; issued_at: string }
-export interface RepTrackRow { id: string; slug: string; title: string; subtitle: string | null; cover: string | null; order_idx: number }
+export interface RepTrackRow { id: string; org_id: string | null; slug: string; title: string; subtitle: string | null; cover: string | null; order_idx: number; required_to_launch?: boolean }
 
 export async function loadRep(): Promise<RepData> {
   if (isDemo) return demoRep();
@@ -1279,4 +1279,14 @@ export async function submitMyAssessment(input: {
     method: 'POST', body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error('Your result didn’t save — try again.');
+}
+
+/** Leader/admin: mark a track as required before an agent takes leads. Display
+ *  only — the product gates nothing on it. */
+export async function setTrackRequired(trackId: string, on: boolean): Promise<void> {
+  const res = await workerFetch('/rep/tracks/required', {
+    method: 'POST', body: JSON.stringify({ track_id: trackId, on }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'Could not change that track.');
 }

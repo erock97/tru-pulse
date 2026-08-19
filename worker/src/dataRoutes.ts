@@ -220,7 +220,7 @@ export async function handleDataRoutes(
       // The learner spine, so the leader can assign a track to an agent OR to
       // another leader. RLS returns this org's rows only (rep_learners_org_read).
       db.select('rep_learners', 'select=id,kind,agent_id,user_id,name,email&order=name.asc'),
-      db.select('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select('rep_tracks', 'select=id,org_id,slug,title,subtitle,cover,order_idx,required_to_launch&active=eq.true&order=order_idx.asc'),
       db.select('rep_track_modules', 'select=track_id,module_id,idx,required'),
       db.select('rep_assignments', 'select=learner_id,track_id,due_at,completed_at'),
       db.select('rep_certificates', 'select=learner_id,track_id,issued_at'),
@@ -262,7 +262,7 @@ export async function handleDataRoutes(
     if (!learner?.id) return json({ error: 'not enrolled' }, 403, cors);
 
     const [tracks, trackModules, modules, progress, assignments, certificates] = await Promise.all([
-      db.select<TrackRow>('rep_tracks', 'select=id,slug,title,subtitle,cover,order_idx&active=eq.true&order=order_idx.asc'),
+      db.select<TrackRow>('rep_tracks', 'select=id,org_id,slug,title,subtitle,cover,order_idx,required_to_launch&active=eq.true&order=order_idx.asc'),
       db.select<TrackModuleRow>('rep_track_modules', 'select=track_id,module_id,idx,required'),
       db.select('rep_modules', 'select=id,idx,title,summary,pass_pct,core,kind,duration_min,level,tags,cover&active=eq.true&status=eq.published&order=idx.asc'),
       db.select<ProgressRow>('rep_progress', `select=module_id,status,score,passed_at&learner_id=eq.${learner.id}`),

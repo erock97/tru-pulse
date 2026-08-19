@@ -183,6 +183,11 @@ export default function LibraryHome({
                 >
                   <span className="lib-track-title">
                     {t.title}
+                    {/* Display only — nothing here is locked. It tells an agent
+                        which training matters before they take leads. */}
+                    {t.requiredToLaunch && !certIds.has(t.id) && (
+                      <span className="lib-chip lib-chip-req">Required to launch</span>
+                    )}
                     {certIds.has(t.id) && <span className="lib-chip lib-chip-done">Certified</span>}
                   </span>
                   <span className="lib-track-sub">

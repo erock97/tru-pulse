@@ -2697,3 +2697,16 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rp-drill-track { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 999px; color: var(--gold); background: rgba(233,162,59,.10); border: 1px solid rgba(233,162,59,.32); }
 .tru-dark .rp-drill-track.late { color: var(--terracotta); background: rgba(192,107,79,.12); border-color: rgba(192,107,79,.42); }
 .tru-dark .rp-drill-track.earned { color: #7fbf94; background: rgba(63,160,108,.12); border-color: rgba(63,160,108,.4); }
+
+
+/* Rep — "required to launch" designation panel */
+.rp-req-panel{ margin-top:12px; padding:14px 16px; border:1px solid var(--accent-line, rgba(255,255,255,.12));
+  border-radius:14px; background:rgba(255,255,255,.03); max-width:420px; }
+.rp-req-head{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  font-size:13px; margin-bottom:10px; }
+.rp-req-list{ list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.rp-req-list label{ display:flex; align-items:center; gap:9px; font-size:13.5px; cursor:pointer; }
+.rp-req-list label.is-locked{ cursor:default; opacity:.62; }
+.rp-req-list input{ width:15px; height:15px; accent-color:#a9791f; cursor:pointer; }
+.rp-req-list em{ font-size:11px; font-style:normal; opacity:.6; }
+.rp-req-note{ font-size:12px; line-height:1.5; opacity:.65; margin:0; }
