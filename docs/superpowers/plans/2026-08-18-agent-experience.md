@@ -576,11 +576,11 @@ git commit -m "feat(agent): home — commitments, pacing, what's next"
 - Consumes: `AgentHome.assessment` (Task 2); `loadMyOneOnOnes` and `MyOneOnOnes` (existing, `web/src/lib/coachData.ts:998` and `AgentCourse.tsx:236`); the profile copy in `web/src/lib/assessmentData.ts`.
 - Produces: nothing downstream.
 
-- [ ] **Step 1: Confirm the promise is currently kept**
+- [x] **Step 1: Confirm the promise is currently kept** — IT IS NOT. Only Coach.tsx (the leader's view) and Assess.tsx (at the moment of taking it) render profile copy; nothing shows an agent a stored result. This task builds that surface for the first time.
 
 `Assess.tsx:360` tells people "Sign in any time to revisit your result." Before writing anything, check whether any current screen actually shows a stored result to the agent who took it. Search `web/src/` for a render path off `assessments`. Write the answer into the task notes: if nothing shows it, this task is building that surface for the first time, not reusing one.
 
-- [ ] **Step 2: Render the result**
+- [x] **Step 2: Render the result** — `ARCH` for the archetype, `AG` for the first-person read, `PERSONAL_TYPES` for the personal code. Deliberately NO fallback profile: an unresolvable code shows a short 'ask your lead' note rather than someone else's read of them.
 
 In `AgentCoach.tsx`, when `home.assessment` exists, render:
 - the personal and professional codes as their full names, resolved through the existing lookups in `web/src/lib/assessmentData.ts` — do not hand-write a second copy of that mapping;
@@ -593,11 +593,11 @@ When `home.assessment` is null (only possible for a pre-existing agent, since Ta
 
 Export `MyOneOnOnes` from `AgentCourse.tsx`, render it under the result in `AgentCoach.tsx`, and delete its render from `AgentCourse`. Keep `loadMyOneOnOnes`'s existing failure behaviour — a failure there must never blank the tab.
 
-- [ ] **Step 4: Prove the private note stays private**
+- [x] **Step 4: Prove the private note stays private** — verified twice. No agent-facing file or RPC references `checkin_leader` (only comments saying not to). And in the database, `checkin_leader` carries a single `is_org_member(org_id)` policy — an agent is an `agents` row, not a membership, so the predicate is false for them and there is no row to read.
 
 Open a leader account, write a private note and tick checklist items on an agent's 1:1. Then View as that agent and confirm: the note is nowhere in the UI, and nowhere in the network responses either. Check the actual response bodies in devtools, not just the rendered page.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/pages/AgentCoach.tsx web/src/pages/AgentCourse.tsx

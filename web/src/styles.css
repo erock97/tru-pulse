@@ -401,6 +401,18 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ag-next-title{ font-size:14px; font-weight:650; color:var(--ac-text); }
 .ag-next-go{ font-size:12.5px; font-weight:700; color:var(--gold-lt); white-space:nowrap; }
 
+/* agent coach — their own read of the assessment */
+.ag-profile{ margin:0; }
+.ag-profile dt{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:800;
+  color:var(--ac-text-60); margin-top:14px; }
+.ag-profile dt:first-child{ margin-top:0; }
+.ag-profile dd{ margin:6px 0 0; font-size:14px; line-height:1.6; color:var(--ac-text); }
+.ag-profile-desc{ font-size:14px; line-height:1.65; color:var(--ac-text); margin:0 0 12px; }
+.ag-strengths{ list-style:none; display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; padding:0; }
+.ag-strengths li{ font-size:12px; font-weight:650; padding:5px 11px; border-radius:99px;
+  background:rgba(169,121,31,.14); color:var(--gold-lt); }
+.ag-taken{ font-size:12px; color:var(--ac-text-60); text-align:center; margin:0 0 20px; }
+
 
 /* home hero — dark espresso, gold glow, draw-in ring */
 .ac-hero2{ position:relative; overflow:hidden; display:flex; align-items:center; gap:18px; border-radius:20px; padding:26px 24px; color:#f4ecdc; margin-bottom:20px;
