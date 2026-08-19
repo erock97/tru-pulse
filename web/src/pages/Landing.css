@@ -174,3 +174,31 @@
   .truland #intro .skip:hover{color:#E9A23B;border-color:rgba(233,162,59,.5)}
   html.intro-lock{overflow:hidden}
   @media (prefers-reduced-motion: reduce){ .truland #intro{display:none} }
+
+  /* ---- Agent welcome: the brand hero, carrying setup instead of a pitch ---- */
+  .truland.aw{min-height:100dvh;display:flex;flex-direction:column;position:relative}
+  .truland .aw-bar{position:relative;z-index:20;padding-top:clamp(1.1rem,2.4vw,1.7rem)}
+  .truland .aw-bar-in{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+  .truland .aw-mark{font-family:var(--serif);font-weight:800;font-size:1.32rem;letter-spacing:0.02em;color:var(--gold)}
+  /* The path through setup, named. A progress bar tells an agent nothing; this
+     tells them there are three things and which one they are on. */
+  .truland .aw-steps{display:flex;align-items:center;gap:0.5rem;list-style:none;margin:0;padding:0}
+  .truland .aw-stepdot{display:flex;align-items:center;gap:0.5rem;font-family:var(--mono);
+    font-size:0.63rem;letter-spacing:0.13em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+  .truland .aw-stepdot::before{content:"";width:6px;height:6px;border-radius:50%;
+    background:rgba(243,236,224,0.22);transition:background .5s var(--e),box-shadow .5s var(--e)}
+  .truland .aw-stepdot + .aw-stepdot{margin-left:0.35rem;padding-left:0.85rem;
+    border-left:1px solid var(--hair)}
+  .truland .aw-stepdot.is-on{color:var(--ink)}
+  .truland .aw-stepdot.is-on::before{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+  .truland .aw-stepdot.is-done::before{background:var(--gold);opacity:.55}
+  .truland .aw-stage{flex:1;padding-top:clamp(1rem,3vw,2.4rem);padding-bottom:clamp(2rem,5vh,4rem)}
+  .truland .aw-stage h1{max-width:13ch}
+  .truland .aw-stage .hsub{max-width:34rem}
+  .truland .aw-stage .cta{border:0}
+  .truland .aw-stage .cta:disabled{opacity:.65;cursor:default;transform:none}
+  @media (max-width:700px){
+    .truland .aw-steps{width:100%;justify-content:space-between;gap:0.25rem}
+    .truland .aw-stepdot span{display:none}
+    .truland .aw-stepdot + .aw-stepdot{border-left:0;padding-left:0;margin-left:0}
+  }

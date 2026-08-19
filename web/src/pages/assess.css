@@ -1,28 +1,51 @@
-.asx-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
-  background: radial-gradient(900px 500px at 50% -10%, #33281a 0%, rgba(51,40,26,0) 60%), linear-gradient(160deg,#221a10,#171009); color: #f2e8d5; }
-.asx-card { width: 100%; max-width: 560px; background: rgba(255,255,255,.03); border: 1px solid rgba(169,121,31,.25);
-  border-radius: 20px; padding: clamp(20px, 5vw, 40px); }
-.asx-eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-hi); font-weight: 800; }
-.asx-h1 { font-size: clamp(26px, 6vw, 40px); margin: 10px 0 8px; }
-.asx-sub { color: #c9baa0; margin-bottom: 20px; }
+/* ── Inside the internal shell ───────────────────────────────────────────────
+   Every stage now renders inside .tru-shell with the sidebar and topbar, so the
+   old full-screen centring shell is gone. What is left is the card itself, and
+   it is the internal pages' card: solid surface, hairline border, same radius. */
+.asx-shell { display: contents; }
+
+.asx-card { position: relative; width: 100%;
+  background: var(--card); border: 1px solid var(--border-soft);
+  border-radius: var(--r-card); padding: clamp(24px, 2.6vw, 40px); }
+
+/* The pill eyebrow the internal pages use (.hq-eyebrow). */
+.asx-eyebrow { display: inline-flex; align-items: center; gap: .5rem;
+  font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600;
+  color: var(--text-60);
+  border: 1px solid var(--border-soft); border-radius: 999px;
+  padding: 7px 15px; background: rgba(20,16,9,.5); }
+.asx-eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); }
+/* .hh-hero-title's scale — the card headline on an internal page, not a
+   marketing headline. */
+.asx-h1 { font-family: var(--hq-serif); font-weight: 700;
+  font-size: clamp(24px, 2.6vw, 34px); line-height: 1.16;
+  margin: 16px 0 10px; color: var(--text-strong); }
+.asx-sub { color: var(--text-60); margin-bottom: 20px;
+  font-size: 16px; line-height: 1.6; max-width: 56ch; }
+
 .asx-picklist { display: grid; gap: 10px; }
 .asx-pick { text-align: left; padding: 16px 18px; border-radius: 12px; background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.08); color: #f2e8d5; font-size: 16px; font-weight: 600; cursor: pointer; }
 .asx-pick:hover { border-color: var(--accent); background: rgba(169,121,31,.12); }
 .asx-msg { color: #c9baa0; }
-.asx-cta { margin-top: 24px; width: 100%; padding: 16px 20px; border-radius: 12px; border: none; cursor: pointer;
-  font-family: var(--hq-font); font-size: 16px; font-weight: 700; color: #241a0c;
-  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
-  box-shadow: 0 10px 26px -12px var(--accent); transition: transform .15s ease, box-shadow .15s ease; }
-.asx-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -12px var(--accent); }
+/* .hqbtn-primary, matched: the internal pages' button, not the marketing pill. */
+.asx-cta { margin-top: 26px; width: auto; display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 24px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+  font-size: 16px; font-weight: 700; color: #1A1206;
+  background: linear-gradient(180deg, var(--accent-hi, #F2C079), var(--accent, #E9A23B));
+  transition: transform .25s ease, box-shadow .25s ease; }
+.asx-cta:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -28px var(--accent, #E9A23B); }
+.asx-cta-link { text-decoration: none; }
 
 /* ── progress + badge (quiz stages) ── */
 .asx-progress { height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; margin-bottom: 18px; }
 .asx-progress > span { display: block; height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent-hi)); transition: width .3s ease; }
 .asx-badge { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-hi); font-weight: 800; }
 .asx-count { font-size: 12px; color: #8a7d68; margin-top: 4px; }
-.asx-quiz { max-width: 680px; }
-.asx-q { font-size: clamp(22px, 4.5vw, 30px); line-height: 1.3; margin: 18px 0 4px; color: #f2e8d5; }
+.asx-quiz { max-width: 900px; }
+.asx-q { font-family: 'Playfair Display', Georgia, serif; font-weight: 700;
+  font-size: clamp(26px, 4.5vw, 34px); line-height: 1.22; margin: 20px 0 4px; color: #F6EFE3; }
 .asx-q-sub { font-size: 15px; color: #c9baa0; margin: 18px 0 0; font-weight: 600; }
 .asx-likert-labels { display: flex; justify-content: space-between; margin-top: 22px; font-size: 13px; color: #8a7d68; text-transform: uppercase; letter-spacing: .06em; }
 
@@ -37,8 +60,8 @@
 .asx-quiz-body { animation: asx-qfade .35s ease both; }
 @keyframes asx-qfade { from { opacity: 0; transform: translateY(8px); } }
 @media (min-width: 900px) {
-  .asx-quiz { max-width: 840px; padding: clamp(44px, 4.6vw, 64px) clamp(48px, 5vw, 68px); }
-  .asx-q { font-size: clamp(38px, 4.2vw, 56px); line-height: 1.2; margin-top: 10px; }
+  .asx-quiz { max-width: 980px; padding: clamp(48px, 4.6vw, 72px) clamp(52px, 5vw, 76px); }
+  .asx-q { font-size: clamp(38px, 4.2vw, 54px); line-height: 1.14; margin-top: 12px; }
   .asx-q-sub { font-size: 21px; }
   .asx-scale { margin-top: 34px; gap: 16px; }
   .asx-diff-labels { font-size: 18px; margin-top: 26px; }
@@ -167,3 +190,44 @@
   .asx-cta, .asx-dot { transition: none !important; }
   .asx-cta:hover, .asx-dot:hover { transform: none !important; }
 }
+
+/* welcome walkthrough — progress dots */
+.ag-welcome-dots{ display:flex; gap:7px; justify-content:center; margin:18px 0 20px; }
+.ag-welcome-dots span{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.18); }
+.ag-welcome-dots span.is-on{ background:var(--gold-lt, #c99a3f); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Wide screens: the shell's main column already runs to 1440. The card fills
+   it, and the reveal splits into identity left / read-out right — assigned by
+   class, so the reveal markup stays untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1100px) {
+  .asx-card { padding: clamp(30px, 2.8vw, 44px); }
+  .asx-quiz-top, .asx-quiz-body { max-width: 1000px; }
+  .asx-q { font-size: clamp(28px, 2.8vw, 40px); line-height: 1.18; max-width: 24ch; }
+  .asx-q-sub { font-size: 18px; }
+  .asx-scale { margin-top: 40px; gap: clamp(14px, 1.5vw, 26px); }
+  .asx-sz1 { width: 54px; height: 54px; }
+  .asx-sz2 { width: 62px; height: 62px; }
+  .asx-sz3 { width: 72px; height: 72px; }
+  .asx-sz4 { width: 82px; height: 82px; }
+  .asx-likert-labels { font-size: 15px; margin-top: 28px; }
+  .asx-diff-labels { font-size: 17px; margin-top: 28px; line-height: 1.4; }
+
+  .asx-reveal-card { display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 44px; align-content: start; }
+  .asx-reveal-card > * { grid-column: 1; }
+  .asx-reveal-card .asx-meters,
+  .asx-reveal-card .asx-divergence { grid-column: 2; }
+  .asx-reveal-card .asx-meters { grid-row: 1 / span 4; align-self: start; }
+  .asx-reveal-card .asx-divergence { grid-row: 5 / span 3; margin-top: 20px; }
+  .asx-meter-row + .asx-meter-row { margin-top: 20px; }
+}
+
+/* The topbar eyebrow already says "Part 1 of 2 · You as a person". Repeating it
+   inside the card was the old full-screen layout talking, where there was no
+   topbar to carry it. The count stays — that one is not duplicated. */
+.asx-badge { display: none; }
+.asx-count { font-size: 13px; color: var(--text-50); margin-top: 0; }

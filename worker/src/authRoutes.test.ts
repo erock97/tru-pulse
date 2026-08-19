@@ -381,6 +381,10 @@ describe('POST /auth/signup', () => {
 });
 
 describe('acting as a team', () => {
+  /** The email the handler asked about, read back out of its lookup URL. */
+  const emailIn = (url: string) =>
+    decodeURIComponent(new URL(url).searchParams.get('filter') ?? '');
+
   /** Sign in as the owner and return their session id. */
   async function ownerSid(): Promise<string> {
     supabase = { ok: true, body: goodSession };
@@ -388,9 +392,13 @@ describe('acting as a team', () => {
   }
 
   /** admins table says yes, generate_link mints a hash, verify returns the team's session. */
-  function adminFlow(isAdmin = true) {
+  function adminFlow(isAdmin = true, exists = true) {
     route = (url) => {
       if (url.includes('/rest/v1/admins')) return { ok: true, body: isAdmin ? [{ id: 'user-1' }] : [] };
+      if (url.includes('/auth/v1/admin/users')) return {
+        ok: true,
+        body: { users: exists ? [{ id: 'target-user', email: emailIn(url) }] : [] },
+      };
       if (url.includes('generate_link')) return { ok: true, body: { properties: { hashed_token: 'h-1' } } };
       if (url.includes('/auth/v1/verify')) return {
         ok: true,
@@ -434,6 +442,18 @@ describe('acting as a team', () => {
     adminFlow(false);
     const res = await post('/auth/act-as', { email: 'lead@team.com' }, { cookie: `${COOKIE_NAME}=${sid}` });
     expect(res.status).toBe(403);
+  });
+
+  it('refuses to act as someone who has never accepted their invite', async () => {
+    const sid = await ownerSid();
+    adminFlow(true, false);
+    const res = await post('/auth/act-as', { email: 'never-logged-in@team.com' },
+      { cookie: `${COOKIE_NAME}=${sid}` });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { error: string }).error).toMatch(/has not set up their account/i);
+    // The point of the guard: generate_link must never run, because it would
+    // create the auth user as a side effect of merely looking.
+    expect(calls.some((c) => c.url.includes('generate_link'))).toBe(false);
   });
 
   it('refuses when nobody is signed in', async () => {
