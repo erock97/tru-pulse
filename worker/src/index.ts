@@ -789,8 +789,13 @@ export default {
       const { link, userId: mintedUserId } = await mintAuthLink(env, agent.email, linkType).catch(() => ({ link: '', userId: null }));
       if (!link) return json({ error: 'could not mint invite' }, 502);
       const newUserId = mintedUserId;
-      if (!agent.auth_id && newUserId) {
-        await database.update('agents', `id=eq.${agentId}`, { auth_id: newUserId });
+      // A FIRST invite marks this agent as gated: they see the welcome and must
+      // finish the assessment before the rest of HQ opens. A re-invite must never
+      // set it — that would ambush someone already working.
+      if (!agent.auth_id) {
+        const patch: Record<string, unknown> = { gated: true };
+        if (newUserId) patch.auth_id = newUserId;
+        await database.update('agents', `id=eq.${agentId}`, patch);
       }
       const orgRows = await database.select('orgs', `id=eq.${agent.org_id}&select=name`);
       const orgName = String((orgRows[0] as { name?: string } | undefined)?.name ?? '').trim() || 'your team';

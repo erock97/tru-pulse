@@ -162,7 +162,13 @@ export async function loadRep(): Promise<RepData> {
 }
 
 // ── Agent side: identity + the course ───────────────────────────────────────
-export interface AgentIdentity { id: string; org_id: string; name: string; team_id: string }
+export interface AgentIdentity {
+  id: string; org_id: string; name: string; team_id: string;
+  /** Invited from the cutover forward, so the welcome + assessment gate applies.
+   *  Every agent who predates it is false and lands straight in HQ. */
+  gated?: boolean;
+  welcome_seen_at?: string | null;
+}
 export interface CourseQuestion { id: string; idx: number; prompt: string; choices: string[] }
 /** One lesson screen. t: text | intro | stat | stats | drill | callout | script | dialogue | compare | section | video | steps | media. */
 export interface LessonCard {
@@ -1114,4 +1120,10 @@ export async function adminResendInvite(o: {
   const body = (await res.json().catch(() => ({}))) as any;
   if (!res.ok) throw new Error(body.error ?? 'Could not resend the invite.');
   return body as { sent: boolean; link?: string };
+}
+
+/** The agent has finished the one-time welcome. Best-effort: a failed stamp must
+ *  never trap them on the walkthrough. */
+export async function markWelcomeSeen(): Promise<void> {
+  await workerFetch('/data/agent/welcome-seen', { method: 'POST', body: '{}' }).catch(() => undefined);
 }

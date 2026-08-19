@@ -14,6 +14,8 @@ import {
   type AgentHqTab,
 } from '../lib/agentHq';
 import { ARCH } from '../lib/assessmentData';
+import { agentStage } from '../lib/agentStage';
+import AgentWelcome from './AgentWelcome';
 import {
   loadCommitments,
   loadMyOneOnOnes,
@@ -41,6 +43,10 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
   const [mods, setMods] = useState<CourseModule[] | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [assessed, setAssessed] = useState(false);
+  // Distinct from `assessed`: until the profile has actually come back we do not
+  // know, and treating "not loaded" as "not assessed" would bounce an agent who
+  // HAS taken it into the assessment on every single load.
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[]>([]);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -49,16 +55,41 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
 
   const refresh = () => {
     void loadCourse(agent.id).then(setMods);
-    void loadOwnProfile(agent.id).then((r) => { setProfile(r.profile); setAssessed(r.assessed); });
+    void loadOwnProfile(agent.id)
+      .then((r) => { setProfile(r.profile); setAssessed(r.assessed); })
+      .finally(() => setProfileLoaded(true));
     void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
     void loadCommitments(agent.id).then(setCommitments).catch(() => setCommitments([]));
   };
   useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [agent.id]);
 
+  // The gate. An agent invited from the cutover forward sees the welcome once,
+  // then the assessment, and cannot reach HQ until it is done — no skip, no
+  // dismiss. Anyone who predates it (`gated` false) never sees any of this.
+  const [welcomeSeen, setWelcomeSeen] = useState(!!agent.welcome_seen_at);
+  const stage = agentStage({
+    hasAssessment: assessed,
+    welcomeSeen,
+    isNewAccount: !!agent.gated,
+  });
+  // Only a gated agent can be held anywhere, and only once we know their state.
+  const holding = agent.gated && profileLoaded ? stage : 'app';
+
   const firstName = agent.name.split(' ')[0] || 'there';
   const active = useMemo(() => mods?.find((m) => m.id === activeId) ?? null, [mods, activeId]);
 
   const closePlayer = () => { setActiveId(null); setPlayer('lesson'); setGrade(null); void loadCourse(agent.id).then(setMods); };
+
+  if (holding === 'welcome') {
+    return <AgentWelcome onDone={() => setWelcomeSeen(true)} />;
+  }
+  // Send them to the assessment and keep them there. `?self=1` is the in-account
+  // flow that already exists, and App.tsx renders it before this component, so
+  // this branch only ever runs when they have navigated away from it.
+  if (holding === 'assessment') {
+    window.location.hash = '/assess?self=1';
+    return <div className="center-wrap"><div className="spinner" /></div>;
+  }
 
   if (active && tab === 'training') {
     if (player === 'quiz') {

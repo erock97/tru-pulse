@@ -241,7 +241,7 @@ export async function handleDataRoutes(
     const [orgs, agents] = await Promise.all([
       db.select<{ id: string; name: string; plan: string }>('orgs', 'select=id,name,plan&limit=1'),
       db.select<{ id: string; org_id: string; name: string; team_id: string }>(
-        'agents', `select=id,org_id,name,team_id&auth_id=eq.${db.userId}&limit=1`,
+        'agents', `select=id,org_id,name,team_id,gated,welcome_seen_at&auth_id=eq.${db.userId}&limit=1`,
       ),
     ]);
     const org = orgs[0] ?? null;
@@ -371,6 +371,13 @@ export async function handleDataRoutes(
       const rows = await db.update('checkin_items', `id=eq.${id}`, { status });
       if (!rows) return json({ error: 'not allowed' }, 403, cors);
       return json({ item: rows[0] ?? null }, 200, cors);
+    }
+
+    // Agent has finished the one-time welcome. Stamped through an RPC keyed on
+    // auth.uid(), so the browser cannot mark it for anyone else.
+    if (url.pathname === '/data/agent/welcome-seen') {
+      const { ok } = await db.rpc('agent_mark_welcome_seen', {});
+      return ok ? json({ ok: true }, 200, cors) : json({ error: 'could not save' }, 400, cors);
     }
 
     // Signed-in agent finishes the existing Assess flow and returns to their Coach tab.
