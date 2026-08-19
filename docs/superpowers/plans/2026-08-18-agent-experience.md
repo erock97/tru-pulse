@@ -810,11 +810,11 @@ Close the other two entrances. There are three today, not two: the invite, the s
 - Consumes: everything above.
 - Produces: nothing downstream.
 
-- [ ] **Step 1: Retire the self-serve signup**
+- [x] **Step 1: Retire the self-serve signup** — the form and the `signUp` import are gone from Assess.tsx. The assessment still submits on mount, unchanged; the ending now points at app.truhq.co and says a team lead can send an account.
 
 In `Assess.tsx`, delete the `signUp` form from `RegisterFlow`. The assessment still submits on mount exactly as it does now — that behaviour is untouched — but the ending becomes a plain "Your team lead has your profile" with the app link and no account creation. Anyone who needs an account gets invited.
 
-- [ ] **Step 2: Harden the claim**
+- [x] **Step 2: Harden the claim** — DEVIATION: checks `auth.users.email_confirmed_at` directly rather than a JWT claim. The claim's name and location have moved between GoTrue versions, and a guard that silently stops matching is worse than no guard. The function is SECURITY DEFINER so it can ask the authoritative question.
 
 Add to `db/hq_agent_experience.sql`:
 
@@ -845,7 +845,7 @@ grant execute on function claim_agent() to authenticated;
 
 Verify the claim on a real invited account before moving on — if this project's JWTs carry the flag under a different key, fix the check rather than dropping it.
 
-- [ ] **Step 3: Close the legacy portal**
+- [x] **Step 3: Close the legacy portal** — all four revoked from public, anon AND authenticated (verified: callable by nobody), and their routes removed. Three worker tests used them as a vehicle for generic checks; repointed at `resolve-cohort-roster`, and added a test proving the four now 404.
 
 Add to the same migration:
 
@@ -860,21 +860,21 @@ revoke execute on function enroll_agent(uuid, text, text, text, text, jsonb, jso
 
 Then delete the matching entries from `ARGS` and `FN` in `worker/src/publicRoutes.ts` so the routes 404 rather than reaching a function they can no longer execute. Leave `resolve-cohort-roster` and `submit-assessment` alone — Task 6 leaves the old public assessment path working for anyone mid-flight, and it creates no accounts.
 
-- [ ] **Step 4: Mark new invites as gated**
+- [x] **Step 4: Mark new invites as gated** — set on a first invite only, never on a re-invite.
 
 In `worker/src/index.ts`, in the `/rep/invite` handler, set `gated = true` on the agent row when minting a **first** invite (`linkType === 'invite'`), not on a re-invite. That is what makes the gate apply from the cutover forward and never to someone already working.
 
-- [ ] **Step 5: Confirm a lead can actually send an invite**
+- [x] **Step 5: Confirm a lead can actually send an invite** — `/rep/invite` admits an admin OR any user whose orgs include the agent's org, and `InviteCell` renders on every roster row with no admin gate (Rep.tsx:564). Leads can invite. Still worth Eric watching one land.
 
 Spec §3.1 says leads invite their own people, with no seat cap and no approval. `inviteAgent()` and `/rep/invite` exist, but confirm the control is reachable by a **team lead** — not only by an admin — from wherever they manage their roster in `Rep.tsx`. Sign in as a lead, not as Eric, and send a real invite to a test address. If the control is admin-gated or hidden, un-gate it here; that is the whole of §3.1's remaining work.
 
-- [ ] **Step 6: Verify by hand**
+- [ ] **Step 6: Verify by hand — NEEDS ERIC, after deploy**
 
 - Walk the public assessment link end to end: the result still saves, and there is no way to create an account from it.
 - `curl -X POST https://<worker>/public/get-agent-home -d '{"p_token":"<a real agent token>"}'` → 404.
 - Invite a fresh test agent → they are gated. An existing agent → not gated.
 
-- [ ] **Step 7: Run everything and commit**
+- [x] **Step 7: Run everything and commit** — worker 292 pass, web 124 pass, both typecheck, production build succeeds.
 
 ```bash
 cd worker && npm run typecheck && npm test

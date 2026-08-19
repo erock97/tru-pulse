@@ -823,8 +823,13 @@ export default {
       const link = props?.action_link;
       if (!res.ok || !link) return json({ error: 'could not mint invite' }, 502);
       const newUserId = gl?.user?.id ?? gl?.id;
-      if (!agent.auth_id && newUserId) {
-        await database.update('agents', `id=eq.${agentId}`, { auth_id: newUserId });
+      // A FIRST invite marks this agent as gated: they will see the welcome and
+      // must finish the assessment before the rest of the product opens. A
+      // re-invite must never set it — that would ambush someone already working.
+      if (!agent.auth_id) {
+        const patch: Record<string, unknown> = { gated: true };
+        if (newUserId) patch.auth_id = newUserId;
+        await database.update('agents', `id=eq.${agentId}`, patch);
       }
       return json({ link, email: agent.email, reinvite: !!agent.auth_id });
     }

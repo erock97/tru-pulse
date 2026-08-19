@@ -65,8 +65,18 @@ describe('the public agent path', () => {
 
   it('refuses a missing or malformed token before touching the database', async () => {
     for (const t of [undefined, '', 'not-a-uuid']) {
-      const res = await call('get-agent-home', t === undefined ? {} : { p_token: t });
+      const res = await call('resolve-cohort-roster', t === undefined ? {} : { p_token: t });
       expect(res.status).toBe(401);
+    }
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it('no longer exposes the retired token portal', async () => {
+    // These four backed the old no-login agent portal: an agent's whole coaching
+    // record, and writes to it, behind a UUID that travelled in a URL. One front
+    // door now, and it is the invite.
+    for (const gone of ['get-agent-home', 'enroll-agent', 'save-checkin', 'toggle-commitment']) {
+      expect((await call(gone, { p_token: TOKEN })).status).toBe(404);
     }
     expect(rpcCalls).toHaveLength(0);
   });
@@ -85,7 +95,7 @@ describe('the public agent path', () => {
   });
 
   it('never uses the service-role key on the public path', async () => {
-    await call('save-checkin', { p_token: TOKEN, p_met: 'yes', p_leads: 3 });
+    await call('resolve-cohort-roster', { p_token: TOKEN });
     expect(rpcCalls[0].args.__auth).not.toContain('SERVICE-ROLE');
     expect(rpcCalls[0].args.__auth).toContain('anon-key');
   });
@@ -97,7 +107,7 @@ describe('the public agent path', () => {
 
   it('does not echo the database error, which could reveal whether a token exists', async () => {
     supabaseOk = false;
-    const res = await call('get-agent-home', { p_token: TOKEN });
+    const res = await call('resolve-cohort-roster', { p_token: TOKEN });
     expect(res.status).toBe(400);
     const body = await res.json() as any;
     // The database's own wording must not reach the caller — it can reveal whether a
@@ -108,7 +118,7 @@ describe('the public agent path', () => {
 
   it('rejects GET — these all change or reveal state', async () => {
     const res = await worker.fetch(
-      new Request(`https://api.truhq.co/public/get-agent-home`), env, ctx,
+      new Request(`https://api.truhq.co/public/resolve-cohort-roster`), env, ctx,
     );
     expect(res.status).toBe(404);
   });

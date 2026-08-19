@@ -125,3 +125,53 @@ revoke execute on function submit_my_assessment(text, jsonb, text, jsonb, jsonb)
 grant  execute on function submit_my_assessment(text, jsonb, text, jsonb, jsonb) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ── 4. One front door ─────────────────────────────────────────────────────────
+-- Three ways into this product existed: the invite, self-serve signup at the end
+-- of the public assessment, and a legacy token portal reachable with no login at
+-- all. Only the invite survives.
+
+-- claim_agent() binds an agents row to whoever signs in with a matching email.
+-- With self-serve signup gone from the assessment, the remaining signup path is
+-- the org-owner one on the login screen — so require a CONFIRMED address before
+-- handing over someone's coaching record.
+--
+-- Deliberately checks auth.users.email_confirmed_at rather than a JWT claim: the
+-- claim's shape and location have moved between GoTrue versions, and a guard that
+-- silently stops matching is worse than no guard. This function is SECURITY
+-- DEFINER, so it can read auth.users directly and ask the authoritative question.
+create or replace function claim_agent()
+returns uuid language plpgsql security definer set search_path = public as $$
+declare aid uuid;
+begin
+  if not exists (
+    select 1 from auth.users u
+     where u.id = auth.uid() and u.email_confirmed_at is not null
+  ) then
+    -- Unconfirmed: never bind a NEW row. An already-linked agent still gets their id.
+    return (select id from agents where auth_id = auth.uid() limit 1);
+  end if;
+
+  update agents
+     set auth_id = auth.uid()
+   where auth_id is null
+     and email is not null
+     and lower(email) = lower(auth.jwt() ->> 'email')
+  returning id into aid;
+
+  if aid is null then
+    select id into aid from agents where auth_id = auth.uid() limit 1;
+  end if;
+  return aid;
+end $$;
+revoke execute on function claim_agent() from public, anon;
+grant  execute on function claim_agent() to authenticated;
+
+-- The old token-URL agent portal. Nothing in the app calls these; each one is an
+-- anon-reachable read or write keyed on a UUID that travels in a URL.
+revoke execute on function get_agent_home(uuid)                                     from public, anon, authenticated;
+revoke execute on function agent_toggle_commitment(uuid, uuid, boolean)             from public, anon, authenticated;
+revoke execute on function agent_save_checkin(uuid, text, int, int, text, text)     from public, anon, authenticated;
+revoke execute on function enroll_agent(uuid, text, text, text, text, jsonb, jsonb) from public, anon, authenticated;
+
+notify pgrst, 'reload schema';

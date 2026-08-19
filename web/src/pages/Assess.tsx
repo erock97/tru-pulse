@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { resolveCohortRoster, submitCohortAssessment, claimAgent, submitMyAssessment } from '../lib/api';
-import { signUp } from '../lib/auth';
+import { useEffect, useRef, useState } from 'react';
+import { resolveCohortRoster, submitCohortAssessment, submitMyAssessment } from '../lib/api';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
   ARCH, PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS,
@@ -106,8 +105,6 @@ export default function Assess({ token, me, onDone }: {
         proResult={proResult!}
         pAns={pAns}
         bAns={bAns}
-        stage={stage}
-        setStage={setStage}
       />
     );
   }
@@ -366,14 +363,18 @@ function InAccountFinish({ personalResult, proResult, pAns, bAns, onDone }: {
   );
 }
 
-// ── Task 7: gated submit + registration ─────────────────────────────────────
-// Mounted only when stage is 'register'/'done'. Fires the cohort-assessment
-// write exactly once on mount (ref-guarded — React StrictMode double-invokes
-// effects in dev), then renders the email/password registration form and the
-// final "you're in" screen. In `?preview=1` this NEVER touches the backend:
-// no submit_cohort_assessment RPC, no auth.signUp — it just walks the screens.
+// ── The public link's ending ────────────────────────────────────────────────
+// Mounted when stage is 'register'/'done'. Fires the cohort-assessment write
+// exactly once on mount (ref-guarded — React StrictMode double-invokes effects in
+// dev), then says thank you.
+//
+// It used to end with an email/password form calling auth.signUp. That was a
+// second front door into the product: anyone could create a login with any
+// address, and claim_agent() would bind it to whichever agents row shared that
+// email. There is one front door now, and it is the invite from a team lead.
+// In `?preview=1` this NEVER touches the backend.
 function RegisterFlow({
-  agent, token, preview, personalResult, proResult, pAns, bAns, stage, setStage,
+  agent, token, preview, personalResult, proResult, pAns, bAns,
 }: {
   agent: { id: string; name: string };
   token: string;
@@ -382,81 +383,33 @@ function RegisterFlow({
   proResult: AxisResult;
   pAns: number[];
   bAns: number[];
-  stage: Stage;
-  setStage: (s: Stage) => void;
 }) {
   const submitted = useRef(false);
   const [submitErr, setSubmitErr] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
 
   useEffect(() => {
     if (submitted.current) return;
     submitted.current = true;
     if (preview) return; // design walk-through only — never hits the DB.
-    const tallies = talliesOf(proResult);
     submitCohortAssessment({
       token, agentId: agent.id, personalCode: personalResult.code, personalAxes: personalResult.axes,
-      businessCode: proResult.code, tallies, answers: { personal: pAns, pro: bAns },
+      businessCode: proResult.code, tallies: talliesOf(proResult), answers: { personal: pAns, pro: bAns },
     }).catch(() => setSubmitErr('Your result didn’t save — refresh and try again, or ask your team lead for a fresh link.'));
-    // Fire once on mount; deps intentionally omitted (values are stable for the
-    // lifetime of this mount, and the ref guard prevents a second fire anyway).
+    // Fire once on mount; the ref guard prevents a second fire.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setErr('');
-    setBusy(true);
-    if (preview) { setStage('done'); setBusy(false); return; } // never create real auth users from a preview
-    try {
-      await signUp(email, password);
-    } catch (error) {
-      setErr(error instanceof Error ? error.message : 'Could not create that account.');
-      setBusy(false);
-      return;
-    }
-    try { await claimAgent(); } catch { /* links on next confirmed login instead */ }
-    setStage('done');
-    setBusy(false);
-  }
-
-  if (stage === 'done') {
-    return (
-      <div className="asx-shell tru-dark">
-        <div className="asx-card asx-reveal-card">
-          <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
-          <h1 className="asx-h1">You're in.</h1>
-          <p className="asx-sub">Your team lead has your profile. Sign in any time to revisit your result.</p>
-          <a className="asx-cta asx-cta-link" href="https://app.truhq.co">Go to app.truhq.co →</a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="asx-shell tru-dark">
       <div className="asx-card asx-reveal-card">
         <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
-        <h1 className="asx-h1">Save your result and see it any time.</h1>
-        <p className="asx-sub">Create a quick login — your team lead already has your profile.</p>
-        <form className="asx-register-form" onSubmit={submit}>
-          <label className="asx-field-label" htmlFor="asx-email">Email</label>
-          <input
-            id="asx-email" className="asx-field" type="email" value={email}
-            onChange={(e) => setEmail(e.target.value)} required autoComplete="email"
-          />
-          <label className="asx-field-label" htmlFor="asx-password">Password</label>
-          <input
-            id="asx-password" className="asx-field" type="password" value={password}
-            onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" minLength={6}
-          />
-          {err && <div className="asx-form-err">{err}</div>}
-          {submitErr && <div className="asx-form-err">{submitErr}</div>}
-          <button className="asx-cta" type="submit" disabled={busy}>{busy ? '…' : 'Create account →'}</button>
-        </form>
+        <h1 className="asx-h1">You’re done.</h1>
+        <p className="asx-sub">
+          Your team lead has your profile. If you have a TRU account, your result is
+          waiting on your Coach tab — and if you don’t, your team lead can send you one.
+        </p>
+        {submitErr && <div className="asx-form-err">{submitErr}</div>}
+        <a className="asx-cta asx-cta-link" href="https://app.truhq.co">Go to app.truhq.co →</a>
       </div>
     </div>
   );
