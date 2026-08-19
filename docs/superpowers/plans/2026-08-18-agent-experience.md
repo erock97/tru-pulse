@@ -386,7 +386,7 @@ Turn the single-screen agent app into three tabs. This task only moves furniture
   - `agentHome(): Promise<AgentHome>` and `setCommitmentDone(id: string, done: boolean): Promise<void>` in `web/src/lib/api.ts`
   - `<AgentShell agent={agent} />`, the only thing `App.tsx` renders for an agent.
 
-- [ ] **Step 1: Add the client calls**
+- [x] **Step 1: Add the client calls** — plus `markWelcomeSeen` and `submitMyAssessment`, since their routes already exist.
 
 In `web/src/lib/api.ts`, mirroring the existing `workerFetch` helpers and re-exporting the `AgentHome` / `AgentCommitment` types so pages import them from one place:
 
@@ -405,7 +405,7 @@ export async function setCommitmentDone(id: string, done: boolean): Promise<void
 }
 ```
 
-- [ ] **Step 2: Build the shell**
+- [x] **Step 2: Build the shell** — added an `onImmersive` callback: a lesson/quiz/sim takes the whole screen (that is how the course was built), so the shell hides its chrome while one is open rather than framing it.
 
 Create `web/src/pages/AgentShell.tsx`. One header (TruLogo + sign out, lifted verbatim from `AgentCourse.tsx`'s `ac-top`), a three-tab nav, and the tab body. Tab state is local `useState`, not a hash route — an agent has one job at a time and deep links into their own tabs buy nothing.
 
@@ -443,19 +443,19 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
 
 For this task, `AgentHomeView` and `AgentCoach` may be one-line placeholders in their own files.
 
-- [ ] **Step 3: Point App.tsx at it**
+- [x] **Step 3: Point App.tsx at it**
 
 In `web/src/App.tsx`, replace `if (agent) return <AgentCourse agent={agent} />;` with `if (agent) return <AgentShell agent={agent} />;`. Leave the demo route at `App.tsx:136` on `AgentCourse` so the demo keeps working unchanged.
 
-- [ ] **Step 4: Style the tabs**
+- [x] **Step 4: Style the tabs** — `.ag-tabs` / `.ag-tab` in styles.css, gold on the active tab, existing tokens only.
 
 Add `.ag-tabs` / `.ag-tab` to the stylesheet `AgentCourse` already uses, matching the warm-gold-on-near-black treatment used elsewhere. Follow the existing token names rather than inventing colors.
 
-- [ ] **Step 5: Verify by hand**
+- [ ] **Step 5: Verify by hand — NEEDS ERIC, after deploy**
 
 `cd web && npm run dev`, sign in as an agent (or use View as agent from Task 1). All three tabs render, Training still works end to end — shelf, lesson, quiz, result.
 
-- [ ] **Step 6: Typecheck and commit**
+- [x] **Step 6: Typecheck and commit** — typecheck clean, 113 web tests pass, production build succeeds.
 
 ```bash
 cd web && npm run typecheck && npm test
@@ -592,7 +592,7 @@ In `AgentCoach.tsx`, when `home.assessment` exists, render:
 
 When `home.assessment` is null (only possible for a pre-existing agent, since Task 6 gates new ones), show a short prompt to take it with a button into the assessment.
 
-- [ ] **Step 3: Move the 1:1 recap in**
+- [x] **Step 3: Move the 1:1 recap in** — done early in Task 3: leaving the loader behind in AgentCourse would have been dead state, which the typecheck refuses.
 
 Export `MyOneOnOnes` from `AgentCourse.tsx`, render it under the result in `AgentCoach.tsx`, and delete its render from `AgentCourse`. Keep `loadMyOneOnOnes`'s existing failure behaviour — a failure there must never blank the tab.
 

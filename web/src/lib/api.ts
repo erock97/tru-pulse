@@ -1229,3 +1229,54 @@ export async function adminResendInvite(o: {
   if (!res.ok) throw new Error(body.error ?? 'Could not resend the invite.');
   return body as { sent: boolean; link?: string };
 }
+
+// ── The agent's own surface ──────────────────────────────────────────────────
+// Everything here is keyed on the signed-in session — no token in a URL, no way
+// in but an invite. Shapes mirror worker/src/agentHome.ts exactly.
+
+export interface AgentCommitment {
+  id: string;
+  body: string;
+  /** The agent's own "I did this" — NOT their leader's verdict, which is `status`. */
+  agent_done: boolean;
+  status: 'done' | 'partial' | 'missed' | null;
+  created_at: string;
+}
+export interface AgentHome {
+  agent: { id: string; name: string } | null;
+  assessment: { code: string; personal_code: string | null; taken_at: string } | null;
+  welcome_seen_at: string | null;
+  gated: boolean;
+  commitments: AgentCommitment[];
+  latest_checkin: string | null;
+  hasEverMet: boolean;
+}
+
+export async function agentHome(): Promise<AgentHome> {
+  const res = await workerFetch('/agent/home');
+  if (!res.ok) throw new Error('Could not load your home.');
+  return (await res.json()) as AgentHome;
+}
+
+export async function setCommitmentDone(id: string, done: boolean): Promise<void> {
+  const res = await workerFetch('/agent/commitment', {
+    method: 'POST', body: JSON.stringify({ id, done }),
+  });
+  if (!res.ok) throw new Error('That didn’t save — try again.');
+}
+
+export async function markWelcomeSeen(): Promise<void> {
+  await workerFetch('/agent/welcome-seen', { method: 'POST', body: '{}' });
+}
+
+/** The in-account assessment submit. The public link's twin lives in
+ *  submitCohortAssessment above; this one needs no join token. */
+export async function submitMyAssessment(input: {
+  personalCode: string; personalAxes: unknown;
+  businessCode: string; tallies: unknown; answers: unknown;
+}): Promise<void> {
+  const res = await workerFetch('/agent/assessment', {
+    method: 'POST', body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error('Your result didn’t save — try again.');
+}

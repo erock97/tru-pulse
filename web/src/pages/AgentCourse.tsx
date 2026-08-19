@@ -11,7 +11,7 @@ import { SlideView } from './SlideDeck';
 import { DealSlide } from './DealSlide';
 import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import { isCoreModule } from '../lib/repCore';
-import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
+import { MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { LabExercise } from './RepLab';
 import '../truHqDark.css';
@@ -57,7 +57,12 @@ const emptyLibrary: LibraryData = {
   tracks: [], modules: [], trackModules: [], progress: [], certificates: [],
 };
 
-export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
+export default function AgentCourse({ agent, onImmersive }: {
+  agent: AgentIdentity;
+  /** A lesson / quiz / sim takes the whole screen. Tell the shell to step out of
+   *  the way while one is open, and to come back when we return to the shelf. */
+  onImmersive?: (immersive: boolean) => void;
+}) {
   const [mods, setMods] = useState<CourseModule[] | null>(null);
   const [lib, setLib] = useState<LibraryData | null>(null);
   const [view, setView] = useState<View>('home');
@@ -67,7 +72,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const [simConfigured, setSimConfigured] = useState(false);
   const [attempts, setAttempts] = useState<SimAttempt[]>([]);
   const [sessionSimPass, setSessionSimPass] = useState(false);
-  const [oneOnOnes, setOneOnOnes] = useState<MyOneOnOne[] | null>(null);
   const [canSkip, setCanSkip] = useState(false);
   const [ackErr, setAckErr] = useState('');
 
@@ -81,12 +85,11 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
     void refresh();
     void simScenarios().then((s) => { setScenarios(s.scenarios); setSimConfigured(s.configured); });
     void mySimAttempts(agent.id).then(setAttempts);
-    // Agent-side 1:1 recap (Block 4c). Agent-safe by construction (checkin_items
-    // only, never checkin_leader). A failure here must never blank the course.
-    void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
     void canSkipGates().then(setCanSkip).catch(() => setCanSkip(false));
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
+
+  useEffect(() => { onImmersive?.(view !== 'home'); }, [view, onImmersive]);
 
   const active = useMemo(() => mods?.find((m) => m.id === activeId) ?? null, [mods, activeId]);
   const firstName = agent.name.split(' ')[0] || 'there';
@@ -113,11 +116,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
 
   if (view === 'home') {
     return (
-      <div className="ac">
-        <header className="ac-top">
-          <TruLogo size={26} wordSize={19} sub="Rep" />
-          <button className="link small" onClick={() => signOutClean()}>Sign out</button>
-        </header>
+      <div className="ac-shelf">
         <main className="ac-main">
           <div className="ac-hero2 fu">
             <div className="ac-hero2-txt">
@@ -171,7 +170,6 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
             </button>
             </div>}
           />
-          {oneOnOnes && <MyOneOnOnes list={oneOnOnes} />}
         </main>
       </div>
     );
@@ -233,7 +231,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
 // ── "Your 1:1s": the agent's read-back of the 1:1s their leader logged (Block 4c).
 // Renders ONLY agent-safe fields (date, met, wins, own commitments) — never the
 // leader checklist or private note, which this surface never even fetches.
-function MyOneOnOnes({ list }: { list: MyOneOnOne[] }) {
+export function MyOneOnOnes({ list }: { list: MyOneOnOne[] }) {
   return (
     <section className="ac-oo fu">
       <div className="ac-oo-head">

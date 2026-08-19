@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
 import AgentCourse from './pages/AgentCourse';
+import AgentShell from './pages/AgentShell';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
 
@@ -155,7 +156,7 @@ export default function App() {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
     if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
-    if (agent) return <AgentCourse agent={agent} />;
+    if (agent) return <AgentShell agent={agent} />;
     return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
   }
   // Impersonated session → the shell's sidebar carries the "Exit — switch teams"
