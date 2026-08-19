@@ -105,10 +105,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'When is Appointment set a legal stage?',
     choices: [
-      'The call went well',
-      'A date and time are on the calendar',
-      'A voicemail about a showing',
-      'They asked you to send times',
+      'When the call went well and they said they want to see homes',
+      'When a date and time are on the calendar',
+      'When you left a voicemail about a showing',
+      'When they asked you to send times',
     ],
     answer: 1,
     explain: 'Appointment set means it is booked. Wanting to see homes is still Spoke with customer.',
@@ -116,10 +116,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'What belongs in a note vs a task?',
     choices: [
-      'Note is the next step',
-      'Note is what happened. Task is next, with a date',
-      'Both are optional',
-      'The note can say follow up later',
+      'Note is the next step. Task is what already happened.',
+      'Note is what happened. Task is what is next, with a date.',
+      'Both are optional if the stage is right.',
+      'The note can say “follow up later” instead of a task.',
     ],
     answer: 1,
     explain: 'The note is the record of the conversation. The task is the promise. “Follow up later” is neither.',
@@ -138,10 +138,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'First attempt on a new paid lead is measured in what?',
     choices: [
-      'Hours — same day',
+      'Hours, as long as you log it the same day',
       'Minutes — on the record before you put the phone down',
-      'Next business morning',
-      'Batch at lunch',
+      'The next business morning',
+      'Whenever you batch notes at lunch',
     ],
     answer: 1,
     explain: 'Paid leads go cold in minutes. The file has to show the attempt immediately, even if they did not pick up.',
@@ -149,10 +149,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'You called, no answer, left a voicemail. What is on the record before you touch the next lead?',
     choices: [
-      'Spoke with customer, no task',
-      'Nothing — catch up in the afternoon',
-      'Attempted contact, a note that you left a VM, and a dated retry',
-      'An appointment for a callback',
+      'Stage Spoke with customer and no task',
+      'Nothing — you will catch up the file this afternoon',
+      'Stage Attempted contact, a note that you called and left a VM, and a dated retry',
+      'An appointment for callback',
     ],
     answer: 2,
     explain: 'A voicemail is an attempt. The note and the dated retry are the proof. Batching it later is how the clock is faked.',
@@ -160,9 +160,9 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'What does a leader look at first when they open your file?',
     choices: [
-      'Call count',
+      'Your call count for the week',
       'Stage, last note, and the next task',
-      'The source field',
+      'Whether you filled out the source field',
       'The Zillow email',
     ],
     answer: 1,
@@ -171,10 +171,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'What gets an agent paused?',
     choices: [
-      'Lunch',
+      'Taking a lunch',
       'Records that do not match reality — empty notes, no next task, stages that lie',
-      'Asking for help',
-      'A lead not converted',
+      'Asking for help on a 1:1',
+      'A lead that has not converted yet',
     ],
     answer: 1,
     explain: 'Pause is not punishment for a slow week. It is what happens when the file cannot be trusted.',
@@ -182,10 +182,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'There is an appointment on the calendar. The stage still says Lead. What is wrong?',
     choices: [
-      'Nothing — the calendar is the truth',
+      'Nothing — the calendar is the source of truth',
       'The stage lags the truth',
-      'Delete the appointment',
-      'Move to Nurture',
+      'You should delete the appointment until the stage catches up',
+      'Move it to Nurture',
     ],
     answer: 1,
     explain: 'The stage has to match the last real outcome. A booked appointment and a Lead stage is two different stories.',
@@ -204,10 +204,10 @@ const QUIZ: Array<{ prompt: string; choices: string[]; answer: number; explain: 
   {
     prompt: 'End of day. Every lead you touched must have which three things?',
     choices: [
-      'A logged call, a smile, and an email',
+      'A logged call, a smile, and a follow-up email',
       'An honest stage, a note from today, and one dated next task',
-      'Appointment set, a long note, no task',
-      'Lead, no note, a task for sometime',
+      'Appointment set, a long note, and no task',
+      'Lead stage, no note, a task for “sometime”',
     ],
     answer: 1,
     explain: 'That is a clean day. A teammate could take any one of those files at 5:00 and not get blindsided.',

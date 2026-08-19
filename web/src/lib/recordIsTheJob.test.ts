@@ -168,4 +168,29 @@ describe('The Record Is the Job', () => {
     expect(seed.QUESTIONS.map((q) => q.answer)).toEqual(RECORD_IS_THE_JOB_ANSWERS);
     expect(seed.QUESTIONS.map((q) => q.choices)).toEqual(RECORD_IS_THE_JOB_QS.map((q) => q.choices));
   });
+
+  it('locks Kayla quiz choices verbatim — do not shorten', () => {
+    expect(RECORD_IS_THE_JOB_ANSWERS).toEqual([1, 1, 2, 1, 2, 1, 1, 1, 2, 1]);
+    expect(RECORD_IS_THE_JOB_QS[0].choices).toEqual([
+      'When the call went well and they said they want to see homes',
+      'When a date and time are on the calendar',
+      'When you left a voicemail about a showing',
+      'When they asked you to send times',
+    ]);
+    expect(RECORD_IS_THE_JOB_QS[1].choices).toEqual([
+      'Note is the next step. Task is what already happened.',
+      'Note is what happened. Task is what is next, with a date.',
+      'Both are optional if the stage is right.',
+      'The note can say “follow up later” instead of a task.',
+    ]);
+    expect(RECORD_IS_THE_JOB_QS[4].choices[2]).toBe(
+      'Stage Attempted contact, a note that you called and left a VM, and a dated retry',
+    );
+    expect(RECORD_IS_THE_JOB_QS[6].choices[1]).toBe(
+      'Records that do not match reality — empty notes, no next task, stages that lie',
+    );
+    expect(RECORD_IS_THE_JOB_QS[9].choices[1]).toBe(
+      'An honest stage, a note from today, and one dated next task',
+    );
+  });
 });
