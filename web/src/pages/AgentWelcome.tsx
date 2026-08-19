@@ -28,7 +28,11 @@ const SCREENS: { title: string; body: string }[] = [
   },
 ];
 
-export default function AgentWelcome({ onDone }: { onDone: () => void }) {
+export default function AgentWelcome({ onDone, preview = false }: {
+  onDone: () => void;
+  /** Design walk-through: never stamps welcome_seen_at, so it can be replayed. */
+  preview?: boolean;
+}) {
   const [i, setI] = useState(0);
   const [busy, setBusy] = useState(false);
   const last = i === SCREENS.length - 1;
@@ -38,7 +42,9 @@ export default function AgentWelcome({ onDone }: { onDone: () => void }) {
     setBusy(true);
     // A failed stamp must not trap them on the welcome. Worst case they see it
     // once more; being stuck behind it would be far worse.
-    await markWelcomeSeen().catch(() => undefined);
+    if (!preview) await markWelcomeSeen().catch(() => undefined);
+    setBusy(false);
+    if (preview) { setI(0); return; }   // replayable in the walk-through
     onDone();
   }
 
@@ -56,7 +62,7 @@ export default function AgentWelcome({ onDone }: { onDone: () => void }) {
           disabled={busy}
           onClick={() => (last ? void finish() : setI(i + 1))}
         >
-          {last ? (busy ? '…' : 'Start the assessment →') : 'Next →'}
+          {last ? (busy ? '…' : preview ? 'Start again ↺' : 'Start the assessment →') : 'Next →'}
         </button>
         {i > 0 && (
           <button className="link small" onClick={() => setI(i - 1)}>Back</button>

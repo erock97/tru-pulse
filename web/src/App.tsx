@@ -14,6 +14,7 @@ import AgentHq from './pages/AgentHq';
 import DeckPreview from './pages/DeckPreview';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
+import AgentWelcome from './pages/AgentWelcome';
 import { parseDeckRoute } from './lib/deckRoute';
 
 type Org = { id: string; name: string; plan?: string };
@@ -125,6 +126,14 @@ export default function App() {
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
         : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />;
+
+  // Design walk-through of the one-time agent welcome (#/welcome-preview). No auth
+  // and no writes — it exists so the screens can be reviewed on a preview deploy,
+  // where a session cookie cannot follow (SameSite=Lax, and a pages.dev host is a
+  // different SITE from truhq.co). Same idiom as Assess's ?preview=1.
+  if (route.startsWith('/welcome-preview')) {
+    return <AgentWelcome preview onDone={() => { window.location.hash = '/welcome-preview'; }} />;
+  }
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
   const assessToken = (() => {
