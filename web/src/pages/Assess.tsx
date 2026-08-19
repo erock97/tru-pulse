@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { resolveCohortRoster, submitCohortAssessment, submitOwnAssessment, myAgent } from '../lib/api';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
@@ -7,6 +7,9 @@ import {
 } from '../lib/assessmentData';
 import '../truHqDark.css';
 import './assess.css';
+import { TruLogo } from '../components/TruLogo';
+import { Icon } from '../components/hqUi';
+import { useForceHqDark } from '../hqHooks';
 
 type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done'|'save';
 
@@ -30,6 +33,58 @@ function isPreviewHash(): boolean {
   if (typeof window === 'undefined') return false;
   const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
   return q.get('preview') === '1';
+}
+
+
+/* The internal-page frame — the same .tru-shell / sidebar / topbar Home, Coach
+   and Rep use, so the assessment sits inside the product rather than beside it.
+   The sidebar carries the two parts and the result instead of the app's tabs:
+   an agent is mid-task here and those tabs are gated until they finish. */
+const ASSESS_STEPS = ['Part 1 · You', 'Part 2 · Work', 'Your result'];
+
+function AssessShell({ active, eyebrow, title, children }: {
+  active: number;
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+}) {
+  useForceHqDark();
+  return (
+    <div className="tru-dark">
+      <div className="tru-shell">
+        <aside className="side">
+          <div className="side-logo"><TruLogo size={28} wordSize={20} sub="HQ" /></div>
+          <nav className="side-nav" aria-label="Assessment">
+            {ASSESS_STEPS.map((label, n) => (
+              <div
+                key={label}
+                className={`side-link aw-side-step${n === active ? ' active' : ''}${n < active ? ' is-done' : ''}`}
+                aria-current={n === active ? 'step' : undefined}
+              >
+                <Icon name={n < active ? 'shield' : n === active ? 'target' : 'clock'} size={20} />
+                <span>{label}</span>
+              </div>
+            ))}
+          </nav>
+          <div className="side-foot">
+            <div className="aw-side-note">No score, no wrong answers.</div>
+          </div>
+        </aside>
+        <main className="main">
+          <header className="topbar">
+            <div>
+              <div className="main-eyebrow">{eyebrow}</div>
+              <h1>{title}</h1>
+            </div>
+          </header>
+          <div className="hh-canvas">
+            <div className="hh-ambient" aria-hidden />
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }
 
 export default function Assess({ token }: { token: string }) {
@@ -74,10 +129,10 @@ export default function Assess({ token }: { token: string }) {
 
   if (stage === 'pick') {
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={0} eyebrow="Behavioral assessment" title="Which one is you?">
         <div className="asx-card">
           <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
-          <h1 className="asx-h1">Which one is you?</h1>
+          <h1 className="asx-h1">Pick your name to begin.</h1>
           <p className="asx-sub">Pick your name to begin. Two quick parts — who you are, then how you work.</p>
           <div className="asx-picklist">
             {(roster ?? []).map((r) => (
@@ -86,7 +141,7 @@ export default function Assess({ token }: { token: string }) {
             {roster && roster.length === 0 && <div className="asx-msg">No one’s been added to coaching for this team yet. Check with your team lead.</div>}
           </div>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
@@ -164,14 +219,14 @@ function AssessFlow({
 
   if (stage === 'intro') {
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={0} eyebrow="Behavioral assessment" title={`Hey ${agent.name.split(' ')[0]}.`}>
         <div className="asx-card">
           <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
-          <h1 className="asx-h1">Hey {agent.name} — let’s find out how you’re wired.</h1>
+          <h1 className="asx-h1">Let’s find out how you’re wired.</h1>
           <p className="asx-sub">Two short parts. Part 1 is 20 quick statements about you as a person. Part 2 is 32 work scenarios — how you actually show up on the job. Takes about five minutes total, and there are no wrong answers.</p>
           <button className="asx-cta" onClick={() => setStage('personal')}>Start Part 1 →</button>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
@@ -179,7 +234,7 @@ function AssessFlow({
     const q = PERSONAL_QUESTIONS[pIdx];
     const pct = Math.round(((pIdx) / PERSONAL_QUESTIONS.length) * 100);
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={0} eyebrow="Part 1 of 2 · You as a person" title="Which sounds like you?">
         <div className="asx-card asx-quiz">
           <div className="asx-quiz-top">
             <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
@@ -203,14 +258,14 @@ function AssessFlow({
             </div>
           </div>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
   if (stage === 'personalResult' && personalResult) {
     const type = PERSONAL_TYPES[personalResult.code];
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={0} eyebrow="Act one · who you are" title={type.name}>
         <div className="asx-card asx-reveal-card asx-act1" key="act1">
           <div className="asx-act-marker">Act One · Who You Are</div>
           <h1 className="asx-h1">{type.name}</h1>
@@ -235,7 +290,7 @@ function AssessFlow({
           <p className="asx-watch"><strong>Watch for:</strong> {type.watch}</p>
           <button className="asx-cta asx-cta-curtain" onClick={() => setStage('pro')}>Now, how you work →</button>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
@@ -243,7 +298,7 @@ function AssessFlow({
     const q = PRO_QUESTIONS[bIdx];
     const pct = Math.round(((bIdx) / PRO_QUESTIONS.length) * 100);
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={1} eyebrow="Part 2 of 2 · How you work" title="Which sounds more like you?">
         <div className="asx-card asx-quiz">
           <div className="asx-quiz-top">
             <div className="asx-progress"><span style={{ width: `${pct}%` }} /></div>
@@ -268,7 +323,7 @@ function AssessFlow({
             </div>
           </div>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
@@ -276,7 +331,7 @@ function AssessFlow({
     const arch = ARCH[proResult.code];
     const divergentAxes = divergence(personalResult, proResult);
     return (
-      <div className="asx-shell tru-dark">
+      <AssessShell active={2} eyebrow="Act two · how you work" title={arch.name}>
         <div className="asx-card asx-reveal-card asx-act2" key="act2" style={{ ['--arch' as string]: arch.color }}>
           <div className="asx-act-marker">Act Two · How You Work</div>
           <div className="asx-medallion"><span>{arch.emoji}</span></div>
@@ -308,7 +363,7 @@ function AssessFlow({
           )}
           <button className="asx-cta" onClick={() => setStage(afterPro)}>See your full result →</button>
         </div>
-      </div>
+      </AssessShell>
     );
   }
 
