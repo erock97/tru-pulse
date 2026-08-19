@@ -52,6 +52,8 @@ type Scenario = {
   requireNote: boolean;
   requireTask: boolean;
   requireDeal: boolean;
+  /** Default true. Day-close leaves the stage alone — saving it is not a step. */
+  requireStageSave?: boolean;
 };
 
 // One new skill at a time, matching the order the slides teach them. Asking for a
@@ -110,6 +112,23 @@ export const SCENARIOS: Record<string, Scenario> = {
     stage: ['under contract'],
     stageMiss: 'A signed contract outranks anything scheduled around it. The stage should say where the deal is, not what is on the calendar.',
     requireNote: true, requireTask: true, requireDeal: true,
+  },
+
+  // The Record Is the Job. Inherited file already claims a booking it never earned.
+  'honest-stage': {
+    id: 'honest-stage',
+    stage: ['spoke with customer', 'spoke with'],
+    stageMiss: 'Read what this file actually earned. A conversation is not a booking, and this record is currently claiming more than the last note supports.',
+    requireNote: true, requireTask: true, requireDeal: false,
+  },
+
+  // The Record Is the Job. Stage is already honest — Appointment set fails.
+  'day-close': {
+    id: 'day-close',
+    stage: ['spoke with customer', 'spoke with'],
+    stageMiss: 'The stage was already honest. Do not claim more than this call earned.',
+    requireNote: true, requireTask: true, requireDeal: false,
+    requireStageSave: false,
   },
 };
 
@@ -172,10 +191,12 @@ export function gradeRecord(scenarioId: string, sub: RecordSubmission): RecordGr
     id: 'stage', label: 'The stage matches what happened', pass: stageOk,
     message: stageOk ? 'Right.' : sc.stageMiss,
   });
-  checks.push({
-    id: 'stage_saved', label: 'The stage was saved', pass: !!sub.stageSaved,
-    message: sub.stageSaved ? 'Saved, and it stuck.' : 'Choosing a stage is not saving it — use the green check.',
-  });
+  if (sc.requireStageSave !== false) {
+    checks.push({
+      id: 'stage_saved', label: 'The stage was saved', pass: !!sub.stageSaved,
+      message: sub.stageSaved ? 'Saved, and it stuck.' : 'Choosing a stage is not saving it — use the green check.',
+    });
+  }
 
   // ── a note exists. Its contents are not ours to mark. ──
   if (sc.requireNote) {

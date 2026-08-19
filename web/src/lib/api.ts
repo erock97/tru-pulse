@@ -1,6 +1,6 @@
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
-import { isOfficialTraining, withOpenableOfficialTraining } from './agentHq';
+import { isOfficialTraining, isRecordIsTheJob, withOpenableOfficialTraining } from './agentHq';
 import {
   OFFICIAL_TRAINING_ANSWERS,
   OFFICIAL_TRAINING_CARDS,
@@ -15,6 +15,14 @@ import {
   SHOW_LIKE_A_PRO_QS,
   SHOW_LIKE_A_PRO_TITLE,
 } from './showLikeAPro';
+import {
+  RECORD_IS_THE_JOB_ANSWERS,
+  RECORD_IS_THE_JOB_CARDS,
+  RECORD_IS_THE_JOB_ID,
+  RECORD_IS_THE_JOB_PASS_PCT,
+  RECORD_IS_THE_JOB_QS,
+  RECORD_IS_THE_JOB_TITLE,
+} from './recordIsTheJob';
 import {
   WINNING_FIRST_CONVERSATION_ANSWERS,
   WINNING_FIRST_CONVERSATION_CARDS,
@@ -142,7 +150,9 @@ export async function loadRep(): Promise<RepData> {
       const n = qcount.get(m.id) ?? 0;
       return {
         ...m,
-        questions: n || (isOfficialTraining(m) ? OFFICIAL_TRAINING_QS.length : 0),
+        questions: n || (isOfficialTraining(m)
+          ? OFFICIAL_TRAINING_QS.length
+          : isRecordIsTheJob(m) ? RECORD_IS_THE_JOB_QS.length : 0),
       };
     }),
     progress: prog,
@@ -401,7 +411,8 @@ export async function uploadRepMedia(file: File, orgId: string): Promise<string>
 // Self-contained course for ?demo=1 (previews + sales demos).
 // July modules are hidden. Catalog is Official Training (Day 1, with
 // practice + dealslide cards), Winning the First Conversation (Day 2),
-// and Show Like a Pro (Day 3).
+// Show Like a Pro (Day 3), and The Record Is the Job (FUB, not on the
+// Zillow track — New agents + Additional).
 const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
   {
     id: OFFICIAL_TRAINING_ID,
@@ -450,6 +461,22 @@ const DEMO_COURSE: Array<CourseModule & { answers: number[] }> = [
     answers: SHOW_LIKE_A_PRO_ANSWERS,
     cards: SHOW_LIKE_A_PRO_CARDS,
     qs: SHOW_LIKE_A_PRO_QS,
+  },
+  {
+    id: RECORD_IS_THE_JOB_ID,
+    idx: 9,
+    title: RECORD_IS_THE_JOB_TITLE,
+    summary: 'Follow Up Boss is how this team runs. Honest stages, a note from today, one dated next task.',
+    body: 'Day 1 taught you how to work one record. This is the operating system: what a stage is allowed to mean, what belongs in a note vs a task, and what gets you paused.',
+    pass_pct: RECORD_IS_THE_JOB_PASS_PCT,
+    questions: RECORD_IS_THE_JOB_QS.length,
+    status: 'not_started',
+    score: null,
+    passed_at: null,
+    signed: false,
+    answers: RECORD_IS_THE_JOB_ANSWERS,
+    cards: RECORD_IS_THE_JOB_CARDS,
+    qs: RECORD_IS_THE_JOB_QS,
   },
 ];
 
@@ -625,6 +652,16 @@ function demoRep(): RepData {
       pass_pct: 80,
       questions: SHOW_LIKE_A_PRO_QS.length,
       cards: SHOW_LIKE_A_PRO_CARDS,
+    },
+    {
+      id: RECORD_IS_THE_JOB_ID,
+      idx: 9,
+      title: RECORD_IS_THE_JOB_TITLE,
+      summary: 'Follow Up Boss is how this team runs. Honest stages, a note from today, one dated next task.',
+      body: 'Day 1 taught you how to work one record. This is the operating system: what a stage is allowed to mean, what belongs in a note vs a task, and what gets you paused.',
+      pass_pct: RECORD_IS_THE_JOB_PASS_PCT,
+      questions: RECORD_IS_THE_JOB_QS.length,
+      cards: RECORD_IS_THE_JOB_CARDS,
     },
   ];
   const agents: RepAgent[] = [

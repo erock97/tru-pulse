@@ -14,6 +14,12 @@ import {
   SHOW_LIKE_A_PRO_TITLE,
 } from './showLikeAPro';
 import {
+  RECORD_IS_THE_JOB_CARDS,
+  RECORD_IS_THE_JOB_ID,
+  RECORD_IS_THE_JOB_QS,
+  RECORD_IS_THE_JOB_TITLE,
+} from './recordIsTheJob';
+import {
   WINNING_FIRST_CONVERSATION_ID,
   WINNING_FIRST_CONVERSATION_TITLE,
 } from './winningFirstConversation';
@@ -135,6 +141,10 @@ export function isShowLikeAPro(m: { id: string; title?: string | null }): boolea
   return m.id === SHOW_LIKE_A_PRO_ID || m.title === SHOW_LIKE_A_PRO_TITLE;
 }
 
+export function isRecordIsTheJob(m: { id: string; title?: string | null }): boolean {
+  return m.id === RECORD_IS_THE_JOB_ID || m.title === RECORD_IS_THE_JOB_TITLE;
+}
+
 export function isZillowOnboarding(m: { id: string; title?: string | null }): boolean {
   return isOfficialTraining(m) || isWinningFirstConversation(m) || isShowLikeAPro(m);
 }
@@ -148,6 +158,7 @@ export function canOpenModule(m: { id: string; title?: string | null; qs?: unkno
 export function courseCardsFor(m: { id: string; title?: string | null; cards?: LessonCard[] | null }): LessonCard[] {
   if (m.cards?.length) return m.cards;
   if (isOfficialTraining(m)) return OFFICIAL_TRAINING_CARDS;
+  if (isRecordIsTheJob(m)) return RECORD_IS_THE_JOB_CARDS;
   return m.cards ?? [];
 }
 
@@ -155,6 +166,7 @@ export function courseCardsFor(m: { id: string; title?: string | null; cards?: L
 export function courseQuestionsFor(m: { id: string; title?: string | null; qs?: CourseQuestion[] | null }): CourseQuestion[] {
   if (m.qs?.length) return m.qs;
   if (isOfficialTraining(m)) return OFFICIAL_TRAINING_QS;
+  if (isRecordIsTheJob(m)) return RECORD_IS_THE_JOB_QS;
   return m.qs ?? [];
 }
 
@@ -165,11 +177,11 @@ export interface TrainingSection<T> {
 
 /** Three labeled bays. Official Training is the start-here module and also Day 1. */
 export function trainingBay<T extends { id: string; title?: string | null }>(mods: T[]): TrainingSection<T>[] {
-  const official = mods.filter(isOfficialTraining);
+  const newAgents = mods.filter((m) => isOfficialTraining(m) || isRecordIsTheJob(m));
   const zillow = mods.filter(isZillowOnboarding);
   const additional = mods.filter((m) => !isZillowOnboarding(m));
   return [
-    { label: TRAINING_SECTION_LABELS.newAgents, modules: official },
+    { label: TRAINING_SECTION_LABELS.newAgents, modules: newAgents },
     { label: TRAINING_SECTION_LABELS.zillow, modules: zillow },
     { label: TRAINING_SECTION_LABELS.additional, modules: additional },
   ];
@@ -220,7 +232,7 @@ export const AGENT_HQ_EMPTY =
 
 export function withOpenableOfficialTraining(mods: CourseModule[]): CourseModule[] {
   return mods.map((m) => {
-    if (!isOfficialTraining(m)) return m;
+    if (!isOfficialTraining(m) && !isRecordIsTheJob(m)) return m;
     const qs = courseQuestionsFor(m);
     return { ...m, cards: courseCardsFor(m), qs, questions: qs.length };
   });

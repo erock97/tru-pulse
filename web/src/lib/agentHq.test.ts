@@ -3,6 +3,7 @@ import agentHqPage from '../pages/AgentHq.tsx?raw';
 import agentHqShell from '../components/agentHqShell.tsx?raw';
 import { OFFICIAL_TRAINING_CARDS, OFFICIAL_TRAINING_ID, OFFICIAL_TRAINING_TITLE } from './officialTraining';
 import { SHOW_LIKE_A_PRO_ID, SHOW_LIKE_A_PRO_TITLE } from './showLikeAPro';
+import { RECORD_IS_THE_JOB_ID, RECORD_IS_THE_JOB_TITLE } from './recordIsTheJob';
 import {
   WINNING_FIRST_CONVERSATION_ID,
   WINNING_FIRST_CONVERSATION_TITLE,
@@ -118,11 +119,13 @@ describe('Official Training is openable without a quiz', () => {
 describe('Training bay sections', () => {
   it('labels the three sections exactly and places Official Training as start-here', () => {
     const extra = { id: 'custom-1', title: 'Sphere scripts' };
+    const record = { id: RECORD_IS_THE_JOB_ID, title: RECORD_IS_THE_JOB_TITLE };
     const bay = trainingBay([
       { id: SHOW_LIKE_A_PRO_ID, title: SHOW_LIKE_A_PRO_TITLE },
       extra,
       { id: OFFICIAL_TRAINING_ID, title: OFFICIAL_TRAINING_TITLE },
       { id: WINNING_FIRST_CONVERSATION_ID, title: WINNING_FIRST_CONVERSATION_TITLE },
+      record,
     ]);
     expect(bay.map((s) => s.label)).toEqual([
       TRAINING_SECTION_LABELS.newAgents,
@@ -134,13 +137,16 @@ describe('Training bay sections', () => {
       zillow: 'Zillow onboarding',
       additional: 'Additional training',
     });
-    expect(bay[0].modules.map((m) => m.title)).toEqual([OFFICIAL_TRAINING_TITLE]);
+    expect(bay[0].modules.map((m) => m.title)).toEqual([
+      OFFICIAL_TRAINING_TITLE,
+      RECORD_IS_THE_JOB_TITLE,
+    ]);
     expect(bay[1].modules.map((m) => m.title)).toEqual([
       SHOW_LIKE_A_PRO_TITLE,
       OFFICIAL_TRAINING_TITLE,
       WINNING_FIRST_CONVERSATION_TITLE,
     ]);
-    expect(bay[2].modules).toEqual([extra]);
+    expect(bay[2].modules).toEqual([extra, record]);
   });
 });
 

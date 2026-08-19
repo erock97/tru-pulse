@@ -162,6 +162,35 @@ export const PACKS: Record<string, Pack> = {
       email: 'elena.brooks@example.test',
     },
   },
+
+  // The Record Is the Job — inherited file that already claims a booking.
+  // No audit gate. Appointment set fails; Spoke with customer + note + dated task.
+  'honest-stage': {
+    subline: 'Last Communication yesterday',
+    title: 'The stage is a lie',
+    situation: 'You inherited this record. The stage says Appointment set. The last note is “Talked. Interested. Follow up later.” Nothing is on the calendar.',
+    steps: [
+      { id: 'stage', text: 'Set the stage to what this file actually earned — a conversation, not a booking — and save it with the green check.' },
+      { id: 'note', text: 'Write a note a teammate could pick up cold, then click Create Note.' },
+      { id: 'task', text: 'Add the next action, with a date on it.' },
+    ],
+    startStage: 'Appointment set',
+    seedLog: [
+      { when: 'yesterday', who: 'Alex Rivera', text: 'Talked. Interested. Follow up later.' },
+    ],
+  },
+
+  // The Record Is the Job — close the day. Stage is already honest; do not upgrade it.
+  'day-close': {
+    subline: 'Last Communication 4 minutes ago',
+    title: 'Close the day on this file',
+    situation: 'You just hung up with Avery. Buying with their sister, Olympia or Lacey, 3+ bedrooms, before November. They want options this weekend. No time was picked. The stage is already honest — do not “upgrade” it.',
+    steps: [
+      { id: 'note', text: 'Write the note from this call (facts, not “talked, interested”), then click Create Note.' },
+      { id: 'task', text: 'Add the next action, with a date on it.' },
+    ],
+    startStage: 'Spoke with customer',
+  },
 };
 
 export type PracticeScenario = keyof typeof PACKS;
