@@ -619,7 +619,7 @@ git commit -m "feat(agent): coach tab — assessment result and 1:1 recap"
 - Consumes: `AgentHome` (Task 2); `AssessFlow` and the scoring in `web/src/lib/assessmentData.ts` (existing).
 - Produces: `agentStage(input: { hasAssessment: boolean; welcomeSeen: boolean; isNewAccount: boolean }): 'welcome' | 'assessment' | 'app'`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `web/src/lib/agentStage.test.ts`:
 
@@ -652,12 +652,12 @@ describe('agentStage', () => {
 
 The last two are the spec's promises in §3.4 — existing agents are untouched, and an old public-link result satisfies the gate.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `cd web && npx vitest run src/lib/agentStage.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `web/src/lib/agentStage.ts`:
 
@@ -675,12 +675,12 @@ export function agentStage(i: {
 }
 ```
 
-- [ ] **Step 4: Run the test**
+- [x] **Step 4: Run the test**
 
 Run: `cd web && npx vitest run src/lib/agentStage.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Add the welcome stamp**
+- [x] **Step 5: Add the welcome stamp**
 
 The `welcome_seen_at` and `gated` columns already landed in Task 2's migration, and `agent_home()` already returns both. This step only adds the write. Append to `db/hq_agent_experience.sql` and re-apply:
 
@@ -694,7 +694,7 @@ end $$;
 grant execute on function agent_mark_welcome_seen() to authenticated;
 ```
 
-- [ ] **Step 6: In-account assessment submit**
+- [x] **Step 6: In-account assessment submit**
 
 Add to the same migration:
 
@@ -733,19 +733,19 @@ grant execute on function submit_my_assessment(text, jsonb, text, jsonb, jsonb) 
 
 Expose it as `POST /agent/assessment` in `worker/src/agentRoutes.ts`, following the `/agent/commitment` shape.
 
-- [ ] **Step 7: In-account mode for Assess.tsx**
+- [x] **Step 7: In-account mode for Assess.tsx** — one `me` prop skips the roster and the name-pick; `InAccountFinish` submits and hands them back. The tallies maths that was inlined in `RegisterFlow` is now `talliesOf()`, shared — two submit paths, one sum.
 
 `AssessFlow` already runs the questions and scoring independent of the token; only the roster resolution and the submit are token-bound. Give `Assess` an in-account mode that skips `resolveCohortRoster` (the agent is known), runs the same `AssessFlow`, and submits through `POST /agent/assessment` instead of `/public/submit-assessment`. Do not fork the question or scoring code — one copy, two submit paths.
 
-- [ ] **Step 8: Wire the gate**
+- [x] **Step 8: Wire the gate** — also built the welcome (Task 7) here, since the gate's `welcome` stage has nowhere to go without it.
 
 In `AgentShell`, compute `agentStage({ hasAssessment: !!home.assessment, welcomeSeen: !!home.welcome_seen_at, isNewAccount: home.gated })`. On `'assessment'`, render the in-account assessment full-bleed with no tabs and no escape — no skip, no dismiss, per spec §3.4. On `'app'`, render the tabs as built.
 
-- [ ] **Step 9: Verify by hand**
+- [ ] **Step 9: Verify by hand — NEEDS ERIC, after deploy**
 
 Create a test agent, invite them, accept, and confirm you cannot reach Home, Coach or Training until the assessment is finished — including by editing the URL. Then confirm an existing agent signs in and sees no gate at all.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add db/hq_agent_experience.sql worker/src/agentRoutes.ts web/src/pages/Assess.tsx web/src/lib/agentStage.ts web/src/lib/agentStage.test.ts web/src/pages/AgentShell.tsx
@@ -764,11 +764,11 @@ git commit -m "feat(agent): the assessment gate, taken inside the account"
 - Consumes: `agentStage` (Task 6), `agent_mark_welcome_seen` (Task 6).
 - Produces: `<AgentWelcome onDone={() => void} />`
 
-- [ ] **Step 1: Build the shell of it**
+- [x] **Step 1: Build the shell of it** — built in Task 6.
 
 Three screens, next/back, a finish button on the last. On finish, call `markWelcomeSeen()` (a new `POST /agent/welcome-seen` wrapper in `api.ts` over the RPC from Task 6) and hand control back. No skip control — spec §3.3 says it is dismissible only by finishing.
 
-- [ ] **Step 2: Put Eric's copy in**
+- [x] **Step 2: Put Eric's copy in** — approved copy is in `AgentWelcome.tsx` verbatim.
 
 Approved 2026-08-18. Use these three screens verbatim as a single named constant:
 
@@ -783,11 +783,11 @@ Approved 2026-08-18. Use these three screens verbatim as a single named constant
 
 Screen 3 is load-bearing: it is what keeps the mandatory assessment from reading as a hoop. Do not trim it.
 
-- [ ] **Step 3: Verify by hand**
+- [ ] **Step 3: Verify by hand — NEEDS ERIC, after deploy**
 
 New agent: welcome appears once, finishing lands on the assessment gate, and signing out and back in does not show it again.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/pages/AgentWelcome.tsx web/src/pages/AgentShell.tsx web/src/lib/api.ts

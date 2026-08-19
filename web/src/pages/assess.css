@@ -167,3 +167,9 @@
   .asx-cta, .asx-dot { transition: none !important; }
   .asx-cta:hover, .asx-dot:hover { transform: none !important; }
 }
+
+
+/* welcome walkthrough — progress dots */
+.ag-welcome-dots{ display:flex; gap:7px; justify-content:center; margin:18px 0 20px; }
+.ag-welcome-dots span{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.18); }
+.ag-welcome-dots span.is-on{ background:var(--gold-lt, #c99a3f); }

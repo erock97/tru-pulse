@@ -9,6 +9,9 @@ import {
   agentHome, signOutClean, type AgentHome, type AgentIdentity,
 } from '../lib/api';
 import { TruLogo } from '../components/TruLogo';
+import { agentStage } from '../lib/agentStage';
+import Assess from './Assess';
+import AgentWelcome from './AgentWelcome';
 import AgentCourse from './AgentCourse';
 import AgentHomeView from './AgentHome';
 import AgentCoach from './AgentCoach';
@@ -30,6 +33,35 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
   useEffect(() => {
     agentHome().then(setHome).catch(() => setErr('Could not load your home. Refresh to try again.'));
   }, []);
+
+  // The gate. A new agent sees the welcome, then the assessment, and cannot reach
+  // Home, Coach or Training until it is done — no skip, no dismiss. An agent who
+  // predates the cutover (`gated` false) never sees any of this.
+  const stage = home
+    ? agentStage({
+        hasAssessment: !!home.assessment,
+        welcomeSeen: !!home.welcome_seen_at,
+        isNewAccount: home.gated,
+      })
+    : null;
+
+  if (home && stage === 'welcome') {
+    return (
+      <AgentWelcome
+        onDone={() => setHome({ ...home, welcome_seen_at: new Date().toISOString() })}
+      />
+    );
+  }
+
+  if (home && stage === 'assessment') {
+    return (
+      <Assess
+        token=""
+        me={home.agent ?? { id: agent.id, name: agent.name }}
+        onDone={() => { void agentHome().then(setHome); }}
+      />
+    );
+  }
 
   const course = (
     <AgentCourse

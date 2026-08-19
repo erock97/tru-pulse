@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { resolveCohortRoster, submitCohortAssessment, claimAgent } from '../lib/api';
+import { resolveCohortRoster, submitCohortAssessment, claimAgent, submitMyAssessment } from '../lib/api';
 import { signUp } from '../lib/auth';
 import {
   PERSONAL_QUESTIONS, PRO_QUESTIONS, scorePersonal, scorePro, divergence,
@@ -27,14 +27,22 @@ function isPreviewHash(): boolean {
   return q.get('preview') === '1';
 }
 
-export default function Assess({ token }: { token: string }) {
+export default function Assess({ token, me, onDone }: {
+  token: string;
+  /** In-account mode: the signed-in agent taking it from inside their own app.
+   *  No join token, no roster, no name to pick — we already know who they are.
+   *  This is the only entrance for anyone invited from the cutover forward. */
+  me?: { id: string; name: string };
+  /** In-account mode: called once the result is saved. */
+  onDone?: () => void;
+}) {
   const preview = isPreviewHash();
   const [roster, setRoster] = useState<{ id: string; name: string }[] | null>(null);
   const [err, setErr] = useState('');
   const [agent, setAgent] = useState<{ id: string; name: string } | null>(
-    preview ? { id: 'preview', name: 'Preview' } : null
+    preview ? { id: 'preview', name: 'Preview' } : me ?? null
   );
-  const [stage, setStage] = useState<Stage>(preview ? 'intro' : 'pick');
+  const [stage, setStage] = useState<Stage>(preview || me ? 'intro' : 'pick');
 
   // Lifted so Task 7's register/done stages can read the finished results.
   const [pAns, setPAns] = useState<number[]>(() => Array(PERSONAL_QUESTIONS.length).fill(0));
@@ -43,13 +51,13 @@ export default function Assess({ token }: { token: string }) {
   const [proResult, setProResult] = useState<AxisResult | null>(null);
 
   useEffect(() => {
-    if (preview) return; // dev preview: no roster fetch, no DB call.
+    if (preview || me) return; // preview and in-account both know who this is already.
     setErr('');
     if (!token) { setErr('This link is missing its team code. Ask your team lead for a fresh link.'); return; }
     resolveCohortRoster(token).then(setRoster).catch(() => setErr('This team link could not be opened. Ask your team lead for a fresh link.'));
   }, [token, preview]);
 
-  if (!preview) {
+  if (!preview && !me) {
     if (err) return <div className="asx-shell tru-dark"><div className="asx-card asx-msg">{err}</div></div>;
     if (!roster) return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
   }
@@ -69,6 +77,20 @@ export default function Assess({ token }: { token: string }) {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if ((stage === 'register' || stage === 'done') && me) {
+    // In-account: the result attaches to the agent we already are. No signup —
+    // there is one front door into this product and it is the invite.
+    return (
+      <InAccountFinish
+        personalResult={personalResult!}
+        proResult={proResult!}
+        pAns={pAns}
+        bAns={bAns}
+        onDone={onDone}
+      />
     );
   }
 
@@ -285,6 +307,65 @@ function AssessFlow({
   return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
 }
 
+/** The tallies both submit paths send. Derived once, here, so the in-account and
+ *  public routes can never drift into computing them differently. */
+function talliesOf(proResult: AxisResult) {
+  const pct = (axis: 'energy'|'approach'|'deal'|'decision', letter: string) =>
+    proResult.axes[axis].letter === letter
+      ? proResult.axes[axis].pct
+      : 100 - proResult.axes[axis].pct;
+  return {
+    energy_p: pct('energy', 'P'), energy_t: pct('energy', 'T'),
+    approach_pro: pct('approach', 'Pro'), approach_rec: pct('approach', 'Rec'),
+    deal_r: pct('deal', 'R'), deal_v: pct('deal', 'V'),
+    decision_d: pct('decision', 'D'), decision_i: pct('decision', 'I'),
+  };
+}
+
+/** In-account finish: save, then hand them back to their app. No account to
+ *  create — they already have one, which is the whole point of one front door. */
+function InAccountFinish({ personalResult, proResult, pAns, bAns, onDone }: {
+  personalResult: AxisResult;
+  proResult: AxisResult;
+  pAns: number[];
+  bAns: number[];
+  onDone?: () => void;
+}) {
+  const submitted = useRef(false);
+  const [err, setErr] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (submitted.current) return;
+    submitted.current = true;
+    submitMyAssessment({
+      personalCode: personalResult.code, personalAxes: personalResult.axes,
+      businessCode: proResult.code, tallies: talliesOf(proResult),
+      answers: { personal: pAns, pro: bAns },
+    })
+      .then(() => setSaved(true))
+      .catch(() => setErr('Your result didn’t save. Refresh and try again — your answers are still here.'));
+    // Fire once on mount; the ref guard prevents a second submit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="asx-shell tru-dark">
+      <div className="asx-card asx-reveal-card">
+        <div className="asx-eyebrow">TRU · Behavioral Assessment</div>
+        <h1 className="asx-h1">{err ? 'Almost.' : 'You’re in.'}</h1>
+        <p className="asx-sub">
+          {err || 'Your profile is saved. Your team lead can now coach you the way you actually learn.'}
+        </p>
+        {err && <div className="asx-form-err">{err}</div>}
+        <button className="asx-cta" disabled={!saved} onClick={() => onDone?.()}>
+          {saved ? 'Go to my home →' : 'Saving…'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Task 7: gated submit + registration ─────────────────────────────────────
 // Mounted only when stage is 'register'/'done'. Fires the cohort-assessment
 // write exactly once on mount (ref-guarded — React StrictMode double-invokes
@@ -315,16 +396,7 @@ function RegisterFlow({
     if (submitted.current) return;
     submitted.current = true;
     if (preview) return; // design walk-through only — never hits the DB.
-    const tallies = {
-      energy_p: proResult.axes.energy.letter === 'P' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
-      energy_t: proResult.axes.energy.letter === 'T' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
-      approach_pro: proResult.axes.approach.letter === 'Pro' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
-      approach_rec: proResult.axes.approach.letter === 'Rec' ? proResult.axes.approach.pct : 100 - proResult.axes.approach.pct,
-      deal_r: proResult.axes.deal.letter === 'R' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
-      deal_v: proResult.axes.deal.letter === 'V' ? proResult.axes.deal.pct : 100 - proResult.axes.deal.pct,
-      decision_d: proResult.axes.decision.letter === 'D' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
-      decision_i: proResult.axes.decision.letter === 'I' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
-    };
+    const tallies = talliesOf(proResult);
     submitCohortAssessment({
       token, agentId: agent.id, personalCode: personalResult.code, personalAxes: personalResult.axes,
       businessCode: proResult.code, tallies, answers: { personal: pAns, pro: bAns },
