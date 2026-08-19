@@ -23,14 +23,24 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
   // A lesson, quiz or live sim takes the whole screen — the course was built that
   // way and reads better for it. The shell steps out of the way while one is open.
   const [immersive, setImmersive] = useState(false);
+  // "What's next" on Home opens a specific module rather than dropping them on the
+  // shelf to find it again. Cleared by the course once it has acted on it.
+  const [openModuleId, setOpenModuleId] = useState<string | null>(null);
 
   useEffect(() => {
     agentHome().then(setHome).catch(() => setErr('Could not load your home. Refresh to try again.'));
   }, []);
 
-  if (immersive) {
-    return <AgentCourse agent={agent} onImmersive={setImmersive} />;
-  }
+  const course = (
+    <AgentCourse
+      agent={agent}
+      onImmersive={setImmersive}
+      openModuleId={openModuleId}
+      onOpened={() => setOpenModuleId(null)}
+    />
+  );
+
+  if (immersive) return course;
 
   return (
     <div className="ac">
@@ -56,11 +66,11 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
           agent={agent}
           home={home}
           onHome={setHome}
-          onOpenTraining={() => setTab('rep')}
+          onOpenModule={(id) => { setOpenModuleId(id); setTab('rep'); }}
         />
       )}
       {tab === 'coach' && <AgentCoach agent={agent} home={home} />}
-      {tab === 'rep' && <AgentCourse agent={agent} onImmersive={setImmersive} />}
+      {tab === 'rep' && course}
     </div>
   );
 }

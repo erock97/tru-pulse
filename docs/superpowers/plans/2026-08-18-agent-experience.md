@@ -475,7 +475,7 @@ git commit -m "feat(agent): three-tab shell around the course"
 - Consumes: `AgentHome`, `AgentCommitment`, `setCommitmentDone` (Task 3); `CourseModule` + `loadCourse` (existing).
 - Produces: `pace(commitments: AgentCommitment[]): { done: number; total: number; pct: number; state: 'none' | 'behind' | 'onTrack' | 'complete' }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `web/src/lib/agentPace.test.ts`:
 
@@ -509,12 +509,12 @@ describe('pace', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `cd web && npx vitest run src/lib/agentPace.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `web/src/lib/agentPace.ts`:
 
@@ -539,12 +539,9 @@ export function pace(commitments: AgentCommitment[]): {
 }
 ```
 
-- [ ] **Step 4: Run the test**
+- [x] **Step 4: Run the test** — 6 pass (added one: a single untouched commitment must not read as 'on track').
 
-Run: `cd web && npx vitest run src/lib/agentPace.test.ts`
-Expected: PASS (5 tests).
-
-- [ ] **Step 5: Build the screen**
+- [x] **Step 5: Build the screen** — 'What's next' opens the actual module rather than dumping them on the shelf: `openModuleId` threads Home → shell → course.
 
 In `web/src/pages/AgentHome.tsx`, render three blocks in this order:
 
@@ -556,11 +553,11 @@ Empty state when `state === 'none'`, and say the true thing rather than a cheerf
 
 > "You don't have any commitments yet. These come from your one-on-one with your team lead — they'll show up here after your next one."
 
-- [ ] **Step 6: Verify by hand**
+- [ ] **Step 6: Verify by hand — NEEDS ERIC, after deploy**
 
 As an agent with open commitments: tick one, reload, confirm it stayed. As an agent with none: confirm the empty state reads correctly and nothing is broken. Confirm ticking your own commitment does not alter what the lead sees under their own review status.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/lib/agentPace.ts web/src/lib/agentPace.test.ts web/src/pages/AgentHome.tsx web/src/pages/AgentShell.tsx

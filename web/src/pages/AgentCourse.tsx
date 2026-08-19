@@ -57,11 +57,14 @@ const emptyLibrary: LibraryData = {
   tracks: [], modules: [], trackModules: [], progress: [], certificates: [],
 };
 
-export default function AgentCourse({ agent, onImmersive }: {
+export default function AgentCourse({ agent, onImmersive, openModuleId, onOpened }: {
   agent: AgentIdentity;
   /** A lesson / quiz / sim takes the whole screen. Tell the shell to step out of
    *  the way while one is open, and to come back when we return to the shelf. */
   onImmersive?: (immersive: boolean) => void;
+  /** A module the shell wants opened on arrival — "What's next" on Home. */
+  openModuleId?: string | null;
+  onOpened?: () => void;
 }) {
   const [mods, setMods] = useState<CourseModule[] | null>(null);
   const [lib, setLib] = useState<LibraryData | null>(null);
@@ -90,6 +93,22 @@ export default function AgentCourse({ agent, onImmersive }: {
   }, []);
 
   useEffect(() => { onImmersive?.(view !== 'home'); }, [view, onImmersive]);
+
+  // Open what Home asked for, but only once the shelf has actually loaded — before
+  // that there is no module to open and the request would be silently dropped.
+  useEffect(() => {
+    if (!openModuleId || !mods) return;
+    const m = mods.find((x) => x.id === openModuleId);
+    onOpened?.();
+    if (!m) return;
+    const hasLesson = (m.cards?.length ?? 0) > 0;
+    if (!hasLesson && m.qs.length === 0) return;
+    setActiveId(m.id);
+    setResult(null);
+    setAckErr('');
+    setView(hasLesson ? 'lesson' : 'quiz');
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [openModuleId, mods]);
 
   const active = useMemo(() => mods?.find((m) => m.id === activeId) ?? null, [mods, activeId]);
   const firstName = agent.name.split(' ')[0] || 'there';
