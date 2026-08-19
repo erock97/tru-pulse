@@ -773,7 +773,18 @@ Three screens, next/back, a finish button on the last. On finish, call `markWelc
 
 - [ ] **Step 2: Put Eric's copy in**
 
-Eric writes these words. Until they exist, the file carries a single named constant with the three screens' text and a comment saying it is awaiting copy. **Do not ship placeholder onboarding prose to a real agent** — if this task reaches the end of the plan without copy, hold this one task and ship the rest.
+Approved 2026-08-18. Use these three screens verbatim as a single named constant:
+
+**Screen 1 — Welcome to TRU**
+> You're here because your team invested in you. TRU is where your training, your coaching, and your commitments live in one place. It takes about ten minutes to get set up, and then you're working.
+
+**Screen 2 — How this works**
+> Your team lead meets with you one-on-one. What you commit to in those meetings shows up on your home screen, so you always know what you said you'd do and how you're tracking against it. Your training library sits alongside it — everything we've taught live, there to re-read whenever you need it.
+
+**Screen 3 — First, we need to know how you work**
+> Next is a short assessment. It's not a test and there's no score. It tells us how you're wired — how you make decisions, how you handle pressure, what you need from a coach. Your team lead uses it to coach you the way you actually learn instead of the way they happen to teach. Take it honestly; it's about ten minutes.
+
+Screen 3 is load-bearing: it is what keeps the mandatory assessment from reading as a hoop. Do not trim it.
 
 - [ ] **Step 3: Verify by hand**
 
