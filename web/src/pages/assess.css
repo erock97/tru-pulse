@@ -1,59 +1,48 @@
-/* ── The brand, carried through the assessment ──────────────────────────────
-   This flow used to be a small card on a flat brown gradient — an app screen
-   bolted onto the end of a cinematic welcome. It now stands on the same TRU
-   artwork as truhq.co and the welcome before it.
-
-   Deliberately the POSTER STILL rather than the looping video the welcome uses:
-   this is fifty-two questions of sustained attention, and motion behind that is
-   a distraction, not atmosphere. Same image, held still. */
+/* ── The internal-page surface ───────────────────────────────────────────────
+   Home, Pulse, Coach and Rep are solid dark surfaces with bordered cards — no
+   photographic background anywhere. This flow now matches them: same base, same
+   card, same radius, same type scale. (It briefly wore the marketing hero
+   artwork; that is the OUTSIDE of the product, and it did not belong here.) */
 .asx-shell { position: relative; min-height: 100vh; display: flex; align-items: center;
-  justify-content: center; padding: clamp(20px, 4vw, 48px); color: #f2e8d5;
-  background: #0b0805; isolation: isolate; }
-.asx-shell::before { content: ""; position: fixed; inset: 0; z-index: -2;
-  background-image: url("/hero-poster.jpg"); background-size: cover; background-position: center;
-  /* The poster is a bright frame of the loop. Left as-is it competes with the
-     question instead of sitting behind it — this is a reading surface first. */
-  filter: brightness(.42) saturate(.85); }
-.asx-shell::after { content: ""; position: fixed; inset: 0; z-index: -1; background:
-  radial-gradient(90% 70% at 50% 45%, rgba(11,8,5,.82) 0%, rgba(11,8,5,.62) 55%, rgba(11,8,5,.72) 100%),
-  linear-gradient(180deg, rgba(11,8,5,.55), rgba(11,8,5,.80)); }
+  justify-content: center; padding: clamp(24px, 3.5vw, 44px);
+  background: var(--base, #0C0A08); color: var(--text, #EFE7DA); }
+/* The one flourish the internal pages do use: a soft ambient wash off the top
+   left, exactly as .hh-ambient does on Home. */
+.asx-shell::before { content: ""; position: fixed; inset: -40px -8vw auto; height: 320px;
+  pointer-events: none;
+  background: radial-gradient(560px 260px at 8% 0%, var(--accent-soft, rgba(233,162,59,.15)), transparent 62%); }
 
-/* The card is now a stage: wide, airy, edge softened rather than boxed. On the
-   reveal and intro screens it carries no border at all — the artwork is the
-   frame, exactly as it is on the welcome. */
-.asx-card { position: relative; width: 100%; max-width: 720px;
-  background: rgba(14, 10, 6, 0.62); border: 1px solid rgba(233,162,59,.18);
-  border-radius: 26px; padding: clamp(28px, 5vw, 56px);
-  /* No backdrop-filter. Blurring a panel this size is expensive enough to stall
-     the compositor on a mid-range laptop — and it buys nothing here, because the
-     artwork behind it is already dimmed and scrimmed. */
-  box-shadow: 0 40px 90px -60px rgba(0,0,0,.9); }
-.asx-eyebrow { display: inline-flex; align-items: center; gap: .55rem;
-  font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
-  color: #d9c9a8; font-weight: 700;
-  border: 1px solid rgba(243,236,224,.16); border-radius: 999px;
-  padding: .42rem .9rem; background: rgba(20,16,9,.5); }
+.asx-card { position: relative; width: 100%; max-width: 760px;
+  background: var(--card, #1C1915); border: 1px solid var(--border-soft, rgba(243,236,224,.10));
+  border-radius: var(--r-card, 14px); padding: clamp(26px, 3.4vw, 44px); }
+
+/* The pill eyebrow the internal pages use (.hq-eyebrow), matched here. */
+.asx-eyebrow { display: inline-flex; align-items: center; gap: .5rem;
+  font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600;
+  color: var(--text-60, #B5A894);
+  border: 1px solid var(--border-soft, rgba(243,236,224,.10)); border-radius: 999px;
+  padding: 7px 15px; background: rgba(20,16,9,.5); }
 .asx-eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%;
-  background: #E9A23B; box-shadow: 0 0 12px #E9A23B; }
-.asx-h1 { font-family: 'Playfair Display', Georgia, serif; font-weight: 800;
-  font-size: clamp(32px, 5.4vw, 54px); line-height: 1.06; letter-spacing: -0.01em;
-  margin: 18px 0 12px; color: #F6EFE3; }
-.asx-sub { color: #D8CFC0; margin-bottom: 22px; font-size: clamp(15.5px, 1.3vw, 17.5px);
-  line-height: 1.58; max-width: 46ch; }
+  background: var(--accent, #E9A23B); }
+/* Matches .topbar h1 — the internal headline size, not a marketing headline. */
+.asx-h1 { font-family: var(--hq-serif, 'Playfair Display', Georgia, serif); font-weight: 700;
+  font-size: clamp(26px, 3.4vw, 37px); line-height: 1.14;
+  margin: 16px 0 10px; color: var(--text-strong, #F6EFE3); }
+.asx-sub { color: var(--text-60, #B5A894); margin-bottom: 20px;
+  font-size: 16px; line-height: 1.6; max-width: 52ch; }
+
 .asx-picklist { display: grid; gap: 10px; }
 .asx-pick { text-align: left; padding: 16px 18px; border-radius: 12px; background: rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.08); color: #f2e8d5; font-size: 16px; font-weight: 600; cursor: pointer; }
 .asx-pick:hover { border-color: var(--accent); background: rgba(169,121,31,.12); }
 .asx-msg { color: #c9baa0; }
-/* The marketing pill, not a full-width app button. */
-.asx-cta { margin-top: 28px; width: auto; display: inline-flex; align-items: center; gap: .7rem;
-  padding: .82rem 1.5rem; border-radius: 999px; border: 0; cursor: pointer;
-  font-size: 15.5px; font-weight: 650; color: #20140A;
-  background: linear-gradient(180deg, #F2C079, #E9A23B);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 16px 38px -18px rgba(233,162,59,.9);
-  transition: transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s ease; }
-.asx-cta:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 22px 46px -18px rgba(233,162,59,.95); }
-.asx-cta:active { transform: scale(.98); }
+/* .hqbtn-primary, matched: the internal pages' button, not the marketing pill. */
+.asx-cta { margin-top: 26px; width: auto; display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 24px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+  font-size: 16px; font-weight: 700; color: #1A1206;
+  background: linear-gradient(180deg, var(--accent-hi, #F2C079), var(--accent, #E9A23B));
+  transition: transform .25s ease, box-shadow .25s ease; }
+.asx-cta:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -28px var(--accent, #E9A23B); }
 .asx-cta-link { text-decoration: none; }
 
 /* ── progress + badge (quiz stages) ── */
@@ -216,86 +205,47 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FILL THE PAGE — the internal pages (Coach, Rep, Pulse) run edge to edge in a
-   1440 row. A centred 720 card floating in the middle reads as a smaller,
-   lesser thing than the app an agent is about to use. From 1100px up, every
-   assessment screen occupies the frame the way those pages do.
+   FILL THE FRAME — like the internal pages, which run edge to edge in a 1440
+   row rather than centring a small card. Same surfaces, same card, wider.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (min-width: 1100px) {
-  /* Padding on the shell, not margin on the card: a child's top margin collapses
-     straight through a padding-less block parent, which pushed the whole page
-     down by exactly that margin and put a scrollbar on a screen that fits. */
-  .asx-shell { display: block; padding: clamp(28px, 3.2vw, 52px); }
+  .asx-shell { display: block; padding: clamp(24px, 3.5vw, 44px); }
+  .asx-card { max-width: 1440px; margin-inline: auto;
+    min-height: calc(100dvh - 2 * clamp(24px, 3.5vw, 44px));
+    padding: clamp(34px, 3.2vw, 52px);
+    display: flex; flex-direction: column; justify-content: center; }
 
-  /* The stage: full width, one 1440 row, vertically centred by its own min-height
-     rather than by squeezing the card. */
-  .asx-card {
-    max-width: 1440px;
-    /* dvh, not vh: mobile browser chrome makes vh taller than the visible area,
-       which is what puts a scrollbar on a screen that should exactly fit. */
-    min-height: calc(100dvh - 2 * clamp(28px, 3.2vw, 52px));
-    margin-inline: auto;
-    padding: clamp(44px, 4vw, 72px) clamp(44px, 4.4vw, 80px);
-    display: flex; flex-direction: column; justify-content: center;
-    border-radius: 28px;
-  }
-
-  /* ── Intro / ending: no panel at all. These screens are a headline and a
-     sentence; boxing them just draws a big empty rectangle over the artwork.
-     Words left, artwork right — the same balance the marketing hero strikes. ── */
-  .asx-card:not(.asx-quiz):not(.asx-reveal-card) {
-    background: none; border: 0; box-shadow: none;
-    backdrop-filter: none; -webkit-backdrop-filter: none;
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
-    grid-template-rows: min-content;
-    align-content: center; column-gap: clamp(40px, 5vw, 88px); }
+  /* Intro / endings: message left, supporting card right — Home's proportions. */
+  .asx-card:not(.asx-quiz):not(.asx-reveal-card) { display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-content: center; column-gap: 18px; }
   .asx-card:not(.asx-quiz):not(.asx-reveal-card) > * { grid-column: 1; }
-  .asx-card:not(.asx-quiz):not(.asx-reveal-card) .asx-h1 { font-size: clamp(48px, 4.8vw, 74px); }
-  .asx-card:not(.asx-quiz):not(.asx-reveal-card) .asx-sub { font-size: 18.5px; max-width: 44ch; }
-  .asx-picklist { grid-column: 2 !important; grid-row: 1 / span 6; align-self: center; }
-
-  /* A pill is a pill. As a grid/flex child it will otherwise stretch to the
-     column and stop looking like one. */
+  .asx-picklist { grid-column: 2 !important; grid-row: 1 / span 6; align-self: start; }
   .asx-eyebrow, .asx-cta { justify-self: start; align-self: start; }
 
-  /* ── Question: the question owns the screen. ── */
-  .asx-quiz { max-width: 1440px; }
-  .asx-quiz-top { max-width: 1180px; width: 100%; margin-inline: auto; }
-  .asx-quiz-body { max-width: 1180px; width: 100%; margin-inline: auto; }
-  .asx-q { font-size: clamp(46px, 4.4vw, 68px); line-height: 1.08; max-width: 20ch; }
-  .asx-q-sub { font-size: 22px; }
-  .asx-scale { margin-top: 52px; gap: clamp(16px, 2vw, 34px); }
-  .asx-sz1 { width: 62px; height: 62px; }
-  .asx-sz2 { width: 72px; height: 72px; }
-  .asx-sz3 { width: 84px; height: 84px; }
-  .asx-sz4 { width: 96px; height: 96px; }
-  .asx-likert-labels { font-size: 16px; margin-top: 34px; }
-  .asx-diff-labels { font-size: 20px; margin-top: 34px; line-height: 1.35; }
+  /* Question: the reading column stays honest; the card carries the width. */
+  .asx-quiz-top, .asx-quiz-body { max-width: 1100px; width: 100%; margin-inline: auto; }
+  .asx-q { font-size: clamp(34px, 3.2vw, 46px); line-height: 1.16; max-width: 24ch; }
+  .asx-q-sub { font-size: 19px; }
+  .asx-scale { margin-top: 44px; gap: clamp(14px, 1.6vw, 28px); }
+  .asx-sz1 { width: 56px; height: 56px; }
+  .asx-sz2 { width: 64px; height: 64px; }
+  .asx-sz3 { width: 74px; height: 74px; }
+  .asx-sz4 { width: 84px; height: 84px; }
+  .asx-likert-labels { font-size: 15px; margin-top: 30px; }
+  .asx-diff-labels { font-size: 18px; margin-top: 30px; line-height: 1.4; }
 
-  /* ── Reveal: identity on the left, the read-out on the right. Assigned by
-     class rather than by markup change — the reveal DOM is untouched. ── */
+  /* Reveal: identity left, the read-out right — assigned by class, so the
+     reveal markup is untouched. */
   .asx-reveal-card { max-width: 1440px; display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: clamp(48px, 5vw, 96px);
-    align-content: center; }
+    column-gap: 48px; align-content: center; }
   .asx-reveal-card > * { grid-column: 1; }
-  .asx-reveal-card .asx-h1 { font-size: clamp(48px, 5vw, 76px); }
-  .asx-reveal-card .asx-sub { font-size: 18.5px; max-width: 42ch; }
+  .asx-reveal-card .asx-h1 { font-size: clamp(34px, 3.6vw, 46px); }
   .asx-reveal-card .asx-meters,
   .asx-reveal-card .asx-divergence { grid-column: 2; align-self: center; }
-  /* The meters start the right-hand column and span the rows opposite the
-     identity block, so both columns end level. */
   .asx-reveal-card .asx-meters { grid-row: 1 / span 4; }
-  .asx-reveal-card .asx-divergence { grid-row: 5 / span 3; margin-top: 22px; }
-  .asx-meter { height: 10px; }
-  .asx-meter-row + .asx-meter-row { margin-top: 22px; }
-  .asx-meter-label { font-size: 16px; }
-  .asx-medallion { width: 78px; height: 78px; font-size: 40px; }
-}
-
-/* Very wide: keep the reading measure honest rather than stretching lines. */
-@media (min-width: 1800px) {
-  .asx-q { font-size: 72px; }
-  .asx-reveal-card .asx-h1 { font-size: 80px; }
+  .asx-reveal-card .asx-divergence { grid-row: 5 / span 3; margin-top: 20px; }
+  .asx-meter-row + .asx-meter-row { margin-top: 20px; }
+  .asx-meter-label { font-size: 15px; }
 }

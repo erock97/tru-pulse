@@ -2755,3 +2755,42 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ah-mod.done .ah-mod-mark { background: var(--sea-soft); color: var(--sea-hi); }
 .tru-dark .ah-mod-title { display: block; font-weight: 700; color: var(--text); }
 .tru-dark .ah-mod-sub { display: block; color: var(--text-50); font-size: 13px; margin-top: 2px; }
+
+/* ---------- Agent welcome ----------------------------------------------------
+   Uses the internal pages' own primitives (.tru-shell, .topbar, .hh-hero,
+   .hqcard, .hqbtn); only the bits with no equivalent are defined here. */
+.tru-shell .aw-side-step { cursor: default; }
+.tru-shell .aw-side-step.is-done { color: var(--text-50); }
+.tru-shell .aw-side-step.is-done svg { color: var(--accent); }
+.tru-dark .aw-side-note {
+  font-size: 13px; line-height: 1.5; color: var(--text-50); padding: 0 4px;
+}
+/* Two columns rather than Home's three-area bento: this screen has a message
+   and one supporting note, not a product grid. */
+.tru-dark .aw-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+/* .hh-hero and the tiles carry grid-area names from Home's named bento
+   template. Borrowed into a plain two-column grid those names place them by
+   Home's layout, not this one — so they are cleared back to source order. */
+.tru-dark .aw-bento > * { grid-area: auto; }
+.tru-dark .aw-aside { padding: 26px 24px; }
+.tru-dark .aw-aside .hh-tile-name { margin: 14px 0 8px; }
+@media (max-width: 1000px) {
+  .tru-dark .aw-bento { grid-template-columns: 1fr; }
+}
+/* The stat row Rep and Home carry under their hero — same card, same rhythm. */
+.tru-dark .aw-stats {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px; margin-top: 18px;
+}
+.tru-dark .aw-stat { padding: 22px 24px; }
+.tru-dark .aw-stat-n {
+  font-family: var(--hq-serif, 'Playfair Display', Georgia, serif);
+  font-size: 30px; font-weight: 700; color: var(--text-strong); line-height: 1.1;
+}
+.tru-dark .aw-stat-l { margin-top: 6px; font-size: 14px; color: var(--text-60); }
+@media (max-width: 1000px) { .tru-dark .aw-stats { grid-template-columns: 1fr; } }

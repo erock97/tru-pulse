@@ -2,84 +2,104 @@
 // There is no skip — a walkthrough you can dismiss is a walkthrough nobody reads,
 // and screen three is what keeps the mandatory assessment from feeling like a hoop.
 //
-// This is an agent's FIRST sight of TRU, so it wears the brand, not the app: the
-// same `.truland` system as truhq.co — the hero loop behind a scrim, the grain,
-// the pill badge, the serif headline with the gold italic and its drawn underline,
-// and the pill CTA. All of it already existed in Landing.css and web/public; none
-// of it is invented here.
-import { useEffect, useRef, useState } from 'react';
+// Built from the SAME primitives as Home, Coach and Rep — `.tru-shell`, the
+// sidebar, the topbar, `.hh-hero`, `.hqcard`, `.hqbtn`. Not a lookalike: the same
+// classes, so it inherits those pages' surfaces, spacing and type scale and stays
+// matched to them when they change.
+//
+// The sidebar carries the three setup steps rather than the app's tabs. Those tabs
+// are gated until the assessment is done, and offering navigation that refuses to
+// navigate is worse than not showing it.
+import { useState } from 'react';
 import { markWelcomeSeen } from '../lib/api';
-import './Landing.css';
-
-/** The pill arrow the marketing CTAs use. */
-const arrow = (
-  <span className="pea" aria-hidden>
-    <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-  </span>
-);
+import { TruLogo } from '../components/TruLogo';
+import { Icon } from '../components/hqUi';
+import { useForceHqDark } from '../hqHooks';
+import '../truHqDark.css';
 
 /** Copy approved by Eric 2026-08-18. Screen three is load-bearing — it is what
  *  keeps the mandatory assessment from reading as a hoop. Do not trim it. */
 const SCREENS: {
-  badge: string;
-  lines: string[];
-  /** The closing line, set in gold italic under the drawn stroke. */
-  say: string;
+  step: string;
+  eyebrow: string;
+  title: string;
+  heroTitle: string;
   body: string;
   cta: string;
+  aside: { title: string; body: string };
+  stats: { n: string; label: string }[];
 }[] = [
   {
-    badge: 'Welcome to TRU',
-    lines: ['Your team', 'invested in'],
-    say: 'you.',
+    step: 'Welcome',
+    eyebrow: 'Getting set up',
+    title: 'Welcome to TRU.',
+    heroTitle: 'Your team invested in you.',
     body: 'TRU is where your training, your coaching, and your commitments live in one '
       + 'place. It takes about ten minutes to get set up, and then you’re working.',
     cta: 'Next',
+    aside: {
+      title: 'What you get',
+      body: 'One login for the training library, your coaching, and everything you and '
+        + 'your team lead agree on.',
+    },
+    stats: [
+      { n: '3', label: 'Steps to finish' },
+      { n: '10', label: 'Minutes, about' },
+      { n: '1', label: 'Login for everything' },
+    ],
   },
   {
-    badge: 'How this works',
-    lines: ['What you', 'commit to'],
-    say: 'shows up here.',
+    step: 'How this works',
+    eyebrow: 'Getting set up',
+    title: 'How this works.',
+    heroTitle: 'What you commit to shows up here.',
     body: 'Your team lead meets with you one-on-one. What you commit to in those meetings '
       + 'shows up on your home screen, so you always know what you said you’d do and how '
       + 'you’re tracking against it. Your training library sits alongside it — everything '
       + 'we’ve taught live, there to re-read whenever you need it.',
     cta: 'Next',
+    aside: {
+      title: 'Your one-on-ones',
+      body: 'Wins, commitments and where you are against them. Your lead’s own notes stay '
+        + 'theirs — you see what you agreed to.',
+    },
+    stats: [
+      { n: 'Home', label: 'What you owe, and your pace' },
+      { n: 'Coach', label: 'Your profile and your 1:1s' },
+      { n: 'Training', label: 'Everything taught live' },
+    ],
   },
   {
-    badge: 'First, the assessment',
-    lines: ['We need to', 'know how'],
-    say: 'you work.',
+    step: 'Your assessment',
+    eyebrow: 'Getting set up',
+    title: 'One thing first.',
+    heroTitle: 'We need to know how you work.',
     body: 'It’s not a test and there’s no score. It tells us how you’re wired — how you '
       + 'make decisions, how you handle pressure, what you need from a coach. Your team '
       + 'lead uses it to coach you the way you actually learn instead of the way they '
       + 'happen to teach. Take it honestly; it’s about ten minutes.',
     cta: 'Start the assessment',
+    aside: {
+      title: 'About ten minutes',
+      body: 'Two short parts — who you are, then how you work. There are no wrong answers '
+        + 'and nothing to revise for.',
+    },
+    stats: [
+      { n: '2', label: 'Short parts' },
+      { n: '0', label: 'Wrong answers' },
+      { n: '10', label: 'Minutes, about' },
+    ],
   },
 ];
-
-/** The path through setup, so an agent can see how far it goes before starting. */
-const STEPS = ['Welcome', 'How this works', 'Your assessment'];
 
 export default function AgentWelcome({ onDone, preview = false }: {
   onDone: () => void;
   /** Design walk-through: never stamps welcome_seen_at, so it can be replayed. */
   preview?: boolean;
 }) {
+  useForceHqDark();
   const [i, setI] = useState(0);
   const [busy, setBusy] = useState(false);
-  // `.truland.ready` is what releases the line reveal and draws the underline.
-  // Set on the next tick so the transition has a start state to move from, and
-  // re-armed per screen so each one plays rather than only the first.
-  const [ready, setReady] = useState(false);
-  const timer = useRef<number | undefined>(undefined);
-
-  useEffect(() => {
-    setReady(false);
-    timer.current = window.setTimeout(() => setReady(true), 40);
-    return () => window.clearTimeout(timer.current);
-  }, [i]);
-
   const last = i === SCREENS.length - 1;
   const s = SCREENS[i];
 
@@ -94,73 +114,79 @@ export default function AgentWelcome({ onDone, preview = false }: {
   }
 
   return (
-    <div className={`truland aw${ready ? ' ready' : ''}`}>
-      <div className="bg">
-        <video autoPlay muted loop playsInline preload="auto" poster="/hero-poster.jpg">
-          <source src="/hero-loop.mp4" type="video/mp4" />
-        </video>
-        <div className="scrim" />
-      </div>
-      <div className="grain" />
-
-      <header className="aw-bar">
-        <div className="wrap aw-bar-in">
-          <span className="aw-mark">TRU</span>
-          <ol className="aw-steps" aria-label={`Step ${i + 1} of ${STEPS.length}`}>
-            {STEPS.map((label, n) => (
-              <li
-                key={label}
-                className={`aw-stepdot${n === i ? ' is-on' : ''}${n < i ? ' is-done' : ''}`}
+    <div className="tru-dark">
+      <div className="tru-shell">
+        <aside className="side">
+          <div className="side-logo">
+            <TruLogo size={28} wordSize={20} sub="HQ" />
+          </div>
+          <nav className="side-nav" aria-label="Setup">
+            {SCREENS.map((scr, n) => (
+              <div
+                key={scr.step}
+                className={`side-link aw-side-step${n === i ? ' active' : ''}${n < i ? ' is-done' : ''}`}
                 aria-current={n === i ? 'step' : undefined}
               >
-                <span>{label}</span>
-              </li>
+                <Icon name={n < i ? 'shield' : n === i ? 'target' : 'clock'} size={20} />
+                <span>{scr.step}</span>
+              </div>
             ))}
-          </ol>
-        </div>
-      </header>
-
-      <main className="hero aw-stage">
-        <div className="wrap">
-          <div key={i}>
-            <span className="badge fade"><span className="s" />{s.badge}</span>
-            <h1>
-              {s.lines.map((line) => (
-                <span className="line" key={line}><span>{line}</span></span>
-              ))}
-              {/* The drawn stroke hugs the words, so `.say` has to be an inline
-                  child of the line rather than the line's own block span — as a
-                  block it stretches the underline across the whole column. */}
-              <span className="line">
-                <span>
-                  <span className="say">
-                    {s.say}
-                    <svg viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden>
-                      <path d="M3 8 C 60 2, 110 11, 160 6 S 250 2, 297 7" />
-                    </svg>
-                  </span>
-                </span>
-              </span>
-            </h1>
-            <p className="hsub fade">{s.body}</p>
-            <div className="hcta fade">
-              <button
-                className="cta"
-                disabled={busy}
-                onClick={() => (last ? void finish() : setI(i + 1))}
-              >
-                {last && preview ? 'Start again' : busy ? 'One moment' : s.cta}{arrow}
-              </button>
-              {i > 0 && (
-                <button className="cta ghost" onClick={() => setI(i - 1)}>Back</button>
-              )}
-              <span className="micro">
-                Step {i + 1} of {STEPS.length} · about ten minutes in total
-              </span>
-            </div>
+          </nav>
+          <div className="side-foot">
+            <div className="aw-side-note">Setup takes about ten minutes.</div>
           </div>
-        </div>
-      </main>
+        </aside>
+
+        <main className="main">
+          <header className="topbar">
+            <div>
+              <div className="main-eyebrow">{s.eyebrow}</div>
+              <h1>{s.title}</h1>
+            </div>
+          </header>
+
+          <div className="hh-canvas">
+            <div className="hh-ambient" aria-hidden />
+            <section className="aw-bento" key={i}>
+              <article className="hh-hero">
+                <div className="hh-hero-glow" />
+                <div className="hh-hero-inner">
+                  <span className="hq-eyebrow"><span className="dot" />Step {i + 1} of {SCREENS.length}</span>
+                  <h2 className="hh-hero-title">{s.heroTitle}</h2>
+                  <p className="hh-hero-sub">{s.body}</p>
+                  <div className="hh-hero-cta">
+                    <button
+                      className="hqbtn hqbtn-primary"
+                      disabled={busy}
+                      onClick={() => (last ? void finish() : setI(i + 1))}
+                    >
+                      {last && preview ? 'Start again' : busy ? 'One moment' : s.cta}
+                    </button>
+                    {i > 0 && (
+                      <button className="hqbtn hqbtn-ghost" onClick={() => setI(i - 1)}>Back</button>
+                    )}
+                  </div>
+                </div>
+              </article>
+
+              <article className="hqcard aw-aside">
+                <span className="hh-tile-icon"><Icon name="coach" size={18} /></span>
+                <h4 className="hh-tile-name">{s.aside.title}</h4>
+                <p className="hh-tile-pitch">{s.aside.body}</p>
+              </article>
+            </section>
+
+            <section className="aw-stats">
+              {s.stats.map((st) => (
+                <article className="hqcard aw-stat" key={st.label}>
+                  <div className="aw-stat-n">{st.n}</div>
+                  <div className="aw-stat-l">{st.label}</div>
+                </article>
+              ))}
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
