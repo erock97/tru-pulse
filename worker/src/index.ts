@@ -8,6 +8,7 @@ import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
+import { handleAgentRoutes } from './agentRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { readCookie, withFreshToken } from './session.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
@@ -218,6 +219,13 @@ export default {
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
     );
     if (dataResponse) return dataResponse;
+
+    // The agent's own surface — their home, their commitments, their assessment.
+    // Authed like /data/*, and like it, running as the agent so RLS still decides.
+    const agentResponse = await handleAgentRoutes(
+      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
+    );
+    if (agentResponse) return agentResponse;
     if (url.pathname === '/health') return json({ ok: true });
 
     // ── Cookie sessions for the routes written before them ──────────────────

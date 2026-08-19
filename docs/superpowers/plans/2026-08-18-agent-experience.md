@@ -167,7 +167,7 @@ The only agent-home function in the database today is `get_agent_home(p_token)` 
   - `export interface AgentHome { agent: { id: string; name: string }; assessment: { code: string; personal_code: string | null; taken_at: string } | null; commitments: AgentCommitment[]; latest_checkin: string | null }`
   - `export interface AgentCommitment { id: string; body: string; agent_done: boolean; status: 'done' | 'partial' | 'missed' | null; created_at: string }`
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 Create `db/hq_agent_experience.sql`:
 
@@ -230,11 +230,11 @@ notify pgrst, 'reload schema';
 
 Open commitments only (`status is null`): once the lead has reviewed one at the next 1:1, it belongs to history, not to today.
 
-- [ ] **Step 2: Apply it**
+- [x] **Step 2: Apply it** — applied to TRU-Pulse (yeyoteredgunhvhqmais). NOTE: Postgres grants EXECUTE to PUBLIC by default and `anon` inherits it, so a `grant ... to authenticated` alone left all four functions anon-callable. Explicit `revoke ... from public, anon` added and verified.
 
 Apply through the Supabase MCP connector against the TRU-Pulse project, then verify by calling `agent_home()` as an agent's session and confirming it returns their row and no one else's.
 
-- [ ] **Step 3: Write the failing test for the Worker layer**
+- [x] **Step 3: Write the failing test for the Worker layer**
 
 Create `worker/src/agentHome.test.ts`:
 
@@ -279,12 +279,12 @@ describe('shapeAgentHome', () => {
 });
 ```
 
-- [ ] **Step 4: Run it and watch it fail**
+- [x] **Step 4: Run it and watch it fail**
 
 Run: `cd worker && npx vitest run src/agentHome.test.ts`
 Expected: FAIL — `Cannot find module './agentHome.js'`.
 
-- [ ] **Step 5: Implement**
+- [x] **Step 5: Implement**
 
 Create `worker/src/agentHome.ts`:
 
@@ -318,12 +318,12 @@ export function shapeAgentHome(row: AgentHomeRow): AgentHome {
 }
 ```
 
-- [ ] **Step 6: Run the test**
+- [x] **Step 6: Run the test**
 
 Run: `cd worker && npx vitest run src/agentHome.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Mount the routes**
+- [x] **Step 7: Mount the routes** — also added `/agent/welcome-seen` and `/agent/assessment` here rather than in Tasks 6-7, since they are the same file and the same shape.
 
 Create `worker/src/agentRoutes.ts` following the shape of `worker/src/dataRoutes.ts` — same origin check, same `db.rpc` helper:
 
@@ -360,7 +360,7 @@ export async function handleAgentRoutes(
 
 Mount it in `worker/src/index.ts` next to the existing route handlers, using that file's established ordering and its per-request `db` construction.
 
-- [ ] **Step 8: Typecheck, test, commit**
+- [x] **Step 8: Typecheck, test, commit** — 291 pass. One PRE-EXISTING typecheck error (`getSetCookie`, authRoutes.test.ts:303) confirmed present on a clean tree; not introduced here, left alone.
 
 ```bash
 cd worker && npm run typecheck && npm test
