@@ -72,7 +72,7 @@ Eric has never seen the agent view. Nothing later in this plan can be judged unt
 - Consumes: nothing.
 - Produces: `actAsAgent(email: string): Promise<void>` in `web/src/lib/api.ts` — same shape as the existing `actAs(email)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `worker/src/authRoutes.test.ts`, alongside the existing act-as describe block:
 
@@ -88,12 +88,12 @@ it('refuses to act as someone who has never accepted their invite', async () => 
 
 Wire the fake so `generate_link` reports the user did not previously exist. If the existing fake has no such switch, add one keyed on the email above.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `cd worker && npx vitest run src/authRoutes.test.ts -t "never accepted"`
 Expected: FAIL — currently returns 200 and silently creates an auth user.
 
-- [ ] **Step 3: Implement the guard**
+- [x] **Step 3: Implement the guard**
 
 In `worker/src/authRoutes.ts`, before the `generate_link` call in `/auth/act-as`, look the user up and refuse if absent:
 
@@ -112,12 +112,12 @@ if (!found.some((u) => (u.email ?? '').toLowerCase() === email)) {
 
 This matters beyond tidiness: without it, viewing as an un-invited agent creates their auth user as a side effect, and `claim_agent` would then bind their row to a session nobody asked for.
 
-- [ ] **Step 4: Run the test and the suite**
+- [x] **Step 4: Run the test and the suite** — 288 passed
 
 Run: `cd worker && npm test`
 Expected: PASS, no regressions.
 
-- [ ] **Step 5: Add the client call**
+- [x] **Step 5: Add the client call** — NOT ADDED. `adminActAs(email)` (api.ts:829) already does exactly this and already surfaces the Worker's 409 text, so a second function would have been a duplicate. The picker calls it directly.
 
 In `web/src/lib/api.ts`, next to the existing `actAs` import and wrapper:
 
@@ -129,17 +129,17 @@ export async function actAsAgent(email: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 6: Add the picker**
+- [x] **Step 6: Add the picker** — `ViewAsCell` in Rep.tsx, gated on `adminLeaders() !== null` (the same admins table `/auth/act-as` checks), disabled when the agent has no auth account.
 
 In `web/src/pages/Rep.tsx`, on each roster row, render a `View as` button when the viewer is a platform admin (the same condition already used to show admin-only controls in that file). Wire it to `actAsAgent(agent.email)`. Disable it with the tooltip "Hasn't set up their account yet" when the agent has no `auth_id`.
 
 Leads do not get this control — admins only, per spec §3.9.
 
-- [ ] **Step 7: Verify by hand**
+- [ ] **Step 7: Verify by hand — NEEDS ERIC, after deploy**
 
 Sign in as Eric, open Rep, click View as on an agent who has accepted their invite. Confirm you land in the agent view and that the existing "Exit" control returns you. Write down what you see — that observation is the baseline everything below is measured against.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add worker/src/authRoutes.ts worker/src/authRoutes.test.ts web/src/lib/api.ts web/src/pages/Rep.tsx

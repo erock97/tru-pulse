@@ -382,6 +382,21 @@ export async function handleAuthRoutes(
     const admins = adminRes.ok ? ((await adminRes.json()) as unknown[]) : [];
     if (!admins.length) return json({ error: 'forbidden' }, 403, cors);
 
+    // generate_link CREATES the user when there isn't one, so looking at an agent who
+    // never accepted their invite would quietly mint their auth account — and
+    // claim_agent() would then bind their row to a session nobody asked for. Look
+    // first, and refuse rather than conjure.
+    const userRes = await fetch(
+      `${rest}/auth/v1/admin/users?filter=${encodeURIComponent(email)}`,
+      { headers: serviceHeaders },
+    );
+    const found = userRes.ok
+      ? ((await userRes.json()) as { users?: Array<{ email?: string }> }).users ?? []
+      : [];
+    if (!found.some((u) => (u.email ?? '').toLowerCase() === email)) {
+      return json({ error: 'That person has not set up their account yet.' }, 409, cors);
+    }
+
     const linkRes = await fetch(`${rest}/auth/v1/admin/generate_link`, {
       method: 'POST',
       headers: serviceHeaders,

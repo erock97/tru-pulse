@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole,
+  loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole, adminLeaders, adminActAs,
   loadRepCustomModules, loadRepQuestionsMasked, loadRepQuestionsForEdit, uploadRepMedia, saveRepModule, saveRepQuestions, archiveRepModule,
   type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type SimScenario, type LessonCard,
   type CourseQuestion, type GradeResult,
@@ -124,6 +124,9 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
   const [q, setQ] = useState('');
   const [role, setRole] = useState<string | null>(null);
+  // Platform owner? /admin/leaders is gated on the same admins table that
+  // /auth/act-as checks, so this is the identical authority, asked once.
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [manage, setManage] = useState(false);
   // null = closed; a string (possibly empty) = open, pre-checking that learner.
   const [assignFor, setAssignFor] = useState<string | null>(null);
@@ -132,6 +135,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const refresh = () => loadRep().then(setData);
   useEffect(() => { void refresh(); void simScenarios().then(setSims); }, []);
   useEffect(() => { void myOrgRole(org.id).then(setRole); }, [org.id]);
+  useEffect(() => { void adminLeaders().then((l) => setIsPlatformAdmin(l !== null)); }, []);
   useEffect(() => {
     if (!preview) { setPreviewQs([]); setPreviewView('lesson'); setPreviewResult(null); return; }
     setPreviewView('lesson');
@@ -556,6 +560,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                                   Assign
                                 </button>
                               )}
+                              {isPlatformAdmin && <ViewAsCell agent={a} />}
                               <InviteCell agent={a} />
                             </span>
                           </div>
@@ -720,6 +725,41 @@ function AgentDrill({ agent, assigned, certified, modules, row, pct, signed, sim
 }
 
 /* ---- Per-agent access control: mint an invite/re-invite login link and copy it. ---- */
+/* Platform owner only: step into an agent's session and see exactly what they see.
+   `invited` is really "has an auth account" (api.ts:137 maps it from auth_id) — the
+   Worker refuses anyone without one, so the button is disabled rather than left to
+   fail. Exit is the shell's existing "Exit — switch teams" control. */
+function ViewAsCell({ agent }: { agent: RepAgent }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  async function go() {
+    if (busy || !agent.email) return;
+    setBusy(true); setMsg('');
+    try {
+      await adminActAs(agent.email);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Could not open that view');
+      setBusy(false);
+    }
+  }
+  if (!agent.email) return null;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <button
+        className="rp-preview sm"
+        onClick={go}
+        disabled={busy || !agent.invited}
+        title={agent.invited
+          ? `See TRU as ${agent.name} sees it`
+          : `${agent.name} hasn't set up their account yet`}
+      >
+        {busy ? '…' : 'View as'}
+      </button>
+      {msg && <span className="rp-invite-msg">{msg}</span>}
+    </span>
+  );
+}
+
 function InviteCell({ agent }: { agent: RepAgent }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
