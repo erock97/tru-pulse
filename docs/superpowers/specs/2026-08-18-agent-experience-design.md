@@ -100,16 +100,28 @@ onboarding copy is worse than none.
 The personality assessment becomes the first and only thing a new agent can do. Home, Coach and
 Rep are all visible but locked behind it. This is a hard gate: no skip, no dismiss.
 
-**One front door.** The invite is the only way in. The public `#/assess?t=<join_token>` link and
-the account-creation step at the end of `RegisterFlow` are retired as an *entrance* — the
-assessment is taken inside the account, the result attaches to the agent's existing row, and the
-gate lifts. Nobody arrives at this platform by any route other than an invite from their lead or
-from TRU.
+**One front door.** The invite is the only way in. The assessment is taken inside the account,
+the result attaches to the agent's existing row, and the gate lifts.
 
-The consequence, stated so it is not a surprise later: someone who is not yet on a team roster
-can no longer take the assessment. If Eric wants to assess a prospect, that person gets added and
-invited first. Retiring the second entrance is the point — two doors is how you end up with
-duplicate agents, orphaned results, and a gate that fires on someone who already did the work.
+There are **three** doors open today, not two, and closing them costs less than it first looked:
+
+1. **The invite** — the one that stays.
+2. **Self-serve signup at the end of the public assessment** — `RegisterFlow` calls `signUp()`
+   with any email, and `claim_agent()` then binds that login to whichever agent row shares the
+   address (`db/hq_rep_agent.sql:29-44`, no confirmation check). This closes. It is the door
+   worth closing on security grounds alone.
+3. **The legacy token portal** — `get_agent_home`, `enroll_agent`, `agent_save_checkin` and
+   `agent_toggle_commitment` are granted to `anon` and reachable through `/public/*` with an
+   agent's `token` UUID and no login at all (`db/hq_coach_compat.sql:207-239`). Nothing in this
+   app calls them; they are left over from the old site. This closes too.
+
+The consequence that is *not* a cost: the public assessment link never created agents anyway —
+`submit_cohort_assessment` requires the person to already be a `coaching_enabled` member of the
+team owning the token, and raises otherwise. So closing door 2 does not remove the ability to
+assess someone who isn't on a roster; that ability never existed.
+
+The consequence that is real: the emailed assessment link stops being a way to *get an account*.
+Anyone who needs one gets invited.
 
 Existing assessment results taken through the old public link stay valid and satisfy the gate for
 whoever they belong to.
@@ -126,6 +138,12 @@ The landing screen on every login after onboarding. Three things:
 - **Pacing** — how they are tracking against those commitments. Measured in **outcomes**
   (appointments held, agreements, closings), deliberately not activity counts. Eric's call:
   activity tracking makes this ridiculous to maintain.
+
+  Pacing is counted against the commitments themselves — how many of the outcomes they
+  committed to they have hit — not derived from FUB. The `deals` table keys on `agent_name`
+  as free text (`db/hq_deals.sql:18`), so attaching closings to a person is a name match, and
+  a name match is too fragile to sit under a number an agent reads every morning. Revisit if
+  deals ever carry an agent id.
 - **What's next** — any training waiting on them.
 
 **The dependency worth stating out loud:** Home is only as alive as the one-on-one habit. If a
@@ -199,7 +217,7 @@ to start. A lead seeing an agent's view is a trust question, not a technical one
 | Risk | Consequence | Mitigation |
 |---|---|---|
 | One-on-one commitments not entered | Home screen is permanently empty; the whole flow feels dead | Honest empty state; leads' roster view shows which agents have no commitments |
-| Retiring the public assessment link | Eric loses the ability to assess someone who isn't on a roster yet | Accepted — one front door is the decision. Assess a prospect by adding and inviting them first |
+| Retiring self-serve signup | Someone mid-flight on the public link can no longer create their own login | Accepted — one front door is the decision. The assessment still saves; the account comes from an invite |
 | Old public-link results | A gate that re-fires on someone who already did the assessment | Treat any stored result for that agent as satisfying the gate, whichever entrance produced it |
 | Welcome copy never written | Blocks the onboarding sequence | Build the walkthrough shell to take content; ship the rest without it if needed |
 | Hard gate on day one | An agent bounces before ever seeing the product | Accepted by Eric; the assessment is short and produces something they immediately get value from |
@@ -215,5 +233,6 @@ to start. A lead seeing an agent's view is a trust question, not a technical one
 - Whether `rep_progress` alone is enough for the roster view in §3.8.
 - Whether the required/self-paced marking belongs on `rep_modules` or on the track grouping
   introduced by the training-library spec.
-- Which outcome numbers back the pacing in §3.5, and whether they come from the one-on-one record
-  or from the existing Pulse closing data.
+- Whether this project's JWTs expose `email_verified` at the top level or under `user_metadata`
+  — the hardened `claim_agent()` checks both, but confirm one of them actually fires before
+  trusting the guard.
