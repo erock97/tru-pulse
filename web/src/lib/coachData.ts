@@ -38,8 +38,13 @@ import {
 export type Arch = (typeof ARCH)[string];
 export type Lens = (typeof LL)[string];
 
+/** Four archetypes need four readable hues, but a primary green and a primary
+ *  blue on a dark green ground fight the room and steal from the accent. These
+ *  sit in the same family as the rest of the deck: sage for the self-driven,
+ *  sand for the one that runs on momentum, slate for the one that works alone,
+ *  clay for the one that needs a conversation. */
 export const QUAD_COLOR: Record<string, string> = {
-  Achiever: '#2E8B57', Striver: '#2F6BB0', Independent: '#A9791F', Detractor: '#C0492F',
+  Achiever: '#8FB0A2', Striver: '#E0A34A', Independent: '#6E9AA8', Detractor: '#C96A46',
 };
 
 // GOAL FUNNEL MATH — quarterly transactions → leads needed → monthly / weekly.
@@ -92,13 +97,13 @@ export function paceFromDays(lastDays: number, hasAny: boolean): Pace {
   if (lastDays >= 14) {
     return {
       pace: hasAny ? 'Stalled' : 'No check-ins',
-      paceColor: '#F0696A', paceBg: 'rgba(240,105,106,.14)', paceShort: 'Needs you',
+      paceColor: '#FF6A45', paceBg: 'rgba(255,106,69,.14)', paceShort: 'Needs you',
     };
   }
   if (lastDays >= 7) {
-    return { pace: 'Slipping', paceColor: '#E0A340', paceBg: 'rgba(224,163,64,.14)', paceShort: 'Check in' };
+    return { pace: 'Slipping', paceColor: '#F2B23C', paceBg: 'rgba(242,178,60,.14)', paceShort: 'Check in' };
   }
-  return { pace: 'On track', paceColor: '#3ECF8E', paceBg: 'rgba(62,207,142,.14)', paceShort: 'On track' };
+  return { pace: 'On track', paceColor: '#8FB0A2', paceBg: 'rgba(143,176,162,.14)', paceShort: 'On track' };
 }
 
 function archOf(code: string): Arch { return ARCH[code] || ARCH['P-Rec-R-I']; }
@@ -256,7 +261,7 @@ export function teamMix(roster: RosterAgent[]): { segs: TeamSeg[]; note: string 
   roster.forEach((r) => { quadCount[r.quad] = (quadCount[r.quad] || 0) + 1; });
   const total = roster.length || 1;
   const segs: TeamSeg[] = Object.keys(quadCount).map((q) => ({
-    label: q, count: quadCount[q], color: QUAD_COLOR[q] || '#5B9DF0',
+    label: q, count: quadCount[q], color: QUAD_COLOR[q] || '#6E7A72',
     pct: Math.round((quadCount[q] / total) * 100),
   }));
   let domQuad = 'Striver'; let domN = -1;
@@ -361,7 +366,7 @@ function computeDivergences(
 }
 
 const DIM_NAMES = ['Energy', 'Approach', 'Deal Style', 'Decisions'];
-function lvColor(lv: number): string { return lv >= 3 ? '#3ECF8E' : lv === 2 ? '#5B9DF0' : '#9fb0c4'; }
+function lvColor(lv: number): string { return lv >= 3 ? '#8FB0A2' : lv === 2 ? '#6E9AA8' : '#6E7A72'; }
 function lvBg(lv: number): string { return lv >= 3 ? 'rgba(62,207,142,.15)' : lv === 2 ? 'rgba(91,157,240,.15)' : 'rgba(255,255,255,.07)'; }
 
 export interface DimStatus { label: string; statusLabel: string; color: string; mark: string }
@@ -388,7 +393,7 @@ export function deriveProfile(
   const code = latest ? latest.code : 'P-Rec-R-I';
   const prev = rows[1] || null;
   const conf = confidence(takes);
-  const confColor = conf.pct >= 90 ? '#3ECF8E' : conf.pct >= 75 ? '#5B9DF0' : conf.pct >= 60 ? '#E0A340' : '#F0888A';
+  const confColor = conf.pct >= 90 ? '#8FB0A2' : conf.pct >= 75 ? '#6E9AA8' : conf.pct >= 60 ? '#F2B23C' : '#FF6A45';
   const span = rows.length
     ? spanLabel(rows[rows.length - 1].taken_at, rows[0].taken_at)
     : 'just now';
@@ -397,7 +402,7 @@ export function deriveProfile(
   const lockedN = Math.min(takes, 4);
   const dimStatus: DimStatus[] = DIM_NAMES.map((d, idx) => {
     const lk = idx < lockedN;
-    return { label: d, statusLabel: lk ? 'Settled' : 'Forming', color: lk ? '#3ECF8E' : '#E0A340', mark: lk ? '✓' : '○' };
+    return { label: d, statusLabel: lk ? 'Settled' : 'Forming', color: lk ? '#8FB0A2' : '#E0A34A', mark: lk ? '✓' : '○' };
   });
 
   // change detection by comparing the two most-recent codes
@@ -424,7 +429,7 @@ export function deriveProfile(
       date: monthYear(r.taken_at),
       level: lv,
       dot: idx === 0 ? archOf(r.code).color : lvColor(lv),
-      nameColor: idx === 0 ? '#33281A' : '#8A7A63',
+      nameColor: idx === 0 ? 'var(--text)' : 'var(--text-50)',
       levelColor: lvColor(lv),
       levelBg: lvBg(lv),
       hasShift: !!(shift && shift.when === monthYear(r.taken_at) && idx === 0),
