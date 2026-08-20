@@ -2996,3 +2996,85 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .rs-q { grid-template-columns: 40px minmax(0, 1fr); }
   .tru-dark .rs-q-fig { display: none; }
 }
+
+/* ---- Pulse roster, second pass ------------------------------------------
+   The first version was thin: a flat table on a flat page. Everything below
+   is weight and hierarchy, not decoration. */
+
+.tru-dark .rs-canvas { font-variant-numeric: tabular-nums; }
+
+/* the strip earns its height: bigger figures, quieter labels */
+.tru-dark .rs-strip { margin-bottom: 30px; }
+.tru-dark .rs-fact { padding: 18px 20px 17px; }
+.tru-dark .rs-fact .k { font-size: 9.5px; letter-spacing: 0.15em; color: var(--text-40); }
+.tru-dark .rs-fact .v { font-size: 34px; letter-spacing: -0.035em; }
+.tru-dark .rs-fact .u { font-size: 11px; margin-top: 8px; }
+
+/* the enclosure: outer shell, inner core, concentric radii */
+.tru-dark .rs-bezel { margin-top: 2px; }
+.tru-dark .rs-table { padding: 0; overflow-x: auto; }
+
+/* ---- rows: denser, with a real name column ---- */
+.tru-dark .rs-table .tru-table thead th {
+  padding: 14px 12px; font-size: 9.5px; letter-spacing: 0.14em; color: var(--text-40);
+}
+.tru-dark .rs-table .tru-table thead th:first-child { padding-left: 20px; }
+.tru-dark .rs-table .tru-table tbody td { padding: 0 12px; height: 62px; font-size: 14px; }
+.tru-dark .rs-table .tru-table tbody td:first-child { padding-left: 20px; }
+.tru-dark .rs-table .tru-table tfoot td { padding: 16px 12px; }
+.tru-dark .rs-table .tru-table tfoot td:first-child {
+  padding-left: 20px; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-40);
+}
+
+.tru-dark .rs-who { display: flex; align-items: center; gap: 12px; }
+.tru-dark .rs-av {
+  width: 34px; height: 34px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; font-size: 11.5px; font-weight: 800;
+  letter-spacing: 0.01em; color: #12180F;
+  background: linear-gradient(150deg, var(--sea-hi), #4B6355);
+}
+.tru-dark .rs-av.h-past-line { background: linear-gradient(150deg, #FF9174, #7A2E1B); color: #1A0B06; }
+.tru-dark .rs-av.h-behind { background: linear-gradient(150deg, var(--accent-hi), #8A5F14); }
+.tru-dark .rs-av.h-no-volume { background: linear-gradient(150deg, #6E7A72, #333D37); color: var(--text); }
+.tru-dark .rs-table .cell-name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.012em; }
+.tru-dark .rs-sub2 {
+  font-size: 11.5px; color: var(--text-40); margin-top: 2px; letter-spacing: 0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+}
+.tru-dark .rs-who > div { min-width: 0; }
+
+/* the figure carries the weight; the scale sits beside it, not under it */
+.tru-dark .rs-rate b { font-family: var(--hq-serif); font-size: 17px; letter-spacing: -0.02em; min-width: 56px; }
+.tru-dark .rs-scale { width: 110px; height: 22px; }
+.tru-dark .rs-scale i { width: 9px; height: 9px; }
+
+/* ---- the priority list: this is the page, so give it presence ---- */
+.tru-dark .rs-queue { gap: 12px; margin-bottom: 26px; }
+.tru-dark .rs-q { padding: 18px 22px; grid-template-columns: 44px minmax(0, 1fr) 150px; }
+.tru-dark .rs-rank { width: 44px; height: 44px; border-radius: 13px; font-size: 16px; }
+.tru-dark .rs-q-name { font-size: 17px; }
+.tru-dark .rs-q-why { font-size: 14px; margin-top: 5px; }
+.tru-dark .rs-q-do { font-size: 13.5px; margin-top: 9px; }
+.tru-dark .rs-q-fig b { font-size: 26px; }
+
+/* a clean week should still read as a finding, not an empty page */
+.tru-dark .rs-clear {
+  display: flex; align-items: center; gap: 16px; padding: 20px 22px; margin-bottom: 26px;
+  border-radius: var(--r-card-lg); background: var(--card);
+  box-shadow: var(--lip), 0 0 0 1px var(--border-soft);
+}
+.tru-dark .rs-clear i {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--sea); flex: none;
+  box-shadow: 0 0 0 4px var(--sea-soft);
+}
+.tru-dark .rs-clear p { margin: 0; font-size: 14px; color: var(--text-60); line-height: 1.5; }
+.tru-dark .rs-clear p b { color: var(--text-strong); font-weight: 700; }
+
+.tru-dark .rs-mast { padding: 0 2px 20px; margin-top: -18px; }
+.tru-dark .rs-sub { font-size: 14.5px; color: var(--text-60); max-width: none; }
+
+/* the name column was taking a third of the table for two short lines */
+.tru-dark .rs-table .tru-table thead th:first-child,
+.tru-dark .rs-table .tru-table tbody td:first-child { width: 260px; }
+.tru-dark .rs-table .tru-table thead th:last-child,
+.tru-dark .rs-table .tru-table tbody td:last-child { width: 130px; padding-right: 20px; }

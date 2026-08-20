@@ -21,7 +21,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useReveal } from '../hqHooks';
 import { HqShell } from '../components/hqShell';
 import { loadDashboard, signOutClean } from '../lib/api';
-import { loadRoster, type RosterAgent } from '../lib/coachData';
+import { initials, loadRoster, type RosterAgent } from '../lib/coachData';
 import { isClosing, isOfferPlus, stageClass, isStuckStage } from '../../../shared/flags';
 
 /* ── the line ──────────────────────────────────────────────────────────────
@@ -89,6 +89,14 @@ function prioritise(rows: readonly Row[]): Priority[] {
         severity: 'high',
         reason: `${r.stuck} of ${r.leads} leads are still sitting in Lead.`,
         action: 'Work the stuck list with them, oldest first.',
+        approach: approachFor(r),
+      });
+    } else if (r.lastDays === null && r.leads >= 5) {
+      out.push({
+        row: r,
+        severity: 'high',
+        reason: `No 1:1 on record, and they are carrying ${r.leads} leads.`,
+        action: 'Book a first one and set the cadence.',
         approach: approachFor(r),
       });
     } else if (r.lastDays !== null && r.lastDays > 45) {
@@ -289,9 +297,20 @@ export default function Roster({
           <p className="rs-sub">
             {priorities.length === 0
               ? `All ${rows.length} agents are inside one in ${line}, and nobody has gone more than 45 days without a 1:1.`
-              : `Ranked on what your numbers can show today. Your line is one in ${line}; the team runs ${totals.perContract ? `one in ${Math.round(totals.perContract)}` : 'no closings yet'}.`}
+              : `Your line is one in ${line}. The team runs ${totals.perContract ? `one in ${Math.round(totals.perContract)}` : 'no closings yet'}.`}
           </p>
         </header>
+
+        {priorities.length === 0 && (
+          <div className="rs-clear">
+            <i />
+            <p>
+              <b>Nothing needs you this week.</b> Every agent is inside one in {line},
+              everyone has had a 1:1 in the last 45 days, and no lead has been left
+              untouched. The roster below is the detail behind that.
+            </p>
+          </div>
+        )}
 
         {priorities.length > 0 && (
           <section className="rs-queue">
@@ -339,7 +358,7 @@ export default function Roster({
           <span className="panel-sub">Bar is leads per contract · the mark is your line at 1 : {line}</span>
         </div>
 
-        <div className="hqcard rs-table">
+        <div className="tru-bezel rs-bezel"><div className="tru-bezel-core rs-table">
           <table className="tru-table">
             <thead>
               <tr>
@@ -355,8 +374,13 @@ export default function Roster({
                     onClick={() => setOpen(r)}
                     onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
                   <td>
-                    <div className="cell-name">{r.name}</div>
-                    <div className="rs-sub2">{r.archName ?? 'Not assessed'}</div>
+                    <div className="rs-who">
+                      <span className={`rs-av h-${r.health}`}>{initials(r.name)}</span>
+                      <div>
+                        <div className="cell-name">{r.name}</div>
+                        <div className="rs-sub2">{r.archName ?? 'Not assessed'} &middot; {r.leads} leads</div>
+                      </div>
+                    </div>
                   </td>
                   <td>{r.leads}</td>
                   <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{r.workedPct}%</td>
@@ -397,7 +421,7 @@ export default function Roster({
               </tr>
             </tfoot>
           </table>
-        </div>
+        </div></div>
       </div>
 
       {open && (
