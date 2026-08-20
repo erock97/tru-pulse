@@ -3078,3 +3078,101 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-table .tru-table tbody td:first-child { width: 260px; }
 .tru-dark .rs-table .tru-table thead th:last-child,
 .tru-dark .rs-table .tru-table tbody td:last-child { width: 130px; padding-right: 20px; }
+
+/* ---- Pulse roster, matched to the approved mockup ------------------------
+   Six separate enclosures rather than one joined strip, a status pill, and a
+   nested-arrow CTA. Every container is a shell around a core: the outer holds
+   the hairline, the inner holds its own tone and a warm top lip, and the radii
+   are concentric so the curves sit inside each other. */
+
+/* the strip becomes six machined tiles */
+.tru-dark .rs-tiles {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 30px;
+}
+.tru-dark .rs-tile {
+  padding: 5px; border-radius: 19px;
+  background: var(--shell);
+  box-shadow: 0 0 0 1px var(--border-soft);
+  transition: transform 0.6s var(--spring), box-shadow 0.6s var(--spring);
+}
+.tru-dark .rs-tile-in {
+  padding: 16px 18px 15px; border-radius: 14px; min-height: 104px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: linear-gradient(168deg, rgba(226, 240, 230, 0.03), transparent 72%);
+  box-shadow: var(--lip);
+}
+.tru-dark .rs-tile:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--border), 0 24px 40px -28px rgba(2, 7, 4, 0.9); }
+.tru-dark .rs-tile.hot { box-shadow: 0 0 0 1px rgba(255, 106, 69, 0.30); }
+.tru-dark .rs-tile.hot .rs-tile-in { background: linear-gradient(168deg, rgba(255, 106, 69, 0.16), transparent 74%); }
+
+.tru-dark .rs-tile .k {
+  display: block; font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-40); font-weight: 700;
+}
+.tru-dark .rs-tile .v {
+  display: block; font-family: var(--hq-serif); font-size: 32px; line-height: 1;
+  letter-spacing: -0.035em; color: var(--text-strong); margin-top: auto;
+}
+.tru-dark .rs-tile.hot .v { color: #FF9174; }
+.tru-dark .rs-tile .u { display: block; font-size: 11px; color: var(--text-40); margin-top: 7px; letter-spacing: 0.02em; }
+
+/* the status pill that leads the page */
+.tru-dark .rs-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 10px; border-radius: var(--r-pill); margin-bottom: 14px;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700;
+  color: var(--sea-hi); background: var(--sea-soft);
+  box-shadow: inset 0 0 0 1px rgba(143, 176, 162, 0.24);
+}
+.tru-dark .rs-pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.tru-dark .rs-pill.hot {
+  color: #EE8264; background: var(--ember-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 69, 0.26);
+}
+
+/* button-in-button: the arrow gets its own circle, flush inside the pill */
+.tru-dark .rs-cta {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 7px 7px 7px 20px; border: 0; border-radius: var(--r-pill); cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+  color: #12180F; background: linear-gradient(180deg, #FFEBC9, var(--accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 20px 40px -24px rgba(242, 178, 60, 0.95);
+  transition: transform 0.6s var(--spring), box-shadow 0.6s var(--spring);
+  white-space: nowrap;
+}
+.tru-dark .rs-cta:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 28px 52px -24px rgba(242, 178, 60, 1); }
+.tru-dark .rs-cta:active { transform: translateY(0) scale(0.985); }
+.tru-dark .rs-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tru-dark .rs-cta span {
+  width: 30px; height: 30px; border-radius: 999px; flex: none;
+  display: grid; place-items: center; background: rgba(18, 24, 15, 0.14);
+  transition: transform 0.6s var(--spring), background 0.6s var(--spring);
+}
+.tru-dark .rs-cta:hover span { transform: translate(3px, -1px) scale(1.06); background: rgba(18, 24, 15, 0.2); }
+
+/* the priority cards are enclosures too, not flat panels */
+/* the outer shell is a plain block; the grid moved to the inner core, or the
+   card's single child gets squeezed into the old 44px rank column */
+.tru-dark .rs-q {
+  display: block; grid-template-columns: none;
+  padding: 5px; background: var(--shell);
+  box-shadow: 0 0 0 1px var(--border-soft); border-radius: 20px;
+}
+.tru-dark .rs-q > * { position: relative; }
+.tru-dark .rs-q-inner {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) 150px; gap: 18px; align-items: center;
+  padding: 16px 18px; border-radius: 15px;
+  background: linear-gradient(168deg, rgba(226, 240, 230, 0.028), transparent 72%);
+  box-shadow: var(--lip);
+}
+.tru-dark .rs-q.crit { box-shadow: 0 0 0 1px rgba(255, 106, 69, 0.28); }
+.tru-dark .rs-q.crit .rs-q-inner { background: linear-gradient(160deg, rgba(255, 106, 69, 0.12), transparent 74%); }
+
+@media (max-width: 1180px) {
+  .tru-dark .rs-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .tru-dark .rs-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tru-dark .rs-cta { display: none; }
+}

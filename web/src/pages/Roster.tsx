@@ -253,6 +253,20 @@ export default function Roster({
   }, [rows, sort]);
 
   const nav = { onOpenPulse, onOpenCoach, onOpenRep };
+
+  // Button-in-button: the arrow never sits naked beside the label.
+  const top = rows && rows.length ? prioritise(rows)[0] : undefined;
+  const cta = top ? (
+    <button className="rs-cta" onClick={() => setOpen(top.row)}>
+      Prep the 1:1 with {top.row.name.split(' ')[0]}
+      <span aria-hidden>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </span>
+    </button>
+  ) : undefined;
   // The shell already renders an eyebrow and an h1. The page used to render its
   // own as well, which stacked two headings. One heading, and it says the thing
   // that actually matters this week.
@@ -262,6 +276,7 @@ export default function Roster({
         orgName={orgName}
         eyebrow={`${orgName} · rolling window`}
         title={title}
+        context={cta}
         onSignOut={() => signOutClean()}
         nav={nav}
       >
@@ -313,6 +328,15 @@ export default function Roster({
         )}
 
         {priorities.length > 0 && (
+          <span className={`rs-pill${totals.pastLine > 0 ? ' hot' : ''}`}>
+            <i />
+            {totals.pastLine > 0
+              ? `${totals.pastLine} past your line`
+              : `${priorities.length} need${priorities.length === 1 ? 's' : ''} you`}
+          </span>
+        )}
+
+        {priorities.length > 0 && (
           <section className="rs-queue">
             {priorities.map((p, i) => (
               <article
@@ -322,6 +346,7 @@ export default function Roster({
                 onClick={() => setOpen(p.row)}
                 onKeyDown={(e) => { if (e.key === 'Enter') setOpen(p.row); }}
               >
+                <div className="rs-q-inner">
                 <div className={`rs-rank ${p.severity}`}>{i + 1}</div>
                 <div className="rs-q-body">
                   <div className="rs-q-name">{p.row.name}</div>
@@ -333,12 +358,13 @@ export default function Roster({
                   <b>{p.row.perContract ? `1 : ${Math.round(p.row.perContract)}` : '—'}</b>
                   <s>per contract</s>
                 </div>
+                </div>
               </article>
             ))}
           </section>
         )}
 
-        <section className="rs-strip">
+        <section className="rs-tiles">
           {[
             ['Leads in play', String(totals.leads), ''],
             ['Worked', `${totals.workedPct}%`, `${totals.worked} of ${totals.leads}`],
@@ -347,8 +373,12 @@ export default function Roster({
             ['Still in Lead', String(totals.stuck), ''],
             ['Past your line', String(totals.pastLine), totals.stale ? `${totals.stale} stale 1:1s` : ''],
           ].map(([k, v, u]) => (
-            <div className={`rs-fact${k === 'Past your line' && totals.pastLine > 0 ? ' hot' : ''}`} key={k}>
-              <span className="k">{k}</span><span className="v">{v}</span>{u ? <span className="u">{u}</span> : null}
+            <div className={`rs-tile${k === 'Past your line' && totals.pastLine > 0 ? ' hot' : ''}`} key={k}>
+              <div className="rs-tile-in">
+                <span className="k">{k}</span>
+                <span className="v">{v}</span>
+                <span className="u">{u || ' '}</span>
+              </div>
             </div>
           ))}
         </section>
