@@ -312,32 +312,33 @@ export default function Roster({
           reads as unfinished no matter how well each card is drawn. Everything
           below sits inside a single enclosure divided by hairlines, and the
           emphasis is deliberately unequal rather than a row of equal squares. */}
-      <div className="rs-deck">
 
-        <div className="rs-band">
-          <div className="rs-band-lead">
+        {/* Unequal on purpose. A row of six identical cards is the pattern
+            that reads as generated; these are one lead card, one alert card,
+            and four supporting ones sharing the remaining width. */}
+        <div className="rs-stats">
+          <div className="rs-plate rs-stat rs-s-lead">
             <span className="k">Leads per contract</span>
             <span className="v">{totals.perContract ? "1 : " + Math.round(totals.perContract) : "\u2014"}</span>
             <span className="u">your line is 1 : {line}</span>
           </div>
-          <div className={totals.pastLine > 0 ? "rs-band-lead hot" : "rs-band-lead"}>
+          <div className={totals.pastLine > 0 ? "rs-plate rs-stat rs-s-alert hot" : "rs-plate rs-stat rs-s-alert"}>
             <span className="k">Past your line</span>
             <span className="v">{totals.pastLine}</span>
             <span className="u">{totals.stale ? totals.stale + " stale 1:1s" : "nobody drifting"}</span>
           </div>
-          <div className="rs-band-rest">
-            {[
-              ["Leads in play", String(totals.leads)],
-              ["Worked", totals.workedPct + "%"],
-              ["Under contract", String(totals.contracts)],
-              ["Still in Lead", String(totals.stuck)],
-            ].map(([k, v]) => (
-              <div className="rs-band-cell" key={k}>
-                <span className="k">{k}</span>
-                <span className="v">{v}</span>
-              </div>
-            ))}
-          </div>
+          {[
+            ["rs-s-a", "Leads in play", String(totals.leads), "all sources"],
+            ["rs-s-b", "Worked", totals.workedPct + "%", totals.worked + " of " + totals.leads],
+            ["rs-s-c", "Under contract", String(totals.contracts), "this window"],
+            ["rs-s-d", "Still in Lead", String(totals.stuck), totals.stuck ? "48h+ untouched" : "nothing sitting"],
+          ].map(([cls, k, v, u]) => (
+            <div className={"rs-plate rs-stat " + cls} key={k}>
+              <span className="k">{k}</span>
+              <span className="v">{v}</span>
+              <span className="u">{u}</span>
+            </div>
+          ))}
         </div>
 
         {/* The people who need you are not a separate card list stacked above a
@@ -347,7 +348,7 @@ export default function Roster({
             {priorities.map((p, i) => (
               <article
                 key={p.row.name}
-                className={p.severity === "high" ? "rs-fr crit" : "rs-fr"}
+                className={p.severity === "high" ? "rs-plate rs-fr crit" : "rs-plate rs-fr"}
                 tabIndex={0}
                 onClick={() => setOpen(p.row)}
                 onKeyDown={(e) => { if (e.key === "Enter") setOpen(p.row); }}
@@ -361,17 +362,13 @@ export default function Roster({
                   <p className="rs-fr-why">{p.reason}</p>
                   <p className="rs-fr-do"><b>Do:</b> {p.action}{p.approach ? <em> {p.approach}</em> : null}</p>
                 </div>
-                <div className="rs-fr-fig">
-                  <b>{p.row.perContract ? "1 : " + Math.round(p.row.perContract) : "\u2014"}</b>
-                  <s>per contract</s>
-                </div>
               </article>
             ))}
           </div>
         )}
 
         {priorities.length === 0 && (
-          <div className="rs-clear">
+          <div className="rs-plate rs-clear">
             <i />
             <p>
               <b>Nothing needs you this week.</b> Every agent is inside one in {line},
@@ -385,7 +382,7 @@ export default function Roster({
           <span className="rs-restbar-note">bar is leads per contract, the mark is your line at 1 : {line}</span>
         </div>
 
-        <div className="rs-table">
+        <div className="rs-plate rs-table">
           <table className="tru-table">
             <thead>
               <tr>
@@ -449,7 +446,6 @@ export default function Roster({
             </tfoot>
           </table>
         </div>
-      </div>
       </div>
 
       {open && (
