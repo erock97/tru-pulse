@@ -445,7 +445,10 @@ html[data-theme="warm"] .tru-dark {
 
 /* ---------- Card (scoped: global .card differs) ---------- */
 .tru-dark .hqcard {
-  background: var(--card);
+  /* Translucent for the same reason the roster's plates are: the field behind
+     is what gives a card depth, and an opaque fill hides it. Kept dense enough
+     that body text still clears contrast against the lit part of the room. */
+  background: rgba(16, 29, 21, 0.76);
   border: 1px solid var(--border-soft);
   border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
@@ -2784,12 +2787,24 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* ---- The field ---------------------------------------------------------- */
 .tru-dark .tru-shell { position: relative; isolation: isolate; }
 
-/* top of the room: the ground gradient plus a broad soft source behind the
-   masthead. */
+/* top of the room: the ground gradient, a broad soft source behind the
+   masthead, and — the part CSS cannot fake — a real depth-of-field layer.
+
+   `public/field.svg` is a generated image where every light carries a softness
+   proportional to its size, so a few small ones sit sharp and everything else
+   falls away out of focus. A gradient has no focal plane, which is exactly why
+   the old ground read flat no matter how the shadows on top were tuned.
+
+   Regenerate with `node web/tools/field.mjs web/public/field.svg`. It is seeded,
+   so that reproduces the same field rather than reshuffling it.
+
+   It is `fixed`, so the room stays put while the data scrolls through it, and
+   it paints once instead of on every scroll frame. */
 .tru-dark .tru-shell::before {
   content: "";
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
+    url("/field.svg") center / cover no-repeat,
     radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
     radial-gradient(38% 24% at 50% 0%, rgba(255, 220, 150, 0.15) 0%, transparent 70%),
     linear-gradient(178deg, #14301F 0%, #0D2015 22%, #0A1710 44%, #071009 70%, var(--base) 100%);
@@ -2800,7 +2815,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    dropping it onto flat black. */
 .tru-dark .tru-shell::after {
   content: "";
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
     radial-gradient(78% 40% at 50% 102%, rgba(96, 168, 124, 0.13) 0%, rgba(52, 104, 74, 0.05) 46%, transparent 76%),
     radial-gradient(122% 74% at 50% 10%, transparent 34%, rgba(2, 6, 4, 0.70) 100%),
@@ -2897,12 +2912,19 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    the room rather than being neutral black. */
 .tru-dark .rs-plate {
   position: relative; border-radius: 18px;
+  /* Glass, not a plate. The fill is translucent so the room's light carries
+     through it. Opaque cards were the reason the depth never landed: a solid
+     card on a gradient has nothing behind it to see.
+
+     Deliberately no backdrop-filter. The field behind is already soft, so a
+     blur pass buys almost nothing visually and costs a compositing layer per
+     card on every scroll frame. */
   background:
-    linear-gradient(168deg, rgba(226, 240, 230, 0.055) 0%, rgba(226, 240, 230, 0.012) 34%, transparent 68%),
-    linear-gradient(180deg, var(--card) 0%, var(--panel) 100%);
+    linear-gradient(168deg, rgba(226, 240, 230, 0.062) 0%, rgba(226, 240, 230, 0.014) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(16, 29, 21, 0.74) 0%, rgba(9, 17, 12, 0.82) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.16),
-    inset 0 -1px 0 rgba(2, 7, 4, 0.5),
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
     0 0 0 1px var(--border-soft),
     0 26px 44px -30px rgba(2, 7, 4, 0.95);
 }
@@ -2943,12 +2965,42 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-s-alert { justify-content: center; gap: 12px; }
 .tru-dark .rs-s-lead .v,
 .tru-dark .rs-s-alert .v { margin-top: 0; }
-.tru-dark .rs-s-lead { padding: 26px 28px 24px; }
+.tru-dark .rs-s-lead { padding: 26px 28px 24px; overflow: hidden; }
 .tru-dark .rs-s-lead .v { font-size: 54px; letter-spacing: -0.045em; }
+.tru-dark .rs-s-lead .k,
+.tru-dark .rs-s-lead .v,
+.tru-dark .rs-s-lead .u { position: relative; z-index: 2; }
 .tru-dark .rs-s-lead::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(120% 90% at 8% 0%, rgba(242, 178, 60, 0.10), transparent 62%);
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  /* the type sits on the left, so the wash keeps that side readable and lets
+     the burst come through on the right */
+  background: linear-gradient(96deg, rgba(10, 20, 14, 0.93) 22%, rgba(10, 20, 14, 0.42) 48%, transparent 76%);
 }
+
+/* ---- the burst: the team, drawn ---- */
+.tru-dark .rs-burst {
+  position: absolute; inset: 0; height: 100%; width: 100%;
+  z-index: 0; pointer-events: none;
+  /* light falls off with distance from its source, so the dial does too */
+  mask-image: radial-gradient(105% 165% at 17% 50%, #000 0%, rgba(0, 0, 0, 0.82) 58%, rgba(0, 0, 0, 0.34) 100%);
+  -webkit-mask-image: radial-gradient(105% 165% at 17% 50%, #000 0%, rgba(0, 0, 0, 0.82) 58%, rgba(0, 0, 0, 0.34) 100%);
+}
+.tru-dark .rs-burst-ring { fill: none; stroke: var(--accent-hi); stroke-width: 1.1; }
+.tru-dark .rs-burst-line {
+  fill: none; stroke: rgba(255, 145, 116, 0.72); stroke-width: 1.5; stroke-dasharray: 4 5;
+}
+
+/* ---- the strips: one bar per agent, same order on every card ---- */
+.tru-dark .rs-stat-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
+.tru-dark .rs-stat-row .v { margin-top: 0; }
+.tru-dark .rs-strip {
+  display: flex; align-items: flex-end; gap: 3px; height: 38px; flex: none;
+  padding-bottom: 2px;
+}
+.tru-dark .rs-strip i { width: 6px; border-radius: 2px; display: block; }
+.tru-dark .rs-strip.t-sea i { background: linear-gradient(180deg, var(--sea-hi), rgba(143, 176, 162, 0.32)); }
+.tru-dark .rs-strip.t-amber i { background: linear-gradient(180deg, var(--accent-hi), rgba(242, 178, 60, 0.30)); }
+.tru-dark .rs-strip.t-ember i { background: linear-gradient(180deg, #FF9174, rgba(255, 106, 69, 0.28)); }
 .tru-dark .rs-s-alert .v { font-size: 40px; }
 .tru-dark .rs-s-alert.hot {
   box-shadow:
