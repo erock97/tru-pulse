@@ -48,14 +48,14 @@ export function Ring({ pct }: { pct: number }) {
   }, [len]);
   return (
     <svg width="128" height="128" viewBox="0 0 128 128">
-      <circle cx="64" cy="64" r={r} fill="none" stroke="#ece2d2" strokeWidth="13" />
+      <circle cx="64" cy="64" r={r} fill="none" stroke="var(--track-fill)" strokeWidth="13" />
       <circle
         ref={arc}
         cx="64"
         cy="64"
         r={r}
         fill="none"
-        stroke="#2e8b57"
+        stroke="var(--accent)"
         strokeWidth="13"
         strokeLinecap="round"
         strokeDasharray={`${len} ${c - len}`}
@@ -63,10 +63,10 @@ export function Ring({ pct }: { pct: number }) {
         transform="rotate(-90 64 64)"
         style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)' }}
       />
-      <text x="64" y="62" textAnchor="middle" fontSize="30" fontWeight="800" fill="#33281a" fontFamily="Georgia">
+      <text x="64" y="62" textAnchor="middle" fontSize="30" fontWeight="800" fill="var(--text)" fontFamily="var(--hq-serif)">
         <CountUp value={pct} fmt={(n) => `${Math.round(n)}%`} />
       </text>
-      <text x="64" y="80" textAnchor="middle" fontSize="9" fill="#8a7a63" letterSpacing="1.2">WORKED</text>
+      <text x="64" y="80" textAnchor="middle" fontSize="9" fill="var(--text-50)" letterSpacing="1.2">WORKED</text>
     </svg>
   );
 }
@@ -120,21 +120,26 @@ export function Donut({ sources }: { sources: Array<{ name: string; n: number; c
       >
         {segs}
       </g>
-      <text x="70" y="66" textAnchor="middle" fontSize="24" fontWeight="800" fill="#33281a" fontFamily="Georgia">
+      <text x="70" y="66" textAnchor="middle" fontSize="24" fontWeight="800" fill="var(--text)" fontFamily="var(--hq-serif)">
         <CountUp value={total} />
       </text>
-      <text x="70" y="84" textAnchor="middle" fontSize="9.5" fill="#8a7a63" letterSpacing="1.2">LEADS</text>
+      <text x="70" y="84" textAnchor="middle" fontSize="9.5" fill="var(--text-50)" letterSpacing="1.2">LEADS</text>
     </svg>
   );
 }
 
+/** Lead sources need distinguishable hues, but a rainbow on a dark green
+ *  ground reads as clip art and steals the meaning from the accent. This set
+ *  runs amber -> sand -> clay -> sage -> slate, so the sources read as one
+ *  family. Zillow holds the true accent because it is the dominant source;
+ *  everything else steps away from it. Keep new sources inside this range. */
 export const SOURCE_COLORS: Record<string, string> = {
-  'Zillow': '#a9791f',
-  'Realtor.com MVIP': '#e0784a',
-  'Realtor.com': '#c0492f',
-  'Homes.com': '#2e8b57',
-  'Facebook': '#2f6bb0',
-  'Google': '#d99a2b',
-  'Referrals': '#7d6a8a',
-  'Other': '#8a7a63',
+  'Zillow': '#F2B23C',
+  'Google': '#D9C77E',
+  'Realtor.com MVIP': '#E08A4A',
+  'Realtor.com': '#C96A46',
+  'Homes.com': '#8FB0A2',
+  'Facebook': '#6E9AA8',
+  'Referrals': '#A99BB0',
+  'Other': '#6E7A72',
 };

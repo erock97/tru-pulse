@@ -1049,14 +1049,14 @@ function Constellation({ nodes, onPick }: { nodes: AgentNode[]; onPick: (agent: 
             {lens === 'status' && (
               <>
                 <circle cx={CW * 0.66} cy={CH * 0.42} r={150} fill="var(--sea-soft)" opacity="0.5" />
-                <circle cx={CW * 0.3} cy={CH * 0.32} r={96} fill="var(--accent-soft)" opacity="0.7" />
+                <circle cx={CW * 0.3} cy={CH * 0.32} r={96} fill="none" opacity="0.7" />
                 <circle cx={CW * 0.24} cy={CH * 0.76} r={74} fill="rgba(192,107,79,0.10)" />
               </>
             )}
             {lens === 'performance' && (
               <>
                 <circle cx={CW * 0.2} cy={CH * 0.5} r={126} fill="rgba(192,107,79,0.13)" opacity="0.9" />
-                <circle cx={CW * 0.52} cy={CH * 0.5} r={126} fill="var(--accent-soft)" opacity="0.7" />
+                <circle cx={CW * 0.52} cy={CH * 0.5} r={126} fill="none" opacity="0.7" />
                 <circle cx={CW * 0.84} cy={CH * 0.5} r={126} fill="var(--sea-soft)" opacity="0.6" />
               </>
             )}
@@ -1743,8 +1743,8 @@ function DividerWave() {
   return (
     <div className="ps-divider" aria-hidden>
       <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="var(--accent-soft)" />
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--accent-line)" strokeWidth="1.5" />
+        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="none" />
+        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
       </svg>
     </div>
   );
