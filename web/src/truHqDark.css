@@ -18,61 +18,74 @@
 
 /* ---- Tokens live on the wrapper, NOT :root, so nothing leaks out ---- */
 .tru-dark {
-  --base: #0C0A08;
-  --panel: #151310;
-  --card: #1C1915;
-  --card-flat: #171410;
-  --border: rgba(243, 236, 224, 0.18);
-  --border-soft: rgba(243, 236, 224, 0.10);
+  /* ---- The forest deck ----------------------------------------
+     Deep, desaturated green ground; bone ink; one amber accent.
+     The ground stays dark and unsaturated on purpose - that is the
+     only reason the amber reads as a signal instead of a theme.
+     Green has a narrow safe band: push it saturated or toward
+     yellow and it turns military. Do not drift these values.
+     ------------------------------------------------------------ */
+  --base: #050B08;
+  --panel: #0C1610;
+  --card: #101D15;
+  --card-flat: #0C1610;
+  --border: rgba(214, 232, 218, 0.14);
+  --border-soft: rgba(214, 232, 218, 0.075);
 
-  --text: #F3ECE0;
-  --text-60: #BDB3A6;
-  --text-50: #9D9285;
-  --text-40: #7C7165;
+  --text: #EDF2EC;
+  --text-60: #A9B5AC;
+  --text-50: #95A398;
+  --text-40: #6E7A72;
 
-  --accent: #E9A23B;
-  --accent-hi: #F2C079;
-  --accent-soft: rgba(233, 162, 59, 0.15);
-  --accent-line: rgba(233, 162, 59, 0.30);
-  --ember: #D2661C;
+  --accent: #F2B23C;
+  --accent-hi: #FFDC93;
+  --accent-soft: rgba(242, 178, 60, 0.16);
+  --accent-line: rgba(242, 178, 60, 0.32);
+  --ember: #FF6A45;
 
-  --espresso: #33281a;
-  --cream: #fbf7f0;
-  --sea: #4a7c6f;
-  --sea-hi: #6fbfa9;
-  --sea-soft: rgba(74, 124, 111, 0.16);
-  --terracotta: #c06b4f;
+  --espresso: #0E1B14;
+  --cream: #F2F6F1;
+  --sea: #8FB0A2;
+  --sea-hi: #A8C9B9;
+  --sea-soft: rgba(143, 176, 162, 0.16);
+  --terracotta: #FF8B62;
 
   --text-strong: #ffffff;
-  --on-hero: #F8F2E8;
-  --on-hero-60: rgba(243, 236, 224, 0.64);
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #21190f 0%, transparent 44%), linear-gradient(150deg, #17110a 0%, #0d0a06 72%);
+  --on-hero: #F2F6F1;
+  --on-hero-60: rgba(226, 240, 230, 0.64);
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #14301F 0%, transparent 46%), linear-gradient(150deg, #0D2015 0%, #060D09 72%);
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #14301F 0%, transparent 46%), linear-gradient(150deg, #0D2015 0%, #060D09 72%);
   --hero-border: var(--accent-line);
-  --hover-fill: rgba(255, 255, 255, 0.04);
-  --avatar-ring: rgba(255, 255, 255, 0.08);
-  --stat-grad: linear-gradient(180deg, #F8F2E8, var(--accent-hi));
+  --hover-fill: rgba(226, 240, 230, 0.045);
+  --avatar-ring: rgba(226, 240, 230, 0.09);
+  --stat-grad: linear-gradient(180deg, #F2F6F1, var(--accent-hi));
   --card-shadow: none;
-  --card-hover-shadow: 0 22px 50px -30px rgba(0, 0, 0, 0.9);
-  --track-fill: #2B2824;
-  --track-fill-2: #24211E;
-  --track-hairline: #1E1C19;
-  --track-outer: #22201C;
-  --dot-empty: #2C2925;
-  --hover-fill-soft: rgba(255, 255, 255, 0.03);
+  --card-hover-shadow: 0 22px 50px -30px rgba(2, 7, 4, 0.92);
+  --track-fill: #1B2620;
+  --track-fill-2: #16201A;
+  --track-hairline: #131B16;
+  --track-outer: #172119;
+  --dot-empty: #1E2A23;
+  --hover-fill-soft: rgba(226, 240, 230, 0.03);
+
+  /* light catching the top edge of an enclosure. a highlight, not an
+     outline - outlines everywhere would spend the accent on trim. */
+  --lip: inset 0 1px 0 rgba(255, 216, 148, 0.15);
+  --lift: inset 0 1px 0 rgba(226, 240, 230, 0.07);
 
   --r-card: 14px;
   --r-card-lg: 16px;
   --r-btn: 10px;
   --r-pill: 999px;
   --r-chip: 28px;
+  --r-bezel: 26px;
+  --r-bezel-in: 20px;
 
   --hq-font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --hq-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* Turn the wrapper into the dark app surface (page background handled
-     by .tru-shell below so the rest of the doc is never repainted). */
   font-family: var(--hq-font);
   color: var(--text);
 }
@@ -291,7 +304,7 @@ html[data-theme="warm"] .tru-dark {
   flex-direction: column;
   justify-content: center;
   padding: clamp(32px, 5vw, 72px);
-  background: linear-gradient(160deg, #17110a, #0b0906);
+  background: linear-gradient(160deg, #0D2015, #060D09);
   border-right: 1px solid var(--border-soft);
 }
 .tru-login-video {
@@ -831,14 +844,14 @@ html[data-theme="warm"] .tru-dark {
    palette, scoped to the lesson shell so no other surface is affected.
    ============================================================ */
 .ac-shell.tru-dark {
-  --gold: #E9A23B;
-  --gold-lt: #F2C079;
-  --gold-dk: #C77E1F;
-  --ink: #F3ECE0;
-  --ink2: #A79C8D;
+  --gold: #F2B23C;
+  --gold-lt: #FFDC93;
+  --gold-dk: #C8891F;
+  --ink: #EDF2EC;
+  --ink2: #A9B5AC;
   --line: rgba(243, 236, 224, 0.12);
-  --cream: #141009;
-  --cream2: #1B150D;
+  --cream: #0C1610;
+  --cream2: #101D15;
   background: var(--base);
 }
 .ac-shell.tru-dark::after { z-index: 5; }
@@ -919,12 +932,12 @@ html[data-theme="warm"] .tru-dark {
   .tabbar-btn {
     background: none; border: 0; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 10px 4px 9px; color: var(--text-50, #8A7F70);
+    padding: 10px 4px 9px; color: var(--text-50, #95A398);
     font: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
     /* A comfortable thumb target, per Android's 48dp guidance. */
     min-height: 52px;
   }
-  .tabbar-btn.active { color: var(--accent-hi, #F2C079); }
+  .tabbar-btn.active { color: var(--accent-hi, #FFDC93); }
   .tabbar-btn:disabled { opacity: 0.4; cursor: default; }
 }
 @media (max-width: 680px) {
@@ -997,7 +1010,7 @@ html[data-theme="warm"] .tru-dark {
   overflow: hidden;
   padding: 30px 32px;
   min-height: 340px;
-  background: linear-gradient(150deg, #241611, #2c1c14 62%);
+  background: linear-gradient(150deg, #1C1410, #2A1A14 62%);
   border: 1px solid rgba(192, 107, 79, 0.4);
   display: flex;
   flex-direction: column;
@@ -1029,7 +1042,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #fff, #d98a6c);
+  background: linear-gradient(180deg, #fff, #FF8B62);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1088,9 +1101,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .ps-oc-chip:hover { opacity: 0.75; }
 .tru-dark .ps-oc-caret { font-size: 8px; opacity: 0.7; }
-.tru-dark .ps-oc-ok    .ps-oc-chip { color: #7ac77a; }
-.tru-dark .ps-oc-warn  .ps-oc-chip { color: #e0b055; }
-.tru-dark .ps-oc-alert .ps-oc-chip { color: #e08a55; }
+.tru-dark .ps-oc-ok    .ps-oc-chip { color: var(--sea); }
+.tru-dark .ps-oc-warn  .ps-oc-chip { color: var(--accent); }
+.tru-dark .ps-oc-alert .ps-oc-chip { color: var(--terracotta); }
 /* Full width, below the tiles. Not a popover: the tiles animate in via .reveal,
    whose transform creates a stacking context an absolute panel can't escape, and
    this text is meant to be read properly rather than squinted at in a 150px column. */
@@ -1099,9 +1112,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-size: 13.5px; line-height: 1.65; color: var(--text-60);
   border-left: 3px solid currentColor;
 }
-.tru-dark .ps-ocpanel.ps-oc-ok    { color: #7ac77a; }
-.tru-dark .ps-ocpanel.ps-oc-warn  { color: #e0b055; }
-.tru-dark .ps-ocpanel.ps-oc-alert { color: #e08a55; }
+.tru-dark .ps-ocpanel.ps-oc-ok    { color: var(--sea); }
+.tru-dark .ps-ocpanel.ps-oc-warn  { color: var(--accent); }
+.tru-dark .ps-ocpanel.ps-oc-alert { color: var(--terracotta); }
 .tru-dark .ps-ocpanel-head {
   margin: 0 0 12px; color: var(--text-strong); font-weight: 700; font-size: 15px;
 }
@@ -1140,7 +1153,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   border-radius: 14px; font-size: 22px; font-weight: 800;
   color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border: 1px solid rgba(192, 107, 79, 0.4);
 }
-.tru-dark .ps-triage-count.clear { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(74, 124, 111, 0.4); }
+.tru-dark .ps-triage-count.clear { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
 .tru-dark .ps-triage-title { font-size: 16px; font-weight: 700; color: var(--text-strong); }
 .tru-dark .ps-triage-sub { font-size: 12px; color: var(--text-50); margin-top: 3px; }
 .tru-dark .ps-triage-list { display: flex; flex-direction: column; gap: 10px; }
@@ -1246,7 +1259,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ps-spine-node { display: flex; align-items: center; gap: 16px; padding: 14px 0; position: relative; opacity: 0; animation: truAdFadeUp 0.6s var(--ease) forwards; }
 .tru-dark .ps-spine-mark { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-hi); z-index: 1; }
 .tru-dark .ps-spine-node.warn .ps-spine-mark { background: rgba(192, 107, 79, 0.12); border-color: rgba(192, 107, 79, 0.4); color: var(--terracotta); }
-.tru-dark .ps-spine-node.good .ps-spine-mark { background: var(--sea-soft); border-color: rgba(74, 124, 111, 0.4); color: var(--sea-hi); }
+.tru-dark .ps-spine-node.good .ps-spine-mark { background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); color: var(--sea-hi); }
 .tru-dark .ps-spine-body { flex: 1; min-width: 0; }
 .tru-dark .ps-spine-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .tru-dark .ps-spine-label { font-size: 15px; font-weight: 600; color: var(--text-strong); }
@@ -1274,7 +1287,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .pill-paused { display: inline-block; margin-left: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border: 1px solid rgba(192, 107, 79, 0.35); padding: 2px 9px; border-radius: var(--r-pill); }
 .tru-dark .pill-strike { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-hi); background: var(--accent-soft); border: 1px solid var(--accent-line); padding: 2px 9px; border-radius: var(--r-pill); }
 .tru-dark .cell-warn { color: var(--terracotta); font-weight: 700; }
-.tru-dark .cell-worked { font-weight: 700; color: #6fbfa9; }
+.tru-dark .cell-worked { font-weight: 700; color: var(--sea-hi); }
 .tru-dark .cell-worked.low { color: var(--terracotta); }
 .tru-dark .cell-strikes { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-weight: 700; font-size: 14px; background: var(--panel); border: 1px solid var(--border-soft); }
 .tru-dark .cell-strikes.s3 { color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border-color: rgba(192, 107, 79, 0.4); }
@@ -1309,7 +1322,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ps-drill-acts { display: inline-flex; gap: 8px; flex-wrap: wrap; }
 .tru-dark .ps-abtn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 700; text-decoration: none; color: var(--accent-hi); background: var(--accent-soft); border: 1px solid var(--accent-line); transition: transform 0.15s var(--ease); }
 .tru-dark .ps-abtn:hover { transform: translateY(-1px); }
-.tru-dark .ps-abtn.warm { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(74, 124, 111, 0.4); }
+.tru-dark .ps-abtn.warm { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
 .tru-dark .ps-abtn.off { color: var(--text-50); background: var(--panel); border-color: var(--border-soft); cursor: default; }
 .tru-dark .ps-abtn.sm { padding: 4px 9px; font-size: 11.5px; }
 .tru-dark .ps-drill-src { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -1324,7 +1337,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ps-leadline .ln { font-weight: 600; color: var(--text-strong); }
 .tru-dark .ps-leadline .muted { color: var(--text-50); font-size: 12.5px; }
 .tru-dark .ps-lead-pill { margin-left: auto; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--r-pill); border: 1px solid; }
-.tru-dark .ps-lead-pill.ok { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(74, 124, 111, 0.4); }
+.tru-dark .ps-lead-pill.ok { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
 .tru-dark .ps-lead-pill.warn { color: var(--accent-hi); background: var(--accent-soft); border-color: var(--accent-line); }
 .tru-dark .ps-lead-pill.bad { color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border-color: rgba(192, 107, 79, 0.4); }
 
@@ -1761,21 +1774,21 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* compliance callout */
 .tru-dark .compliance {
   position: relative; overflow: hidden; display: flex; align-items: center; gap: 20px;
-  padding: 24px 28px; border: 1px solid rgba(74, 124, 111, 0.4); margin-bottom: 26px;
+  padding: 24px 28px; border: 1px solid rgba(143, 176, 162, 0.38); margin-bottom: 26px;
 }
 .tru-dark .compliance-icon {
   width: 54px; height: 54px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center;
-  background: rgba(74, 124, 111, 0.14); border: 1px solid rgba(74, 124, 111, 0.4); color: #6fbfa9; position: relative;
+  background: rgba(143, 176, 162, 0.14); border: 1px solid rgba(143, 176, 162, 0.38); color: var(--sea-hi); position: relative;
 }
 .tru-dark .compliance-body { flex: 1; min-width: 0; position: relative; }
 .tru-dark .compliance-body h4 { font-size: 19px; font-weight: 700; color: var(--text-strong); }
 .tru-dark .compliance-body p { color: var(--text-60); font-size: 14px; margin-top: 6px; max-width: 62ch; }
 .tru-dark .compliance-badge {
   position: relative; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700;
-  color: #6fbfa9; background: rgba(74, 124, 111, 0.12); border: 1px solid rgba(74, 124, 111, 0.35);
+  color: var(--sea-hi); background: rgba(143, 176, 162, 0.12); border: 1px solid rgba(143, 176, 162, 0.34);
   padding: 5px 14px; border-radius: var(--r-pill); white-space: nowrap;
 }
-.tru-dark .compliance-badge .hq-prod-dot { background: #6fbfa9; box-shadow: 0 0 8px #4a7c6f; }
+.tru-dark .compliance-badge .hq-prod-dot { background: var(--sea-hi); box-shadow: none; }
 
 /* ambient glows behind the whole canvas (positioning fix) */
 .tru-dark .pr-canvas { position: relative; }
@@ -1875,7 +1888,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   padding: 7px 14px; border-radius: var(--r-btn); color: #fff; background: linear-gradient(180deg, var(--sea-hi), #3f6f61);
   border: 1px solid rgba(74,124,111,0.5); white-space: nowrap; cursor: pointer; transition: transform 0.18s var(--ease), box-shadow 0.2s var(--ease);
 }
-.tru-dark .pr-callbtn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -10px #4a7c6f; }
+.tru-dark .pr-callbtn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -10px rgba(143,176,162,.6); }
 .tru-dark .pr-opener { margin-top: 8px; font-size: 13px; color: var(--text); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; padding: 9px 12px; }
 .tru-dark .pr-manual { margin-top: 8px; font-size: 12.5px; color: var(--accent-hi); }
 .tru-dark .pr-disp { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
@@ -2164,7 +2177,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* met/partial/missed status pill — same shape+3-state color language as
    Prospect's .ps-lead-pill (ok/warn/bad → sea/accent/terracotta). */
 .tru-dark .ad-met-pill { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--r-pill); border: 1px solid; white-space: nowrap; }
-.tru-dark .ad-met-pill.yes { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(74, 124, 111, 0.4); }
+.tru-dark .ad-met-pill.yes { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
 .tru-dark .ad-met-pill.partial { color: var(--accent-hi); background: var(--accent-soft); border-color: var(--accent-line); }
 .tru-dark .ad-met-pill.no { color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border-color: rgba(192, 107, 79, 0.4); }
 .tru-dark .ad-met-pill.unknown { color: var(--text-50); background: var(--card-flat); border-color: var(--border-soft); }
@@ -2196,7 +2209,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* self-clearing "Saved"/"Logged"/"Added" pill */
 .tru-dark .ad-saved {
   display: inline-flex; align-items: center; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em; color: #3ECF8E;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--sea-hi);
   background: rgba(62, 207, 142, 0.14); border: 1px solid rgba(62, 207, 142, 0.35);
   padding: 2px 9px; border-radius: var(--r-pill); animation: adFade 0.25s var(--ease);
 }
@@ -2518,8 +2531,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font: inherit; font-size: 15.5px; font-weight: 600; color: var(--text-strong);
   padding: 17px 2px; transition: color 0.15s;
 }
-.tru-dark .htw-q:hover { color: var(--accent-hi, #e8c98a); }
-.tru-dark .htw-sec.on .htw-q { color: var(--accent-hi, #e8c98a); }
+.tru-dark .htw-q:hover { color: var(--accent-hi, #FFDC93); }
+.tru-dark .htw-sec.on .htw-q { color: var(--accent-hi, #FFDC93); }
 .tru-dark .htw-caret {
   flex-shrink: 0; font-size: 17px; line-height: 1; opacity: 0.55; font-weight: 400;
 }
@@ -2538,7 +2551,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .htw-note {
   margin: 15px 0 0 !important; padding: 13px 15px; border-radius: 9px;
   background: rgba(232, 201, 138, 0.055);
-  border-left: 2px solid var(--accent-hi, #e8c98a);
+  border-left: 2px solid var(--accent-hi, #FFDC93);
   color: var(--text-strong);
 }
 
@@ -2755,3 +2768,107 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ah-mod.done .ah-mod-mark { background: var(--sea-soft); color: var(--sea-hi); }
 .tru-dark .ah-mod-title { display: block; font-weight: 700; color: var(--text); }
 .tru-dark .ah-mod-sub { display: block; color: var(--text-50); font-size: 13px; margin-top: 2px; }
+
+/* ============================================================================
+   THE FOREST DECK — lighting, enclosures, and the gold edge
+   ----------------------------------------------------------------------------
+   Everything below hangs off `.tru-shell`, which both hqShell (leader) and
+   agentHqShell (agent) already render. That means Home, Pulse, Coach, Rep and
+   every agent-facing screen pick this up without a line of page code changing.
+
+   The idea, in one sentence: the page is a room that is lit at the top and lit
+   at the floor, with the data sitting in the calm band between, and the amber
+   spent only on things that mean something.
+   ========================================================================== */
+
+/* ---- The field ---------------------------------------------------------- */
+.tru-dark .tru-shell { position: relative; isolation: isolate; }
+
+/* top of the room: the ground gradient plus a broad soft source behind the
+   masthead. */
+.tru-dark .tru-shell::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(58% 34% at 56% 0%, rgba(242, 178, 60, 0.13) 0%, rgba(180, 126, 40, 0.04) 46%, transparent 76%),
+    linear-gradient(178deg, #11291B 0%, #0C1C13 20%, #09150F 42%, #061009 68%, var(--base) 100%);
+}
+
+/* the floor: green light coming back up under the content, then the corners
+   falling away. keeps the bottom of a long page inside the same room instead of
+   dropping it onto flat black. */
+.tru-dark .tru-shell::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(76% 40% at 50% 102%, rgba(96, 168, 124, 0.13) 0%, rgba(52, 104, 74, 0.05) 46%, transparent 76%),
+    radial-gradient(120% 70% at 50% 10%, transparent 34%, rgba(2, 6, 4, 0.66) 100%);
+}
+
+.tru-dark .tru-shell > * { position: relative; z-index: 1; }
+
+/* The per-screen decorative glows predate this and are the warm blobs the field
+   replaces. One light source, not five. */
+.tru-dark [class$="-ambient"] { display: none; }
+
+/* ---- Enclosures: light on the top edge, never an outline ----------------- */
+.tru-dark .hqcard,
+.tru-dark .panel,
+.tru-dark .ps-risk,
+.tru-dark .ps-prod,
+.tru-dark .ps-source,
+.tru-dark .ps-triage,
+.tru-dark .rp-funnel,
+.tru-dark .rp-roster { box-shadow: var(--lip), var(--card-shadow); }
+
+.tru-dark .hqcard-hover:hover { box-shadow: var(--lip), var(--card-hover-shadow); }
+
+/* A true double bezel for anything that deserves to read as hardware: an outer
+   shell with a hairline, an inner core with its own tone and concentric radius. */
+.tru-dark .tru-bezel {
+  padding: 6px; border-radius: var(--r-bezel);
+  background: rgba(226, 240, 230, 0.032);
+  box-shadow: 0 0 0 1px var(--border), 0 50px 90px -50px rgba(2, 7, 4, 0.95);
+}
+.tru-dark .tru-bezel > .tru-bezel-core {
+  border-radius: var(--r-bezel-in);
+  background: linear-gradient(172deg, var(--card) 0%, var(--panel) 68%);
+  box-shadow: var(--lip), 0 0 0 1px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* ---- The gold edge: a behaviour, not trim ------------------------------- */
+
+/* the column the table is ranked by. until now nothing said which rule was
+   sorting the roster. */
+.tru-dark .tru-table thead th.sortable.on {
+  color: var(--accent-hi);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* the row under the cursor gets a hairline across its full width. it exists
+   only where you are pointing, so it never becomes decoration. */
+.tru-dark .tru-table tbody tr.rowlink:hover td,
+.tru-dark .tru-table tbody tr.row-open td {
+  background: var(--hover-fill-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 178, 60, 0.30),
+    inset 0 -1px 0 rgba(242, 178, 60, 0.30);
+}
+
+/* a row already flagged keeps its own colour — state beats hover. */
+.tru-dark .tru-table tbody tr.row-paused:hover td,
+.tru-dark .tru-table tbody tr.row-alert:hover td {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 106, 69, 0.42),
+    inset 0 -1px 0 rgba(255, 106, 69, 0.42);
+}
+
+/* ---- Motion: one curve, real mass --------------------------------------- */
+.tru-dark .tru-table tbody tr { transition: background 0.35s var(--spring), box-shadow 0.35s var(--spring); }
+.tru-dark .hqcard-hover { transition: transform 0.4s var(--spring), box-shadow 0.4s var(--spring), border-color 0.3s var(--spring); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-table tbody tr,
+  .tru-dark .hqcard-hover { transition: none; }
+}
