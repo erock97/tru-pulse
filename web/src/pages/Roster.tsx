@@ -308,136 +308,133 @@ export default function Roster({
   return wrap(
     <>
       <div className="rs-canvas">
-        <header className="rs-mast">
-          <p className="rs-sub">
-            {priorities.length === 0
-              ? `All ${rows.length} agents are inside one in ${line}, and nobody has gone more than 45 days without a 1:1.`
-              : `Your line is one in ${line}. The team runs ${totals.perContract ? `one in ${Math.round(totals.perContract)}` : 'no closings yet'}.`}
-          </p>
-        </header>
+      {/* ONE surface. Not a stack of floating cards separated by gaps - that
+          reads as unfinished no matter how well each card is drawn. Everything
+          below sits inside a single enclosure divided by hairlines, and the
+          emphasis is deliberately unequal rather than a row of equal squares. */}
+      <div className="rs-deck">
+
+        <div className="rs-band">
+          <div className="rs-band-lead">
+            <span className="k">Leads per contract</span>
+            <span className="v">{totals.perContract ? "1 : " + Math.round(totals.perContract) : "\u2014"}</span>
+            <span className="u">your line is 1 : {line}</span>
+          </div>
+          <div className={totals.pastLine > 0 ? "rs-band-lead hot" : "rs-band-lead"}>
+            <span className="k">Past your line</span>
+            <span className="v">{totals.pastLine}</span>
+            <span className="u">{totals.stale ? totals.stale + " stale 1:1s" : "nobody drifting"}</span>
+          </div>
+          <div className="rs-band-rest">
+            {[
+              ["Leads in play", String(totals.leads)],
+              ["Worked", totals.workedPct + "%"],
+              ["Under contract", String(totals.contracts)],
+              ["Still in Lead", String(totals.stuck)],
+            ].map(([k, v]) => (
+              <div className="rs-band-cell" key={k}>
+                <span className="k">{k}</span>
+                <span className="v">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* The people who need you are not a separate card list stacked above a
+            table - that printed every name twice. Same list, opened. */}
+        {priorities.length > 0 && (
+          <div className="rs-focus">
+            {priorities.map((p, i) => (
+              <article
+                key={p.row.name}
+                className={p.severity === "high" ? "rs-fr crit" : "rs-fr"}
+                tabIndex={0}
+                onClick={() => setOpen(p.row)}
+                onKeyDown={(e) => { if (e.key === "Enter") setOpen(p.row); }}
+              >
+                <span className={"rs-av h-" + p.row.health}>{initials(p.row.name)}</span>
+                <div className="rs-fr-body">
+                  <div className="rs-fr-top">
+                    <span className="rs-fr-name">{p.row.name}</span>
+                    <span className="rs-fr-idx">{i + 1} of {priorities.length}</span>
+                  </div>
+                  <p className="rs-fr-why">{p.reason}</p>
+                  <p className="rs-fr-do"><b>Do:</b> {p.action}{p.approach ? <em> {p.approach}</em> : null}</p>
+                </div>
+                <div className="rs-fr-fig">
+                  <b>{p.row.perContract ? "1 : " + Math.round(p.row.perContract) : "\u2014"}</b>
+                  <s>per contract</s>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
 
         {priorities.length === 0 && (
           <div className="rs-clear">
             <i />
             <p>
               <b>Nothing needs you this week.</b> Every agent is inside one in {line},
-              everyone has had a 1:1 in the last 45 days, and no lead has been left
-              untouched. The roster below is the detail behind that.
+              everyone has had a 1:1 in the last 45 days, and no lead has been left untouched.
             </p>
           </div>
         )}
 
-        {priorities.length > 0 && (
-          <span className={`rs-pill${totals.pastLine > 0 ? ' hot' : ''}`}>
-            <i />
-            {totals.pastLine > 0
-              ? `${totals.pastLine} past your line`
-              : `${priorities.length} need${priorities.length === 1 ? 's' : ''} you`}
-          </span>
-        )}
-
-        {priorities.length > 0 && (
-          <section className="rs-queue">
-            {priorities.map((p, i) => (
-              <article
-                key={p.row.name}
-                className={`rs-q${p.severity === 'high' ? ' crit' : ''}`}
-                tabIndex={0}
-                onClick={() => setOpen(p.row)}
-                onKeyDown={(e) => { if (e.key === 'Enter') setOpen(p.row); }}
-              >
-                <div className="rs-q-inner">
-                <div className={`rs-rank ${p.severity}`}>{i + 1}</div>
-                <div className="rs-q-body">
-                  <div className="rs-q-name">{p.row.name}</div>
-                  <p className="rs-q-why">{p.reason}</p>
-                  <p className="rs-q-do"><b>Do:</b> {p.action}</p>
-                  {p.approach && <p className="rs-q-how">{p.approach}</p>}
-                </div>
-                <div className="rs-q-fig">
-                  <b>{p.row.perContract ? `1 : ${Math.round(p.row.perContract)}` : '—'}</b>
-                  <s>per contract</s>
-                </div>
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
-
-        <section className="rs-tiles">
-          {[
-            ['Leads in play', String(totals.leads), ''],
-            ['Worked', `${totals.workedPct}%`, `${totals.worked} of ${totals.leads}`],
-            ['Under contract', String(totals.contracts), ''],
-            ['Leads per contract', totals.perContract ? `1 : ${Math.round(totals.perContract)}` : '—', `your line is 1 : ${line}`],
-            ['Still in Lead', String(totals.stuck), ''],
-            ['Past your line', String(totals.pastLine), totals.stale ? `${totals.stale} stale 1:1s` : ''],
-          ].map(([k, v, u]) => (
-            <div className={`rs-tile${k === 'Past your line' && totals.pastLine > 0 ? ' hot' : ''}`} key={k}>
-              <div className="rs-tile-in">
-                <span className="k">{k}</span>
-                <span className="v">{v}</span>
-                <span className="u">{u || ' '}</span>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <div className="panel-head rs-head">
-          <h3>The roster</h3>
-          <span className="panel-sub">Bar is leads per contract · the mark is your line at 1 : {line}</span>
+        <div className="rs-restbar">
+          <span>The rest of the floor</span>
+          <span className="rs-restbar-note">bar is leads per contract, the mark is your line at 1 : {line}</span>
         </div>
 
-        <div className="tru-bezel rs-bezel"><div className="tru-bezel-core rs-table">
+        <div className="rs-table">
           <table className="tru-table">
             <thead>
               <tr>
-                {th('name', 'Agent')}{th('leads', 'Leads')}{th('workedPct', 'Worked')}
-                {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
-                {th('perContract', 'Leads per contract')}{th('lastDays', 'Last 1:1')}
+                {th("name", "Agent")}{th("leads", "Leads")}{th("workedPct", "Worked")}
+                {th("stuck", "In Lead")}{th("offers", "Offers")}{th("contracts", "Contracts")}
+                {th("perContract", "Leads per contract")}{th("lastDays", "Last 1:1")}
                 <th>State</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r) => (
+              {sorted.filter((r) => !priorities.some((p) => p.row.name === r.name)).map((r) => (
                 <tr key={r.name} className="rowlink" tabIndex={0}
                     onClick={() => setOpen(r)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
+                    onKeyDown={(e) => { if (e.key === "Enter") setOpen(r); }}>
                   <td>
                     <div className="rs-who">
-                      <span className={`rs-av h-${r.health}`}>{initials(r.name)}</span>
+                      <span className={"rs-av h-" + r.health}>{initials(r.name)}</span>
                       <div>
                         <div className="cell-name">{r.name}</div>
-                        <div className="rs-sub2">{r.archName ?? 'Not assessed'} &middot; {r.leads} leads</div>
+                        <div className="rs-sub2">{r.archName ?? "Not assessed"} &middot; {r.leads} leads</div>
                       </div>
                     </div>
                   </td>
                   <td>{r.leads}</td>
-                  <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{r.workedPct}%</td>
-                  <td className={r.stuck > 10 ? 'cell-warn' : ''}>{r.stuck || '—'}</td>
-                  <td>{r.offers || '—'}</td>
-                  <td>{r.contracts || '—'}</td>
+                  <td className={r.workedPct < 90 ? "cell-warn" : ""}>{r.workedPct}%</td>
+                  <td className={r.stuck > 10 ? "cell-warn" : ""}>{r.stuck || "\u2014"}</td>
+                  <td>{r.offers || "\u2014"}</td>
+                  <td>{r.contracts || "\u2014"}</td>
                   <td>
                     <div className="rs-rate">
-                      <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
-                        {r.perContract ? `1 : ${Math.round(r.perContract)}` : '—'}
+                      <b className={r.health === "past-line" ? "cell-warn" : ""}>
+                        {r.perContract ? "1 : " + Math.round(r.perContract) : "\u2014"}
                       </b>
                       <span className="rs-scale">
                         <hr />
-                        <u style={{ left: `${scale(line)}%` }} />
+                        <u style={{ left: scale(line) + "%" }} />
                         {r.perContract !== null && (
-                          <i style={{ left: `${scale(r.perContract)}%` }} className={`h-${r.health}`} />
+                          <i style={{ left: scale(r.perContract) + "%" }} className={"h-" + r.health} />
                         )}
                       </span>
                     </div>
                   </td>
-                  <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
-                    {r.lastDays === null ? '—' : `${r.lastDays}d`}
+                  <td className={r.lastDays !== null && r.lastDays > 45 ? "cell-warn" : ""}>
+                    {r.lastDays === null ? "\u2014" : r.lastDays + "d"}
                   </td>
-                  <td><span className={`rs-tag h-${r.health}`}>{
-                    r.health === 'past-line' ? 'past the line'
-                      : r.health === 'behind' ? 'behind team'
-                        : r.health === 'no-volume' ? 'no volume' : 'holding'
+                  <td><span className={"rs-tag h-" + r.health}>{
+                    r.health === "past-line" ? "past the line"
+                      : r.health === "behind" ? "behind team"
+                        : r.health === "no-volume" ? "no volume" : "holding"
                   }</span></td>
                 </tr>
               ))}
@@ -446,12 +443,13 @@ export default function Roster({
               <tr>
                 <td>Team</td><td><b>{totals.leads}</b></td><td><b>{totals.workedPct}%</b></td>
                 <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
-                <td><b>{totals.perContract ? `1 : ${Math.round(totals.perContract)}` : '—'}</b></td>
+                <td><b>{totals.perContract ? "1 : " + Math.round(totals.perContract) : "\u2014"}</b></td>
                 <td><b>{totals.stale} stale</b></td><td />
               </tr>
             </tfoot>
           </table>
-        </div></div>
+        </div>
+      </div>
       </div>
 
       {open && (

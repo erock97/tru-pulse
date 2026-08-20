@@ -2954,7 +2954,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-scale i.h-holding { background: var(--sea); }
 
 .tru-dark .rs-tag {
-  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; white-space: nowrap; padding: 3px 10px; border-radius: var(--r-pill);
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
 }
 .tru-dark .rs-tag.h-past-line { background: rgba(255,106,69,0.16); color: #FF9174; }
@@ -3177,4 +3177,131 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (max-width: 720px) {
   .tru-dark .rs-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tru-dark .rs-cta { display: none; }
+}
+
+/* ============================================================================
+   PULSE - full bleed
+   ----------------------------------------------------------------------------
+   No cards. No rounded containers floating on a background with gaps between
+   them - that is the thing that reads as unfinished no matter how well each
+   piece is drawn. Content runs edge to edge and hairlines do the dividing.
+   The emphasis is deliberately unequal: two numbers get weight, four share a
+   row, and the people who need you are bands, not tiles.
+   ========================================================================== */
+
+.tru-dark .rs-canvas { padding: 0 0 80px; max-width: none; margin: 0; }
+.tru-dark .rs-deck { border-top: 1px solid var(--border-soft); }
+
+/* every horizontal run of content bleeds to the shell edges and is inset by
+   one shared gutter, so nothing looks like it is sitting on top of anything */
+.tru-dark .rs-band,
+.tru-dark .rs-fr,
+.tru-dark .rs-restbar,
+.tru-dark .rs-clear,
+.tru-dark .rs-table .tru-table th,
+.tru-dark .rs-table .tru-table td { --gut: 34px; }
+
+/* ---- the band: unequal, hairline-divided, no boxes ---- */
+.tru-dark .rs-band {
+  display: grid; grid-template-columns: 1.15fr 1fr 2.4fr;
+  border-bottom: 1px solid var(--border-soft);
+}
+.tru-dark .rs-band-lead {
+  padding: 26px 30px 24px var(--gut);
+  border-right: 1px solid var(--border-soft);
+  display: flex; flex-direction: column; gap: 9px; min-width: 0;
+}
+.tru-dark .rs-band-lead:nth-child(2) { padding-left: 30px; }
+.tru-dark .rs-band-lead.hot { background: linear-gradient(180deg, rgba(255, 106, 69, 0.10), transparent 82%); }
+
+.tru-dark .rs-band .k {
+  font-size: 9.5px; letter-spacing: 0.17em; text-transform: uppercase;
+  color: var(--text-40); font-weight: 700;
+}
+.tru-dark .rs-band-lead .v {
+  font-family: var(--hq-serif); font-size: 46px; line-height: 0.92;
+  letter-spacing: -0.04em; color: var(--text-strong);
+}
+.tru-dark .rs-band-lead.hot .v { color: #FF9174; }
+.tru-dark .rs-band .u { font-size: 11.5px; color: var(--text-40); letter-spacing: 0.02em; }
+
+.tru-dark .rs-band-rest { display: grid; grid-template-columns: repeat(4, 1fr); }
+.tru-dark .rs-band-cell {
+  padding: 26px 18px 24px 26px; border-right: 1px solid var(--border-soft);
+  display: flex; flex-direction: column; gap: 10px; min-width: 0;
+}
+.tru-dark .rs-band-cell:last-child { border-right: 0; padding-right: var(--gut); }
+.tru-dark .rs-band-cell .v {
+  font-family: var(--hq-serif); font-size: 27px; line-height: 1;
+  letter-spacing: -0.03em; color: var(--text-60);
+}
+
+/* ---- who needs you: full-width bands with a lit rail, not cards ---- */
+.tru-dark .rs-focus { border-bottom: 1px solid var(--border-soft); }
+.tru-dark .rs-fr {
+  position: relative; display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 128px; gap: 18px; align-items: center;
+  padding: 22px var(--gut) 22px calc(var(--gut) + 4px);
+  border-bottom: 1px solid var(--border-soft);
+  cursor: pointer; transition: background 0.5s var(--spring);
+}
+.tru-dark .rs-focus .rs-fr:last-child { border-bottom: 0; }
+.tru-dark .rs-fr::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent);
+}
+.tru-dark .rs-fr.crit::before { background: var(--ember); }
+.tru-dark .rs-fr.crit { background: linear-gradient(90deg, rgba(255, 106, 69, 0.09), transparent 62%); }
+.tru-dark .rs-fr:hover { background: linear-gradient(90deg, rgba(226, 240, 230, 0.05), transparent 62%); }
+.tru-dark .rs-fr.crit:hover { background: linear-gradient(90deg, rgba(255, 106, 69, 0.14), transparent 62%); }
+.tru-dark .rs-fr:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+.tru-dark .rs-fr-top { display: flex; align-items: baseline; gap: 12px; }
+.tru-dark .rs-fr-name { font-size: 17px; font-weight: 700; color: var(--text-strong); letter-spacing: -0.015em; }
+.tru-dark .rs-fr-idx { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-40); font-weight: 700; }
+.tru-dark .rs-fr-why { margin: 5px 0 0; font-size: 14px; color: var(--text-60); line-height: 1.5; max-width: 82ch; }
+.tru-dark .rs-fr-do { margin: 7px 0 0; font-size: 13.5px; color: var(--text); }
+.tru-dark .rs-fr-do b { color: var(--accent-hi); font-weight: 700; }
+.tru-dark .rs-fr-do em { color: var(--text-50); font-style: italic; }
+.tru-dark .rs-fr-fig { text-align: right; }
+.tru-dark .rs-fr-fig b { display: block; font-family: var(--hq-serif); font-size: 25px; letter-spacing: -0.025em; }
+.tru-dark .rs-fr-fig s { display: block; text-decoration: none; font-size: 10.5px; color: var(--text-40); margin-top: 3px; }
+
+.tru-dark .rs-clear {
+  display: flex; align-items: center; gap: 14px; padding: 24px var(--gut);
+  border-bottom: 1px solid var(--border-soft); background: none; box-shadow: none; border-radius: 0;
+}
+
+/* ---- the label bar that introduces the rest ---- */
+.tru-dark .rs-restbar {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
+  padding: 22px var(--gut) 14px;
+  font-size: 10px; letter-spacing: 0.17em; text-transform: uppercase;
+  color: var(--text-40); font-weight: 700;
+}
+.tru-dark .rs-restbar-note { letter-spacing: 0.04em; text-transform: none; font-weight: 400; font-size: 11.5px; }
+
+/* ---- the roster: rows on the page, no container ---- */
+.tru-dark .rs-table { padding: 0; overflow-x: auto; background: none; box-shadow: none; border-radius: 0; }
+.tru-dark .rs-table .tru-table thead th { padding: 10px 12px 12px; border-bottom: 1px solid var(--border-soft); }
+.tru-dark .rs-table .tru-table thead th:first-child { padding-left: var(--gut); }
+.tru-dark .rs-table .tru-table thead th:last-child { padding-right: var(--gut); }
+.tru-dark .rs-table .tru-table tbody td { height: 58px; border-bottom: 1px solid var(--border-soft); }
+.tru-dark .rs-table .tru-table tbody td:first-child { padding-left: var(--gut); }
+.tru-dark .rs-table .tru-table tbody td:last-child { padding-right: var(--gut); }
+.tru-dark .rs-table .tru-table tfoot td { border-top: 1px solid var(--border); }
+.tru-dark .rs-table .tru-table tfoot td:first-child { padding-left: var(--gut); }
+
+/* the shell's own topbar becomes part of the same surface */
+.tru-dark .tru-shell .topbar { padding-left: 34px; padding-right: 34px; }
+
+@media (max-width: 1180px) {
+  .tru-dark .rs-band { grid-template-columns: 1fr 1fr; }
+  .tru-dark .rs-band-rest { grid-column: 1 / -1; border-top: 1px solid var(--border-soft); }
+}
+@media (max-width: 720px) {
+  .tru-dark .rs-band,
+  .tru-dark .rs-band-rest { grid-template-columns: 1fr 1fr; }
+  .tru-dark .rs-fr { grid-template-columns: 38px minmax(0, 1fr); }
+  .tru-dark .rs-fr-fig { display: none; }
 }
