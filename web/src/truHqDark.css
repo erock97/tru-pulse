@@ -2970,24 +2970,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-s-lead .k,
 .tru-dark .rs-s-lead .v,
 .tru-dark .rs-s-lead .u { position: relative; z-index: 2; }
-.tru-dark .rs-s-lead::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
-  /* the type sits on the left, so the wash keeps that side readable and lets
-     the burst come through on the right */
-  background: linear-gradient(96deg, rgba(10, 20, 14, 0.93) 22%, rgba(10, 20, 14, 0.42) 48%, transparent 76%);
-}
+/* No wash over the type here — the burst cuts its own light back off the left
+   side as part of the render. Two of them stacked just made it muddy. */
 
 /* ---- the burst: the team, drawn ---- */
+/* A canvas, not an SVG. The fall-off and the wash over the type are painted
+   into the render itself, so there is no mask here. */
 .tru-dark .rs-burst {
-  position: absolute; inset: 0; height: 100%; width: 100%;
+  position: absolute; inset: 0; display: block; height: 100%; width: 100%;
   z-index: 0; pointer-events: none;
-  /* light falls off with distance from its source, so the dial does too */
-  mask-image: radial-gradient(105% 165% at 17% 50%, #000 0%, rgba(0, 0, 0, 0.82) 58%, rgba(0, 0, 0, 0.34) 100%);
-  -webkit-mask-image: radial-gradient(105% 165% at 17% 50%, #000 0%, rgba(0, 0, 0, 0.82) 58%, rgba(0, 0, 0, 0.34) 100%);
-}
-.tru-dark .rs-burst-ring { fill: none; stroke: var(--accent-hi); stroke-width: 1.1; }
-.tru-dark .rs-burst-line {
-  fill: none; stroke: rgba(255, 145, 116, 0.72); stroke-width: 1.5; stroke-dasharray: 4 5;
 }
 
 /* ---- the strips: one bar per agent, same order on every card ---- */
