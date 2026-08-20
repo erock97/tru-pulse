@@ -82,7 +82,7 @@
   --r-bezel-in: 20px;
 
   --hq-font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --hq-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --hq-serif: "Fraunces", "Playfair Display", Georgia, serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
 
@@ -2790,8 +2790,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   content: "";
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(58% 34% at 56% 0%, rgba(242, 178, 60, 0.13) 0%, rgba(180, 126, 40, 0.04) 46%, transparent 76%),
-    linear-gradient(178deg, #11291B 0%, #0C1C13 20%, #09150F 42%, #061009 68%, var(--base) 100%);
+    radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
+    radial-gradient(38% 24% at 50% 0%, rgba(255, 220, 150, 0.15) 0%, transparent 70%),
+    linear-gradient(178deg, #14301F 0%, #0D2015 22%, #0A1710 44%, #071009 70%, var(--base) 100%);
 }
 
 /* the floor: green light coming back up under the content, then the corners
@@ -2801,8 +2802,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   content: "";
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(76% 40% at 50% 102%, rgba(96, 168, 124, 0.13) 0%, rgba(52, 104, 74, 0.05) 46%, transparent 76%),
-    radial-gradient(120% 70% at 50% 10%, transparent 34%, rgba(2, 6, 4, 0.66) 100%);
+    radial-gradient(78% 40% at 50% 102%, rgba(96, 168, 124, 0.13) 0%, rgba(52, 104, 74, 0.05) 46%, transparent 76%),
+    radial-gradient(122% 74% at 50% 10%, transparent 34%, rgba(2, 6, 4, 0.70) 100%),
+    linear-gradient(180deg, rgba(2, 6, 4, 0.34) 0%, transparent 15%, transparent 62%, rgba(3, 8, 5, 0.55) 100%);
 }
 
 .tru-dark .tru-shell > * { position: relative; z-index: 1; }
