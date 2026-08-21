@@ -3105,7 +3105,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   /* `width: 100%` is load-bearing. This is a grid item, and `margin: 0 auto`
      on a grid item makes it shrink to its content rather than fill the track —
      without this the whole deck sits in a narrow column on a wide monitor. */
-  width: 100%; max-width: 1560px; margin: 0 auto; padding: 0 30px 72px; min-width: 0;
+  /* 1560 left 366px of dead room either side on a 2560 monitor — the page was
+     using 71% of the screen. The table is the widest thing here and it reads
+     better with the room, so the cap follows the screen up to a point. */
+  width: 100%; max-width: 2160px; margin: 0 auto; padding: 0 34px 72px; min-width: 0;
 }
 
 /* ---- the island ---- */
@@ -3191,10 +3194,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* ---- the bento: the dial gets two columns, the rest share the row ---- */
 .tru-dark .dk-bento {
   display: grid; gap: 10px; margin-bottom: 20px;
-  grid-template-columns: 1.9fr repeat(5, minmax(0, 1fr));
+  grid-template-columns: 2.5fr repeat(5, minmax(0, 1fr));
 }
 .tru-dark .dk-tile {
-  padding: 16px 18px 15px; min-height: 104px; overflow: hidden;
+  /* The dial's render is 3:1. Anything much shorter than this crops the fan
+     off top and bottom, which reads as light that is trying to travel and
+     being cut off an inch in. */
+  padding: 16px 18px 15px; min-height: 168px; overflow: hidden;
   display: flex; flex-direction: column; gap: 6px;
   transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
 }
@@ -3212,7 +3218,12 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .dk-tile .rs-strip { height: 22px; gap: 2px; margin-top: 4px; }
 .tru-dark .dk-tile .rs-strip i { width: 4px; }
-.tru-dark .dk-tile-lead { padding: 22px 24px 20px; }
+.tru-dark .dk-tile-lead {
+  padding: 24px 26px 22px;
+  /* Sized so the tile lands near the render's own 3:1. The row stretches to
+     match, which is what gives the whole strip its height. */
+  min-height: 210px;
+}
 .tru-dark .dk-tile-lead .v { font-size: 46px; letter-spacing: -0.04em; }
 
 /* ---- section head ---- */
