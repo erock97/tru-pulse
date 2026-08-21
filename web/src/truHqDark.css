@@ -2890,22 +2890,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .hqcard-hover { transition: none; }
 }
 
-/* ============================================================================
-   PULSE - the roster
-   ----------------------------------------------------------------------------
-   Cards with real edges, and depth as the thing that carries the quality:
-   every surface is layered, lit along its top edge, and sits above the page on
-   a soft shadow rather than a hard one.
-
-   Two rules that keep it from reading as generated:
-     - No row of identical, evenly-spaced boxes. The stat cards are
-       deliberately unequal - one lead card, one alert card, four supporting.
-     - A metric keeps one size per role. Leads-per-contract is large in its own
-       card and small in a table cell; it is never given a third treatment.
-   ========================================================================== */
-
-.tru-dark .rs-canvas { padding: 22px 34px 80px; max-width: 1620px; margin: 0 auto; }
-
 /* ---- the material -------------------------------------------------------
    One mixin, used by every surface: a lifted plate. Warm light catches the top
    edge, a hairline holds the shape, and the shadow underneath is tinted with
@@ -2928,55 +2912,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
     0 0 0 1px var(--border-soft),
     0 26px 44px -30px rgba(2, 7, 4, 0.95);
 }
-
-/* ---- the lede: what the headline number actually means ---- */
-.tru-dark .rs-lede {
-  margin: 0 4px 18px; max-width: 74ch;
-  font-size: 14.5px; line-height: 1.6; color: var(--text-60);
-}
-.tru-dark .rs-lede b { color: var(--text-strong); font-weight: 700; }
-
-/* ---- stat cards: unequal on purpose ---- */
-.tru-dark .rs-stats {
-  display: grid; gap: 12px; margin-bottom: 14px;
-  grid-template-columns: 1.45fr 1fr 1fr 1fr;
-  grid-template-areas: "lead alert a b" "lead alert c d";
-}
-.tru-dark .rs-s-lead  { grid-area: lead; }
-.tru-dark .rs-s-alert { grid-area: alert; }
-.tru-dark .rs-s-a { grid-area: a; } .tru-dark .rs-s-b { grid-area: b; }
-.tru-dark .rs-s-c { grid-area: c; } .tru-dark .rs-s-d { grid-area: d; }
-
-.tru-dark .rs-stat {
-  padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 8px;
-  transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
-}
-.tru-dark .rs-stat:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.22), inset 0 -1px 0 rgba(2, 7, 4, 0.5),
-    0 0 0 1px var(--border), 0 34px 54px -30px rgba(2, 7, 4, 1);
-}
-.tru-dark .rs-stat .k {
-  font-size: 9.5px; letter-spacing: 0.17em; text-transform: uppercase;
-  color: var(--text-40); font-weight: 700;
-}
-.tru-dark .rs-stat .v {
-  font-family: var(--hq-serif); font-size: 26px; line-height: 1;
-  letter-spacing: -0.03em; color: var(--text-strong); margin-top: auto;
-}
-.tru-dark .rs-stat .u { font-size: 11.5px; color: var(--text-40); letter-spacing: 0.02em; }
-
-/* the lead card is the one number a lead acts on, so it gets the room */
-.tru-dark .rs-s-lead,
-.tru-dark .rs-s-alert { justify-content: center; gap: 12px; }
-.tru-dark .rs-s-lead .v,
-.tru-dark .rs-s-alert .v { margin-top: 0; }
-.tru-dark .rs-s-lead { padding: 26px 28px 24px; overflow: hidden; }
-.tru-dark .rs-s-lead .v { font-size: 54px; letter-spacing: -0.045em; }
-.tru-dark .rs-s-lead .k,
-.tru-dark .rs-s-lead .v,
-.tru-dark .rs-s-lead .u { position: relative; z-index: 2; }
 /* No wash over the type here — the burst cuts its own light back off the left
    side as part of the render. Two of them stacked just made it muddy. */
 
@@ -3010,10 +2945,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   position: absolute; inset: 0; display: block; height: 100%; width: 100%;
   z-index: 1; pointer-events: none;
 }
-
-/* ---- the strips: one bar per agent, same order on every card ---- */
-.tru-dark .rs-stat-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: auto; }
-.tru-dark .rs-stat-row .v { margin-top: 0; }
 .tru-dark .rs-strip {
   display: flex; align-items: flex-end; gap: 3px; height: 38px; flex: none;
   padding-bottom: 2px;
@@ -3022,79 +2953,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-strip.t-sea i { background: linear-gradient(180deg, var(--sea-hi), rgba(143, 176, 162, 0.32)); }
 .tru-dark .rs-strip.t-amber i { background: linear-gradient(180deg, var(--accent-hi), rgba(242, 178, 60, 0.30)); }
 .tru-dark .rs-strip.t-ember i { background: linear-gradient(180deg, #FF9174, rgba(255, 106, 69, 0.28)); }
-.tru-dark .rs-s-alert .v { font-size: 40px; }
-.tru-dark .rs-s-alert.hot {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 180, 150, 0.20), inset 0 -1px 0 rgba(2, 7, 4, 0.5),
-    0 0 0 1px rgba(255, 106, 69, 0.28), 0 26px 44px -30px rgba(2, 7, 4, 0.95);
-}
-.tru-dark .rs-s-alert.hot::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 106, 69, 0.16), transparent 66%);
-}
-.tru-dark .rs-s-alert.hot .v { color: #FF9174; }
-
-/* ---- who needs you ---- */
-.tru-dark .rs-focus { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
-.tru-dark .rs-fr {
-  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; align-items: start;
-  padding: 20px 24px 20px 26px; cursor: pointer; overflow: hidden;
-  transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
-}
-.tru-dark .rs-fr::before {
-  content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px;
-  border-radius: 0 3px 3px 0; background: var(--accent);
-}
-.tru-dark .rs-fr.crit::before { background: var(--ember); }
-.tru-dark .rs-fr.crit::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(100deg, rgba(255, 106, 69, 0.13), transparent 58%);
-}
-.tru-dark .rs-fr:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.22), inset 0 -1px 0 rgba(2, 7, 4, 0.5),
-    0 0 0 1px var(--accent-line), 0 34px 54px -30px rgba(2, 7, 4, 1);
-}
-.tru-dark .rs-fr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.tru-dark .rs-fr-top { display: flex; align-items: baseline; gap: 12px; }
-.tru-dark .rs-fr-name { font-size: 17px; font-weight: 700; color: var(--text-strong); letter-spacing: -0.015em; }
-.tru-dark .rs-fr-idx { font-size: 9.5px; letter-spacing: 0.17em; text-transform: uppercase; color: var(--text-40); font-weight: 700; }
-.tru-dark .rs-fr-why { margin: 6px 0 0; font-size: 14px; color: var(--text-60); line-height: 1.5; max-width: 88ch; }
-.tru-dark .rs-fr-do { margin: 8px 0 0; font-size: 13.5px; color: var(--text); }
-.tru-dark .rs-fr-do b { color: var(--accent-hi); font-weight: 700; }
-.tru-dark .rs-fr-do em { color: var(--text-50); font-style: italic; }
-
-.tru-dark .rs-clear { display: flex; align-items: center; gap: 14px; padding: 22px 24px; margin-bottom: 22px; }
-.tru-dark .rs-clear i {
-  width: 8px; height: 8px; border-radius: 50%; background: var(--sea); flex: none;
-  box-shadow: 0 0 0 4px var(--sea-soft);
-}
-.tru-dark .rs-clear p { margin: 0; font-size: 14px; color: var(--text-60); line-height: 1.5; }
-.tru-dark .rs-clear p b { color: var(--text-strong); font-weight: 700; }
-
-/* ---- the roster, in its own plate ---- */
-.tru-dark .rs-restbar {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
-  padding: 4px 4px 12px;
-  font-size: 9.5px; letter-spacing: 0.17em; text-transform: uppercase;
-  color: var(--text-40); font-weight: 700;
-}
-.tru-dark .rs-restbar-note { letter-spacing: 0.03em; text-transform: none; font-weight: 400; font-size: 11.5px; }
-.tru-dark .rs-table { overflow: hidden; }
-.tru-dark .rs-table .tru-table { font-variant-numeric: tabular-nums; }
-.tru-dark .rs-table .tru-table thead th { padding: 15px 12px; border-bottom: 1px solid var(--border-soft); }
-.tru-dark .rs-table .tru-table thead th:first-child { padding-left: 22px; }
-.tru-dark .rs-table .tru-table thead th:last-child { padding-right: 22px; }
-.tru-dark .rs-table .tru-table tbody td { height: 60px; }
-.tru-dark .rs-table .tru-table tbody td:first-child { padding-left: 22px; }
-.tru-dark .rs-table .tru-table tbody td:last-child { padding-right: 22px; }
-.tru-dark .rs-table .tru-table tfoot td { border-top: 1px solid var(--border); background: rgba(2, 7, 4, 0.28); }
-.tru-dark .rs-table .tru-table tfoot td:first-child {
-  padding-left: 22px; font-size: 9.5px; letter-spacing: 0.15em;
-  text-transform: uppercase; color: var(--text-40);
-}
 
 .tru-dark .rs-who { display: flex; align-items: center; gap: 12px; }
 .tru-dark .rs-av {
@@ -3106,7 +2964,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-av.h-past-line { background: linear-gradient(150deg, #FF9174, #7A2E1B); color: #1A0B06; }
 .tru-dark .rs-av.h-behind { background: linear-gradient(150deg, var(--accent-hi), #8A5F14); }
 .tru-dark .rs-av.h-no-volume { background: linear-gradient(150deg, #6E7A72, #333D37); color: var(--text); }
-.tru-dark .rs-table .cell-name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.012em; }
 .tru-dark .rs-sub2 {
   font-size: 11.5px; color: var(--text-40); margin-top: 2px; letter-spacing: 0.02em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px;

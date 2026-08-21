@@ -7,7 +7,6 @@ import Login from './pages/Login';
 import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
-import Roster from './pages/Roster';
 import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
@@ -121,12 +120,10 @@ export default function App() {
       ? <Dashboard org={o} onHome={() => go('/')} />
       : route === '/home'
       ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
-      // The Command Deck arrangement, parked on its own route while the two
-      // layouts are being compared. Same loader, same numbers.
-      : route === '/deck'
-      ? <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
+      // `/deck` is NOT listed here on purpose — it belongs to the Zillow slide
+      // preview (parseDeckRoute), which is matched earlier.
       : route === '/pulse' || route === '/'
-      ? <Roster orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
+      ? <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : isCoachRoute(route)
         ? (
           <Coach
@@ -138,7 +135,7 @@ export default function App() {
         )
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
-        : <Roster orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
+        : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
   const assessToken = (() => {
