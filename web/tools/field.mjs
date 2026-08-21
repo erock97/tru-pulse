@@ -33,6 +33,36 @@ const r = rng(20260820);
 const pickI = (a) => Math.floor(r() * a.length);
 const between = (lo, hi) => lo + r() * (hi - lo);
 
+/* Stratified placement.
+ *
+ * Uniform random is NOT evenly spread — it clumps and leaves voids, which is
+ * exactly what it did here: dense on the right, empty on the left. That is
+ * Poisson clumping, and no amount of re-rolling the seed fixes it.
+ *
+ * So the frame is divided into cols x rows cells and ONE point is placed per
+ * cell, at a random position inside that cell. Coverage is guaranteed even;
+ * the jitter inside each cell keeps it organic rather than a visible grid.
+ * `inset` pulls points off the cell walls so neighbours never touch. */
+function scatter(cols, rows, inset = 0.14) {
+  const out = [];
+  const cw = W / cols, ch = H / rows;
+  for (let cx = 0; cx < cols; cx++) {
+    for (let cy = 0; cy < rows; cy++) {
+      out.push({
+        x: (cx + inset + r() * (1 - inset * 2)) * cw,
+        y: (cy + inset + r() * (1 - inset * 2)) * ch,
+      });
+    }
+  }
+  // Shuffle so draw order does not sweep left-to-right, which would make the
+  // brightness ramp across the frame.
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 /* The palette is the forest deck's own. Amber is the light source, sea green
    is bounce off the room, and the near-whites are the few sharp highlights. */
 const WARM = ['#F2B23C', '#E8A63A', '#FFDC93', '#C98A2E'];
@@ -75,31 +105,28 @@ for (let i = 0; i < 8; i++) {
 }
 
 /* ---- mid bokeh: the recognisable out-of-focus discs ---- */
-for (let i = 0; i < 40; i++) {
+for (const p of scatter(8, 5)) {
   const rad = between(22, 88);
-  light(between(-30, W + 30), between(-20, H + 20), rad,
+  light(p.x, p.y, rad,
     r() > 0.48 ? pickI(WARM) : 4 + pickI(COOL),
     rad > 62 ? 3 : 2, between(0.055, 0.125));
 }
 
 /* ---- near specks: small, brighter, barely softened. These are what the eye
        reads as "in focus", and they are why the rest reads as not. ---- */
-for (let i = 0; i < 96; i++) {
+for (const p of scatter(14, 8)) {
   const rad = between(2, 11);
-  light(between(0, W), between(0, H), rad,
+  light(p.x, p.y, rad,
     r() > 0.42 ? pickI(WARM) : 4 + pickI(COOL),
     rad > 8 ? 1 : 0, between(0.30, 0.72));
 }
 
 /* ---- the lattice: faint connected points, low and to the sides, so the room
        has structure behind the data without competing with it. ---- */
-const nodes = [];
-for (let i = 0; i < 58; i++) {
-  // Across the WHOLE frame. The first version pinned these to the left and
-  // right edges below the halfway line, which left the middle and the bottom
-  // right visibly empty once the image was cropped to a wide viewport.
-  nodes.push({ x: between(0, W), y: between(0, H) });
-}
+// Across the whole frame, one per cell. The first version pinned these to the
+// left and right edges below the halfway line; the second scattered them at
+// random, which clumped. Stratified is what actually spreads them.
+const nodes = scatter(10, 6, 0.10);
 const lines = [];
 for (let i = 0; i < nodes.length; i++) {
   for (let j = i + 1; j < nodes.length; j++) {
