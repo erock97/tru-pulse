@@ -116,7 +116,13 @@ export default function App() {
   // "act as team" tile is not lost, and `/pulse/detail` keeps the old
   // lead-by-lead view reachable while the roster proves itself.
   const shell = (o: { id: string; name: string }, adminLeaders?: AdminLeader[]) =>
-    route === '/pulse/detail'
+    // A platform owner has no org of their own, so there is no roster to put
+    // in front of them — sending them to one rendered a dead page and took the
+    // "act as a team" picker away with it, because the picker lives on Home.
+    // They land on the picker; every product route needs a team chosen first.
+    adminLeaders && (route === '/' || route === '/pulse')
+      ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
+    : route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
       : route === '/home'
       ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
