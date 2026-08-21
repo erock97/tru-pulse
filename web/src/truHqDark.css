@@ -2974,11 +2974,16 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    side as part of the render. Two of them stacked just made it muddy. */
 
 /* ---- the burst: the team, drawn ---- */
-/* A canvas, not an SVG. The fall-off and the wash over the type are painted
-   into the render itself, so there is no mask here. */
+/* The rendered plate, and the live marks over it. Both fill the card; the
+   canvas paints its own wash over the left so the type stays readable. */
+.tru-dark .rs-plate-art {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+  object-fit: cover; object-position: left center;
+  z-index: 0; pointer-events: none; user-select: none;
+}
 .tru-dark .rs-burst {
   position: absolute; inset: 0; display: block; height: 100%; width: 100%;
-  z-index: 0; pointer-events: none;
+  z-index: 1; pointer-events: none;
 }
 
 /* ---- the strips: one bar per agent, same order on every card ---- */

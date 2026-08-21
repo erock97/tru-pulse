@@ -126,23 +126,22 @@ function prioritise(rows: readonly Row[]): Priority[] {
 }
 
 /* ── the burst ─────────────────────────────────────────────────────────────
-   The one piece of artwork on the page, and it is made out of the same
-   numbers as the table underneath it.
+   Two layers, and the split is the point.
 
-   Drawn on a canvas rather than in SVG, and the reason is the whole point of
-   it: light looks like light because hundreds of faint strokes ADD together.
-   Canvas can do that — `globalCompositeOperation = 'lighter'` sums the
-   channels the way a sensor does. A stack of SVG strokes at uniform opacity
-   cannot, which is why the first version read as a wireframe of a light
-   rather than a light.
+   Behind: `burst-plate.webp`, a rendered image. Drawing light this good in
+   code was the thing that kept coming out cheap - a real render has depth and
+   colour behaviour that hand-drawn strokes do not.
 
-   It renders once, on mount and on resize. No animation loop, so it costs
-   nothing after the first frame, and it is seeded so a resize redraws the
-   same picture instead of reshuffling it.
+   In front: a canvas carrying only what is true of this team - the ring at
+   your line, and one node per agent at their own leads-per-contract. Those
+   move per team, so they cannot live in the image.
 
-   What is real in it: the ring is your line, and every bright node is one
-   agent at their own leads-per-contract. The rays are the light the dial
-   sits in — they carry no data and are not pretending to. */
+   The plate is decoration and says so; every mark on top of it is measured.
+
+   Positions are tied together: the plate's own light source sits at 19% across
+   and halfway down, and the canvas uses the same origin. Swap the plate for a
+   different render and those two numbers have to move with it, or the dots
+   will float beside the burst instead of sitting in it. */
 function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
@@ -166,14 +165,20 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
       'no-volume': '110, 128, 116',
     };
 
+    // The dial starts partway out rather than at the source. Marks drawn close
+    // in land on top of the number and its caption, and a dial with a non-zero
+    // origin is normal as long as the ring sits on the same scale — which it
+    // does, so the reading is unchanged.
+    const band = (v: number) => 0.44 + (Math.min(v, hi) / hi) * 0.56;
+
     return {
       spread: SPREAD,
-      lineAt: line / hi,
+      lineAt: band(line),
       dots: fan.map((r, i) => ({
         angle: fan.length > 1 ? -SPREAD + i * step : 0,
-        // No volume has no rate to place, so it sits near the source rather
-        // than being given a number it does not have.
-        at: r.perContract === null ? 0.16 : Math.min(r.perContract, hi) / hi,
+        // No volume has no rate to place, so it sits at the foot of the dial
+        // rather than being given a number it does not have.
+        at: r.perContract === null ? 0.40 : band(r.perContract),
         tone: TONE[r.health],
         faded: r.perContract === null,
       })),
@@ -184,16 +189,6 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
     const cv = ref.current;
     if (!cv || !marks) return;
 
-    /* mulberry32 — the same seed every draw, so a resize repaints rather than
-       redesigns */
-    let seed = 0x5EED10;
-    const rnd = () => {
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-
     const draw = () => {
       const w = cv.clientWidth, h = cv.clientHeight;
       if (!w || !h) return;
@@ -203,84 +198,27 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
 
       const g = cv.getContext('2d');
       if (!g) return;
-      seed = 0x5EED10;
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
 
-      // The source sits clear of the type rather than behind it. Light that
-      // starts underneath a word makes the word unreadable no matter how the
-      // wash on top is tuned.
-      const cx = w * 0.30, cy = h * 0.5;
-      const R = w * 0.82;
+      // The plate's own light source sits at 19% across and halfway down the
+      // render. These match it, so a dot lands on the burst rather than beside
+      // it. Change one and you must change the other.
+      const cx = w * 0.19, cy = h * 0.496;
+      const R = w * 0.78;
       const { spread, lineAt, dots } = marks;
       const at = (a: number, f: number) =>
         [cx + Math.cos(a) * R * f, cy + Math.sin(a) * R * f] as const;
 
-      // ---- the light. Everything in this block accumulates. ----
-      g.globalCompositeOperation = 'lighter';
-
-      // the source
-      const core = g.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
-      core.addColorStop(0, 'rgba(255, 235, 196, 0.50)');
-      core.addColorStop(0.18, 'rgba(255, 205, 120, 0.20)');
-      core.addColorStop(0.55, 'rgba(242, 178, 60, 0.055)');
-      core.addColorStop(1, 'rgba(242, 178, 60, 0)');
-      g.fillStyle = core;
-      g.beginPath(); g.arc(cx, cy, R * 0.5, 0, Math.PI * 2); g.fill();
-
-      // the spray. Individually almost invisible; together they are the glow.
-      for (let i = 0; i < 620; i++) {
-        const a = -spread + rnd() * spread * 2;
-        const r0 = 0.05 + rnd() * 0.10;
-        const r1 = r0 + 0.12 + Math.pow(rnd(), 1.9) * 0.78;
-        const [x0, y0] = at(a, r0);
-        const [x1, y1] = at(a, r1);
-        // a sixth of the spray is the room's green, so the gold has something
-        // to be gold against
-        const cool = rnd() < 0.17;
-        const grad = g.createLinearGradient(x0, y0, x1, y1);
-        const head = cool ? '143, 200, 170' : rnd() < 0.35 ? '255, 232, 190' : '246, 186, 78';
-        grad.addColorStop(0, `rgba(${head}, ${(0.10 + rnd() * 0.16).toFixed(3)})`);
-        grad.addColorStop(0.45, `rgba(${cool ? '110, 168, 140' : '236, 166, 58'}, 0.05)`);
-        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        g.strokeStyle = grad;
-        g.lineWidth = 0.35 + rnd() * 1.15;
-        g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
-      }
-
-      // concentric segments — the dial's own scale, and what stops the spray
-      // from reading as a plain gradient
-      for (let i = 0; i < 130; i++) {
-        const f = 0.12 + Math.pow(rnd(), 0.85) * 0.92;
-        const mid = -spread + rnd() * spread * 2;
-        const half = (0.10 + rnd() * 0.55) * spread;
-        g.strokeStyle = `rgba(${rnd() < 0.2 ? '150, 205, 175' : '250, 200, 110'}, ${(0.14 - f * 0.085).toFixed(3)})`;
-        g.lineWidth = 0.5 + rnd() * 0.9;
-        g.beginPath();
-        g.arc(cx, cy, R * f, mid - half, mid + half);
-        g.stroke();
-      }
-
-      // ---- fall-off. Light dies with distance; this is that, cut out of
-      //      what was just drawn rather than painted over it. ----
-      g.globalCompositeOperation = 'destination-out';
-      const fade = g.createRadialGradient(cx, cy, R * 0.34, cx, cy, R * 1.02);
-      fade.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      fade.addColorStop(0.72, 'rgba(0, 0, 0, 0.30)');
-      fade.addColorStop(1, 'rgba(0, 0, 0, 0.92)');
-      g.fillStyle = fade;
-      g.fillRect(0, 0, w, h);
-
-      // the type sits on the left, so the light is cut back off it
-      const left = g.createLinearGradient(0, 0, w * 0.44, 0);
-      left.addColorStop(0, 'rgba(0, 0, 0, 0.97)');
-      left.addColorStop(0.5, 'rgba(0, 0, 0, 0.62)');
-      left.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      // The type sits on the left, so the plate is knocked back off it. This
+      // is the only thing painted rather than drawn.
+      const left = g.createLinearGradient(0, 0, w * 0.46, 0);
+      left.addColorStop(0, 'rgba(7, 15, 10, 0.94)');
+      left.addColorStop(0.42, 'rgba(7, 15, 10, 0.72)');
+      left.addColorStop(1, 'rgba(7, 15, 10, 0)');
       g.fillStyle = left;
-      g.fillRect(0, 0, w * 0.44, h);
+      g.fillRect(0, 0, w * 0.46, h);
 
-      // ---- the data, drawn plainly on top of the light ----
-      g.globalCompositeOperation = 'source-over';
 
       g.strokeStyle = 'rgba(255, 145, 116, 0.85)';
       g.lineWidth = 1.5;
@@ -314,7 +252,12 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
   }, [marks]);
 
   if (!marks) return null;
-  return <canvas className="rs-burst" ref={ref} aria-hidden />;
+  return (
+    <>
+      <img className="rs-plate-art" src="/burst-plate.webp" alt="" aria-hidden decoding="async" />
+      <canvas className="rs-burst" ref={ref} aria-hidden />
+    </>
+  );
 }
 
 /* ── the strips ────────────────────────────────────────────────────────────
