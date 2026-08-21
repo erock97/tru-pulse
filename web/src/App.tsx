@@ -8,6 +8,7 @@ import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Roster from './pages/Roster';
+import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
@@ -120,6 +121,10 @@ export default function App() {
       ? <Dashboard org={o} onHome={() => go('/')} />
       : route === '/home'
       ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
+      // The Command Deck arrangement, parked on its own route while the two
+      // layouts are being compared. Same loader, same numbers.
+      : route === '/deck'
+      ? <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : route === '/pulse' || route === '/'
       ? <Roster orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : isCoachRoute(route)
