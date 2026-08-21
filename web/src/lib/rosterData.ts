@@ -173,11 +173,17 @@ export interface RosterState {
   err: string;
   /** Leads carrying no created date, so a window could not include them. */
   undated: number;
+  /** Agents taken off the team whose leads still count toward the totals. */
+  departed: { names: string[]; leads: number };
+  /** Computed across EVERYONE, departed agents included — see the note in the
+   *  hook. Do not recompute these from `rows`, which is the living roster. */
+  totals: Totals | null;
 }
 
 export function useRosterData(line: number, windowDays: number | null): RosterState {
   const [raw, setRaw] = useState<{
     leads: Awaited<ReturnType<typeof loadDashboard>>['leads'];
+    agents: Awaited<ReturnType<typeof loadDashboard>>['agents'];
     coach: RosterAgent[];
     rep: RepData | null;
   } | null>(null);
@@ -195,7 +201,7 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
           loadRoster().catch((): RosterAgent[] => []),
           loadRep().catch((): RepData | null => null),
         ]);
-        if (alive) setRaw({ leads: data.leads, coach, rep });
+        if (alive) setRaw({ leads: data.leads, agents: data.agents, coach, rep });
       } catch (e) {
         if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
       }
@@ -204,7 +210,7 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
   }, []);
 
   return useMemo(() => {
-    if (!raw) return { rows: null, err, undated: 0 };
+    if (!raw) return { rows: null, err, undated: 0, departed: { names: [], leads: 0 }, totals: null };
 
     // One row per agent per module, so passes are counted per agent rather
     // than summed. Only published modules count toward the total.
@@ -273,10 +279,29 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
     const totalContracts = list.reduce((a, r) => a + r.contracts, 0);
     const teamRate = totalContracts ? totalLeads / totalContracts : null;
 
+    // A departed agent's leads and contracts stay in the team's totals above —
+    // that business really happened and removing it would silently rewrite
+    // months you have already reported. What goes is the person: they are not
+    // somebody to coach, rank, or prioritise any more.
+    const gone = new Set(
+      (raw.agents ?? []).filter((a) => a.excluded).map((a) => norm(a.name)),
+    );
+    const departedRows = list.filter((r) => gone.has(norm(r.name)));
+
+    const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) }));
+
     return {
-      rows: list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) })),
+      rows: withHealth.filter((r) => !gone.has(norm(r.name))),
+      // Totals come off the FULL list on purpose. A page that computed them
+      // from `rows` would quietly rewrite months you have already reported the
+      // moment somebody leaves.
+      totals: totalsOf(withHealth),
       err,
       undated,
+      departed: {
+        names: departedRows.map((r) => r.name),
+        leads: departedRows.reduce((a, r) => a + r.leads, 0),
+      },
     };
   }, [raw, err, line, windowDays]);
 }

@@ -48,7 +48,7 @@ export async function handleDataRoutes(
       db.select('org_settings', `select=${SETTINGS_COLS}&order=org_id.asc&limit=1`),
       db.selectAll('leads', LEAD_COLS, 'fub_person_id.asc'),
       db.select('accountability_cases', `select=assigned_to,status,opened_at&opened_at=gte.${sinceIso}`),
-      db.select('agents', 'select=id,name,email,phone,is_paused,pause_reason,pause_note,paused_at'),
+      db.select('agents', 'select=id,name,email,phone,excluded,is_paused,pause_reason,pause_note,paused_at'),
       db.select('deals', 'select=team_id,stage,stage_class,price,commission,agent_name,fub_person_id,projected_close,fub_created'),
       db.selectAll('person_stage_log', STAGE_LOG_COLS, 'fub_person_id.asc'),
     ]);
@@ -76,7 +76,7 @@ export async function handleDataRoutes(
         'agents',
         'select=id,team_id,token,name,email,phone,created_at,coaching_enabled,' +
         'assessments(code,taken_at),checkins(created_at,met,leads,convos,focus)' +
-        '&order=created_at.asc',
+        '&excluded=eq.false&order=created_at.asc',
       ),
       db.select('agents', 'select=id,personal_code'),
     ]);
@@ -453,6 +453,12 @@ export async function handleDataRoutes(
       }
       if (body.coaching !== undefined) {
         const { ok } = await db.rpc('set_coaching', { p_agent_id: agentId, p_on: !!body.coaching });
+        if (!ok) return json({ error: 'not allowed' }, 403, cors);
+      }
+      // Off the team entirely. Leader/admin only (the RPC enforces it), and it
+      // switches coaching off on the way out.
+      if (body.excluded !== undefined) {
+        const { ok } = await db.rpc('set_excluded', { p_agent_id: agentId, p_on: !!body.excluded });
         if (!ok) return json({ error: 'not allowed' }, 403, cors);
       }
       return json({ ok: true }, 200, cors);

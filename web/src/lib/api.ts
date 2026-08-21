@@ -821,6 +821,9 @@ export interface AgentRow {
   email: string | null;
   phone: string | null;
   // Manual pause (leader-set; sole source of truth for "Paused" — see hq_agent_pause.sql).
+  // Taken off the team by a leader. Their leads still count in team totals;
+  // they stop appearing as a person. See setExcluded().
+  excluded?: boolean;
   is_paused: boolean;
   pause_reason: string | null;   // at_capacity | no_closings | on_leave | coaching | other
   pause_note: string | null;     // free text, used when pause_reason = 'other'
@@ -1054,6 +1057,21 @@ export async function submitCohortAssessment(input: {
   if (!res.ok) throw new Error('Could not save your assessment.');
   const d = (await res.json()) as { data: { agent_id: string; token: string } };
   return d.data;
+}
+
+/** Take an agent off the team, or put them back.
+ *
+ *  Their leads keep counting toward the team's totals — that business really
+ *  happened — they simply stop appearing as a person to coach, certify or
+ *  scan on the roster. Removing also switches coaching off; putting them back
+ *  does not switch it on again, because rejoining and being coached are two
+ *  separate decisions. Leader/admin only; the database function enforces it. */
+export async function setExcluded(agentId: string, excluded: boolean): Promise<void> {
+  if (isDemo) return;
+  const res = await workerFetch('/data/coach/agent-flags', {
+    method: 'POST', body: JSON.stringify({ agentId, excluded }),
+  });
+  if (!res.ok) throw new Error('Could not change this agent’s team membership.');
 }
 
 export async function setCoaching(agentId: string, on: boolean): Promise<void> {
