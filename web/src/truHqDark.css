@@ -3445,14 +3445,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* ============================================================================
    THE ROOM — three become one, and the strands move
    ----------------------------------------------------------------------------
-   Two copies of the same render, counter-drifting. Where the ribbons cross,
-   the light ADDS and brightens, and because the two layers move in opposite
-   directions that bright interference travels slowly along the strands. It
-   looks like light flowing down them. It is two transforms and nothing else —
-   no canvas, no JavaScript, no per-frame work; the compositor owns both.
+   ONE copy of the render, drifting slowly. A second mirrored copy blended on
+   `screen` was tried, to make light appear to travel along the strands where
+   the two crossed. It worked, and it read as exactly what it was: the same
+   picture twice, strands everywhere. Clever is not the same as good.
 
-   Speeds are deliberately coprime-ish (170s / 233s) so the pattern never
-   settles into an obvious repeat.
+   The image is also held well back now. It is the room, not the subject —
+   the numbers are the subject.
    ========================================================================== */
 .tru-dark .tru-room { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .tru-dark .tru-room i {
@@ -3460,20 +3459,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: url("/trinity.webp") 63% 30% / cover no-repeat;
   will-change: transform;
 }
-.tru-dark .tru-room-a { animation: roomDriftA 170s cubic-bezier(.4,0,.5,1) infinite alternate; }
-.tru-dark .tru-room-b {
-  opacity: 0.55;
-  transform: scaleX(-1);
-  animation: roomDriftB 233s cubic-bezier(.4,0,.5,1) infinite alternate;
-  mix-blend-mode: screen;   /* light adds where the two cross */
+.tru-dark .tru-room-a {
+  opacity: 0.44;   /* the room, not the subject */
+  animation: roomDriftA 170s cubic-bezier(.4,0,.5,1) infinite alternate;
 }
 @keyframes roomDriftA {
   from { transform: translate3d(-3.4%, -1.8%, 0) scale(1.04); }
   to   { transform: translate3d(3.4%,  1.8%, 0) scale(1.10); }
-}
-@keyframes roomDriftB {
-  from { transform: scaleX(-1) translate3d(-2.6%,  1.4%, 0) scale(1.08); }
-  to   { transform: scaleX(-1) translate3d(2.6%,  -1.4%, 0) scale(1.03); }
 }
 
 /* The union itself. Breathes slowly, and flares whenever you change tab —

@@ -68,18 +68,12 @@ export function HqShell({
   }
   return (
     <div className="tru-shell">
-      {/* The room. Two counter-drifting copies of the same render: where the
-          ribbons cross, the light adds and brightens, so it reads as light
-          travelling ALONG the strands — with no per-frame work at all, just
-          two transforms the compositor owns.
-
-          The core carries `key={activeKey}`, so React remounts it whenever you
-          change tab and its flare animation restarts. Moving between Pulse,
-          Coach and Rep makes the convergence pulse: the three uniting again,
-          exactly as you move between them. */}
+      {/* The room. ONE copy of the render, drifting slowly.
+          A second mirrored copy was tried and read exactly as what it was —
+          the same picture twice, strands everywhere. Clever, and sloppy.
+          The core carries `key={activeKey}`, so it flares on every tab change. */}
       <div className="tru-room" aria-hidden>
         <i className="tru-room-a" />
-        <i className="tru-room-b" />
         <i className="tru-room-core" key={activeKey} />
       </div>
       <aside className="side">

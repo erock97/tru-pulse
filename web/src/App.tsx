@@ -30,6 +30,16 @@ function useHashRoute(): string {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
+
+  // Land at the top of every page.
+  //
+  // Without this the browser keeps whatever scroll position you had, so
+  // switching from a short page to a long one drops you into the middle of it.
+  // It also made the fixed backdrop look like it MOVED between tabs — the
+  // room never shifted, the content had slid up underneath it. Measured:
+  // Pulse landed at 37px, Coach at 122px, Rep at 600px.
+  useEffect(() => { window.scrollTo(0, 0); }, [route]);
+
   return route;
 }
 
