@@ -33,6 +33,15 @@ export const BUSINESS = {
   siteUrl: 'https://truhq.co',
   appUrl: 'https://app.truhq.co',
 
+  /* Where "Client log in" goes. It must carry the route.
+   *
+   * This used to point at appUrl bare. Signed IN that lands you in HQ, so it
+   * looked fine for months. Signed OUT the very same URL renders the marketing
+   * home again — and for the first seconds, while the 3MB hero video loads,
+   * that page is solid black. The button became a dead end that reloaded a
+   * black screen, and there was no way to reach the sign-in form from it. */
+  loginUrl: 'https://app.truhq.co/#/login',
+
   /* Every "book a call" on this site lands here.
    *
    * It used to be https://calendly.com/adamt-terrasonconsulting — a personal
