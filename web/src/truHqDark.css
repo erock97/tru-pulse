@@ -29,6 +29,12 @@
   --panel: #0C1610;
   --card: #101D15;
   --card-flat: #0C1610;
+  /* A surface that sits ON a card rather than on the page. It tints what is
+     already behind it instead of replacing it, so a row inside a translucent
+     card stays translucent. Filling these with --panel is what made the
+     certification journey read as one solid block while everything around it
+     was glass. */
+  --lift: rgba(226, 240, 230, 0.045);
   --border: rgba(214, 232, 218, 0.14);
   --border-soft: rgba(214, 232, 218, 0.075);
 
@@ -1543,7 +1549,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   gap: 18px;
   padding: 16px 18px 16px 8px;
   border-radius: var(--r-card);
-  background: var(--panel);
+  background: var(--lift);
   border: 1px solid var(--border-soft);
   transition: border-color 0.25s var(--ease), transform 0.25s var(--ease);
 }
@@ -1558,7 +1564,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--card-flat);
+  background: rgba(7, 15, 10, 0.55);
   border: 2px solid var(--accent-line);
 }
 .tru-dark .rp-node-n { font-weight: 800; font-size: 17px; color: var(--accent-hi); }
@@ -1580,7 +1586,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   padding: 2px 9px; border-radius: var(--r-pill);
 }
-.tru-dark .rp-lock { color: var(--text-50); background: var(--panel); border: 1px solid var(--border); }
+.tru-dark .rp-lock { color: var(--text-50); background: var(--lift); border: 1px solid var(--border); }
 .tru-dark .rp-open { color: var(--accent-hi); background: var(--accent-soft); border: 1px solid var(--accent-line); }
 .tru-dark .rp-preview {
   display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
@@ -1647,7 +1653,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* per-agent drill-down (real module rows + sign-off) */
 .tru-dark .rp-drill { padding: 4px 4px 14px; border-bottom: 1px solid var(--border-soft); }
 .tru-dark .rp-drill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 12px; }
-.tru-dark .rp-drill-mod { padding: 12px 14px; border-radius: var(--r-btn); background: var(--panel); border: 1px solid var(--border-soft); }
+.tru-dark .rp-drill-mod { padding: 12px 14px; border-radius: var(--r-btn); background: var(--lift); border: 1px solid var(--border-soft); }
 .tru-dark .rp-drill-mod.passed { border-color: rgba(74,124,111,0.4); }
 .tru-dark .rp-drill-mod.in_progress { border-color: var(--accent-line); }
 .tru-dark .rp-drill-mtitle { font-size: 13px; font-weight: 700; color: var(--text-strong); }
@@ -3566,3 +3572,84 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rp-roster-plate .rp-agent { padding-left: 14px; padding-right: 14px; }
 .tru-dark .rp-roster-plate .rp-legend { padding: 12px 16px 2px; }
 .tru-dark .rp-roster-plate .rp-roster-more { padding: 10px 16px 0; }
+
+/* ════════════════════════════════════════════════════════════════════
+   TEAM — one table, one row per person, every column a stored fact.
+   No plates, no artwork: this is the maintenance screen, and the only
+   thing that should draw the eye is a row that needs an action.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tru-dark .tm-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.tru-dark .tm-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 13px; border-radius: 999px;
+  font: 600 12.5px/1 var(--hq-font); color: var(--text-60);
+  background: var(--lift); border: 1px solid var(--border-soft);
+  cursor: pointer; transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.tru-dark .tm-tab b { font-weight: 700; font-size: 11.5px; color: var(--text-40); font-variant-numeric: tabular-nums; }
+.tru-dark .tm-tab:hover { color: var(--text); border-color: var(--border); }
+.tru-dark .tm-tab.is-on { color: var(--text); border-color: var(--accent-line); }
+.tru-dark .tm-tab.is-on b { color: var(--accent-hi); }
+
+.tru-dark .tm-plate { padding: 6px 10px 12px; }
+.tru-dark .tm-table th, .tru-dark .tm-table td { vertical-align: middle; }
+.tru-dark .tm-c-tick { width: 104px; text-align: center; }
+.tru-dark .tm-c-act { width: 150px; text-align: right; }
+.tru-dark .tm-empty { padding: 30px 12px; color: var(--text-50); text-align: center; }
+
+/* A row someone has taken off the team. Still legible — you have to be able to
+   read the name to put them back — but plainly not part of the roster. */
+.tru-dark .tm-row.is-off { opacity: 0.52; }
+.tru-dark .tm-row.is-off .cell-name { text-decoration: line-through; text-decoration-color: var(--text-40); }
+
+/* The tick itself. A native checkbox cannot be styled to match the room, so
+   the input stays (it keeps the keyboard and screen-reader behaviour) and the
+   span next to it is what you see. */
+.tru-dark .tm-check { display: inline-grid; place-items: center; cursor: pointer; }
+.tru-dark .tm-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.tru-dark .tm-check span {
+  width: 19px; height: 19px; border-radius: 6px; display: block;
+  border: 1.5px solid var(--border); background: rgba(7, 15, 10, 0.5);
+  transition: background .18s var(--ease), border-color .18s var(--ease);
+  position: relative;
+}
+.tru-dark .tm-check span::after {
+  content: ''; position: absolute; left: 5.5px; top: 2.4px;
+  width: 5px; height: 9.5px; border: solid #071009; border-width: 0 2px 2px 0;
+  transform: rotate(42deg) scale(0.4); opacity: 0;
+  transition: transform .18s var(--ease), opacity .18s var(--ease);
+}
+.tru-dark .tm-check input:checked + span { background: var(--sea); border-color: var(--sea); }
+.tru-dark .tm-check input:checked + span::after { transform: rotate(42deg) scale(1); opacity: 1; }
+.tru-dark .tm-check input:focus-visible + span { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.tru-dark .tm-check:hover input:not(:checked):not(:disabled) + span { border-color: var(--accent-line); }
+.tru-dark .tm-check input:disabled + span { opacity: 0.35; cursor: default; }
+
+/* Where a person actually is. Amber is reserved for the one that needs you:
+   the invite went out and they never turned up. */
+.tru-dark .tm-state { font: 600 12.5px/1.2 var(--hq-font); display: block; }
+.tru-dark .tm-state.st-here { color: var(--sea); }
+.tru-dark .tm-state.st-waiting { color: var(--accent-hi); }
+.tru-dark .tm-state.st-off { color: var(--text-50); }
+
+.tru-dark .tm-invite {
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  font: 650 12.5px/1 var(--hq-font); color: var(--text);
+  background: var(--lift); border: 1px solid var(--border);
+  transition: border-color .2s var(--ease), color .2s var(--ease), transform .2s var(--ease);
+}
+.tru-dark .tm-invite:hover:not(:disabled) { border-color: var(--accent-line); color: var(--accent-hi); transform: translateY(-1px); }
+.tru-dark .tm-invite:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.tru-dark .tm-invite:disabled { opacity: 0.4; cursor: default; }
+.tru-dark .tm-sent { font: 600 12px/1.2 var(--hq-font); color: var(--sea); }
+
+.tru-dark .tm-foot {
+  margin: 16px 2px 0; max-width: 68ch;
+  font: 400 12.5px/1.6 var(--hq-font); color: var(--text-50);
+}
+
+@media (max-width: 720px) {
+  .tru-dark .tm-c-tick { width: 60px; }
+  .tru-dark .tm-c-act { width: auto; }
+}

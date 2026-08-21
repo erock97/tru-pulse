@@ -106,6 +106,19 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
           <path d="M8 13l-1 8 5-3 5 3-1-8" />
         </svg>
       );
+    // The Team tab. Deliberately NOT another pair of heads — Coach already owns
+    // that shape, and two people icons side by side in one sidebar read as the
+    // same destination twice. This is a checklist of names: the page is a list
+    // you tick, not a group you look at.
+    case 'roster':
+      return (
+        <svg {...common}>
+          <path d="M9 6h11M9 12h11M9 18h11" />
+          <path d="M3.5 5.8l1.2 1.3 2-2.4" />
+          <path d="M3.5 11.8l1.2 1.3 2-2.4" />
+          <circle cx="4.8" cy="18" r="1.1" />
+        </svg>
+      );
     case 'prospect':
       return (
         <svg {...common}>

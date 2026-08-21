@@ -77,7 +77,7 @@ export default function RosterDeck({
       <HqShell
         orgName={orgName}
         onSignOut={() => signOutClean()}
-        nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
+        nav={{ onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam: () => { window.location.hash = '/team'; } }}
         hideTopbar
         islandSlot={windowTabs}
       >

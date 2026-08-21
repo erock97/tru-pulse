@@ -186,6 +186,17 @@ export async function handleDataRoutes(
     return json({ agents }, 200, cors);
   }
 
+  // ── The Team tab: everyone Follow Up Boss gave us, hidden people included. ──
+  // Deliberately NOT a plain agents select. Every other roster read filters
+  // `excluded=eq.false`; this is the one screen where the excluded people are
+  // the point. It also carries whether each person has ever signed in, which
+  // only the database can answer (auth.users is not reachable under RLS).
+  if (url.pathname === '/data/team/roster' && req.method === 'GET') {
+    const { ok, data } = await db.rpc('team_admin_roster', {});
+    if (!ok) return json({ error: 'not allowed' }, 403, cors);
+    return json({ agents: data ?? [] }, 200, cors);
+  }
+
   // ── Coach: the per-team public assessment join links. ──
   if (url.pathname === '/data/coach/team-links' && req.method === 'GET') {
     const teams = await db.select('teams', 'select=id,name,join_token&order=name.asc');
