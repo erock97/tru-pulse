@@ -138,7 +138,7 @@ function prioritise(rows: readonly Row[]): Priority[] {
 
    The plate is decoration and says so; every mark on top of it is measured.
 
-   Positions are tied together: the plate's own light source sits at 25% across
+   Positions are tied together: the plate's own light source sits at 20% across
    and halfway down, and the canvas uses the same origin. Swap the plate for a
    different render and those two numbers have to move with it, or the dots
    will float beside the burst instead of sitting in it. */
@@ -201,10 +201,10 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
 
-      // The plate's own light source sits at 25% across and halfway down the
+      // The plate's own light source sits at 20% across and halfway down the
       // render. These match it, so a dot lands on the burst rather than beside
       // it. Change one and you must change the other.
-      const cx = w * 0.25, cy = h * 0.504;
+      const cx = w * 0.20, cy = h * 0.502;
       // The dial is an ellipse, not a circle. The card is roughly twice as wide
       // as it is tall, so a circular dial throws its widest marks straight out
       // of the bottom edge.
