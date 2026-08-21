@@ -25,6 +25,7 @@ import {
   type Row, type Window,
 } from '../lib/rosterData';
 import { Strip } from '../components/rosterViz';
+import { ScaleMarks } from '../components/scaleMarks';
 import { PersonPane } from '../components/personPane';
 
 export default function RosterDeck({
@@ -163,7 +164,19 @@ export default function RosterDeck({
         <div className="rs-plate dk-tile dk-tile-lead">
           <span className="k">Leads per contract</span>
           <span className="v">{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</span>
-          <span className="u">your line is 1 : {line}</span>
+          {/* One dot per agent, on the same scale as your line. The light comes
+              from the room behind this card; the card only has to be true. */}
+          <ScaleMarks
+            lo={lo} hi={hi} line={line} lineLabel={`your line 1 : ${line}`}
+            marks={rows.map((r) => ({
+              key: r.name,
+              value: r.perContract,
+              tone: r.health === 'past-line' ? 'bad'
+                : r.health === 'behind' ? 'warn'
+                  : r.health === 'holding' ? 'ok' : 'none',
+            }))}
+          />
+          <span className="u">every dot is an agent</span>
         </div>
         {([
           ['Leads in play', String(totals.leads), 'all sources', 'sea', strip.map((r) => r.leads)],

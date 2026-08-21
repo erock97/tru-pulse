@@ -2805,20 +2805,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   /* Oversized on purpose: the layer drifts, and at inset:0 the edges would
      swing into view. 12% is more than the 4% the animation ever travels. */
   position: fixed; inset: -12%; z-index: 0; pointer-events: none;
-  /* A very slow drift. 200 seconds means you never catch it moving — you only
-     notice the room is not dead. Transform only, so the compositor handles it
-     and nothing repaints.
-
-     Calibration, learned the hard way: the first pass travelled 1.6% over
-     200s — about 0.4 pixels a second — which is below what anyone can
-     perceive even between glances. It ran perfectly and was invisible. This
-     travels 4.2% over 140s, roughly 1.7 px/s: still impossible to catch in
-     the act, but look away for twenty seconds and the room has moved. The
-     layer is inset -12%, so 4.2% of travel never brings an edge into view. */
-  animation: hqRoomDrift 140s cubic-bezier(0.4, 0, 0.5, 1) infinite alternate;
-  will-change: transform;
+  /* No animation here any more. This layer is now only the ground gradient —
+     the movement lives in `.tru-room`, which drifts the actual image. Drifting
+     a gradient underneath it bought nothing and cost a composited layer. */
   background:
-    url("/trinity.webp") 63% 30% / cover no-repeat,
     radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
     radial-gradient(38% 24% at 50% 0%, rgba(255, 220, 150, 0.15) 0%, transparent 70%),
     linear-gradient(178deg, #14301F 0%, #0D2015 22%, #0A1710 44%, #071009 70%, var(--base) 100%);
@@ -3348,19 +3338,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .ad-goal-empty .hqbtn { margin-top: 14px; }
 
-/* ---- the room's drift -----------------------------------------------------
-   One transform, two hundred seconds, alternating so it never snaps back to
-   the start. Deliberately not a video and not a canvas loop: this costs one
-   composited layer and no frames of JavaScript, on a screen people keep open
-   all day. */
-@keyframes hqRoomDrift {
-  from { transform: translate3d(-4.2%, -2.4%, 0) scale(1.03); }
-  to   { transform: translate3d(4.2%, 2.4%, 0) scale(1.10); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tru-dark .tru-shell::before { animation: none; transform: none; }
-}
-
 /* ---- Coach, in Pulse's shape --------------------------------------------
    The two pages are siblings, not clones. Coach reuses the deck's masthead,
    tiles, section head, priority rows and table, but its lead tile carries a
@@ -3463,4 +3440,81 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
     radial-gradient(90% 110% at 22% 50%, rgba(3, 9, 6, 0.80) 0%, rgba(3, 9, 6, 0.42) 55%, transparent 85%),
     /* the roster sits in the lower half and has to stay readable */
     linear-gradient(180deg, rgba(2, 6, 4, 0.30) 0%, rgba(2,6,4,0.12) 26%, rgba(2,6,4,0.44) 58%, rgba(3, 8, 5, 0.70) 100%);
+}
+
+/* ============================================================================
+   THE ROOM — three become one, and the strands move
+   ----------------------------------------------------------------------------
+   Two copies of the same render, counter-drifting. Where the ribbons cross,
+   the light ADDS and brightens, and because the two layers move in opposite
+   directions that bright interference travels slowly along the strands. It
+   looks like light flowing down them. It is two transforms and nothing else —
+   no canvas, no JavaScript, no per-frame work; the compositor owns both.
+
+   Speeds are deliberately coprime-ish (170s / 233s) so the pattern never
+   settles into an obvious repeat.
+   ========================================================================== */
+.tru-dark .tru-room { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.tru-dark .tru-room i {
+  position: absolute; inset: -14%; display: block;
+  background: url("/trinity.webp") 63% 30% / cover no-repeat;
+  will-change: transform;
+}
+.tru-dark .tru-room-a { animation: roomDriftA 170s cubic-bezier(.4,0,.5,1) infinite alternate; }
+.tru-dark .tru-room-b {
+  opacity: 0.55;
+  transform: scaleX(-1);
+  animation: roomDriftB 233s cubic-bezier(.4,0,.5,1) infinite alternate;
+  mix-blend-mode: screen;   /* light adds where the two cross */
+}
+@keyframes roomDriftA {
+  from { transform: translate3d(-3.4%, -1.8%, 0) scale(1.04); }
+  to   { transform: translate3d(3.4%,  1.8%, 0) scale(1.10); }
+}
+@keyframes roomDriftB {
+  from { transform: scaleX(-1) translate3d(-2.6%,  1.4%, 0) scale(1.08); }
+  to   { transform: scaleX(-1) translate3d(2.6%,  -1.4%, 0) scale(1.03); }
+}
+
+/* The union itself. Breathes slowly, and flares whenever you change tab —
+   the core is keyed on the active tab, so React remounts it and this restarts. */
+.tru-dark .tru-room-core {
+  inset: auto; left: 63%; top: 30%;
+  width: 46vw; height: 46vw; background: none;
+  transform: translate(-50%, -50%);
+  background-image: radial-gradient(circle, rgba(255,240,205,0.16) 0%, rgba(255,214,130,0.06) 26%, transparent 62%);
+  animation: coreFlare 2.6s var(--spring) 1, coreBreathe 14s ease-in-out 2.6s infinite alternate;
+}
+@keyframes coreFlare {
+  0%   { opacity: 1;    transform: translate(-50%, -50%) scale(1); }
+  18%  { opacity: 2.1;  transform: translate(-50%, -50%) scale(1.16); }
+  100% { opacity: 1;    transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes coreBreathe {
+  from { opacity: 0.85; transform: translate(-50%, -50%) scale(0.98); }
+  to   { opacity: 1.25; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-room i { animation: none !important; }
+}
+
+/* ---- the marks: one dot per agent, and your line ------------------------- */
+.tru-dark .sm-scale {
+  position: relative; display: block; height: 46px; margin: 14px 0 4px;
+}
+.tru-dark .sm-rail {
+  position: absolute; left: 0; right: 0; top: 22px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(226,240,230,0.22) 12%, rgba(226,240,230,0.22) 88%, transparent);
+}
+.tru-dark .sm-line { position: absolute; top: 6px; bottom: 6px; width: 1.5px; background: rgba(255,145,116,0.75); }
+.tru-dark .sm-line b {
+  position: absolute; top: -2px; left: 8px; white-space: nowrap;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,145,116,0.85);
+}
+.tru-dark .sm-dot {
+  position: absolute; top: 22px; width: 9px; height: 9px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 4px rgba(2, 7, 4, 0.45), 0 0 14px 2px currentColor;
 }
