@@ -1,6 +1,6 @@
 @import './truHqFonts.css';
 
-/* ============================================================
+/* =====================================================
    TRU HQ — Dark design system. Elevated to the truhq.co landing
    standard: warm-obsidian palette, Playfair Display + Hanken
    Grotesk type, gold-gradient CTA physics, and filmic grain.
@@ -518,7 +518,7 @@ html[data-theme="warm"] .tru-dark {
   .tru-dark .reveal { opacity: 1; transform: none; transition: none; }
 }
 
-/* ============================================================
+/* =====================================================
    HOME HUB — asymmetric BENTO command center
    ============================================================ */
 .tru-dark .hh-canvas { position: relative; }
@@ -839,7 +839,7 @@ html[data-theme="warm"] .tru-dark {
 }
 .tru-dark .hh-signout:hover { color: var(--text-strong); }
 
-/* ============================================================
+/* =====================================================
    AGENT-COURSE LESSONS — onto the elevated system
    The .ac- lesson styles live in styles.css on the legacy brass/cold palette.
    Wrapping the lesson Shell in .tru-dark gives it Playfair h1-h3 + grain; here
@@ -859,7 +859,7 @@ html[data-theme="warm"] .tru-dark {
 }
 .ac-shell.tru-dark::after { z-index: 5; }
 
-/* ============================================================
+/* =====================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1000px) {
@@ -955,7 +955,7 @@ html[data-theme="warm"] .tru-dark {
   .tru-dark .hh-connect-strip { border-radius: var(--r-card); flex-wrap: wrap; }
 }
 
-/* ============================================================
+/* =====================================================
    PULSE (Dashboard reskin) — asymmetric BENTO, constellation,
    triage, roster, accountability spine. Ported from the TRU HQ
    Redesign mockup (hq.css .ps-* block) and scoped under .tru-dark.
@@ -1381,7 +1381,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .ps-src-grid { grid-template-columns: 1fr; }
 }
 
-/* ============================================================
+/* =====================================================
    REP  onboarding & certification (dark shape-diverse reskin).
    Ported from the TRU HQ Redesign mockup, scoped under .tru-dark.
    ============================================================ */
@@ -1742,7 +1742,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .rp-mgmt-panel { padding: 20px; }
 }
 
-/* ============================================================
+/* =====================================================
    PROSPECT — dark shape-diverse reskin (radar + pipeline + list)
    Ported from the mockup, scoped under .tru-dark so both themes
    keep working and no un-reskinned page is affected.
@@ -1948,7 +1948,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .compliance { flex-direction: column; align-items: flex-start; }
 }
 
-/* ============================================================
+/* =====================================================
    COACH (native) — ported from the standalone Coaching redesign
    (app.css + theme.css), scoped under .tru-dark. Shared helpers
    the Coach markup relies on that weren't already scoped:
@@ -2093,7 +2093,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .cohort-cta h4 { font-size: 19px; font-weight: 700; margin: 16px 0 8px; color: var(--text-strong); }
 .tru-dark .cohort-cta p { color: var(--text-60); font-size: 14px; margin-bottom: 18px; }
 
-/* ============================================================
+/* =====================================================
    AGENT DRILL-IN (ad-*)
    ============================================================ */
 .tru-dark .ad-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-60); font-weight: 600; font-size: 15px; padding: 8px 4px; background: none; border: 0; cursor: pointer; transition: color 0.2s var(--ease), gap 0.2s var(--ease); }
@@ -2194,7 +2194,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ad-checkin-detail-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-50); }
 .tru-dark .ad-checkin-detail-text { font-size: 14.5px; color: var(--text-strong); line-height: 1.45; }
 
-/* ============================================================
+/* =====================================================
    1:1 PREP + GOAL/COMMITMENT SHEETS (writable drill-in sections)
    One clean flowing page — no tabs. Full-width panels below the
    profile grid, matching the ad-panel language.
@@ -2319,7 +2319,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ad-commit-add { display: flex; gap: 8px; margin-top: 4px; }
 .tru-dark .ad-commit-add .ad-input { flex: 1; }
 
-/* ============================================================
+/* =====================================================
    RUN THIS 1:1 (Block 4b, design-craft polish) — a premium leadership
    prep doc: LEFT = a numbered five-step "meeting" stepper with a live
    progress bar and archetype-tailored cues; RIGHT = clean capture groups
@@ -2772,7 +2772,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ah-mod-title { display: block; font-weight: 700; color: var(--text); }
 .tru-dark .ah-mod-sub { display: block; color: var(--text-50); font-size: 13px; margin-top: 2px; }
 
-/* ============================================================================
+/* =====================================================================
    THE FOREST DECK — lighting, enclosures, and the gold edge
    ----------------------------------------------------------------------------
    Everything below hangs off `.tru-shell`, which both hqShell (leader) and
@@ -2807,9 +2807,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   position: fixed; inset: -12%; z-index: 0; pointer-events: none;
   /* A very slow drift. 200 seconds means you never catch it moving — you only
      notice the room is not dead. Transform only, so the compositor handles it
-     and nothing repaints; the earlier Command Deck mockup used 74-118s and
-     read as slightly busy, so this is slower still. */
-  animation: hqRoomDrift 200s cubic-bezier(0.4, 0, 0.5, 1) infinite alternate;
+     and nothing repaints.
+
+     Calibration, learned the hard way: the first pass travelled 1.6% over
+     200s — about 0.4 pixels a second — which is below what anyone can
+     perceive even between glances. It ran perfectly and was invisible. This
+     travels 4.2% over 140s, roughly 1.7 px/s: still impossible to catch in
+     the act, but look away for twenty seconds and the room has moved. The
+     layer is inset -12%, so 4.2% of travel never brings an edge into view. */
+  animation: hqRoomDrift 140s cubic-bezier(0.4, 0, 0.5, 1) infinite alternate;
   will-change: transform;
   background:
     url("/field.svg") center / cover no-repeat,
@@ -3101,7 +3107,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .rs-cta { display: none; }
 }
 
-/* ============================================================================
+/* =====================================================================
    PULSE — the Command Deck layout (RosterDeck.tsx)
    ----------------------------------------------------------------------------
    The alternative arrangement, offered side by side with the sidebar version.
@@ -3348,8 +3354,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    composited layer and no frames of JavaScript, on a screen people keep open
    all day. */
 @keyframes hqRoomDrift {
-  from { transform: translate3d(-1.6%, -1%, 0) scale(1.02); }
-  to   { transform: translate3d(1.6%, 1%, 0) scale(1.06); }
+  from { transform: translate3d(-4.2%, -2.4%, 0) scale(1.03); }
+  to   { transform: translate3d(4.2%, 2.4%, 0) scale(1.10); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .tru-shell::before { animation: none; transform: none; }
@@ -3418,3 +3424,14 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .dk-fr.adm-row::before { background: var(--sea); }
 .tru-dark .dk-fr.adm-row .dk-fr-do { color: var(--sea-hi); }
 .tru-dark .dk-fr.adm-row:hover .dk-fr-do { color: var(--accent-hi); }
+
+/* ---- Rep, in the same shape ---------------------------------------------
+   Its lead tile carries a TRACK rather than a dial or a drift map. Pulse
+   measures rate, Coach measures elapsed time, Rep measures position in a
+   sequence — so it is the one page whose picture is a line. */
+.tru-dark .rp-canvas.dk-main { padding-top: 0; }
+.tru-dark .rp-canvas.dk-main .rp-ambient { display: none; }
+/* Same legacy 1440 cap that made Coach look narrow. */
+.tru-dark .rp-canvas.dk-main > * { max-width: none; }
+.tru-dark .rp-canvas.dk-main .rp-journey,
+.tru-dark .rp-canvas.dk-main .rp-progress { margin-top: 8px; }
