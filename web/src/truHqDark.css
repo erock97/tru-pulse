@@ -2805,10 +2805,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   /* Oversized on purpose: the layer drifts, and at inset:0 the edges would
      swing into view. 12% is more than the 4% the animation ever travels. */
   position: fixed; inset: -12%; z-index: 0; pointer-events: none;
-  /* No animation here any more. This layer is now only the ground gradient —
-     the movement lives in `.tru-room`, which drifts the actual image. Drifting
-     a gradient underneath it bought nothing and cost a composited layer. */
+  /* The GROUND: depth-of-field texture and the ground gradient. The light —
+     the Trinity render — is a separate layer above this in `.tru-room`.
+     They coexist because they are not the same kind of image: this one is
+     fine-grained and low contrast, the render is broad and bright. One is the
+     air in the room, the other is the light in it. Give them the same
+     intensity and they fight; keep the ground quiet and they compose.
+     No animation here — the movement belongs to the light. */
   background:
+    url("/field.svg") center / cover no-repeat,
     radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
     radial-gradient(38% 24% at 50% 0%, rgba(255, 220, 150, 0.15) 0%, transparent 70%),
     linear-gradient(178deg, #14301F 0%, #0D2015 22%, #0A1710 44%, #071009 70%, var(--base) 100%);
