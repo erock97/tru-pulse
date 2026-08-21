@@ -6,6 +6,7 @@ import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
+import AdminTeams from './pages/AdminTeams';
 import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
@@ -116,11 +117,15 @@ export default function App() {
   // lead-by-lead view reachable while the roster proves itself.
   const shell = (o: { id: string; name: string }, adminLeaders?: AdminLeader[]) =>
     // A platform owner has no org of their own, so there is no roster to put
-    // in front of them — sending them to one rendered a dead page and took the
-    // "act as a team" picker away with it, because the picker lives on Home.
-    // They land on the picker; every product route needs a team chosen first.
-    adminLeaders && (route === '/' || route === '/pulse')
-      ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
+    // in front of them. They get the Admin tab — their own screen, in the same
+    // shell as everything else, rather than the retired Home page.
+    adminLeaders && (route === '/' || route === '/pulse' || route === '/admin')
+      ? <AdminTeams
+          leaders={adminLeaders}
+          onOpenPulse={() => go('/pulse')}
+          onOpenCoach={() => go('/coach')}
+          onOpenRep={() => go('/rep')}
+        />
     : route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
       : route === '/home'

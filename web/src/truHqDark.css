@@ -3404,3 +3404,17 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-family: var(--hq-serif); font-size: 15px; color: var(--text);
   letter-spacing: -0.02em; margin-left: 4px;
 }
+
+/* ---- Admin: act as any team ---------------------------------------------
+   The platform owner's own screen. Reuses the deck's priority-row shape,
+   because "pick one of these and go" is the same gesture. */
+.tru-dark .adm-search {
+  width: 260px; padding: 7px 12px; border-radius: var(--r-pill);
+  background: var(--hover-fill); border: 1px solid var(--border-soft);
+  color: var(--text); font-family: inherit; font-size: 12.5px;
+}
+.tru-dark .adm-search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tru-dark .adm-search::placeholder { color: var(--text-40); }
+.tru-dark .dk-fr.adm-row::before { background: var(--sea); }
+.tru-dark .dk-fr.adm-row .dk-fr-do { color: var(--sea-hi); }
+.tru-dark .dk-fr.adm-row:hover .dk-fr-do { color: var(--accent-hi); }

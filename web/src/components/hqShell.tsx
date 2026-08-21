@@ -21,6 +21,8 @@ export function HqShell({
   context,
   onSignOut,
   nav,
+  isAdmin = false,
+  onOpenAdmin,
   hideTopbar = false,
   children,
 }: {
@@ -31,6 +33,9 @@ export function HqShell({
   context?: ReactNode;
   onSignOut?: () => void;
   nav: ShellNav;
+  /** Platform owner. Adds an Admin tab that nobody else can see or reach. */
+  isAdmin?: boolean;
+  onOpenAdmin?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -43,6 +48,7 @@ export function HqShell({
   // at #/home for the platform-owner "act as team" tile.
   const activeKey = route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
+      : route === 'admin' ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them
@@ -54,6 +60,12 @@ export function HqShell({
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
     { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
   ];
+  // The owner's own tab. Rendered only for a platform owner, and separated
+  // from the product tabs because it is about who you are, not what you are
+  // looking at.
+  if (isAdmin && onOpenAdmin) {
+    links.push({ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin });
+  }
   return (
     <div className="tru-shell">
       <aside className="side">
