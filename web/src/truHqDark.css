@@ -3138,9 +3138,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* ---- the island ---- */
 .tru-dark .dk-island {
   position: sticky; top: 16px; z-index: 30;
+  /* drawn by the shell for every deck page, so they all start at the same y */
   margin: 16px auto 0; width: max-content; max-width: 100%;
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   padding: 7px 8px 7px 16px; border-radius: var(--r-pill);
+  /* Same height with or without the window tabs — otherwise Pulse's bar is
+     taller than the others and the pages start 9px apart. */
+  min-height: 44px; box-sizing: border-box;
   background: linear-gradient(180deg, rgba(20, 38, 27, 0.94), rgba(7, 14, 10, 0.96));
   box-shadow: 0 0 0 1px var(--border-soft), var(--lip), 0 30px 60px -34px rgba(2, 7, 4, 0.95);
 }
@@ -3206,12 +3210,24 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .dk-eyebrow.hot i { background: var(--ember); }
 .tru-dark .dk-mast h1 {
+  /* Two lines of space, always. Pulse's headline is one line and Coach's is
+     two, which started the bento 44px lower on Coach and made the whole page
+     look like it had sunk when you switched tabs. Reserving the space costs a
+     little air on the short ones and makes the three tabs line up exactly. */
+  min-height: 2.08em;
   font-family: var(--hq-serif); margin: 16px 0 0;
   font-size: clamp(30px, 3.2vw, 44px); line-height: 1.04; letter-spacing: -0.026em;
   font-weight: 550; color: var(--text-strong); max-width: 24ch; text-wrap: balance;
 }
 .tru-dark .dk-mast h1 em { font-style: italic; color: var(--accent-hi); }
-.tru-dark .dk-sub { margin: 12px 0 0; font-size: 14.5px; color: var(--text-60); max-width: 62ch; line-height: 1.6; }
+/* Three lines reserved, for the same reason the headline reserves two: the
+   lede runs to 2 lines on Pulse and 3 on Rep, and letting it vary moved the
+   whole page up and down as you switched tabs. Reserving both means the bento
+   begins at exactly the same y on all three. */
+.tru-dark .dk-sub {
+  margin: 12px 0 0; font-size: 14.5px; color: var(--text-60);
+  max-width: 62ch; line-height: 1.6; min-height: 4.8em;
+}
 .tru-dark .dk-sub b { color: var(--text-strong); font-weight: 600; }
 .tru-dark .dk-note { text-decoration: none; color: var(--text-40); }
 
@@ -3361,7 +3377,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    Coach 700px narrower than Pulse on the same screen — the canvas was already
    2160, its children were not. The deck manages its own width. */
 .tru-dark .coach-canvas.dk-main > * { max-width: none; }
-.tru-dark .dk-wiring { margin-top: 16px; max-width: 480px; }
+.tru-dark .dk-wiring { margin: 4px 4px 18px; max-width: 480px; }
 /* Coach's table has no numeric bar column, so its cells sit closer together */
 .tru-dark .dk-table .tru-table td .rs-rate { gap: 10px; }
 .tru-dark .dk-table .tru-table td .rs-rate b { min-width: 30px; }

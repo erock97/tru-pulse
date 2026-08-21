@@ -24,6 +24,7 @@ export function HqShell({
   isAdmin = false,
   onOpenAdmin,
   hideTopbar = false,
+  islandSlot,
   children,
 }: {
   orgName: string;
@@ -39,6 +40,11 @@ export function HqShell({
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
+  /** Controls for the island bar, e.g. Pulse's window tabs. The bar itself is
+   *  drawn by the shell either way, so every deck page starts at the same y —
+   *  when only Pulse rendered it, its content sat 61px lower than the others
+   *  and switching tabs looked like the page had jumped. */
+  islandSlot?: ReactNode;
   children: ReactNode;
 }) {
   // Active tab derived from the current route so every page highlights its own link
@@ -126,6 +132,12 @@ export function HqShell({
       </aside>
 
       <main className="main">
+        {hideTopbar && (
+          <div className="dk-island">
+            <span className="dk-mk"><i>tru</i><b>TRU <em>HQ</em></b></span>
+            {islandSlot && <><span className="dk-div" />{islandSlot}</>}
+          </div>
+        )}
         {!hideTopbar && (
           <header className="topbar reveal">
             <div>

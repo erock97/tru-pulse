@@ -46,7 +46,6 @@ function healthOf(a: RosterAgent): number {
   const conf = confidence(a.takes).pct;
   return Math.round(0.5 * checkin + 0.2 * cadence + 0.3 * conf);
 }
-const firstNm = (n: string) => firstName(n);
 
 /* ---- Big team-health gauge — focal, ambient glow ---- */
 
@@ -313,19 +312,7 @@ export default function Coach({
                       : <>Your team, at a glance.</>}
                   </h1>
                   <p className="dk-sub">{mix.note}</p>
-                  <div className="dk-wiring"><WiringBar segs={mix.segs} /></div>
                 </div>
-                {derived.needsYou.length > 0 && (
-                  <button className="rs-cta" onClick={() => setOpenId(derived.needsYou[0].a.id)}>
-                    Open {firstNm(derived.needsYou[0].a.name)}’s brief
-                    <span aria-hidden>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                           strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M13 6l6 6-6 6" />
-                      </svg>
-                    </span>
-                  </button>
-                )}
               </header>
 
               {/* ============ THE DRIFT MAP + THE NUMBERS ============ */}
@@ -354,6 +341,11 @@ export default function Coach({
                   </div>
                 ))}
               </section>
+
+              {/* The archetype mix. It used to sit inside the masthead, which
+                  made Coach's header 44px taller than Pulse's and pushed the
+                  whole page down relative to the other tabs. */}
+              <div className="dk-wiring"><WiringBar segs={mix.segs} /></div>
 
               {/* ============ THE COHORT ============ */}
               <div className="dk-sec">

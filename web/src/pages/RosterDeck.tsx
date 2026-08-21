@@ -61,21 +61,15 @@ export default function RosterDeck({
     });
   }, [rows, sort]);
 
-  /* The island carries the mark and the window tabs and nothing else.
-     Navigation, the org and sign-out live in the sidebar; putting them here
-     too was two of everything. */
-  const island = (
-    <div className="dk-island">
-      <span className="dk-mk"><i>tru</i><b>TRU <em>HQ</em></b></span>
-      <span className="dk-div" />
-      <span className="dk-win">
-        {WINDOWS.map((w) => (
-          <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
-            {w.label}
-          </button>
-        ))}
-      </span>
-    </div>
+  /* Just the window tabs now — the shell draws the bar. */
+  const windowTabs = (
+    <span className="dk-win">
+      {WINDOWS.map((w) => (
+        <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
+          {w.label}
+        </button>
+      ))}
+    </span>
   );
 
   const frame = (body: React.ReactNode) => (
@@ -85,9 +79,9 @@ export default function RosterDeck({
         onSignOut={() => signOutClean()}
         nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
         hideTopbar
+        islandSlot={windowTabs}
       >
         <div className="dk-main">
-          {island}
           {body}
         </div>
       </HqShell>
@@ -115,7 +109,6 @@ export default function RosterDeck({
     </th>
   );
 
-  const top = priorities[0];
 
   return frame(
     <>
@@ -147,17 +140,6 @@ export default function RosterDeck({
             )}
           </p>
         </div>
-        {top && (
-          <button className="rs-cta" onClick={() => setOpen(top.row)}>
-            Prep the 1:1 with {top.row.name.split(' ')[0]}
-            <span aria-hidden>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </span>
-          </button>
-        )}
       </header>
 
       <section className="dk-bento">
