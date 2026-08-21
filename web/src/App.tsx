@@ -4,7 +4,6 @@ import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, typ
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
 import Login from './pages/Login';
-import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import RosterDeck from './pages/RosterDeck';
@@ -177,11 +176,15 @@ export default function App() {
     return <div className="center-wrap"><div className="spinner" /></div>;
   }
   if (!session) {
-    if (route === '/login') return <Login />;
-    // Marketing home. Only reached when signed out, so a signed-in visitor
-    // at "/" still gets HQ. /services, /about, and /apply never reach App —
-    // main.tsx routes them (see routes.ts). Login stays at #/login.
-    return <PublicSite route="/" />;
+    // Signed out on the APP host means one thing: you came here to sign in.
+    //
+    // This used to render the marketing home instead, which was a trap. The
+    // marketing site's "Client log in" points at this host's bare root, so the
+    // moment a session expired that button could only reload a marketing page
+    // — solid black for the first seconds while a 3MB hero video loads — with
+    // no route to the form from it. Marketing lives at truhq.co; this host is
+    // the product, and its signed-out face is the door.
+    return <Login />;
   }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
