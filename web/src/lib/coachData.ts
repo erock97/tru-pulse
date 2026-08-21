@@ -585,10 +585,28 @@ export const ARCHETYPE_CUES: Record<string, ArchetypeCue> = {
   },
 };
 
-// GOAL DEFAULTS + quarter options (ported verbatim from truData.js). loadGoalBundle
-// seeds a goal from these on first open so an agent always has a starting funnel.
-export const GOAL_DEFAULTS = { quarter: 'Q3 2026', q_goal: 6, alloc_company: 3, cvr_company: 4.0, cvr_sphere: 12.0 } as const;
-export const QUARTERS = ['Q3 2026', 'Q4 2026', 'Q1 2027', 'Q2 2027', 'Q3 2027'];
+/* ── goal starting points ──────────────────────────────────────────────────
+   These are the values a NEW goal form opens on. They are not measured, and
+   the two conversion rates in particular are assumptions carried over from
+   the legacy app — which is exactly why a goal is no longer created just
+   because somebody opened a page. A leader sets one deliberately, sees these
+   numbers, and changes them or doesn't. */
+export function currentQuarter(now: Date = new Date()): string {
+  return `Q${Math.floor(now.getMonth() / 3) + 1} ${now.getFullYear()}`;
+}
+/** This quarter and the next four, derived — the old fixed list went stale. */
+export function quarterOptions(now: Date = new Date()): string[] {
+  let q = Math.floor(now.getMonth() / 3) + 1;
+  let y = now.getFullYear();
+  const out: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    out.push(`Q${q} ${y}`);
+    if (++q > 4) { q = 1; y += 1; }
+  }
+  return out;
+}
+export const GOAL_DEFAULTS = { q_goal: 6, alloc_company: 3, cvr_company: 4.0, cvr_sphere: 12.0 } as const;
+export const QUARTERS = quarterOptions();
 
 // Generate the base commitments from the funnel + archetype letters (ported).
 // COMPANY = execution on the leads the team FEEDS them; SPHERE = the agent's own
@@ -626,10 +644,23 @@ export function goalFunnel(goal: Goal): GoalFunnel {
   return { qGoal, allocC, allocS, pctC, pctS: 100 - pctC, comp, sph };
 }
 
-// Load the full goal bundle for an agent; CREATE the goal + SEED the base
-// commitments on first open so the agent has a checklist immediately.
-// This is the write-path restoration — the earlier HQ port made it read-only.
+/** Read an agent's goal and checklist. Returns `goal: null` when they have
+ *  none — opening a page does not create one. Use `createGoal` for that. */
 export async function loadGoalBundle(
+  agentId: string,
+  teamId: string | null,
+): Promise<{ goal: Goal | null; commitments: Commitment[] }> {
+  const res = await workerFetch('/data/coach/goal-bundle', {
+    method: 'POST',
+    body: JSON.stringify({ agentId, teamId }),
+  });
+  if (!res.ok) throw new Error('Could not open this agent’s goal.');
+  const d = (await res.json()) as { goal: Goal | null; commitments: Commitment[] | null };
+  return { goal: d.goal ?? null, commitments: d.commitments ?? [] };
+}
+
+/** Deliberately create a goal and its starter checklist, from a leader action. */
+export async function createGoal(
   agentId: string,
   teamId: string | null,
   code: string,
@@ -641,9 +672,10 @@ export async function loadGoalBundle(
   // generateBaseCommitments needs the goal to exist first, and the goal may itself be
   // created by this call. Ask once with no seed, then once more with it, rather than
   // teaching the Worker how to build the rows.
+  const defaults = { ...GOAL_DEFAULTS, quarter: currentQuarter() };
   const first = await workerFetch('/data/coach/goal-bundle', {
     method: 'POST',
-    body: JSON.stringify({ agentId, teamId, goalDefaults: GOAL_DEFAULTS }),
+    body: JSON.stringify({ agentId, teamId, create: true, goalDefaults: defaults }),
   });
   if (!first.ok) throw new Error('Could not open this agent’s goal.');
   const d1 = (await first.json()) as { goal: Goal | null; commitments: Commitment[] | null };
@@ -656,7 +688,7 @@ export async function loadGoalBundle(
     }));
     const second = await workerFetch('/data/coach/goal-bundle', {
       method: 'POST',
-      body: JSON.stringify({ agentId, teamId, goalDefaults: GOAL_DEFAULTS, seed }),
+      body: JSON.stringify({ agentId, teamId, create: true, goalDefaults: defaults, seed }),
     });
     if (second.ok) {
       const d2 = (await second.json()) as { commitments: Commitment[] | null };

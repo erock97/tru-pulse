@@ -5,7 +5,7 @@ import { HqShell } from '../components/hqShell';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
 import {
-  loadRoster, teamMix, loadProfile, loadGoalBundle,
+  loadRoster, teamMix, loadProfile, loadGoalBundle, createGoal, GOAL_DEFAULTS,
   loadCheckinBundle, loadOpenCommitments, saveStructuredCheckin,
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
@@ -795,7 +795,8 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
     let live = true;
     (async () => {
       try {
-        // loadGoalBundle now CREATES + SEEDS on first open (write path). Run the
+        // loadGoalBundle is read-only; a goal is created from an explicit
+        // action on the sheet. Run the
         // reads first so a denied goal-write can't blank the profile/history.
         // loadCheckinBundle (Block 4a/4b) enriches each checkins row with its
         // structured children (checkin_items + checkin_leader) so Past 1:1s can
@@ -810,7 +811,7 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
         setCheckins(ci);
         setOpenCommitments(oc);
         try {
-          const gb = await loadGoalBundle(agent.id, agent.teamId, agent.code);
+          const gb = await loadGoalBundle(agent.id, agent.teamId);
           if (!live) return;
           setGoal(gb.goal);
           setCommitments(gb.commitments);
@@ -1594,8 +1595,24 @@ function GoalSheet({
   const first = firstName(agent.name);
   const [flag, flash] = useSavedFlag();
   const [err, setErr] = useState<string | null>(null);
+  const [making, setMaking] = useState(false);
+  const [makeErr, setMakeErr] = useState<string | null>(null);
   const debounce = useRef<number | null>(null);
   useEffect(() => () => { if (debounce.current) window.clearTimeout(debounce.current); }, []);
+
+  async function makeGoal() {
+    setMaking(true);
+    setMakeErr(null);
+    try {
+      const gb = await createGoal(agent.id, agent.teamId, agent.code);
+      setGoal(gb.goal);
+      setCommitments(gb.commitments);
+    } catch (e) {
+      setMakeErr(e instanceof Error ? e.message : 'Could not set up this goal.');
+    } finally {
+      setMaking(false);
+    }
+  }
 
   // Optimistic goal-field edit → debounced persist.
   function editGoal(field: Partial<Goal>) {
@@ -1671,9 +1688,24 @@ function GoalSheet({
       {err && <div className="ad-inline-err" style={{ marginBottom: 16 }}>{err}</div>}
 
       {!goal ? (
-        <div className="ad-move-lead">
+        /* No goal, and opening this page will not invent one. The starting
+           numbers are visible before anything is written, because the two
+           conversion rates in them are assumptions, not measurements. */
+        <div className="ad-move-lead ad-goal-empty">
           <span className="method-badge"><Icon name="target" size={18} /></span>
-          <p>Setting up {first}’s quarterly goal…</p>
+          <div>
+            <p><b>{first} has no goal set.</b></p>
+            <p className="ad-goal-empty-note">
+              Starting from {GOAL_DEFAULTS.q_goal} contracts this quarter,
+              {' '}{GOAL_DEFAULTS.alloc_company} of them from company leads, at
+              {' '}{GOAL_DEFAULTS.cvr_company}% company and {GOAL_DEFAULTS.cvr_sphere}% sphere conversion.
+              Those two rates are assumptions — change them once you know {first}’s real ones.
+            </p>
+            <button className="hqbtn hqbtn-primary" disabled={making} onClick={makeGoal}>
+              {making ? 'Setting up…' : `Set ${first}’s goal`}
+            </button>
+            {makeErr && <div className="ad-inline-err" style={{ marginTop: 12 }}>{makeErr}</div>}
+          </div>
         </div>
       ) : (
         <>

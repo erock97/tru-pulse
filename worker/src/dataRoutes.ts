@@ -307,8 +307,9 @@ export async function handleDataRoutes(
     }
 
     // First open of an agent's goal screen: fetch the goal and its checklist, creating
-    // both if this is the first time. The create half is why this is a POST and not a
-    // GET — opening the screen genuinely writes.
+    // It only creates when the caller passes `create: true`, which the browser
+    // does from an explicit "Set a goal" action and never on open. It stays a
+    // POST because of that path.
     //
     // Every read and write here runs as the user, so a leader who cannot see this agent
     // gets a refusal rather than a freshly-seeded goal on someone else's agent.
@@ -317,10 +318,16 @@ export async function handleDataRoutes(
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
       const teamId = body.teamId == null ? null : String(body.teamId);
 
+      // Creating is opt-in. Merely opening an agent used to write a goal seeded
+      // with conversion rates nobody measured, plus six commitments nobody
+      // asked for, and the whole funnel panel then descended from those. A goal
+      // exists because a leader chose to set one.
+      const create = body.create === true;
+
       let goals = await db.select<Record<string, unknown>>(
         'goals', `select=*&agent_id=eq.${agentId}&limit=1`,
       );
-      if (goals.length === 0) {
+      if (goals.length === 0 && create) {
         const created = await db.insert<Record<string, unknown>>('goals', {
           agent_id: agentId, team_id: teamId, ...(body.goalDefaults ?? {}),
         });
@@ -336,7 +343,7 @@ export async function handleDataRoutes(
       // agent has none yet. The rows themselves are computed in the browser (they are
       // pure text derived from the archetype) and sent along.
       const seed = Array.isArray(body.seed) ? (body.seed as unknown[]) : [];
-      if (commitments.length === 0 && goal && seed.length > 0) {
+      if (create && commitments.length === 0 && goal && seed.length > 0) {
         const created = await db.insert<Record<string, unknown>>('commitments', seed);
         if (!created) return json({ error: 'not allowed' }, 403, cors);
         commitments = created;
