@@ -2981,6 +2981,24 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    side as part of the render. Two of them stacked just made it muddy. */
 
 /* ---- the burst: the team, drawn ---- */
+/* ---- the sidebar plate ----------------------------------------------------
+   A rendered vertical wash: warm at the head where the mark sits, sage at the
+   foot under the org chip, and plain through the middle so the nav labels
+   never read over light.
+
+   Kept at 45%. At full strength the sidebar goes browner than the room it
+   sits in and stops looking like one continuous surface.
+
+   Generated in Higgsfield; see [[higgsfield-mcp-for-renders]] for the crop and
+   convert step. -1 z-index puts it behind the sidebar's own children without
+   needing a wrapper. */
+.tru-dark .tru-shell .side { position: relative; isolation: isolate; }
+.tru-dark .tru-shell .side::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: url("/side-plate.webp") center / cover no-repeat;
+  opacity: 0.45;
+}
+
 /* The rendered plate, and the live marks over it. Both fill the card; the
    canvas paints its own wash over the left so the type stays readable. */
 .tru-dark .rs-plate-art {
