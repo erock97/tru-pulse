@@ -21,15 +21,19 @@ export function HqShell({
   context,
   onSignOut,
   nav,
+  hideTopbar = false,
   children,
 }: {
   orgName: string;
   role?: string;
   eyebrow?: string;
-  title: string;
+  title?: string;
   context?: ReactNode;
   onSignOut?: () => void;
   nav: ShellNav;
+  /** Skip the shell's own eyebrow/title bar for a page that brings its own
+   *  masthead. The sidebar and the phone tab bar are unaffected. */
+  hideTopbar?: boolean;
   children: ReactNode;
 }) {
   // Active tab derived from the current route so every page highlights its own link
@@ -102,15 +106,17 @@ export function HqShell({
       </aside>
 
       <main className="main">
-        <header className="topbar reveal">
-          <div>
-            {eyebrow && <div className="main-eyebrow">{eyebrow}</div>}
-            <h1>{title}</h1>
-          </div>
-          <div className="topbar-ctx">
-            {context}
-          </div>
-        </header>
+        {!hideTopbar && (
+          <header className="topbar reveal">
+            <div>
+              {eyebrow && <div className="main-eyebrow">{eyebrow}</div>}
+              <h1>{title}</h1>
+            </div>
+            <div className="topbar-ctx">
+              {context}
+            </div>
+          </header>
+        )}
         {children}
       </main>
 

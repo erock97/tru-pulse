@@ -3239,7 +3239,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    animated gradient the original mockup used.
    ========================================================================== */
 
-.tru-dark .dk-shell { grid-template-columns: 1fr; }
+/* The deck keeps the sidebar; the shell's own topbar is what it replaces.
+   `.main` already pads, so the deck's own canvas pulls that back to nothing
+   and manages its own gutters. */
+.tru-dark .tru-shell .main:has(> .dk-main) { padding: 0; }
 .tru-dark .dk-main {
   position: relative; z-index: 1;
   /* `width: 100%` is load-bearing. This is a grid item, and `margin: 0 auto`
@@ -3429,3 +3432,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .dk-fr { grid-template-columns: 28px minmax(0, 1fr); }
   .tru-dark .dk-fr-why, .tru-dark .dk-fr-do { grid-column: 2; white-space: normal; }
 }
+
+/* The window tabs also ride in the sidebar layout's topbar, so both
+   arrangements are cut by the same control. */
+.tru-dark .topbar-ctx .dk-win { flex: none; }

@@ -1,296 +1,27 @@
 /**
- * Pulse — the roster.
- *
- * This replaces the old overview, which showed six stat cards, a bubble chart
- * and a commission figure, and buried the only genuinely useful thing (the
- * per-agent table) below all of it.
+ * Pulse — the roster, sidebar layout.
  *
  * The page answers one question: who do I need to talk to, and why. It opens
- * with a short priority list, then the numbers behind it, then the whole roster
- * dense enough to scan in one screen.
+ * with a short priority list, then the numbers behind it, then the whole
+ * roster.
  *
- * Two rules it holds to, because breaking them is what made the old page
- * untrustworthy:
- *   - Every number on screen is measured. Nothing is a placeholder and nothing
- *     is derived from an assumption without saying so.
- *   - An agent it cannot resolve is shown, not dropped.
+ * `RosterDeck.tsx` is the same page arranged differently, and both read from
+ * `lib/rosterData.ts` — a comparison running on two loaders is not a
+ * comparison.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useReveal } from '../hqHooks';
 import { HqShell } from '../components/hqShell';
-import { loadDashboard, loadRep, signOutClean, type RepData } from '../lib/api';
-import { initials, loadRoster, type RosterAgent } from '../lib/coachData';
-import { isClosing, isOfferPlus, stageClass, isStuckStage } from '../../../shared/flags';
-
-/* ── the line ──────────────────────────────────────────────────────────────
-   Leads-per-contract worse than this is "past the line". Set per team in
-   settings; the fallback is Eric's stated standard of one in thirty. */
-const DEFAULT_LINE = 30;
-
-type Health = 'past-line' | 'behind' | 'holding' | 'no-volume';
-
-interface Row {
-  agentId: string | null;
-  name: string;
-  leads: number;
-  worked: number;
-  workedPct: number;
-  stuck: number;
-  offers: number;
-  contracts: number;
-  perContract: number | null;
-  lastDays: number | null;
-  arch: string | null;
-  archName: string | null;
-  health: Health;
-  /* Certification, from the Rep board. `null` means this name has no Rep
-     record at all, which is different from having one and passing nothing. */
-  cert: { passed: number; total: number; invited: boolean } | null;
-}
-
-interface Priority {
-  row: Row;
-  reason: string;
-  action: string;
-  approach: string | null;
-  severity: 'high' | 'medium';
-}
-
-const norm = (s: string | null | undefined) =>
-  (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
-
-function healthOf(perContract: number | null, teamRate: number | null, line: number): Health {
-  if (perContract === null) return 'no-volume';
-  if (perContract > line) return 'past-line';
-  if (teamRate !== null && perContract > teamRate * 1.12) return 'behind';
-  return 'holding';
-}
-
-/* ── the priority list ─────────────────────────────────────────────────────
-   Ranked on signals that are all genuinely measured today. Trend is absent on
-   purpose: Follow Up Boss carries no stage history, so it cannot be computed
-   without inventing it. It arrives once the weekly Hustle rows accumulate. */
-function prioritise(rows: readonly Row[]): Priority[] {
-  const out: Priority[] = [];
-
-  for (const r of rows) {
-    if (r.health === 'past-line') {
-      out.push({
-        row: r,
-        severity: 'high',
-        reason: r.workedPct >= 95
-          ? `Worked ${r.workedPct}% of ${r.leads} leads and closed ${r.contracts}. Nothing is being dropped before the call, so the loss is on it.`
-          : `One contract from ${r.leads} leads, and ${100 - r.workedPct}% of them were never worked.`,
-        action: r.workedPct >= 95 ? 'Listen to a recent call before the next 1:1.' : 'Start with the untouched leads.',
-        approach: approachFor(r),
-      });
-    } else if (r.stuck > 10) {
-      out.push({
-        row: r,
-        severity: 'high',
-        reason: `${r.stuck} of ${r.leads} leads are still sitting in Lead.`,
-        action: 'Work the stuck list with them, oldest first.',
-        approach: approachFor(r),
-      });
-    } else if (r.lastDays === null && r.leads >= 5) {
-      out.push({
-        row: r,
-        severity: 'high',
-        reason: `No 1:1 on record, and they are carrying ${r.leads} leads.`,
-        action: 'Book a first one and set the cadence.',
-        approach: approachFor(r),
-      });
-    } else if (r.lastDays !== null && r.lastDays > 45) {
-      out.push({
-        row: r,
-        severity: 'medium',
-        reason: `${r.lastDays} days since their last 1:1.`,
-        action: 'Book one this week.',
-        approach: approachFor(r),
-      });
-    } else if (r.health === 'no-volume' && r.leads < 5) {
-      out.push({
-        row: r,
-        severity: 'medium',
-        reason: `${r.leads} lead${r.leads === 1 ? '' : 's'} in this window. There is nothing here to coach from.`,
-        action: 'Check how leads are being routed before anything else.',
-        approach: null,
-      });
-    }
-  }
-
-  const rank = { high: 0, medium: 1 } as const;
-  return out
-    .sort((a, b) => rank[a.severity] - rank[b.severity]
-      || (b.row.perContract ?? 0) - (a.row.perContract ?? 0))
-    .slice(0, 4);
-}
-
-/* ── the burst ─────────────────────────────────────────────────────────────
-   Two layers, and the split is the point.
-
-   Behind: `burst-plate.webp`, a rendered image. Drawing light this good in
-   code was the thing that kept coming out cheap - a real render has depth and
-   colour behaviour that hand-drawn strokes do not.
-
-   In front: a canvas carrying only what is true of this team - the ring at
-   your line, and one node per agent at their own leads-per-contract. Those
-   move per team, so they cannot live in the image.
-
-   The plate is decoration and says so; every mark on top of it is measured.
-
-   Positions are tied together: the plate's own light source sits at 20% across
-   and halfway down, and the canvas uses the same origin. Swap the plate for a
-   different render and those two numbers have to move with it, or the dots
-   will float beside the burst instead of sitting in it. */
-function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-
-  const marks = useMemo(() => {
-    const rates = rows
-      .map((r) => r.perContract)
-      .filter((v): v is number => v !== null);
-    if (rates.length === 0) return null;
-
-    // The line gets a fixed place on the dial and everyone is read against
-    // it. Anyone worse than the line lands outside the ring, which is the
-    // entire reason for drawing it this way round.
-    const hi = Math.max(line, ...rates) * 1.18;
-    const fan = [...rows].sort((a, b) => (b.perContract ?? -1) - (a.perContract ?? -1));
-    const SPREAD = (52 * Math.PI) / 180;
-    const step = fan.length > 1 ? (SPREAD * 2) / (fan.length - 1) : 0;
-    const TONE: Record<Health, string> = {
-      'past-line': '255, 106, 69',
-      behind: '242, 178, 60',
-      holding: '143, 176, 162',
-      'no-volume': '110, 128, 116',
-    };
-
-    // The dial starts partway out rather than at the source. Marks drawn close
-    // in land on top of the number and its caption, and a dial with a non-zero
-    // origin is normal as long as the ring sits on the same scale — which it
-    // does, so the reading is unchanged.
-    const band = (v: number) => 0.44 + (Math.min(v, hi) / hi) * 0.56;
-
-    return {
-      spread: SPREAD,
-      lineAt: band(line),
-      dots: fan.map((r, i) => ({
-        angle: fan.length > 1 ? -SPREAD + i * step : 0,
-        // No volume has no rate to place, so it sits at the foot of the dial
-        // rather than being given a number it does not have.
-        at: r.perContract === null ? 0.40 : band(r.perContract),
-        tone: TONE[r.health],
-        faded: r.perContract === null,
-      })),
-    };
-  }, [rows, line]);
-
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv || !marks) return;
-
-    const draw = () => {
-      const w = cv.clientWidth, h = cv.clientHeight;
-      if (!w || !h) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width = Math.round(w * dpr);
-      cv.height = Math.round(h * dpr);
-
-      const g = cv.getContext('2d');
-      if (!g) return;
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      g.clearRect(0, 0, w, h);
-
-      // The plate's own light source sits at 20% across and halfway down the
-      // render. These match it, so a dot lands on the burst rather than beside
-      // it. Change one and you must change the other.
-      const cx = w * 0.20, cy = h * 0.502;
-      // The dial is an ellipse, not a circle. The card is roughly twice as wide
-      // as it is tall, so a circular dial throws its widest marks straight out
-      // of the bottom edge.
-      const rx = w * 0.74, ry = h * 0.44;
-      const { spread, lineAt, dots } = marks;
-      const at = (a: number, f: number) =>
-        [cx + Math.cos(a) * rx * f, cy + Math.sin(a) * ry * f] as const;
-
-      // The type sits on the left, so the plate is knocked back off it. This
-      // is the only thing painted rather than drawn.
-      const left = g.createLinearGradient(0, 0, w * 0.46, 0);
-      left.addColorStop(0, 'rgba(7, 15, 10, 0.94)');
-      left.addColorStop(0.42, 'rgba(7, 15, 10, 0.72)');
-      left.addColorStop(1, 'rgba(7, 15, 10, 0)');
-      g.fillStyle = left;
-      g.fillRect(0, 0, w * 0.46, h);
-
-
-      g.strokeStyle = 'rgba(255, 145, 116, 0.85)';
-      g.lineWidth = 1.5;
-      g.setLineDash([4, 5]);
-      g.beginPath();
-      g.ellipse(cx, cy, rx * lineAt, ry * lineAt, 0, -spread - 0.16, spread + 0.16);
-      g.stroke();
-      g.setLineDash([]);
-
-      for (const d of dots) {
-        const [x, y] = at(d.angle, d.at);
-        const halo = g.createRadialGradient(x, y, 0, x, y, 13);
-        halo.addColorStop(0, `rgba(${d.tone}, ${d.faded ? 0.22 : 0.42})`);
-        halo.addColorStop(1, `rgba(${d.tone}, 0)`);
-        g.fillStyle = halo;
-        g.beginPath(); g.arc(x, y, 13, 0, Math.PI * 2); g.fill();
-
-        g.fillStyle = `rgba(${d.tone}, ${d.faded ? 0.55 : 1})`;
-        g.beginPath(); g.arc(x, y, 3.4, 0, Math.PI * 2); g.fill();
-
-        g.strokeStyle = `rgba(${d.tone}, 0.5)`;
-        g.lineWidth = 1;
-        g.beginPath(); g.arc(x, y, 6.4, 0, Math.PI * 2); g.stroke();
-      }
-    };
-
-    draw();
-    const ro = new ResizeObserver(draw);
-    ro.observe(cv);
-    return () => ro.disconnect();
-  }, [marks]);
-
-  if (!marks) return null;
-  return (
-    <>
-      <img className="rs-plate-art" src="/burst-plate.webp" alt="" aria-hidden decoding="async" />
-      <canvas className="rs-burst" ref={ref} aria-hidden />
-    </>
-  );
-}
-
-/* ── the strips ────────────────────────────────────────────────────────────
-   One bar per agent, in the order the roster sits. Same form on all four
-   supporting cards so the shape of the team is comparable between them.
-
-   Deliberately NOT a sparkline: a sparkline claims a history, and Follow Up
-   Boss carries no stage history to draw one from. */
-function Strip({ values, tone }: { values: readonly number[]; tone: string }) {
-  const max = Math.max(1, ...values);
-  return (
-    <span className={`rs-strip t-${tone}`} aria-hidden>
-      {values.map((v, i) => (
-        <i key={i} style={{ height: `${Math.max(7, (v / max) * 100)}%`, opacity: v === 0 ? 0.22 : 1 }} />
-      ))}
-    </span>
-  );
-}
-
-/** The personality angle comes from the assessment; without one, say nothing. */
-function approachFor(r: Row): string | null {
-  if (!r.arch) return null;
-  if (r.arch === 'Striver') return 'A Striver — lead with momentum and a specific next rep, not a target.';
-  if (r.arch === 'Achiever') return 'An Achiever — give them the number and the autonomy to hit it.';
-  if (r.arch === 'Independent') return 'Independent — agree the outcome, then stay out of the method.';
-  return null;
-}
+import { PersonPane } from '../components/personPane';
+import { Burst, Strip } from '../components/rosterViz';
+import { signOutClean } from '../lib/api';
+import { initials } from '../lib/coachData';
+import {
+  DEFAULT_LINE, WINDOWS, approachFor, prioritise, totalsOf, useRosterData,
+  type Row, type Window,
+} from '../lib/rosterData';
 
 export default function Roster({
   orgName, onOpenPulse, onOpenCoach, onOpenRep,
@@ -300,118 +31,22 @@ export default function Roster({
   onOpenCoach: () => void;
   onOpenRep: () => void;
 }) {
-  const [rows, setRows] = useState<Row[] | null>(null);
   const line = DEFAULT_LINE;
-  const [err, setErr] = useState('');
+  const [win, setWin] = useState<Window>(WINDOWS[3]);
+  const { rows, err, undated } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
 
   // The shell's heading is a `.reveal` element and stays hidden until this runs.
   useReveal([rows]);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        // The coaching roster and the certification board are separate reads
-        // and are both allowed to fail: a team with Coach or Rep switched off
-        // still gets its pipeline.
-        const [data, coach, rep] = await Promise.all([
-          loadDashboard(),
-          loadRoster().catch((): RosterAgent[] => []),
-          loadRep().catch((): RepData | null => null),
-        ]);
-        if (!alive) return;
+  const totals = useMemo(() => (rows ? totalsOf(rows) : null), [rows]);
+  const priorities = useMemo(() => (rows ? prioritise(rows) : []), [rows]);
 
-        // One row per agent per module, so passes are counted per agent rather
-        // than summed. Only published modules count toward the total.
-        const liveModules = (rep?.modules ?? []).filter((m) => m.status !== 'draft' && m.status !== 'archived');
-        const passedBy = new Map<string, Set<string>>();
-        for (const p of rep?.progress ?? []) {
-          if (p.status !== 'passed') continue;
-          if (!liveModules.some((m) => m.id === p.module_id)) continue;
-          const set = passedBy.get(p.agent_id) ?? new Set<string>();
-          set.add(p.module_id);
-          passedBy.set(p.agent_id, set);
-        }
-        const repByName = new Map((rep?.agents ?? []).map((a) => [norm(a.name), a]));
-
-        // NOTE: org_settings.close_rate is a percentage, not a ratio - reading
-        // it here produced "your line is 1 : 2". The per-team line needs its own
-        // settings field; until it exists this holds the stated standard.
-
-        const byName = new Map(coach.map((c) => [norm(c.name), c]));
-        const bucket = new Map<string, Row>();
-
-        for (const l of data.leads) {
-          const owner = l.assigned_to?.trim();
-          if (!owner) continue;
-          const key = norm(owner);
-          let r = bucket.get(key);
-          if (!r) {
-            const c = byName.get(key);
-            const ra = repByName.get(key);
-            r = {
-              agentId: c?.id ?? null,
-              name: owner,
-              leads: 0, worked: 0, workedPct: 0, stuck: 0, offers: 0, contracts: 0,
-              perContract: null,
-              lastDays: c && c.lastDays < 99 ? c.lastDays : null,
-              arch: c?.quad ?? null,
-              archName: c?.archName ?? null,
-              health: 'no-volume',
-              cert: ra
-                ? { passed: passedBy.get(ra.id)?.size ?? 0, total: liveModules.length, invited: ra.invited }
-                : null,
-            };
-            bucket.set(key, r);
-          }
-          r.leads += 1;
-          const cls = stageClass(l.stage);
-          if (isOfferPlus(cls)) r.offers += 1;
-          if (isClosing(cls)) r.contracts += 1;
-          if (isStuckStage(l.stage)) r.stuck += 1;
-          if (l.flag !== 'zero_contact') r.worked += 1;
-        }
-
-        const list = [...bucket.values()].map((r) => ({
-          ...r,
-          workedPct: r.leads ? Math.round((r.worked / r.leads) * 100) : 0,
-          perContract: r.contracts ? r.leads / r.contracts : null,
-        }));
-
-        const totalLeads = list.reduce((a, r) => a + r.leads, 0);
-        const totalContracts = list.reduce((a, r) => a + r.contracts, 0);
-        const teamRate = totalContracts ? totalLeads / totalContracts : null;
-
-        setRows(list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) })));
-      } catch (e) {
-        if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
-      }
-    })();
-    return () => { alive = false; };
-    // `line` is read inside but only as a fallback; re-running on it would loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const totals = useMemo(() => {
-    if (!rows) return null;
-    const leads = rows.reduce((a, r) => a + r.leads, 0);
-    const worked = rows.reduce((a, r) => a + r.worked, 0);
-    const contracts = rows.reduce((a, r) => a + r.contracts, 0);
-    const offers = rows.reduce((a, r) => a + r.offers, 0);
-    const stuck = rows.reduce((a, r) => a + r.stuck, 0);
-    return {
-      leads, worked, contracts, offers, stuck,
-      workedPct: leads ? Math.round((worked / leads) * 100) : 0,
-      perContract: contracts ? leads / contracts : null,
-      pastLine: rows.filter((r) => r.health === 'past-line').length,
-      stale: rows.filter((r) => r.lastDays !== null && r.lastDays > 30).length,
-    };
-  }, [rows]);
-
-  const priorities = useMemo(
-    () => (rows ? prioritise(rows) : []),
+  // One fixed order for every strip, so the four cards are comparable to each
+  // other rather than each being sorted by its own metric.
+  const strip = useMemo(
+    () => (rows ? [...rows].sort((a, b) => b.leads - a.leads) : []),
     [rows],
   );
 
@@ -429,40 +64,40 @@ export default function Roster({
     });
   }, [rows, sort]);
 
-  // One fixed order for every strip, so the four cards are comparable to each
-  // other rather than each being sorted by its own metric.
-  const strip = useMemo(
-    () => (rows ? [...rows].sort((a, b) => b.leads - a.leads) : []),
-    [rows],
+  const top = priorities[0];
+  const context = (
+    <>
+      <span className="dk-win">
+        {WINDOWS.map((w) => (
+          <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
+            {w.label}
+          </button>
+        ))}
+      </span>
+      {top && (
+        // Button-in-button: the arrow never sits naked beside the label.
+        <button className="rs-cta" onClick={() => setOpen(top.row)}>
+          Prep the 1:1 with {top.row.name.split(' ')[0]}
+          <span aria-hidden>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </span>
+        </button>
+      )}
+    </>
   );
 
-  const nav = { onOpenPulse, onOpenCoach, onOpenRep };
-
-  // Button-in-button: the arrow never sits naked beside the label.
-  const top = rows && rows.length ? prioritise(rows)[0] : undefined;
-  const cta = top ? (
-    <button className="rs-cta" onClick={() => setOpen(top.row)}>
-      Prep the 1:1 with {top.row.name.split(' ')[0]}
-      <span aria-hidden>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      </span>
-    </button>
-  ) : undefined;
-  // The shell already renders an eyebrow and an h1. The page used to render its
-  // own as well, which stacked two headings. One heading, and it says the thing
-  // that actually matters this week.
   const wrap = (body: React.ReactNode, title: string) => (
     <div className="tru-dark">
       <HqShell
         orgName={orgName}
-        eyebrow={`${orgName} · rolling window`}
+        eyebrow={`${orgName} · ${win.days === null ? 'all time' : `last ${win.days} days`}`}
         title={title}
-        context={cta}
+        context={context}
         onSignOut={() => signOutClean()}
-        nav={nav}
+        nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
       >
         {body}
       </HqShell>
@@ -478,6 +113,7 @@ export default function Roster({
   const lo = Math.max(0, Math.min(line, ...rates) - 4);
   const hi = Math.max(line, ...rates) + 4;
   const scale = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
+
   const th = (key: keyof Row, label: string) => (
     <th
       className={`sortable${sort.key === key ? ' on' : ''}`}
@@ -503,12 +139,8 @@ export default function Roster({
           {totals.workedPct >= 95
             ? <>, so almost nothing is being dropped before the call — what is being lost is being lost on it.</>
             : <>, so {100 - totals.workedPct}% never got a first touch. Start there before coaching anybody on the call.</>}
+          {undated > 0 && <> <s className="dk-note">{undated} leads carry no date and sit outside this window.</s></>}
         </p>
-
-      {/* ONE surface. Not a stack of floating cards separated by gaps - that
-          reads as unfinished no matter how well each card is drawn. Everything
-          below sits inside a single enclosure divided by hairlines, and the
-          emphasis is deliberately unequal rather than a row of equal squares. */}
 
         {/* Unequal on purpose. A row of six identical cards is the pattern
             that reads as generated; these are one lead card, one alert card,
@@ -517,21 +149,21 @@ export default function Roster({
           <div className="rs-plate rs-stat rs-s-lead">
             <Burst rows={rows} line={line} />
             <span className="k">Leads per contract</span>
-            <span className="v">{totals.perContract ? "1 : " + Math.round(totals.perContract) : "\u2014"}</span>
+            <span className="v">{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</span>
             <span className="u">your line is 1 : {line}</span>
           </div>
-          <div className={totals.pastLine > 0 ? "rs-plate rs-stat rs-s-alert hot" : "rs-plate rs-stat rs-s-alert"}>
+          <div className={totals.pastLine > 0 ? 'rs-plate rs-stat rs-s-alert hot' : 'rs-plate rs-stat rs-s-alert'}>
             <span className="k">Past your line</span>
             <span className="v">{totals.pastLine}</span>
-            <span className="u">{totals.stale ? totals.stale + " stale 1:1s" : "nobody drifting"}</span>
+            <span className="u">{totals.stale ? totals.stale + ' stale 1:1s' : 'nobody drifting'}</span>
           </div>
           {([
-            ["rs-s-a", "Leads in play", String(totals.leads), "all sources", "sea", strip.map((r) => r.leads)],
-            ["rs-s-b", "Worked", totals.workedPct + "%", totals.worked + " of " + totals.leads, "sea", strip.map((r) => r.workedPct)],
-            ["rs-s-c", "Under contract", String(totals.contracts), "this window", "amber", strip.map((r) => r.contracts)],
-            ["rs-s-d", "Still in Lead", String(totals.stuck), totals.stuck ? "48h+ untouched" : "nothing sitting", "ember", strip.map((r) => r.stuck)],
+            ['rs-s-a', 'Leads in play', String(totals.leads), 'all sources', 'sea', strip.map((r) => r.leads)],
+            ['rs-s-b', 'Worked', totals.workedPct + '%', totals.worked + ' of ' + totals.leads, 'sea', strip.map((r) => r.workedPct)],
+            ['rs-s-c', 'Under contract', String(totals.contracts), 'this window', 'amber', strip.map((r) => r.contracts)],
+            ['rs-s-d', 'Still in Lead', String(totals.stuck), totals.stuck ? '48h+ untouched' : 'nothing sitting', 'ember', strip.map((r) => r.stuck)],
           ] as const).map(([cls, k, v, u, tone, values]) => (
-            <div className={"rs-plate rs-stat " + cls} key={k}>
+            <div className={'rs-plate rs-stat ' + cls} key={k}>
               <span className="k">{k}</span>
               <span className="rs-stat-row">
                 <span className="v">{v}</span>
@@ -542,19 +174,17 @@ export default function Roster({
           ))}
         </div>
 
-        {/* The people who need you are not a separate card list stacked above a
-            table - that printed every name twice. Same list, opened. */}
         {priorities.length > 0 && (
           <div className="rs-focus">
             {priorities.map((p, i) => (
               <article
                 key={p.row.name}
-                className={p.severity === "high" ? "rs-plate rs-fr crit" : "rs-plate rs-fr"}
+                className={p.severity === 'high' ? 'rs-plate rs-fr crit' : 'rs-plate rs-fr'}
                 tabIndex={0}
                 onClick={() => setOpen(p.row)}
-                onKeyDown={(e) => { if (e.key === "Enter") setOpen(p.row); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') setOpen(p.row); }}
               >
-                <span className={"rs-av h-" + p.row.health}>{initials(p.row.name)}</span>
+                <span className={'rs-av h-' + p.row.health}>{initials(p.row.name)}</span>
                 <div className="rs-fr-body">
                   <div className="rs-fr-top">
                     <span className="rs-fr-name">{p.row.name}</span>
@@ -572,7 +202,7 @@ export default function Roster({
           <div className="rs-plate rs-clear">
             <i />
             <p>
-              <b>Nothing needs you this week.</b> Every agent is inside one in {line},
+              <b>Nothing needs you in this window.</b> Every agent is inside one in {line},
               everyone has had a 1:1 in the last 45 days, and no lead has been left untouched.
             </p>
           </div>
@@ -591,9 +221,9 @@ export default function Roster({
           <table className="tru-table">
             <thead>
               <tr>
-                {th("name", "Agent")}{th("leads", "Leads")}{th("workedPct", "Worked")}
-                {th("stuck", "In Lead")}{th("offers", "Offers")}{th("contracts", "Contracts")}
-                {th("perContract", "Leads per contract")}{th("lastDays", "Last 1:1")}
+                {th('name', 'Agent')}{th('leads', 'Leads')}{th('workedPct', 'Worked')}
+                {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
+                {th('perContract', 'Leads per contract')}{th('lastDays', 'Last 1:1')}
                 <th>State</th>
               </tr>
             </thead>
@@ -601,46 +231,46 @@ export default function Roster({
               {sorted.filter((r) => !priorities.some((p) => p.row.name === r.name)).map((r) => (
                 <tr key={r.name} className="rowlink" tabIndex={0}
                     onClick={() => setOpen(r)}
-                    onKeyDown={(e) => { if (e.key === "Enter") setOpen(r); }}>
+                    onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
                   <td>
                     <div className="rs-who">
-                      <span className={"rs-av h-" + r.health}>{initials(r.name)}</span>
+                      <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
                       <div>
                         <div className="cell-name">{r.name}</div>
-                        <div className="rs-sub2">{r.archName ?? "Not assessed"} &middot; {r.leads} leads</div>
+                        <div className="rs-sub2">{r.archName ?? 'Not assessed'} &middot; {r.leads} leads</div>
                       </div>
                     </div>
                   </td>
                   <td>{r.leads}</td>
-                  <td className={r.workedPct < 90 ? "cell-warn" : ""}>{r.workedPct}%</td>
-                  <td className={r.stuck > 10 ? "cell-warn" : ""}>{r.stuck || "\u2014"}</td>
-                  <td>{r.offers || "\u2014"}</td>
-                  <td>{r.contracts || "\u2014"}</td>
+                  <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{r.workedPct}%</td>
+                  <td className={r.stuck > 10 ? 'cell-warn' : ''}>{r.stuck || '—'}</td>
+                  <td>{r.offers || '—'}</td>
+                  <td>{r.contracts || '—'}</td>
                   <td>
                     <div className="rs-rate">
-                      <b className={r.health === "past-line" ? "cell-warn" : ""}>
-                        {r.perContract ? "1 : " + Math.round(r.perContract) : "\u2014"}
+                      <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
+                        {r.perContract ? '1 : ' + Math.round(r.perContract) : '—'}
                       </b>
                       <span className="rs-scale">
                         <hr />
                         {/* two references, not one: where the team sits, and
                             where your line is. "behind team" was a tag with
                             nothing on screen to check it against. */}
-                        {totals.perContract && <s style={{ left: scale(totals.perContract) + "%" }} />}
-                        <u style={{ left: scale(line) + "%" }} />
+                        {totals.perContract && <s style={{ left: scale(totals.perContract) + '%' }} />}
+                        <u style={{ left: scale(line) + '%' }} />
                         {r.perContract !== null && (
-                          <i style={{ left: scale(r.perContract) + "%" }} className={"h-" + r.health} />
+                          <i style={{ left: scale(r.perContract) + '%' }} className={'h-' + r.health} />
                         )}
                       </span>
                     </div>
                   </td>
-                  <td className={r.lastDays !== null && r.lastDays > 45 ? "cell-warn" : ""}>
-                    {r.lastDays === null ? "\u2014" : r.lastDays + "d"}
+                  <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
+                    {r.lastDays === null ? 'never' : r.lastDays + 'd'}
                   </td>
-                  <td><span className={"rs-tag h-" + r.health}>{
-                    r.health === "past-line" ? "past the line"
-                      : r.health === "behind" ? "behind team"
-                        : r.health === "no-volume" ? "no volume" : "holding"
+                  <td><span className={'rs-tag h-' + r.health}>{
+                    r.health === 'past-line' ? 'past the line'
+                      : r.health === 'behind' ? 'behind team'
+                        : r.health === 'no-volume' ? 'no volume' : 'holding'
                   }</span></td>
                 </tr>
               ))}
@@ -649,7 +279,7 @@ export default function Roster({
               <tr>
                 <td>Team</td><td><b>{totals.leads}</b></td><td><b>{totals.workedPct}%</b></td>
                 <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
-                <td><b>{totals.perContract ? "1 : " + Math.round(totals.perContract) : "\u2014"}</b></td>
+                <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
                 <td><b>{totals.stale} stale</b></td><td />
               </tr>
             </tfoot>
@@ -657,82 +287,7 @@ export default function Roster({
         </div>
       </div>
 
-      {open && (
-        <>
-          <div className="rs-scrim on" onClick={() => setOpen(null)} />
-          <aside className="rs-pane on">
-            <div className="rs-pane-h">
-              <button className="x" onClick={() => setOpen(null)} aria-label="Close">✕</button>
-              <h3>{open.name}</h3>
-              <p>{open.archName ?? 'Not assessed'} · {open.leads} leads</p>
-            </div>
-            <div className="rs-pane-b">
-              <div className="rs-grp">
-                <div className="rs-grp-k">Pipeline</div>
-                {[
-                  ['Leads assigned', String(open.leads)],
-                  ['Worked', `${open.workedPct}%`],
-                  ['Sitting in Lead', open.stuck ? String(open.stuck) : 'none'],
-                  ['Reached an offer', open.offers ? String(open.offers) : 'none'],
-                  ['Under contract', open.contracts ? String(open.contracts) : 'none'],
-                  ['Leads per contract', open.perContract ? `1 : ${Math.round(open.perContract)}` : '—'],
-                ].map(([k, v]) => (
-                  <div className="rs-ln" key={k}><s>{k}</s><b>{v}</b></div>
-                ))}
-              </div>
-              <div className="rs-grp">
-                <div className="rs-grp-k">Coaching</div>
-                <div className="rs-ln"><s>Archetype</s><b>{open.arch ?? '—'}</b></div>
-                <div className="rs-ln"><s>Last 1:1</s><b>{open.lastDays === null ? 'no record' : `${open.lastDays} days ago`}</b></div>
-                {approachFor(open) && <p className="rs-msg">{approachFor(open)}</p>}
-              </div>
-
-              {/* Certification, read from the Rep board. Everything here is a
-                  real row - an agent with no Rep record says so rather than
-                  being shown as nought passed. */}
-              <div className="rs-grp">
-                <div className="rs-grp-k">Certification</div>
-                {open.cert ? (
-                  <>
-                    <div className="rs-ln">
-                      <s>Modules passed</s>
-                      <b className={open.cert.passed === 0 ? 'rs-dim' : ''}>
-                        {open.cert.passed} of {open.cert.total}
-                      </b>
-                    </div>
-                    <div className="rs-ln">
-                      <s>Login sent</s>
-                      <b className={open.cert.invited ? '' : 'rs-dim'}>{open.cert.invited ? 'yes' : 'no'}</b>
-                    </div>
-                    {!open.cert.invited && (
-                      <p className="rs-msg">
-                        <b>{open.name.split(' ')[0]} has never been invited.</b> They cannot start a
-                        module until a login goes out.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="rs-msg">This name has no record on the certification board.</p>
-                )}
-              </div>
-
-              <div className="rs-acts">
-                {open.agentId
-                  ? <a className="rs-pill p" href={`#/coach/${open.agentId}`}>
-                      Prep the 1:1 with {open.name.split(' ')[0]}<span aria-hidden>&rarr;</span>
-                    </a>
-                  : <p className="rs-msg">No coaching record is linked to this name, so there is nothing to open.</p>}
-                {open.cert && (
-                  <a className="rs-pill g" href="#/rep">
-                    {open.cert.invited ? `See ${open.name.split(' ')[0]} in Rep` : `Send ${open.name.split(' ')[0]} a login`}
-                    <span aria-hidden>&rarr;</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </aside>
-        </>
-      )}
+      <PersonPane row={open} onClose={() => setOpen(null)} approach={open ? approachFor(open) : null} />
     </>,
     priorities.length === 0
       ? 'Nobody is past your line.'

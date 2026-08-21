@@ -17,6 +17,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { HqShell } from '../components/hqShell';
 import { signOutClean } from '../lib/api';
 import { initials } from '../lib/coachData';
 import {
@@ -60,17 +61,13 @@ export default function RosterDeck({
     });
   }, [rows, sort]);
 
+  /* The island carries the mark and the window tabs and nothing else.
+     Navigation, the org and sign-out live in the sidebar; putting them here
+     too was two of everything. */
   const island = (
-    <nav className="dk-island">
+    <div className="dk-island">
       <span className="dk-mk"><i>tru</i><b>TRU <em>HQ</em></b></span>
       <span className="dk-div" />
-      <span className="dk-who"><b>{orgName}</b>{rows ? ` · ${rows.length} agents` : ''}</span>
-      <span className="dk-div" />
-      <span className="dk-nav">
-        <button className="on" onClick={onOpenPulse}>Pulse</button>
-        <button onClick={onOpenCoach}>Coach</button>
-        <button onClick={onOpenRep}>Rep</button>
-      </span>
       <span className="dk-win">
         {WINDOWS.map((w) => (
           <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
@@ -78,19 +75,22 @@ export default function RosterDeck({
           </button>
         ))}
       </span>
-      <span className="dk-div" />
-      <button className="dk-out" onClick={() => signOutClean()}>Sign out</button>
-    </nav>
+    </div>
   );
 
   const frame = (body: React.ReactNode) => (
     <div className="tru-dark">
-      <div className="tru-shell dk-shell">
-        <main className="dk-main">
+      <HqShell
+        orgName={orgName}
+        onSignOut={() => signOutClean()}
+        nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
+        hideTopbar
+      >
+        <div className="dk-main">
           {island}
           {body}
-        </main>
-      </div>
+        </div>
+      </HqShell>
     </div>
   );
 
