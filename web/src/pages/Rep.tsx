@@ -322,7 +322,11 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                     data-delay={i * 70}
                     onClick={() => openable && openPreview(m)}
                   >
-                    <span className="rp-node"><span className="rp-node-n">{m.idx}</span></span>
+                    {/* Position in this journey, NOT m.idx. idx is the module's
+                        authoring order and has gaps — a four-step track was
+                        numbering itself 1, 2, 3, 9, which reads as five missing
+                        modules rather than one renamed one. */}
+                    <span className="rp-node"><span className="rp-node-n">{i + 1}</span></span>
                     <div className="rp-step-body">
                       <div className="rp-step-top">
                         <h4>{m.title}</h4>

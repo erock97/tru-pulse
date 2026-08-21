@@ -157,7 +157,7 @@ export default function TeamAdmin({
           onOpenTeam: () => { window.location.hash = '/team'; },
         }}
       >
-        <div className="dk-main">
+        <div className="dk-main tm-main">
           <header className="dk-mast">
             <div>
               <span className={counts.off > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
@@ -219,8 +219,8 @@ export default function TeamAdmin({
               <thead>
                 <tr>
                   <th className="tm-c-tick" title="Untick to take someone off the team">On the team</th>
-                  <th>Person</th>
-                  <th>Account</th>
+                  <th className="tm-c-who">Person</th>
+                  <th className="tm-c-state">Account</th>
                   <th className="tm-c-tick">In Coach</th>
                   <th className="tm-c-act">Login</th>
                 </tr>
@@ -253,7 +253,7 @@ export default function TeamAdmin({
                           <span aria-hidden />
                         </label>
                       </td>
-                      <td>
+                      <td className="tm-c-who">
                         <div className="rs-who">
                           <Avatar name={m.name} size={34} tone={i % 5} />
                           <div>
@@ -265,7 +265,7 @@ export default function TeamAdmin({
                           </div>
                         </div>
                       </td>
-                      <td>
+                      <td className="tm-c-state">
                         <span className={`tm-state st-${st.key}`}>{st.label}</span>
                         <div className="rs-sub2">{st.note}</div>
                       </td>

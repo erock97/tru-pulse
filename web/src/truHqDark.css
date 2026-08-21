@@ -3593,9 +3593,18 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tm-tab.is-on b { color: var(--accent-hi); }
 
 .tru-dark .tm-plate { padding: 6px 10px 12px; }
+/* Fixed layout on purpose. Left to size itself, the browser handed every spare
+   pixel to the widest column — the name — and opened a 600px hole between a
+   person and their own status. Columns are declared so the space is shared. */
+.tru-dark .tm-table { table-layout: fixed; }
 .tru-dark .tm-table th, .tru-dark .tm-table td { vertical-align: middle; }
-.tru-dark .tm-c-tick { width: 104px; text-align: center; }
-.tru-dark .tm-c-act { width: 150px; text-align: right; }
+.tru-dark .tm-c-tick { width: 96px; text-align: center; }
+.tru-dark .tm-c-who { width: 34%; }
+.tru-dark .tm-c-state { width: 30%; }
+.tru-dark .tm-c-act { width: 148px; text-align: right; }
+/* Long addresses must not push the columns around. */
+.tru-dark .tm-table .cell-name,
+.tru-dark .tm-table .rs-sub2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tru-dark .tm-empty { padding: 30px 12px; color: var(--text-50); text-align: center; }
 
 /* A row someone has taken off the team. Still legible — you have to be able to
@@ -3643,6 +3652,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tm-invite:active:not(:disabled) { transform: translateY(0) scale(0.98); }
 .tru-dark .tm-invite:disabled { opacity: 0.4; cursor: default; }
 .tru-dark .tm-sent { font: 600 12px/1.2 var(--hq-font); color: var(--sea); }
+
+/* Instructional copy, so it gets a reading measure rather than the masthead's
+   narrow one — a 45-character column above a full-width table looked broken. */
+.tru-dark .tm-main .dk-sub { max-width: 74ch; }
 
 .tru-dark .tm-foot {
   margin: 16px 2px 0; max-width: 68ch;

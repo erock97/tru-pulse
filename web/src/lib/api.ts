@@ -258,6 +258,9 @@ export async function signOffAgent(agentId: string): Promise<void> {
 
 /** Leader/admin: email an agent a set-password invite (same Resend path as Coach). */
 export async function inviteAgent(agentId: string): Promise<{ emailed: boolean; email: string; reinvite: boolean }> {
+  // ?demo=1 must never send a real email. It reports the send it would have
+  // made, so the Team tab's flow can be walked through without one going out.
+  if (isDemo) return { emailed: true, email: 'demo@example.com', reinvite: false };
   const res = await workerFetch('/rep/invite', {
     method: 'POST',
     body: JSON.stringify({ agentId }),
@@ -1150,6 +1153,9 @@ export async function setExcluded(agentId: string, excluded: boolean): Promise<v
 }
 
 export async function setCoaching(agentId: string, on: boolean): Promise<void> {
+  // ?demo=1 has no server behind it. Without this the Team tab's tick boxes
+  // roll back with an error the moment anyone tries one in the demo.
+  if (isDemo) return;
   const res = await workerFetch('/data/coach/agent-flags', {
     method: 'POST', body: JSON.stringify({ agentId, coaching: on }),
   });
