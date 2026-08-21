@@ -66,47 +66,6 @@ function DividerWave() {
 
 /* ---- Certification funnel — tapering SVG segments, drawn in.
    Derived from the REAL roster's progress (see below). ---- */
-function CertFunnel({ tiers }: { tiers: Array<{ label: string; value: number; color: string }> }) {
-  const W = 460;
-  const rowH = 70;
-  const gap = 12;
-  const max = tiers[0]?.value || 1;
-  const minW = 120;
-  return (
-    <svg
-      className="rp-funnel-svg"
-      viewBox={`0 0 ${W} ${tiers.length * rowH + (tiers.length - 1) * gap}`}
-      preserveAspectRatio="xMidYMid meet"
-      role="img"
-      aria-label="Certification funnel"
-    >
-      <defs>
-        {tiers.map((f, i) => (
-          <linearGradient id={`rpFun${i}`} key={i} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor={f.color} stopOpacity="0.9" />
-            <stop offset="1" stopColor={f.color} stopOpacity="0.55" />
-          </linearGradient>
-        ))}
-      </defs>
-      {tiers.map((f, i) => {
-        const w = Math.max(minW, (f.value / max) * W);
-        const x = (W - w) / 2;
-        const y = i * (rowH + gap);
-        const drop = i > 0 ? tiers[i - 1].value - f.value : 0;
-        return (
-          <g key={f.label} className="rp-funnel-row" style={{ ['--fd' as string]: `${i * 130}ms` }}>
-            <rect x={x} y={y} width={w} height={rowH} rx="12" fill={`url(#rpFun${i})`} stroke={f.color} strokeOpacity="0.5" />
-            <text x={W / 2} y={y + rowH / 2 - 6} textAnchor="middle" className="rp-funnel-val">{f.value}</text>
-            <text x={W / 2} y={y + rowH / 2 + 14} textAnchor="middle" className="rp-funnel-lbl">{f.label}</text>
-            {drop > 0 && (
-              <text x={W - 6} y={y - 2} textAnchor="end" className="rp-funnel-drop">−{drop}</text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 export default function Rep({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
   const [data, setData] = useState<RepData | null>(null);
@@ -222,23 +181,11 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   const teamCert = agents.length ? Math.round((certifiedCount / agents.length) * 100) : 0;
   const totalQuestions = modules.reduce((s, m) => s + m.questions, 0);
 
-  // ── Certification FUNNEL — derived entirely from the REAL per-agent progress.
-  // enrolled (all agents) → invited (login minted) → started (any module touched)
-  // → in progress (started, not fully certified) → certified (100% + all signed).
+  // Real per-agent progress. `invitedCount` and `inProgressCount` went with the
+  // funnel — the two tiers nobody could act on. What is left is what the page
+  // states: how many are enrolled, and how many have actually begun.
   const enrolled = agents.length;
-  const invitedCount = agents.filter((a) => a.invited).length;
   const startedCount = agents.filter((a) => progress.some((p) => p.agent_id === a.id && p.status !== 'not_started')).length;
-  const inProgressCount = agents.filter((a) => {
-    const started = progress.some((p) => p.agent_id === a.id && p.status !== 'not_started');
-    return started && pct(a.id) < 100;
-  }).length;
-  const funnelTiers = [
-    { label: 'Agents enrolled', value: enrolled, color: 'var(--accent-hi)' },
-    { label: 'Invited (login sent)', value: invitedCount, color: 'var(--accent)' },
-    { label: 'Started a module', value: startedCount, color: 'var(--sea-hi)' },
-    { label: 'In progress', value: inProgressCount, color: 'var(--accent)' },
-    { label: 'Fully certified', value: certifiedCount, color: 'var(--terracotta)' },
-  ];
 
   // Never invited is NOT the same as stalled: they were never able to start.
   // Surfaced in the eyebrow, a tile and the lede rather than a picture.
@@ -400,97 +347,86 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
             </div>
           </section>
 
-          <DividerWave />
+          {/* ============ THE ROSTER ============ */}
+          {/* The funnel that used to sit beside this is gone. On real data it
+              read: 10 enrolled, 10 never invited, 0 started, 0 certified — a
+              funnel where everyone drops at step one is not a funnel, it is
+              one sentence with four empty tiers under it. The track at the top
+              of the page already says it, and says it better. This half is the
+              one you can act on. */}
+          <div className="dk-sec">
+            <h2>The roster</h2>
+            <p>
+              {notInvited > 0
+                ? `${notInvited} of ${enrolled} cannot start until a login goes out`
+                : `${startedCount} of ${enrolled} underway`}
+            </p>
+            <span className="dk-key">
+              <input
+                className="ad-input adm-search"
+                placeholder={`Search ${agents.length} agent${agents.length === 1 ? '' : 's'}…`}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </span>
+          </div>
 
-          {/* ============ FUNNEL + ROSTER ============ */}
-          <section className="rp-progress">
-            <div className="panel-head reveal">
-              <h3>Certification progress · {agents.length} agent{agents.length === 1 ? '' : 's'}</h3>
-              <span className="panel-sub">See the drop-off, then work the roster</span>
-            </div>
-            <div className="rp-progress-grid">
-              {/* Funnel — derived from real progress */}
-              <div className="card rp-funnel reveal">
-                <div><span className="rp-tile-eyebrow">Where agents stall</span></div>
-                <CertFunnel tiers={funnelTiers} />
-                <p className="rp-funnel-note">
-                  {startedCount} of {enrolled} started a module
-                  {certifiedCount === 0 ? ", but no one has cleared every module yet — the middle is where momentum dies." : `, and ${certifiedCount} ${certifiedCount === 1 ? 'has' : 'have'} earned the full badge.`}
-                </p>
+          <div className="rs-plate dk-table rp-roster-plate">
+            {agents.length === 0 ? (
+              <div className="rp-roster-empty">No agents yet — invite your team in Coach and they’ll appear here.</div>
+            ) : (
+              <div className="rp-roster-list">
+                {shown.map((a) => {
+                  const p = pct(a.id);
+                  const statuses = modules.map((m) => stat(a.id, m.id));
+                  const isOpen = openAgent === a.id;
+                  return (
+                    <div key={a.id}>
+                      <div className="rp-agent is-open" onClick={() => setOpenAgent(isOpen ? null : a.id)}>
+                        <Avatar name={a.name} size={34} tone={0} />
+                        <span className="rp-agent-name">
+                          {a.name}
+                          {isSigned(a.id) && <span className="rp-pill-ok" title="Certification signed off">Signed ✓</span>}
+                        </span>
+                        <ProgressDots statuses={statuses} />
+                        <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
+                        <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
+                        <span onClick={(e) => e.stopPropagation()}>
+                          <InviteCell agent={a} />
+                        </span>
+                      </div>
+                      {isOpen && (
+                        <AgentDrill
+                          agent={a}
+                          modules={modules}
+                          row={row}
+                          pct={p}
+                          signed={isSigned(a.id)}
+                          sim={{ best: simBest(a.id), passed: simPassed(a.id), tries: simTries(a.id) }}
+                          onSigned={() => void refresh()}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+                {shown.length === 0 && <div className="rp-roster-empty">No agents match “{q}”.</div>}
               </div>
+            )}
 
-              {/* Roster — REAL agents, real Invite, expandable drill-down */}
-              <div className="card rp-roster reveal" data-delay="100">
-                <div className="rp-roster-head">
-                  <div className="rp-search">
-                    <Icon name="prospect" size={16} />
-                    <input
-                      className="rp-search-input"
-                      placeholder={`Search ${agents.length} agent${agents.length === 1 ? '' : 's'} by name…`}
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                    />
-                  </div>
-                  <span className="rp-roster-count">Showing {shown.length} of {filtered.length}</span>
-                </div>
-
-                {agents.length === 0 ? (
-                  <div className="rp-roster-empty">No agents yet — invite your team in Coach and they'll appear here.</div>
-                ) : (
-                  <div className="rp-roster-list">
-                    {shown.map((a) => {
-                      const p = pct(a.id);
-                      const statuses = modules.map((m) => stat(a.id, m.id));
-                      const isOpen = openAgent === a.id;
-                      return (
-                        <div key={a.id}>
-                          <div className="rp-agent is-open" onClick={() => setOpenAgent(isOpen ? null : a.id)}>
-                            <Avatar name={a.name} size={34} tone={0} />
-                            <span className="rp-agent-name">
-                              {a.name}
-                              {isSigned(a.id) && <span className="rp-pill-ok" title="Certification signed off">Signed ✓</span>}
-                            </span>
-                            <ProgressDots statuses={statuses} />
-                            <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
-                            <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
-                            <span onClick={(e) => e.stopPropagation()}>
-                              <InviteCell agent={a} />
-                            </span>
-                          </div>
-                          {isOpen && (
-                            <AgentDrill
-                              agent={a}
-                              modules={modules}
-                              row={row}
-                              pct={p}
-                              signed={isSigned(a.id)}
-                              sim={{ best: simBest(a.id), passed: simPassed(a.id), tries: simTries(a.id) }}
-                              onSigned={() => void refresh()}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                    {shown.length === 0 && <div className="rp-roster-empty">No agents match “{q}”.</div>}
-                  </div>
-                )}
-
-                {filtered.length > CAP && (
-                  <div className="rp-roster-more">{filtered.length - CAP} more — search to narrow the roster.</div>
-                )}
-                <div className="rp-legend">
-                  <span><span className="rp-dot on" /> Module cleared</span>
-                  <span><span className="rp-dot mid" /> In progress</span>
-                  <span><span className="rp-dot" /> Not started</span>
-                </div>
-              </div>
+            {filtered.length > CAP && (
+              <div className="rp-roster-more">{filtered.length - CAP} more — search to narrow the roster.</div>
+            )}
+            <div className="rp-legend">
+              <span><span className="rp-dot on" /> Module cleared</span>
+              <span><span className="rp-dot mid" /> In progress</span>
+              <span><span className="rp-dot" /> Not started</span>
             </div>
+          </div>
 
-            <div className="rp-note" style={{ margin: '18px 2px 0' }}>
-              <b>How it works:</b> hit <b>Invite</b> to send an agent their login. They set a password, take each module,
-              and pass its quiz — their progress fills in above. Quizzes are graded server-side, so a pass is real.
-            </div>
-          </section>
+          <div className="rp-note" style={{ margin: '18px 2px 0' }}>
+            <b>How it works:</b> hit <b>Invite</b> to send an agent their login. They set a password, take each module,
+            and pass its quiz — their progress fills in above. Quizzes are graded server-side, so a pass is real.
+          </div>
         </div>
       </HqShell>
 

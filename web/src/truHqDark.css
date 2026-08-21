@@ -3558,3 +3558,11 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .tru-shell::before { animation: none; transform: none; }
 }
+
+/* ---- Rep's roster, full width ------------------------------------------
+   Was half the page beside a funnel. The funnel said one thing in five tiers,
+   four of them zero; this is the half you can act on, so it gets the width. */
+.tru-dark .rp-roster-plate { padding: 8px 10px 14px; }
+.tru-dark .rp-roster-plate .rp-agent { padding-left: 14px; padding-right: 14px; }
+.tru-dark .rp-roster-plate .rp-legend { padding: 12px 16px 2px; }
+.tru-dark .rp-roster-plate .rp-roster-more { padding: 10px 16px 0; }
