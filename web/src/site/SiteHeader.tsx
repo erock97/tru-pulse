@@ -29,7 +29,7 @@ export default function SiteHeader({ current }: { current: PublicView }) {
         {link('/apply', 'Apply')}
       </div>
       <div className="nright">
-        <a href={BUSINESS.appUrl} className="login">Client log in</a>
+        <a href={BUSINESS.loginUrl} className="login">Client log in</a>
         <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
           Book a call with our team
           <span className="pea"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span>
