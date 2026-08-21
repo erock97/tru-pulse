@@ -21,30 +21,35 @@ export function HqShell({
   context,
   onSignOut,
   nav,
+  hideTopbar = false,
   children,
 }: {
   orgName: string;
   role?: string;
   eyebrow?: string;
-  title: string;
+  title?: string;
   context?: ReactNode;
   onSignOut?: () => void;
   nav: ShellNav;
+  /** Skip the shell's own eyebrow/title bar for a page that brings its own
+   *  masthead. The sidebar and the phone tab bar are unaffected. */
+  hideTopbar?: boolean;
   children: ReactNode;
 }) {
   // Active tab derived from the current route so every page highlights its own link
   // (not a hardcoded one). Each page renders its own HqShell on its route.
   const route = typeof window !== 'undefined' ? window.location.hash.replace(/^#\/?/, '') : '';
-  const activeKey = route.startsWith('pulse') ? 'pulse'
-    : route.startsWith('coach') ? 'coach'
-      : route.startsWith('rep') ? 'rep'
-        : 'home';
+  // '/' lands on the roster now, so an empty hash is Pulse. Home survives only
+  // at #/home for the platform-owner "act as team" tile.
+  const activeKey = route.startsWith('coach') ? 'coach'
+    : route.startsWith('rep') ? 'rep'
+      : route === 'home' ? 'home'
+        : 'pulse';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them
   // back to their HQ "Act as a team" picker, not the login).
   const impersonating = hasAdminReturn();
   useForceHqDark();
   const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = [
-    { key: 'home', label: 'Home', icon: 'home', onClick: nav.onHome },
     { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
     { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
@@ -101,15 +106,17 @@ export function HqShell({
       </aside>
 
       <main className="main">
-        <header className="topbar reveal">
-          <div>
-            {eyebrow && <div className="main-eyebrow">{eyebrow}</div>}
-            <h1>{title}</h1>
-          </div>
-          <div className="topbar-ctx">
-            {context}
-          </div>
-        </header>
+        {!hideTopbar && (
+          <header className="topbar reveal">
+            <div>
+              {eyebrow && <div className="main-eyebrow">{eyebrow}</div>}
+              <h1>{title}</h1>
+            </div>
+            <div className="topbar-ctx">
+              {context}
+            </div>
+          </header>
+        )}
         {children}
       </main>
 

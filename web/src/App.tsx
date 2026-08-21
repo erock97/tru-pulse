@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import PublicSite from './site/PublicSite';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
+import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
 import Rep from './pages/Rep';
@@ -109,10 +110,20 @@ export default function App() {
     })();
   }, [session, org, admin]);
 
-  // The HQ shell: home (product cards) ↔ a product module (Pulse), by hash route.
+  // The HQ shell, by hash route. Landing on the roster rather than a page of
+  // product cards: Home showed the same nine people a second time and cost a
+  // click before anything real. `/home` still resolves so the platform-owner
+  // "act as team" tile is not lost, and `/pulse/detail` keeps the old
+  // lead-by-lead view reachable while the roster proves itself.
   const shell = (o: { id: string; name: string }, adminLeaders?: AdminLeader[]) =>
-    route === '/pulse'
+    route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
+      : route === '/home'
+      ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
+      // `/deck` is NOT listed here on purpose — it belongs to the Zillow slide
+      // preview (parseDeckRoute), which is matched earlier.
+      : route === '/pulse' || route === '/'
+      ? <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : isCoachRoute(route)
         ? (
           <Coach
@@ -124,7 +135,7 @@ export default function App() {
         )
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
-        : <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />;
+        : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
   const assessToken = (() => {
