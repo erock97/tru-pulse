@@ -21,7 +21,7 @@ import { HqShell } from '../components/hqShell';
 import { signOutClean } from '../lib/api';
 import { initials } from '../lib/coachData';
 import {
-  DEFAULT_LINE, WINDOWS, approachFor, prioritise, totalsOf, useRosterData,
+  DEFAULT_LINE, WINDOWS, approachFor, prioritise, useRosterData,
   type Row, type Window,
 } from '../lib/rosterData';
 import { Burst, Strip } from '../components/rosterViz';
@@ -37,11 +37,10 @@ export default function RosterDeck({
 }) {
   const line = DEFAULT_LINE;
   const [win, setWin] = useState<Window>(WINDOWS[3]);
-  const { rows, err, undated } = useRosterData(line, win.days);
+  const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
 
-  const totals = useMemo(() => (rows ? totalsOf(rows) : null), [rows]);
   const priorities = useMemo(() => (rows ? prioritise(rows) : []), [rows]);
   const strip = useMemo(
     () => (rows ? [...rows].sort((a, b) => b.leads - a.leads) : []),
@@ -140,6 +139,11 @@ export default function RosterDeck({
               ? <>, so almost nothing is being dropped before the call — what is being lost is being lost on it.</>
               : <>, so {100 - totals.workedPct}% never got a first touch. Start there before coaching anybody on the call.</>}
             {undated > 0 && <> <s className="dk-note">{undated} leads carry no date and sit outside this window.</s></>}
+            {departed.names.length > 0 && (
+              <> <s className="dk-note">
+                Totals include {departed.leads} leads from {departed.names.join(' and ')}, no longer on the team.
+              </s></>
+            )}
           </p>
         </div>
         {top && (

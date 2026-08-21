@@ -48,7 +48,7 @@ export async function handleDataRoutes(
       db.select('org_settings', `select=${SETTINGS_COLS}&order=org_id.asc&limit=1`),
       db.selectAll('leads', LEAD_COLS, 'fub_person_id.asc'),
       db.select('accountability_cases', `select=assigned_to,status,opened_at&opened_at=gte.${sinceIso}`),
-      db.select('agents', 'select=id,name,email,phone,is_paused,pause_reason,pause_note,paused_at'),
+      db.select('agents', 'select=id,name,email,phone,excluded,is_paused,pause_reason,pause_note,paused_at'),
       db.select('deals', 'select=team_id,stage,stage_class,price,commission,agent_name,fub_person_id,projected_close,fub_created'),
       db.selectAll('person_stage_log', STAGE_LOG_COLS, 'fub_person_id.asc'),
     ]);
@@ -76,7 +76,7 @@ export async function handleDataRoutes(
         'agents',
         'select=id,team_id,token,name,email,phone,created_at,coaching_enabled,' +
         'assessments(code,taken_at),checkins(created_at,met,leads,convos,focus)' +
-        '&order=created_at.asc',
+        '&excluded=eq.false&order=created_at.asc',
       ),
       db.select('agents', 'select=id,personal_code'),
     ]);
@@ -307,8 +307,9 @@ export async function handleDataRoutes(
     }
 
     // First open of an agent's goal screen: fetch the goal and its checklist, creating
-    // both if this is the first time. The create half is why this is a POST and not a
-    // GET — opening the screen genuinely writes.
+    // It only creates when the caller passes `create: true`, which the browser
+    // does from an explicit "Set a goal" action and never on open. It stays a
+    // POST because of that path.
     //
     // Every read and write here runs as the user, so a leader who cannot see this agent
     // gets a refusal rather than a freshly-seeded goal on someone else's agent.
@@ -317,10 +318,16 @@ export async function handleDataRoutes(
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
       const teamId = body.teamId == null ? null : String(body.teamId);
 
+      // Creating is opt-in. Merely opening an agent used to write a goal seeded
+      // with conversion rates nobody measured, plus six commitments nobody
+      // asked for, and the whole funnel panel then descended from those. A goal
+      // exists because a leader chose to set one.
+      const create = body.create === true;
+
       let goals = await db.select<Record<string, unknown>>(
         'goals', `select=*&agent_id=eq.${agentId}&limit=1`,
       );
-      if (goals.length === 0) {
+      if (goals.length === 0 && create) {
         const created = await db.insert<Record<string, unknown>>('goals', {
           agent_id: agentId, team_id: teamId, ...(body.goalDefaults ?? {}),
         });
@@ -336,7 +343,7 @@ export async function handleDataRoutes(
       // agent has none yet. The rows themselves are computed in the browser (they are
       // pure text derived from the archetype) and sent along.
       const seed = Array.isArray(body.seed) ? (body.seed as unknown[]) : [];
-      if (commitments.length === 0 && goal && seed.length > 0) {
+      if (create && commitments.length === 0 && goal && seed.length > 0) {
         const created = await db.insert<Record<string, unknown>>('commitments', seed);
         if (!created) return json({ error: 'not allowed' }, 403, cors);
         commitments = created;
@@ -453,6 +460,12 @@ export async function handleDataRoutes(
       }
       if (body.coaching !== undefined) {
         const { ok } = await db.rpc('set_coaching', { p_agent_id: agentId, p_on: !!body.coaching });
+        if (!ok) return json({ error: 'not allowed' }, 403, cors);
+      }
+      // Off the team entirely. Leader/admin only (the RPC enforces it), and it
+      // switches coaching off on the way out.
+      if (body.excluded !== undefined) {
+        const { ok } = await db.rpc('set_excluded', { p_agent_id: agentId, p_on: !!body.excluded });
         if (!ok) return json({ error: 'not allowed' }, 403, cors);
       }
       return json({ ok: true }, 200, cors);
