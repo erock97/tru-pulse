@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useReveal } from '../hqHooks';
 import { HqShell } from '../components/hqShell';
-import { loadDashboard, signOutClean } from '../lib/api';
+import { loadDashboard, loadRep, signOutClean, type RepData } from '../lib/api';
 import { initials, loadRoster, type RosterAgent } from '../lib/coachData';
 import { isClosing, isOfferPlus, stageClass, isStuckStage } from '../../../shared/flags';
 
@@ -45,6 +45,9 @@ interface Row {
   arch: string | null;
   archName: string | null;
   health: Health;
+  /* Certification, from the Rep board. `null` means this name has no Rep
+     record at all, which is different from having one and passing nothing. */
+  cert: { passed: number; total: number; invited: boolean } | null;
 }
 
 interface Priority {
@@ -310,13 +313,28 @@ export default function Roster({
     let alive = true;
     (async () => {
       try {
-        // The coaching roster is a separate read and is allowed to fail: a team
-        // with Coach switched off still gets its pipeline.
-        const [data, coach] = await Promise.all([
+        // The coaching roster and the certification board are separate reads
+        // and are both allowed to fail: a team with Coach or Rep switched off
+        // still gets its pipeline.
+        const [data, coach, rep] = await Promise.all([
           loadDashboard(),
           loadRoster().catch((): RosterAgent[] => []),
+          loadRep().catch((): RepData | null => null),
         ]);
         if (!alive) return;
+
+        // One row per agent per module, so passes are counted per agent rather
+        // than summed. Only published modules count toward the total.
+        const liveModules = (rep?.modules ?? []).filter((m) => m.status !== 'draft' && m.status !== 'archived');
+        const passedBy = new Map<string, Set<string>>();
+        for (const p of rep?.progress ?? []) {
+          if (p.status !== 'passed') continue;
+          if (!liveModules.some((m) => m.id === p.module_id)) continue;
+          const set = passedBy.get(p.agent_id) ?? new Set<string>();
+          set.add(p.module_id);
+          passedBy.set(p.agent_id, set);
+        }
+        const repByName = new Map((rep?.agents ?? []).map((a) => [norm(a.name), a]));
 
         // NOTE: org_settings.close_rate is a percentage, not a ratio - reading
         // it here produced "your line is 1 : 2". The per-team line needs its own
@@ -332,6 +350,7 @@ export default function Roster({
           let r = bucket.get(key);
           if (!r) {
             const c = byName.get(key);
+            const ra = repByName.get(key);
             r = {
               agentId: c?.id ?? null,
               name: owner,
@@ -341,6 +360,9 @@ export default function Roster({
               arch: c?.quad ?? null,
               archName: c?.archName ?? null,
               health: 'no-volume',
+              cert: ra
+                ? { passed: passedBy.get(ra.id)?.size ?? 0, total: liveModules.length, invited: ra.invited }
+                : null,
             };
             bucket.set(key, r);
           }
@@ -470,6 +492,19 @@ export default function Roster({
   return wrap(
     <>
       <div className="rs-canvas">
+        {/* The headline states a number; this says what it means and what it
+            rules out. Without it a lead has to work that out themselves every
+            single week, which is the job the page is supposed to do for them. */}
+        <p className="rs-lede">
+          {totals.perContract
+            ? <>The team runs <b>one in {Math.round(totals.perContract)}</b> against your line of one in {line}. </>
+            : <>Nobody has taken a contract in this window, so there is no rate to read yet. </>}
+          <b>{totals.workedPct}%</b> of {totals.leads} leads have been worked
+          {totals.workedPct >= 95
+            ? <>, so almost nothing is being dropped before the call — what is being lost is being lost on it.</>
+            : <>, so {100 - totals.workedPct}% never got a first touch. Start there before coaching anybody on the call.</>}
+        </p>
+
       {/* ONE surface. Not a stack of floating cards separated by gaps - that
           reads as unfinished no matter how well each card is drawn. Everything
           below sits inside a single enclosure divided by hairlines, and the
@@ -545,7 +580,11 @@ export default function Roster({
 
         <div className="rs-restbar">
           <span>The rest of the floor</span>
-          <span className="rs-restbar-note">bar is leads per contract, the mark is your line at 1 : {line}</span>
+          <span className="rs-restbar-note">
+            bar is leads per contract &middot; <s className="rs-key team" /> the team
+            {totals.perContract ? ` at 1 : ${Math.round(totals.perContract)}` : ''} &middot;{' '}
+            <s className="rs-key line" /> your line at 1 : {line}
+          </span>
         </div>
 
         <div className="rs-plate rs-table">
@@ -584,6 +623,10 @@ export default function Roster({
                       </b>
                       <span className="rs-scale">
                         <hr />
+                        {/* two references, not one: where the team sits, and
+                            where your line is. "behind team" was a tag with
+                            nothing on screen to check it against. */}
+                        {totals.perContract && <s style={{ left: scale(totals.perContract) + "%" }} />}
                         <u style={{ left: scale(line) + "%" }} />
                         {r.perContract !== null && (
                           <i style={{ left: scale(r.perContract) + "%" }} className={"h-" + r.health} />
@@ -642,9 +685,49 @@ export default function Roster({
                 <div className="rs-ln"><s>Archetype</s><b>{open.arch ?? '—'}</b></div>
                 <div className="rs-ln"><s>Last 1:1</s><b>{open.lastDays === null ? 'no record' : `${open.lastDays} days ago`}</b></div>
                 {approachFor(open) && <p className="rs-msg">{approachFor(open)}</p>}
+              </div>
+
+              {/* Certification, read from the Rep board. Everything here is a
+                  real row - an agent with no Rep record says so rather than
+                  being shown as nought passed. */}
+              <div className="rs-grp">
+                <div className="rs-grp-k">Certification</div>
+                {open.cert ? (
+                  <>
+                    <div className="rs-ln">
+                      <s>Modules passed</s>
+                      <b className={open.cert.passed === 0 ? 'rs-dim' : ''}>
+                        {open.cert.passed} of {open.cert.total}
+                      </b>
+                    </div>
+                    <div className="rs-ln">
+                      <s>Login sent</s>
+                      <b className={open.cert.invited ? '' : 'rs-dim'}>{open.cert.invited ? 'yes' : 'no'}</b>
+                    </div>
+                    {!open.cert.invited && (
+                      <p className="rs-msg">
+                        <b>{open.name.split(' ')[0]} has never been invited.</b> They cannot start a
+                        module until a login goes out.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="rs-msg">This name has no record on the certification board.</p>
+                )}
+              </div>
+
+              <div className="rs-acts">
                 {open.agentId
-                  ? <a className="hqbtn hqbtn-primary rs-go" href={`#/coach/${open.agentId}`}>Open {open.name.split(' ')[0]} in Coach</a>
+                  ? <a className="rs-pill p" href={`#/coach/${open.agentId}`}>
+                      Prep the 1:1 with {open.name.split(' ')[0]}<span aria-hidden>&rarr;</span>
+                    </a>
                   : <p className="rs-msg">No coaching record is linked to this name, so there is nothing to open.</p>}
+                {open.cert && (
+                  <a className="rs-pill g" href="#/rep">
+                    {open.cert.invited ? `See ${open.name.split(' ')[0]} in Rep` : `Send ${open.name.split(' ')[0]} a login`}
+                    <span aria-hidden>&rarr;</span>
+                  </a>
+                )}
               </div>
             </div>
           </aside>
