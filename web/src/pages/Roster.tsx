@@ -138,7 +138,7 @@ function prioritise(rows: readonly Row[]): Priority[] {
 
    The plate is decoration and says so; every mark on top of it is measured.
 
-   Positions are tied together: the plate's own light source sits at 19% across
+   Positions are tied together: the plate's own light source sits at 25% across
    and halfway down, and the canvas uses the same origin. Swap the plate for a
    different render and those two numbers have to move with it, or the dots
    will float beside the burst instead of sitting in it. */
@@ -201,14 +201,17 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
 
-      // The plate's own light source sits at 19% across and halfway down the
+      // The plate's own light source sits at 25% across and halfway down the
       // render. These match it, so a dot lands on the burst rather than beside
       // it. Change one and you must change the other.
-      const cx = w * 0.19, cy = h * 0.496;
-      const R = w * 0.78;
+      const cx = w * 0.25, cy = h * 0.504;
+      // The dial is an ellipse, not a circle. The card is roughly twice as wide
+      // as it is tall, so a circular dial throws its widest marks straight out
+      // of the bottom edge.
+      const rx = w * 0.74, ry = h * 0.44;
       const { spread, lineAt, dots } = marks;
       const at = (a: number, f: number) =>
-        [cx + Math.cos(a) * R * f, cy + Math.sin(a) * R * f] as const;
+        [cx + Math.cos(a) * rx * f, cy + Math.sin(a) * ry * f] as const;
 
       // The type sits on the left, so the plate is knocked back off it. This
       // is the only thing painted rather than drawn.
@@ -224,7 +227,7 @@ function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
       g.lineWidth = 1.5;
       g.setLineDash([4, 5]);
       g.beginPath();
-      g.arc(cx, cy, R * lineAt, -spread - 0.16, spread + 0.16);
+      g.ellipse(cx, cy, rx * lineAt, ry * lineAt, 0, -spread - 0.16, spread + 0.16);
       g.stroke();
       g.setLineDash([]);
 
