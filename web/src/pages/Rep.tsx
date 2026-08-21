@@ -8,7 +8,6 @@ import { Lesson, Quiz, Result, SimView } from './AgentCourse';
 import { courseCardsFor, courseQuestionsFor } from '../lib/agentHq';
 import { HqShell } from '../components/hqShell';
 import { Icon, Avatar } from '../components/hqUi';
-import { Track } from '../components/repViz';
 import { useReveal } from '../hqHooks';
 import '../truHqDark.css';
 
@@ -242,15 +241,9 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   ];
 
   // Never invited is NOT the same as stalled: they were never able to start.
-  // The track draws them before the gate for exactly this reason.
+  // Surfaced in the eyebrow, a tile and the lede rather than a picture.
   const notInvited = agents.filter((a) => !a.invited).length;
-  const trackAgents = agents.map((a) => ({
-    id: a.id,
-    name: a.name,
-    passed: modules.filter((m) => stat(a.id, m.id) === 'passed').length,
-    invited: a.invited,
-    signed: isSigned(a.id),
-  }));
+
 
   // Journey state per module: locked if no preview cards; otherwise the first
   // previewable is "start here", the rest "available". Mirrors the real openable flag.
@@ -333,7 +326,6 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                 components/repViz.tsx for why this page is the one that is not
                 a circle. */}
             <div className="rs-plate dk-tile dk-tile-lead">
-              <Track agents={trackAgents} modules={modules.length} />
               <span className="k">The track</span>
               <span className="v">{teamCert}%</span>
               <span className="u">fully certified · every dot is an agent, every mark a module</span>

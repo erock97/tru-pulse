@@ -2818,7 +2818,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   animation: hqRoomDrift 140s cubic-bezier(0.4, 0, 0.5, 1) infinite alternate;
   will-change: transform;
   background:
-    url("/field.svg") center / cover no-repeat,
+    url("/trinity.webp") 63% 30% / cover no-repeat,
     radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
     radial-gradient(38% 24% at 50% 0%, rgba(255, 220, 150, 0.15) 0%, transparent 70%),
     linear-gradient(178deg, #14301F 0%, #0D2015 22%, #0A1710 44%, #071009 70%, var(--base) 100%);
@@ -3437,69 +3437,30 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rp-canvas.dk-main .rp-progress { margin-top: 8px; }
 
 /* ============================================================================
-   THE TRINITY — the room's structure, on every page
+   THE TRINITY — three become one
    ----------------------------------------------------------------------------
-   Three points and the arcs between them, running in the direction the work
-   flows: Pulse names who to talk to, Coach is the conversation, Rep is what
-   you train afterwards, and that changes what Pulse says next week.
+   Three ribbons of light sweeping in from three directions, converging into a
+   single brilliant point, and continuing on as ONE beam. Pulse, Coach and Rep
+   are not three tools sitting beside each other; united they are the product.
 
-   Nodes are positioned in percentages so they are always on screen and always
-   round; the arcs live in a stretched SVG on the same 0-100 coordinates so
-   they always meet the nodes. See the note in components/trinity.tsx for why
-   a single scaled SVG did not work.
+   It replaces both the bokeh field AND the three per-page hero graphics. Those
+   were three variations of a glowing shape behind a number, and at card size
+   they read as scribbles. One strong image, in the room, on every page.
+
+   Rendered rather than drawn. Every attempt to draw light of this quality in
+   code came out scratchy, and no amount of tuning fixed that — it is the wrong
+   tool for the job.
+
+   The scrim below it is load-bearing: at full strength the ribbons wash out
+   body text, so the image carries the room and the scrim keeps it a room
+   rather than a poster.
    ========================================================================== */
-.tru-dark .trinity {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  /* falls away at the edges so it never reads as a shape sitting ON the page */
-  mask-image: radial-gradient(88% 88% at 50% 45%, #000 30%, rgba(0,0,0,0.5) 70%, transparent 100%);
-  -webkit-mask-image: radial-gradient(88% 88% at 50% 45%, #000 30%, rgba(0,0,0,0.5) 70%, transparent 100%);
-}
-.tru-dark .trinity-web { position: absolute; inset: 0; width: 100%; height: 100%; }
-
-.tru-dark .trinity-leg {
-  fill: none; stroke: rgba(226, 240, 230, 0.15);
-  stroke-width: 0.12; vector-effect: non-scaling-stroke;
-}
-
-/* The travelling light — a short lit segment chasing each arc. The one piece
-   of motion in the room that means something rather than just moving. */
-.tru-dark .trinity-run {
-  fill: none; stroke: var(--accent); stroke-width: 1.6;
-  stroke-linecap: round; vector-effect: non-scaling-stroke;
-  stroke-dasharray: 8 220; opacity: 0.55;
-  animation: trinityRun 21s linear infinite;
-}
-@keyframes trinityRun { to { stroke-dashoffset: -228; } }
-
-.tru-dark .trinity-node {
-  position: absolute; width: 0; height: 0;
-  transition: opacity 1.4s var(--spring);
-}
-.tru-dark .trinity-node i { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); display: block; }
-.tru-dark .trinity-glow {
-  width: 320px; height: 320px;
-  background: radial-gradient(circle, rgba(143,176,162,0.20) 0%, rgba(143,176,162,0.055) 42%, transparent 70%);
-}
-.tru-dark .trinity-ring {
-  width: 44px; height: 44px; border: 1px solid rgba(143, 176, 162, 0.40);
-}
-.tru-dark .trinity-core {
-  width: 7px; height: 7px; background: rgba(143, 176, 162, 0.55);
-}
-/* wherever you are standing */
-.tru-dark .trinity-node.on .trinity-glow {
-  width: 440px; height: 440px;
-  background: radial-gradient(circle, rgba(255,220,147,0.20) 0%, rgba(242,178,60,0.06) 40%, transparent 70%);
-}
-.tru-dark .trinity-node.on .trinity-ring {
-  width: 58px; height: 58px; border-color: rgba(255, 220, 147, 0.6);
-}
-.tru-dark .trinity-node.on .trinity-core {
-  width: 10px; height: 10px; background: var(--accent-hi);
-  box-shadow: 0 0 14px 3px rgba(242, 178, 60, 0.5);
-}
-.tru-dark .trinity-node i { transition: width 1.4s var(--spring), height 1.4s var(--spring), background 1.4s var(--spring), border-color 1.4s var(--spring); }
-
-@media (prefers-reduced-motion: reduce) {
-  .tru-dark .trinity-run { animation: none; stroke-dasharray: none; opacity: 0.22; }
+.tru-dark .tru-shell::after {
+  background:
+    radial-gradient(78% 40% at 50% 102%, rgba(96, 168, 124, 0.10) 0%, transparent 72%),
+    /* Cut hardest where the CONTENT is (left of centre) and let the right
+       breathe, so the convergence is not scrimmed into nothing. */
+    radial-gradient(90% 110% at 22% 50%, rgba(3, 9, 6, 0.80) 0%, rgba(3, 9, 6, 0.42) 55%, transparent 85%),
+    /* the roster sits in the lower half and has to stay readable */
+    linear-gradient(180deg, rgba(2, 6, 4, 0.30) 0%, rgba(2,6,4,0.12) 26%, rgba(2,6,4,0.44) 58%, rgba(3, 8, 5, 0.70) 100%);
 }

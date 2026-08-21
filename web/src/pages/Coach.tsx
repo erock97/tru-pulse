@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { setCoaching, isDemo, signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
-import { DriftMap } from '../components/coachViz';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
 import {
@@ -335,7 +334,6 @@ export default function Coach({
                     person you have gone longest without sitting down with. Not
                     the health score; that is its own tile and its own thing. */}
                 <div className="rs-plate dk-tile dk-tile-lead">
-                  <DriftMap roster={roster} />
                   <span className="k">Longest without a 1:1</span>
                   <span className="v">{driftPeak.never ? 'never' : `${driftPeak.days}d`}</span>
                   <span className="u">

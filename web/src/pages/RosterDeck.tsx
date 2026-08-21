@@ -24,7 +24,7 @@ import {
   DEFAULT_LINE, WINDOWS, approachFor, prioritise, useRosterData,
   type Row, type Window,
 } from '../lib/rosterData';
-import { Burst, Strip } from '../components/rosterViz';
+import { Strip } from '../components/rosterViz';
 import { PersonPane } from '../components/personPane';
 
 export default function RosterDeck({
@@ -161,7 +161,6 @@ export default function RosterDeck({
 
       <section className="dk-bento">
         <div className="rs-plate dk-tile dk-tile-lead">
-          <Burst rows={rows} line={line} />
           <span className="k">Leads per contract</span>
           <span className="v">{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</span>
           <span className="u">your line is 1 : {line}</span>
