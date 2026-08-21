@@ -256,7 +256,11 @@ html[data-theme="warm"] .tru-dark {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--base);
+  /* --lift, not --base. This card sits ON the sidebar, and --base is DARKER
+     than the sidebar's own --panel, so it read as a black hole punched in the
+     bottom-left corner rather than a raised card. Every other raised surface
+     in the deck tints what is behind it; this one was the last exception. */
+  background: var(--lift);
   border: 1px solid var(--border-soft);
   border-radius: 14px;
 }
@@ -3666,3 +3670,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .tm-c-tick { width: 60px; }
   .tru-dark .tm-c-act { width: auto; }
 }
+
+/* Deck masthead actions. Coach hides the shell's top bar on its roster view,
+   so anything passed as `context` had nowhere to render — the cohort and
+   assessment-link buttons were both invisible there. They belong beside the
+   headline, where a deck page puts its actions. */
+.tru-dark .dk-mast-do { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+@media (max-width: 900px) { .tru-dark .dk-mast-do { width: 100%; } }
