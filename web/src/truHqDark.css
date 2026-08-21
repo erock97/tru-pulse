@@ -2937,7 +2937,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    Generated in Higgsfield; see [[higgsfield-mcp-for-renders]] for the crop and
    convert step. -1 z-index puts it behind the sidebar's own children without
    needing a wrapper. */
-.tru-dark .tru-shell .side { position: relative; isolation: isolate; }
+/* `sticky`, NOT `relative`. This rule exists to host the plate below, and an
+   earlier version of it said `relative` — which quietly overrode the sticky
+   in the base shell and left the sidebar as a viewport-tall panel sitting at
+   the top of a page three times that long. Scroll down and it simply ended. */
+.tru-dark .tru-shell .side {
+  position: sticky; top: 0; height: 100vh; align-self: start; isolation: isolate;
+}
 .tru-dark .tru-shell .side::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: url("/side-plate.webp") center / cover no-repeat;
