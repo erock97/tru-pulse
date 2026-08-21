@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  loadRep, inviteAgent, signOffAgent, simScenarios, signOutClean, myOrgRole,
+  loadRep, signOffAgent, simScenarios, signOutClean, myOrgRole,
   loadRepCustomModules, loadRepQuestionsMasked, loadRepQuestionsForEdit, uploadRepMedia, saveRepModule, saveRepQuestions, archiveRepModule,
   type RepData, type RepAgent, type RepProgressRow, type RepModule, type CourseModule, type GradeResult, type SimScenario, type LessonCard,
 } from '../lib/api';
@@ -19,7 +19,7 @@ import '../truHqDark.css';
 
    PRESENTATION ONLY. Every number/name flows from the SAME real
    data the previous render used — loadRep() (modules, progress,
-   agents, practice), simScenarios(), inviteAgent(), signOffAgent(),
+   agents, practice), simScenarios(), signOffAgent(),
    and the Lesson / SimView preview entries. No mock data.
    ============================================================ */
 
@@ -221,6 +221,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
           onOpenPulse: () => { window.location.hash = '/pulse'; },
           onOpenCoach: () => { window.location.hash = '/'; },
           onOpenRep: () => { window.location.hash = '/rep'; },
+          onOpenTeam: () => { window.location.hash = '/team'; },
         }}
       >
         <div className="rp-canvas dk-main" ref={canvasRef}>
@@ -358,7 +359,7 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
             <h2>The roster</h2>
             <p>
               {notInvited > 0
-                ? `${notInvited} of ${enrolled} cannot start until a login goes out`
+                ? `${notInvited} of ${enrolled} cannot start until a login goes out — send them from Team`
                 : `${startedCount} of ${enrolled} underway`}
             </p>
             <span className="dk-key">
@@ -391,9 +392,6 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                         <ProgressDots statuses={statuses} />
                         <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
                         <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
-                        <span onClick={(e) => e.stopPropagation()}>
-                          <InviteCell agent={a} />
-                        </span>
                       </div>
                       {isOpen && (
                         <AgentDrill
@@ -513,30 +511,6 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
 }
 
 /* ---- Per-agent access: email a set-password invite (Resend, same path as Coach). ---- */
-function InviteCell({ agent }: { agent: RepAgent }) {
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  async function go() {
-    if (busy || !agent.email) return;
-    setBusy(true); setMsg('');
-    try {
-      await inviteAgent(agent.id);
-      setMsg('Email sent');
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : 'Could not send invite');
-    }
-    setBusy(false);
-  }
-  if (!agent.email) return <span className="rp-invite-msg">Add an email first — the invite is sent there.</span>;
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <button className={`rp-invite${agent.invited ? ' ok' : ''}`} onClick={go} disabled={busy}>
-        {busy ? '…' : agent.invited ? 'Re-invite' : 'Invite'}
-      </button>
-      {msg && <span className="rp-invite-msg">{msg}</span>}
-    </span>
-  );
-}
 
 /* ============================================================
    MODULE MANAGER — the leader's authoring surface: list of the

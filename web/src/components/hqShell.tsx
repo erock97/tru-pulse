@@ -9,6 +9,7 @@ export interface ShellNav {
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep?: () => void;
+  onOpenTeam?: () => void;
 }
 
 /** The dark unified HQ shell: sidebar + slim top bar. Wired to the REAL
@@ -54,6 +55,7 @@ export function HqShell({
   // at #/home for the platform-owner "act as team" tile.
   const activeKey = route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
+      : route.startsWith('team') ? 'team'
       : route === 'admin' ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
@@ -66,6 +68,12 @@ export function HqShell({
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
     { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
   ];
+  // Who is on the platform at all. Sits under the three products because it is
+  // the thing you do once, before any of them have anyone in them — and because
+  // "invite" used to be scattered across all three.
+  if (nav.onOpenTeam) {
+    links.push({ key: 'team', label: 'Team', icon: 'roster', onClick: nav.onOpenTeam });
+  }
   // The owner's own tab. Rendered only for a platform owner, and separated
   // from the product tabs because it is about who you are, not what you are
   // looking at.

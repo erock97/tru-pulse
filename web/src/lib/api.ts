@@ -1066,6 +1066,81 @@ export async function submitCohortAssessment(input: {
  *  scan on the roster. Removing also switches coaching off; putting them back
  *  does not switch it on again, because rejoining and being coached are two
  *  separate decisions. Leader/admin only; the database function enforces it. */
+
+/** One person as the Team tab sees them: the Follow Up Boss row, plus the two
+ *  things the rest of the product cannot tell apart.
+ *
+ *  `invitedAt` is set the moment an invite is sent — the invite mints the login,
+ *  which is why `agents.auth_id` has always meant "invited", never "arrived".
+ *  `signedInAt` is arrival, and it comes from auth.users, so only the database
+ *  can supply it. A row with an invite date and no sign-in is someone whose
+ *  email went out and who never showed up: the single most useful state on the
+ *  page, and one nothing else in TRU HQ could display. */
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string | null;
+  teamId: string;
+  teamName: string;
+  /** Taken off the team by a leader. These rows appear ONLY here. */
+  excluded: boolean;
+  coaching: boolean;
+  paused: boolean;
+  invitedAt: string | null;
+  signedInAt: string | null;
+}
+
+/** ?demo=1 fixtures. Shaped like a real Follow Up Boss import rather than a
+ *  tidy roster: mostly people who have never been sent a login, one who was
+ *  emailed and never turned up, and two who should not be on a sales roster at
+ *  all — the office manager and the lender. Those last two are the reason the
+ *  page has tick boxes. */
+function demoTeam(): TeamMember[] {
+  const day = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
+  const one = (
+    name: string, email: string | null,
+    o: Partial<TeamMember> = {},
+  ): TeamMember => ({
+    id: name.toLowerCase().replace(/\W+/g, '-'),
+    name, email, teamId: 't1', teamName: 'Signature Realty',
+    excluded: false, coaching: false, paused: false,
+    invitedAt: null, signedInAt: null, ...o,
+  });
+  return [
+    one('Marisol Aguirre', 'marisol@example.com', { invitedAt: day(41), signedInAt: day(2), coaching: true }),
+    one('Priya Raghunathan', 'priya@example.com', { invitedAt: day(38), signedInAt: day(19), coaching: true }),
+    one('Devon Ashworth', 'devon@example.com', { invitedAt: day(12) }),
+    one('Curtis Nnadi', 'curtis@example.com'),
+    one('Halle Brightman', 'halle@example.com', { coaching: true }),
+    one('Rob Vandermolen', 'rob@example.com', { paused: true }),
+    one('Tomás Ferreira', null),
+    one('Janice Kolb', 'janice@example.com', { excluded: true }),
+    one('First Meridian Lending', 'apps@example.com', { excluded: true }),
+  ];
+}
+
+/** Everyone Follow Up Boss gave us for the teams you lead — hidden people
+ *  included. Every other roster read filters the excluded out, which is why
+ *  this one exists rather than reusing loadFullRoster(). */
+export async function loadTeamRoster(): Promise<TeamMember[]> {
+  if (isDemo) return demoTeam();
+  const res = await workerFetch('/data/team/roster');
+  if (!res.ok) throw new Error('Could not load your team.');
+  const { agents } = (await res.json()) as { agents: Array<Record<string, unknown>> | null };
+  return (agents ?? []).map((a) => ({
+    id: String(a.id),
+    name: String(a.name ?? ''),
+    email: (a.email as string | null) ?? null,
+    teamId: String(a.team_id ?? ''),
+    teamName: String(a.team_name ?? ''),
+    excluded: !!a.excluded,
+    coaching: !!a.coaching_enabled,
+    paused: !!a.is_paused,
+    invitedAt: (a.invited_at as string | null) ?? null,
+    signedInAt: (a.signed_in_at as string | null) ?? null,
+  }));
+}
+
 export async function setExcluded(agentId: string, excluded: boolean): Promise<void> {
   if (isDemo) return;
   const res = await workerFetch('/data/coach/agent-flags', {

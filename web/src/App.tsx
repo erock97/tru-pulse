@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
+import TeamAdmin from './pages/TeamAdmin';
 import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
@@ -155,6 +156,10 @@ export default function App() {
         )
       : route === '/rep'
         ? <Rep org={o} onHome={() => go('/')} />
+      // Who is on the platform at all. One screen, so "invite" stops being a
+      // control scattered through Coach, Rep and the agent drill-down.
+      : route === '/team'
+        ? <TeamAdmin org={o} onHome={() => go('/')} />
         : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.

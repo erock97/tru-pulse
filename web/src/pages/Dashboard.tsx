@@ -427,6 +427,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
           onOpenPulse: () => setView('overview'),
           onOpenCoach: () => { window.location.hash = '/coach'; },
           onOpenRep: () => { window.location.hash = '/rep'; },
+          onOpenTeam: () => { window.location.hash = '/team'; },
         }}
       >
         <div className="pulse-canvas" ref={canvasRef}>
