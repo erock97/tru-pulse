@@ -3356,6 +3356,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    Coach measures cadence, so distance there means days rather than rate. */
 .tru-dark .coach-canvas.dk-main { padding-top: 0; }
 .tru-dark .coach-canvas.dk-main .coach-ambient { display: none; }
+/* The legacy stage rule caps every canvas child at 1440. That is what made
+   Coach 700px narrower than Pulse on the same screen — the canvas was already
+   2160, its children were not. The deck manages its own width. */
+.tru-dark .coach-canvas.dk-main > * { max-width: none; }
 .tru-dark .dk-wiring { margin-top: 16px; max-width: 480px; }
 /* Coach's table has no numeric bar column, so its cells sit closer together */
 .tru-dark .dk-table .tru-table td .rs-rate { gap: 10px; }
@@ -3364,7 +3368,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* ---- the leaderboard, as a strip ----------------------------------------
    Coach is one column now, so the old right-hand rail became a row. Same
    four entries, same ordering, same numbers. */
-.tru-dark .ch-board {
+.tru-dark .ch-board { display: none; }
+.tru-dark .ch-board-unused {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 12px 4px 20px;
 }

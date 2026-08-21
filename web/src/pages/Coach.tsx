@@ -210,10 +210,13 @@ export default function Coach({
     const needsYou = withHealth
       .filter(({ a }) => a.pace === 'Stalled' || a.pace === 'No check-ins' || a.pace === 'Slipping' || a.due)
       .sort((x, y) => x.health - y.health);
-    const leaderboard = [...withHealth].sort((x, y) => y.health - x.health).slice(0, 4);
+    // The table IS the leaderboard now — same ordering, no second list of the
+    // same four people sitting above it.
+    const ranked = [...withHealth].sort((x, y) => y.health - x.health);
+    const leaderboard = ranked.slice(0, 4);
     const dueCount = roster.filter((a) => a.due).length;
     const assessed = roster.reduce((s, a) => s + a.takes, 0);
-    return { withHealth, teamHealth, onTrack, needsYou, leaderboard, dueCount, assessed };
+    return { withHealth, ranked, teamHealth, onTrack, needsYou, leaderboard, dueCount, assessed };
   }, [roster]);
 
   // Header actions only make sense on the roster dashboard, not the agent drill-in.
@@ -354,23 +357,6 @@ export default function Coach({
                 ))}
               </section>
 
-              {/* The leaderboard, kept. It ranks on the coaching health score,
-                  which currently places an agent you have NEVER met above one
-                  you saw a fortnight ago — see the note in the PR. Preserved
-                  as-is because this pass is layout only. */}
-              <div className="ch-board">
-                <span className="ch-board-k">Leaderboard · by coaching health</span>
-                {derived.leaderboard.map(({ a, health }, i) => (
-                  <button key={a.id} className="ch-board-row" onClick={() => setOpenId(a.id)}>
-                    <span className={`ch-rank r${i + 1}`}>{i + 1}</span>
-                    <Avatar name={a.name} size={26} tone={i % 5} />
-                    <span className="ch-board-name">{a.name}</span>
-                    <span className="ch-board-sub">{a.quad} · {a.pace}</span>
-                    <span className="ch-board-n">{health}</span>
-                  </button>
-                ))}
-              </div>
-
               {/* ============ THE COHORT ============ */}
               <div className="dk-sec">
                 <h2>The cohort</h2>
@@ -379,7 +365,7 @@ export default function Coach({
                     ? 'Nobody needs you this week.'
                     : `${derived.needsYou.length} need you · ${derived.dueCount} due for a re-assessment`}
                 </p>
-                <span className="dk-key">coaching health ring · archetype · pace</span>
+                <span className="dk-key">ranked by coaching health · top three marked</span>
               </div>
 
               {derived.needsYou.length > 0 && (
@@ -406,17 +392,18 @@ export default function Coach({
                   <thead>
                     <tr>
                       <th>Agent</th><th>Archetype</th><th>Quadrant</th>
-                      <th>Coaching health</th><th>Last 1:1</th><th>Assessed</th><th>Pace</th>
+                      <th>Coaching health &#9660;</th><th>Last 1:1</th><th>Assessed</th><th>Pace</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {derived.withHealth.map(({ a, health }, i) => (
+                    {derived.ranked.map(({ a, health }, i) => (
                       <tr key={a.id} className="rowlink" tabIndex={0}
                           style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
                           onClick={() => setOpenId(a.id)}
                           onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}>
                         <td>
                           <div className="rs-who">
+                            {i < 3 && <span className={`ch-rank r${i + 1}`}>{i + 1}</span>}
                             <Avatar name={a.name} size={34} tone={i % 5} />
                             <div>
                               <div className="cell-name">{a.name}</div>
