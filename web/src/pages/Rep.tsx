@@ -7,8 +7,9 @@ import {
 import { Lesson, Quiz, Result, SimView } from './AgentCourse';
 import { courseCardsFor, courseQuestionsFor } from '../lib/agentHq';
 import { HqShell } from '../components/hqShell';
-import { Icon, Ring, Avatar } from '../components/hqUi';
-import { useReveal, useCountUp } from '../hqHooks';
+import { Icon, Avatar } from '../components/hqUi';
+import { Track } from '../components/repViz';
+import { useReveal } from '../hqHooks';
 import '../truHqDark.css';
 
 /* ============================================================
@@ -39,15 +40,6 @@ function previewCards(cards: LessonCard[] | null | undefined): LessonCard[] {
 }
 
 /* ---- satellite count-up tile (varied sizes) ---- */
-function Satellite({ value, label }: { value: number; label: string }) {
-  const { ref, val } = useCountUp(value);
-  return (
-    <div>
-      <div className="rp-sat-num"><span ref={ref}>{val}</span></div>
-      <div className="rp-sat-label">{label}</div>
-    </div>
-  );
-}
 
 /* ---- module-progress dots (per REAL module: cleared / in progress / not started) ---- */
 function ProgressDots({ statuses }: { statuses: string[] }) {
@@ -249,6 +241,17 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     { label: 'Fully certified', value: certifiedCount, color: 'var(--terracotta)' },
   ];
 
+  // Never invited is NOT the same as stalled: they were never able to start.
+  // The track draws them before the gate for exactly this reason.
+  const notInvited = agents.filter((a) => !a.invited).length;
+  const trackAgents = agents.map((a) => ({
+    id: a.id,
+    name: a.name,
+    passed: modules.filter((m) => stat(a.id, m.id) === 'passed').length,
+    invited: a.invited,
+    signed: isSigned(a.id),
+  }));
+
   // Journey state per module: locked if no preview cards; otherwise the first
   // previewable is "start here", the rest "available". Mirrors the real openable flag.
   let firstOpenSeen = false;
@@ -271,9 +274,8 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     <div className="tru-dark">
       <HqShell
         orgName={org.name}
-        eyebrow="Onboarding & certification"
-        title="Rep — certify every agent."
         onSignOut={() => signOutClean()}
+        hideTopbar
         nav={{
           onHome: () => onHome?.(),
           onOpenPulse: () => { window.location.hash = '/pulse'; },
@@ -281,66 +283,74 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
           onOpenRep: () => { window.location.hash = '/rep'; },
         }}
       >
-        <div className="rp-canvas" ref={canvasRef}>
+        <div className="rp-canvas dk-main" ref={canvasRef}>
           <div className="rp-ambient" aria-hidden />
 
-          {/* ============ HERO BENTO: gauge focal + satellite tiles ============ */}
-          <section className="rp-bento">
-            <article className="rp-hero-anchor reveal">
-              <div className="rp-hero-glow" />
-              <div className="rp-hero-inner">
-                <span className="hq-eyebrow"><span className="dot" /> The program</span>
-                <h2 className="rp-hero-title">Certify every agent on the program.</h2>
-                <p className="rp-hero-sub">
-                  The Preferred standards, real scripts and practice drills, and a server-graded quiz
-                  to pass on every module. Agents sign in with their own login; you invite, watch
-                  progress, and sign off here.
-                </p>
-                <div className="rp-hero-cta">
-                  <button
-                    className="rp-preview"
-                    onClick={() => setSimTest(true)}
-                    title="Take a practice call yourself — real call, real grade, nothing recorded"
-                  >
-                    🎙 Test the Live Sim
-                  </button>
-                  {canAuthor && (
-                    <button
-                      className="rp-preview"
-                      onClick={() => setManage(true)}
-                      title="Author, publish, or archive your org's own training modules"
-                    >
-                      🛠 Manage modules
-                    </button>
-                  )}
-                </div>
-              </div>
-            </article>
-
-            {/* Focal: certification gauge — REAL fully-certified % */}
-            <article className="card rp-gauge-tile reveal" data-delay="80">
-              <div className="rp-gauge-glow" />
-              <div className="rp-gauge-wrap">
-                <Ring pct={teamCert} size={186} stroke={16} label={`${teamCert}%`} color="var(--accent-hi)" />
-              </div>
-              <div className="rp-gauge-cap">Fully certified</div>
-              <div className="rp-gauge-sub">
-                {certifiedCount} of {agents.length} agent{agents.length === 1 ? '' : 's'} {certifiedCount === 1 ? 'has' : 'have'} earned the badge
-              </div>
-            </article>
-
-            {/* Satellite tiles — REAL module / quiz / agent counts */}
-            <div className="rp-sats-row">
-              <article className="card rp-sat-tile rp-sat-a reveal" data-delay="140">
-                <Satellite value={modules.length} label="Modules" />
-              </article>
-              <article className="card rp-sat-tile rp-sat-b reveal" data-delay="180">
-                <Satellite value={totalQuestions} label="Quiz questions" />
-              </article>
-              <article className="card rp-sat-tile rp-sat-c reveal" data-delay="220">
-                <Satellite value={agents.length} label="Agents enrolled" />
-              </article>
+          {/* ============ MASTHEAD + THE TRACK ============ */}
+          <header className="dk-mast">
+            <div>
+              <span className={notInvited > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
+                <i />
+                {notInvited > 0
+                  ? `${notInvited} cannot start yet`
+                  : certifiedCount === agents.length && agents.length > 0
+                    ? 'Everybody is certified'
+                    : `${startedCount} of ${enrolled} underway`}
+              </span>
+              <h1>
+                {certifiedCount > 0
+                  ? <><em>{certifiedCount}</em> of {agents.length} have earned the badge.</>
+                  : <>Nobody has cleared <em>all {modules.length}</em> modules yet.</>}
+              </h1>
+              <p className="dk-sub">
+                The Preferred standards, real scripts and practice drills, and a server-graded quiz
+                to pass on every module.{' '}
+                {notInvited > 0
+                  ? <><b>{notInvited}</b> {notInvited === 1 ? 'agent has' : 'agents have'} never been sent a login, so
+                    {notInvited === 1 ? ' they are' : ' they are'} not stalled — they were never able to begin.</>
+                  : <>Every agent has a login, so what you see on the track is real progress.</>}
+              </p>
             </div>
+            <div className="rp-hero-cta">
+              <button
+                className="rs-cta"
+                onClick={() => setSimTest(true)}
+                title="Take a practice call yourself — real call, real grade, nothing recorded"
+              >
+                Test the Live Sim
+                <span aria-hidden>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </header>
+
+          <section className="dk-bento rp-bento-deck">
+            {/* The track. Distance is progress, not rate and not time — see
+                components/repViz.tsx for why this page is the one that is not
+                a circle. */}
+            <div className="rs-plate dk-tile dk-tile-lead">
+              <Track agents={trackAgents} modules={modules.length} />
+              <span className="k">The track</span>
+              <span className="v">{teamCert}%</span>
+              <span className="u">fully certified · every dot is an agent, every mark a module</span>
+            </div>
+            {([
+              ['Modules', String(modules.length), 'in the programme'],
+              ['Quiz questions', String(totalQuestions), 'across all modules'],
+              ['Agents enrolled', String(agents.length), 'in your cohort'],
+              ['Started a module', String(startedCount), `of ${enrolled}`],
+              ['Never sent a login', String(notInvited), notInvited ? 'cannot begin' : 'everybody has one'],
+            ] as const).map(([k, v, u]) => (
+              <div className="rs-plate dk-tile" key={k}>
+                <span className="k">{k}</span>
+                <span className="v">{v}</span>
+                <span className="u">{u}</span>
+              </div>
+            ))}
           </section>
 
           <DividerWave />

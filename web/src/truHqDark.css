@@ -3404,3 +3404,14 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-family: var(--hq-serif); font-size: 15px; color: var(--text);
   letter-spacing: -0.02em; margin-left: 4px;
 }
+
+/* ---- Rep, in the same shape ---------------------------------------------
+   Its lead tile carries a TRACK rather than a dial or a drift map. Pulse
+   measures rate, Coach measures elapsed time, Rep measures position in a
+   sequence — so it is the one page whose picture is a line. */
+.tru-dark .rp-canvas.dk-main { padding-top: 0; }
+.tru-dark .rp-canvas.dk-main .rp-ambient { display: none; }
+/* Same legacy 1440 cap that made Coach look narrow. */
+.tru-dark .rp-canvas.dk-main > * { max-width: none; }
+.tru-dark .rp-canvas.dk-main .rp-journey,
+.tru-dark .rp-canvas.dk-main .rp-progress { margin-top: 8px; }
