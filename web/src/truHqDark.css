@@ -2817,7 +2817,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
      move less, so a slower ground under faster light reads as depth rather
      than as one locked picture sliding about. Matching their speeds would
      glue the two layers into a single flat image. */
-  animation: groundDrift 260s cubic-bezier(.4,0,.5,1) infinite alternate;
+  animation: groundDrift 150s cubic-bezier(.4,0,.5,1) infinite alternate;
   will-change: transform;
   background:
     url("/field.svg") center / cover no-repeat,
@@ -3473,11 +3473,12 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .tru-room-a {
   opacity: 0.44;   /* the room, not the subject */
-  animation: roomDriftA 170s cubic-bezier(.4,0,.5,1) infinite alternate;
+  /* Faster and further than the ground beneath it — that gap is the parallax. */
+  animation: roomDriftA 110s cubic-bezier(.4,0,.5,1) infinite alternate;
 }
 @keyframes roomDriftA {
-  from { transform: translate3d(-3.4%, -1.8%, 0) scale(1.04); }
-  to   { transform: translate3d(3.4%,  1.8%, 0) scale(1.10); }
+  from { transform: translate3d(-6.0%, -3.0%, 0) scale(1.04); }
+  to   { transform: translate3d(6.0%,  3.0%, 0) scale(1.12); }
 }
 
 /* The union itself. Breathes slowly, and flares whenever you change tab —
@@ -3526,9 +3527,14 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* The ground's own drift. Half the travel of the light and much slower — the
    parallax between them is what makes the room feel deep. Travel stays well
    inside the -12% inset, so no edge can ever swing into view. */
+/* Calibration, for the third time: 1.9% over 260s is 0.19 pixels a second and
+   cannot be seen. Discrete dots actually make motion MORE perceptible than
+   smooth ribbons do, so this needs real travel, not less. 4.0% over 150s is
+   about 0.7 px/s — look away for twenty seconds and the field has moved 14px,
+   which registers. */
 @keyframes groundDrift {
-  from { transform: translate3d(1.9%, 0.9%, 0) scale(1.02); }
-  to   { transform: translate3d(-1.9%, -0.9%, 0) scale(1.05); }
+  from { transform: translate3d(4.0%, 1.8%, 0) scale(1.03); }
+  to   { transform: translate3d(-4.0%, -1.8%, 0) scale(1.07); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .tru-shell::before { animation: none; transform: none; }

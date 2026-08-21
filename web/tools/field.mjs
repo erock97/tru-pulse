@@ -75,8 +75,8 @@ for (let i = 0; i < 8; i++) {
 }
 
 /* ---- mid bokeh: the recognisable out-of-focus discs ---- */
-for (let i = 0; i < 28; i++) {
-  const rad = between(24, 92);
+for (let i = 0; i < 40; i++) {
+  const rad = between(22, 88);
   light(between(-30, W + 30), between(-20, H + 20), rad,
     r() > 0.48 ? pickI(WARM) : 4 + pickI(COOL),
     rad > 62 ? 3 : 2, between(0.055, 0.125));
@@ -84,8 +84,8 @@ for (let i = 0; i < 28; i++) {
 
 /* ---- near specks: small, brighter, barely softened. These are what the eye
        reads as "in focus", and they are why the rest reads as not. ---- */
-for (let i = 0; i < 36; i++) {
-  const rad = between(2.5, 12);
+for (let i = 0; i < 96; i++) {
+  const rad = between(2, 11);
   light(between(0, W), between(0, H), rad,
     r() > 0.42 ? pickI(WARM) : 4 + pickI(COOL),
     rad > 8 ? 1 : 0, between(0.30, 0.72));
@@ -94,12 +94,11 @@ for (let i = 0; i < 36; i++) {
 /* ---- the lattice: faint connected points, low and to the sides, so the room
        has structure behind the data without competing with it. ---- */
 const nodes = [];
-for (let i = 0; i < 34; i++) {
-  const side = r() > 0.5;
-  nodes.push({
-    x: side ? between(0, W * 0.26) : between(W * 0.74, W),
-    y: between(H * 0.42, H),
-  });
+for (let i = 0; i < 58; i++) {
+  // Across the WHOLE frame. The first version pinned these to the left and
+  // right edges below the halfway line, which left the middle and the bottom
+  // right visibly empty once the image was cropped to a wide viewport.
+  nodes.push({ x: between(0, W), y: between(0, H) });
 }
 const lines = [];
 for (let i = 0; i < nodes.length; i++) {
