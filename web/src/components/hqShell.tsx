@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { TruLogo } from './TruLogo';
+import { Trinity, type TrinityNode } from './trinity';
 import { Avatar, Icon } from './hqUi';
 import { useForceHqDark } from '../hqHooks';
 import { hasAdminReturn, adminReturn } from '../lib/api';
@@ -66,8 +67,15 @@ export function HqShell({
   if (isAdmin && onOpenAdmin) {
     links.push({ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin });
   }
+  // The Trinity sits behind everything, on every page, with the point you are
+  // standing on lit. Admin and Home are not part of the loop, so they leave
+  // Pulse lit rather than inventing a fourth node.
+  const trinityAt: TrinityNode =
+    activeKey === 'coach' ? 'coach' : activeKey === 'rep' ? 'rep' : 'pulse';
+
   return (
     <div className="tru-shell">
+      <Trinity active={trinityAt} />
       <aside className="side">
         <div className="side-logo">
           <button onClick={nav.onHome} style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0 }} aria-label="TRU HQ home">

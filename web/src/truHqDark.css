@@ -3435,3 +3435,71 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rp-canvas.dk-main > * { max-width: none; }
 .tru-dark .rp-canvas.dk-main .rp-journey,
 .tru-dark .rp-canvas.dk-main .rp-progress { margin-top: 8px; }
+
+/* ============================================================================
+   THE TRINITY — the room's structure, on every page
+   ----------------------------------------------------------------------------
+   Three points and the arcs between them, running in the direction the work
+   flows: Pulse names who to talk to, Coach is the conversation, Rep is what
+   you train afterwards, and that changes what Pulse says next week.
+
+   Nodes are positioned in percentages so they are always on screen and always
+   round; the arcs live in a stretched SVG on the same 0-100 coordinates so
+   they always meet the nodes. See the note in components/trinity.tsx for why
+   a single scaled SVG did not work.
+   ========================================================================== */
+.tru-dark .trinity {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  /* falls away at the edges so it never reads as a shape sitting ON the page */
+  mask-image: radial-gradient(88% 88% at 50% 45%, #000 30%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  -webkit-mask-image: radial-gradient(88% 88% at 50% 45%, #000 30%, rgba(0,0,0,0.5) 70%, transparent 100%);
+}
+.tru-dark .trinity-web { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.tru-dark .trinity-leg {
+  fill: none; stroke: rgba(226, 240, 230, 0.15);
+  stroke-width: 0.12; vector-effect: non-scaling-stroke;
+}
+
+/* The travelling light — a short lit segment chasing each arc. The one piece
+   of motion in the room that means something rather than just moving. */
+.tru-dark .trinity-run {
+  fill: none; stroke: var(--accent); stroke-width: 1.6;
+  stroke-linecap: round; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 8 220; opacity: 0.55;
+  animation: trinityRun 21s linear infinite;
+}
+@keyframes trinityRun { to { stroke-dashoffset: -228; } }
+
+.tru-dark .trinity-node {
+  position: absolute; width: 0; height: 0;
+  transition: opacity 1.4s var(--spring);
+}
+.tru-dark .trinity-node i { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); display: block; }
+.tru-dark .trinity-glow {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(143,176,162,0.20) 0%, rgba(143,176,162,0.055) 42%, transparent 70%);
+}
+.tru-dark .trinity-ring {
+  width: 44px; height: 44px; border: 1px solid rgba(143, 176, 162, 0.40);
+}
+.tru-dark .trinity-core {
+  width: 7px; height: 7px; background: rgba(143, 176, 162, 0.55);
+}
+/* wherever you are standing */
+.tru-dark .trinity-node.on .trinity-glow {
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, rgba(255,220,147,0.20) 0%, rgba(242,178,60,0.06) 40%, transparent 70%);
+}
+.tru-dark .trinity-node.on .trinity-ring {
+  width: 58px; height: 58px; border-color: rgba(255, 220, 147, 0.6);
+}
+.tru-dark .trinity-node.on .trinity-core {
+  width: 10px; height: 10px; background: var(--accent-hi);
+  box-shadow: 0 0 14px 3px rgba(242, 178, 60, 0.5);
+}
+.tru-dark .trinity-node i { transition: width 1.4s var(--spring), height 1.4s var(--spring), background 1.4s var(--spring), border-color 1.4s var(--spring); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .trinity-run { animation: none; stroke-dasharray: none; opacity: 0.22; }
+}
