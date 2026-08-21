@@ -2802,7 +2802,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    it paints once instead of on every scroll frame. */
 .tru-dark .tru-shell::before {
   content: "";
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  /* Oversized on purpose: the layer drifts, and at inset:0 the edges would
+     swing into view. 12% is more than the 4% the animation ever travels. */
+  position: fixed; inset: -12%; z-index: 0; pointer-events: none;
+  /* A very slow drift. 200 seconds means you never catch it moving — you only
+     notice the room is not dead. Transform only, so the compositor handles it
+     and nothing repaints; the earlier Command Deck mockup used 74-118s and
+     read as slightly busy, so this is slower still. */
+  animation: hqRoomDrift 200s cubic-bezier(0.4, 0, 0.5, 1) infinite alternate;
+  will-change: transform;
   background:
     url("/field.svg") center / cover no-repeat,
     radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.19) 0%, rgba(180, 126, 40, 0.06) 44%, transparent 74%),
@@ -2813,6 +2821,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* the floor: green light coming back up under the content, then the corners
    falling away. keeps the bottom of a long page inside the same room instead of
    dropping it onto flat black. */
+/* The vignette does NOT drift. It is anchored to the screen's own corners —
+   moving it would slide the darkness off the edges it exists to darken. */
 .tru-dark .tru-shell::after {
   content: "";
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -3325,3 +3335,16 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   color: var(--text-50); max-width: 62ch;
 }
 .tru-dark .ad-goal-empty .hqbtn { margin-top: 14px; }
+
+/* ---- the room's drift -----------------------------------------------------
+   One transform, two hundred seconds, alternating so it never snaps back to
+   the start. Deliberately not a video and not a canvas loop: this costs one
+   composited layer and no frames of JavaScript, on a screen people keep open
+   all day. */
+@keyframes hqRoomDrift {
+  from { transform: translate3d(-1.6%, -1%, 0) scale(1.02); }
+  to   { transform: translate3d(1.6%, 1%, 0) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-shell::before { animation: none; transform: none; }
+}
