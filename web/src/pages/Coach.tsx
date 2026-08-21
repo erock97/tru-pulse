@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { setCoaching, isDemo, signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
+import { DriftMap } from '../components/coachViz';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal, useCountUp } from '../hqHooks';
 import {
@@ -49,51 +50,7 @@ function healthOf(a: RosterAgent): number {
 const firstNm = (n: string) => firstName(n);
 
 /* ---- Big team-health gauge — focal, ambient glow ---- */
-function HealthGauge({ score }: { score: number }) {
-  const size = 208;
-  const stroke = 16;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const off = c - (score / 100) * c;
-  return (
-    <div className="hustle-ring" style={{ width: size, height: size }}>
-      <div className="hustle-ring-glow" />
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <defs>
-          <linearGradient id="coachGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#c9962f" />
-            <stop offset="1" stopColor="#a9791f" />
-          </linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={r + 9} fill="none" stroke="var(--track-outer)" strokeWidth="1" />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track-fill-2)" strokeWidth={stroke} />
-        <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="url(#coachGrad)" strokeWidth={stroke} strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={off}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: 'stroke-dashoffset 1.3s var(--ease)' }}
-        />
-        <circle cx={size / 2} cy={size / 2} r={r - stroke} fill="none" stroke="var(--track-hairline)" strokeWidth="1" />
-      </svg>
-      <div className="hustle-center">
-        <div className="hustle-num">{score}</div>
-        <div className="hustle-cap">Team Health</div>
-      </div>
-    </div>
-  );
-}
 
-function MetricTile({ value, label, prefix = '', icon, className = '' }: { value: number; label: string; prefix?: string; icon: string; className?: string }) {
-  const { ref, val } = useCountUp(value);
-  return (
-    <article className={`card coach-metric ${className}`}>
-      <span className="coach-metric-mark"><Icon name={icon} size={16} /></span>
-      <div className="coach-metric-num">{prefix}<span ref={ref}>{val}</span></div>
-      <div className="coach-metric-label">{label}</div>
-    </article>
-  );
-}
 
 function DividerWave() {
   return (
@@ -302,17 +259,26 @@ export default function Coach({
 
   const openAgent = roster.find((a) => a.id === openId) || null;
 
+  // The furthest-out point on the drift map, so the lead tile can name it.
+  // `lastDays` uses 99 for "never", which is worse than any real number.
+  const driftPeak = (() => {
+    const worst = [...roster].sort((a, b) => b.lastDays - a.lastDays)[0];
+    if (!worst) return { name: '—', days: 0, never: false };
+    return { name: worst.name, days: worst.lastDays, never: worst.lastDays >= 99 };
+  })();
+
   return (
     <div className="tru-dark">
       <HqShell
         orgName={org.name}
-        eyebrow={openAgent ? `Coaching · ${org.name}` : 'Monday, coaching brief'}
-        title={openAgent ? `Coach — ${openAgent.name}` : 'Coach — your team, at a glance.'}
+        eyebrow={openAgent ? `Coaching · ${org.name}` : undefined}
+        title={openAgent ? `Coach — ${openAgent.name}` : undefined}
         context={context}
         onSignOut={() => signOutClean()}
         nav={coachNav(onHome)}
+        hideTopbar={!openAgent}
       >
-        <div className="coach-canvas" ref={canvasRef}>
+        <div className={openAgent ? 'coach-canvas' : 'coach-canvas dk-main'} ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
 
           {openAgent ? (
@@ -330,111 +296,160 @@ export default function Coach({
                 </div>
               ) : (
                 <>
-              {/* ============ HERO BENTO ============ */}
-              <section className="coach-bento">
-                <article className="card hustle-card reveal">
-                  <div className="hustle-card-glow" />
-                  <HealthGauge score={derived.teamHealth} />
-                  <div className="hustle-copy">
-                    <span className="eyebrow"><span className="dot" /> Team pulse</span>
-                    <h3>How your team is wired.</h3>
-                    <p>{mix.note}</p>
-                    <div style={{ marginTop: 16 }}><WiringBar segs={mix.segs} /></div>
-                  </div>
-                </article>
-
-                <MetricTile className="coach-metric-a reveal" value={roster.length} label="Agents on roster" icon="coach" />
-                <MetricTile className="coach-metric-b reveal" value={derived.onTrack} label="On track this week" icon="pulse" />
-                <MetricTile className="coach-metric-c reveal" value={derived.dueCount} label="Due for a re-assessment" icon="clock" />
-              </section>
-
-              <DividerWave />
-
-              {/* ============ AGENTS + LEADERBOARD ============ */}
-              <section className="grid-row">
-                <div className="agents-panel">
-                  <div className="panel-head reveal">
-                    <h3>Agents</h3>
-                    <span className="panel-sub">Coaching health ring · archetype · pace</span>
-                  </div>
-                  <div className="agents-grid">
-                    {derived.withHealth.map(({ a, health }, i) => (
-                      <article
-                        key={a.id}
-                        className="card card-hover agent agent-clickable reveal"
-                        data-delay={i * 70}
-                        role="link" tabIndex={0}
-                        onClick={() => setOpenId(a.id)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(a.id); } }}
-                      >
-                        <div className="agent-glow" />
-                        <div className="agent-top">
-                          <Avatar name={a.name} size={46} tone={i % 5} />
-                          <Ring pct={health} size={56} label={`${health}`} color={a.paceColor} />
-                        </div>
-                        <div className="agent-body">
-                          <div className="agent-name">{a.name}</div>
-                          <div className="agent-meta">
-                            <span className="agent-type">{a.archName}</span>
-                            <span className="agent-level">{a.quad}</span>
-                            <span className="agent-trend" style={{ color: a.paceColor, marginLeft: 'auto' }}>{a.pace}</span>
-                          </div>
-                        </div>
-                        <button
-                          className="btn btn-ghost btn-block btn-sm"
-                          onClick={(e) => { e.stopPropagation(); setOpenId(a.id); }}
-                        >
-                          <Icon name="coach" size={17} /> Prep 1:1
-                        </button>
-                      </article>
-                    ))}
-                  </div>
+              {/* ============ MASTHEAD ============ */}
+              <header className="dk-mast">
+                <div>
+                  <span className={derived.needsYou.length > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
+                    <i />
+                    {derived.needsYou.length > 0
+                      ? `${derived.needsYou.length} need you`
+                      : 'Everybody is current'}
+                  </span>
+                  <h1>
+                    {mix.segs[0]
+                      ? <>Mostly <em>{mix.segs[0].label.toLowerCase()}s</em>, and {derived.onTrack} of {roster.length} on track.</>
+                      : <>Your team, at a glance.</>}
+                  </h1>
+                  <p className="dk-sub">{mix.note}</p>
+                  <div className="dk-wiring"><WiringBar segs={mix.segs} /></div>
                 </div>
+                {derived.needsYou.length > 0 && (
+                  <button className="rs-cta" onClick={() => setOpenId(derived.needsYou[0].a.id)}>
+                    Open {firstNm(derived.needsYou[0].a.name)}’s brief
+                    <span aria-hidden>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </span>
+                  </button>
+                )}
+              </header>
 
-                <aside className="cohort-panel">
-                  <div className="card cohort reveal">
-                    <div className="panel-head">
-                      <h3>Leaderboard</h3>
-                      <span className="panel-sub">By coaching health</span>
-                    </div>
-                    <ol className="cohort-list">
-                      {derived.leaderboard.map(({ a, health }, i) => (
-                        <li key={a.id} className={`cohort-row rank-${i + 1}`} role="link" tabIndex={0} style={{ cursor: 'pointer' }}
-                          onClick={() => setOpenId(a.id)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(a.id); } }}
-                        >
-                          <span className={`cohort-medal rank-${i + 1}`} aria-hidden>
-                            <svg viewBox="0 0 24 24" width="30" height="30">
-                              <path d="M12 2l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 15.9 6.8 18.2l1-5.8L3.5 8.2l5.9-.9z" className="cohort-medal-star" />
-                            </svg>
-                            <span className="cohort-medal-rank">{i + 1}</span>
-                          </span>
-                          <Avatar name={a.name} size={38} tone={i % 5} />
-                          <div className="cohort-info">
-                            <div className="cohort-name">{a.name}</div>
-                            <div className="cohort-sub">{a.quad} · {a.pace}</div>
-                          </div>
-                          <span className="cohort-metric">{health}</span>
-                        </li>
-                      ))}
-                    </ol>
+              {/* ============ THE DRIFT MAP + THE NUMBERS ============ */}
+              <section className="dk-bento">
+                {/* The value is the outermost dot on the map beside it — the
+                    person you have gone longest without sitting down with. Not
+                    the health score; that is its own tile and its own thing. */}
+                <div className="rs-plate dk-tile dk-tile-lead">
+                  <DriftMap roster={roster} />
+                  <span className="k">Longest without a 1:1</span>
+                  <span className="v">{driftPeak.never ? 'never' : `${driftPeak.days}d`}</span>
+                  <span className="u">
+                    {driftPeak.name} · distance is time, rings are 7, 14 and 30 days
+                  </span>
+                </div>
+                {([
+                  ['Agents on roster', String(roster.length), 'in your cohort'],
+                  ['On track this week', String(derived.onTrack), `of ${roster.length}`],
+                  ['Due for a re-assessment', String(derived.dueCount), 'past 90 days'],
+                  ['Slipping or stalled', String(derived.needsYou.length), derived.needsYou.length ? 'need a conversation' : 'nobody drifting'],
+                  ['Team coaching health', String(derived.teamHealth), 'check-ins, cadence, profile'],
+                ] as const).map(([k, v, u]) => (
+                  <div className="rs-plate dk-tile" key={k}>
+                    <span className="k">{k}</span>
+                    <span className="v">{v}</span>
+                    <span className="u">{u}</span>
                   </div>
-
-                  {derived.needsYou.length > 0 && (
-                    <div className="card cohort-cta reveal" data-delay="100">
-                      <div className="cohort-cta-glow" />
-                      <span className="method-badge cohort-cta-badge"><Icon name="target" size={18} /></span>
-                      <h4>{derived.needsYou[0].a.name} needs you</h4>
-                      <p>
-                        {needsReason(derived.needsYou[0].a)} {derived.needsYou.length > 1 ? `${derived.needsYou.length - 1} more ${derived.needsYou.length - 1 === 1 ? 'agent is' : 'agents are'} slipping too.` : ''}
-                      </p>
-                      <button className="btn btn-primary btn-block btn-sm" onClick={() => setOpenId(derived.needsYou[0].a.id)}>
-                        Open {firstNm(derived.needsYou[0].a.name)}’s brief
-                      </button>
-                    </div>
-                  )}
-                </aside>
+                ))}
               </section>
+
+              {/* The leaderboard, kept. It ranks on the coaching health score,
+                  which currently places an agent you have NEVER met above one
+                  you saw a fortnight ago — see the note in the PR. Preserved
+                  as-is because this pass is layout only. */}
+              <div className="ch-board">
+                <span className="ch-board-k">Leaderboard · by coaching health</span>
+                {derived.leaderboard.map(({ a, health }, i) => (
+                  <button key={a.id} className="ch-board-row" onClick={() => setOpenId(a.id)}>
+                    <span className={`ch-rank r${i + 1}`}>{i + 1}</span>
+                    <Avatar name={a.name} size={26} tone={i % 5} />
+                    <span className="ch-board-name">{a.name}</span>
+                    <span className="ch-board-sub">{a.quad} · {a.pace}</span>
+                    <span className="ch-board-n">{health}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* ============ THE COHORT ============ */}
+              <div className="dk-sec">
+                <h2>The cohort</h2>
+                <p>
+                  {derived.needsYou.length === 0
+                    ? 'Nobody needs you this week.'
+                    : `${derived.needsYou.length} need you · ${derived.dueCount} due for a re-assessment`}
+                </p>
+                <span className="dk-key">coaching health ring · archetype · pace</span>
+              </div>
+
+              {derived.needsYou.length > 0 && (
+                <div className="dk-focus">
+                  {derived.needsYou.slice(0, 4).map(({ a }) => (
+                    <article
+                      key={a.id}
+                      className="dk-fr crit"
+                      tabIndex={0}
+                      onClick={() => setOpenId(a.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}
+                    >
+                      <span className="rs-av h-past-line">{a.initials}</span>
+                      <span className="dk-fr-name">{a.name}</span>
+                      <span className="dk-fr-why">{needsReason(a)}</span>
+                      <span className="dk-fr-do">Prep the 1:1</span>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              <div className="rs-plate dk-table">
+                <table className="tru-table">
+                  <thead>
+                    <tr>
+                      <th>Agent</th><th>Archetype</th><th>Quadrant</th>
+                      <th>Coaching health</th><th>Last 1:1</th><th>Assessed</th><th>Pace</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {derived.withHealth.map(({ a, health }, i) => (
+                      <tr key={a.id} className="rowlink" tabIndex={0}
+                          style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                          onClick={() => setOpenId(a.id)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}>
+                        <td>
+                          <div className="rs-who">
+                            <Avatar name={a.name} size={34} tone={i % 5} />
+                            <div>
+                              <div className="cell-name">{a.name}</div>
+                              <div className="rs-sub2">{a.pace}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{a.archName}</td>
+                        <td>{a.quad}</td>
+                        <td>
+                          <div className="rs-rate">
+                            <b>{health}</b>
+                            <Ring pct={health} size={26} label="" color={a.paceColor} />
+                          </div>
+                        </td>
+                        <td className={a.lastDays >= 14 ? 'cell-warn' : ''}>{a.lastLabel}</td>
+                        <td>{a.days >= 99 ? 'never' : `${a.days}d ago`}</td>
+                        <td><span className="rs-tag" style={{ background: 'transparent', color: a.paceColor }}>{a.pace}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td>Cohort</td>
+                      <td colSpan={2}><b>{roster.length} agents</b></td>
+                      <td><b>{derived.teamHealth}</b></td>
+                      <td><b>{derived.needsYou.length} slipping</b></td>
+                      <td><b>{derived.dueCount} due</b></td>
+                      <td><b>{derived.onTrack} on track</b></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
                 </>
               )}
 

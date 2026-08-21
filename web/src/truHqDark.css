@@ -3348,3 +3348,48 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .tru-shell::before { animation: none; transform: none; }
 }
+
+/* ---- Coach, in Pulse's shape --------------------------------------------
+   The two pages are siblings, not clones. Coach reuses the deck's masthead,
+   tiles, section head, priority rows and table, but its lead tile carries a
+   drift map rather than a dial — Pulse measures output against a target,
+   Coach measures cadence, so distance there means days rather than rate. */
+.tru-dark .coach-canvas.dk-main { padding-top: 0; }
+.tru-dark .coach-canvas.dk-main .coach-ambient { display: none; }
+.tru-dark .dk-wiring { margin-top: 16px; max-width: 480px; }
+/* Coach's table has no numeric bar column, so its cells sit closer together */
+.tru-dark .dk-table .tru-table td .rs-rate { gap: 10px; }
+.tru-dark .dk-table .tru-table td .rs-rate b { min-width: 30px; }
+
+/* ---- the leaderboard, as a strip ----------------------------------------
+   Coach is one column now, so the old right-hand rail became a row. Same
+   four entries, same ordering, same numbers. */
+.tru-dark .ch-board {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 4px 20px;
+}
+.tru-dark .ch-board-k {
+  font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-40); font-weight: 700; margin-right: 6px;
+}
+.tru-dark .ch-board-row {
+  display: flex; align-items: center; gap: 9px; cursor: pointer;
+  padding: 6px 14px 6px 7px; border: 0; border-radius: var(--r-pill);
+  font-family: inherit; background: rgba(226, 240, 230, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.08);
+  transition: background 0.4s var(--spring), transform 0.4s var(--spring);
+}
+.tru-dark .ch-board-row:hover { background: rgba(226, 240, 230, 0.07); transform: translateY(-1px); }
+.tru-dark .ch-board-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tru-dark .ch-rank {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-size: 9.5px; font-weight: 800;
+  background: var(--hover-fill); color: var(--text-50);
+}
+.tru-dark .ch-rank.r1 { background: linear-gradient(150deg, var(--accent-hi), #B07A18); color: #12180F; }
+.tru-dark .ch-board-name { font-size: 12.5px; font-weight: 700; color: var(--text-strong); white-space: nowrap; }
+.tru-dark .ch-board-sub { font-size: 11px; color: var(--text-40); white-space: nowrap; }
+.tru-dark .ch-board-n {
+  font-family: var(--hq-serif); font-size: 15px; color: var(--text);
+  letter-spacing: -0.02em; margin-left: 4px;
+}
