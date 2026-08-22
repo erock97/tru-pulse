@@ -1,5 +1,9 @@
 // Public marketing paths that render outside the logged-in product.
-// /apply is the intake form; Work and the legal pages stay off this branch.
+//
+// The legal three (/privacy, /terms, /refund-policy) are NOT optional. They are
+// linked from the footer, a payment processor expects them to resolve, and
+// truhq.co has been serving them from a branch that never merged. Dropping them
+// from this list is how they vanish from the internet.
 //
 // "/" is listed so PublicSite can render the marketing home, but
 // matchPublicRoute never claims it. The product lives at "/" plus a hash
@@ -10,11 +14,14 @@
 // A "#/" hash is an app route and also yields. A bare "#anchor" is an
 // in-page link on a marketing page and is fine.
 //
-// Anything else — /engagement, /privacy, a guessed URL — is 'not-found'.
+// Anything else - /engagement, a guessed URL - is 'not-found'.
 // Returning null used to drop those into App, which signed-out renders
 // as the marketing home. Dead paths must not look like a broken deep link.
 
-export const PUBLIC_ROUTES = ['/', '/services', '/about', '/apply'] as const;
+export const PUBLIC_ROUTES = [
+  '/', '/services', '/work', '/about', '/apply',
+  '/privacy', '/terms', '/refund-policy',
+] as const;
 export const NOT_FOUND = 'not-found' as const;
 
 export type PublicRoute = (typeof PUBLIC_ROUTES)[number];
