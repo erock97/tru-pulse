@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
 
 /* ============================================================================
@@ -55,9 +55,63 @@ const WHO = [
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
+/* The rendered wordmark, if one has been produced. Dropping the file into
+   web/public is the whole install: the hero probes for it and lights the layer
+   up only if it loads, so a missing render is not a broken hero, it is the
+   typeset mark exactly as it is today.
+
+   The render is used for the BIG state only. It hands over to the live type
+   partway through the travel, because the thing the mark has to land on is the
+   header's own wordmark, which is text. A raster arriving on a typeset target
+   would not coincide, and coinciding is the entire trick. The surface
+   simplifying as the object becomes interface is the right reading anyway: it
+   starts as a rendered thing and resolves into the product. */
+const MARK_RENDER = '/tru-mark.webp';
+
+/* ---- the strike -----------------------------------------------------------
+   Four bolts come in off the edges and converge on the mark. Then the last one
+   does not fade: as you scroll it STRAIGHTENS, and what it straightens into is
+   the hairline under the site header. The lightning becomes a rule on the
+   page.
+
+   That is the answer to the thing that keeps being wrong with openings. An
+   animation that finishes and gets out of the way is a separate object no
+   matter how well it is matched. An animation whose last frame is a piece of
+   the interface was never separate: you watched the page get built out of it.
+
+   Every bolt is authored with the SAME number of points as the flat rule, so
+   one can be interpolated into the other by lerping the pairs. Different point
+   counts is why path morphs usually have to be faked with a crossfade. */
+const STRIKES: readonly (readonly [number, number][])[] = [
+  [[262, -30], [300, 52], [244, 96], [318, 150], [268, 190], [352, 224], [430, 258]],
+  [[496, -30], [458, 62], [532, 104], [470, 156], [540, 196], [478, 228], [500, 258]],
+  [[742, -30], [700, 58], [762, 100], [686, 152], [742, 194], [660, 226], [572, 258]],
+  [[930, -30], [852, 66], [906, 112], [806, 162], [852, 202], [740, 232], [618, 258]],
+];
+
+/* Where the surviving bolt ends up: the header's own hairline, flat across. */
+const RULE: readonly (readonly [number, number])[] =
+  [[-20, 74], [150, 74], [320, 74], [490, 74], [660, 74], [840, 74], [1020, 74]];
+
+const path = (pts: readonly (readonly [number, number])[]) =>
+  pts.map((pt, i) => `${i ? 'L' : 'M'}${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ');
+
+/* Ease the morph so the bolt holds its shape for a beat and then snaps flat,
+   rather than sagging uniformly the whole way. */
+const settle = (t: number) => 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
+
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
   const markRef = useRef<HTMLParagraphElement | null>(null);
+  const boltRef = useRef<SVGPathElement | null>(null);
+  const glowRef = useRef<SVGPathElement | null>(null);
+  const [hasRender, setHasRender] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setHasRender(img.naturalWidth > 0);
+    img.src = MARK_RENDER;
+  }, []);
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
      and how much bigger its opening state is.
@@ -125,6 +179,20 @@ export default function Home() {
       const p = Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel));
       arrive.style.setProperty('--p', p.toFixed(4));
       if (mark) mark.style.setProperty('--p', p.toFixed(4));
+
+      /* The surviving bolt flattens into the header's rule. Lerped point by
+         point and written straight onto the path, because `d` is only
+         interpolable when both shapes share a command structure and doing it
+         here means it cannot silently stop working in a browser that does not
+         support animating it. */
+      const t = settle((p - 0.08) / 0.72);
+      const shape = STRIKES[1].map((pt, i) => [
+        pt[0] + (RULE[i][0] - pt[0]) * t,
+        pt[1] + (RULE[i][1] - pt[1]) * t,
+      ] as [number, number]);
+      const d = path(shape);
+      boltRef.current?.setAttribute('d', d);
+      glowRef.current?.setAttribute('d', d);
       // Hand the header its own mark back only once the travelling one has
       // landed on it. Both visible at once, even for two frames, and the
       // illusion is over.
@@ -157,6 +225,29 @@ export default function Home() {
               has underneath, which is the same room. */}
           <div className="arrive-light" aria-hidden />
 
+          {/* The strike. Four bolts in, one stays and becomes the rule under
+              the header. `preserveAspectRatio: none` on purpose: this is a
+              field of light stretched to the viewport, not a shape with a
+              correct aspect ratio, and the last bolt has to reach both edges
+              of the screen when it flattens. */}
+          <svg
+            className="arrive-bolts"
+            viewBox="0 0 1000 600"
+            preserveAspectRatio="none"
+            aria-hidden
+            focusable="false"
+          >
+            {STRIKES.map((pts, i) => (
+              i === 1 ? null : (
+                <path key={i} className={`bolt b${i}`} d={path(pts)} pathLength={1} />
+              )
+            ))}
+            {/* The one that survives, drawn twice: a wide soft pass for the
+                bloom and a hairline for the bolt itself. */}
+            <path ref={glowRef} className="bolt-glow" d={path(STRIKES[1])} pathLength={1} />
+            <path ref={boltRef} className="bolt keeper" d={path(STRIKES[1])} pathLength={1} />
+          </svg>
+
           <div className="arrive-copy">
             <h1>
               Somebody has to run the sales floor.{' '}
@@ -180,8 +271,9 @@ export default function Home() {
           outlive it: it is still moving when the stage has released, and it
           finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
-      <p className="arrive-mark" ref={markRef} aria-hidden>
+      <p className={`arrive-mark${hasRender ? ' has-render' : ''}`} ref={markRef} aria-hidden>
         <span>T<i className="r">RU</i></span>
+        {hasRender && <img className="arrive-render" src={MARK_RENDER} alt="" decoding="async" />}
       </p>
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">
