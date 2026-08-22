@@ -1,0 +1,195 @@
+/* ============================================================================
+   THE MARKETING SITE JOINS THE PRODUCT
+   ----------------------------------------------------------------------------
+   truhq.co and app.truhq.co were two different companies. The site was warm
+   brown and gold; the product is deep green, bone and amber. Not a near-miss
+   you notice on close inspection, two separate colour worlds, and the seam is
+   the exact moment a prospect becomes a customer.
+
+   The whole site's palette turned out to be eighteen custom properties on
+   `.truland`. Everything else - the 165KB of Landing.css, the header, the
+   footer, Services, About, Apply, the legal pages - reads through them. So the
+   fix is not a redesign of five stylesheets, it is one block of overrides, and
+   every page moves at once.
+
+   Each value below is not "a green that looks about right". It is the EXACT
+   counterpart token from `truHqDark.css`, the palette that shipped in the app,
+   so the two properties cannot drift apart again:
+
+     --bg       ->  --base        the room's floor
+     --bg-2     ->  --panel       a raised surface on it
+     --ink      ->  --text        bone
+     --muted    ->  --text-60     supporting copy
+     --faint    ->  --text-40     "no data" grey, and the quietest type
+     --gold     ->  --accent      the one thing that needs action
+     --gold-soft->  --accent-hi   its lit edge
+     --ember    ->  --ember       bad
+     --good     ->  --sea         good
+     --risk     ->  --terracotta  a warning that is not yet a failure
+     --hair(-2) ->  --border(-soft)
+
+   Loaded AFTER Landing.css in PublicSite, so these win on source order without
+   a single `!important` and without editing a minified stylesheet nobody can
+   read.
+   ========================================================================== */
+
+.truland {
+  /* ---- the forest ground ---- */
+  --bg: #050B08;
+  --bg-2: #0C1610;
+
+  /* ---- bone, and the two greys under it ---- */
+  --ink: #EDF2EC;
+  --muted: #A9B5AC;
+  --faint: #6E7A72;
+
+  /* ---- the one accent, and the states ---- */
+  --gold: #F2B23C;
+  --gold-soft: #FFDC93;
+  --ember: #FF6A45;
+  --good: #8FB0A2;
+  --risk: #FF8B62;
+
+  /* ---- hairlines carry the enclosures, not drop shadows ---- */
+  --hair: rgba(214, 232, 218, 0.14);
+  --hair-2: rgba(214, 232, 218, 0.075);
+
+  /* Fraunces is the app's masthead face. Playfair stays in the stack because it
+     is what the site has been setting for a year and it is the closest fallback
+     if Fraunces has not loaded yet. */
+  --serif: "Fraunces", "Playfair Display", Georgia, serif;
+
+  /* The sans was already Hanken Grotesk on both sides. It is the one thing that
+     never needed fixing. */
+
+  color-scheme: dark;
+  background: var(--bg);
+}
+
+/* The page behind the shell. Without this the browser paints its own white
+   under the fold on an over-scroll, which on a dark site reads as a flash. */
+html:has(.truland),
+body:has(.truland) { background: var(--bg, #050B08); }
+
+/* ---- the room, brought across --------------------------------------------
+   The product sits in a lit room: a warm source at the head, green light coming
+   back up off the floor, and the data in the calm band between. The marketing
+   site had the same idea in a different colour - a fixed `.bg` layer holding a
+   video and a scrim - so the room goes THERE rather than into a new element.
+
+   Two things were making the site brown no matter what the tokens said, and
+   neither is visible from the token block:
+
+     `.truland .bg` is `background:#000`, an opaque fixed layer covering the
+     whole viewport, so anything painted behind it is simply never seen. That
+     is why a `::before` on `.truland` did nothing at all.
+
+     `.scrim` on top of it is `rgba(12,10,8,...)` at 60-80%, which is warm
+     brown at three-quarters strength across the entire page.
+
+   So both are replaced in place. Same elements, same z-order, same one paint. */
+.truland .bg {
+  background:
+    radial-gradient(88% 46% at 50% 2%, rgba(242, 178, 60, 0.15) 0%, rgba(180, 126, 40, 0.05) 44%, transparent 74%),
+    radial-gradient(78% 42% at 50% 102%, rgba(96, 168, 124, 0.12) 0%, transparent 76%),
+    linear-gradient(178deg, #16351F 0%, #10261A 26%, #0C1D14 54%, #091610 78%, #071009 100%);
+}
+
+/* The wisp was shot warm and tuned against brown. Held back so it reads as the
+   room's own light source rather than as a brown film over a green page - the
+   app does the same thing with its render, for the same reason. */
+.truland .bg video { opacity: 0.18; }
+
+/* The scrim keeps its job (hold the light back off the type) and changes its
+   colour: cut hardest where the copy is, let the right-hand side breathe. */
+.truland .bg .scrim {
+  background:
+    radial-gradient(92% 110% at 24% 45%, rgba(3, 9, 6, 0.46) 0%, rgba(3, 9, 6, 0.22) 58%, transparent 88%),
+    linear-gradient(180deg, rgba(2, 6, 4, 0.22) 0%, transparent 30%, rgba(2, 6, 4, 0.24) 66%, rgba(3, 8, 5, 0.48) 100%);
+}
+
+/* Grain was calibrated on brown; on the green it reads as haze. Back a stop. */
+.truland .grain { opacity: 0.04; }
+
+/* ---- the legal three, in the footer --------------------------------------
+   They are links, not fine print: a payment processor expects them to resolve
+   and a visitor looking for them is usually mid-decision. */
+.truland .sitefoot-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  font-size: 0.86rem;
+}
+.truland .sitefoot-legal a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.2s var(--e), border-color 0.2s var(--e);
+}
+.truland .sitefoot-legal a:hover {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+.truland .sitefoot-legal a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ---- the surfaces ---------------------------------------------------------
+   The token block above moves everything that reads a variable. It could not
+   move the twenty places where Landing.css writes the old brown as a LITERAL
+   rgba, because you cannot put a custom property inside `rgba()` in the syntax
+   that stylesheet is written in. Those twenty are why the site stayed brown
+   with a green palette underneath it: `.panel` alone lays a
+   `rgba(12,10,8,0.9)` sheet over the full width of every section, so the room
+   was being painted and then covered.
+
+   Four colours, seven selectors, and they are all surfaces. Each one is
+   replaced with its counterpart from the product rather than with a green
+   guess. The cards in particular become the app's actual plate: warm light
+   caught on the top edge, a hairline holding the shape, and a translucent fill
+   so the room shows through it - which is the whole reason the deck has depth
+   and the marketing site did not. */
+
+/* A full-width band. Denser than a card because body copy sits on it, and
+   still translucent, so the ground and its light carry through. */
+.truland .panel {
+  background: linear-gradient(180deg, rgba(9, 22, 15, 0.58) 0%, rgba(6, 15, 10, 0.74) 100%);
+}
+
+/* The plate, lifted straight from `.rs-plate` in the app. */
+.truland .card,
+.truland .p,
+.truland .tier,
+.truland .quote {
+  background:
+    linear-gradient(168deg, rgba(226, 240, 230, 0.062) 0%, rgba(226, 240, 230, 0.014) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(16, 29, 21, 0.74) 0%, rgba(9, 17, 12, 0.82) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px var(--hair-2),
+    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+  border-color: transparent;
+}
+
+/* Hovering a plate lifts it and catches the accent on its edge - the same
+   gesture the product's tiles make. */
+.truland .card:hover,
+.truland .p:hover,
+.truland .tier:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.22),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px rgba(242, 178, 60, 0.32),
+    0 30px 52px -30px rgba(2, 7, 4, 0.95);
+}
+
+/* The bar, once it has something behind it. Matches the island in the app:
+   solid enough to read against a moving ground, with a lit top edge. */
+.truland .nav.scrolled {
+  background: linear-gradient(180deg, rgba(12, 24, 17, 0.94) 0%, rgba(7, 14, 10, 0.96) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.10), 0 1px 0 var(--hair-2);
+}

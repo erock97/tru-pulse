@@ -14,6 +14,9 @@ import RefundPolicy from './pages/RefundPolicy';
 import NotFound from './pages/NotFound';
 import '../pages/Landing.css';
 import './site.css';
+// Last, so its token overrides win on source order. See the note at the top of
+// the file: this is the whole marketing palette moving onto the app's.
+import './forest.css';
 
 export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
   '/': {
