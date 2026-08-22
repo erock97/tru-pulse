@@ -34,17 +34,20 @@ interface DeckFocus {
   pinned: string | null;
   /** Pointed if anything is pointed, otherwise whatever is pinned. */
   active: string | null;
+  /** Everything but the people who need you has been sent away. */
+  quiet: boolean;
   point: (key: string | null) => void;
   pin: (key: string | null) => void;
   togglePin: (key: string) => void;
+  setQuiet: (on: boolean) => void;
 }
 
 const Ctx = createContext<DeckFocus | null>(null);
 
 /** Safe outside a provider: every consumer degrades to "nothing is focused". */
 const IDLE: DeckFocus = {
-  pointed: null, pinned: null, active: null,
-  point: () => {}, pin: () => {}, togglePin: () => {},
+  pointed: null, pinned: null, active: null, quiet: false,
+  point: () => {}, pin: () => {}, togglePin: () => {}, setQuiet: () => {},
 };
 
 export function useDeckFocus(): DeckFocus {
@@ -54,15 +57,18 @@ export function useDeckFocus(): DeckFocus {
 export function DeckFocusProvider({ children }: { children: ReactNode }) {
   const [pointed, setPointed] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
+  const [quiet, setQuiet] = useState(false);
 
   const value = useMemo<DeckFocus>(() => ({
     pointed,
     pinned,
+    quiet,
     active: pointed ?? pinned,
     point: setPointed,
     pin: setPinned,
     togglePin: (key: string) => setPinned((cur) => (cur === key ? null : key)),
-  }), [pointed, pinned]);
+    setQuiet,
+  }), [pointed, pinned, quiet]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -92,18 +98,20 @@ export function focusBinding(key: string, focus: DeckFocus) {
    It stands down whenever something else has a claim on the keyboard: a text
    field, a modal, or a page where a sheet is open over the roster. */
 export function useDeckKeys({
-  keys, onOpen, onEscape, enabled = true,
+  keys, onOpen, onEscape, enabled = true, canQuiet = false,
 }: {
   keys: readonly string[];
   onOpen?: (key: string) => void;
   onEscape?: () => void;
   enabled?: boolean;
+  /** `f` only means anything when there IS something to be left alone with. */
+  canQuiet?: boolean;
 }) {
   const focus = useDeckFocus();
   // Read through a ref so the listener is bound once rather than on every
   // sort — rebinding on each render is how key handlers start missing presses.
-  const state = useRef({ keys, onOpen, onEscape, focus });
-  state.current = { keys, onOpen, onEscape, focus };
+  const state = useRef({ keys, onOpen, onEscape, focus, canQuiet });
+  state.current = { keys, onOpen, onEscape, focus, canQuiet };
 
   useEffect(() => {
     if (!enabled) return;
@@ -113,11 +121,20 @@ export function useDeckKeys({
         el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
       );
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
-      const { keys: list, onOpen: open, onEscape: esc, focus: f } = state.current;
+      const { keys: list, onOpen: open, onEscape: esc, focus: f, canQuiet: quietable } = state.current;
 
       if (e.key === 'Escape') {
+        // Unwinds in the order it was put on: the room comes back first, then
+        // the held person, then whatever the page wants to close.
+        if (f.quiet) { f.setQuiet(false); e.preventDefault(); return; }
         if (f.pinned) { f.pin(null); e.preventDefault(); return; }
         if (esc) { esc(); e.preventDefault(); }
+        return;
+      }
+      // Send the rest of the page away and sit with the people who need you.
+      if ((e.key === 'f' || e.key === 'F') && quietable) {
+        e.preventDefault();
+        f.setQuiet(!f.quiet);
         return;
       }
       if (list.length === 0) return;

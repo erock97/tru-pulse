@@ -4174,17 +4174,30 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
      `--lift` stacks the people who landed on the same number, so a pile-up
      reads as a pile-up rather than as one dot drawn three times. */
-  transform: translate3d(
-    calc(var(--at, 0) * 1cqw - 50%),
-    calc(-50% - var(--lift, 0) * 10px),
-    0
-  );
+  /* `translate` and `scale` as separate longhands rather than one `transform`,
+     because the dot needs two independent motions: WHERE it sits, which travels
+     when the window changes, and its ARRIVAL, which is a pop. Packed into a
+     single `transform` the entry animation would overwrite the position and
+     drop every agent onto the same spot for half a second. */
+  transform: none;
+  translate:
+    calc(var(--at, 0) * 1cqw - 50%)
+    calc(-50% - var(--lift, 0) * 10px);
   transition:
-    transform 0.62s var(--spring),
+    translate 0.62s var(--spring),
     width 0.34s var(--spring),
     height 0.34s var(--spring),
     box-shadow 0.34s var(--ease),
     opacity 0.28s var(--ease);
+  /* The team populates the scale left to right once the tile has landed, so
+     you watch the spread assemble rather than finding it already there. Runs on
+     creation only: a window change reuses the same nodes and simply travels. */
+  animation: smArrive 520ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--n, 0) * 42ms + 430ms);
+}
+@keyframes smArrive {
+  from { scale: 0.1; opacity: 0; }
+  to   { scale: 1; opacity: 1; }
 }
 
 /* While one dot is being read the others step back rather than disappearing —
@@ -4242,6 +4255,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .sm-dot,
   .tru-dark .sm-flag,
   .tru-dark .rs-strip i { transition: none; }
+  .tru-dark .sm-dot { animation: none; scale: 1; }
 }
 
 /* ---- the strips ---------------------------------------------------------
@@ -4394,3 +4408,282 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    captions are one sentence, and turning it into a flex row would put a gap
    between "your line at" and the tick it belongs to. The legend and the held
    chip flow inside it as inline-flex pills instead. */
+
+/* ════════════════════════════════════════════════════════════════════
+   THE ROOM IS ALIVE
+   --------------------------------------------------------------------
+   The system's thesis was always that a page is a ROOM that is lit. The
+   lighting just never knew anything: a render drifting on a fixed loop,
+   indifferent to the cursor, to the scroll, and to whether the floor was on
+   fire.
+
+   Everything below is that one idea followed through — light that answers.
+   Not one colour is introduced; every value here is an existing token, or the
+   same warm white the plates already catch on their top edge.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. The light lags the page -----------------------------------------
+   The room is `fixed`, so scrolling used to slide the data past a picture
+   that never moved — which is a wallpaper, not a space. Now the light layer
+   trails the scroll while the ground behind it does not, and the separation
+   between them is what makes the deck feel like somewhere you are moving
+   THROUGH.
+
+   The carrier is a wrapper of exactly the room's own box, so every percentage
+   inside (the core sits at 63%/30%) resolves precisely as it did before. The
+   render's own drift keyframes stay on the children, untouched — two
+   transforms on one element would fight, and the drift is load-bearing. */
+.tru-dark .tru-room-move {
+  position: absolute; inset: 0;
+  transform: translate3d(0, calc(var(--sy, 0) * 0.045px), 0);
+  will-change: transform;
+}
+/* The children are inset -14%, and the lag tops out at 108px. Widening the
+   crop a little guarantees no edge can swing in at the extreme of both. */
+.tru-dark .tru-room i { inset: -18%; }
+
+/* ---- 2. The room takes the temperature of the floor ----------------------
+   You should notice the room is warmer before you notice why, and then read
+   the number that says so. Three layers rather than one animated background,
+   because gradients do not interpolate and a snap would be the one thing that
+   gave this away as a switch rather than as light.
+
+   Held far below a status colour on purpose. If this ever reads as "the amber
+   state" it has failed — the amber belongs to the one row that needs action,
+   and this is the air in the room. */
+.tru-dark .tru-mood { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.tru-dark .tru-mood i {
+  position: absolute; inset: 0; display: block; opacity: 0;
+  transition: opacity 1.6s var(--ease);
+}
+.tru-dark .tru-mood .m-calm {
+  background: radial-gradient(112% 56% at 50% 106%, rgba(143, 176, 162, 0.10), transparent 64%);
+}
+.tru-dark .tru-mood .m-watch {
+  background:
+    radial-gradient(112% 56% at 50% 106%, rgba(242, 178, 60, 0.075), transparent 64%),
+    radial-gradient(64% 34% at 50% -4%, rgba(242, 178, 60, 0.045), transparent 72%);
+}
+.tru-dark .tru-mood .m-hot {
+  background:
+    radial-gradient(118% 60% at 50% 108%, rgba(255, 106, 69, 0.10), transparent 62%),
+    radial-gradient(70% 38% at 50% -6%, rgba(255, 106, 69, 0.055), transparent 70%);
+}
+.tru-dark .tru-mood[data-mood="calm"] .m-calm,
+.tru-dark .tru-mood[data-mood="watch"] .m-watch,
+.tru-dark .tru-mood[data-mood="hot"] .m-hot { opacity: 1; }
+
+/* ---- 3. The plate catches the light where your hand is -------------------
+   The room has one warm source. This is that source landing on a surface you
+   happen to be touching — not a highlight bolted onto a card, which is why it
+   is the room's own warm white and not the accent.
+
+   `isolation: isolate` is what lets the wash sit at z-index -1: above the
+   plate's own glass, under everything printed on it. Without a stacking
+   context here a negative index escapes to the page and disappears behind the
+   plate entirely. */
+.tru-dark .rs-plate { isolation: isolate; }
+.tru-dark .rs-plate::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit; pointer-events: none;
+  background: radial-gradient(
+    260px circle at var(--px, 50%) var(--py, -40%),
+    rgba(255, 226, 170, 0.085), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.42s var(--ease);
+}
+.tru-dark .rs-plate.is-lit::after { opacity: 1; }
+
+/* ---- 4. Light travels across a plate as it lands -------------------------
+   The cards already settled into place on a shared curve. Now a band of light
+   crosses each one as it arrives, the way a source sweeps over glass when the
+   glass moves. It rides the SAME delays as the settle, so it is part of the
+   one choreography rather than a second thing happening at once.
+
+   Once, on arrival. A sweep that loops is a loading skeleton, and this page is
+   not loading. */
+.tru-dark .dk-page .dk-tile::before,
+.tru-dark .dk-page .dk-table::before {
+  content: ''; position: absolute; top: -20%; bottom: -20%; left: 0;
+  width: 34%; pointer-events: none; z-index: 0;
+  /* The RESTING state is off the right-hand edge — the same place the sweep
+     ends. `backwards` fill holds the FIRST frame during the delay and then
+     hands the element back to its own resting state, so without this line the
+     band reverts to `transform: none` and parks itself permanently across the
+     left third of every tile. It looked deliberate, which is the dangerous
+     kind of wrong. */
+  transform: translate3d(430%, 0, 0) skewX(-13deg);
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 236, 198, 0.05) 38%,
+    rgba(255, 236, 198, 0.11) 52%,
+    rgba(255, 236, 198, 0.03) 66%,
+    transparent 100%);
+  animation: plateSweep 1250ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes plateSweep {
+  from { transform: translate3d(-170%, 0, 0) skewX(-13deg); }
+  to   { transform: translate3d(430%, 0, 0) skewX(-13deg); }
+}
+/* One beat behind each plate's own landing, so the light arrives with it
+   rather than ahead of it. Mirrors the cardSettle running order exactly. */
+.tru-dark .dk-page .dk-bento > *:nth-child(1)::before { animation-delay: 270ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(2)::before { animation-delay: 325ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(3)::before { animation-delay: 370ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(4)::before { animation-delay: 410ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(5)::before { animation-delay: 445ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(n+6)::before { animation-delay: 475ms; }
+.tru-dark .dk-page .dk-table::before { animation-delay: 560ms; }
+
+/* ---- 5. The thread of light ----------------------------------------------
+   From the dot on the scale down to that person's row. The highlight already
+   said these two were the same person; this says it out loud, and turns an
+   inference into something you watch happen.
+
+   It fades toward the row on purpose. A line of even weight between two points
+   is an org chart; light leaving a source is what this actually is. */
+.tru-dark .fw {
+  position: fixed; inset: 0; z-index: 20;
+  width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+  opacity: 0; transition: opacity 0.24s var(--ease);
+}
+.tru-dark .fw.is-on { opacity: 1; }
+.tru-dark .fw path { fill: none; stroke-linecap: round; }
+/* pathLength="1" normalises every curve, so one dash pair draws any shape. */
+.tru-dark .fw-line {
+  stroke-width: 1.25;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: fwDraw 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.tru-dark .fw-glow {
+  stroke-width: 7; opacity: 0.16;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: fwDraw 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes fwDraw { to { stroke-dashoffset: 0; } }
+
+/* ---- 6. The strip answers in a wave -------------------------------------
+   Thirty bars re-scaling in perfect unison reads as a redraw. The same thirty
+   arriving a frame and a half apart reads as the change travelling through the
+   team, which is what a window change actually is.
+
+   The delay is on `transform` ONLY. Putting it on opacity too would make the
+   cross-highlight feel like it was thinking about it. */
+.tru-dark .rs-strip i {
+  transition:
+    transform 0.62s var(--spring) calc(var(--i, 0) * 16ms),
+    opacity 0.3s var(--ease),
+    filter 0.3s var(--ease);
+}
+
+/* ---- 7. Numbers roll ------------------------------------------------------
+   Each digit is a column of ten. The digits that did not change do not move,
+   so 398 → 390 turns one wheel and leaves two standing — and you read the size
+   of a change from how much of the tile moves.
+
+   Every character is the same inline-block, separators included, so `1 : 15`
+   keeps one baseline instead of the digits floating against the colon. */
+.tru-dark .od { display: inline-flex; align-items: baseline; }
+.tru-dark .od-c {
+  display: inline-block; height: 1em; line-height: 1;
+  overflow: hidden; vertical-align: baseline;
+}
+.tru-dark .od-d b {
+  display: block; font-weight: inherit;
+  transition: transform 0.66s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tru-dark .od-d i {
+  display: block; height: 1em; line-height: 1;
+  font-style: inherit; font-variant-numeric: tabular-nums;
+}
+
+/* ---- 8. Quiet ------------------------------------------------------------
+   `f`, and the rest of the page walks out of the room. What is left is the
+   masthead and the people who need you — which on a Monday morning is the
+   entire reason a leader opened this.
+
+   A dim rather than a hide: the deck stays where it was, so letting go puts
+   you back exactly where you were looking. Nothing moves position; the rows
+   that remain lift a fraction, which is enough to read as "these came
+   forward" without the page reflowing. */
+.tru-dark .dk-page .dk-bento,
+.tru-dark .dk-page .dk-table,
+.tru-dark .dk-page .dk-wiring,
+.tru-dark .dk-page .rp-journey,
+.tru-dark .dk-page .dk-sub,
+.tru-dark .dk-page .dk-sec p {
+  transition: opacity 0.62s var(--ease), filter 0.62s var(--ease);
+}
+.tru-dark .dk-page .dk-key { transition: color 0.62s var(--ease); }
+.tru-dark .dk-page .dk-key > s,
+.tru-dark .dk-page .dk-key > .dk-keys,
+.tru-dark .dk-page .dk-key > .dk-pinned { transition: opacity 0.62s var(--ease); }
+.tru-dark .dk-page.is-quiet .dk-bento,
+.tru-dark .dk-page.is-quiet .dk-table,
+.tru-dark .dk-page.is-quiet .dk-wiring,
+.tru-dark .dk-page.is-quiet .rp-journey,
+.tru-dark .dk-page.is-quiet .dk-sub,
+.tru-dark .dk-page.is-quiet .dk-sec p {
+  opacity: 0.12; filter: saturate(0.35);
+  pointer-events: none;
+}
+/* The section key holds the way OUT of quiet, so it cannot be dimmed as a
+   block — opacity on a parent is not something a child can undo, and the first
+   version faded the escape hatch to twelve percent and switched its pointer
+   events off. The key's own text and tick marks go instead, and the chip keeps
+   its own colour. */
+.tru-dark .dk-page.is-quiet .dk-key { color: transparent; }
+.tru-dark .dk-page.is-quiet .dk-key > s,
+.tru-dark .dk-page.is-quiet .dk-key > .dk-keys,
+.tru-dark .dk-page.is-quiet .dk-key > .dk-pinned { opacity: 0; pointer-events: none; }
+.tru-dark .dk-page .dk-focus > * {
+  transition:
+    transform 0.62s var(--spring),
+    background 0.4s var(--spring),
+    box-shadow 0.62s var(--ease);
+}
+.tru-dark .dk-page.is-quiet .dk-focus > * {
+  transform: scale(1.014);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.14), 0 26px 50px -34px rgba(2, 7, 4, 0.9);
+}
+/* Said once, where the eye already is, so nobody is stranded in a dimmed page
+   wondering what they pressed. */
+.tru-dark .dk-quiet-out {
+  display: inline-flex; align-items: center; gap: 8px;
+  vertical-align: middle; margin-right: 14px;
+  padding: 4px 5px 4px 12px; border-radius: var(--r-pill);
+  font: 600 11px/1 var(--hq-font); color: var(--sea-hi);
+  background: var(--sea-soft); box-shadow: inset 0 0 0 1px rgba(143, 176, 162, 0.24);
+}
+.tru-dark .dk-quiet-out button {
+  border: 0; cursor: pointer; font-family: inherit; font-size: 11px; line-height: 1;
+  color: var(--text-50); background: var(--hover-fill);
+  border-radius: var(--r-pill); padding: 4px 9px;
+  transition: color 0.2s var(--ease);
+}
+.tru-dark .dk-quiet-out button:hover { color: var(--text-strong); }
+/* The section head is the one thing that must stay legible in quiet, because
+   it is the sentence naming who is left. */
+.tru-dark .dk-page.is-quiet .dk-sec h2 { color: var(--text-strong); }
+
+/* ---- and none of it under reduced motion -------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-room-move { transform: none; }
+  .tru-dark .rs-plate::after { display: none; }
+  .tru-dark .dk-page .dk-tile::before,
+  .tru-dark .dk-page .dk-table::before { animation: none; display: none; }
+  .tru-dark .fw { display: none; }
+  .tru-dark .od-d b { transition: none; }
+  .tru-dark .dk-page .dk-focus > *,
+  .tru-dark .dk-page .dk-bento,
+  .tru-dark .dk-page .dk-table,
+  .tru-dark .dk-page .dk-wiring,
+  .tru-dark .dk-page .rp-journey,
+  .tru-dark .dk-page .dk-sub,
+  .tru-dark .dk-page .dk-sec p,
+  .tru-dark .dk-page .dk-key { transition: none; }
+  .tru-dark .dk-page.is-quiet .dk-focus > * { transform: none; }
+  .tru-dark .tru-mood i { transition: none; }
+}

@@ -103,7 +103,7 @@ export function ScaleMarks({
       >
         <b>{lineLabel}</b>
       </span>
-      {stacked.map(({ m, x, lift }) => {
+      {stacked.map(({ m, x, lift }, i) => {
         const on = focus.active === m.key;
         return (
           <span
@@ -119,6 +119,9 @@ export function ScaleMarks({
             style={{
               '--at': x,
               '--lift': lift,
+              // Its place in the running order, so the scale populates left to
+              // right after the tile has landed rather than all at once.
+              '--n': i,
               color: TONE[m.tone],
               background: TONE[m.tone],
             } as CSSProperties}

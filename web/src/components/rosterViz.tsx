@@ -186,6 +186,10 @@ export function Strip({
               // rather than as a missing agent.
               transform: `scaleY(${Math.max(0.07, v / max)})`,
               opacity: v === 0 ? 0.22 : 1,
+              // The bar's place in the strip, which the stylesheet turns into a
+              // transition delay — so a window change travels through the team
+              // left to right instead of the whole strip redrawing at once.
+              ['--i' as string]: i,
             }}
             title={labels && key !== null ? labels[i] : undefined}
             onMouseEnter={key !== null ? () => focus.point(key) : undefined}

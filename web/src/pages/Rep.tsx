@@ -10,8 +10,9 @@ import { HqShell } from '../components/hqShell';
 import { Icon, Avatar } from '../components/hqUi';
 import { ScaleMarks } from '../components/scaleMarks';
 import {
-  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys,
+  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
+import { Odometer } from '../components/odometer';
 import { trackMark } from '../lib/deckMarks';
 import { useReveal } from '../hqHooks';
 import '../truHqDark.css';
@@ -260,6 +261,16 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
         orgName={org.name}
         onSignOut={() => signOutClean()}
         hideTopbar
+        // Rep's fire is somebody who cannot begin. The room goes ember while a
+        // login is outstanding, amber while the programme is under way, and sea
+        // once the whole cohort is certified.
+        mood={
+          allAgents.some((a) => !a.invited) ? 'hot'
+            : allAgents.length > 0 && allAgents.every((a) => data.modules.length > 0
+              && data.modules.every((m) => data.progress.some((p) => p.agent_id === a.id && p.module_id === m.id && p.status === 'passed')))
+              ? 'calm'
+              : 'watch'
+        }
         nav={{
           onHome: () => onHome?.(),
           onOpenPulse: () => { window.location.hash = '/pulse'; },
@@ -319,7 +330,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                 a circle. */}
             <div className="rs-plate dk-tile dk-tile-lead">
               <span className="k">The track</span>
-              <span className="v"><Num n={teamCert} suffix="%" /></span>
+              <span className="v"><Odometer value={teamCert} suffix="%" /></span>
               <ScaleMarks
                 lo={0} hi={modules.length} line={modules.length} lineLabel="certified"
                 marks={trackMarks}
@@ -340,7 +351,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             ] as const).map(([k, n, u]) => (
               <div className="rs-plate dk-tile" key={k}>
                 <span className="k">{k}</span>
-                <span className="v"><Num n={n} /></span>
+                <span className="v"><Odometer value={n} /></span>
                 <span className="u">{u}</span>
               </div>
             ))}

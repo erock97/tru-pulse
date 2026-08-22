@@ -22,8 +22,9 @@ import { fitFor } from '../lib/channelFit';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import { Strip } from '../components/rosterViz';
 import {
-  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys,
+  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
+import { Odometer } from '../components/odometer';
 import { useFlip } from '../lib/deckMotion';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark } from '../lib/deckMarks';
 import '../truHqDark.css';
@@ -236,6 +237,7 @@ function CoachDeck({
     keys: derived ? derived.ranked.map(({ a }) => a.id) : [],
     onOpen: (id) => setOpenId(id),
     enabled: !openId && !!derived,
+    canQuiet: !!derived && derived.needsYou.length > 0,
   });
 
   // Header actions only make sense on the roster dashboard, not the agent drill-in.
@@ -312,6 +314,14 @@ function CoachDeck({
         onSignOut={() => signOutClean()}
         nav={coachNav(onHome)}
         hideTopbar
+        // Coach's fire is a conversation owed, not a number missed. The room
+        // goes ember once somebody has stalled, amber while a re-assessment is
+        // due, and sea when the whole cohort is current.
+        mood={
+          derived && derived.needsYou.length > 0 ? 'hot'
+            : derived && derived.dueCount > 0 ? 'watch'
+              : 'calm'
+        }
         islandSlot={openAgent ? (
           <button className="dk-back" onClick={() => setOpenId(null)}>
             <span aria-hidden>←</span> Team
@@ -405,7 +415,7 @@ function CoachDeck({
                 ] as const).map(([k, n, u, tone, values, labels]) => (
                   <div className="rs-plate dk-tile" key={k}>
                     <span className="k">{k}</span>
-                    <span className="v"><Num n={n} /></span>
+                    <span className="v"><Odometer value={n} /></span>
                     {tone && values && labels && (
                       <Strip
                         values={values}
@@ -433,7 +443,12 @@ function CoachDeck({
                     : `${derived.needsYou.length} need you · ${derived.dueCount} due for a re-assessment`}
                 </p>
                 <span className="dk-key">
-                  {focus.pinned ? (
+                  {focus.quiet ? (
+                    <span className="dk-quiet-out">
+                      Just the {derived.needsYou.length} who need you
+                      <button onClick={() => focus.setQuiet(false)}>Bring it back</button>
+                    </span>
+                  ) : focus.pinned ? (
                     <span className="dk-pinned">
                       Holding {roster.find((a) => a.id === focus.pinned)?.name ?? 'one agent'}
                       <button onClick={() => focus.pin(null)}>Let go</button>
@@ -443,6 +458,7 @@ function CoachDeck({
                       <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
                       <kbd>↵</kbd> <b>open</b>
                       <kbd>P</kbd> <b>hold</b>
+                      {derived.needsYou.length > 0 && <><kbd>F</kbd> <b>just these</b></>}
                     </span>
                   )}
                   ranked by coaching health · top three marked

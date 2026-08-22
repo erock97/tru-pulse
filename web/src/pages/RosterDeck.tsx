@@ -35,8 +35,9 @@ import { Strip } from '../components/rosterViz';
 import { ScaleMarks } from '../components/scaleMarks';
 import { PersonPane } from '../components/personPane';
 import {
-  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys, useRounded,
+  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys, useRounded,
 } from '../components/deckFocus';
+import { Odometer } from '../components/odometer';
 import { useFlip } from '../lib/deckMotion';
 
 export default function RosterDeck(props: {
@@ -102,6 +103,9 @@ function Deck({
     onOpen: (name) => setOpen(sorted.find((r) => r.name === name) ?? null),
     onEscape: () => setOpen(null),
     enabled: !!rows,
+    // `f` sends the rest of the page away. Only offered when there is somebody
+    // to be left alone with — dimming a page down to nothing is not a feature.
+    canQuiet: priorities.length > 0,
   });
 
   // The headline rate travels between windows rather than being swapped, so 30
@@ -128,6 +132,9 @@ function Deck({
         nav={{ onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam: () => { window.location.hash = '/team'; } }}
         hideTopbar
         islandSlot={windowTabs}
+        // The room warms with the floor: ember once somebody is past your line,
+        // amber while there are conversations owed, sea when nobody needs you.
+        mood={!totals ? 'calm' : totals.pastLine > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
       >
         <div className="dk-main">
           {body}
@@ -218,7 +225,7 @@ function Deck({
       <section className="dk-bento">
         <div className="rs-plate dk-tile dk-tile-lead">
           <span className="k">Leads per contract</span>
-          <span className="v">{totals.perContract ? `1 : ${rateShown ?? Math.round(totals.perContract)}` : '—'}</span>
+          <span className="v"><Odometer value={totals.perContract} prefix="1 : " /></span>
           {/* One dot per agent, on the same scale as your line. The light comes
               from the room behind this card; the card only has to be true.
               Every dot knows whose it is now, so pointing at one — with the
@@ -240,7 +247,7 @@ function Deck({
         {tiles.map((t) => (
           <div className="rs-plate dk-tile" key={t.k}>
             <span className="k">{t.k}</span>
-            <span className="v"><Num n={t.n} suffix={t.suffix} /></span>
+            <span className="v"><Odometer value={t.n} suffix={t.suffix} /></span>
             <Strip values={t.values} tone={t.tone} keys={stripKeys} labels={strip.map(t.say)} />
             <span className="u">{t.u}</span>
           </div>
@@ -255,7 +262,12 @@ function Deck({
             : `${priorities.length} need you · ${totals.stale} past thirty days without a 1:1`}
         </p>
         <span className="dk-key">
-          {focus.pinned ? (
+          {focus.quiet ? (
+            <span className="dk-quiet-out">
+              Just the {priorities.length} who need you
+              <button onClick={() => focus.setQuiet(false)}>Bring it back</button>
+            </span>
+          ) : focus.pinned ? (
             <span className="dk-pinned">
               Holding {focus.pinned}
               <button onClick={() => focus.pin(null)}>Let go</button>
@@ -265,6 +277,7 @@ function Deck({
               <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
               <kbd>↵</kbd> <b>open</b>
               <kbd>P</kbd> <b>hold</b>
+              {priorities.length > 0 && <><kbd>F</kbd> <b>just these</b></>}
             </span>
           )}
           <s className="rs-key team" /> the team{totals.perContract ? ` at 1 : ${Math.round(totals.perContract)}` : ''}

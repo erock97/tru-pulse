@@ -3,13 +3,28 @@
   "project": {
     "name": "tru-pulse-web",
     "productType": "b2b-saas-dashboard",
-    "stack": ["react", "vite", "typescript", "hand-written-css"]
+    "stack": [
+      "react",
+      "vite",
+      "typescript",
+      "hand-written-css"
+    ]
   },
   "sources": {
-    "tokens": ["src/truHqDark.css"],
-    "components": ["src/components"],
-    "assets": ["public/field.svg", "public/trinity.webp"],
-    "instructions": ["AGENTS.md", "CLAUDE.md"]
+    "tokens": [
+      "src/truHqDark.css"
+    ],
+    "components": [
+      "src/components"
+    ],
+    "assets": [
+      "public/field.svg",
+      "public/trinity.webp"
+    ],
+    "instructions": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ]
   },
   "design": {
     "colorMode": "dark-only",
@@ -40,9 +55,20 @@
       "eyebrow": "10-11px sans, weight 700, uppercase, letter-spacing 0.11em",
       "body": "14px sans, line-height 1.5"
     },
-    "spacing": { "tileGap": "18px", "panelPadding": "24px 26px", "rowPadding": "11px 6px" },
-    "radius": { "card": "14px", "cardLg": "16px", "btn": "10px", "pill": "999px" },
-    "shadows": { "note": "hairline borders and translucency carry elevation; drop shadows are reserved for the ⌘K bar and modals" },
+    "spacing": {
+      "tileGap": "18px",
+      "panelPadding": "24px 26px",
+      "rowPadding": "11px 6px"
+    },
+    "radius": {
+      "card": "14px",
+      "cardLg": "16px",
+      "btn": "10px",
+      "pill": "999px"
+    },
+    "shadows": {
+      "note": "hairline borders and translucency carry elevation; drop shadows are reserved for the ⌘K bar and modals"
+    },
     "motion": {
       "ease": "cubic-bezier(0.22, 1, 0.36, 1)",
       "spring": "cubic-bezier(0.32, 0.72, 0, 1)",
@@ -70,7 +96,12 @@
       "DeckFocusProvider + focusBinding + useDeckKeys (src/components/deckFocus.tsx) — one person lit across the tiles, the marks and the table; arrow keys walk the roster, p holds a person",
       "ScaleMarks (src/components/scaleMarks.tsx) — the shared lead-tile instrument on all three pages",
       "Num (src/components/deckFocus.tsx) — a figure that travels to its new value when the window changes",
-      "useFlip (src/lib/deckMotion.ts) — rows move to their new place on a sort"
+      "useFlip (src/lib/deckMotion.ts) — rows move to their new place on a sort",
+      "useRoomLight (src/lib/deckLight.ts) — the plate catches light where the cursor is; the room lags the scroll",
+      "FocusWire (src/components/focusWire.tsx) — a thread of light from a dot to its row",
+      "Odometer (src/components/odometer.tsx) — digit wheels; only the digits that changed move",
+      "HqShell mood='calm'|'watch'|'hot' — the floor's temperature cast into the room",
+      "focus.quiet / .dk-page.is-quiet — `f` sends the page away and leaves the people who need you"
     ]
   },
   "constraints": {
@@ -132,10 +163,36 @@
       "date": "2026-08-22",
       "choice": "Sticky column headers on a deck table, but NOT a sticky totals row.",
       "why": "Pinned to the foot of the viewport the totals permanently covered whichever agent was at the bottom of the screen. Column names earn a strip of the screen; a second copy of the team average does not."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "Light is the one language every motion speaks: it follows the cursor across a plate, lags the page as you scroll, sweeps a card as it lands, threads from a dot to its row, and warms with the state of the floor.",
+      "why": "The system already said a page is a room that is lit. The lighting just never knew anything — it was a render on a fixed loop, indifferent to the cursor, the scroll and the data. Making every new motion the SAME idea is what keeps eight additions from reading as eight tricks."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "Numbers roll on digit wheels rather than counting up through intermediate values.",
+      "why": "A counting tween draws three hundred figures that are true of nothing on the way to one that is real, on a page whose rule is that every number traces to a loader. Wheels also carry meaning a count cannot: the digits that did not change do not move, so you read the size of a change from how much of the tile moves."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "Animation resting states are declared explicitly, never left to `transform: none`.",
+      "why": "The plate sweep used `backwards` fill and no resting transform, so after it ran the band reverted to translate(0) and parked itself permanently across the left third of every tile. It looked deliberate, which is the dangerous kind of wrong."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "The control that UNDOES a page-wide dim can never be inside the dimmed region.",
+      "why": "Quiet mode faded the section key to twelve percent with pointer-events off, and the 'bring it back' chip lived in it. Opacity on a parent is not something a child can undo."
     }
   ],
   "evidence": [
-    { "fact": "tokens live in src/truHqDark.css", "source": "3700-line hand-written stylesheet" },
-    { "fact": "no tailwind/shadcn/radix/motion dependency", "source": "package.json" }
+    {
+      "fact": "tokens live in src/truHqDark.css",
+      "source": "3700-line hand-written stylesheet"
+    },
+    {
+      "fact": "no tailwind/shadcn/radix/motion dependency",
+      "source": "package.json"
+    }
   ]
 }
