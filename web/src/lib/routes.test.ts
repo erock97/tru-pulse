@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchPublicRoute, PUBLIC_ROUTES } from './routes';
+import { matchPublicRoute, PUBLIC_ROUTES, resolveView } from './routes';
 
 describe('matchPublicRoute', () => {
   it('matches /about, /services, and /apply and ignores a trailing slash or case', () => {
@@ -80,5 +80,51 @@ describe('matchPublicRoute', () => {
       expect(META[r], `no META for ${r}`).toBeTruthy();
       expect(META[r].title, `no title for ${r}`).toBeTruthy();
     }
+  });
+});
+
+/* The marketing site had no home page on this branch. `matchPublicRoute` never
+   claims "/", and App's signed-out face is the login door, so rebuilding
+   truhq.co from main would have replaced the front page of the business with a
+   sign-in box. These lock the host split so that cannot happen quietly. */
+describe('resolveView - which site is this', () => {
+  it('gives truhq.co its home page back', () => {
+    expect(resolveView('/', '', 'truhq.co')).toBe('/');
+    expect(resolveView('/', '', 'www.truhq.co')).toBe('/');
+    expect(resolveView('', '', 'truhq.co')).toBe('/');
+  });
+
+  it('leaves the app host exactly as it was', () => {
+    expect(resolveView('/', '', 'app.truhq.co')).toBeNull();
+    expect(resolveView('/', '#/pulse', 'app.truhq.co')).toBeNull();
+  });
+
+  it('lets an app hash route win on any host', () => {
+    // /#/pulse is the product wherever it is typed, marketing host included.
+    expect(resolveView('/', '#/pulse', 'truhq.co')).toBeNull();
+    expect(resolveView('/', '#/coach', 'www.truhq.co')).toBeNull();
+  });
+
+  it('serves the marketing sub-routes from either host', () => {
+    expect(resolveView('/services', '', 'app.truhq.co')).toBe('/services');
+    expect(resolveView('/privacy', '', 'truhq.co')).toBe('/privacy');
+    expect(resolveView('/terms', '', 'app.truhq.co')).toBe('/terms');
+  });
+
+  it('covers the Pages project and its preview aliases', () => {
+    expect(resolveView('/', '', 'tru-landing.pages.dev')).toBe('/');
+    expect(resolveView('/', '', 'feat-x.tru-landing.pages.dev')).toBeNull();
+    expect(resolveView('/', '', 'tru-landing-preview.pages.dev')).toBe('/');
+  });
+
+  it('honours ?site so the marketing home is reviewable anywhere', () => {
+    expect(resolveView('/', '', 'localhost:5300', '?site')).toBe('/');
+    expect(resolveView('/', '', 'localhost:5300', '?site=1')).toBe('/');
+    expect(resolveView('/', '', 'localhost:5300', '')).toBeNull();
+  });
+
+  it('still returns not-found for a dead path rather than the homepage', () => {
+    expect(resolveView('/nope', '', 'truhq.co')).toBe('not-found');
+    expect(resolveView('/nope', '', 'app.truhq.co')).toBe('not-found');
   });
 });

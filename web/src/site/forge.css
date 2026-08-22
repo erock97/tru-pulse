@@ -1,0 +1,355 @@
+/* ============================================================================
+   THE FORGE, AND THE PAGE THAT COMES OUT OF IT
+   ----------------------------------------------------------------------------
+   One idea: the letters burn in, the camera pushes through them, the heat cools
+   into the green the product lives in. Everything below is that transition and
+   the short page it hands you to.
+
+   Every movement is driven by ONE custom property, `--p`, which the page writes
+   as a number from 0 to 1 for how far you are through the hero. Nothing here
+   reads the scroll position itself, nothing animates a layout property, and the
+   whole hero is two transforms and two opacities on the compositor.
+   ========================================================================== */
+
+/* `--p` needs a type to be usable in calc() and to interpolate. Without the
+   @property registration it is an unparsed token and every calc below fails
+   silently, which reads as "the hero does not move" with no error anywhere. */
+@property --p {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ---- the hero ------------------------------------------------------------
+   Two viewports tall, holding a sticky stage one viewport tall. The extra
+   viewport IS the transition: it is the scroll distance the camera move gets
+   to happen over. `dvh`, never `vh`, or the whole thing jumps by the height of
+   the address bar the first time a phone scrolls. */
+.truland .forge {
+  --p: 0;
+  position: relative;
+  /* 150, not 200. At 200 the copy had faded out by the halfway mark and the
+     remaining half-viewport of scroll was an empty room: a dead zone between
+     the hero leaving and the page arriving. The travel is now only as long as
+     the transition actually takes. */
+  height: 150dvh;
+  /* The hero owns the top of the page outright, so the site's usual band
+     padding would only push the letters down out of frame. */
+  margin-top: calc(-1 * var(--navh, 76px));
+}
+.truland .forge-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+/* The reveal. Scales up as you scroll, so you travel INTO the letters rather
+   than watching them shrink away, and fades as the room takes over. */
+.truland .forge-vid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Push the mark right so it is not competing with the sentence for the same
+     pixels. The words get the left third, the letters get the rest. */
+  object-position: 74% center;
+  z-index: 0;
+  transform: scale(calc(1 + var(--p) * 0.34));
+  opacity: calc(1 - var(--p) * 0.96);
+  will-change: transform, opacity;
+}
+
+/* The type sits on the left, so the picture is knocked back off it. This is the
+   same move the product makes under every one of its canvases, and for the same
+   reason: molten letters are the brightest thing on any screen they are on, and
+   a headline laid straight over them is unreadable no matter how heavy it is
+   set. Sharp on the left where the words are, gone by two-thirds across so the
+   mark stays fully lit. */
+.truland .forge-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(3, 9, 6, 0.94) 0%,
+    rgba(3, 9, 6, 0.86) 22%,
+    rgba(3, 9, 6, 0.62) 46%,
+    rgba(3, 9, 6, 0.20) 64%,
+    transparent 82%);
+  /* It leaves with the video rather than sitting over the room afterwards. */
+  opacity: calc(1 - var(--p) * 0.9);
+}
+
+/* The heat leaving. An amber wash at the top of the travel that resolves into
+   the product's own ground, so the last frame of the hero and the first frame
+   of the page are the same colour. */
+.truland .forge-cool {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: calc(var(--p) * 1.15);
+  background:
+    radial-gradient(88% 50% at 50% 0%, rgba(242, 178, 60, 0.16) 0%, transparent 66%),
+    radial-gradient(80% 44% at 50% 104%, rgba(96, 168, 124, 0.14) 0%, transparent 76%),
+    linear-gradient(178deg, #16351F 0%, #10261A 30%, #0A1710 68%, #050B08 100%);
+}
+
+/* The words sit above both and leave before the room arrives, so they never
+   fight the light for the same pixels. */
+.truland .forge-copy {
+  position: relative;
+  z-index: 3;
+  width: min(var(--maxw), calc(100% - 3rem));
+  margin-inline: auto;
+  /* The sentence lives in the left half; the mark has the right. */
+  max-width: min(var(--maxw), 100%);
+  padding-right: clamp(0px, 36vw, 640px);
+  transform: translate3d(0, calc(var(--p) * -3.2rem), 0);
+  opacity: calc(1 - var(--p) * 1.55);
+  will-change: transform, opacity;
+}
+.truland .forge-copy h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 4.4vw, 3.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+/* Italic emphasis in the SAME family. A second typeface dropped into a
+   headline to make one clause feel important is the tell. */
+.truland .forge-copy h1 em {
+  font-style: italic;
+  color: var(--gold-soft);
+  /* Descender clearance: "you" drops below the baseline and a 1.06 line-height
+     on the block would shave the tail off the y. */
+  display: inline-block;
+  padding-bottom: 0.08em;
+}
+.truland .forge-copy .forge-sub {
+  margin: 1.5rem 0 0;
+  max-width: 40ch;
+  font-size: clamp(1rem, 1.5vw, 1.16rem);
+  line-height: 1.62;
+  color: var(--muted);
+}
+.truland .forge-copy .hcta { margin-top: 2.1rem; }
+
+/* ---- the numbers ---------------------------------------------------------
+   The strongest material this business has, and it was on a page the router
+   did not even serve. Set as figures rather than as sentences, because the
+   whole point is that they are countable. */
+.truland .fh-figs {
+  list-style: none;
+  margin: 3rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+.truland .fh-fig {
+  padding: 1.9rem 1.7rem 1.7rem;
+  border-radius: 16px;
+  background:
+    linear-gradient(168deg, rgba(226, 240, 230, 0.062) 0%, rgba(226, 240, 230, 0.014) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(16, 29, 21, 0.74) 0%, rgba(9, 17, 12, 0.82) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px var(--hair-2),
+    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+}
+.truland .fh-fig b {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 3.6vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.truland .fh-what {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gold-soft);
+}
+.truland .fh-scope {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.truland .fh-fig p {
+  margin: 1.1rem 0 0;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Sits directly under the claims it qualifies, never in the footer. */
+.truland .fh-proof .disclaimer {
+  margin-top: 1.8rem;
+  max-width: 78ch;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--faint);
+}
+
+/* ---- the two lists -------------------------------------------------------
+   A term and a line, on a hairline. Not cards: three cards of pure text with
+   no image in them is the shape every generated page reaches for, and it says
+   less than a list does. */
+.truland .fh-list { margin: 2.6rem 0 0; }
+.truland .fh-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 210px) 1fr;
+  gap: 1.6rem;
+  align-items: baseline;
+  padding: 1.3rem 0;
+  border-top: 1px solid var(--hair-2);
+}
+.truland .fh-row:last-child { border-bottom: 1px solid var(--hair-2); }
+.truland .fh-row dt {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.32rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.truland .fh-row dd {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 58ch;
+}
+
+.truland .fh-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.9rem;
+  font-weight: 650;
+  font-size: 0.98rem;
+  color: var(--gold-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 3px;
+  transition: border-color 0.2s var(--e);
+}
+.truland .fh-more:hover { border-bottom-color: var(--gold); }
+.truland .fh-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 3px; }
+
+/* ---- the product, actually shown -----------------------------------------
+   Real screenshots of the shipped deck rather than a description of it, and
+   rather than a product preview built out of styled divs, which is the other
+   thing every generated page does. Sample data, so nobody's roster is on the
+   marketing site. */
+.truland .fh-shots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+  margin-top: 2.6rem;
+}
+.truland .fh-shot { margin: 0; }
+.truland .fh-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    0 0 0 1px var(--hair-2),
+    0 30px 60px -34px rgba(2, 7, 4, 0.95);
+}
+.truland .fh-shot figcaption {
+  margin-top: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.truland .fh-shot figcaption b,
+.truland .fh-third b { color: var(--ink); font-weight: 650; }
+.truland .fh-third {
+  margin: 1.6rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* ---- narrow ---------------------------------------------------------------
+   The hero keeps its transition on a phone (it is the point of the page) but
+   loses the scale push, which on a small viewport crops the word rather than
+   travelling through it. */
+@media (max-width: 900px) {
+  .truland .fh-figs { grid-template-columns: 1fr; }
+  .truland .fh-shots { grid-template-columns: 1fr; }
+  .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
+}
+@media (max-width: 760px) {
+  .truland .forge { height: 132dvh; }
+  .truland .forge-vid { transform: none; }
+}
+
+/* ---- and none of it under reduced motion ---------------------------------
+   The hero collapses to one still viewport: the finished lockup, the words,
+   and the way in. No pin, no travel, no fade. */
+@media (prefers-reduced-motion: reduce) {
+  .truland .forge { height: auto; min-height: 100dvh; }
+  .truland .forge-stage { position: relative; }
+  .truland .forge-vid { transform: none; opacity: 1; }
+  .truland .forge-cool { opacity: 0; }
+  .truland .forge-copy { transform: none; opacity: 1; }
+}
+
+/* ---- the rhythm ----------------------------------------------------------
+   The site's band padding is clamp(4.5rem, 9vw, 8rem) top AND bottom, so two
+   adjacent sections put up to sixteen rems of nothing between them. On a page
+   with five sections that is most of a viewport of empty scroll, four times
+   over, and it is the largest single reason the old page took 5.6 screens to
+   say 735 words. The home page sets its own, tighter. */
+.truland .fh .panel.band { padding-block: clamp(3.2rem, 5vw, 4.8rem); }
+.truland .fh .panel.ctaband { padding-block: clamp(3.6rem, 6vw, 5.4rem); }
+
+/* The section heads run wider here than the site default, which is measured for
+   a narrow column and was breaking "Every team we have worked with has improved
+   its transaction count." across four lines. */
+.truland .fh .h2 { max-width: 26ch; }
+.truland .fh-proof .h2 { max-width: 32ch; }
+
+/* `.pea` is the arrow inside a `.cta` pill and gets its size from that pill.
+   On a plain link it collapsed to nothing, so the link read as a dead sentence
+   with no affordance. */
+.truland .fh-more .pea {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.truland .fh-more .pea svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.28s var(--e);
+}
+.truland .fh-more:hover .pea svg { transform: translateX(3px); }

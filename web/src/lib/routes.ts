@@ -38,3 +38,60 @@ export function matchPublicRoute(pathname: string, hash: string): PublicMatch | 
   if (p === '/' || p === '') return null;
   return (SUB_ROUTES as readonly string[]).includes(p) ? (p as PublicSubRoute) : NOT_FOUND;
 }
+
+/* ---------------------------------------------------------------------------
+   WHICH SITE IS THIS?
+
+   truhq.co and app.truhq.co are two Cloudflare Pages projects serving the same
+   bundle, and `matchPublicRoute` deliberately never claims "/" because on the
+   app host the root is the product.
+
+   That leaves the marketing site with no home page. On this branch, a signed-out
+   visitor to "/" gets the login form, because App's signed-out face is the door
+   and that is correct FOR THE APP HOST. truhq.co has only ever shown its
+   marketing home because it is built from a branch where App had not been
+   changed yet. Rebuild it from main and the front page of the business becomes
+   a sign-in box, silently, with no error to notice. Same shape of trap as the
+   legal pages, one level up.
+
+   So the host decides. app.truhq.co keeps exactly the behaviour it has; the
+   marketing hosts get their home page back.
+
+   `?site` forces marketing mode on any host, which is the only way to review
+   the marketing home on localhost or on an app preview deployment. It reads a
+   query flag rather than a build variable because both properties are built by
+   the same `npm run build`.
+   --------------------------------------------------------------------------- */
+const MARKETING_HOSTS = ['truhq.co', 'www.truhq.co'];
+
+export function isMarketingHost(host: string, search = ''): boolean {
+  // URLSearchParams rather than a hand-written pattern. The first version of
+  // this line carried a literal backspace byte where a `\b` was meant to be,
+  // so the regex looked correct in every grep and matched nothing at all.
+  try {
+    if (new URLSearchParams(search).has('site')) return true;
+  } catch {
+    /* a malformed query string simply is not the flag */
+  }
+  const h = (host || '').toLowerCase().replace(/:\d+$/, '');
+  // The Pages project and its preview aliases all start with the project name.
+  return MARKETING_HOSTS.includes(h) || h.startsWith('tru-landing');
+}
+
+/** The route to render, once the host has been taken into account. Returns null
+ *  when the product should handle it. */
+export function resolveView(
+  pathname: string,
+  hash: string,
+  host: string,
+  search = '',
+): PublicMatch | '/' | null {
+  const matched = matchPublicRoute(pathname, hash);
+  if (matched) return matched;
+  // An app hash route wins on any host: /#/pulse is the product, wherever it
+  // is typed.
+  if (/^#\//.test(hash)) return null;
+  const p = (pathname || '/').toLowerCase().replace(/\/+$/, '');
+  if ((p === '' || p === '/') && isMarketingHost(host, search)) return '/';
+  return null;
+}
