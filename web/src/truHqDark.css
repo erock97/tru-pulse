@@ -3710,13 +3710,67 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    agent drill-in panel and its scrim render inside here — they would anchor to
    the page instead of the viewport. With no fill-mode nothing persists at all
    once the 380ms is over. */
-.tru-dark .dk-page { animation: pageIn 380ms var(--ease); }
-@keyframes pageIn {
-  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+/* The camera move. Horizontal, not vertical — a page that rises reads as a
+   list loading; a page that slides across reads as somewhere you have arrived.
+   Long and heavily eased so it decelerates into place rather than stopping. */
+.tru-dark .dk-page { animation: pageSettle 620ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes pageSettle {
+  from { opacity: 0; transform: translate3d(30px, 0, 0) scale(0.995); }
   to   { opacity: 1; transform: none; }
 }
+
+/* And the cards settling into it. One shared keyframe, one shared curve, and
+   the ONLY thing that varies is when each starts — that is what makes it read
+   as choreography rather than as several things animating at once.
+ *
+ * `backwards` fill, never `both`: during its delay an element holds the FIRST
+ * frame (invisible, which is the point), and once the animation is over it
+ * reverts to its own resting state. `both` would make opacity 0 the resting
+ * state, and anything that stopped the animation would leave a blank page. */
+.tru-dark .dk-page .dk-mast,
+.tru-dark .dk-page .dk-bento > *,
+.tru-dark .dk-page .dk-sec,
+.tru-dark .dk-page .dk-focus > *,
+.tru-dark .dk-page .dk-table,
+.tru-dark .dk-page .tm-tabs,
+.tru-dark .dk-page .df-wrap {
+  animation: cardSettle 540ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+@keyframes cardSettle {
+  from { opacity: 0; transform: translate3d(0, 26px, 0) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The running order. The headline leads, the tiles land left to right behind
+   it, then the section head, then the table last — the eye follows the same
+   path it would read in. */
+.tru-dark .dk-page .dk-mast   { animation-delay: 60ms; }
+.tru-dark .dk-page .df-wrap   { animation-delay: 150ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(1) { animation-delay: 150ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(2) { animation-delay: 205ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(3) { animation-delay: 250ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(4) { animation-delay: 290ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(5) { animation-delay: 325ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(6) { animation-delay: 355ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(n+7) { animation-delay: 380ms; }
+.tru-dark .dk-page .tm-tabs   { animation-delay: 300ms; }
+.tru-dark .dk-page .dk-sec    { animation-delay: 330ms; }
+.tru-dark .dk-page .dk-focus > *:nth-child(1) { animation-delay: 370ms; }
+.tru-dark .dk-page .dk-focus > *:nth-child(2) { animation-delay: 405ms; }
+.tru-dark .dk-page .dk-focus > *:nth-child(3) { animation-delay: 435ms; }
+.tru-dark .dk-page .dk-focus > *:nth-child(n+4) { animation-delay: 460ms; }
+/* The table arrives whole. Its rows have their own cascade already, and two
+   cascades inside one another is the mess this replaced. */
+.tru-dark .dk-page .dk-table  { animation-delay: 430ms; }
 @media (prefers-reduced-motion: reduce) {
-  .tru-dark .dk-page { animation: none; }
+  .tru-dark .dk-page,
+  .tru-dark .dk-page .dk-mast,
+  .tru-dark .dk-page .dk-bento > *,
+  .tru-dark .dk-page .dk-sec,
+  .tru-dark .dk-page .dk-focus > *,
+  .tru-dark .dk-page .dk-table,
+  .tru-dark .dk-page .tm-tabs,
+  .tru-dark .dk-page .df-wrap { animation: none; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3891,4 +3945,44 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (max-width: 700px) {
   .tru-dark .cb-hint span { display: none; }
   .tru-dark .cb-scrim { padding-top: 8vh; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   THE COACHING SHEET, in the deck's language.
+   Opening an agent used to swap the whole page back to the previous
+   product — its own header band, its own width, its own card idiom.
+   It is the same page now, so it reads like the same page.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* The way back, in the island bar beside the wordmark. */
+.tru-dark .dk-back { display: inline-flex; align-items: center; gap: 7px; }
+.tru-dark .dk-back span { font-size: 14px; line-height: 1; opacity: 0.75; }
+
+/* Panels become plates: translucent, hairline, the same surface as every
+   other card in the deck rather than the old opaque .card. */
+.tru-dark .ad-panel {
+  padding: 24px 26px;
+  border-radius: var(--r-card);
+  background:
+    linear-gradient(168deg, rgba(226, 240, 230, 0.055) 0%, rgba(226, 240, 230, 0.012) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(16, 29, 21, 0.72) 0%, rgba(9, 17, 12, 0.80) 100%);
+  border: 1px solid var(--border-soft);
+}
+.tru-dark .ad-grid { gap: 18px; margin-top: 22px; }
+/* Section heads inside the sheet match .dk-sec rather than shouting at 20px
+   bold — the masthead is the only large type on a deck page. */
+.tru-dark .ad-panel-head h3 {
+  font-family: var(--hq-serif); font-size: 18px; font-weight: 550;
+  letter-spacing: -0.02em; color: var(--text-strong);
+}
+.tru-dark .ad-panel-head .panel-sub { font-size: 12px; color: var(--text-40); }
+
+/* The sheet's cards join the choreography with everything else. */
+.tru-dark .dk-page .ad-grid > * { animation: cardSettle 540ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.tru-dark .dk-page .ad-grid > *:nth-child(1) { animation-delay: 380ms; }
+.tru-dark .dk-page .ad-grid > *:nth-child(2) { animation-delay: 420ms; }
+.tru-dark .dk-page .ad-grid > *:nth-child(3) { animation-delay: 455ms; }
+.tru-dark .dk-page .ad-grid > *:nth-child(n+4) { animation-delay: 485ms; }
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .dk-page .ad-grid > * { animation: none; }
 }

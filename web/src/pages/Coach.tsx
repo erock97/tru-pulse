@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { Avatar, Icon, Ring } from '../components/hqUi';
-import { useReveal, useCountUp } from '../hqHooks';
+import { useReveal } from '../hqHooks';
 import {
   loadRoster, teamMix, loadProfile, loadGoalBundle, createGoal, GOAL_DEFAULTS,
   loadCheckinBundle, loadOpenCommitments, saveStructuredCheckin,
@@ -252,20 +252,26 @@ export default function Coach({
 
   return (
     <div className="tru-dark">
+      {/* One layout, open or not. Opening an agent used to drop `dk-main` and
+          bring back the old top bar, which is why the sheet looked like a
+          different, older product the moment you clicked a name — different
+          width, different header, different language. It is the same page. */}
       <HqShell
         orgName={org.name}
-        eyebrow={openAgent ? `Coaching · ${org.name}` : undefined}
-        title={openAgent ? `Coach — ${openAgent.name}` : undefined}
-        context={context}
         onSignOut={() => signOutClean()}
         nav={coachNav(onHome)}
-        hideTopbar={!openAgent}
+        hideTopbar
+        islandSlot={openAgent ? (
+          <button className="dk-win dk-back" onClick={() => setOpenId(null)}>
+            <span aria-hidden>←</span> Team
+          </button>
+        ) : undefined}
       >
-        <div className={openAgent ? 'coach-canvas' : 'coach-canvas dk-main'} ref={canvasRef}>
+        <div className="coach-canvas dk-main" ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
 
           {openAgent ? (
-            <AgentDrill agent={openAgent} onBack={() => setOpenId(null)} />
+            <AgentDrill agent={openAgent} />
           ) : (
             <>
               {roster.length === 0 || !derived || !mix ? (
@@ -483,15 +489,6 @@ function needsReason(a: RosterAgent): string {
    AGENT DRILL-IN — real profile (archetype + confidence dims from
    deriveProfile) + goals + check-in history.
    ============================================================ */
-function Stat({ value, label, prefix = '', suffix = '' }: { value: number; label: string; prefix?: string; suffix?: string }) {
-  const { ref, val } = useCountUp(value);
-  return (
-    <div className="ad-stat">
-      <div className="ad-stat-num">{prefix}<span ref={ref}>{val}</span>{suffix}</div>
-      <div className="ad-stat-label">{label}</div>
-    </div>
-  );
-}
 
 /* ---- Display titles for the 4 divergence axes (energy/approach/deal/decision). ---- */
 const AXIS_TITLE: Record<string, string> = {
@@ -624,7 +621,7 @@ function useSavedFlag(): [string | null, (label?: string) => void] {
   return [flag, flash];
 }
 
-function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void }) {
+function AgentDrill({ agent }: { agent: RosterAgent }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
@@ -717,55 +714,52 @@ function AgentDrill({ agent, onBack }: { agent: RosterAgent; onBack: () => void 
 
   return (
     <>
-      <button className="ad-back reveal" onClick={onBack}>
-        <Icon name="coach" size={18} /> Back to team
-      </button>
-
-      {/* 1. HEADER BAND (kept) */}
-      <header className="ad-header reveal" data-delay="40">
-        <div className="ad-header-glow" />
-        <div className="ad-avatar-xl"><Avatar name={agent.name} size={92} tone={0} /></div>
-        <div className="ad-header-info">
-          <h1 className="ad-name">{agent.name}</h1>
-          <div className="ad-badges">
-            <span className="agent-type">{agent.archName}</span>
-            <span className="ad-level-badge">{agent.quad}</span>
-            <span className="ad-trend" style={{ color: agent.paceColor }}>{agent.pace}</span>
-          </div>
-          <p className="ad-status">{profile ? profile.tagline : `${agent.emoji} ${agent.archName}`}</p>
+      {/* The sheet, in the deck's own language.
+          Was: a back button, a glowing header band, a hero with a dial, and a
+          drawn divider — the vocabulary of the product this replaced. The way
+          back now lives in the island bar with everything else. */}
+      <header className="dk-mast">
+        <div>
+          <span className="dk-eyebrow"><i />{agent.archName} · {agent.quad}</span>
+          <h1>{agent.name}</h1>
+          <p className="dk-sub">
+            {profile
+              ? profile.tagline
+              : `Stepping into ${first}'s coaching.`}
+          </p>
         </div>
       </header>
 
-      {/* HERO CLOCK (kept) */}
-      <section className="ad-hero reveal" data-delay="90">
-        <div className="ad-hero-glow" />
-        <AdClock pct={health} />
-        <div className="ad-hero-stats">
-          <div className="ad-hero-lead">
-            <span className="eyebrow"><span className="dot" /> Stepping into {first}’s coaching</span>
-            <h3>Where they stand.</h3>
-            <p>{first}’s coaching health blends check-in freshness, assessment recency, and how settled their profile is.</p>
-          </div>
-          <div className="ad-hero-metrics">
-            <Stat value={agent.lastDays >= 99 ? 0 : agent.lastDays} suffix={agent.lastDays >= 99 ? '' : 'd'} label={agent.lastDays >= 99 ? 'No check-ins yet' : 'Since last check-in'} />
-            <Stat value={agent.takes} label="Assessments taken" />
-            <Stat value={agent.days} suffix="d" label="Since last assessment" />
-          </div>
+      <section className="dk-bento">
+        <div className="rs-plate dk-tile dk-tile-lead">
+          <span className="k">Coaching health</span>
+          <span className="v">{health}</span>
+          <span className="u">check-in freshness, assessment recency, and how settled the profile is</span>
         </div>
+        {([
+          ['Since last check-in', agent.lastDays >= 99 ? 'never' : `${agent.lastDays}d`,
+            agent.lastDays >= 99 ? 'no 1:1 on record' : 'last sat down'],
+          ['Assessments taken', String(agent.takes), 'all time'],
+          ['Since last assessment', agent.days >= 99 ? 'never' : `${agent.days}d`, 'profile freshness'],
+          ['Pace', agent.pace, 'against the cohort'],
+        ] as const).map(([k, v, u]) => (
+          <div className="rs-plate dk-tile" key={k}>
+            <span className="k">{k}</span>
+            <span className="v">{v}</span>
+            <span className="u">{u}</span>
+          </div>
+        ))}
       </section>
 
+      {/* Coaching data is read-only on some logins (RLS). Losing this in the
+          reformat would have hidden a real failure behind a sheet that just
+          looked empty. */}
       {writeErr && (
-        <div className="ad-writebar reveal" role="alert">
-          <Icon name="target" size={15} /> {writeErr} — coaching data may be read-only on this login.
+        <div className="ad-inline-err" role="alert" style={{ marginBottom: 18 }}>
+          {writeErr} — coaching data may be read-only on this login.
         </div>
       )}
 
-      <div className="coach-divider ad-divider" aria-hidden>
-        <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-          <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="none" />
-          <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
-        </svg>
-      </div>
 
       {/* PROFILE + HOW-TO-COACH (kept) */}
       <div className="ad-grid">
@@ -1695,37 +1689,3 @@ function CommitGroup({
   );
 }
 
-function AdClock({ pct }: { pct: number }) {
-  const size = 260;
-  const stroke = 20;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const off = c - (pct / 100) * c;
-  return (
-    <div className="ad-clock" style={{ width: size, height: size }}>
-      <div className="ad-clock-glow" />
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <defs>
-          <linearGradient id="adGradC" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#c9962f" />
-            <stop offset="1" stopColor="#a9791f" />
-          </linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={r + 12} fill="none" stroke="var(--track-outer)" strokeWidth="1" />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track-fill-2)" strokeWidth={stroke} />
-        <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="url(#adGradC)" strokeWidth={stroke} strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={off}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: 'stroke-dashoffset 1.4s var(--ease)' }}
-        />
-        <circle cx={size / 2} cy={size / 2} r={r - 22} fill="none" stroke="var(--track-hairline)" strokeWidth="1" />
-      </svg>
-      <div className="ad-clock-center">
-        <div className="ad-clock-num">{pct}</div>
-        <div className="ad-clock-cap">Coaching Health</div>
-      </div>
-    </div>
-  );
-}
