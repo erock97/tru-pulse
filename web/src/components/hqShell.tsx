@@ -157,7 +157,16 @@ export function HqShell({
             </div>
           </header>
         )}
-        {children}
+        {/* ONE transition per tab, instead of the three uncoordinated entrance
+            systems that used to fire on arrival — per-element JS timers, a
+            per-row CSS stagger, and the room flare. Timers are not frame-aligned,
+            which is what "stutter" actually was.
+
+            Keyed on the active tab so it re-runs on every switch. The keyframes
+            MUST end at `transform: none`: a lingering transform on this wrapper
+            would become the containing block for every `position: fixed`
+            descendant, and the agent drill-in panel and its scrim live in here. */}
+        <div className="dk-page" key={activeKey}>{children}</div>
       </main>
 
       {/* Phone navigation. Same links as the sidebar, fixed to the bottom where a

@@ -241,7 +241,7 @@ export default function TeamAdmin({
                   const working = busy[m.id];
                   return (
                     <tr key={m.id} className={m.excluded ? 'tm-row is-off' : 'tm-row'}
-                        style={{ animationDelay: `${Math.min(i, 14) * 35}ms` }}>
+                        style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}>
                       <td className="tm-c-tick">
                         <label className="tm-check" title={m.excluded ? 'Put back on the team' : 'Take off the team'}>
                           <input

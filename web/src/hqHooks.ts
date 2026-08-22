@@ -29,7 +29,12 @@ export function useReveal(deps: unknown[] = [], root?: HTMLElement | null) {
     );
     els.forEach((el) => {
       const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight && r.bottom > 0) show(el);
+      // Already on screen when the page mounts? Then it is part of the page's
+      // arrival, and the page transition owns that — show it at once. Running
+      // its data-delay here staggered the visible tiles on their own setTimeout
+      // clocks, against a page that was already animating in. That collision,
+      // not slow rendering, was the stutter on every tab change.
+      if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('in');
       else io.observe(el);
     });
     const fallback = window.setTimeout(() => els.forEach((el) => el.classList.add('in')), 1200);

@@ -223,7 +223,7 @@ export default function RosterDeck({
               <tr key={r.name}
                   className={priorities.some((p) => p.row.name === r.name) ? 'rowlink crit' : 'rowlink'}
                   tabIndex={0}
-                  style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                  style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
                   onClick={() => setOpen(r)}
                   onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
                 <td>

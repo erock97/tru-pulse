@@ -3687,3 +3687,34 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    headline, where a deck page puts its actions. */
 .tru-dark .dk-mast-do { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
 @media (max-width: 900px) { .tru-dark .dk-mast-do { width: 100%; } }
+
+/* ── The page transition ────────────────────────────────────────────────
+   Every tab change used to be three entrance systems racing each other:
+   per-element setTimeout reveals, a per-row CSS stagger up to 540ms, and the
+   room's 2.6s flare. setTimeout is not frame-aligned, so the reveals started
+   on arbitrary frames — that is what read as a stutter, not slow rendering.
+
+   Now one movement owns the arrival: the whole page lifts and resolves as a
+   single object, and the smaller staggers ride inside it rather than against
+   it.
+
+   Deliberately NO fill-mode. With `both` the page's resting state becomes the
+   keyframe's first frame — opacity 0 — so anything that stops the animation
+   advancing leaves a blank app. A hidden tab does exactly that: the animation
+   reports `running` while currentTime stays pinned at 0, which is how this was
+   caught. Without a fill-mode the page's natural state is simply visible, and
+   the animation can only ever add movement on top of it.
+
+   It also settles the other hazard for free. A wrapper holding a transform
+   becomes the containing block for every `position: fixed` descendant, and the
+   agent drill-in panel and its scrim render inside here — they would anchor to
+   the page instead of the viewport. With no fill-mode nothing persists at all
+   once the 380ms is over. */
+.tru-dark .dk-page { animation: pageIn 380ms var(--ease); }
+@keyframes pageIn {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .dk-page { animation: none; }
+}

@@ -376,7 +376,7 @@ export default function Coach({
                   <tbody>
                     {derived.ranked.map(({ a, health }, i) => (
                       <tr key={a.id} className="rowlink" tabIndex={0}
-                          style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                          style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
                           onClick={() => setOpenId(a.id)}
                           onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}>
                         <td>
