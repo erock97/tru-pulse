@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
 import TeamAdmin from './pages/TeamAdmin';
 import PulseLab from './pages/PulseLab';
+import Lab from './pages/Lab';
 import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
@@ -166,6 +167,9 @@ export default function App() {
       // while this is being judged.
       : route === '/pulse/lab'
         ? <PulseLab org={o} onHome={() => go('/')} />
+      // Design concepts, on live data. Not linked from anywhere.
+      : route === '/lab'
+        ? <Lab org={o} onHome={() => go('/')} />
         : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
