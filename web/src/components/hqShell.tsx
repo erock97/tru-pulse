@@ -8,6 +8,7 @@ import { CommandBar } from './commandBar';
 import { FocusWire } from './focusWire';
 import { useDeckFocus } from './deckFocus';
 import { useRoomLight } from '../lib/deckLight';
+import { useGlide } from '../lib/deckMotion';
 
 /** What the floor is doing, said in light rather than in words. Every page
  *  derives it from a number it is already showing:
@@ -90,6 +91,10 @@ export function HqShell({
   // Outside a DeckFocusProvider this is the idle stand-in, so pages that have
   // no roster (Team, Admin) simply never go quiet and never draw a wire.
   const focus = useDeckFocus();
+  // One marker for the whole rail, moved — rather than a highlight that
+  // vanishes on one tab and appears on another with nothing joining them.
+  const navRef = useRef<HTMLElement | null>(null);
+  const glide = useGlide(navRef, '.side-link.active', 'y', activeKey);
   const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = [
     { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
@@ -122,7 +127,10 @@ export function HqShell({
       <div className="tru-room" aria-hidden>
         <div className="tru-room-move">
           <i className="tru-room-a" />
-          <i className="tru-room-core" key={activeKey} />
+          {/* Keyed on the tab AND on whoever is being held, so the union flares
+              when you arrive somewhere and again when you pick a person to
+              read the rest of the page against. The room acknowledges you. */}
+          <i className="tru-room-core" key={`${activeKey}:${focus.pinned ?? ''}`} />
         </div>
       </div>
       {/* The floor's temperature. Anchored to the screen like the vignette
@@ -137,7 +145,10 @@ export function HqShell({
             <TruLogo size={28} wordSize={20} sub="HQ" />
           </button>
         </div>
-        <nav className="side-nav">
+        <nav className="side-nav" ref={navRef}>
+          {/* The selection itself. It carries the fill, the hairline and the
+              gold edge, so the active link only has to say which one it is. */}
+          <i className="side-glide" style={glide} aria-hidden />
           {links.map((l) => (
             <button
               key={l.label}

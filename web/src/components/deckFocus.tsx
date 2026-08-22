@@ -117,8 +117,11 @@ export function useDeckKeys({
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
+      // Stand down for anything that owns its own keys: a text field, or a
+      // control like the draggable line, whose whole job is to answer arrows.
       const typing = !!el && (
-        el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
+        el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT'
+        || el.isContentEditable || el.getAttribute('role') === 'slider'
       );
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
       const { keys: list, onOpen: open, onEscape: esc, focus: f, canQuiet: quietable } = state.current;

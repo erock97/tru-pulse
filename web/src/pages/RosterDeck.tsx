@@ -38,7 +38,7 @@ import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys, useRounded,
 } from '../components/deckFocus';
 import { Odometer } from '../components/odometer';
-import { useFlip } from '../lib/deckMotion';
+import { useFlip, useGlide } from '../lib/deckMotion';
 
 export default function RosterDeck(props: {
   orgName: string;
@@ -63,7 +63,13 @@ function Deck({
   onOpenCoach: () => void;
   onOpenRep: () => void;
 }) {
-  const line = DEFAULT_LINE;
+  /* The threshold every agent on this page is judged against. It was a
+     constant; it is state now, because the marker on the lead tile's scale can
+     be dragged. Nothing is written anywhere — `useRosterData` already takes
+     the line as a parameter and re-derives from the data it has, so moving it
+     re-judges the whole page without a request. It is a question you can ask
+     of today's numbers, not a setting you are changing. */
+  const [line, setLine] = useState<number>(DEFAULT_LINE);
   const [win, setWin] = useState<Window>(WINDOWS[3]);
   const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
@@ -113,9 +119,16 @@ function Deck({
   // time — which is what actually happened.
   const rateShown = useRounded(totals?.perContract ?? null);
 
-  /* Just the window tabs now — the shell draws the bar. */
+  /* Just the window tabs now — the shell draws the bar.
+     The lit pill is one element that travels between them rather than a
+     highlight that blinks out here and in over there. This is the control that
+     changes every figure on the page, so the selection moving is the first
+     half of the answer; the numbers rolling underneath is the second. */
+  const winRef = useRef<HTMLSpanElement | null>(null);
+  const winGlide = useGlide(winRef, 'button.on', 'x', win.key);
   const windowTabs = (
-    <span className="dk-win">
+    <span className="dk-win" ref={winRef}>
+      <i className="dk-win-glide" style={winGlide} aria-hidden />
       {WINDOWS.map((w) => (
         <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
           {w.label}
@@ -148,9 +161,14 @@ function Deck({
 
   // Fit the axis to what is actually on screen, with a little air either side,
   // so the dots spread across the bar instead of bunching at one end.
+  //
+  // Anchored on DEFAULT_LINE rather than on the LIVE line, which matters now
+  // that the line can be dragged: an axis that rescaled as you moved the
+  // marker would slide the marker out from under the cursor, and the control
+  // would feel like it was resisting you.
   const rates = rows.map((r) => r.perContract).filter((v): v is number => v !== null);
-  const lo = Math.max(0, Math.min(line, ...rates) - 4);
-  const hi = Math.max(line, ...rates) + 4;
+  const lo = Math.max(0, Math.min(DEFAULT_LINE, ...rates) - 4);
+  const hi = Math.max(DEFAULT_LINE, ...rates) + 6;
   const scale = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
 
   const resort = (key: keyof Row) =>
@@ -231,7 +249,10 @@ function Deck({
               Every dot knows whose it is now, so pointing at one — with the
               cursor, or with the arrow keys from the table — names them. */}
           <ScaleMarks
-            lo={lo} hi={hi} line={line} lineLabel={`your line 1 : ${line}`}
+            lo={lo} hi={hi} line={line}
+            lineLabel={line === DEFAULT_LINE ? `your line 1 : ${line}` : `trying 1 : ${line}`}
+            onLineChange={setLine}
+            lineName={`your line, currently one in ${line}`}
             marks={rows.map((r) => ({
               key: r.name,
               value: r.perContract,
@@ -242,7 +263,11 @@ function Deck({
                   : r.health === 'holding' ? 'ok' : 'none',
             }))}
           />
-          <span className="u">every dot is an agent</span>
+          <span className="u">
+            {line === DEFAULT_LINE
+              ? 'every dot is an agent · drag the line to ask what a different one would mean'
+              : <>reading the floor against <b>1 : {line}</b> · <button className="sm-reset" onClick={() => setLine(DEFAULT_LINE)}>back to 1 : {DEFAULT_LINE}</button></>}
+          </span>
         </div>
         {tiles.map((t) => (
           <div className="rs-plate dk-tile" key={t.k}>
@@ -353,12 +378,17 @@ function Deck({
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
                       {r.perContract ? '1 : ' + Math.round(r.perContract) : '—'}
                     </b>
+                    {/* Placed by `--at` rather than by `left`, exactly like the
+                        big scale in the lead tile — so changing the window
+                        slides every mark in the table to its new place instead
+                        of redrawing the column. That travel IS the table
+                        registering the change. */}
                     <span className="rs-scale">
                       <hr />
-                      {totals.perContract && <s style={{ left: scale(totals.perContract) + '%' }} />}
-                      <u style={{ left: scale(line) + '%' }} />
+                      {totals.perContract && <s style={{ '--at': scale(totals.perContract) } as React.CSSProperties} />}
+                      <u style={{ '--at': scale(line) } as React.CSSProperties} />
                       {r.perContract !== null && (
-                        <i style={{ left: scale(r.perContract) + '%' }} className={'h-' + r.health} />
+                        <i style={{ '--at': scale(r.perContract) } as React.CSSProperties} className={'h-' + r.health} />
                       )}
                     </span>
                   </div>

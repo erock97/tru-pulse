@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
+import type { CSSProperties, RefObject } from 'react';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -134,4 +134,59 @@ export function useFlip(ref: RefObject<HTMLElement | null>, signature: string): 
       );
     }
   }, [ref, signature, reduced]);
+}
+
+/**
+ * The marker travels instead of teleporting.
+ *
+ * A selected tab used to be drawn by putting the highlight ON the selected
+ * item, so choosing a different one meant the mark vanished in one place and
+ * appeared in another. Nothing connected the two, and the eye has to re-find
+ * the selection every time.
+ *
+ * One marker, moved. It slides from where it was to where it now belongs,
+ * which says "this is the same thing, it is over here now" — and on the two
+ * controls this is used for (the sidebar, and the window tabs that change
+ * every number on the page) that is worth the twenty lines.
+ *
+ * Measured rather than calculated. Deriving the offset from an index and an
+ * assumed row height works right up until a label wraps or a tab is added.
+ *
+ * `offsetTop` / `offsetLeft`, so the reading is relative to the track itself
+ * and survives a scroll. The track needs `position: relative` for that to be
+ * true, which its stylesheet rule declares.
+ */
+export function useGlide(
+  trackRef: RefObject<HTMLElement | null>,
+  selector: string,
+  axis: 'x' | 'y',
+  /** Anything whose change can move the marker — usually the active key. */
+  dep: unknown,
+): CSSProperties {
+  const [box, setBox] = useState<{ off: number; size: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const measure = () => {
+      const el = track.querySelector<HTMLElement>(selector);
+      if (!el) { setBox(null); return; }
+      setBox(axis === 'y'
+        ? { off: el.offsetTop, size: el.offsetHeight }
+        : { off: el.offsetLeft, size: el.offsetWidth });
+    };
+    measure();
+    // Fonts landing, a sidebar collapsing, a label wrapping: all of them move
+    // the target without anything in React changing.
+    const ro = new ResizeObserver(measure);
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [trackRef, selector, axis, dep]);
+
+  // Nothing selected — the marker is simply not there, rather than parked at
+  // the top of the track waiting to be noticed.
+  if (!box) return { opacity: 0 };
+  return axis === 'y'
+    ? { opacity: 1, transform: `translateY(${box.off}px)`, height: box.size }
+    : { opacity: 1, transform: `translateX(${box.off}px)`, width: box.size };
 }

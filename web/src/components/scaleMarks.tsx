@@ -31,7 +31,8 @@
  * relayout the card on every frame of every change.
  */
 
-import type { CSSProperties } from 'react';
+import { useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 
 import { useDeckFocus } from './deckFocus';
 
@@ -55,17 +56,76 @@ const TONE: Record<ScaleMark['tone'], string> = {
 };
 
 export function ScaleMarks({
-  marks, line, lo, hi, lineLabel,
+  marks, line, lo, hi, lineLabel, onLineChange, lineName = 'the line',
 }: {
   marks: readonly ScaleMark[];
   line: number;
   lo: number;
   hi: number;
   lineLabel: string;
+  /* Hand this in and the line becomes something you can TAKE HOLD OF.
+     Everything downstream already derives from it, so moving it re-judges the
+     whole page live — who is past it, how many conversations you owe, what
+     every row's tag says. See the note on the handle below. */
+  onLineChange?: (next: number) => void;
+  lineName?: string;
 }) {
   const focus = useDeckFocus();
+  const railRef = useRef<HTMLSpanElement | null>(null);
+  // The flag is a REF as well as state: a fast drag can deliver a pointermove
+  // in the same tick as the pointerdown, and a state read there would still be
+  // `false` from the stale closure and drop the move on the floor. The state
+  // copy exists only so the class can change.
+  const holding = useRef(false);
+  const [dragging, setDragging] = useState(false);
   const at = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
   const placed = marks.filter((m) => m.value !== null);
+
+  /* Where the pointer is, in the axis's own units, clamped to the rail. The
+     domain is fixed by the CALLER and deliberately does not depend on `line`
+     — an axis that rescaled as you dragged would make the line feel like it
+     was resisting you. */
+  const valueAt = (clientX: number): number => {
+    const rail = railRef.current;
+    if (!rail) return line;
+    const r = rail.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (clientX - r.left) / Math.max(1, r.width)));
+    return Math.max(Math.ceil(lo) + 1, Math.min(Math.floor(hi) - 1, Math.round(lo + f * (hi - lo))));
+  };
+
+  const onDown = (e: ReactPointerEvent<HTMLSpanElement>) => {
+    if (!onLineChange) return;
+    // preventDefault stops the drag from selecting the caption text — and it
+    // also stops the handle taking focus, so focus has to be asked for. Without
+    // that line the arrow keys silently did nothing after a click, which is the
+    // worst kind of broken: it looks fine.
+    e.preventDefault();
+    e.currentTarget.focus();
+    // Capture, so the drag survives leaving the 46px-tall rail — which on a
+    // control this thin is what happens on essentially every drag.
+    e.currentTarget.setPointerCapture(e.pointerId);
+    holding.current = true;
+    setDragging(true);
+    onLineChange(valueAt(e.clientX));
+  };
+  const onMove = (e: ReactPointerEvent<HTMLSpanElement>) => {
+    if (!onLineChange || !holding.current) return;
+    onLineChange(valueAt(e.clientX));
+  };
+  const onUp = (e: ReactPointerEvent<HTMLSpanElement>) => {
+    if (!holding.current) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    holding.current = false;
+    setDragging(false);
+  };
+  const onKey = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (!onLineChange) return;
+    const step = e.shiftKey ? 5 : 1;
+    const bounds = (v: number) => Math.max(Math.ceil(lo) + 1, Math.min(Math.floor(hi) - 1, v));
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); onLineChange(bounds(line - step)); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); onLineChange(bounds(line + step)); }
+  };
+
   if (placed.length === 0) return null;
 
   /* People who land on the same number stack upward instead of hiding each
@@ -92,16 +152,41 @@ export function ScaleMarks({
 
   return (
     <span className={`sm-scale${anyOn ? ' is-focused' : ''}`}>
-      <span className="sm-rail" aria-hidden />
+      <span className="sm-rail" ref={railRef} aria-hidden />
       {/* Rep's line is the finish, which sits at the far right — so past
           halfway the line labels itself leftward, exactly as a dot does,
-          rather than hanging its caption off the end of the card. */}
+          rather than hanging its caption off the end of the card.
+
+          On Pulse it is also a HANDLE. The threshold every agent on this page
+          is judged against was a constant baked into the page; drag it and the
+          whole deck re-judges itself live — the dots re-tone, the eyebrow
+          re-counts, the priority rows change, every row's tag rewrites. It is
+          the difference between a dashboard reporting a rule and an instrument
+          for asking what a different rule would mean. Nothing is written
+          anywhere: this is a question, not a setting. */}
       <span
-        className={`sm-line${at(line) > 58 ? ' flip' : ''}`}
+        className={[
+          'sm-line',
+          at(line) > 58 ? 'flip' : '',
+          onLineChange ? 'is-grab' : '',
+          dragging ? 'is-dragging' : '',
+        ].filter(Boolean).join(' ')}
         style={{ left: `${at(line)}%` }}
-        aria-hidden
+        role={onLineChange ? 'slider' : undefined}
+        tabIndex={onLineChange ? 0 : undefined}
+        aria-label={onLineChange ? `Move ${lineName}` : undefined}
+        aria-valuemin={onLineChange ? Math.ceil(lo) + 1 : undefined}
+        aria-valuemax={onLineChange ? Math.floor(hi) - 1 : undefined}
+        aria-valuenow={onLineChange ? line : undefined}
+        aria-hidden={onLineChange ? undefined : true}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        onKeyDown={onKey}
       >
         <b>{lineLabel}</b>
+        {onLineChange && <s className="sm-grip" aria-hidden />}
       </span>
       {stacked.map(({ m, x, lift }, i) => {
         const on = focus.active === m.key;

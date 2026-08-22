@@ -4687,3 +4687,235 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .dk-page.is-quiet .dk-focus > * { transform: none; }
   .tru-dark .tru-mood i { transition: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   THINGS THAT TRAVEL
+   --------------------------------------------------------------------
+   Same thesis, pushed further: nothing on this deck should teleport. A
+   selection, a mark on a scale, a sentence arriving — each one should move
+   from where it was to where it belongs, because that movement is what tells
+   you the two are the same thing.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. One marker for the rail, moved ----------------------------------
+   The active link used to CARRY its own highlight, so switching tabs meant
+   the mark blinked out in one place and appeared in another with nothing
+   joining them. Now there is one marker and it slides. The active link is
+   left saying only which one it is; the marker says where the selection is.
+
+   `position: relative` on the track is load-bearing — the hook measures with
+   `offsetTop`, which is relative to the offset parent. */
+.tru-dark .tru-shell .side-nav { position: relative; }
+.tru-dark .side-glide {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 0;
+  border-radius: 12px; pointer-events: none;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  transition:
+    transform 0.52s var(--spring),
+    height 0.52s var(--spring),
+    opacity 0.3s var(--ease);
+}
+/* The gold edge rides the marker rather than the link, so it travels too. */
+.tru-dark .side-glide::before {
+  content: ''; position: absolute; left: 6px; top: 50%;
+  width: 3px; height: 18px; margin-top: -9px;
+  border-radius: 3px; background: var(--accent-hi);
+  box-shadow: 0 0 10px -1px var(--accent);
+}
+/* The links now sit ON the marker, so they need to be above it and to stop
+   drawing a second copy of it. */
+.tru-dark .tru-shell .side-link { position: relative; z-index: 1; }
+.tru-dark .tru-shell .side-link.active {
+  background: none;
+  border-color: transparent;
+}
+.tru-dark .tru-shell .side-link.active::before { display: none; }
+
+/* ---- 2. The same, for the window tabs ------------------------------------
+   This is the one control that changes every figure on the page, so the
+   selection travelling is the first half of the answer and the numbers
+   rolling underneath is the second. */
+.tru-dark .dk-win { position: relative; }
+.tru-dark .dk-win-glide {
+  position: absolute; left: 0; top: 3px; bottom: 3px; z-index: 0;
+  border-radius: var(--r-pill); pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 220, 147, 0.22), rgba(242, 178, 60, 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 0.5s var(--spring),
+    width 0.5s var(--spring),
+    opacity 0.3s var(--ease);
+}
+.tru-dark .dk-win button { position: relative; z-index: 1; }
+.tru-dark .dk-win button.on { background: none; box-shadow: none; }
+
+/* ---- 3. The sentence arrives ---------------------------------------------
+   The masthead is the only large type on a deck page and it was the one thing
+   that simply appeared. It writes itself in now — a wipe left to right, under
+   the same curve as everything else, one beat after the page has settled.
+
+   `inset(0 -8% 0 0)` at the end rather than `inset(0)`: the headline's italic
+   `em` overhangs its own box, and clipping to exactly zero shaves the tail off
+   the last letter. */
+.tru-dark .dk-page .dk-mast h1 {
+  animation: mastWrite 760ms cubic-bezier(0.16, 1, 0.3, 1) 200ms backwards;
+}
+@keyframes mastWrite {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 -8% 0 0); }
+}
+
+/* ---- 4. The rows that need you have a pulse ------------------------------
+   The product is called Pulse and the one thing on the page that is genuinely
+   urgent sat there as still as everything else. The ember edge on a critical
+   row now beats, slowly — about one cycle every three seconds, which is
+   under a resting heart rate and reads as alive rather than as an alarm.
+
+   Opacity only, and only on the rows already marked critical. If every row
+   did this it would be a screensaver. */
+.tru-dark .dk-fr.crit::before {
+  box-shadow: 0 0 11px -1px var(--ember);
+  animation: needPulse 3s ease-in-out infinite;
+}
+@keyframes needPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+
+/* ---- 5. The marks in the table travel too --------------------------------
+   The lead tile's dots already slid to their new places on a window change
+   while the identical marks in every table row snapped. Same treatment, same
+   technique: `cqw` off the row's own scale, so position is a compositor
+   property and forty of them move without a single relayout. */
+.tru-dark .rs-scale { container-type: inline-size; }
+.tru-dark .rs-scale s,
+.tru-dark .rs-scale u,
+.tru-dark .rs-scale i {
+  left: 0;
+  transition: translate 0.62s var(--spring);
+}
+.tru-dark .rs-scale s,
+.tru-dark .rs-scale u { translate: calc(var(--at, 0) * 1cqw); }
+.tru-dark .rs-scale i {
+  transform: none;
+  translate: calc(var(--at, 0) * 1cqw - 50%) -50%;
+}
+
+/* ---- 6. Quiet racks the focus -------------------------------------------
+   A dim alone reads as "these went grey". A dim plus a step backwards reads
+   as the room pulling away and the people who need you coming forward, which
+   is the actual gesture. Small enough that nothing reflows — the deck stays
+   exactly where it was, so letting go puts you back where you were looking. */
+.tru-dark .dk-page .dk-bento,
+.tru-dark .dk-page .dk-table,
+.tru-dark .dk-page .dk-wiring,
+.tru-dark .dk-page .rp-journey {
+  transform-origin: 50% 0;
+  transition:
+    opacity 0.62s var(--ease),
+    filter 0.62s var(--ease),
+    transform 0.72s var(--spring);
+}
+.tru-dark .dk-page.is-quiet .dk-bento,
+.tru-dark .dk-page.is-quiet .dk-table,
+.tru-dark .dk-page.is-quiet .dk-wiring,
+.tru-dark .dk-page.is-quiet .rp-journey { transform: scale(0.986); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .side-glide,
+  .tru-dark .dk-win-glide,
+  .tru-dark .rs-scale s,
+  .tru-dark .rs-scale u,
+  .tru-dark .rs-scale i { transition: none; }
+  .tru-dark .dk-page .dk-mast h1 { animation: none; }
+  .tru-dark .dk-fr.crit::before { animation: none; opacity: 1; }
+  .tru-dark .dk-page .dk-bento,
+  .tru-dark .dk-page .dk-table,
+  .tru-dark .dk-page .dk-wiring,
+  .tru-dark .dk-page .rp-journey { transition: none; }
+  .tru-dark .dk-page.is-quiet .dk-bento,
+  .tru-dark .dk-page.is-quiet .dk-table,
+  .tru-dark .dk-page.is-quiet .dk-wiring,
+  .tru-dark .dk-page.is-quiet .rp-journey { transform: none; }
+}
+
+/* ---- 7. The line you can take hold of -----------------------------------
+   The threshold every agent on Pulse is judged against was a constant baked
+   into the page. It is a handle now: drag it and the whole deck re-judges
+   itself live — the dots re-tone, the eyebrow re-counts, the priority rows
+   change, every row's tag rewrites, and the lede rewrites with them.
+
+   It is the difference between a dashboard that reports a rule and an
+   instrument for asking what a different rule would mean. Nothing is written
+   anywhere; the caption says "trying" rather than "your line" for exactly
+   that reason.
+
+   The target is deliberately much larger than the 1.5px it draws as — a
+   hairline is not something a hand can catch. */
+.tru-dark .sm-line.is-grab { cursor: ew-resize; touch-action: none; z-index: 4; }
+.tru-dark .sm-line.is-grab::after {
+  content: ''; position: absolute; left: -11px; right: -11px; top: -10px; bottom: -14px;
+}
+.tru-dark .sm-line.is-grab:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+
+/* The grip. Sits at the foot of the line where it cannot collide with the
+   line's own caption, and grows when you take hold of it. */
+.tru-dark .sm-grip {
+  position: absolute; left: 50%; bottom: -5px;
+  width: 11px; height: 11px; border-radius: 50%;
+  text-decoration: none; translate: -50% 0;
+  background: linear-gradient(180deg, #FFB59B, var(--ember));
+  box-shadow: 0 0 0 3px rgba(2, 7, 4, 0.55), 0 0 14px -2px var(--ember);
+  transition: scale 0.3s var(--spring), box-shadow 0.3s var(--ease);
+}
+.tru-dark .sm-line.is-grab:hover .sm-grip,
+.tru-dark .sm-line.is-grab:focus-visible .sm-grip { scale: 1.22; }
+.tru-dark .sm-line.is-dragging .sm-grip {
+  scale: 1.35;
+  box-shadow: 0 0 0 3px rgba(2, 7, 4, 0.55), 0 0 22px 1px var(--ember);
+}
+/* While it is being moved the caption is the number, so it has to be the
+   loudest thing on the rail. */
+.tru-dark .sm-line.is-dragging b { color: var(--text-strong); }
+
+/* Back to the real line. A link, not a button-looking thing — it undoes a
+   question rather than performing an action. */
+.tru-dark .sm-reset {
+  border: 0; padding: 0; margin-left: 2px; cursor: pointer;
+  background: none; font: inherit; color: var(--accent-hi);
+  text-decoration: underline; text-underline-offset: 2px;
+  text-decoration-color: var(--accent-line);
+}
+.tru-dark .sm-reset:hover { text-decoration-color: var(--accent-hi); }
+.tru-dark .dk-tile .u b { color: var(--text-60); font-weight: 700; }
+
+/* ---- 8. The command bar's results arrive in order ------------------------
+   They appeared as a block, which on a list you are reading top-down is the
+   one moment a stagger actually helps: the eye is already at the top. */
+.tru-dark .cb-list .cb-row {
+  animation: cbRow 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.tru-dark .cb-list .cb-row:nth-child(1) { animation-delay: 20ms; }
+.tru-dark .cb-list .cb-row:nth-child(2) { animation-delay: 45ms; }
+.tru-dark .cb-list .cb-row:nth-child(3) { animation-delay: 66ms; }
+.tru-dark .cb-list .cb-row:nth-child(4) { animation-delay: 84ms; }
+.tru-dark .cb-list .cb-row:nth-child(n+5) { animation-delay: 98ms; }
+@keyframes cbRow {
+  from { opacity: 0; transform: translate3d(0, 7px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .sm-grip { transition: none; }
+  .tru-dark .cb-list .cb-row { animation: none; }
+}
+
+/* The line's caption sits ON the rail, and once the line can be moved it can
+   be moved into the middle of the dots. A chip rather than bare text, so the
+   number stays readable wherever you put it. */
+.tru-dark .sm-line b {
+  padding: 2px 7px; border-radius: var(--r-pill);
+  background: rgba(7, 15, 10, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 145, 116, 0.28);
+}
