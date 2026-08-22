@@ -3718,3 +3718,93 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .dk-page { animation: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   PULSE LAB — the pipeline at true scale. Mock, at #/pulse/lab.
+   One picture, and everything else subordinate to it.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tru-dark .pl-mast { margin-bottom: 10px; }
+.tru-dark .pl-main .dk-sub { max-width: 62ch; }
+
+.tru-dark .df-wrap { position: relative; margin: 22px 0 30px; padding: 96px 0 46px; }
+/* Stretched to the page width on purpose: this is a proportion, not a shape
+   with a correct aspect ratio. Any TEXT therefore lives in the DOM above it,
+   never inside the SVG, or it would stretch with the ribbon. */
+.tru-dark .df-svg { display: block; width: 100%; height: clamp(190px, 26vw, 300px); overflow: visible; }
+
+/* Labels sit ABOVE the ribbon, not over it. At the left-hand gate the ribbon
+   is at full height, so anything laid on top of it there is unreadable. */
+.tru-dark .df-gates { position: absolute; top: 0; left: 0; right: 0; height: 88px; pointer-events: none; }
+.tru-dark .df-gate {
+  position: absolute; top: 0; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  width: 140px;
+}
+/* The first and last gate sit on the edges — pull them inboard so their
+   numbers are not half off the page. */
+/* The end gates sit ON the edges, so centring them would hang half of each
+   number off the page. Pin them inside instead. */
+.tru-dark .df-gate:first-child { transform: translateX(0); align-items: flex-start; text-align: left; }
+.tru-dark .df-gate:last-child { transform: translateX(-100%); align-items: flex-end; text-align: right; }
+.tru-dark .df-gate b {
+  font-family: var(--hq-serif); font-size: clamp(22px, 2.4vw, 34px); font-weight: 550;
+  letter-spacing: -0.03em; color: var(--text-strong); font-variant-numeric: tabular-nums;
+}
+.tru-dark .df-gate span {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-60);
+}
+.tru-dark .df-gate i { font-style: normal; font-size: 11.5px; color: var(--text-40); line-height: 1.35; }
+
+/* The losses, sitting under the ribbon between the gates they happened in. */
+.tru-dark .df-drops { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; pointer-events: none; }
+.tru-dark .df-drop {
+  position: absolute; bottom: 0; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 1px; white-space: nowrap;
+}
+.tru-dark .df-drop b {
+  font-size: 14px; font-weight: 700; color: var(--text-50); font-variant-numeric: tabular-nums;
+}
+.tru-dark .df-drop span { font-size: 10.5px; color: var(--text-40); }
+/* Only the biggest hole is coloured. If every loss were amber, none would read
+   as the one to go and fix. */
+.tru-dark .df-drop.is-worst b { color: var(--ember); font-size: 17px; }
+.tru-dark .df-drop.is-worst span { color: var(--accent-hi); }
+
+/* ---- the roster, reduced to one shape per person ---- */
+.tru-dark .pl-sec { padding-top: 4px; }
+.tru-dark .pl-plate { padding: 4px 14px 12px; }
+.tru-dark .pl-head, .tru-dark .pl-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) 116px repeat(5, minmax(64px, 0.6fr));
+  align-items: center; gap: 12px;
+}
+.tru-dark .pl-head {
+  padding: 12px 6px 10px; border-bottom: 1px solid var(--border-soft);
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-40);
+}
+.tru-dark .pl-row {
+  padding: 11px 6px; border-bottom: 1px solid var(--border-soft);
+  transition: background 0.2s var(--ease);
+}
+.tru-dark .pl-row:last-child { border-bottom: 0; }
+.tru-dark .pl-row:hover { background: var(--lift); }
+.tru-dark .pl-who { font-weight: 600; font-size: 14px; color: var(--text-strong); }
+.tru-dark .pl-n { text-align: right; font-size: 13.5px; color: var(--text-60); font-variant-numeric: tabular-nums; }
+.tru-dark .pl-head .pl-n { text-align: right; }
+.tru-dark .pl-lost { color: var(--ember); font-weight: 650; }
+.tru-dark .pl-shape { display: block; }
+.tru-dark .df-spark { display: block; width: 100%; height: 26px; }
+.tru-dark .df-spark.is-empty { height: 26px; }
+
+@media (max-width: 1100px) {
+  .tru-dark .pl-head, .tru-dark .pl-row { grid-template-columns: minmax(120px, 1.2fr) 90px repeat(5, minmax(48px, 0.5fr)); gap: 8px; }
+  .tru-dark .df-gate i { display: none; }
+}
+@media (max-width: 760px) {
+  .tru-dark .df-gate { width: 90px; }
+  .tru-dark .df-gate i { display: none; }
+  .tru-dark .df-drop span { display: none; }
+}

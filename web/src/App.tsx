@@ -8,6 +8,7 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
 import TeamAdmin from './pages/TeamAdmin';
+import PulseLab from './pages/PulseLab';
 import RosterDeck from './pages/RosterDeck';
 import Dashboard from './pages/Dashboard';
 import Coach from './pages/Coach';
@@ -160,6 +161,11 @@ export default function App() {
       // control scattered through Coach, Rep and the agent drill-down.
       : route === '/team'
         ? <TeamAdmin org={o} onHome={() => go('/')} />
+      // A mock of a different Pulse. Deliberately NOT in the sidebar — it is
+      // reachable only by typing the route, so production Pulse is untouched
+      // while this is being judged.
+      : route === '/pulse/lab'
+        ? <PulseLab org={o} onHome={() => go('/')} />
         : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
