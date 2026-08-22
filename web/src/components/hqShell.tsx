@@ -1,9 +1,26 @@
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { TruLogo } from './TruLogo';
 import { Avatar, Icon } from './hqUi';
 import { useForceHqDark } from '../hqHooks';
 import { hasAdminReturn, adminReturn } from '../lib/api';
 import { CommandBar } from './commandBar';
+import { FocusWire } from './focusWire';
+import { useDeckFocus } from './deckFocus';
+import { useRoomLight } from '../lib/deckLight';
+import { useGlide } from '../lib/deckMotion';
+
+/** What the floor is doing, said in light rather than in words. Every page
+ *  derives it from a number it is already showing:
+ *
+ *    hot    somebody is past the line / stalled / cannot start
+ *    watch  nothing is on fire but there are conversations owed
+ *    calm   nobody needs you
+ *
+ *  It is deliberately below the threshold of "a status colour" — you should
+ *  notice the room is warmer before you notice why, and then read the number
+ *  that says so. */
+export type Mood = 'calm' | 'watch' | 'hot';
 
 export interface ShellNav {
   onHome?: () => void;
@@ -27,6 +44,7 @@ export function HqShell({
   onOpenAdmin,
   hideTopbar = false,
   islandSlot,
+  mood = 'calm',
   children,
 }: {
   orgName: string;
@@ -47,6 +65,8 @@ export function HqShell({
    *  when only Pulse rendered it, its content sat 61px lower than the others
    *  and switching tabs looked like the page had jumped. */
   islandSlot?: ReactNode;
+  /** The temperature of the floor, cast into the room. See `Mood`. */
+  mood?: Mood;
   children: ReactNode;
 }) {
   // Active tab derived from the current route so every page highlights its own link
@@ -64,6 +84,17 @@ export function HqShell({
   // back to their HQ "Act as a team" picker, not the login).
   const impersonating = hasAdminReturn();
   useForceHqDark();
+  // The room answers the cursor and lags the scroll. One delegated listener for
+  // the whole shell; see lib/deckLight.
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  useRoomLight(shellRef);
+  // Outside a DeckFocusProvider this is the idle stand-in, so pages that have
+  // no roster (Team, Admin) simply never go quiet and never draw a wire.
+  const focus = useDeckFocus();
+  // One marker for the whole rail, moved — rather than a highlight that
+  // vanishes on one tab and appears on another with nothing joining them.
+  const navRef = useRef<HTMLElement | null>(null);
+  const glide = useGlide(navRef, '.side-link.active', 'y', activeKey);
   const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = [
     { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
@@ -82,14 +113,31 @@ export function HqShell({
     links.push({ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin });
   }
   return (
-    <div className="tru-shell">
+    <div className="tru-shell" ref={shellRef}>
       {/* The room. ONE copy of the render, drifting slowly.
           A second mirrored copy was tried and read exactly as what it was —
           the same picture twice, strands everywhere. Clever, and sloppy.
-          The core carries `key={activeKey}`, so it flares on every tab change. */}
+          The core carries `key={activeKey}`, so it flares on every tab change.
+
+          `.tru-room-move` is the parallax carrier and nothing else. The render
+          itself is already animated on `transform` by its drift keyframes, and
+          a second transform on the same element would have to fight it — so the
+          scroll lag rides on a wrapper of exactly the room's own box, which
+          leaves every percentage inside it resolving as before. */}
       <div className="tru-room" aria-hidden>
-        <i className="tru-room-a" />
-        <i className="tru-room-core" key={activeKey} />
+        <div className="tru-room-move">
+          <i className="tru-room-a" />
+          {/* Keyed on the tab AND on whoever is being held, so the union flares
+              when you arrive somewhere and again when you pick a person to
+              read the rest of the page against. The room acknowledges you. */}
+          <i className="tru-room-core" key={`${activeKey}:${focus.pinned ?? ''}`} />
+        </div>
+      </div>
+      {/* The floor's temperature. Anchored to the screen like the vignette
+          rather than to the room, because it is a wash over everything, and it
+          sits BEFORE the vignette in paint order so the vignette scrims it. */}
+      <div className="tru-mood" data-mood={mood} aria-hidden>
+        <i className="m-calm" /><i className="m-watch" /><i className="m-hot" />
       </div>
       <aside className="side">
         <div className="side-logo">
@@ -97,7 +145,10 @@ export function HqShell({
             <TruLogo size={28} wordSize={20} sub="HQ" />
           </button>
         </div>
-        <nav className="side-nav">
+        <nav className="side-nav" ref={navRef}>
+          {/* The selection itself. It carries the fill, the hairline and the
+              gold edge, so the active link only has to say which one it is. */}
+          <i className="side-glide" style={glide} aria-hidden />
           {links.map((l) => (
             <button
               key={l.label}
@@ -175,8 +226,12 @@ export function HqShell({
             MUST end at `transform: none`: a lingering transform on this wrapper
             would become the containing block for every `position: fixed`
             descendant, and the agent drill-in panel and its scrim live in here. */}
-        <div className="dk-page" key={activeKey}>{children}</div>
+        <div className={`dk-page${focus.quiet ? ' is-quiet' : ''}`} key={activeKey}>{children}</div>
       </main>
+
+      {/* The thread of light from a dot to its row. Renders nothing at all
+          unless a person is being pointed at and both ends are on screen. */}
+      <FocusWire />
 
       {/* Phone navigation. Same links as the sidebar, fixed to the bottom where a
           thumb reaches — and the reason the sidebar can stop trying to be a

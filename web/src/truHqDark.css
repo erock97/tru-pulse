@@ -2986,7 +2986,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   display: flex; align-items: flex-end; gap: 3px; height: 38px; flex: none;
   padding-bottom: 2px;
 }
-.tru-dark .rs-strip i { width: 6px; border-radius: 2px; display: block; }
+/* Full height, scaled from the floor. The bar's LENGTH is a transform rather
+   than a height so that changing the window re-scales thirty bars on the
+   compositor instead of relaying the tile out thirty times a frame. */
+.tru-dark .rs-strip i {
+  width: 6px; border-radius: 2px; display: block;
+  height: 100%; transform-origin: bottom; transform: scaleY(1);
+  transition: transform 0.62s var(--spring), opacity 0.3s var(--ease),
+    filter 0.3s var(--ease);
+}
 .tru-dark .rs-strip.t-sea i { background: linear-gradient(180deg, var(--sea-hi), rgba(143, 176, 162, 0.32)); }
 .tru-dark .rs-strip.t-amber i { background: linear-gradient(180deg, var(--accent-hi), rgba(242, 178, 60, 0.30)); }
 .tru-dark .rs-strip.t-ember i { background: linear-gradient(180deg, #FF9174, rgba(255, 106, 69, 0.28)); }
@@ -4136,3 +4144,870 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .lab-brief b { font-size: 15px; font-weight: 600; color: var(--text-strong); }
 .tru-dark .lab-brief p { margin: 3px 0 6px; font-size: 13.5px; line-height: 1.5; color: var(--text-60); }
 .tru-dark .lab-brief-do { font: 600 12px/1 var(--hq-font); color: var(--accent-hi); }
+
+/* ════════════════════════════════════════════════════════════════════
+   ONE INSTRUMENT — the tiles, the marks and the table, wired together
+   --------------------------------------------------------------------
+   A deck page draws the same team three times over: as dots on a scale in the
+   lead tile, as bars in the five small tiles, and as rows in the table. Until
+   now those three were strangers. You could see that somebody was an outlier
+   and had no way to find out who without reading every number.
+
+   Everything below is the wire between them, and none of it introduces a
+   colour. The tone of a mark is still whatever the data made it; focus only
+   changes how much light it gets. Amber stays scarce.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- the scale ----------------------------------------------------------
+   `container-type: inline-size` is load-bearing, not a flourish. It makes
+   `1cqw` mean "one percent of this rail", which lets a dot be positioned by
+   `translate` instead of by `left` — so a dot travelling to a new value when
+   the window changes is a compositor job, and ten of them travelling at once
+   do not relayout the card on every frame. */
+.tru-dark .sm-scale { container-type: inline-size; }
+
+.tru-dark .sm-dot {
+  left: 0;
+  /* The `- 50%` is the centring the retired `translate(-50%, -50%)` did.
+     Without it a dot's left EDGE lands on its value instead of its middle,
+     which is a four-pixel lie about where every agent sits.
+
+     `--lift` stacks the people who landed on the same number, so a pile-up
+     reads as a pile-up rather than as one dot drawn three times. */
+  /* `translate` and `scale` as separate longhands rather than one `transform`,
+     because the dot needs two independent motions: WHERE it sits, which travels
+     when the window changes, and its ARRIVAL, which is a pop. Packed into a
+     single `transform` the entry animation would overwrite the position and
+     drop every agent onto the same spot for half a second. */
+  transform: none;
+  translate:
+    calc(var(--at, 0) * 1cqw - 50%)
+    calc(-50% - var(--lift, 0) * 10px);
+  transition:
+    translate 0.62s var(--spring),
+    width 0.34s var(--spring),
+    height 0.34s var(--spring),
+    box-shadow 0.34s var(--ease),
+    opacity 0.28s var(--ease);
+  /* The team populates the scale left to right once the tile has landed, so
+     you watch the spread assemble rather than finding it already there. Runs on
+     creation only: a window change reuses the same nodes and simply travels. */
+  animation: smArrive 520ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--n, 0) * 42ms + 430ms);
+}
+@keyframes smArrive {
+  from { scale: 0.1; opacity: 0; }
+  to   { scale: 1; opacity: 1; }
+}
+
+/* While one dot is being read the others step back rather than disappearing —
+   the spread of the team is half of what the picture says, so it has to
+   survive being pointed at. */
+.tru-dark .sm-scale.is-focused .sm-dot { opacity: 0.34; }
+.tru-dark .sm-scale.is-focused .sm-dot.is-on { opacity: 1; }
+
+.tru-dark .sm-dot.is-on {
+  width: 13px; height: 13px; z-index: 3;
+  box-shadow: 0 0 0 4px rgba(2, 7, 4, 0.5), 0 0 22px 4px currentColor;
+}
+/* Held. A ring rather than more glow, because glow already means "you are
+   pointing at this" and the two states have to be told apart at a glance. */
+.tru-dark .sm-dot.is-pinned {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(2, 7, 4, 0.72), 0 0 0 3.5px currentColor, 0 0 18px 3px currentColor;
+}
+
+/* Rep's line is the finish, which lands at the far right of the rail. Its
+   caption labels itself leftward there for the same reason a dot past halfway
+   does — otherwise the word hangs off the end of the card. */
+.tru-dark .sm-line.flip b { left: auto; right: 8px; }
+
+/* The name, said only while the dot is being read. */
+.tru-dark .sm-flag {
+  position: absolute; left: 15px; top: 50%;
+  transform: translateY(-50%) scale(0.94);
+  transform-origin: left center;
+  display: flex; align-items: baseline; gap: 7px; white-space: nowrap;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font: 700 11px/1 var(--hq-font); letter-spacing: -0.005em; color: var(--text-strong);
+  background: rgba(7, 15, 10, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.16), 0 0 0 1px var(--border-soft);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s var(--ease), transform 0.34s var(--spring);
+}
+.tru-dark .sm-flag s { text-decoration: none; font-weight: 600; color: var(--text-50); }
+.tru-dark .sm-dot.is-on .sm-flag,
+.tru-dark .sm-dot.is-pinned .sm-flag { opacity: 1; transform: translateY(-50%) scale(1); }
+/* Past halfway a dot would hang its own name off the end of the card. */
+.tru-dark .sm-dot.flip .sm-flag {
+  left: auto; right: 15px; transform-origin: right center;
+  flex-direction: row-reverse;
+}
+
+/* The dots are pointable now, so they need a target bigger than 9px. An
+   invisible pad rather than a bigger dot: the mark stays the size the reading
+   needs it to be. */
+.tru-dark .sm-dot::before {
+  content: ''; position: absolute; inset: -9px; border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .sm-dot,
+  .tru-dark .sm-flag,
+  .tru-dark .rs-strip i { transition: none; }
+  .tru-dark .sm-dot { animation: none; scale: 1; }
+}
+
+/* ---- the strips ---------------------------------------------------------
+   The same idea, five tiles over. Point at a row and you can see in one
+   movement that this is the person who is fifth on leads, second on worked
+   and first on stuck — five readings the page was already drawing that
+   nobody could line up against each other. */
+.tru-dark .rs-strip.is-focused i { opacity: 0.26; filter: saturate(0.5); }
+.tru-dark .rs-strip.is-focused i.is-on { opacity: 1; filter: none; }
+/* The bar being read is found by light, not by a different colour. */
+.tru-dark .rs-strip i.is-on { box-shadow: 0 0 9px 1px rgba(255, 216, 148, 0.35); }
+.tru-dark .rs-strip.t-sea i.is-on { box-shadow: 0 0 9px 1px rgba(143, 176, 162, 0.55); }
+.tru-dark .rs-strip.t-ember i.is-on { box-shadow: 0 0 9px 1px rgba(255, 106, 69, 0.50); }
+
+/* ---- the row ------------------------------------------------------------
+   The table end of the same wire. It reuses the gold edge the hover rule
+   already draws rather than inventing a second way to mark a row, so pointing
+   from a tile and pointing from the table look identical. */
+.tru-dark .tru-table tbody tr.is-on td {
+  background: var(--hover-fill-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 178, 60, 0.30),
+    inset 0 -1px 0 rgba(242, 178, 60, 0.30);
+}
+/* Held: the one row you came here about, kept lit through a sort, a window
+   change and a scroll, so the rest of the page can be read against it. */
+.tru-dark .tru-table tbody tr.is-pinned td { background: rgba(242, 178, 60, 0.055); }
+.tru-dark .tru-table tbody tr.is-pinned td:first-child { position: relative; }
+.tru-dark .tru-table tbody tr.is-pinned td:first-child::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px;
+  border-radius: 0 2px 2px 0; background: var(--accent);
+}
+.tru-dark .dk-focus .dk-fr.is-on { background: rgba(226, 240, 230, 0.055); }
+.tru-dark .dk-focus .dk-fr.crit.is-on { background: rgba(255, 106, 69, 0.12); }
+
+/* ---- the header stays, and so do the totals -----------------------------
+   A roster runs past the fold. Scrolling used to take the column names with
+   it, so halfway down the table the numbers stopped saying what they were —
+   and the team totals, the row every other row is compared against, sat at
+   the very bottom where you could never see them and a person at the same
+   time.
+
+   `overflow: clip` rather than `hidden` on the plate. Both round the corners.
+   `hidden` also makes the plate a scroll container, and a sticky child of a
+   scroll container with no scroll range never sticks at all. That one word is
+   the whole reason this works.
+
+   The TOTALS row was tried this way too and was wrong. Pinned to the foot of
+   the viewport it permanently covered whichever agent happened to be at the
+   bottom of the screen — a row of nine numbers hiding a person, on a page
+   whose entire job is the people. The column names are worth a strip of the
+   screen; a second copy of the team average is not. */
+.tru-dark .dk-table { overflow: clip; }
+.tru-dark .dk-table .tru-table thead th {
+  position: sticky;
+  /* Under the island, which is sticky at 16px and 44px tall, with enough
+     air that the two bars do not read as one crowded strip. */
+  top: 74px;
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(16, 29, 21, 0.97), rgba(9, 17, 12, 0.98));
+  /* `border-collapse: collapse` drops the border of a sticky cell, so the rule
+     under the header is drawn as an inset shadow instead. */
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 var(--border-soft);
+}
+.tru-dark .dk-table .tru-table thead th.sortable.on {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ---- the sortable header, made obviously sortable -----------------------
+   The caret existed only on the column already sorting, so every other header
+   read as a label and nobody clicked one. Now it appears, faint, under the
+   cursor. */
+.tru-dark .tru-table thead th.sortable .sortcaret {
+  display: inline-block; width: 9px; opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.tru-dark .tru-table thead th.sortable:hover .sortcaret { opacity: 0.45; }
+.tru-dark .tru-table thead th.sortable.on .sortcaret { opacity: 0.85; }
+.tru-dark .tru-table thead th.sortable:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px;
+}
+
+/* ---- the keyboard, said out loud ----------------------------------------
+   The command bar made the deck reachable without a mouse. This says the
+   roster is readable without one too. It sits with the section key, in the
+   same voice, and is hidden on a touch screen where it would be a lie. */
+.tru-dark .dk-keys {
+  display: inline-flex; align-items: center; gap: 7px;
+  vertical-align: middle; margin-right: 14px;
+  font-size: 11px; color: var(--text-40); letter-spacing: 0.02em;
+}
+.tru-dark .dk-keys kbd {
+  font: 600 10px/1 var(--hq-font); color: var(--text-50);
+  background: var(--lift); border: 1px solid var(--border-soft);
+  border-radius: 5px; padding: 3px 5px;
+}
+.tru-dark .dk-keys b { font-weight: 600; color: var(--text-50); }
+@media (hover: none), (max-width: 900px) {
+  .tru-dark .dk-keys { display: none; }
+}
+
+/* A held row is worth saying in words as well, once, where the eye already is. */
+.tru-dark .dk-pinned {
+  display: inline-flex; align-items: center; gap: 8px;
+  vertical-align: middle; margin-right: 14px;
+  padding: 4px 5px 4px 12px; border-radius: var(--r-pill);
+  font: 600 11px/1 var(--hq-font); color: var(--accent-hi);
+  background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.tru-dark .dk-pinned button {
+  border: 0; cursor: pointer; font-family: inherit; font-size: 11px; line-height: 1;
+  color: var(--text-50); background: var(--hover-fill);
+  border-radius: var(--r-pill); padding: 4px 9px;
+  transition: color 0.2s var(--ease);
+}
+.tru-dark .dk-pinned button:hover { color: var(--text-strong); }
+
+@media (max-width: 900px) {
+  /* The island wraps on a narrow screen, so a fixed offset would either float
+     the header off the table or bury it under the bar. Below the deck's own
+     breakpoint the header scrolls with the table, which is the honest
+     behaviour on a phone. */
+  .tru-dark .dk-table .tru-table thead th { position: static; }
+}
+
+/* Rep's roster is a list of rows rather than a table, so it wears the same
+   focus marks in its own shape. Identical behaviour, identical vocabulary:
+   pointed gets the gold edge, held gets the amber bar. */
+.tru-dark .rp-agent {
+  position: relative;
+  transition: background 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.tru-dark .rp-agent.is-on {
+  background: var(--hover-fill-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 178, 60, 0.30),
+    inset 0 -1px 0 rgba(242, 178, 60, 0.30);
+}
+.tru-dark .rp-agent.is-pinned { background: rgba(242, 178, 60, 0.055); }
+.tru-dark .rp-agent.is-pinned::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px;
+  border-radius: 0 2px 2px 0; background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .rp-agent { transition: none; }
+}
+
+/* The section key stays an inline run of text — the tick marks and their
+   captions are one sentence, and turning it into a flex row would put a gap
+   between "your line at" and the tick it belongs to. The legend and the held
+   chip flow inside it as inline-flex pills instead. */
+
+/* ════════════════════════════════════════════════════════════════════
+   THE ROOM IS ALIVE
+   --------------------------------------------------------------------
+   The system's thesis was always that a page is a ROOM that is lit. The
+   lighting just never knew anything: a render drifting on a fixed loop,
+   indifferent to the cursor, to the scroll, and to whether the floor was on
+   fire.
+
+   Everything below is that one idea followed through — light that answers.
+   Not one colour is introduced; every value here is an existing token, or the
+   same warm white the plates already catch on their top edge.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. The light lags the page -----------------------------------------
+   The room is `fixed`, so scrolling used to slide the data past a picture
+   that never moved — which is a wallpaper, not a space. Now the light layer
+   trails the scroll while the ground behind it does not, and the separation
+   between them is what makes the deck feel like somewhere you are moving
+   THROUGH.
+
+   The carrier is a wrapper of exactly the room's own box, so every percentage
+   inside (the core sits at 63%/30%) resolves precisely as it did before. The
+   render's own drift keyframes stay on the children, untouched — two
+   transforms on one element would fight, and the drift is load-bearing. */
+.tru-dark .tru-room-move {
+  position: absolute; inset: 0;
+  transform: translate3d(0, calc(var(--sy, 0) * 0.045px), 0);
+  will-change: transform;
+}
+/* The children are inset -14%, and the lag tops out at 108px. Widening the
+   crop a little guarantees no edge can swing in at the extreme of both. */
+.tru-dark .tru-room i { inset: -18%; }
+
+/* ---- 2. The room takes the temperature of the floor ----------------------
+   You should notice the room is warmer before you notice why, and then read
+   the number that says so. Three layers rather than one animated background,
+   because gradients do not interpolate and a snap would be the one thing that
+   gave this away as a switch rather than as light.
+
+   Held far below a status colour on purpose. If this ever reads as "the amber
+   state" it has failed — the amber belongs to the one row that needs action,
+   and this is the air in the room. */
+.tru-dark .tru-mood { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.tru-dark .tru-mood i {
+  position: absolute; inset: 0; display: block; opacity: 0;
+  transition: opacity 1.6s var(--ease);
+}
+.tru-dark .tru-mood .m-calm {
+  background: radial-gradient(112% 56% at 50% 106%, rgba(143, 176, 162, 0.10), transparent 64%);
+}
+.tru-dark .tru-mood .m-watch {
+  background:
+    radial-gradient(112% 56% at 50% 106%, rgba(242, 178, 60, 0.075), transparent 64%),
+    radial-gradient(64% 34% at 50% -4%, rgba(242, 178, 60, 0.045), transparent 72%);
+}
+.tru-dark .tru-mood .m-hot {
+  background:
+    radial-gradient(118% 60% at 50% 108%, rgba(255, 106, 69, 0.10), transparent 62%),
+    radial-gradient(70% 38% at 50% -6%, rgba(255, 106, 69, 0.055), transparent 70%);
+}
+.tru-dark .tru-mood[data-mood="calm"] .m-calm,
+.tru-dark .tru-mood[data-mood="watch"] .m-watch,
+.tru-dark .tru-mood[data-mood="hot"] .m-hot { opacity: 1; }
+
+/* ---- 3. The plate catches the light where your hand is -------------------
+   The room has one warm source. This is that source landing on a surface you
+   happen to be touching — not a highlight bolted onto a card, which is why it
+   is the room's own warm white and not the accent.
+
+   `isolation: isolate` is what lets the wash sit at z-index -1: above the
+   plate's own glass, under everything printed on it. Without a stacking
+   context here a negative index escapes to the page and disappears behind the
+   plate entirely. */
+.tru-dark .rs-plate { isolation: isolate; }
+.tru-dark .rs-plate::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  border-radius: inherit; pointer-events: none;
+  background: radial-gradient(
+    260px circle at var(--px, 50%) var(--py, -40%),
+    rgba(255, 226, 170, 0.085), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.42s var(--ease);
+}
+.tru-dark .rs-plate.is-lit::after { opacity: 1; }
+
+/* ---- 4. Light travels across a plate as it lands -------------------------
+   The cards already settled into place on a shared curve. Now a band of light
+   crosses each one as it arrives, the way a source sweeps over glass when the
+   glass moves. It rides the SAME delays as the settle, so it is part of the
+   one choreography rather than a second thing happening at once.
+
+   Once, on arrival. A sweep that loops is a loading skeleton, and this page is
+   not loading. */
+.tru-dark .dk-page .dk-tile::before,
+.tru-dark .dk-page .dk-table::before {
+  content: ''; position: absolute; top: -20%; bottom: -20%; left: 0;
+  width: 34%; pointer-events: none; z-index: 0;
+  /* The RESTING state is off the right-hand edge — the same place the sweep
+     ends. `backwards` fill holds the FIRST frame during the delay and then
+     hands the element back to its own resting state, so without this line the
+     band reverts to `transform: none` and parks itself permanently across the
+     left third of every tile. It looked deliberate, which is the dangerous
+     kind of wrong. */
+  transform: translate3d(430%, 0, 0) skewX(-13deg);
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 236, 198, 0.05) 38%,
+    rgba(255, 236, 198, 0.11) 52%,
+    rgba(255, 236, 198, 0.03) 66%,
+    transparent 100%);
+  animation: plateSweep 1250ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes plateSweep {
+  from { transform: translate3d(-170%, 0, 0) skewX(-13deg); }
+  to   { transform: translate3d(430%, 0, 0) skewX(-13deg); }
+}
+/* One beat behind each plate's own landing, so the light arrives with it
+   rather than ahead of it. Mirrors the cardSettle running order exactly. */
+.tru-dark .dk-page .dk-bento > *:nth-child(1)::before { animation-delay: 270ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(2)::before { animation-delay: 325ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(3)::before { animation-delay: 370ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(4)::before { animation-delay: 410ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(5)::before { animation-delay: 445ms; }
+.tru-dark .dk-page .dk-bento > *:nth-child(n+6)::before { animation-delay: 475ms; }
+.tru-dark .dk-page .dk-table::before { animation-delay: 560ms; }
+
+/* ---- 5. The thread of light ----------------------------------------------
+   From the dot on the scale down to that person's row. The highlight already
+   said these two were the same person; this says it out loud, and turns an
+   inference into something you watch happen.
+
+   It fades toward the row on purpose. A line of even weight between two points
+   is an org chart; light leaving a source is what this actually is. */
+.tru-dark .fw {
+  position: fixed; inset: 0; z-index: 20;
+  width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+  opacity: 0; transition: opacity 0.24s var(--ease);
+}
+.tru-dark .fw.is-on { opacity: 1; }
+.tru-dark .fw path { fill: none; stroke-linecap: round; }
+/* pathLength="1" normalises every curve, so one dash pair draws any shape. */
+.tru-dark .fw-line {
+  stroke-width: 1.25;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: fwDraw 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.tru-dark .fw-glow {
+  stroke-width: 7; opacity: 0.16;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: fwDraw 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes fwDraw { to { stroke-dashoffset: 0; } }
+
+/* ---- 6. The strip answers in a wave -------------------------------------
+   Thirty bars re-scaling in perfect unison reads as a redraw. The same thirty
+   arriving a frame and a half apart reads as the change travelling through the
+   team, which is what a window change actually is.
+
+   The delay is on `transform` ONLY. Putting it on opacity too would make the
+   cross-highlight feel like it was thinking about it. */
+.tru-dark .rs-strip i {
+  transition:
+    transform 0.62s var(--spring) calc(var(--i, 0) * 16ms),
+    opacity 0.3s var(--ease),
+    filter 0.3s var(--ease);
+}
+
+/* ---- 7. Numbers roll ------------------------------------------------------
+   Each digit is a column of ten. The digits that did not change do not move,
+   so 398 → 390 turns one wheel and leaves two standing — and you read the size
+   of a change from how much of the tile moves.
+
+   Every character is the same inline-block, separators included, so `1 : 15`
+   keeps one baseline instead of the digits floating against the colon. */
+.tru-dark .od { display: inline-flex; align-items: baseline; }
+.tru-dark .od-c {
+  display: inline-block; height: 1em; line-height: 1;
+  overflow: hidden; vertical-align: baseline;
+}
+.tru-dark .od-d b {
+  display: block; font-weight: inherit;
+  transition: transform 0.66s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tru-dark .od-d i {
+  display: block; height: 1em; line-height: 1;
+  font-style: inherit; font-variant-numeric: tabular-nums;
+}
+
+/* ---- 8. Quiet ------------------------------------------------------------
+   `f`, and the rest of the page walks out of the room. What is left is the
+   masthead and the people who need you — which on a Monday morning is the
+   entire reason a leader opened this.
+
+   A dim rather than a hide: the deck stays where it was, so letting go puts
+   you back exactly where you were looking. Nothing moves position; the rows
+   that remain lift a fraction, which is enough to read as "these came
+   forward" without the page reflowing. */
+.tru-dark .dk-page .dk-bento,
+.tru-dark .dk-page .dk-table,
+.tru-dark .dk-page .dk-wiring,
+.tru-dark .dk-page .rp-journey,
+.tru-dark .dk-page .dk-sub,
+.tru-dark .dk-page .dk-sec p {
+  transition: opacity 0.62s var(--ease), filter 0.62s var(--ease);
+}
+.tru-dark .dk-page .dk-key { transition: color 0.62s var(--ease); }
+.tru-dark .dk-page .dk-key > s,
+.tru-dark .dk-page .dk-key > .dk-keys,
+.tru-dark .dk-page .dk-key > .dk-pinned { transition: opacity 0.62s var(--ease); }
+.tru-dark .dk-page.is-quiet .dk-bento,
+.tru-dark .dk-page.is-quiet .dk-table,
+.tru-dark .dk-page.is-quiet .dk-wiring,
+.tru-dark .dk-page.is-quiet .rp-journey,
+.tru-dark .dk-page.is-quiet .dk-sub,
+.tru-dark .dk-page.is-quiet .dk-sec p {
+  opacity: 0.12; filter: saturate(0.35);
+  pointer-events: none;
+}
+/* The section key holds the way OUT of quiet, so it cannot be dimmed as a
+   block — opacity on a parent is not something a child can undo, and the first
+   version faded the escape hatch to twelve percent and switched its pointer
+   events off. The key's own text and tick marks go instead, and the chip keeps
+   its own colour. */
+.tru-dark .dk-page.is-quiet .dk-key { color: transparent; }
+.tru-dark .dk-page.is-quiet .dk-key > s,
+.tru-dark .dk-page.is-quiet .dk-key > .dk-keys,
+.tru-dark .dk-page.is-quiet .dk-key > .dk-pinned { opacity: 0; pointer-events: none; }
+.tru-dark .dk-page .dk-focus > * {
+  transition:
+    transform 0.62s var(--spring),
+    background 0.4s var(--spring),
+    box-shadow 0.62s var(--ease);
+}
+.tru-dark .dk-page.is-quiet .dk-focus > * {
+  transform: scale(1.014);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.14), 0 26px 50px -34px rgba(2, 7, 4, 0.9);
+}
+/* Said once, where the eye already is, so nobody is stranded in a dimmed page
+   wondering what they pressed. */
+.tru-dark .dk-quiet-out {
+  display: inline-flex; align-items: center; gap: 8px;
+  vertical-align: middle; margin-right: 14px;
+  padding: 4px 5px 4px 12px; border-radius: var(--r-pill);
+  font: 600 11px/1 var(--hq-font); color: var(--sea-hi);
+  background: var(--sea-soft); box-shadow: inset 0 0 0 1px rgba(143, 176, 162, 0.24);
+}
+.tru-dark .dk-quiet-out button {
+  border: 0; cursor: pointer; font-family: inherit; font-size: 11px; line-height: 1;
+  color: var(--text-50); background: var(--hover-fill);
+  border-radius: var(--r-pill); padding: 4px 9px;
+  transition: color 0.2s var(--ease);
+}
+.tru-dark .dk-quiet-out button:hover { color: var(--text-strong); }
+/* The section head is the one thing that must stay legible in quiet, because
+   it is the sentence naming who is left. */
+.tru-dark .dk-page.is-quiet .dk-sec h2 { color: var(--text-strong); }
+
+/* ---- and none of it under reduced motion -------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-room-move { transform: none; }
+  .tru-dark .rs-plate::after { display: none; }
+  .tru-dark .dk-page .dk-tile::before,
+  .tru-dark .dk-page .dk-table::before { animation: none; display: none; }
+  .tru-dark .fw { display: none; }
+  .tru-dark .od-d b { transition: none; }
+  .tru-dark .dk-page .dk-focus > *,
+  .tru-dark .dk-page .dk-bento,
+  .tru-dark .dk-page .dk-table,
+  .tru-dark .dk-page .dk-wiring,
+  .tru-dark .dk-page .rp-journey,
+  .tru-dark .dk-page .dk-sub,
+  .tru-dark .dk-page .dk-sec p,
+  .tru-dark .dk-page .dk-key { transition: none; }
+  .tru-dark .dk-page.is-quiet .dk-focus > * { transform: none; }
+  .tru-dark .tru-mood i { transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   THINGS THAT TRAVEL
+   --------------------------------------------------------------------
+   Same thesis, pushed further: nothing on this deck should teleport. A
+   selection, a mark on a scale, a sentence arriving — each one should move
+   from where it was to where it belongs, because that movement is what tells
+   you the two are the same thing.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- 1. One marker for the rail, moved ----------------------------------
+   The active link used to CARRY its own highlight, so switching tabs meant
+   the mark blinked out in one place and appeared in another with nothing
+   joining them. Now there is one marker and it slides. The active link is
+   left saying only which one it is; the marker says where the selection is.
+
+   `position: relative` on the track is load-bearing — the hook measures with
+   `offsetTop`, which is relative to the offset parent. */
+.tru-dark .tru-shell .side-nav { position: relative; }
+.tru-dark .side-glide {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 0;
+  border-radius: 12px; pointer-events: none;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  transition:
+    transform 0.52s var(--spring),
+    height 0.52s var(--spring),
+    opacity 0.3s var(--ease);
+}
+/* The gold edge rides the marker rather than the link, so it travels too. */
+.tru-dark .side-glide::before {
+  content: ''; position: absolute; left: 6px; top: 50%;
+  width: 3px; height: 18px; margin-top: -9px;
+  border-radius: 3px; background: var(--accent-hi);
+  box-shadow: 0 0 10px -1px var(--accent);
+}
+/* The links now sit ON the marker, so they need to be above it and to stop
+   drawing a second copy of it. */
+.tru-dark .tru-shell .side-link { position: relative; z-index: 1; }
+.tru-dark .tru-shell .side-link.active {
+  background: none;
+  border-color: transparent;
+}
+.tru-dark .tru-shell .side-link.active::before { display: none; }
+
+/* ---- 2. The same, for the window tabs ------------------------------------
+   This is the one control that changes every figure on the page, so the
+   selection travelling is the first half of the answer and the numbers
+   rolling underneath is the second. */
+.tru-dark .dk-win { position: relative; }
+.tru-dark .dk-win-glide {
+  position: absolute; left: 0; top: 3px; bottom: 3px; z-index: 0;
+  border-radius: var(--r-pill); pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 220, 147, 0.22), rgba(242, 178, 60, 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 0.5s var(--spring),
+    width 0.5s var(--spring),
+    opacity 0.3s var(--ease);
+}
+.tru-dark .dk-win button { position: relative; z-index: 1; }
+.tru-dark .dk-win button.on { background: none; box-shadow: none; }
+
+/* ---- 3. The sentence arrives ---------------------------------------------
+   The masthead is the only large type on a deck page and it was the one thing
+   that simply appeared. It writes itself in now — a wipe left to right, under
+   the same curve as everything else, one beat after the page has settled.
+
+   `inset(0 -8% 0 0)` at the end rather than `inset(0)`: the headline's italic
+   `em` overhangs its own box, and clipping to exactly zero shaves the tail off
+   the last letter. */
+.tru-dark .dk-page .dk-mast h1 {
+  animation: mastWrite 760ms cubic-bezier(0.16, 1, 0.3, 1) 200ms backwards;
+}
+@keyframes mastWrite {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 -8% 0 0); }
+}
+
+/* ---- 4. The rows that need you have a pulse ------------------------------
+   The product is called Pulse and the one thing on the page that is genuinely
+   urgent sat there as still as everything else. The ember edge on a critical
+   row now beats, slowly — about one cycle every three seconds, which is
+   under a resting heart rate and reads as alive rather than as an alarm.
+
+   Opacity only, and only on the rows already marked critical. If every row
+   did this it would be a screensaver. */
+.tru-dark .dk-fr.crit::before {
+  box-shadow: 0 0 11px -1px var(--ember);
+  animation: needPulse 3s ease-in-out infinite;
+}
+@keyframes needPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+
+/* ---- 5. The marks in the table travel too --------------------------------
+   The lead tile's dots already slid to their new places on a window change
+   while the identical marks in every table row snapped. Same treatment, same
+   technique: `cqw` off the row's own scale, so position is a compositor
+   property and forty of them move without a single relayout. */
+.tru-dark .rs-scale { container-type: inline-size; }
+.tru-dark .rs-scale s,
+.tru-dark .rs-scale u,
+.tru-dark .rs-scale i {
+  left: 0;
+  transition: translate 0.62s var(--spring);
+}
+.tru-dark .rs-scale s,
+.tru-dark .rs-scale u { translate: calc(var(--at, 0) * 1cqw); }
+.tru-dark .rs-scale i {
+  transform: none;
+  translate: calc(var(--at, 0) * 1cqw - 50%) -50%;
+}
+
+/* ---- 6. Quiet racks the focus -------------------------------------------
+   A dim alone reads as "these went grey". A dim plus a step backwards reads
+   as the room pulling away and the people who need you coming forward, which
+   is the actual gesture. Small enough that nothing reflows — the deck stays
+   exactly where it was, so letting go puts you back where you were looking. */
+.tru-dark .dk-page .dk-bento,
+.tru-dark .dk-page .dk-table,
+.tru-dark .dk-page .dk-wiring,
+.tru-dark .dk-page .rp-journey {
+  transform-origin: 50% 0;
+  transition:
+    opacity 0.62s var(--ease),
+    filter 0.62s var(--ease),
+    transform 0.72s var(--spring);
+}
+.tru-dark .dk-page.is-quiet .dk-bento,
+.tru-dark .dk-page.is-quiet .dk-table,
+.tru-dark .dk-page.is-quiet .dk-wiring,
+.tru-dark .dk-page.is-quiet .rp-journey { transform: scale(0.986); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .side-glide,
+  .tru-dark .dk-win-glide,
+  .tru-dark .rs-scale s,
+  .tru-dark .rs-scale u,
+  .tru-dark .rs-scale i { transition: none; }
+  .tru-dark .dk-page .dk-mast h1 { animation: none; }
+  .tru-dark .dk-fr.crit::before { animation: none; opacity: 1; }
+  .tru-dark .dk-page .dk-bento,
+  .tru-dark .dk-page .dk-table,
+  .tru-dark .dk-page .dk-wiring,
+  .tru-dark .dk-page .rp-journey { transition: none; }
+  .tru-dark .dk-page.is-quiet .dk-bento,
+  .tru-dark .dk-page.is-quiet .dk-table,
+  .tru-dark .dk-page.is-quiet .dk-wiring,
+  .tru-dark .dk-page.is-quiet .rp-journey { transform: none; }
+}
+
+/* ---- 7. The line you can take hold of -----------------------------------
+   The threshold every agent on Pulse is judged against was a constant baked
+   into the page. It is a handle now: drag it and the whole deck re-judges
+   itself live — the dots re-tone, the eyebrow re-counts, the priority rows
+   change, every row's tag rewrites, and the lede rewrites with them.
+
+   It is the difference between a dashboard that reports a rule and an
+   instrument for asking what a different rule would mean. Nothing is written
+   anywhere; the caption says "trying" rather than "your line" for exactly
+   that reason.
+
+   The target is deliberately much larger than the 1.5px it draws as — a
+   hairline is not something a hand can catch. */
+.tru-dark .sm-line.is-grab { cursor: ew-resize; touch-action: none; z-index: 4; }
+.tru-dark .sm-line.is-grab::after {
+  content: ''; position: absolute; left: -11px; right: -11px; top: -10px; bottom: -14px;
+}
+.tru-dark .sm-line.is-grab:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+
+/* The grip. Sits at the foot of the line where it cannot collide with the
+   line's own caption, and grows when you take hold of it. */
+.tru-dark .sm-grip {
+  position: absolute; left: 50%; bottom: -5px;
+  width: 11px; height: 11px; border-radius: 50%;
+  text-decoration: none; translate: -50% 0;
+  background: linear-gradient(180deg, #FFB59B, var(--ember));
+  box-shadow: 0 0 0 3px rgba(2, 7, 4, 0.55), 0 0 14px -2px var(--ember);
+  transition: scale 0.3s var(--spring), box-shadow 0.3s var(--ease);
+}
+.tru-dark .sm-line.is-grab:hover .sm-grip,
+.tru-dark .sm-line.is-grab:focus-visible .sm-grip { scale: 1.22; }
+.tru-dark .sm-line.is-dragging .sm-grip {
+  scale: 1.35;
+  box-shadow: 0 0 0 3px rgba(2, 7, 4, 0.55), 0 0 22px 1px var(--ember);
+}
+/* While it is being moved the caption is the number, so it has to be the
+   loudest thing on the rail. */
+.tru-dark .sm-line.is-dragging b { color: var(--text-strong); }
+
+/* Back to the real line. A link, not a button-looking thing — it undoes a
+   question rather than performing an action. */
+.tru-dark .sm-reset {
+  border: 0; padding: 0; margin-left: 2px; cursor: pointer;
+  background: none; font: inherit; color: var(--accent-hi);
+  text-decoration: underline; text-underline-offset: 2px;
+  text-decoration-color: var(--accent-line);
+}
+.tru-dark .sm-reset:hover { text-decoration-color: var(--accent-hi); }
+.tru-dark .dk-tile .u b { color: var(--text-60); font-weight: 700; }
+
+/* ---- 8. The command bar's results arrive in order ------------------------
+   They appeared as a block, which on a list you are reading top-down is the
+   one moment a stagger actually helps: the eye is already at the top. */
+.tru-dark .cb-list .cb-row {
+  animation: cbRow 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.tru-dark .cb-list .cb-row:nth-child(1) { animation-delay: 20ms; }
+.tru-dark .cb-list .cb-row:nth-child(2) { animation-delay: 45ms; }
+.tru-dark .cb-list .cb-row:nth-child(3) { animation-delay: 66ms; }
+.tru-dark .cb-list .cb-row:nth-child(4) { animation-delay: 84ms; }
+.tru-dark .cb-list .cb-row:nth-child(n+5) { animation-delay: 98ms; }
+@keyframes cbRow {
+  from { opacity: 0; transform: translate3d(0, 7px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .sm-grip { transition: none; }
+  .tru-dark .cb-list .cb-row { animation: none; }
+}
+
+/* The line's caption sits ON the rail, and once the line can be moved it can
+   be moved into the middle of the dots. A chip rather than bare text, so the
+   number stays readable wherever you put it. */
+.tru-dark .sm-line b {
+  padding: 2px 7px; border-radius: var(--r-pill);
+  background: rgba(7, 15, 10, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 145, 116, 0.28);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   THE SUMMARY IS THE CONTROL SURFACE
+   --------------------------------------------------------------------
+   A leader reads "Still in Lead: 12" and immediately wants to know WHO. The
+   answer was always in the table two inches below, sorted by something else.
+   Every tile summarises a column, so every tile is now the control for that
+   column: click it and the roster re-ranks by it, and the rows travel to
+   their new places.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tru-dark .dk-tile-do { cursor: pointer; }
+.tru-dark .dk-tile-do:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+/* Said only under the cursor. A permanent "rank by this" on six tiles would
+   be six instructions competing with the numbers they sit under. */
+.tru-dark .dk-tile-rank {
+  position: absolute; right: 14px; top: 13px; z-index: 3;
+  font: 700 8.5px/1 var(--hq-font); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-40); opacity: 0;
+  transition: opacity 0.24s var(--ease), color 0.24s var(--ease);
+}
+.tru-dark .dk-tile-do:hover .dk-tile-rank,
+.tru-dark .dk-tile-do:focus-visible .dk-tile-rank { opacity: 1; }
+.tru-dark .dk-tile.is-sorting .dk-tile-rank { opacity: 1; color: var(--accent-hi); }
+
+/* The tile that is driving the sort wears the same gold edge the column
+   header does, so the two read as one control with two ends. */
+.tru-dark .dk-tile.is-sorting {
+  box-shadow:
+    inset 0 2px 0 var(--accent),
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px var(--border-soft),
+    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+}
+
+/* The lead tile's heading sorts; its scale does not, because the scale is a
+   drag target and one gesture must not give two answers. */
+.tru-dark .dk-tile .k-do {
+  cursor: pointer; border-radius: 5px;
+  transition: color 0.24s var(--ease);
+}
+.tru-dark .dk-tile .k-do:hover { color: var(--text-60); }
+.tru-dark .dk-tile .k-do.is-sorting { color: var(--accent-hi); }
+.tru-dark .dk-tile .k-do:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* A bar is a way IN to that person now, not only a way to find them. */
+.tru-dark .rs-strip.is-pickable i { cursor: pointer; }
+
+/* ---- the wave down the roster -------------------------------------------
+   Every figure in the table changes when the window does, and they all used to
+   change in silence while the tiles above them rolled. The new numbers drop
+   into place a beat apart down the rows, so a window change is one movement
+   from the headline to the last row rather than two unrelated events. */
+.tru-dark .cell-roll {
+  display: inline-block;
+  animation: cellRoll 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--r, 0) * 26ms);
+}
+@keyframes cellRoll {
+  from { opacity: 0; transform: translate3d(0, -0.55em, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- where one person stands --------------------------------------------
+   The panel opened on a list of figures and left the reading to you — which
+   meant that having just clicked a dot on a scale to get here, the first thing
+   you saw was the one view that had thrown the scale away. Same picture, crowd
+   removed. */
+.tru-dark .rs-stand { padding-bottom: 18px; }
+.tru-dark .rs-scale-lg {
+  width: 100%; height: 30px; display: block; margin: 4px 0 2px;
+}
+.tru-dark .rs-scale-lg hr { top: 50%; }
+.tru-dark .rs-scale-lg s { top: 8px; bottom: 8px; }
+.tru-dark .rs-scale-lg u { top: 5px; bottom: 5px; width: 2px; }
+.tru-dark .rs-scale-lg i { width: 13px; height: 13px; box-shadow: 0 0 0 4px rgba(2, 7, 4, 0.5), 0 0 18px 2px currentColor; }
+.tru-dark .rs-scale-lg i.h-past-line { color: var(--ember); }
+.tru-dark .rs-scale-lg i.h-behind { color: var(--accent); }
+.tru-dark .rs-scale-lg i.h-holding { color: var(--sea); }
+.tru-dark .rs-stand-key {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--text-40); letter-spacing: 0.02em;
+}
+.tru-dark .rs-stand .rs-msg { font-style: normal; color: var(--text); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .cell-roll { animation: none; }
+  .tru-dark .dk-tile-rank { transition: none; }
+}

@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 
 import type { Health, Row } from '../lib/rosterData';
+import { useDeckFocus } from './deckFocus';
 
 /* ── the burst ─────────────────────────────────────────────────────────────
    Two layers, and the split is the point.
@@ -145,14 +146,72 @@ export function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
    supporting card so the shape of the team is comparable between them.
 
    Deliberately NOT a sparkline: a sparkline claims a history, and Follow Up
-   Boss carries no stage history to draw one from. */
-export function Strip({ values, tone }: { values: readonly number[]; tone: string }) {
+   Boss carries no stage history to draw one from.
+
+   Each bar now knows WHOSE it is. Give the strip the same keys the table gives
+   its rows and the five small tiles stop being decoration: point at a row and
+   you can see, in one movement, that this is the person who is fifth on leads,
+   second on worked and first on stuck. That is five readings the page was
+   already drawing and nobody could line up.
+
+   Heights are set with `transform: scaleY`, not `height` — a strip is up to
+   thirty bars, and animating height would relayout the tile for every one of
+   them on every frame. The bar sits bottom-anchored so the scale reads from
+   the floor. */
+export function Strip({
+  values, tone, keys, labels, onPick,
+}: {
+  values: readonly number[];
+  tone: string;
+  /** Same order and length as `values`. Without it the strip stays decorative. */
+  keys?: readonly string[];
+  /** What to say about a bar on hover — "Dana Cole · 71 leads". */
+  labels?: readonly string[];
+  /** Give it this and a bar becomes a way IN to that person, not only a way to
+   *  find them. The strips already knew whose each bar was; clicking one is the
+   *  shortest path there is from "who is that outlier" to their record. */
+  onPick?: (key: string) => void;
+}) {
+  const focus = useDeckFocus();
   const max = Math.max(1, ...values);
+  const linked = !!keys && keys.length === values.length;
+  const anyOn = linked && focus.active !== null && keys.includes(focus.active);
+
+  const pickable = linked && !!onPick;
+
   return (
-    <span className={`rs-strip t-${tone}`} aria-hidden>
-      {values.map((v, i) => (
-        <i key={i} style={{ height: `${Math.max(7, (v / max) * 100)}%`, opacity: v === 0 ? 0.22 : 1 }} />
-      ))}
+    <span
+      className={`rs-strip t-${tone}${anyOn ? ' is-focused' : ''}${pickable ? ' is-pickable' : ''}`}
+      aria-hidden={!linked}
+    >
+      {values.map((v, i) => {
+        const key = linked ? keys[i] : null;
+        return (
+          <i
+            key={key ?? i}
+            className={key !== null && focus.active === key ? 'is-on' : ''}
+            style={{
+              // `scaleY` from a floor of 7% keeps a zero bar visible as a zero
+              // rather than as a missing agent.
+              transform: `scaleY(${Math.max(0.07, v / max)})`,
+              opacity: v === 0 ? 0.22 : 1,
+              // The bar's place in the strip, which the stylesheet turns into a
+              // transition delay — so a window change travels through the team
+              // left to right instead of the whole strip redrawing at once.
+              ['--i' as string]: i,
+            }}
+            title={labels && key !== null ? labels[i] : undefined}
+            onMouseEnter={key !== null ? () => focus.point(key) : undefined}
+            onMouseLeave={key !== null ? () => focus.point(null) : undefined}
+            onClick={pickable && key !== null
+              // The tile around this is itself a control (it re-ranks the
+              // table), so a click that lands on a BAR has to stop there or it
+              // would do two things at once.
+              ? (e) => { e.stopPropagation(); onPick(key); }
+              : undefined}
+          />
+        );
+      })}
     </span>
   );
 }
