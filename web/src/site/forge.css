@@ -393,11 +393,54 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  height: 168%;
-  width: auto;
+  /* The render is 21:9 and its letters occupy about 70% of that frame, so the
+     frame is sized ~1.45x the typeset mark for the letters inside to land on
+     roughly the same footprint. It scales with the mark, because it is a child
+     of the transformed element. */
+  width: 145%;
+  height: auto;
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: clamp(0, calc((0.62 - var(--p)) * 4), 1);
+  /* Feathered, or it is a rectangle sitting on a page. The render's ground is
+     the same near-black green as the hero's, so once the edges dissolve there
+     is no box left to see - only the letters and the discharge. */
+  -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
+  mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive-mark.has-render span { opacity: 1; }
+  .truland .arrive-render { display: none; }
+}
+
+/* ---- the rendered mark, when there is one --------------------------------
+   Sits exactly over the typeset mark, same box, and hands back to the type
+   partway through the travel. The handover happens while the mark is still
+   large and moving, so the eye is following position rather than surface and
+   the change of material goes unnoticed; by the time it reaches the header it
+   is live text landing on live text.
+
+   Not a crossfade between two PLACES, which is the thing that failed. Same
+   object, same trajectory, one surface resolving into another. */
+.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.62 - var(--p)) * 4, 1)); }
+.truland .arrive-render {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* The render is 21:9 and its letters occupy about 70% of that frame, so the
+     frame is sized ~1.45x the typeset mark for the letters inside to land on
+     roughly the same footprint. It scales with the mark, because it is a child
+     of the transformed element. */
+  width: 145%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: clamp(0, calc((0.62 - var(--p)) * 4), 1);
+  /* Feathered, or it is a rectangle sitting on a page. The render's ground is
+     the same near-black green as the hero's, so once the edges dissolve there
+     is no box left to see - only the letters and the discharge. */
+  -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
+  mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
 }
 @media (prefers-reduced-motion: reduce) {
   .truland .arrive-mark.has-render span { opacity: 1; }
