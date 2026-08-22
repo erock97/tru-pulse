@@ -74,8 +74,13 @@ export function isMarketingHost(host: string, search = ''): boolean {
     /* a malformed query string simply is not the flag */
   }
   const h = (host || '').toLowerCase().replace(/:\d+$/, '');
-  // The Pages project and its preview aliases all start with the project name.
-  return MARKETING_HOSTS.includes(h) || h.startsWith('tru-landing');
+  // CONTAINS, not startsWith. A Pages preview alias is
+  // `<branch>.<project>.pages.dev`, so the project name sits in the middle:
+  // `feat-landing.tru-landing.pages.dev`. The first version of this checked
+  // the start, which meant every preview of the marketing site rendered the
+  // login screen instead - caught on the first deploy, by the preview itself.
+  // `app.truhq.co` contains none of it, so the app host is unaffected.
+  return MARKETING_HOSTS.includes(h) || h.includes('tru-landing');
 }
 
 /** The route to render, once the host has been taken into account. Returns null

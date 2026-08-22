@@ -2,31 +2,23 @@ import { useEffect, useRef } from 'react';
 import { BUSINESS } from '../../config/business';
 
 /* ============================================================================
-   THE FORGE
+   THE ARRIVAL
    ----------------------------------------------------------------------------
-   The old home page was 5.6 viewports and 735 words, and the reveal at the top
-   of it was a curtain: a full-screen overlay that played for seven seconds,
-   locked the page so you could not scroll past it, faded, and then deleted
-   itself. Whatever came next had no relationship to it. That is why it read as
-   an intro rather than as a beginning.
+   The wordmark opens at half the width of the screen and, as you scroll, moves
+   and shrinks until it is sitting exactly where the header's own wordmark
+   sits, at exactly its size. Then the two swap and the page is there.
 
-   So it stops being a curtain and becomes the first six inches of the page.
-   The letters burn in, and scrolling pushes the camera through them while the
-   heat cools out of the picture into the deep green the product lives in. By
-   the time the hero is behind you, you are standing in the same room as Pulse.
-   The brand cooling into the software is the transition, and it is the only
-   piece of motion on the page that carries an idea.
+   The previous version of this was a video of molten letters that cooled into
+   the page. It failed for a reason worth keeping written down: a crossfade has
+   no object in common on either side of it, so there is nothing for the eye to
+   follow, and the opening reads as a separate thing bolted to the front of the
+   site no matter how well the colours are matched. Continuity is not a colour
+   problem. One thing has to survive the boundary.
 
-   Two things go with the curtain. The scroll lock goes, so nobody is ever held
-   in a video they have already seen. And the once-per-visitor localStorage gate
-   goes with it, because the reveal is no longer a toll to be paid: it is the
-   top of the page, and it behaves the same on the tenth visit as the first.
+   Everything below serves that: measure the real header mark, hand the CSS the
+   delta, and let one custom property drive the trip.
    ========================================================================== */
 
-/* Every number here is real work, and none of it is named, which is the client's
-   call rather than an omission. The disclaimer under them is carried over
-   verbatim from the Work page: it was written carefully and it belongs directly
-   beneath the claims it qualifies. */
 const PROOF = [
   {
     figure: '12 → 22',
@@ -64,29 +56,80 @@ const WHO = [
 ] as const;
 
 export default function Home() {
-  const forgeRef = useRef<HTMLElement | null>(null);
+  const arriveRef = useRef<HTMLElement | null>(null);
+  const markRef = useRef<HTMLParagraphElement | null>(null);
 
-  /* One value drives the whole hero: how far you are through the forge, 0 to 1.
-     It is written straight onto the element as a custom property, so the CSS
+  /* Lay the travelling mark exactly over the header's, then tell it how far out
+     and how much bigger its opening state is.
+
+     Measured from the real element rather than assumed, because the header mark
+     is set in rem and moves with the viewport, and a shared-element landing
+     that is two pixels out stops reading as one object. Re-measured on resize
+     and after the webfont settles, since a fallback face is a different width
+     and the mark would otherwise land beside its target rather than on it. */
+  useEffect(() => {
+    const mark = markRef.current;
+    if (!mark) return;
+
+    const measure = () => {
+      const brand = document.querySelector<HTMLElement>('.truland .nav .brand');
+      if (!brand) return;
+      const r = brand.getBoundingClientRect();
+      if (!r.width) return;
+
+      // Sit on it: same box, same face, same size.
+      mark.style.left = `${r.left}px`;
+      mark.style.top = `${r.top}px`;
+      mark.style.fontSize = getComputedStyle(brand).fontSize;
+
+      /* And the opening state, as a delta from there.
+
+         The scale has to be inside the centring. `transform-origin` is the
+         mark's own left edge, so after scaling by S its centre has moved to
+         `left + width * S / 2`, not `left + width / 2`. Using the unscaled
+         half-width put the opening mark most of a screen to the right and
+         hanging off the edge. */
+      const scale = Math.max(2, Math.min(16, (window.innerWidth * 0.44) / r.width));
+      mark.style.setProperty('--dx', `${window.innerWidth / 2 - (r.left + (r.width * scale) / 2)}px`);
+      mark.style.setProperty('--dy', `${window.innerHeight * 0.42 - (r.top + r.height / 2)}px`);
+      mark.style.setProperty('--s', String(scale));
+    };
+
+    measure();
+    window.addEventListener('resize', measure, { passive: true });
+    if (document.fonts?.ready) void document.fonts.ready.then(measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  /* One value drives the whole thing: how far through the arrival you are.
+     Written straight onto the element as a custom property, so the stylesheet
      owns every transform and this owns none of them. rAF-throttled, so a burst
      of scroll events costs one write per frame and never touches React state,
      which at sixty frames a second would re-render the page instead of moving
-     a video. */
+     a wordmark. */
   useEffect(() => {
-    const forge = forgeRef.current;
-    if (!forge) return;
+    const arrive = arriveRef.current;
+    const mark = markRef.current;
+    if (!arrive) return;
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      forge.style.setProperty('--p', '0');
+      document.querySelector('.truland')?.classList.remove('arrive-live');
       return;
     }
 
     let frame = 0;
     const paint = () => {
       frame = 0;
-      const travel = forge.offsetHeight - window.innerHeight;
+      const travel = arrive.offsetHeight - window.innerHeight;
       if (travel <= 0) return;
-      const p = Math.max(0, Math.min(1, (window.scrollY - forge.offsetTop) / travel));
-      forge.style.setProperty('--p', p.toFixed(4));
+      const p = Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel));
+      arrive.style.setProperty('--p', p.toFixed(4));
+      if (mark) mark.style.setProperty('--p', p.toFixed(4));
+      // Hand the header its own mark back only once the travelling one has
+      // landed on it. Both visible at once, even for two frames, and the
+      // illusion is over.
+      document.querySelector('.truland')?.classList.toggle('arrive-live', p < 0.985);
+      if (mark) mark.style.opacity = p < 0.985 ? '1' : '0';
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(paint); };
 
@@ -97,27 +140,8 @@ export default function Home() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
       cancelAnimationFrame(frame);
+      document.querySelector('.truland')?.classList.remove('arrive-live');
     };
-  }, []);
-
-  /* The reveal was cut in two aspect ratios. A phone gets the square one, which
-     is the only crop where the whole word fits on screen. */
-  useEffect(() => {
-    const v = document.getElementById('forgevid') as HTMLVideoElement | null;
-    if (!v) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      v.removeAttribute('autoplay');
-      v.pause();
-      return;
-    }
-    if (window.matchMedia('(max-width:760px),(max-aspect-ratio:1/1)').matches) {
-      v.poster = '/TRU-lockup-square.jpg';
-      const src = v.querySelector('source');
-      if (src) { src.src = '/TRU-reveal-square.mp4'; v.load(); }
-    }
-    // Autoplay refusal is not a failure worth handling: the poster is the fully
-    // lit lockup, so a blocked video simply shows the finished mark.
-    v.play().catch(() => {});
   }, []);
 
   const arrow = (
@@ -126,30 +150,19 @@ export default function Home() {
 
   return (
     <div className="fh">
-      <section className="forge" id="top" ref={forgeRef}>
-        <div className="forge-stage">
-          <video
-            id="forgevid"
-            className="forge-vid"
-            muted
-            playsInline
-            preload="auto"
-            poster="/TRU-lockup.jpg"
-            aria-hidden="true"
-          >
-            <source src="/TRU-reveal.mp4" type="video/mp4" />
-          </video>
-          {/* Knocks the picture back off the words. See forge.css. */}
-          <div className="forge-wash" aria-hidden />
-          {/* The heat coming out of the picture. Opacity only, driven by --p. */}
-          <div className="forge-cool" aria-hidden />
+      <section className="arrive" id="top" ref={arriveRef}>
+        <div className="arrive-stage">
+          {/* The product's own room render. The mark is lit by the same source
+              the app is lit by, and it fades into the room the page already
+              has underneath, which is the same room. */}
+          <div className="arrive-light" aria-hidden />
 
-          <div className="forge-copy">
+          <div className="arrive-copy">
             <h1>
-              Somebody has to run the sales floor.<br />
+              Somebody has to run the sales floor.{' '}
               <em>It should not be you.</em>
             </h1>
-            <p className="forge-sub">
+            <p className="arrive-sub">
               Fractional sales management for real estate teams. We own accountability,
               pipeline, and Zillow Preferred conversion.
             </p>
@@ -162,6 +175,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* The travelling mark. Fixed, outside the pinned stage, because it has to
+          outlive it: it is still moving when the stage has released, and it
+          finishes its trip sitting in the header. aria-hidden because the
+          header's own mark is the one in the document. */}
+      <p className="arrive-mark" ref={markRef} aria-hidden>
+        <span>T<i className="r">RU</i></span>
+      </p>
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">
         <h2 className="h2 reveal">

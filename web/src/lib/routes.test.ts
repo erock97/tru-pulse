@@ -113,8 +113,16 @@ describe('resolveView - which site is this', () => {
 
   it('covers the Pages project and its preview aliases', () => {
     expect(resolveView('/', '', 'tru-landing.pages.dev')).toBe('/');
-    expect(resolveView('/', '', 'feat-x.tru-landing.pages.dev')).toBeNull();
     expect(resolveView('/', '', 'tru-landing-preview.pages.dev')).toBe('/');
+    // A Pages preview alias is `<branch>.<project>.pages.dev`, so the project
+    // name is in the middle. This assertion originally expected null, which is
+    // what made the very first preview deploy of the marketing site render a
+    // login screen: a preview of the landing project IS the landing.
+    expect(resolveView('/', '', 'feat-landing.tru-landing.pages.dev')).toBe('/');
+    expect(resolveView('/', '', 'deadbeef.tru-landing.pages.dev')).toBe('/');
+    // and the app and its previews are still the app
+    expect(resolveView('/', '', 'app.truhq.co')).toBeNull();
+    expect(resolveView('/', '', 'feat-deck-polish.tru-pulse-app.pages.dev')).toBeNull();
   });
 
   it('honours ?site so the marketing home is reviewable anywhere', () => {
