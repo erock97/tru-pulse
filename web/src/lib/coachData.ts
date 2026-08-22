@@ -650,6 +650,10 @@ export async function loadGoalBundle(
   agentId: string,
   teamId: string | null,
 ): Promise<{ goal: Goal | null; commitments: Commitment[] }> {
+  // ?demo=1 has no server. Without this the demo sheet shows a red
+  // "coaching data may be read-only on this login" bar for a login that does
+  // not exist — an alarming error about nothing.
+  if (isDemo) return { goal: null, commitments: [] };
   const res = await workerFetch('/data/coach/goal-bundle', {
     method: 'POST',
     body: JSON.stringify({ agentId, teamId }),

@@ -3986,3 +3986,42 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .dk-page .ad-grid > * { animation: none; }
 }
+
+/* The four-up: where they win, where they slip, the work, the warning sign.
+   A grid rather than a list, because these are four parallel answers to one
+   question — a list implies an order they do not have. */
+.tru-dark .ad-strengths { grid-column: 1 / -1; }
+.tru-dark .ad-swot { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tru-dark .ad-swot li {
+  padding: 14px 16px; border-radius: var(--r-card);
+  background: var(--lift); border: 1px solid var(--border-soft);
+  border-left-width: 2px;
+}
+.tru-dark .ad-swot li.is-good { border-left-color: var(--sea); }
+.tru-dark .ad-swot li.is-risk { border-left-color: var(--ember); }
+.tru-dark .ad-swot li.is-work { border-left-color: var(--accent); }
+.tru-dark .ad-swot li.is-watch { border-left-color: var(--text-40); }
+.tru-dark .ad-swot-k {
+  display: block; margin-bottom: 6px;
+  font: 700 10px/1 var(--hq-font); letter-spacing: 0.11em; text-transform: uppercase;
+}
+.tru-dark .ad-swot li.is-good .ad-swot-k { color: var(--sea); }
+.tru-dark .ad-swot li.is-risk .ad-swot-k { color: var(--ember); }
+.tru-dark .ad-swot li.is-work .ad-swot-k { color: var(--accent-hi); }
+.tru-dark .ad-swot li.is-watch .ad-swot-k { color: var(--text-50); }
+.tru-dark .ad-swot p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-80, var(--text)); }
+.tru-dark .ad-grid-tail { margin-top: 26px; grid-template-columns: 1fr; }
+@media (max-width: 900px) { .tru-dark .ad-swot { grid-template-columns: 1fr; } }
+
+/* The way back, in the island. It is a standalone control, not a member of the
+   .dk-win tab group whose container styles it was wearing — which is why it
+   rendered as an unlabelled dark pill. */
+.tru-dark .dk-back {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 13px 5px 10px; border-radius: var(--r-pill); cursor: pointer;
+  font: 600 12px/1 var(--hq-font); color: var(--text);
+  background: rgba(226, 240, 230, 0.06); border: 1px solid var(--border-soft);
+  transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.tru-dark .dk-back:hover { color: var(--accent-hi); border-color: var(--accent-line); }
+.tru-dark .dk-back span { font-size: 13px; line-height: 1; }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
+import { ScaleMarks } from '../components/scaleMarks';
 import { Avatar, Icon, Ring } from '../components/hqUi';
 import { useReveal } from '../hqHooks';
 import {
@@ -16,7 +17,7 @@ import {
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
   type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
-import { CG } from '../lib/assessmentData';
+import { AG, CG } from '../lib/assessmentData';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import '../truHqDark.css';
 
@@ -262,7 +263,7 @@ export default function Coach({
         nav={coachNav(onHome)}
         hideTopbar
         islandSlot={openAgent ? (
-          <button className="dk-win dk-back" onClick={() => setOpenId(null)}>
+          <button className="dk-back" onClick={() => setOpenId(null)}>
             <span aria-hidden>←</span> Team
           </button>
         ) : undefined}
@@ -271,7 +272,11 @@ export default function Coach({
           <div className="coach-ambient" aria-hidden />
 
           {openAgent ? (
-            <AgentDrill agent={openAgent} />
+            <AgentDrill
+              agent={openAgent}
+              cohort={derived ? derived.withHealth.map((x) => ({ id: x.a.id, health: x.health })) : []}
+              teamHealth={derived ? derived.teamHealth : null}
+            />
           ) : (
             <>
               {roster.length === 0 || !derived || !mix ? (
@@ -621,7 +626,12 @@ function useSavedFlag(): [string | null, (label?: string) => void] {
   return [flag, flash];
 }
 
-function AgentDrill({ agent }: { agent: RosterAgent }) {
+function AgentDrill({ agent, cohort, teamHealth }: {
+  agent: RosterAgent;
+  /** Everyone's coaching health, so this one can be shown in context. */
+  cohort: Array<{ id: string; health: number }>;
+  teamHealth: number | null;
+}) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
@@ -731,10 +741,30 @@ function AgentDrill({ agent }: { agent: RosterAgent }) {
       </header>
 
       <section className="dk-bento">
+        {/* A number on its own says nothing — 73 is only meaningful against the
+            people around it. Every dot is a colleague, the marked line is the
+            team, and the tile stops being a 400px box holding one figure. */}
         <div className="rs-plate dk-tile dk-tile-lead">
           <span className="k">Coaching health</span>
           <span className="v">{health}</span>
-          <span className="u">check-in freshness, assessment recency, and how settled the profile is</span>
+          {cohort.length > 1 && teamHealth !== null && (
+            <ScaleMarks
+              marks={cohort.map((c) => ({
+                key: c.id,
+                value: c.health,
+                tone: c.id === agent.id ? 'warn' : c.health >= 60 ? 'ok' : c.health >= 40 ? 'none' : 'bad',
+              }))}
+              line={teamHealth}
+              lo={0}
+              hi={100}
+              lineLabel={`team ${teamHealth}`}
+            />
+          )}
+          <span className="u">
+            {cohort.length > 1
+              ? 'every dot is an agent · the line is the team'
+              : 'check-in freshness, assessment recency, and how settled the profile is'}
+          </span>
         </div>
         {([
           ['Since last check-in', agent.lastDays >= 99 ? 'never' : `${agent.lastDays}d`,
@@ -763,44 +793,52 @@ function AgentDrill({ agent }: { agent: RosterAgent }) {
 
       {/* PROFILE + HOW-TO-COACH (kept) */}
       <div className="ad-grid">
-        <section className="card ad-panel reveal" data-delay="60">
+
+        {/* The four AG fields — strength, watch-for, growth edge, challenge —
+            were authored per archetype and rendered NOWHERE on the leader's
+            sheet. They are the half that answers "where will they struggle,
+            where will they do well", which is the question a leader actually
+            arrives with. They are written to the agent, so they are labelled
+            as what that agent is told rather than silently re-voiced. */}
+        <section className="card ad-panel reveal ad-strengths" data-delay="120">
           <div className="ad-panel-head">
-            <h3>Their profile</h3>
-            <span className="panel-sub">{profile ? `${profile.confLabel} · ${profile.confPct}% confidence` : agent.archName}</span>
+            <h3>Where they win, where they slip</h3>
+            <span className="panel-sub">{profile ? `${profile.quad} · ${profile.law}` : agent.quad}</span>
           </div>
-          {profile ? (
-            <>
-              <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 18 }}>{profile.tagline}</p>
-              <div className="ad-dims">
-                {profile.dimStatus.map((d) => (
-                  <div key={d.label} className="ad-dim">
-                    <span className="ad-dim-mark" style={{ color: d.color }}>{d.mark}</span>
-                    <span className="ad-dim-label">{d.label}</span>
-                    <span className="ad-dim-status" style={{ color: d.color }}>{d.statusLabel}</span>
-                  </div>
-                ))}
-              </div>
-              {profile.shift && (
-                <div className="ad-shift">
-                  <b>{profile.shift.dim}</b> shifted {profile.shift.from} → {profile.shift.to} ({profile.shift.when})
-                </div>
-              )}
-            </>
+          {profile && AG[profile.code] ? (
+            <ul className="ad-swot">
+              <li className="is-good">
+                <span className="ad-swot-k">Where they do well</span>
+                <p>{AG[profile.code].sup}</p>
+              </li>
+              <li className="is-risk">
+                <span className="ad-swot-k">Where they slip</span>
+                <p>{AG[profile.code].watch}</p>
+              </li>
+              <li className="is-work">
+                <span className="ad-swot-k">The work with them</span>
+                <p>{AG[profile.code].edge}</p>
+              </li>
+              <li className="is-watch">
+                <span className="ad-swot-k">Warning sign</span>
+                <p>{profile.signal}</p>
+              </li>
+            </ul>
           ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading profile…</p>
+            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading…</p>
           )}
         </section>
 
-        <section className="card ad-panel reveal" data-delay="120">
+        <section className="card ad-panel reveal" data-delay="150">
           <div className="ad-panel-head">
-            <h3>How to coach them</h3>
-            <span className="panel-sub">{profile ? `${profile.quad} · ${profile.law}` : agent.quad}</span>
+            <h3>What to say to them</h3>
+            <span className="panel-sub">their own framing, in their words</span>
           </div>
-          {profile ? (
+          {profile && AG[profile.code] ? (
             <ul className="ad-wired">
               <li>
-                <span className="ad-wired-tag blind">Early-warning signal</span>
-                <p>{profile.signal}</p>
+                <span className="ad-wired-tag drive">The challenge to put to them</span>
+                <p>{AG[profile.code].challenge}</p>
               </li>
               <li>
                 <span className="ad-wired-tag drive">Next unlock</span>
@@ -905,6 +943,38 @@ function AgentDrill({ agent }: { agent: RosterAgent }) {
         setCommitments={setCommitments}
         doneCount={doneCount}
       />
+      {/* Last, deliberately. It describes who they are; everything above it is
+          what to DO about that, which is what a leader opened this for. */}
+      <div className="ad-grid ad-grid-tail">
+        <section className="card ad-panel reveal" data-delay="60">
+          <div className="ad-panel-head">
+            <h3>Their profile</h3>
+            <span className="panel-sub">{profile ? `${profile.confLabel} · ${profile.confPct}% confidence` : agent.archName}</span>
+          </div>
+          {profile ? (
+            <>
+              <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 18 }}>{profile.tagline}</p>
+              <div className="ad-dims">
+                {profile.dimStatus.map((d) => (
+                  <div key={d.label} className="ad-dim">
+                    <span className="ad-dim-mark" style={{ color: d.color }}>{d.mark}</span>
+                    <span className="ad-dim-label">{d.label}</span>
+                    <span className="ad-dim-status" style={{ color: d.color }}>{d.statusLabel}</span>
+                  </div>
+                ))}
+              </div>
+              {profile.shift && (
+                <div className="ad-shift">
+                  <b>{profile.shift.dim}</b> shifted {profile.shift.from} → {profile.shift.to} ({profile.shift.when})
+                </div>
+              )}
+            </>
+          ) : (
+            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading profile…</p>
+          )}
+        </section>
+      </div>
+
     </>
   );
 }
