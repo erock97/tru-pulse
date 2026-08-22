@@ -8,6 +8,11 @@ import { Lesson, Quiz, Result, SimView } from './AgentCourse';
 import { courseCardsFor, courseQuestionsFor } from '../lib/agentHq';
 import { HqShell } from '../components/hqShell';
 import { Icon, Avatar } from '../components/hqUi';
+import { ScaleMarks } from '../components/scaleMarks';
+import {
+  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys,
+} from '../components/deckFocus';
+import { trackMark } from '../lib/deckMarks';
 import { useReveal } from '../hqHooks';
 import '../truHqDark.css';
 
@@ -22,6 +27,9 @@ import '../truHqDark.css';
    agents, practice), simScenarios(), signOffAgent(),
    and the Lesson / SimView preview entries. No mock data.
    ============================================================ */
+
+/** How many of the roster the plate shows before the search has to narrow it. */
+const ROSTER_CAP = 10;
 
 const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -67,7 +75,17 @@ function DividerWave() {
 /* ---- Certification funnel — tapering SVG segments, drawn in.
    Derived from the REAL roster's progress (see below). ---- */
 
-export default function Rep({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
+export default function Rep(props: { org: { id: string; name: string }; onHome?: () => void }) {
+  // The track and the roster are one instrument: point at a person in the list
+  // and their dot lights on the track above it, and the other way round.
+  return (
+    <DeckFocusProvider>
+      <RepDeck {...props} />
+    </DeckFocusProvider>
+  );
+}
+
+function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: () => void }) {
   const [data, setData] = useState<RepData | null>(null);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [preview, setPreview] = useState<RepModule | null>(null);
@@ -101,6 +119,23 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
   // authoring write. A plain 'coach' member never sees the entry point,
   // though the Worker is still the real authority if this check is bypassed.
   const canAuthor = role === 'admin' || role === 'leader';
+
+  /* The searchable, capped roster. Computed here rather than beside the markup
+     because the keyboard walk needs the same list, and hooks cannot live below
+     the loading and preview returns. */
+  const needle = q.trim().toLowerCase();
+  const allAgents = data?.agents ?? [];
+  const filtered = needle ? allAgents.filter((a) => a.name.toLowerCase().includes(needle)) : allAgents;
+  const shown = filtered.slice(0, ROSTER_CAP);
+
+  const focus = useDeckFocus();
+  useDeckKeys({
+    keys: shown.map((a) => a.id),
+    onOpen: (id) => setOpenAgent((cur) => (cur === id ? null : id)),
+    // The lesson preview and the live-sim test drive take the whole screen and
+    // own their own keys.
+    enabled: !!data && !preview && !simTest && !manage,
+  });
 
   if (!data) {
     return (
@@ -204,11 +239,20 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
     return { m, openable, state };
   });
 
-  // Searchable + capped roster (real agents).
-  const needle = q.trim().toLowerCase();
-  const filtered = needle ? agents.filter((a) => a.name.toLowerCase().includes(needle)) : agents;
-  const CAP = 10;
-  const shown = filtered.slice(0, CAP);
+  /* ---- the track, drawn ---------------------------------------------------
+     Rep's lead tile carried the caption "every dot is an agent, every mark a
+     module" over an empty card — the picture it described was written and
+     never rendered, and the words outlived it. It gets the SAME instrument
+     Pulse and Coach have rather than a third kind of chart. Pulse measures a
+     rate, Coach measures elapsed days, Rep measures position in a sequence.
+     One reading, one gesture, three units.
+
+     Where the dots pile up is where people stall: three at module two is a
+     fact about module two, not about three agents. The placement rules, and
+     the reason someone with no login is not the same as someone stalled at
+     zero, live in lib/deckMarks. */
+  const trackMarks = agents.map((a) =>
+    trackMark(a, modules.filter((m) => stat(a.id, m.id) === 'passed').length, modules.length));
 
   return (
     <div className="tru-dark">
@@ -275,19 +319,28 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                 a circle. */}
             <div className="rs-plate dk-tile dk-tile-lead">
               <span className="k">The track</span>
-              <span className="v">{teamCert}%</span>
+              <span className="v"><Num n={teamCert} suffix="%" /></span>
+              <ScaleMarks
+                lo={0} hi={modules.length} line={modules.length} lineLabel="certified"
+                marks={trackMarks}
+              />
               <span className="u">fully certified · every dot is an agent, every mark a module</span>
             </div>
+            {/* No strips here on purpose. Pulse's five tiles each summarise a
+                distribution across the team, so a strip is the same fact drawn
+                twice; Rep's are facts about the PROGRAMME — how many modules,
+                how many questions — and a bar chart of a constant would be
+                decoration. The per-agent spread lives on the track above. */}
             {([
-              ['Modules', String(modules.length), 'in the programme'],
-              ['Quiz questions', String(totalQuestions), 'across all modules'],
-              ['Agents enrolled', String(agents.length), 'in your cohort'],
-              ['Started a module', String(startedCount), `of ${enrolled}`],
-              ['Never sent a login', String(notInvited), notInvited ? 'cannot begin' : 'everybody has one'],
-            ] as const).map(([k, v, u]) => (
+              ['Modules', modules.length, 'in the programme'],
+              ['Quiz questions', totalQuestions, 'across all modules'],
+              ['Agents enrolled', agents.length, 'in your cohort'],
+              ['Started a module', startedCount, `of ${enrolled}`],
+              ['Never sent a login', notInvited, notInvited ? 'cannot begin' : 'everybody has one'],
+            ] as const).map(([k, n, u]) => (
               <div className="rs-plate dk-tile" key={k}>
                 <span className="k">{k}</span>
-                <span className="v">{v}</span>
+                <span className="v"><Num n={n} /></span>
                 <span className="u">{u}</span>
               </div>
             ))}
@@ -367,6 +420,18 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                 : `${startedCount} of ${enrolled} underway`}
             </p>
             <span className="dk-key">
+              {focus.pinned ? (
+                <span className="dk-pinned">
+                  Holding {agents.find((a) => a.id === focus.pinned)?.name ?? 'one agent'}
+                  <button onClick={() => focus.pin(null)}>Let go</button>
+                </span>
+              ) : (
+                <span className="dk-keys">
+                  <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
+                  <kbd>↵</kbd> <b>open</b>
+                  <kbd>P</kbd> <b>hold</b>
+                </span>
+              )}
               <input
                 className="ad-input adm-search"
                 placeholder={`Search ${agents.length} agent${agents.length === 1 ? '' : 's'}…`}
@@ -386,14 +451,19 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                   const statuses = modules.map((m) => stat(a.id, m.id));
                   const isOpen = openAgent === a.id;
                   return (
-                    <div key={a.id}>
+                    <div key={a.id} data-flip={a.id}>
                       {/* A real control, not a clickable div: this row expands
                           the drill-in, and a keyboard had no way to do it. */}
                       <div
-                        className="rp-agent is-open"
+                        className={[
+                          'rp-agent', 'is-open',
+                          focus.active === a.id ? 'is-on' : '',
+                          focus.pinned === a.id ? 'is-pinned' : '',
+                        ].filter(Boolean).join(' ')}
                         role="button"
                         tabIndex={0}
                         aria-expanded={isOpen}
+                        {...focusBinding(a.id, focus)}
                         onClick={() => setOpenAgent(isOpen ? null : a.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -429,8 +499,8 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
               </div>
             )}
 
-            {filtered.length > CAP && (
-              <div className="rp-roster-more">{filtered.length - CAP} more — search to narrow the roster.</div>
+            {filtered.length > ROSTER_CAP && (
+              <div className="rp-roster-more">{filtered.length - ROSTER_CAP} more — search to narrow the roster.</div>
             )}
             <div className="rp-legend">
               <span><span className="rp-dot on" /> Module cleared</span>

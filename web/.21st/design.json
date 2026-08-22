@@ -66,7 +66,11 @@
       ".dk-bento — one lead tile plus satellites",
       ".dk-sec — section head with a right-hand key",
       ".rs-plate .dk-table — translucent plate wrapping a dense table",
-      ".dk-focus > .dk-fr — the 'needs you' rows"
+      ".dk-focus > .dk-fr — the 'needs you' rows",
+      "DeckFocusProvider + focusBinding + useDeckKeys (src/components/deckFocus.tsx) — one person lit across the tiles, the marks and the table; arrow keys walk the roster, p holds a person",
+      "ScaleMarks (src/components/scaleMarks.tsx) — the shared lead-tile instrument on all three pages",
+      "Num (src/components/deckFocus.tsx) — a figure that travels to its new value when the window changes",
+      "useFlip (src/lib/deckMotion.ts) — rows move to their new place on a sort"
     ]
   },
   "constraints": {
@@ -108,6 +112,26 @@
       "date": "2026-08-22",
       "choice": "One layout whether or not an agent sheet is open; the way back lives in the island bar.",
       "why": "Opening an agent used to drop dk-main and restore the retired top bar, so the sheet looked like an older product."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "All three deck pages carry the SAME lead-tile instrument — ScaleMarks — on three different axes: a rate (Pulse), elapsed days (Coach), position in a sequence (Rep).",
+      "why": "Coach and Rep were showing captions that described pictures ('rings are 7, 14 and 30 days', 'every dot is an agent, every mark a module') over empty cards. The canvas artwork those sentences belonged to was cut for reading as scribbles at card size, and the words outlived it. One instrument beats three chart types."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "The tiles and the table are one instrument: pointing at a person anywhere lights them everywhere. Focus changes how much LIGHT a mark gets, never its colour.",
+      "why": "A deck page drew the same team three times over with no wire between the copies — you could see that somebody was an outlier and had no way to find out who without reading every number. Changing colour on focus would have spent the amber that has to stay scarce."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "Dots that land on the same value stack upward rather than overlapping.",
+      "why": "Three agents piled at module two is a fact about module two. Drawn flat it looked like one person and two missing ones, and it hid the difference between never-invited and stalled-at-zero."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "Sticky column headers on a deck table, but NOT a sticky totals row.",
+      "why": "Pinned to the foot of the viewport the totals permanently covered whichever agent was at the bottom of the screen. Column names earn a strip of the screen; a second copy of the team average does not."
     }
   ],
   "evidence": [

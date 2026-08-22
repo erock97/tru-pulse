@@ -13,9 +13,16 @@
  *
  * The backdrop is the shell's own field — the same room every other screen
  * sits in, not the animated gradient the original mockup used.
+ *
+ * The six tiles and the table are ONE instrument now rather than two pictures
+ * of the same team (see components/deckFocus.tsx). Point at a row and that
+ * agent's dot swells on the scale and says its name, and their bar lights in
+ * all five strips. The arrow keys walk the roster and the dot walks with
+ * them. `p` holds a person lit so the rest of the page can be read against
+ * them.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { HqShell } from '../components/hqShell';
 import { signOutClean } from '../lib/api';
@@ -27,8 +34,27 @@ import {
 import { Strip } from '../components/rosterViz';
 import { ScaleMarks } from '../components/scaleMarks';
 import { PersonPane } from '../components/personPane';
+import {
+  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys, useRounded,
+} from '../components/deckFocus';
+import { useFlip } from '../lib/deckMotion';
 
-export default function RosterDeck({
+export default function RosterDeck(props: {
+  orgName: string;
+  onOpenPulse: () => void;
+  onOpenCoach: () => void;
+  onOpenRep: () => void;
+}) {
+  // The provider wraps the shell as well as the page, so the tiles, the marks
+  // and the table all sit inside one focus scope rather than three.
+  return (
+    <DeckFocusProvider>
+      <Deck {...props} />
+    </DeckFocusProvider>
+  );
+}
+
+function Deck({
   orgName, onOpenPulse, onOpenCoach, onOpenRep,
 }: {
   orgName: string;
@@ -41,6 +67,7 @@ export default function RosterDeck({
   const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
+  const focus = useDeckFocus();
 
   const priorities = useMemo(() => (rows ? prioritise(rows) : []), [rows]);
   const strip = useMemo(
@@ -60,6 +87,27 @@ export default function RosterDeck({
       return ((y as number) - (x as number)) * sort.dir;
     });
   }, [rows, sort]);
+
+  /* Rows travel to their new place when you sort, rather than the table
+     redrawing. The order itself is the signature, so re-sorting to the same
+     order — which is what a window change does — correctly moves nothing. */
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  useFlip(tableRef, sorted.map((r) => r.name).join('|'));
+
+  /* Up and down walk the roster, and because walking POINTS at each person in
+     turn, the dot travels along the scale beside you. Enter opens them, `p`
+     holds them lit, Escape lets go — or closes the panel if one is open. */
+  useDeckKeys({
+    keys: sorted.map((r) => r.name),
+    onOpen: (name) => setOpen(sorted.find((r) => r.name === name) ?? null),
+    onEscape: () => setOpen(null),
+    enabled: !!rows,
+  });
+
+  // The headline rate travels between windows rather than being swapped, so 30
+  // days and 90 days read as one team measured over a different stretch of
+  // time — which is what actually happened.
+  const rateShown = useRounded(totals?.perContract ?? null);
 
   /* Just the window tabs now — the shell draws the bar. */
   const windowTabs = (
@@ -98,17 +146,42 @@ export default function RosterDeck({
   const hi = Math.max(line, ...rates) + 4;
   const scale = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
 
+  const resort = (key: keyof Row) =>
+    setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
+
   const th = (key: keyof Row, label: string) => (
     <th
       className={`sortable${sort.key === key ? ' on' : ''}`}
       tabIndex={0}
-      onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 })); } }}
+      aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
+      onClick={() => resort(key)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resort(key); } }}
     >
-      {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : ''}</span>
+      {/* The caret used to appear only on the column already sorting, so every
+          other header read as a label and nobody clicked one. It is on all of
+          them now, and shows itself faintly under the cursor. */}
+      {label}<span className="sortcaret">{sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : '▾'}</span>
     </th>
   );
 
+  // Every supporting tile draws the same team in the same order, so a bar in
+  // one lines up with the bar directly under it in the next.
+  const stripKeys = strip.map((r) => r.name);
+  const tiles: Array<{
+    k: string; n: number; suffix?: string; u: string;
+    tone: string; values: number[]; say: (r: Row) => string;
+  }> = [
+    { k: 'Leads in play', n: totals.leads, u: 'all sources', tone: 'sea',
+      values: strip.map((r) => r.leads), say: (r) => `${r.name} · ${r.leads} leads` },
+    { k: 'Worked', n: totals.workedPct, suffix: '%', u: `${totals.worked} of ${totals.leads}`, tone: 'sea',
+      values: strip.map((r) => r.workedPct), say: (r) => `${r.name} · ${r.workedPct}% worked` },
+    { k: 'Under contract', n: totals.contracts, u: 'this window', tone: 'amber',
+      values: strip.map((r) => r.contracts), say: (r) => `${r.name} · ${r.contracts} under contract` },
+    { k: 'Reached an offer', n: totals.offers, u: 'this window', tone: 'amber',
+      values: strip.map((r) => r.offers), say: (r) => `${r.name} · ${r.offers} reached an offer` },
+    { k: 'Still in Lead', n: totals.stuck, u: totals.stuck ? '48h+ untouched' : 'nothing sitting', tone: 'ember',
+      values: strip.map((r) => r.stuck), say: (r) => `${r.name} · ${r.stuck} still in Lead` },
+  ];
 
   return frame(
     <>
@@ -124,7 +197,7 @@ export default function RosterDeck({
           </span>
           <h1>
             {totals.perContract
-              ? <>The floor turns one lead in <em>{Math.round(totals.perContract)}</em>.</>
+              ? <>The floor turns one lead in <em>{rateShown ?? Math.round(totals.perContract)}</em>.</>
               : <>No contracts in this window yet.</>}
           </h1>
           <p className="dk-sub">
@@ -145,14 +218,18 @@ export default function RosterDeck({
       <section className="dk-bento">
         <div className="rs-plate dk-tile dk-tile-lead">
           <span className="k">Leads per contract</span>
-          <span className="v">{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</span>
+          <span className="v">{totals.perContract ? `1 : ${rateShown ?? Math.round(totals.perContract)}` : '—'}</span>
           {/* One dot per agent, on the same scale as your line. The light comes
-              from the room behind this card; the card only has to be true. */}
+              from the room behind this card; the card only has to be true.
+              Every dot knows whose it is now, so pointing at one — with the
+              cursor, or with the arrow keys from the table — names them. */}
           <ScaleMarks
             lo={lo} hi={hi} line={line} lineLabel={`your line 1 : ${line}`}
             marks={rows.map((r) => ({
               key: r.name,
               value: r.perContract,
+              label: r.name,
+              reading: r.perContract ? `1 : ${Math.round(r.perContract)}` : undefined,
               tone: r.health === 'past-line' ? 'bad'
                 : r.health === 'behind' ? 'warn'
                   : r.health === 'holding' ? 'ok' : 'none',
@@ -160,18 +237,12 @@ export default function RosterDeck({
           />
           <span className="u">every dot is an agent</span>
         </div>
-        {([
-          ['Leads in play', String(totals.leads), 'all sources', 'sea', strip.map((r) => r.leads)],
-          ['Worked', totals.workedPct + '%', totals.worked + ' of ' + totals.leads, 'sea', strip.map((r) => r.workedPct)],
-          ['Under contract', String(totals.contracts), 'this window', 'amber', strip.map((r) => r.contracts)],
-          ['Reached an offer', String(totals.offers), 'this window', 'amber', strip.map((r) => r.offers)],
-          ['Still in Lead', String(totals.stuck), totals.stuck ? '48h+ untouched' : 'nothing sitting', 'ember', strip.map((r) => r.stuck)],
-        ] as const).map(([k, v, u, tone, values]) => (
-          <div className="rs-plate dk-tile" key={k}>
-            <span className="k">{k}</span>
-            <span className="v">{v}</span>
-            <Strip values={values} tone={tone} />
-            <span className="u">{u}</span>
+        {tiles.map((t) => (
+          <div className="rs-plate dk-tile" key={t.k}>
+            <span className="k">{t.k}</span>
+            <span className="v"><Num n={t.n} suffix={t.suffix} /></span>
+            <Strip values={t.values} tone={t.tone} keys={stripKeys} labels={strip.map(t.say)} />
+            <span className="u">{t.u}</span>
           </div>
         ))}
       </section>
@@ -184,6 +255,18 @@ export default function RosterDeck({
             : `${priorities.length} need you · ${totals.stale} past thirty days without a 1:1`}
         </p>
         <span className="dk-key">
+          {focus.pinned ? (
+            <span className="dk-pinned">
+              Holding {focus.pinned}
+              <button onClick={() => focus.pin(null)}>Let go</button>
+            </span>
+          ) : (
+            <span className="dk-keys">
+              <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
+              <kbd>↵</kbd> <b>open</b>
+              <kbd>P</kbd> <b>hold</b>
+            </span>
+          )}
           <s className="rs-key team" /> the team{totals.perContract ? ` at 1 : ${Math.round(totals.perContract)}` : ''}
           <s className="rs-key line" /> your line at 1 : {line}
         </span>
@@ -194,8 +277,13 @@ export default function RosterDeck({
           {priorities.map((p) => (
             <article
               key={p.row.name}
-              className={p.severity === 'high' ? 'dk-fr crit' : 'dk-fr'}
+              className={[
+                'dk-fr',
+                p.severity === 'high' ? 'crit' : '',
+                focus.active === p.row.name ? 'is-on' : '',
+              ].filter(Boolean).join(' ')}
               tabIndex={0}
+              {...focusBinding(p.row.name, focus)}
               onClick={() => setOpen(p.row)}
               onKeyDown={(e) => { if (e.key === 'Enter') setOpen(p.row); }}
             >
@@ -208,7 +296,7 @@ export default function RosterDeck({
         </div>
       )}
 
-      <div className="rs-plate dk-table">
+      <div className="rs-plate dk-table" ref={tableRef}>
         <table className="tru-table">
           <thead>
             <tr>
@@ -221,9 +309,16 @@ export default function RosterDeck({
           <tbody>
             {sorted.map((r, i) => (
               <tr key={r.name}
-                  className={priorities.some((p) => p.row.name === r.name) ? 'rowlink crit' : 'rowlink'}
+                  data-flip={r.name}
+                  className={[
+                    'rowlink',
+                    priorities.some((p) => p.row.name === r.name) ? 'crit' : '',
+                    focus.active === r.name ? 'is-on' : '',
+                    focus.pinned === r.name ? 'is-pinned' : '',
+                  ].filter(Boolean).join(' ')}
                   tabIndex={0}
                   style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
+                  {...focusBinding(r.name, focus)}
                   onClick={() => setOpen(r)}
                   onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
                 <td>

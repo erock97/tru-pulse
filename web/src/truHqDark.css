@@ -2986,7 +2986,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   display: flex; align-items: flex-end; gap: 3px; height: 38px; flex: none;
   padding-bottom: 2px;
 }
-.tru-dark .rs-strip i { width: 6px; border-radius: 2px; display: block; }
+/* Full height, scaled from the floor. The bar's LENGTH is a transform rather
+   than a height so that changing the window re-scales thirty bars on the
+   compositor instead of relaying the tile out thirty times a frame. */
+.tru-dark .rs-strip i {
+  width: 6px; border-radius: 2px; display: block;
+  height: 100%; transform-origin: bottom; transform: scaleY(1);
+  transition: transform 0.62s var(--spring), opacity 0.3s var(--ease),
+    filter 0.3s var(--ease);
+}
 .tru-dark .rs-strip.t-sea i { background: linear-gradient(180deg, var(--sea-hi), rgba(143, 176, 162, 0.32)); }
 .tru-dark .rs-strip.t-amber i { background: linear-gradient(180deg, var(--accent-hi), rgba(242, 178, 60, 0.30)); }
 .tru-dark .rs-strip.t-ember i { background: linear-gradient(180deg, #FF9174, rgba(255, 106, 69, 0.28)); }
@@ -4136,3 +4144,253 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .lab-brief b { font-size: 15px; font-weight: 600; color: var(--text-strong); }
 .tru-dark .lab-brief p { margin: 3px 0 6px; font-size: 13.5px; line-height: 1.5; color: var(--text-60); }
 .tru-dark .lab-brief-do { font: 600 12px/1 var(--hq-font); color: var(--accent-hi); }
+
+/* ════════════════════════════════════════════════════════════════════
+   ONE INSTRUMENT — the tiles, the marks and the table, wired together
+   --------------------------------------------------------------------
+   A deck page draws the same team three times over: as dots on a scale in the
+   lead tile, as bars in the five small tiles, and as rows in the table. Until
+   now those three were strangers. You could see that somebody was an outlier
+   and had no way to find out who without reading every number.
+
+   Everything below is the wire between them, and none of it introduces a
+   colour. The tone of a mark is still whatever the data made it; focus only
+   changes how much light it gets. Amber stays scarce.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- the scale ----------------------------------------------------------
+   `container-type: inline-size` is load-bearing, not a flourish. It makes
+   `1cqw` mean "one percent of this rail", which lets a dot be positioned by
+   `translate` instead of by `left` — so a dot travelling to a new value when
+   the window changes is a compositor job, and ten of them travelling at once
+   do not relayout the card on every frame. */
+.tru-dark .sm-scale { container-type: inline-size; }
+
+.tru-dark .sm-dot {
+  left: 0;
+  /* The `- 50%` is the centring the retired `translate(-50%, -50%)` did.
+     Without it a dot's left EDGE lands on its value instead of its middle,
+     which is a four-pixel lie about where every agent sits.
+
+     `--lift` stacks the people who landed on the same number, so a pile-up
+     reads as a pile-up rather than as one dot drawn three times. */
+  transform: translate3d(
+    calc(var(--at, 0) * 1cqw - 50%),
+    calc(-50% - var(--lift, 0) * 10px),
+    0
+  );
+  transition:
+    transform 0.62s var(--spring),
+    width 0.34s var(--spring),
+    height 0.34s var(--spring),
+    box-shadow 0.34s var(--ease),
+    opacity 0.28s var(--ease);
+}
+
+/* While one dot is being read the others step back rather than disappearing —
+   the spread of the team is half of what the picture says, so it has to
+   survive being pointed at. */
+.tru-dark .sm-scale.is-focused .sm-dot { opacity: 0.34; }
+.tru-dark .sm-scale.is-focused .sm-dot.is-on { opacity: 1; }
+
+.tru-dark .sm-dot.is-on {
+  width: 13px; height: 13px; z-index: 3;
+  box-shadow: 0 0 0 4px rgba(2, 7, 4, 0.5), 0 0 22px 4px currentColor;
+}
+/* Held. A ring rather than more glow, because glow already means "you are
+   pointing at this" and the two states have to be told apart at a glance. */
+.tru-dark .sm-dot.is-pinned {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(2, 7, 4, 0.72), 0 0 0 3.5px currentColor, 0 0 18px 3px currentColor;
+}
+
+/* Rep's line is the finish, which lands at the far right of the rail. Its
+   caption labels itself leftward there for the same reason a dot past halfway
+   does — otherwise the word hangs off the end of the card. */
+.tru-dark .sm-line.flip b { left: auto; right: 8px; }
+
+/* The name, said only while the dot is being read. */
+.tru-dark .sm-flag {
+  position: absolute; left: 15px; top: 50%;
+  transform: translateY(-50%) scale(0.94);
+  transform-origin: left center;
+  display: flex; align-items: baseline; gap: 7px; white-space: nowrap;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font: 700 11px/1 var(--hq-font); letter-spacing: -0.005em; color: var(--text-strong);
+  background: rgba(7, 15, 10, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 216, 148, 0.16), 0 0 0 1px var(--border-soft);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s var(--ease), transform 0.34s var(--spring);
+}
+.tru-dark .sm-flag s { text-decoration: none; font-weight: 600; color: var(--text-50); }
+.tru-dark .sm-dot.is-on .sm-flag,
+.tru-dark .sm-dot.is-pinned .sm-flag { opacity: 1; transform: translateY(-50%) scale(1); }
+/* Past halfway a dot would hang its own name off the end of the card. */
+.tru-dark .sm-dot.flip .sm-flag {
+  left: auto; right: 15px; transform-origin: right center;
+  flex-direction: row-reverse;
+}
+
+/* The dots are pointable now, so they need a target bigger than 9px. An
+   invisible pad rather than a bigger dot: the mark stays the size the reading
+   needs it to be. */
+.tru-dark .sm-dot::before {
+  content: ''; position: absolute; inset: -9px; border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .sm-dot,
+  .tru-dark .sm-flag,
+  .tru-dark .rs-strip i { transition: none; }
+}
+
+/* ---- the strips ---------------------------------------------------------
+   The same idea, five tiles over. Point at a row and you can see in one
+   movement that this is the person who is fifth on leads, second on worked
+   and first on stuck — five readings the page was already drawing that
+   nobody could line up against each other. */
+.tru-dark .rs-strip.is-focused i { opacity: 0.26; filter: saturate(0.5); }
+.tru-dark .rs-strip.is-focused i.is-on { opacity: 1; filter: none; }
+/* The bar being read is found by light, not by a different colour. */
+.tru-dark .rs-strip i.is-on { box-shadow: 0 0 9px 1px rgba(255, 216, 148, 0.35); }
+.tru-dark .rs-strip.t-sea i.is-on { box-shadow: 0 0 9px 1px rgba(143, 176, 162, 0.55); }
+.tru-dark .rs-strip.t-ember i.is-on { box-shadow: 0 0 9px 1px rgba(255, 106, 69, 0.50); }
+
+/* ---- the row ------------------------------------------------------------
+   The table end of the same wire. It reuses the gold edge the hover rule
+   already draws rather than inventing a second way to mark a row, so pointing
+   from a tile and pointing from the table look identical. */
+.tru-dark .tru-table tbody tr.is-on td {
+  background: var(--hover-fill-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 178, 60, 0.30),
+    inset 0 -1px 0 rgba(242, 178, 60, 0.30);
+}
+/* Held: the one row you came here about, kept lit through a sort, a window
+   change and a scroll, so the rest of the page can be read against it. */
+.tru-dark .tru-table tbody tr.is-pinned td { background: rgba(242, 178, 60, 0.055); }
+.tru-dark .tru-table tbody tr.is-pinned td:first-child { position: relative; }
+.tru-dark .tru-table tbody tr.is-pinned td:first-child::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px;
+  border-radius: 0 2px 2px 0; background: var(--accent);
+}
+.tru-dark .dk-focus .dk-fr.is-on { background: rgba(226, 240, 230, 0.055); }
+.tru-dark .dk-focus .dk-fr.crit.is-on { background: rgba(255, 106, 69, 0.12); }
+
+/* ---- the header stays, and so do the totals -----------------------------
+   A roster runs past the fold. Scrolling used to take the column names with
+   it, so halfway down the table the numbers stopped saying what they were —
+   and the team totals, the row every other row is compared against, sat at
+   the very bottom where you could never see them and a person at the same
+   time.
+
+   `overflow: clip` rather than `hidden` on the plate. Both round the corners.
+   `hidden` also makes the plate a scroll container, and a sticky child of a
+   scroll container with no scroll range never sticks at all. That one word is
+   the whole reason this works.
+
+   The TOTALS row was tried this way too and was wrong. Pinned to the foot of
+   the viewport it permanently covered whichever agent happened to be at the
+   bottom of the screen — a row of nine numbers hiding a person, on a page
+   whose entire job is the people. The column names are worth a strip of the
+   screen; a second copy of the team average is not. */
+.tru-dark .dk-table { overflow: clip; }
+.tru-dark .dk-table .tru-table thead th {
+  position: sticky;
+  /* Under the island, which is sticky at 16px and 44px tall, with enough
+     air that the two bars do not read as one crowded strip. */
+  top: 74px;
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(16, 29, 21, 0.97), rgba(9, 17, 12, 0.98));
+  /* `border-collapse: collapse` drops the border of a sticky cell, so the rule
+     under the header is drawn as an inset shadow instead. */
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 var(--border-soft);
+}
+.tru-dark .dk-table .tru-table thead th.sortable.on {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ---- the sortable header, made obviously sortable -----------------------
+   The caret existed only on the column already sorting, so every other header
+   read as a label and nobody clicked one. Now it appears, faint, under the
+   cursor. */
+.tru-dark .tru-table thead th.sortable .sortcaret {
+  display: inline-block; width: 9px; opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.tru-dark .tru-table thead th.sortable:hover .sortcaret { opacity: 0.45; }
+.tru-dark .tru-table thead th.sortable.on .sortcaret { opacity: 0.85; }
+.tru-dark .tru-table thead th.sortable:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px;
+}
+
+/* ---- the keyboard, said out loud ----------------------------------------
+   The command bar made the deck reachable without a mouse. This says the
+   roster is readable without one too. It sits with the section key, in the
+   same voice, and is hidden on a touch screen where it would be a lie. */
+.tru-dark .dk-keys {
+  display: inline-flex; align-items: center; gap: 7px;
+  vertical-align: middle; margin-right: 14px;
+  font-size: 11px; color: var(--text-40); letter-spacing: 0.02em;
+}
+.tru-dark .dk-keys kbd {
+  font: 600 10px/1 var(--hq-font); color: var(--text-50);
+  background: var(--lift); border: 1px solid var(--border-soft);
+  border-radius: 5px; padding: 3px 5px;
+}
+.tru-dark .dk-keys b { font-weight: 600; color: var(--text-50); }
+@media (hover: none), (max-width: 900px) {
+  .tru-dark .dk-keys { display: none; }
+}
+
+/* A held row is worth saying in words as well, once, where the eye already is. */
+.tru-dark .dk-pinned {
+  display: inline-flex; align-items: center; gap: 8px;
+  vertical-align: middle; margin-right: 14px;
+  padding: 4px 5px 4px 12px; border-radius: var(--r-pill);
+  font: 600 11px/1 var(--hq-font); color: var(--accent-hi);
+  background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.tru-dark .dk-pinned button {
+  border: 0; cursor: pointer; font-family: inherit; font-size: 11px; line-height: 1;
+  color: var(--text-50); background: var(--hover-fill);
+  border-radius: var(--r-pill); padding: 4px 9px;
+  transition: color 0.2s var(--ease);
+}
+.tru-dark .dk-pinned button:hover { color: var(--text-strong); }
+
+@media (max-width: 900px) {
+  /* The island wraps on a narrow screen, so a fixed offset would either float
+     the header off the table or bury it under the bar. Below the deck's own
+     breakpoint the header scrolls with the table, which is the honest
+     behaviour on a phone. */
+  .tru-dark .dk-table .tru-table thead th { position: static; }
+}
+
+/* Rep's roster is a list of rows rather than a table, so it wears the same
+   focus marks in its own shape. Identical behaviour, identical vocabulary:
+   pointed gets the gold edge, held gets the amber bar. */
+.tru-dark .rp-agent {
+  position: relative;
+  transition: background 0.35s var(--spring), box-shadow 0.35s var(--spring);
+}
+.tru-dark .rp-agent.is-on {
+  background: var(--hover-fill-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 178, 60, 0.30),
+    inset 0 -1px 0 rgba(242, 178, 60, 0.30);
+}
+.tru-dark .rp-agent.is-pinned { background: rgba(242, 178, 60, 0.055); }
+.tru-dark .rp-agent.is-pinned::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px;
+  border-radius: 0 2px 2px 0; background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .rp-agent { transition: none; }
+}
+
+/* The section key stays an inline run of text — the tick marks and their
+   captions are one sentence, and turning it into a flex row would put a gap
+   between "your line at" and the tick it belongs to. The legend and the held
+   chip flow inside it as inline-flex pills instead. */

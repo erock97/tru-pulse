@@ -20,6 +20,12 @@ import {
 import { AG, CG, TRAIT_LABELS, type Pole } from '../lib/assessmentData';
 import { fitFor } from '../lib/channelFit';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
+import { Strip } from '../components/rosterViz';
+import {
+  DeckFocusProvider, Num, focusBinding, useDeckFocus, useDeckKeys,
+} from '../components/deckFocus';
+import { useFlip } from '../lib/deckMotion';
+import { CADENCE_DAYS, cadenceEdge, cadenceMark } from '../lib/deckMarks';
 import '../truHqDark.css';
 
 /* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
@@ -92,7 +98,23 @@ function WiringBar({ segs }: { segs: TeamSeg[] }) {
 /* ============================================================
    COACH DASHBOARD
    ============================================================ */
-export default function Coach({
+export default function Coach(props: {
+  org: { id: string; name: string };
+  onHome?: () => void;
+  openAgentId?: string | null;
+  onOpenAgent?: (id: string | null) => void;
+}) {
+  // One focus scope around the whole page, so the marks in the lead tile, the
+  // bars in the small tiles and the rows in the cohort table are three faces
+  // of one instrument rather than three separate pictures of one team.
+  return (
+    <DeckFocusProvider>
+      <CoachDeck {...props} />
+    </DeckFocusProvider>
+  );
+}
+
+function CoachDeck({
   org,
   onHome,
   openAgentId = null,
@@ -114,6 +136,8 @@ export default function Coach({
   const openId = onOpenAgent ? openAgentId : localOpenId;
   const setOpenId = onOpenAgent ?? setLocalOpenId;
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const focus = useDeckFocus();
 
   // Cohort management (Task 8): the full Pulse roster (for the picker + the
   // "not yet assessed" lane) and each team's public assessment join link.
@@ -199,6 +223,21 @@ export default function Coach({
     return { withHealth, ranked, teamHealth, onTrack, needsYou, leaderboard, dueCount, assessed };
   }, [roster]);
 
+  /* The cohort is ranked by coaching health, so its order changes whenever the
+     data does. FLIP moves each person to their new place rather than redrawing
+     the table under you. */
+  const rankOrder = derived ? derived.ranked.map(({ a }) => a.id).join('|') : '';
+  useFlip(tableRef, rankOrder);
+
+  /* Walking the cohort from the keyboard, which also walks the dot along the
+     cadence scale in the lead tile. Stood down while a coaching sheet is open
+     — the sheet owns Escape there, and arrow keys belong to its own content. */
+  useDeckKeys({
+    keys: derived ? derived.ranked.map(({ a }) => a.id) : [],
+    onOpen: (id) => setOpenId(id),
+    enabled: !openId && !!derived,
+  });
+
   // Header actions only make sense on the roster dashboard, not the agent drill-in.
   const context = !openId ? (
     <div className="coach-header-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -244,13 +283,23 @@ export default function Coach({
 
   const openAgent = roster.find((a) => a.id === openId) || null;
 
-  // The furthest-out point on the drift map, so the lead tile can name it.
+  // The furthest-out point on the cadence scale, so the lead tile can name it.
   // `lastDays` uses 99 for "never", which is worse than any real number.
   const driftPeak = (() => {
     const worst = [...roster].sort((a, b) => b.lastDays - a.lastDays)[0];
     if (!worst) return { name: '—', days: 0, never: false };
     return { name: worst.name, days: worst.lastDays, never: worst.lastDays >= 99 };
   })();
+
+  /* ---- the cadence scale ------------------------------------------------
+     Coach's lead tile carried a caption about rings at 7, 14 and 30 days over
+     an empty card: the picture it described was written, never rendered, and
+     the words outlived it. Rather than a second kind of chart, Coach gets the
+     SAME instrument Pulse has, on its own axis. Pulse measures a rate against
+     your line; Coach measures elapsed days against your cadence. One reading,
+     one gesture, two units. The placement rules live in lib/deckMarks. */
+  const cadenceHi = cadenceEdge(roster);
+  const cadenceMarks = roster.map((a) => cadenceMark(a, cadenceHi));
 
   return (
     <div className="tru-dark">
@@ -315,28 +364,56 @@ export default function Coach({
                 <div className="dk-mast-do">{context}</div>
               </header>
 
-              {/* ============ THE DRIFT MAP + THE NUMBERS ============ */}
+              {/* ============ THE CADENCE SCALE + THE NUMBERS ============ */}
               <section className="dk-bento">
-                {/* The value is the outermost dot on the map beside it — the
+                {/* The value is the outermost dot on the scale beside it — the
                     person you have gone longest without sitting down with. Not
                     the health score; that is its own tile and its own thing. */}
                 <div className="rs-plate dk-tile dk-tile-lead">
                   <span className="k">Longest without a 1:1</span>
                   <span className="v">{driftPeak.never ? 'never' : `${driftPeak.days}d`}</span>
+                  <ScaleMarks
+                    lo={0} hi={cadenceHi} line={CADENCE_DAYS}
+                    lineLabel={`your cadence · ${CADENCE_DAYS}d`}
+                    marks={cadenceMarks}
+                  />
                   <span className="u">
-                    {driftPeak.name} · distance is time, rings are 7, 14 and 30 days
+                    {driftPeak.name} · every dot is an agent, never sits at the edge
                   </span>
                 </div>
+                {/* Four of the five carry the distribution the number
+                    summarises, in the same order every time, so a bar in one
+                    tile lines up with the bar under it in the next. The
+                    headcount does not — a strip of one bar per agent all the
+                    same height would be decoration, and this deck does not
+                    draw decoration. */}
                 {([
-                  ['Agents on roster', String(roster.length), 'in your cohort'],
-                  ['On track this week', String(derived.onTrack), `of ${roster.length}`],
-                  ['Due for a re-assessment', String(derived.dueCount), 'past 90 days'],
-                  ['Slipping or stalled', String(derived.needsYou.length), derived.needsYou.length ? 'need a conversation' : 'nobody drifting'],
-                  ['Team coaching health', String(derived.teamHealth), 'check-ins, cadence, profile'],
-                ] as const).map(([k, v, u]) => (
+                  ['Agents on roster', roster.length, 'in your cohort', null, null, null],
+                  ['On track this week', derived.onTrack, `of ${roster.length}`,
+                    'sea', derived.ranked.map(({ a }) => (a.pace === 'On track' ? 1 : 0)),
+                    derived.ranked.map(({ a }) => `${a.name} · ${a.pace}`)],
+                  ['Due for a re-assessment', derived.dueCount, 'past 90 days',
+                    'amber', derived.ranked.map(({ a }) => Math.min(a.days, 120)),
+                    derived.ranked.map(({ a }) => `${a.name} · ${a.days >= 99 ? 'never assessed' : `${a.days}d since assessment`}`)],
+                  ['Slipping or stalled', derived.needsYou.length,
+                    derived.needsYou.length ? 'need a conversation' : 'nobody drifting',
+                    'ember', derived.ranked.map(({ a }) => Math.min(a.lastDays, 60)),
+                    derived.ranked.map(({ a }) => `${a.name} · ${a.lastDays >= 99 ? 'never' : `${a.lastDays}d`} since a 1:1`)],
+                  ['Team coaching health', derived.teamHealth, 'check-ins, cadence, profile',
+                    'sea', derived.ranked.map(({ health }) => health),
+                    derived.ranked.map(({ a, health }) => `${a.name} · health ${health}`)],
+                ] as const).map(([k, n, u, tone, values, labels]) => (
                   <div className="rs-plate dk-tile" key={k}>
                     <span className="k">{k}</span>
-                    <span className="v">{v}</span>
+                    <span className="v"><Num n={n} /></span>
+                    {tone && values && labels && (
+                      <Strip
+                        values={values}
+                        tone={tone}
+                        keys={derived.ranked.map(({ a }) => a.id)}
+                        labels={labels}
+                      />
+                    )}
                     <span className="u">{u}</span>
                   </div>
                 ))}
@@ -355,7 +432,21 @@ export default function Coach({
                     ? 'Nobody needs you this week.'
                     : `${derived.needsYou.length} need you · ${derived.dueCount} due for a re-assessment`}
                 </p>
-                <span className="dk-key">ranked by coaching health · top three marked</span>
+                <span className="dk-key">
+                  {focus.pinned ? (
+                    <span className="dk-pinned">
+                      Holding {roster.find((a) => a.id === focus.pinned)?.name ?? 'one agent'}
+                      <button onClick={() => focus.pin(null)}>Let go</button>
+                    </span>
+                  ) : (
+                    <span className="dk-keys">
+                      <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
+                      <kbd>↵</kbd> <b>open</b>
+                      <kbd>P</kbd> <b>hold</b>
+                    </span>
+                  )}
+                  ranked by coaching health · top three marked
+                </span>
               </div>
 
               {derived.needsYou.length > 0 && (
@@ -363,8 +454,9 @@ export default function Coach({
                   {derived.needsYou.slice(0, 4).map(({ a }) => (
                     <article
                       key={a.id}
-                      className="dk-fr crit"
+                      className={`dk-fr crit${focus.active === a.id ? ' is-on' : ''}`}
                       tabIndex={0}
+                      {...focusBinding(a.id, focus)}
                       onClick={() => setOpenId(a.id)}
                       onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}
                     >
@@ -377,7 +469,7 @@ export default function Coach({
                 </div>
               )}
 
-              <div className="rs-plate dk-table">
+              <div className="rs-plate dk-table" ref={tableRef}>
                 <table className="tru-table">
                   <thead>
                     <tr>
@@ -387,8 +479,16 @@ export default function Coach({
                   </thead>
                   <tbody>
                     {derived.ranked.map(({ a, health }, i) => (
-                      <tr key={a.id} className="rowlink" tabIndex={0}
+                      <tr key={a.id}
+                          data-flip={a.id}
+                          className={[
+                            'rowlink',
+                            focus.active === a.id ? 'is-on' : '',
+                            focus.pinned === a.id ? 'is-pinned' : '',
+                          ].filter(Boolean).join(' ')}
+                          tabIndex={0}
                           style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
+                          {...focusBinding(a.id, focus)}
                           onClick={() => setOpenId(a.id)}
                           onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}>
                         <td>
