@@ -3808,3 +3808,87 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .df-gate i { display: none; }
   .tru-dark .df-drop span { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   THE COMMAND BAR — ⌘K. The first keyboard-first surface in TRU HQ.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tru-dark .cb-hint {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 9px 5px 11px; border-radius: 999px; cursor: pointer;
+  font: 500 12.5px/1 var(--hq-font); color: var(--text-50);
+  background: transparent; border: 1px solid var(--border-soft);
+  transition: color .2s var(--ease), border-color .2s var(--ease);
+}
+.tru-dark .cb-hint:hover { color: var(--text); border-color: var(--accent-line); }
+.tru-dark .cb-hint kbd, .tru-dark .cb kbd {
+  font: 600 10.5px/1 var(--hq-font); color: var(--text-40);
+  background: var(--lift); border: 1px solid var(--border-soft);
+  border-radius: 5px; padding: 3px 5px;
+}
+
+.tru-dark .cb-scrim {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(2, 7, 4, 0.62);
+  display: grid; place-items: start center; padding-top: 14vh;
+  animation: cbFade 160ms var(--ease);
+}
+@keyframes cbFade { from { opacity: 0; } to { opacity: 1; } }
+
+.tru-dark .cb {
+  width: min(620px, calc(100vw - 32px));
+  border-radius: 18px; overflow: hidden;
+  /* Solid rather than glass, on purpose. This floats over a moving render, and
+     type you are reading while typing must not have light drifting behind it. */
+  background: #0B1710;
+  border: 1px solid rgba(214, 232, 218, 0.16);
+  box-shadow: 0 40px 90px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0,0,0,0.35);
+  animation: cbRise 200ms var(--spring);
+}
+@keyframes cbRise { from { opacity: 0; transform: translateY(-10px) scale(0.985); } to { opacity: 1; transform: none; } }
+
+.tru-dark .cb-field {
+  display: flex; align-items: center; gap: 11px;
+  padding: 15px 16px; border-bottom: 1px solid var(--border-soft);
+  color: var(--text-40);
+}
+.tru-dark .cb-field input {
+  flex: 1; min-width: 0; background: none; border: 0; outline: none;
+  font: 400 16px/1.2 var(--hq-font); color: var(--text-strong);
+}
+.tru-dark .cb-field input::placeholder { color: var(--text-40); }
+
+.tru-dark .cb-list { max-height: min(46vh, 420px); overflow-y: auto; padding: 6px; }
+.tru-dark .cb-group {
+  padding: 10px 10px 5px; font: 700 10px/1 var(--hq-font);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-40);
+}
+.tru-dark .cb-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 9px 11px; border-radius: 10px; cursor: pointer;
+}
+.tru-dark .cb-row.is-sel { background: var(--lift); }
+.tru-dark .cb-label { font-size: 14.5px; font-weight: 600; color: var(--text-strong); }
+.tru-dark .cb-sub {
+  flex: 1; min-width: 0; font-size: 12px; color: var(--text-40);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tru-dark .cb-go { opacity: 0; font-size: 13px; color: var(--accent-hi); }
+.tru-dark .cb-row.is-sel .cb-go { opacity: 1; }
+.tru-dark .cb-none { margin: 0; padding: 26px 12px; text-align: center; color: var(--text-50); font-size: 13.5px; }
+
+.tru-dark .cb-foot {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 14px; border-top: 1px solid var(--border-soft);
+  font-size: 11.5px; color: var(--text-40);
+}
+.tru-dark .cb-foot span { display: inline-flex; align-items: center; gap: 5px; }
+.tru-dark .cb-count { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .cb-scrim, .tru-dark .cb { animation: none; }
+}
+@media (max-width: 700px) {
+  .tru-dark .cb-hint span { display: none; }
+  .tru-dark .cb-scrim { padding-top: 8vh; }
+}

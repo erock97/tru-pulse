@@ -5,6 +5,7 @@
  * agent with no record there says so rather than being shown as nought passed.
  */
 
+import { useEffect } from 'react';
 import type { Row } from '../lib/rosterData';
 
 export function PersonPane({
@@ -17,9 +18,19 @@ export function PersonPane({
   if (!row) return null;
   const first = row.name.split(' ')[0];
 
+  // Escape closes the drill-in. Without it the only way out was the mouse.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <>
-      <div className="rs-scrim on" onClick={onClose} />
+      {/* Decorative backdrop. Clicking it closes, but it is NOT the keyboard
+          path out — Escape is, wired below — so it stays aria-hidden rather
+          than pretending to be a control. */}
+      <div className="rs-scrim on" onClick={onClose} aria-hidden />
       <aside className="rs-pane on">
         <div className="rs-pane-h">
           <button className="x" onClick={onClose} aria-label="Close">✕</button>

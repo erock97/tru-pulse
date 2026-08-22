@@ -387,7 +387,21 @@ export default function Rep({ org, onHome }: { org: { id: string; name: string }
                   const isOpen = openAgent === a.id;
                   return (
                     <div key={a.id}>
-                      <div className="rp-agent is-open" onClick={() => setOpenAgent(isOpen ? null : a.id)}>
+                      {/* A real control, not a clickable div: this row expands
+                          the drill-in, and a keyboard had no way to do it. */}
+                      <div
+                        className="rp-agent is-open"
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isOpen}
+                        onClick={() => setOpenAgent(isOpen ? null : a.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setOpenAgent(isOpen ? null : a.id);
+                          }
+                        }}
+                      >
                         <Avatar name={a.name} size={34} tone={0} />
                         <span className="rp-agent-name">
                           {a.name}
@@ -539,6 +553,14 @@ function ModuleManager({ org, onClose, onPreview }: {
       .catch((e) => setErr(e instanceof Error ? e.message : 'Could not load your modules'));
   useEffect(() => { void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [org.id]);
 
+  // Escape closes this dialog. Clicking the backdrop already did, but that is a
+  // mouse path only — a modal you cannot leave from the keyboard is a trap.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   async function toggleStatus(m: RepModule) {
     if (busyId) return;
     setBusyId(m.id); setErr('');
@@ -575,8 +597,17 @@ function ModuleManager({ org, onClose, onPreview }: {
   }
 
   return (
-    <div className="rp-mgmt-overlay" role="dialog" aria-modal="true" aria-label="Manage custom modules" onClick={onClose}>
-      <div className="rp-mgmt-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="rp-mgmt-overlay" onClick={onClose}>
+      {/* The dialog is the PANEL, not the backdrop. Naming the backdrop as the
+          dialog put the modal role on an element whose only job is to be
+          clicked away, and left the real content unlabelled. */}
+      <div
+        className="rp-mgmt-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Manage custom modules"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="rp-mgmt-head">
           <div className="panel-head" style={{ margin: 0 }}>
             <h3>Manage custom modules</h3>

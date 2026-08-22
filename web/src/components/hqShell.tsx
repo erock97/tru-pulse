@@ -3,6 +3,7 @@ import { TruLogo } from './TruLogo';
 import { Avatar, Icon } from './hqUi';
 import { useForceHqDark } from '../hqHooks';
 import { hasAdminReturn, adminReturn } from '../lib/api';
+import { CommandBar } from './commandBar';
 
 export interface ShellNav {
   onHome?: () => void;
@@ -144,6 +145,14 @@ export function HqShell({
           <div className="dk-island">
             <span className="dk-mk"><i>tru</i><b>TRU <em>HQ</em></b></span>
             {islandSlot && <><span className="dk-div" />{islandSlot}</>}
+            <span className="dk-div" />
+            <CommandBar
+              onOpenPulse={nav.onOpenPulse}
+              onOpenCoach={nav.onOpenCoach}
+              onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
+              onOpenTeam={nav.onOpenTeam}
+              onSignOut={onSignOut}
+            />
           </div>
         )}
         {!hideTopbar && (

@@ -1,6 +1,0 @@
----
-description: Workflow rules for this repo — branching, PRs, previews, deploys
-alwaysApply: true
----
-
-Read `AGENTS.md` at the repository root and follow it exactly. It applies to you.
