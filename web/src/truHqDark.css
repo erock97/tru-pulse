@@ -3511,8 +3511,18 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 
 /* The union itself. Breathes slowly, and flares whenever you change tab —
-   the core is keyed on the active tab, so React remounts it and this restarts. */
-.tru-dark .tru-room-core {
+   the core is keyed on the active tab, so React remounts it and this restarts.
+ *
+ * The `i` in this selector is load-bearing. Written as `.tru-dark .tru-room-core`
+ * it is two classes (0,2,0) and LOSES to `.tru-dark .tru-room i` (0,2,1) — a type
+ * selector outranks nothing, but it does break the tie. Every property below that
+ * the other rule also sets was being thrown away: `inset: auto` lost to
+ * `inset: -14%`, so the flare was pinned to the top-left corner instead of the
+ * light source at 63%/30%, and `background: none` lost to the trinity.webp
+ * background, so instead of a soft radial glow this painted an OPAQUE 46vw square
+ * crop of the render — a black box in the corner, re-firing on every tab change
+ * because the element is keyed on the active tab. */
+.tru-dark .tru-room i.tru-room-core {
   inset: auto; left: 63%; top: 30%;
   width: 46vw; height: 46vw; background: none;
   transform: translate(-50%, -50%);
