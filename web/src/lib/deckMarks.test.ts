@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CADENCE_DAYS, cadenceEdge, cadenceMark, trackMark } from './deckMarks';
+import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence, trackMark } from './deckMarks';
 
 const coachAgent = (name: string, lastDays: number) => ({ id: name, name, lastDays });
 const repAgent = (name: string, invited: boolean) => ({ id: name, name, invited });
@@ -38,6 +38,41 @@ describe('Coach — the cadence scale', () => {
 
   it('does not let the never sentinel stretch the axis to 99', () => {
     expect(cadenceEdge([{ lastDays: 12 }, { lastDays: 99 }])).toBe(CADENCE_DAYS + 6);
+  });
+});
+
+describe('Coach — asking for a tighter cadence', () => {
+  // The leader can drag the cadence marker, so the tones have to be judged
+  // against the cadence in force rather than against the default.
+  it('re-tones everybody when the cadence is tightened', () => {
+    const a = coachAgent('Dana Cole', 9);
+    expect(cadenceMark(a, 40, 14).tone).toBe('ok');    // inside a fortnight
+    expect(cadenceMark(a, 40, 7).tone).toBe('warn');   // past a week
+    expect(cadenceMark(a, 40, 4).tone).toBe('bad');    // more than double it
+  });
+
+  it('still treats never as the worst state at any cadence', () => {
+    expect(cadenceMark(coachAgent('Maria Lopez', 99), 40, 4).tone).toBe('bad');
+    expect(cadenceMark(coachAgent('Maria Lopez', 99), 40, 60).tone).toBe('bad');
+  });
+
+  it('falls back to the standing cadence when none is given', () => {
+    expect(cadenceMark(coachAgent('A', CADENCE_DAYS), 40).tone)
+      .toBe(cadenceMark(coachAgent('A', CADENCE_DAYS), 40, CADENCE_DAYS).tone);
+  });
+
+  it('counts who is past the cadence being asked about', () => {
+    const cohort = [coachAgent('A', 3), coachAgent('B', 9), coachAgent('C', 21), coachAgent('D', 99)];
+    expect(pastCadence(cohort, 14)).toBe(2);   // C and never-met D
+    expect(pastCadence(cohort, 7)).toBe(3);    // B joins them
+    expect(pastCadence(cohort, 30)).toBe(1);   // only never-met D
+  });
+
+  it('does not let a tightened cadence rescale the axis', () => {
+    // The axis is anchored on the DEFAULT so the marker cannot slide out from
+    // under the cursor as it is dragged.
+    const cohort = [{ lastDays: 3 }, { lastDays: 8 }];
+    expect(cadenceEdge(cohort)).toBe(CADENCE_DAYS + 6);
   });
 });
 

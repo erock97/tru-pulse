@@ -6,14 +6,48 @@
  */
 
 import { useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import type { Row } from '../lib/rosterData';
 
+/* One person's own axis. It has to hold three numbers — them, the floor and
+   the line — with air either side, and it must not depend on the roster, which
+   the panel does not have. */
+function standAt(v: number, row: Row, line: number, team: number | null): number {
+  const marks = [line, row.perContract ?? line, team ?? line];
+  const lo = Math.max(0, Math.min(...marks) - 4);
+  const hi = Math.max(...marks) + 4;
+  return Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
+}
+
+/* The reading, said in a sentence, because a picture of three marks still
+   leaves the leader to work out which way round is good. Every clause traces
+   to a number on the panel — nothing here is an opinion. */
+function verdict(row: Row, line: number, team: number | null): string {
+  const first = row.name.split(' ')[0];
+  if (row.perContract === null) {
+    return `${first} has closed nothing in this window, so there is no rate to judge yet. ${row.leads} leads is the number to watch.`;
+  }
+  const rate = Math.round(row.perContract);
+  const vsLine = rate > line
+    ? `past your line of one in ${line}`
+    : `inside your line of one in ${line}`;
+  const vsTeam = team === null ? ''
+    : rate > Math.round(team) ? `, and behind the floor at one in ${Math.round(team)}`
+      : rate < Math.round(team) ? `, and ahead of the floor at one in ${Math.round(team)}`
+        : `, level with the floor`;
+  return `${first} turns one lead in ${rate} — ${vsLine}${vsTeam}.`;
+}
+
 export function PersonPane({
-  row, onClose, approach,
+  row, onClose, approach, line, teamRate,
 }: {
   row: Row | null;
   onClose: () => void;
   approach: string | null;
+  /** The threshold in force right now — which on Pulse the leader can move. */
+  line: number;
+  /** What the whole floor is running at, so one person can be read against it. */
+  teamRate: number | null;
 }) {
   if (!row) return null;
   const first = row.name.split(' ')[0];
@@ -38,6 +72,33 @@ export function PersonPane({
           <p>{row.archName ?? 'Not assessed'} · {row.leads} leads</p>
         </div>
         <div className="rs-pane-b">
+          {/* Where they STAND, before any of the numbers.
+              The panel used to open on a list of figures and leave the reading
+              to you — which meant that having just clicked a dot on a scale to
+              get here, the first thing you saw was the one view that had
+              thrown the scale away. This is the same picture the lead tile
+              draws, with the crowd removed and only this person, the floor and
+              your line left on it. */}
+          <div className="rs-grp rs-stand">
+            <div className="rs-grp-k">Where {first} stands</div>
+            <span className="rs-scale rs-scale-lg">
+              <hr />
+              {teamRate !== null && <s style={{ '--at': standAt(teamRate, row, line, teamRate) } as CSSProperties} />}
+              <u style={{ '--at': standAt(line, row, line, teamRate) } as CSSProperties} />
+              {row.perContract !== null && (
+                <i
+                  className={'h-' + row.health}
+                  style={{ '--at': standAt(row.perContract, row, line, teamRate) } as CSSProperties}
+                />
+              )}
+            </span>
+            <div className="rs-stand-key">
+              <span><s className="rs-key team" /> the floor{teamRate ? ` at 1 : ${Math.round(teamRate)}` : ''}</span>
+              <span><s className="rs-key line" /> your line at 1 : {line}</span>
+            </div>
+            <p className="rs-msg">{verdict(row, line, teamRate)}</p>
+          </div>
+
           <div className="rs-grp">
             <div className="rs-grp-k">Pipeline</div>
             {[

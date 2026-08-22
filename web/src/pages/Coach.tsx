@@ -26,7 +26,7 @@ import {
 } from '../components/deckFocus';
 import { Odometer } from '../components/odometer';
 import { useFlip } from '../lib/deckMotion';
-import { CADENCE_DAYS, cadenceEdge, cadenceMark } from '../lib/deckMarks';
+import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
 import '../truHqDark.css';
 
 /* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
@@ -139,6 +139,11 @@ function CoachDeck({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
   const focus = useDeckFocus();
+  /* How often you mean to sit down with each of them. A constant until now.
+     Drag the marker on the lead tile and the cohort re-tones against the
+     cadence you are asking about — "what would it look like if I saw everyone
+     weekly?" Nothing is written; it is a question, not a setting. */
+  const [cadence, setCadence] = useState<number>(CADENCE_DAYS);
 
   // Cohort management (Task 8): the full Pulse roster (for the picker + the
   // "not yet assessed" lane) and each team's public assessment join link.
@@ -301,7 +306,8 @@ function CoachDeck({
      your line; Coach measures elapsed days against your cadence. One reading,
      one gesture, two units. The placement rules live in lib/deckMarks. */
   const cadenceHi = cadenceEdge(roster);
-  const cadenceMarks = roster.map((a) => cadenceMark(a, cadenceHi));
+  const cadenceMarks = roster.map((a) => cadenceMark(a, cadenceHi, cadence));
+  const overCadence = pastCadence(roster, cadence);
 
   return (
     <div className="tru-dark">
@@ -383,12 +389,16 @@ function CoachDeck({
                   <span className="k">Longest without a 1:1</span>
                   <span className="v">{driftPeak.never ? 'never' : `${driftPeak.days}d`}</span>
                   <ScaleMarks
-                    lo={0} hi={cadenceHi} line={CADENCE_DAYS}
-                    lineLabel={`your cadence · ${CADENCE_DAYS}d`}
+                    lo={0} hi={cadenceHi} line={cadence}
+                    lineLabel={cadence === CADENCE_DAYS ? `your cadence · ${cadence}d` : `trying ${cadence}d`}
+                    onLineChange={setCadence}
+                    lineName={`your cadence, currently every ${cadence} days`}
                     marks={cadenceMarks}
                   />
                   <span className="u">
-                    {driftPeak.name} · every dot is an agent, never sits at the edge
+                    {cadence === CADENCE_DAYS
+                      ? <>{driftPeak.name} · drag the cadence to ask what a tighter one would mean</>
+                      : <><b>{overCadence}</b> of {roster.length} past a {cadence}-day cadence · <button className="sm-reset" onClick={() => setCadence(CADENCE_DAYS)}>back to {CADENCE_DAYS}d</button></>}
                   </span>
                 </div>
                 {/* Four of the five carry the distribution the number

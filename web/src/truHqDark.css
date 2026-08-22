@@ -4919,3 +4919,95 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: rgba(7, 15, 10, 0.9);
   box-shadow: inset 0 0 0 1px rgba(255, 145, 116, 0.28);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   THE SUMMARY IS THE CONTROL SURFACE
+   --------------------------------------------------------------------
+   A leader reads "Still in Lead: 12" and immediately wants to know WHO. The
+   answer was always in the table two inches below, sorted by something else.
+   Every tile summarises a column, so every tile is now the control for that
+   column: click it and the roster re-ranks by it, and the rows travel to
+   their new places.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tru-dark .dk-tile-do { cursor: pointer; }
+.tru-dark .dk-tile-do:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+/* Said only under the cursor. A permanent "rank by this" on six tiles would
+   be six instructions competing with the numbers they sit under. */
+.tru-dark .dk-tile-rank {
+  position: absolute; right: 14px; top: 13px; z-index: 3;
+  font: 700 8.5px/1 var(--hq-font); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-40); opacity: 0;
+  transition: opacity 0.24s var(--ease), color 0.24s var(--ease);
+}
+.tru-dark .dk-tile-do:hover .dk-tile-rank,
+.tru-dark .dk-tile-do:focus-visible .dk-tile-rank { opacity: 1; }
+.tru-dark .dk-tile.is-sorting .dk-tile-rank { opacity: 1; color: var(--accent-hi); }
+
+/* The tile that is driving the sort wears the same gold edge the column
+   header does, so the two read as one control with two ends. */
+.tru-dark .dk-tile.is-sorting {
+  box-shadow:
+    inset 0 2px 0 var(--accent),
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px var(--border-soft),
+    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+}
+
+/* The lead tile's heading sorts; its scale does not, because the scale is a
+   drag target and one gesture must not give two answers. */
+.tru-dark .dk-tile .k-do {
+  cursor: pointer; border-radius: 5px;
+  transition: color 0.24s var(--ease);
+}
+.tru-dark .dk-tile .k-do:hover { color: var(--text-60); }
+.tru-dark .dk-tile .k-do.is-sorting { color: var(--accent-hi); }
+.tru-dark .dk-tile .k-do:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* A bar is a way IN to that person now, not only a way to find them. */
+.tru-dark .rs-strip.is-pickable i { cursor: pointer; }
+
+/* ---- the wave down the roster -------------------------------------------
+   Every figure in the table changes when the window does, and they all used to
+   change in silence while the tiles above them rolled. The new numbers drop
+   into place a beat apart down the rows, so a window change is one movement
+   from the headline to the last row rather than two unrelated events. */
+.tru-dark .cell-roll {
+  display: inline-block;
+  animation: cellRoll 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--r, 0) * 26ms);
+}
+@keyframes cellRoll {
+  from { opacity: 0; transform: translate3d(0, -0.55em, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- where one person stands --------------------------------------------
+   The panel opened on a list of figures and left the reading to you — which
+   meant that having just clicked a dot on a scale to get here, the first thing
+   you saw was the one view that had thrown the scale away. Same picture, crowd
+   removed. */
+.tru-dark .rs-stand { padding-bottom: 18px; }
+.tru-dark .rs-scale-lg {
+  width: 100%; height: 30px; display: block; margin: 4px 0 2px;
+}
+.tru-dark .rs-scale-lg hr { top: 50%; }
+.tru-dark .rs-scale-lg s { top: 8px; bottom: 8px; }
+.tru-dark .rs-scale-lg u { top: 5px; bottom: 5px; width: 2px; }
+.tru-dark .rs-scale-lg i { width: 13px; height: 13px; box-shadow: 0 0 0 4px rgba(2, 7, 4, 0.5), 0 0 18px 2px currentColor; }
+.tru-dark .rs-scale-lg i.h-past-line { color: var(--ember); }
+.tru-dark .rs-scale-lg i.h-behind { color: var(--accent); }
+.tru-dark .rs-scale-lg i.h-holding { color: var(--sea); }
+.tru-dark .rs-stand-key {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 10.5px; color: var(--text-40); letter-spacing: 0.02em;
+}
+.tru-dark .rs-stand .rs-msg { font-style: normal; color: var(--text); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .cell-roll { animation: none; }
+  .tru-dark .dk-tile-rank { transition: none; }
+}

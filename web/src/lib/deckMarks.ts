@@ -39,6 +39,9 @@ const NEVER = 99;
 export function cadenceMark(
   agent: { id: string; name: string; lastDays: number },
   edge: number,
+  /** The cadence in force. A leader can move it on the page to ask what a
+   *  tighter one would mean, so it cannot be read off the constant. */
+  cadence: number = CADENCE_DAYS,
 ): ScaleMark {
   const never = agent.lastDays >= NEVER;
   return {
@@ -46,13 +49,24 @@ export function cadenceMark(
     value: never ? edge : agent.lastDays,
     label: agent.name,
     reading: never ? 'never' : `${agent.lastDays}d`,
-    tone: never || agent.lastDays >= 30 ? 'bad'
-      : agent.lastDays >= CADENCE_DAYS ? 'warn'
+    tone: never || agent.lastDays >= cadence * 2 ? 'bad'
+      : agent.lastDays >= cadence ? 'warn'
         : 'ok',
   };
 }
 
-/** The far end of Coach's axis: past the cadence line, and past everybody real. */
+/** How many of them are past the cadence in force, including never-met. */
+export function pastCadence(
+  agents: readonly { lastDays: number }[],
+  cadence: number,
+): number {
+  return agents.filter((a) => a.lastDays >= cadence).length;
+}
+
+/** The far end of Coach's axis: past the cadence line, and past everybody real.
+ *  Anchored on the DEFAULT cadence rather than the live one — an axis that
+ *  rescaled while you dragged the marker would slide it out from under the
+ *  cursor and the control would feel like it was resisting you. */
 export function cadenceEdge(agents: readonly { lastDays: number }[]): number {
   const real = agents.map((a) => a.lastDays).filter((d) => d < NEVER);
   return Math.max(CADENCE_DAYS + 6, ...real.map((d) => d + 4));

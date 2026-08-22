@@ -159,7 +159,7 @@ export function Burst({ rows, line }: { rows: readonly Row[]; line: number }) {
    them on every frame. The bar sits bottom-anchored so the scale reads from
    the floor. */
 export function Strip({
-  values, tone, keys, labels,
+  values, tone, keys, labels, onPick,
 }: {
   values: readonly number[];
   tone: string;
@@ -167,14 +167,23 @@ export function Strip({
   keys?: readonly string[];
   /** What to say about a bar on hover — "Dana Cole · 71 leads". */
   labels?: readonly string[];
+  /** Give it this and a bar becomes a way IN to that person, not only a way to
+   *  find them. The strips already knew whose each bar was; clicking one is the
+   *  shortest path there is from "who is that outlier" to their record. */
+  onPick?: (key: string) => void;
 }) {
   const focus = useDeckFocus();
   const max = Math.max(1, ...values);
   const linked = !!keys && keys.length === values.length;
   const anyOn = linked && focus.active !== null && keys.includes(focus.active);
 
+  const pickable = linked && !!onPick;
+
   return (
-    <span className={`rs-strip t-${tone}${anyOn ? ' is-focused' : ''}`} aria-hidden={!linked}>
+    <span
+      className={`rs-strip t-${tone}${anyOn ? ' is-focused' : ''}${pickable ? ' is-pickable' : ''}`}
+      aria-hidden={!linked}
+    >
       {values.map((v, i) => {
         const key = linked ? keys[i] : null;
         return (
@@ -194,6 +203,12 @@ export function Strip({
             title={labels && key !== null ? labels[i] : undefined}
             onMouseEnter={key !== null ? () => focus.point(key) : undefined}
             onMouseLeave={key !== null ? () => focus.point(null) : undefined}
+            onClick={pickable && key !== null
+              // The tile around this is itself a control (it re-ranks the
+              // table), so a click that lands on a BAR has to stop there or it
+              // would do two things at once.
+              ? (e) => { e.stopPropagation(); onPick(key); }
+              : undefined}
           />
         );
       })}

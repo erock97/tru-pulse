@@ -101,6 +101,24 @@ function Deck({
   const tableRef = useRef<HTMLDivElement | null>(null);
   useFlip(tableRef, sorted.map((r) => r.name).join('|'));
 
+  /* Every figure in the table changes when the window does, and until now they
+     all changed silently while the tiles above them rolled. This counter
+     advances ONLY on a window change; re-keying a cell on it remounts a small
+     span and replays one CSS animation, so the new numbers drop into place in
+     a wave down the roster.
+     It starts at zero and the cells only wear the class once it has moved, so
+     the very first paint is left to the row entrance it already has — two
+     entrances at once on arrival read as a stutter, which is the exact mistake
+     the page transition was built to fix. */
+  const gen = useRef(0);
+  const lastWin = useRef(win.key);
+  if (lastWin.current !== win.key) { lastWin.current = win.key; gen.current += 1; }
+  const cell = (value: React.ReactNode, rowIndex: number) => (
+    gen.current === 0
+      ? value
+      : <span className="cell-roll" key={gen.current} style={{ '--r': Math.min(rowIndex, 14) } as React.CSSProperties}>{value}</span>
+  );
+
   /* Up and down walk the roster, and because walking POINTS at each person in
      turn, the dot travels along the scale beside you. Enter opens them, `p`
      holds them lit, Escape lets go — or closes the panel if one is open. */
@@ -192,19 +210,24 @@ function Deck({
   // Every supporting tile draws the same team in the same order, so a bar in
   // one lines up with the bar directly under it in the next.
   const stripKeys = strip.map((r) => r.name);
+  /* Every tile summarises a column of the table underneath it, so every tile
+     is also the control for that column. Click one and the roster re-ranks by
+     it. The bento stops being a read-only headline and becomes the table's
+     control surface — which is what a leader is reaching for anyway when they
+     look at "Still in Lead: 12" and want to know who. */
   const tiles: Array<{
-    k: string; n: number; suffix?: string; u: string;
+    k: string; n: number; suffix?: string; u: string; sortKey: keyof Row;
     tone: string; values: number[]; say: (r: Row) => string;
   }> = [
-    { k: 'Leads in play', n: totals.leads, u: 'all sources', tone: 'sea',
+    { k: 'Leads in play', n: totals.leads, u: 'all sources', tone: 'sea', sortKey: 'leads',
       values: strip.map((r) => r.leads), say: (r) => `${r.name} · ${r.leads} leads` },
-    { k: 'Worked', n: totals.workedPct, suffix: '%', u: `${totals.worked} of ${totals.leads}`, tone: 'sea',
+    { k: 'Worked', n: totals.workedPct, suffix: '%', u: `${totals.worked} of ${totals.leads}`, tone: 'sea', sortKey: 'workedPct',
       values: strip.map((r) => r.workedPct), say: (r) => `${r.name} · ${r.workedPct}% worked` },
-    { k: 'Under contract', n: totals.contracts, u: 'this window', tone: 'amber',
+    { k: 'Under contract', n: totals.contracts, u: 'this window', tone: 'amber', sortKey: 'contracts',
       values: strip.map((r) => r.contracts), say: (r) => `${r.name} · ${r.contracts} under contract` },
-    { k: 'Reached an offer', n: totals.offers, u: 'this window', tone: 'amber',
+    { k: 'Reached an offer', n: totals.offers, u: 'this window', tone: 'amber', sortKey: 'offers',
       values: strip.map((r) => r.offers), say: (r) => `${r.name} · ${r.offers} reached an offer` },
-    { k: 'Still in Lead', n: totals.stuck, u: totals.stuck ? '48h+ untouched' : 'nothing sitting', tone: 'ember',
+    { k: 'Still in Lead', n: totals.stuck, u: totals.stuck ? '48h+ untouched' : 'nothing sitting', tone: 'ember', sortKey: 'stuck',
       values: strip.map((r) => r.stuck), say: (r) => `${r.name} · ${r.stuck} still in Lead` },
   ];
 
@@ -242,7 +265,17 @@ function Deck({
 
       <section className="dk-bento">
         <div className="rs-plate dk-tile dk-tile-lead">
-          <span className="k">Leads per contract</span>
+          {/* The heading sorts; the scale below it does NOT, because the scale
+              is a drag target and a click that both re-ranked the table and
+              moved your line would be two answers to one gesture. */}
+          <span
+            className={`k k-do${sort.key === 'perContract' ? ' is-sorting' : ''}`}
+            role="button"
+            tabIndex={0}
+            title="Rank the roster by leads per contract"
+            onClick={() => resort('perContract')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resort('perContract'); } }}
+          >Leads per contract</span>
           <span className="v"><Odometer value={totals.perContract} prefix="1 : " /></span>
           {/* One dot per agent, on the same scale as your line. The light comes
               from the room behind this card; the card only has to be true.
@@ -270,11 +303,29 @@ function Deck({
           </span>
         </div>
         {tiles.map((t) => (
-          <div className="rs-plate dk-tile" key={t.k}>
+          <div
+            className={`rs-plate dk-tile dk-tile-do${sort.key === t.sortKey ? ' is-sorting' : ''}`}
+            key={t.k}
+            role="button"
+            tabIndex={0}
+            aria-pressed={sort.key === t.sortKey}
+            title={`Rank the roster by ${t.k.toLowerCase()}`}
+            onClick={() => resort(t.sortKey)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resort(t.sortKey); } }}
+          >
             <span className="k">{t.k}</span>
             <span className="v"><Odometer value={t.n} suffix={t.suffix} /></span>
-            <Strip values={t.values} tone={t.tone} keys={stripKeys} labels={strip.map(t.say)} />
+            <Strip
+              values={t.values}
+              tone={t.tone}
+              keys={stripKeys}
+              labels={strip.map(t.say)}
+              onPick={(name) => setOpen(rows.find((r) => r.name === name) ?? null)}
+            />
             <span className="u">{t.u}</span>
+            <span className="dk-tile-rank" aria-hidden>
+              {sort.key === t.sortKey ? (sort.dir === 1 ? 'ranking ▲' : 'ranking ▼') : 'rank by this'}
+            </span>
           </div>
         ))}
       </section>
@@ -368,15 +419,15 @@ function Deck({
                     </div>
                   </div>
                 </td>
-                <td>{r.leads}</td>
-                <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{r.workedPct}%</td>
-                <td className={r.stuck > 10 ? 'cell-warn' : ''}>{r.stuck || '—'}</td>
-                <td>{r.offers || '—'}</td>
-                <td>{r.contracts || '—'}</td>
+                <td>{cell(r.leads, i)}</td>
+                <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{cell(`${r.workedPct}%`, i)}</td>
+                <td className={r.stuck > 10 ? 'cell-warn' : ''}>{cell(r.stuck || '—', i)}</td>
+                <td>{cell(r.offers || '—', i)}</td>
+                <td>{cell(r.contracts || '—', i)}</td>
                 <td>
                   <div className="rs-rate">
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
-                      {r.perContract ? '1 : ' + Math.round(r.perContract) : '—'}
+                      {cell(r.perContract ? '1 : ' + Math.round(r.perContract) : '—', i)}
                     </b>
                     {/* Placed by `--at` rather than by `left`, exactly like the
                         big scale in the lead tile — so changing the window
@@ -415,7 +466,13 @@ function Deck({
         </table>
       </div>
 
-      <PersonPane row={open} onClose={() => setOpen(null)} approach={open ? approachFor(open) : null} />
+      <PersonPane
+        row={open}
+        onClose={() => setOpen(null)}
+        approach={open ? approachFor(open) : null}
+        line={line}
+        teamRate={totals.perContract}
+      />
     </>,
   );
 }
