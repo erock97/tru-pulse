@@ -2,47 +2,116 @@
   "version": 1,
   "project": {
     "name": "tru-pulse-web",
-    "productType": null,
-    "stack": [
-      "react",
-      "vite"
-    ]
+    "productType": "b2b-saas-dashboard",
+    "stack": ["react", "vite", "typescript", "hand-written-css"]
   },
   "sources": {
-    "tokens": [],
-    "components": [],
-    "assets": [],
-    "instructions": []
+    "tokens": ["src/truHqDark.css"],
+    "components": ["src/components"],
+    "assets": ["public/field.svg", "public/trinity.webp"],
+    "instructions": ["AGENTS.md", "CLAUDE.md"]
   },
   "design": {
-    "colorMode": "unknown",
-    "colors": {},
-    "typography": {},
-    "spacing": {},
-    "radius": {},
-    "shadows": {},
-    "motion": {},
-    "density": "unknown"
+    "colorMode": "dark-only",
+    "colors": {
+      "base": "#050B08",
+      "panel": "#0C1610",
+      "card": "#101D15",
+      "lift": "rgba(226, 240, 230, 0.045)",
+      "border": "rgba(214, 232, 218, 0.14)",
+      "borderSoft": "rgba(214, 232, 218, 0.075)",
+      "text": "#EDF2EC",
+      "textStrong": "#ffffff",
+      "text60": "#A9B5AC",
+      "text50": "#95A398",
+      "text40": "#6E7A72",
+      "accent": "#F2B23C",
+      "accentHi": "#FFDC93",
+      "accentLine": "rgba(242, 178, 60, 0.32)",
+      "sea": "#8FB0A2",
+      "ember": "#FF6A45",
+      "terracotta": "#FF8B62"
+    },
+    "typography": {
+      "sans": "\"Hanken Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "serif": "\"Fraunces\", \"Playfair Display\", Georgia, serif",
+      "serifUsedFor": "mastheads, section heads, and large numerals ONLY",
+      "sectionHead": "18px serif, weight 550, letter-spacing -0.02em",
+      "eyebrow": "10-11px sans, weight 700, uppercase, letter-spacing 0.11em",
+      "body": "14px sans, line-height 1.5"
+    },
+    "spacing": { "tileGap": "18px", "panelPadding": "24px 26px", "rowPadding": "11px 6px" },
+    "radius": { "card": "14px", "cardLg": "16px", "btn": "10px", "pill": "999px" },
+    "shadows": { "note": "hairline borders and translucency carry elevation; drop shadows are reserved for the ⌘K bar and modals" },
+    "motion": {
+      "ease": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "spring": "cubic-bezier(0.32, 0.72, 0, 1)",
+      "settle": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "pageTransition": "620ms horizontal camera move, then cards settle on staggered delays"
+    },
+    "density": "dense"
   },
   "components": {
     "installed": [],
-    "preferredPrimitives": [],
-    "patterns": []
+    "preferredPrimitives": [
+      "HqShell (src/components/hqShell.tsx) — sidebar, island bar, room background, ⌘K",
+      "CommandBar (src/components/commandBar.tsx)",
+      "ScaleMarks (src/components/scaleMarks.tsx) — dots on a scale with a marked line",
+      "DropFlow / DropSpark (src/components/dropFlow.tsx) — true-scale pipeline ribbon",
+      "Avatar, Icon, Ring (src/components/hqUi.tsx)"
+    ],
+    "patterns": [
+      ".dk-main — page column",
+      ".dk-mast — eyebrow + headline + sub",
+      ".dk-bento — one lead tile plus satellites",
+      ".dk-sec — section head with a right-hand key",
+      ".rs-plate .dk-table — translucent plate wrapping a dense table",
+      ".dk-focus > .dk-fr — the 'needs you' rows"
+    ]
   },
   "constraints": {
-    "must": [],
-    "avoid": []
+    "must": [
+      "Use CSS custom properties from truHqDark.css. Never hardcode a hex or rgba that a token already covers.",
+      "Every surface is translucent so the background render shows through. --lift for a surface sitting ON a card; never --panel or --base for an inner surface.",
+      "Amber (--accent) is scarce on purpose. Colour ONLY the one thing that needs action. If everything is amber, nothing reads as urgent.",
+      "Sea green = good, amber = needs attention, ember = bad, --text-40 = no data. Never repurpose these.",
+      "Animate transform and opacity only. Never animate top/left/width/height.",
+      "Staggered entrances use animation-fill-mode: backwards, NEVER both — `both` makes opacity 0 the resting state and a stalled animation leaves a blank page.",
+      "A wrapper that keeps a transform becomes the containing block for position:fixed descendants. Page-level animations must end at transform: none.",
+      "Every clickable element must be reachable by keyboard: a real button, or role + tabIndex + Enter/Space. Modals close on Escape.",
+      "Every number on screen must trace to a real loader. No invented data, no placeholder copy.",
+      "Respect prefers-reduced-motion on every animation."
+    ],
+    "avoid": [
+      "Tailwind, shadcn, Radix, styled-components — this project is hand-written CSS and pasting them is not portable.",
+      "<filter> / feGaussianBlur inside a full-viewport SVG background — it rasterises at display resolution and freezes the renderer. Bake softness into gradient stops.",
+      "backdrop-filter on cards — costs a compositing layer per card per scroll frame for almost no visual gain here.",
+      "Opaque cards. They were why the depth never landed.",
+      "Drawn hairline artwork crushed into a small card — it reads as scribbles.",
+      "Decorative dividers and wave SVGs between sections.",
+      "Type selectors in a class rule (.tru-room i) that silently outrank a class-only rule (.tru-room-core) — this caused a live rendering bug.",
+      "Large bold sans headings inside panels — the masthead is the only large type on a page."
+    ]
   },
-  "decisions": [],
-  "evidence": [
+  "decisions": [
     {
-      "fact": "project.stack:react",
-      "source": "package.json"
+      "date": "2026-08-22",
+      "choice": "Forest palette: deep green ground, bone text, amber used sparingly for the single thing needing action.",
+      "why": "Replaced the earlier warm-gold-on-near-black marketing palette for the app."
     },
     {
-      "fact": "project.stack:vite",
-      "source": "package.json"
+      "date": "2026-08-22",
+      "choice": "One page transition owns arrival: a 620ms horizontal camera move, then cards settling on staggered delays from a single shared keyframe.",
+      "why": "Three uncoordinated entrance systems (setTimeout reveals, per-row CSS stagger, room flare) were racing and read as stutter."
+    },
+    {
+      "date": "2026-08-22",
+      "choice": "One layout whether or not an agent sheet is open; the way back lives in the island bar.",
+      "why": "Opening an agent used to drop dk-main and restore the retired top bar, so the sheet looked like an older product."
     }
   ],
-  "generatedAt": "2026-08-22T03:00:59.624Z"
+  "evidence": [
+    { "fact": "tokens live in src/truHqDark.css", "source": "3700-line hand-written stylesheet" },
+    { "fact": "no tailwind/shadcn/radix/motion dependency", "source": "package.json" }
+  ]
 }

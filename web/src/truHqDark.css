@@ -4025,3 +4025,44 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .dk-back:hover { color: var(--accent-hi); border-color: var(--accent-line); }
 .tru-dark .dk-back span { font-size: 13px; line-height: 1; }
+
+/* Where they'll win business — ranked channel fit.
+   Bars are the share of a channel's rewarded traits the agent actually has,
+   so the number is explainable rather than tuned. */
+.tru-dark .ad-fit { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.tru-dark .ad-fit li { display: grid; gap: 7px; }
+.tru-dark .ad-fit-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.tru-dark .ad-fit-name {
+  font-family: var(--hq-serif); font-size: 17px; font-weight: 550;
+  letter-spacing: -0.015em; color: var(--text-strong);
+}
+.tru-dark .ad-fit-traits {
+  font: 700 10px/1.3 var(--hq-font); letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--sea); text-align: right; flex-shrink: 0;
+}
+.tru-dark .ad-fit-bar {
+  display: block; height: 3px; border-radius: 999px;
+  background: rgba(226, 240, 230, 0.07); overflow: hidden;
+}
+.tru-dark .ad-fit-bar i {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--sea), var(--sea-hi));
+  transform-origin: left; animation: fitFill 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+/* The strongest fit leads, so its bar draws first. */
+.tru-dark .ad-fit li:nth-child(1) .ad-fit-bar i { animation-delay: 240ms; }
+.tru-dark .ad-fit li:nth-child(2) .ad-fit-bar i { animation-delay: 320ms; }
+.tru-dark .ad-fit li:nth-child(3) .ad-fit-bar i { animation-delay: 390ms; }
+@keyframes fitFill { from { transform: scaleX(0); } to { transform: none; } }
+.tru-dark .ad-fit p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-60); }
+
+.tru-dark .ad-fit-against {
+  margin-top: 18px; padding: 13px 15px; border-radius: var(--r-card);
+  background: var(--lift); border: 1px solid var(--border-soft); border-left: 2px solid var(--ember);
+}
+.tru-dark .ad-fit-against .ad-swot-k { color: var(--ember); }
+.tru-dark .ad-fit-against p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-60); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .ad-fit-bar i { animation: none; }
+}

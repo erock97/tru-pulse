@@ -17,7 +17,8 @@ import {
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
   type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
-import { AG, CG } from '../lib/assessmentData';
+import { AG, CG, TRAIT_LABELS, type Pole } from '../lib/assessmentData';
+import { fitFor } from '../lib/channelFit';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import '../truHqDark.css';
 
@@ -632,12 +633,18 @@ function AgentDrill({ agent, cohort, teamHealth }: {
   cohort: Array<{ id: string; health: number }>;
   teamHealth: number | null;
 }) {
+  // Channel fit is pure derivation from the assessment code — no request, no
+  // state. Computed here so both the list and the "against the grain" line
+  // come from one ranking.
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
   const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
   const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
   const [writeErr, setWriteErr] = useState<string | null>(null);
+  const fit = useMemo(() => fitFor(profile?.code ?? null), [profile?.code]);
+  const worst = fit.length ? fit[fit.length - 1] : null;
 
   // Remember where the leader was in THIS agent's sheet. Restoring on mount is
   // what makes returning from another tab land on the same line rather than the
@@ -829,24 +836,46 @@ function AgentDrill({ agent, cohort, teamHealth }: {
           )}
         </section>
 
-        <section className="card ad-panel reveal" data-delay="150">
+        {/* Where they will actually win business. Scored off the same four
+            axes the assessment already measures, and the matched traits are
+            printed next to each reason so a leader can see the working instead
+            of trusting a number. */}
+        <section className="card ad-panel reveal ad-strengths" data-delay="150">
           <div className="ad-panel-head">
-            <h3>What to say to them</h3>
-            <span className="panel-sub">their own framing, in their words</span>
+            <h3>Where they’ll win business</h3>
+            <span className="panel-sub">
+              {profile ? profile.code.split('-').map((c) => TRAIT_LABELS[c as Pole]).join(' · ') : 'scored on their assessment'}
+            </span>
           </div>
-          {profile && AG[profile.code] ? (
-            <ul className="ad-wired">
-              <li>
-                <span className="ad-wired-tag drive">The challenge to put to them</span>
-                <p>{AG[profile.code].challenge}</p>
-              </li>
-              <li>
-                <span className="ad-wired-tag drive">Next unlock</span>
-                <p>{profile.unlock}</p>
-              </li>
-            </ul>
+          {fit.length > 0 ? (
+            <>
+              <ol className="ad-fit">
+                {fit.slice(0, 3).map(({ channel, score, matched }) => (
+                  <li key={channel.key}>
+                    <div className="ad-fit-top">
+                      <span className="ad-fit-name">{channel.name}</span>
+                      <span className="ad-fit-traits">
+                        {matched.map((m) => TRAIT_LABELS[m]).join(' + ')}
+                      </span>
+                    </div>
+                    <span className="ad-fit-bar" aria-hidden>
+                      <i style={{ width: `${Math.round(score * 100)}%` }} />
+                    </span>
+                    <p>{channel.because}</p>
+                  </li>
+                ))}
+              </ol>
+              {worst && (
+                <div className="ad-fit-against">
+                  <span className="ad-swot-k">Against the grain — {worst.channel.name}</span>
+                  <p>{worst.channel.cost}</p>
+                </div>
+              )}
+            </>
           ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading…</p>
+            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>
+              No assessment on file yet, so there is nothing to score this on.
+            </p>
           )}
         </section>
       </div>
@@ -854,27 +883,8 @@ function AgentDrill({ agent, cohort, teamHealth }: {
       {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
           (Task 7's baseline assessment). Old-site, business-only agents simply
           don't render these two cards — no crash, no empty headings. */}
-      {(profile?.personalType || (profile && profile.divergences.length > 0)) && (
+      {profile && profile.divergences.length > 0 && (
         <div className="ad-grid" style={{ marginTop: 22 }}>
-          {profile?.personalType && (
-            <section className="card ad-panel">
-              <div className="ad-panel-head">
-                <h3>Who they are</h3>
-                <span className="panel-sub">{profile.personalCode}</span>
-              </div>
-              <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-strong)', marginBottom: 8 }}>
-                {profile.personalType.name}
-              </p>
-              <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 16 }}>{profile.personalType.desc}</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                {profile.personalType.strengths.map((s) => (
-                  <span key={s} className="chip">{s}</span>
-                ))}
-              </div>
-              <div className="ad-shift">{profile.personalType.watch}</div>
-            </section>
-          )}
-
           {profile && profile.divergences.length > 0 && (
             <section className="card ad-panel">
               <div className="ad-panel-head">
