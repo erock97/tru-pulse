@@ -25,6 +25,7 @@ import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
 import { Odometer } from '../components/odometer';
+import { AgentBriefPanel, TeamBriefSection } from '../components/CoachBrief';
 import { useFlip } from '../lib/deckMotion';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
 import '../truHqDark.css';
@@ -443,6 +444,12 @@ function CoachDeck({
                   made Coach's header 44px taller than Pulse's and pushed the
                   whole page down relative to the other tabs. */}
               <div className="dk-wiring"><WiringBar segs={mix.segs} /></div>
+
+              {/* ============ THE WEEKLY BRIEF ============ */}
+              {/* The Hermes review of last week's Follow Up Boss activity —
+                  who to coach on what, with the evidence one click deep. Rows
+                  open the agent's sheet, where their full brief lives. */}
+              <TeamBriefSection onOpenAgent={(id) => setOpenId(id)} />
 
               {/* ============ THE COHORT ============ */}
               <div className="dk-sec">
@@ -1005,6 +1012,13 @@ function AgentDrill({ agent, cohort, teamHealth }: {
           )}
         </section>
       </div>
+
+      {/* THE WEEKLY BRIEF — this agent's slice of the Hermes report: what to
+          keep doing, what to fix (with the exact call as evidence), objections
+          heard, and the week's plan. Renders nothing when no brief system runs
+          for this team; renders "not enough reviewed" when the report simply
+          had nothing on them — that distinction is deliberate. */}
+      <AgentBriefPanel agentId={agent.id} agentName={agent.name} />
 
       {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
           (Task 7's baseline assessment). Old-site, business-only agents simply

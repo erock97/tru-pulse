@@ -5179,3 +5179,144 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (max-width: 1100px) {
   .tru-dark .dk-mast::after { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE WEEKLY COACHING BRIEF — the Hermes report inside Coach.
+   Wears the tab's own temperature (--tab-mid/--tab-soft), never raw palette.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The recurring "no data" line. Eric's rule: a blank section says this, in
+   words, and never renders as an empty box or an error. */
+.tru-dark .brief-none { color: var(--text-60); font-size: 14.5px; margin: 6px 0 0; }
+.tru-dark .brief-none-inline { color: var(--text-60); font-style: normal; }
+
+/* ── The team scan (roster page) ── */
+.tru-dark .brief-sec .brief-actions { display: inline-flex; gap: 10px; align-items: center; }
+.tru-dark .brief-week-pick {
+  background: var(--lift); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; font-size: 13px; padding: 5px 8px;
+}
+.tru-dark .brief-pdf {
+  background: var(--tab-soft, rgba(255,139,98,.16));
+  color: var(--tab-hi, var(--text));
+  border: 1px solid var(--tab-line, var(--border));
+  border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600;
+  padding: 5px 12px; cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.tru-dark .brief-pdf:hover { background: var(--tab-line, var(--lift)); }
+.tru-dark .brief-pdf.is-ghost { background: transparent; color: var(--text-60); border-color: var(--border); }
+
+.tru-dark .brief-scan { margin-top: 14px; border-top: 1px solid var(--border); }
+.tru-dark .brief-scan-row {
+  display: grid; grid-template-columns: 180px 200px 150px 1fr;
+  gap: 14px; align-items: baseline;
+  padding: 11px 10px; border-bottom: 1px solid var(--border);
+}
+.tru-dark .brief-scan-row.is-link { cursor: pointer; transition: background .15s ease; }
+.tru-dark .brief-scan-row.is-link:hover,
+.tru-dark .brief-scan-row.is-link:focus-visible { background: var(--tab-soft, rgba(255,139,98,.16)); outline: none; }
+.tru-dark .brief-scan-name { font-weight: 640; font-size: 15px; }
+.tru-dark .brief-scan-cov, .tru-dark .brief-scan-obj { color: var(--text-60); font-size: 13.5px; }
+.tru-dark .brief-scan-pri {
+  font-size: 14px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .tru-dark .brief-scan-row { grid-template-columns: 1fr 1fr; }
+  .tru-dark .brief-scan-pri { grid-column: 1 / -1; white-space: normal; }
+}
+
+/* ── The agent panel (drill-in sheet) ── */
+.tru-dark .brief-panel { margin-top: 22px; }
+.tru-dark .brief-panel .ad-panel-head { align-items: center; gap: 12px; }
+.tru-dark .brief-panel .brief-week-pick { margin-left: auto; }
+.tru-dark .brief-outreach {
+  color: var(--text-60); font-size: 14px; margin: 2px 0 14px;
+  padding: 8px 12px; border-left: 2px solid var(--tab-line, var(--border));
+  background: var(--tab-soft, rgba(255,139,98,.08));
+  border-radius: 0 8px 8px 0;
+}
+.tru-dark .brief-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px 26px;
+}
+@media (max-width: 900px) { .tru-dark .brief-cols { grid-template-columns: 1fr; } }
+
+.tru-dark .brief-points { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 12px; }
+.tru-dark .brief-points > li {
+  padding-left: 12px; border-left: 2px solid var(--border);
+}
+.tru-dark .brief-points.is-good > li { border-left-color: var(--sea); }
+.tru-dark .brief-points.is-work > li { border-left-color: var(--tab-mid, var(--terracotta)); }
+.tru-dark .brief-points.is-watch > li { border-left-color: var(--accent); }
+.tru-dark .brief-point-text { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.tru-dark .brief-coach { margin: 4px 0 0; font-size: 13.5px; color: var(--text-60); }
+.tru-dark .brief-coach b { color: var(--tab-hi, var(--text)); font-weight: 640; }
+
+.tru-dark .brief-evidence-toggle {
+  background: none; border: none; padding: 0; margin-top: 5px;
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  color: var(--tab-mid, var(--terracotta));
+}
+.tru-dark .brief-evidence-toggle:hover { text-decoration: underline; }
+.tru-dark .brief-evidence { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.tru-dark .brief-evidence blockquote {
+  margin: 0; padding: 8px 12px; font-size: 13.5px; line-height: 1.5;
+  color: var(--text); background: var(--lift);
+  border-radius: 8px; border: 1px solid var(--border);
+}
+.tru-dark .brief-evidence-meta { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-60); }
+.tru-dark .brief-evidence-meta a { color: var(--tab-mid, var(--terracotta)); }
+
+/* ── The printable brief — a paper document over the app ── */
+.brief-print-wrap {
+  position: fixed; inset: 0; z-index: 300;
+  overflow: auto; background: rgba(8, 12, 10, .82);
+  padding: 26px 16px 60px;
+}
+.brief-print-bar {
+  max-width: 820px; margin: 0 auto 12px;
+  display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  color: #E8EDE9; font-size: 13.5px;
+}
+.brief-print-bar > span:last-child { display: inline-flex; gap: 8px; }
+.brief-print {
+  max-width: 820px; margin: 0 auto; background: #FDFCF9; color: #1E2420;
+  border-radius: 10px; padding: 52px 58px 44px;
+  font-size: 14px; line-height: 1.55;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+.brief-print h1, .brief-print h2, .brief-print h4 { color: #14201A; margin: 0; }
+.bp-head { display: flex; gap: 18px; align-items: center; border-bottom: 2px solid #14201A; padding-bottom: 18px; }
+.bp-head h1 { font-size: 26px; letter-spacing: .01em; }
+.bp-head p { margin: 4px 0 0; color: #5A6660; }
+.bp-mark img { width: 46px; height: 46px; display: block; }
+.bp-scan { margin-top: 26px; }
+.bp-scan h2, .bp-agent h2 { font-size: 17px; margin-bottom: 10px; }
+.bp-scan table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bp-scan th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: #5A6660; padding: 6px 8px; border-bottom: 1.5px solid #14201A; }
+.bp-scan td { padding: 7px 8px; border-bottom: 1px solid #D9DDD8; vertical-align: top; }
+.bp-agent { margin-top: 30px; padding-top: 20px; border-top: 1px solid #D9DDD8; break-inside: avoid-page; }
+.bp-metrics { color: #5A6660; font-size: 13px; margin: 0 0 8px; }
+.bp-block { margin-top: 12px; }
+.bp-block h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: #7A5B3C; }
+.bp-block ul { margin: 6px 0 0; padding-left: 18px; }
+.bp-block li { margin-bottom: 8px; }
+.bp-block li p { margin: 0; }
+.bp-coach { color: #4A5650; font-size: 13px; }
+.bp-evidence { color: #5A6660; font-size: 12.5px; font-style: italic; }
+.bp-none { color: #8A948E; font-style: italic; margin: 4px 0 0; }
+.bp-foot { margin-top: 34px; padding-top: 12px; border-top: 1px solid #D9DDD8; color: #8A948E; font-size: 11.5px; }
+
+/* Print isolation: only the sheet reaches the page. */
+@media print {
+  body.brief-printing * { visibility: hidden; }
+  body.brief-printing .brief-print, body.brief-printing .brief-print * { visibility: visible; }
+  body.brief-printing .brief-print-wrap { position: static; overflow: visible; background: none; padding: 0; }
+  body.brief-printing .brief-print {
+    position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none;
+    box-shadow: none; border-radius: 0; padding: 0;
+  }
+  body.brief-printing .brief-print-bar { display: none; }
+}

@@ -9,6 +9,7 @@ import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
+import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { readCookie, withFreshToken } from './session.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
@@ -201,6 +202,12 @@ export default {
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
     );
     if (dataResponse) return dataResponse;
+
+    // The Hermes laptop's weekly coaching brief lands here (its own secret; the
+    // Coach tab reads the stored result through /data/coach/brief above).
+    const briefIngestResponse = await handleCoachBriefIngest(req, env, url, cors, database);
+    if (briefIngestResponse) return briefIngestResponse;
+
     if (url.pathname === '/health') return json({ ok: true });
 
     // ── Cookie sessions for the routes written before them ──────────────────
