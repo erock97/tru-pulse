@@ -86,6 +86,24 @@
      makes that class of bug impossible rather than merely fixed. */
   font-weight: 700;
   font-synthesis: none;
+  /* PIN THE OPTICAL SIZE. THIS IS THE "CARTOONY" FIX.
+
+     Fraunces is a variable face with an `opsz` axis, and `font-optical-sizing`
+     defaults to auto — which resolves the axis from the SPECIFIED font size,
+     not the size you end up seeing. The mark is specified at ~25px and blown up
+     twelvefold by a transform, so the page has been showing Fraunces' SMALL
+     TEXT cut at 690px: heavy slab serifs, thick even strokes, almost no
+     thick-to-thin. That cut is drawn to survive being tiny. Enormous, it is a
+     cartoon.
+
+     Pinned to 144 it draws the display cut instead — fine hairlines, flat sharp
+     serifs, real contrast. Same font, same weight, same everything else.
+     Verified against a specimen rendering both cuts at identical final size.
+
+     The header's own wordmark is pinned too, because the travelling mark lands
+     on it and swaps; two different optical cuts at that moment is a visible
+     change of weight right at the join. */
+  font-variation-settings: 'opsz' 144;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
@@ -286,6 +304,7 @@
   font-family: var(--serif);
   font-weight: 700;
   font-synthesis: none;
+  font-variation-settings: 'opsz' 144;
   font-size: clamp(3.4rem, 11vw, 7.5rem);
   line-height: 1.15;
   white-space: nowrap;
@@ -320,6 +339,7 @@
    curve finishes on (0.3 of full). If these two drift apart the swap becomes
    visible as a small dimming, which reads as the animation switching off. */
 .truland .brand {
+  font-variation-settings: 'opsz' 144;
   text-shadow:
     0 0 0.35em rgba(255, 220, 147, 0.30),
     0 0 0.9em rgba(242, 178, 60, 0.22);
@@ -838,4 +858,58 @@
   .truland .nav .cta .pea { width: 24px; height: 24px; }
   .truland .nav .cta .pea svg { width: 12px; height: 12px; }
   .truland .brand { font-size: 1.28rem; }
+}
+
+/* ---- the rows, given some life ------------------------------------------
+   These were a term and a line on a hairline: correct, readable, and inert.
+   They are three of the most important sentences on the page — the moment a
+   reader decides whether this is about them — so they are allowed to respond.
+
+   An index in the margin, the hairline lighting from the left as the row is
+   entered, and the term shifting a hair toward the reader. Nothing moves far
+   enough to be a effect; it is the difference between a printed list and a
+   surface someone is standing in front of. */
+.truland .fh-row {
+  position: relative;
+  counter-increment: fhrow;
+  transition: background 420ms var(--e);
+}
+.truland .fh-list { counter-reset: fhrow; }
+.truland .fh-row::before {
+  content: counter(fhrow, decimal-leading-zero);
+  position: absolute;
+  left: -2.6rem;
+  top: 1.5rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  opacity: 0;
+  transition: opacity 420ms var(--e), transform 420ms var(--e);
+  transform: translateX(6px);
+}
+.truland .fh-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), rgba(242, 178, 60, 0));
+  transition: width 620ms var(--e);
+}
+.truland .fh-row:hover::after { width: 100%; }
+.truland .fh-row:hover::before { opacity: 1; transform: none; }
+.truland .fh-row dt { transition: transform 420ms var(--e), color 420ms var(--e); }
+.truland .fh-row:hover dt { transform: translateX(4px); }
+
+@media (max-width: 900px) {
+  .truland .fh-row::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .fh-row,
+  .truland .fh-row::before,
+  .truland .fh-row::after,
+  .truland .fh-row dt { transition: none; }
+  .truland .fh-row:hover dt { transform: none; }
 }

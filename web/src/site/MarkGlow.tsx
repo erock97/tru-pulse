@@ -544,10 +544,19 @@ export default function MarkGlow({ text, fadeRef }: Props) {
       // and the letters end up drawn in two different fonts after a redesign.
       const type = document.querySelector<HTMLElement>('.truland .arrive-type');
       const cs = type ? getComputedStyle(type) : null;
-      // The page's own size, not a nominal one — see buildSDF on optical sizing.
+      /* 144px, matching the optical size the mark is pinned to.
+
+         Canvas 2D has no `font-variation-settings`, so the only handle on the
+         `opsz` axis is the font size you ask for — it resolves the axis from
+         that. The mark pins itself to 'opsz' 144 in CSS, so the field has to be
+         rasterised at 144px to get the same letterforms. Asking at the page's
+         own ~25px would build the light of the small-text cut and stand it
+         behind the display cut, which is the mismatch that produced misplaced
+         glow in the first place. The context is scaled after this, so the size
+         here sets the DRAWING, never the resolution. */
       const font = cs
-        ? `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
-        : '800 25px Fraunces, Georgia, serif';
+        ? `${cs.fontStyle} ${cs.fontWeight} 144px ${cs.fontFamily}`
+        : '700 144px Fraunces, Georgia, serif';
       /* Rebuilding an identical field costs a euclidean transform over 400k
          pixels, and resize fires in bursts — but the font STRING is not the
          whole story. When the webfont finishes loading, the computed style is
