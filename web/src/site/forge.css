@@ -27,8 +27,12 @@
 .truland .arrive {
   --p: 0;
   --pt: 0;
+  --ps: 1;
+  --pc: 0;
   position: relative;
-  height: 175dvh;
+  /* Two beats now live in this scroll: ~52% of it walks the camera around the
+     Trinity set, the rest carries the mark home to the header. */
+  height: 300dvh;
 }
 .truland .arrive-stage {
   position: sticky;
@@ -36,6 +40,28 @@
   height: 100dvh;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* THE SCENE — the Trinity set, scrubbed by scroll.
+   Above the room and the veil, below the copy. Its own opacity is the
+   handover: it owns the screen for the whole orbit and yields over a short
+   overlap while the live page stands up underneath it. */
+.truland .arrive-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--ps, 1);
+  will-change: opacity;
+}
+
+/* The words belong to beat two: the reveal frame is the headline moment, and
+   copy over the orbit would caption a film that is doing fine on its own. */
+.truland .arrive-copy {
+  opacity: var(--pc, 0);
 }
 
 /* The veil, not a room. The site already stands on one fixed plate on every
@@ -117,10 +143,10 @@
       0)
     scale(calc(1 + (var(--s, 1) - 1) * (1 - var(--pt))));
   will-change: transform;
-  /* Something happens before any scrolling. A hero whose only motion is
-     scroll-driven shows a still frame to anyone who lands and does not move,
-     which is most people for the first second. */
-  animation: markEnter 1500ms cubic-bezier(0.16, 1, 0.3, 1) 80ms backwards;
+  /* Enters with beat two, driven by the same scroll value as the copy. The old
+     load-time fade-in is gone: the opening frame now belongs to the scene, and
+     a wordmark fading in over the orbit would be two heroes on one stage. */
+  opacity: var(--pm, 0);
 }
 /* Landed. The header's own mark takes over here and this one leaves without a
    frame where both are visible, which would end the illusion. */
@@ -371,7 +397,6 @@
   translate: -50% calc(-15dvh * var(--pt));
   text-align: center;
   z-index: 3;
-  animation: arriveCopy 1000ms var(--e) 700ms backwards;
 }
 .truland .arrive-copy h1 {
   font-family: var(--serif);
@@ -406,6 +431,7 @@
 
 /* Somewhere to go. A hero whose first beat is scroll-driven owes the reader a
    reason to scroll, and it is gone the moment they take it. */
+.truland .arrive-cue { z-index: 4; }
 .truland .arrive-cue {
   position: absolute;
   left: 50%;
@@ -630,6 +656,8 @@
   /* The travelling mark is not rendered at all here; `.arrive-still` below is,
      and it sits inside the stage where the hero can lay it out. */
   .truland .arrive-mark { display: none; }
+  .truland .arrive-scene { display: none; }
+  .truland .arrive-copy { opacity: 1; }
   .truland .arrive-type b,
   .truland .arrive-type i { animation: none; background-position: 200% 0, 0 0; }
   /* One frame of the room, not a loop. */

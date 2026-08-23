@@ -96,6 +96,7 @@ const MARK = 'TRU';
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
   const markRef = useRef<HTMLDivElement | null>(null);
+  const orbitRef = useRef<HTMLVideoElement | null>(null);
   /* How lit the mark is, written by the scroll rig and read by the light on its
      own frame. A ref rather than state on purpose: this changes sixty times a
      second, and re-rendering the page that often to dim a glow is how a smooth
@@ -250,7 +251,36 @@ export default function Home() {
          to hand over to, the type has been the type the whole way — so this
          curve is free to be about the feel of landing rather than about hiding
          a seam. */
-      const travel = Math.max(0, Math.min(1, (v - 0.14) / 0.86));
+      /* THE SCROLL IS A CAMERA. Beat one: the first 52% of the scroll scrubs a
+         2K orbit around the Trinity set — the emblem face-on, and the machined
+         TRU letters standing in the world behind it, revealed by walking
+         around, not by a fade. The video is encoded all-intra (every frame a
+         keyframe), which is the one encoding a browser can seek per-frame
+         without hunting — the same rig Apple's product intros use. currentTime
+         rides the same eased value as everything else, so the camera has the
+         same mass as the page.
+
+         Beat two: the scene hands the frame to the live page and the existing
+         travel carries mark and light into the header. */
+      const orbit = Math.max(0, Math.min(1, v / 0.52));
+      const vid = orbitRef.current;
+      if (vid && vid.duration > 0 && vid.readyState >= 2) {
+        const t = orbit * Math.max(0.001, vid.duration - 0.05);
+        // Seeking is not free; a re-seek under a 48th of a second buys nothing.
+        if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
+      }
+      // The scene owns the screen through the orbit, then yields over a short
+      // overlap so there is never a frame with nobody on stage.
+      const scene = 1 - Math.max(0, Math.min(1, (v - 0.54) / 0.1));
+      arrive.style.setProperty('--ps', scene.toFixed(4));
+      // The words and the travelling mark belong to beat two.
+      const copy = Math.max(0, Math.min(1, (v - 0.55) / 0.09));
+      arrive.style.setProperty('--pc', copy.toFixed(4));
+      // The travelling mark is a beat-two citizen too: invisible while the
+      // camera owns the screen, standing by the time the scene yields.
+      mark?.style.setProperty('--pm', copy.toFixed(4));
+
+      const travel = Math.max(0, Math.min(1, (v - 0.60) / 0.40));
       /* The light banks down to a FLOOR, not to zero. The brief has always been
          that the mark "settles at the top with that nice glow" — so the glow is
          a thing the mark keeps, not a thing the trip burns off. It runs the
@@ -349,6 +379,22 @@ export default function Home() {
               near-black, so what the eye follows is one continuous space with
               the light changing character — not an intro ending and a website
               starting. */}
+          {/* THE SET. One scene, rendered as a physical place: the Trinity
+              emblem downstage, the machined TRU letters upstage, one raking
+              beam. Scroll walks the camera around it. Generated in Higgsfield
+              (keyframed orbit between two stills of the same set), encoded
+              all-intra for frame-accurate scrubbing. */}
+          <video
+            className="arrive-scene"
+            ref={orbitRef}
+            src="/tru-orbit.mp4"
+            poster="/tru-orbit-poster.webp"
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden
+          />
+
           <video
             className="arrive-room"
             src="/tru-room.mp4"
