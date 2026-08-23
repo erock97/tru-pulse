@@ -32,7 +32,10 @@
   position: relative;
   /* Two beats now live in this scroll: ~52% of it walks the camera around the
      Trinity set, the rest carries the mark home to the header. */
-  height: 380dvh;
+  /* Dense on purpose. The 360 is unchanged — the same arc simply lives in a
+     third less scroll, after the first cut read as lengthy. The feel knob is
+     HERE, not in the video: scroll distance per camera-degree. */
+  height: 260dvh;
 }
 .truland .arrive-stage {
   position: sticky;
@@ -386,6 +389,7 @@
     0 0 0.35em rgba(255, 220, 147, 0.30),
     0 0 0.9em rgba(242, 178, 60, 0.22);
 }
+.truland .brand .brand-word { font-weight: inherit; }
 .truland .brand .brand-mark {
   display: block;
   width: 26px;
@@ -641,7 +645,7 @@
   .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 760px) {
-  .truland .arrive { height: 300dvh; }
+  .truland .arrive { height: 220dvh; }
   .truland .arrive-copy { top: 50dvh; }
   /* The CTAs stack on a phone, so the copy block reaches the bottom of the
      screen and the cue lands on top of the second button. A phone does not

@@ -26,7 +26,11 @@ export default function SiteHeader({ current }: { current: PublicView }) {
         {/* The Tripod. Three bars, each carrying the other two — the mark the
             arrival sequence orbits, at rest where the sequence ends. */}
         <img className="brand-mark" src="/tru-mark.png" alt="" width="26" height="26" decoding="async" />
-        T<span className="r">RU</span>
+        {/* One flex item, not three. The brand is a flex row so the icon can
+            sit beside the wordmark — and flex treats a bare text node and a
+            span as SEPARATE items, which put the icon gap into the middle of
+            the word: T [gap] RU, a wordmark with a hole in it. */}
+        <b className="brand-word">T<span className="r">RU</span></b>
       </a>
       <div className="nlinks">
         {link('/services', 'Services')}
