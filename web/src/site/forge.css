@@ -76,6 +76,66 @@
   will-change: opacity, transform, filter;
 }
 
+/* ---- the living air -------------------------------------------------------
+   The owner's brief, in his own image: a man standing in a photograph while
+   wind moves his hair. The subject never moves; the AIR does. So the camera
+   and the frame hold perfectly still, and over them drift two soft warm bodies
+   of light along the beam's own diagonal, with a handful of embers climbing
+   through it. Screen-blended, so they only ever ADD light. Everything rides
+   --ps and dies with the scene. */
+.truland .arrive-air {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--ps, 1);
+  overflow: hidden;
+}
+.truland .arrive-air i {
+  position: absolute;
+  mix-blend-mode: screen;
+}
+.truland .air-a {
+  left: -12%; top: -18%;
+  width: 75vw; height: 75vw;
+  background: radial-gradient(circle, rgba(255, 214, 130, 0.13) 0%, rgba(255, 190, 90, 0.05) 38%, transparent 64%);
+  animation: airDrift 17s ease-in-out infinite alternate;
+}
+.truland .air-b {
+  left: 12%; top: -6%;
+  width: 55vw; height: 55vw;
+  background: radial-gradient(circle, rgba(255, 236, 190, 0.09) 0%, transparent 60%);
+  animation: airDrift 26s ease-in-out -9s infinite alternate-reverse;
+}
+@keyframes airDrift {
+  from { transform: translate3d(-3.5%, -2.5%, 0) scale(1);    opacity: 0.55; }
+  50%  {                                                       opacity: 1; }
+  to   { transform: translate3d(3%, 2%, 0) scale(1.12);        opacity: 0.65; }
+}
+/* The embers: small, few, and patient. They read as dust in the beam. */
+.truland .mote {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 235, 190, 0.95) 0%, rgba(255, 200, 110, 0.4) 60%, transparent 100%);
+  animation: moteRise linear infinite;
+  opacity: 0;
+}
+.truland .m1 { left: 30%; top: 72%; animation-duration: 13s; animation-delay: 0s; }
+.truland .m2 { left: 44%; top: 78%; animation-duration: 17s; animation-delay: 4s; }
+.truland .m3 { left: 56%; top: 74%; animation-duration: 15s; animation-delay: 8s; width: 2px; height: 2px; }
+.truland .m4 { left: 66%; top: 80%; animation-duration: 19s; animation-delay: 2s; }
+.truland .m5 { left: 38%; top: 66%; animation-duration: 21s; animation-delay: 11s; width: 2px; height: 2px; }
+.truland .m6 { left: 61%; top: 68%; animation-duration: 16s; animation-delay: 6s; }
+@keyframes moteRise {
+  0%   { transform: translate3d(0, 0, 0);          opacity: 0; }
+  12%  {                                            opacity: 0.75; }
+  55%  { transform: translate3d(14px, -34vh, 0);   opacity: 0.5; }
+  100% { transform: translate3d(-8px, -58vh, 0);   opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive-air { display: none; }
+}
+
 /* The tip callouts, with the fanfare they earn. Each point of the Trinity is
    introduced like a stage light coming up: a spark ignites ON the vertex, a
    hairline grows out of the spark, and the word arrives out of wide tracking —

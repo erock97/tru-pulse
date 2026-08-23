@@ -351,36 +351,25 @@ export default function Home() {
 
        The loop only runs while there is distance left to close, so a page at
        rest costs nothing. */
-    /* THE SCENE BREATHES. Without this, the film only moved when the reader's
-       finger did — a photograph until touched, and the owner called it what it
-       was: stale. The camera now sways a few frames forward and back around
-       wherever the scroll has parked it, on a slow sine — the haze drifts, the
-       beam shifts, the highlights crawl. Alive on landing, alive mid-scroll,
-       alive wherever you stop.
-
-       The sway rides the SAME seek path as the scrub (all-intra, one cheap
-       decode per seek) and is centred a breath inside the film so it never
-       slams into either end. The loop stays warm while the scene is on stage
-       and parks once it has fully yielded to the page — or when the tab is
-       hidden, because nobody watches a hidden tab breathe. */
-    const syncVideo = (v: number, now: number) => {
+    /* The seek follows the scroll and nothing else. A camera that rocks on
+       its own reads as a glitch, not as life — the owner said so in plain
+       words after the first attempt swayed the whole world and tore the tip
+       callouts off their vertices. Life belongs to the LIGHT (the overlay
+       layered over the scene), never to the camera. */
+    const syncVideo = (v: number) => {
       const vid = orbitRef.current;
       if (!vid || !(vid.duration > 0) || vid.readyState < 2) return;
       const orbit = Math.max(0, Math.min(1, v / 0.62));
-      const sway = 0.55 * Math.sin(now / 1120);
-      const base = 0.58 + orbit * (vid.duration - 1.2);
-      const t = Math.min(Math.max(base + sway, 0.02), vid.duration - 0.06);
+      const t = Math.min(Math.max(orbit * (vid.duration - 0.06), 0.02), vid.duration - 0.06);
       if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
     };
 
-    const tick = (now: number) => {
-      const before = cur;
+    const tick = () => {
       cur += (target - cur) * 0.12;
       if (Math.abs(target - cur) < 0.0006) cur = target;
-      if (cur !== before) apply(cur);
-      syncVideo(cur, now);
-      const alive = cur !== target || (cur < 0.985 && !document.hidden);
-      frame = alive ? requestAnimationFrame(tick) : 0;
+      apply(cur);
+      syncVideo(cur);
+      frame = cur === target ? 0 : requestAnimationFrame(tick);
     };
 
     const measureTarget = () => {
@@ -396,8 +385,7 @@ export default function Home() {
     cur = travel0 > 0 ? Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel0)) : 0;
     target = cur;
     apply(cur);
-    // Breathe from the first frame, not from the first scroll.
-    frame = requestAnimationFrame(tick);
+    syncVideo(cur);
 
     window.addEventListener('scroll', measureTarget, { passive: true });
     window.addEventListener('resize', measureTarget, { passive: true });
@@ -462,6 +450,17 @@ export default function Home() {
               callouts exist solely on the opening frame: they breathe in
               after a beat, and the first pixel of scroll dissolves them. The
               pause gets the meaning; the scroll gets the cinema. */}
+          {/* THE LIVING LIGHT. What "make it feel alive" actually meant: the
+              beam and the air move, the camera does not. Two soft warm glows
+              drift slowly across the beam's path and a handful of embers rise
+              through it — layered over the still frame, so the world holds
+              perfectly steady under the tips while its light never stops. */}
+          <div className="arrive-air" aria-hidden>
+            <i className="air-a" /><i className="air-b" />
+            <i className="mote m1" /><i className="mote m2" /><i className="mote m3" />
+            <i className="mote m4" /><i className="mote m5" /><i className="mote m6" />
+          </div>
+
           <div className="arrive-tips" aria-hidden>
             {(['pulse', 'coach', 'rep'] as const).map((k) => (
               <span className={`tip tip-${k}`} key={k}>
