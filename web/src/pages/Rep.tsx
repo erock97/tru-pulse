@@ -274,7 +274,12 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
         nav={{
           onHome: () => onHome?.(),
           onOpenPulse: () => { window.location.hash = '/pulse'; },
-          onOpenCoach: () => { window.location.hash = '/'; },
+          /* '/coach', not '/'. The root used to be Coach's home and later became
+             the roster — this handler was written in that earlier world and never
+             updated, so from this tab the Coach link quietly took you to Pulse.
+             (Coach.tsx has its own correct coachNav; this page hand-rolls the
+             same object, which is exactly how the two drifted apart.) */
+          onOpenCoach: () => { window.location.hash = '/coach'; },
           onOpenRep: () => { window.location.hash = '/rep'; },
           onOpenTeam: () => { window.location.hash = '/team'; },
         }}
