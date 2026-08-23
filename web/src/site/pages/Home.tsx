@@ -289,13 +289,7 @@ export default function Home() {
 
          Beat two: the scene hands the frame to the live page and the existing
          travel carries mark and light into the header. */
-      const orbit = Math.max(0, Math.min(1, v / 0.62));
-      const vid = orbitRef.current;
-      if (vid && vid.duration > 0 && vid.readyState >= 2) {
-        const t = orbit * Math.max(0.001, vid.duration - 0.05);
-        // Seeking is not free; a re-seek under a 48th of a second buys nothing.
-        if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
-      }
+
       /* BEAT THREE: THE SCENE ITSELF SETTLES. The circle has closed — the
          orbit ends on the composition it opened on, emblem in front, letters
          behind — so nothing is handed over or crossfaded. The one object on
@@ -357,11 +351,36 @@ export default function Home() {
 
        The loop only runs while there is distance left to close, so a page at
        rest costs nothing. */
-    const tick = () => {
+    /* THE SCENE BREATHES. Without this, the film only moved when the reader's
+       finger did — a photograph until touched, and the owner called it what it
+       was: stale. The camera now sways a few frames forward and back around
+       wherever the scroll has parked it, on a slow sine — the haze drifts, the
+       beam shifts, the highlights crawl. Alive on landing, alive mid-scroll,
+       alive wherever you stop.
+
+       The sway rides the SAME seek path as the scrub (all-intra, one cheap
+       decode per seek) and is centred a breath inside the film so it never
+       slams into either end. The loop stays warm while the scene is on stage
+       and parks once it has fully yielded to the page — or when the tab is
+       hidden, because nobody watches a hidden tab breathe. */
+    const syncVideo = (v: number, now: number) => {
+      const vid = orbitRef.current;
+      if (!vid || !(vid.duration > 0) || vid.readyState < 2) return;
+      const orbit = Math.max(0, Math.min(1, v / 0.62));
+      const sway = 0.55 * Math.sin(now / 1120);
+      const base = 0.58 + orbit * (vid.duration - 1.2);
+      const t = Math.min(Math.max(base + sway, 0.02), vid.duration - 0.06);
+      if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
+    };
+
+    const tick = (now: number) => {
+      const before = cur;
       cur += (target - cur) * 0.12;
       if (Math.abs(target - cur) < 0.0006) cur = target;
-      apply(cur);
-      frame = cur === target ? 0 : requestAnimationFrame(tick);
+      if (cur !== before) apply(cur);
+      syncVideo(cur, now);
+      const alive = cur !== target || (cur < 0.985 && !document.hidden);
+      frame = alive ? requestAnimationFrame(tick) : 0;
     };
 
     const measureTarget = () => {
@@ -377,10 +396,17 @@ export default function Home() {
     cur = travel0 > 0 ? Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel0)) : 0;
     target = cur;
     apply(cur);
+    // Breathe from the first frame, not from the first scroll.
+    frame = requestAnimationFrame(tick);
 
     window.addEventListener('scroll', measureTarget, { passive: true });
     window.addEventListener('resize', measureTarget, { passive: true });
+    const rewake = () => {
+      if (!document.hidden && !frame) frame = requestAnimationFrame(tick);
+    };
+    document.addEventListener('visibilitychange', rewake);
     return () => {
+      document.removeEventListener('visibilitychange', rewake);
       window.removeEventListener('scroll', measureTarget);
       window.removeEventListener('resize', measureTarget);
       cancelAnimationFrame(frame);
