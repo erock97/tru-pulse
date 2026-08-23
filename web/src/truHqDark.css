@@ -236,28 +236,40 @@ html[data-theme="warm"] .tru-dark {
 .tru-dark .tru-shell {
   --tab-hi: var(--accent-hi);
   --tab-mid: var(--accent);
-  --tab-flare-a: rgba(255, 240, 205, 0.16);
-  --tab-flare-b: rgba(255, 214, 130, 0.06);
+  --tab-soft: var(--accent-soft);
+  --tab-line: var(--accent-line);
+  --tab-flare-a: rgba(255, 240, 205, 0.30);
+  --tab-flare-b: rgba(255, 214, 130, 0.11);
   --stat-grad: linear-gradient(180deg, #F2F6F1, var(--tab-hi));
 }
+/* The first cut of these used pale "hi" tones for everything — #FFC9AC against
+   #FFDC93 — and the honest review from the owner was that nothing looked any
+   different, because at those chromas nothing WAS different. The full-chroma
+   mids carry the identity now, and the flares are twice what they were. */
 .tru-dark .tru-shell[data-tab="coach"] {
   --tab-hi: #FFC9AC;
   --tab-mid: var(--terracotta);
-  --tab-flare-a: rgba(255, 198, 168, 0.15);
-  --tab-flare-b: rgba(255, 139, 98, 0.055);
+  --tab-soft: rgba(255, 139, 98, 0.16);
+  --tab-line: rgba(255, 139, 98, 0.34);
+  --tab-flare-a: rgba(255, 185, 150, 0.28);
+  --tab-flare-b: rgba(255, 139, 98, 0.10);
 }
 .tru-dark .tru-shell[data-tab="rep"] {
   --tab-hi: var(--sea-hi);
   --tab-mid: var(--sea);
-  --tab-flare-a: rgba(190, 222, 206, 0.14);
-  --tab-flare-b: rgba(143, 176, 162, 0.055);
+  --tab-soft: rgba(143, 176, 162, 0.16);
+  --tab-line: rgba(143, 176, 162, 0.36);
+  --tab-flare-a: rgba(178, 216, 198, 0.26);
+  --tab-flare-b: rgba(143, 176, 162, 0.10);
 }
 .tru-dark .tru-shell[data-tab="team"],
 .tru-dark .tru-shell[data-tab="admin"] {
   --tab-hi: #E9F0EA;
   --tab-mid: #C4D2C6;
-  --tab-flare-a: rgba(226, 240, 230, 0.11);
-  --tab-flare-b: rgba(200, 215, 205, 0.04);
+  --tab-soft: rgba(226, 240, 230, 0.10);
+  --tab-line: rgba(226, 240, 230, 0.26);
+  --tab-flare-a: rgba(226, 240, 230, 0.20);
+  --tab-flare-b: rgba(200, 215, 205, 0.07);
 }
 
 .tru-shell .side-link.active::before {
@@ -3264,7 +3276,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: var(--sea-soft); color: var(--sea-hi);
   box-shadow: inset 0 0 0 1px rgba(143, 176, 162, 0.24);
 }
-.tru-dark .dk-eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: var(--sea); }
+.tru-dark .dk-eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: var(--tab-mid, var(--sea)); }
 .tru-dark .dk-eyebrow.hot {
   background: rgba(255, 106, 69, 0.12); color: #FF9174;
   box-shadow: inset 0 0 0 1px rgba(255, 106, 69, 0.24);
@@ -3280,7 +3292,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-size: clamp(30px, 3.2vw, 44px); line-height: 1.04; letter-spacing: -0.026em;
   font-weight: 550; color: var(--text-strong); max-width: 24ch; text-wrap: balance;
 }
-.tru-dark .dk-mast h1 em { font-style: italic; color: var(--tab-hi, var(--accent-hi)); }
+.tru-dark .dk-mast h1 em { font-style: italic; color: var(--tab-mid, var(--accent)); }
 /* Three lines reserved, for the same reason the headline reserves two: the
    lede runs to 2 lines on Pulse and 3 on Rep, and letting it vary moved the
    whole page up and down as you switched tabs. Reserving both means the bento
@@ -4777,19 +4789,25 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .side-glide {
   position: absolute; left: 0; right: 0; top: 0; z-index: 0;
   border-radius: 12px; pointer-events: none;
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent-line);
+  /* The tab's own temperature. The first attempt tinted `.side-link.active`,
+     which the marker refactor had already stripped of its paint — dead rules,
+     invisible change. The marker is the thing that is actually drawn. */
+  background: var(--tab-soft, var(--accent-soft));
+  box-shadow: inset 0 0 0 1px var(--tab-line, var(--accent-line));
   transition:
     transform 0.52s var(--spring),
     height 0.52s var(--spring),
+    background 0.4s var(--ease),
+    box-shadow 0.4s var(--ease),
     opacity 0.3s var(--ease);
 }
 /* The gold edge rides the marker rather than the link, so it travels too. */
 .tru-dark .side-glide::before {
   content: ''; position: absolute; left: 6px; top: 50%;
   width: 3px; height: 18px; margin-top: -9px;
-  border-radius: 3px; background: var(--accent-hi);
-  box-shadow: 0 0 10px -1px var(--accent);
+  border-radius: 3px; background: var(--tab-hi, var(--accent-hi));
+  box-shadow: 0 0 10px -1px var(--tab-mid, var(--accent));
+  transition: background 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
 /* The links now sit ON the marker, so they need to be above it and to stop
    drawing a second copy of it. */
@@ -4814,28 +4832,40 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tru-shell {
   --tab-hi: var(--accent-hi);
   --tab-mid: var(--accent);
-  --tab-flare-a: rgba(255, 240, 205, 0.16);
-  --tab-flare-b: rgba(255, 214, 130, 0.06);
+  --tab-soft: var(--accent-soft);
+  --tab-line: var(--accent-line);
+  --tab-flare-a: rgba(255, 240, 205, 0.30);
+  --tab-flare-b: rgba(255, 214, 130, 0.11);
   --stat-grad: linear-gradient(180deg, #F2F6F1, var(--tab-hi));
 }
+/* The first cut of these used pale "hi" tones for everything — #FFC9AC against
+   #FFDC93 — and the honest review from the owner was that nothing looked any
+   different, because at those chromas nothing WAS different. The full-chroma
+   mids carry the identity now, and the flares are twice what they were. */
 .tru-dark .tru-shell[data-tab="coach"] {
   --tab-hi: #FFC9AC;
   --tab-mid: var(--terracotta);
-  --tab-flare-a: rgba(255, 198, 168, 0.15);
-  --tab-flare-b: rgba(255, 139, 98, 0.055);
+  --tab-soft: rgba(255, 139, 98, 0.16);
+  --tab-line: rgba(255, 139, 98, 0.34);
+  --tab-flare-a: rgba(255, 185, 150, 0.28);
+  --tab-flare-b: rgba(255, 139, 98, 0.10);
 }
 .tru-dark .tru-shell[data-tab="rep"] {
   --tab-hi: var(--sea-hi);
   --tab-mid: var(--sea);
-  --tab-flare-a: rgba(190, 222, 206, 0.14);
-  --tab-flare-b: rgba(143, 176, 162, 0.055);
+  --tab-soft: rgba(143, 176, 162, 0.16);
+  --tab-line: rgba(143, 176, 162, 0.36);
+  --tab-flare-a: rgba(178, 216, 198, 0.26);
+  --tab-flare-b: rgba(143, 176, 162, 0.10);
 }
 .tru-dark .tru-shell[data-tab="team"],
 .tru-dark .tru-shell[data-tab="admin"] {
   --tab-hi: #E9F0EA;
   --tab-mid: #C4D2C6;
-  --tab-flare-a: rgba(226, 240, 230, 0.11);
-  --tab-flare-b: rgba(200, 215, 205, 0.04);
+  --tab-soft: rgba(226, 240, 230, 0.10);
+  --tab-line: rgba(226, 240, 230, 0.26);
+  --tab-flare-a: rgba(226, 240, 230, 0.20);
+  --tab-flare-b: rgba(200, 215, 205, 0.07);
 }
 
 .tru-shell .side-link.active::before { display: none; }

@@ -156,14 +156,32 @@ export function useFlip(ref: RefObject<HTMLElement | null>, signature: string): 
  * and survives a scroll. The track needs `position: relative` for that to be
  * true, which its stylesheet rule declares.
  */
+/* Where each remembered marker was last seen. Module scope, because the thing
+   that owns the marker does not necessarily survive the change it is marking:
+   the sidebar's shell is remounted on every tab switch, so a marker whose only
+   memory is component state is BORN AT THE TOP of the rail every time, and its
+   transition then sweeps it down to the active link — from the top, always,
+   wherever you actually came from. Flipping through tabs read as the pill
+   leaping to the top and diving back down, over and over.
+
+   Seeded from here, the fresh marker's first frame is the OLD tab's position,
+   and the transition carries it from there to the new one — which is the
+   continuous marker the hook promised in the first place. */
+const glideMemory = new Map<string, { off: number; size: number }>();
+
 export function useGlide(
   trackRef: RefObject<HTMLElement | null>,
   selector: string,
   axis: 'x' | 'y',
   /** Anything whose change can move the marker — usually the active key. */
   dep: unknown,
+  /** Names a marker whose position should survive its component. Omit for
+   *  markers that live and die with their view, like the window tabs. */
+  memoryKey?: string,
 ): CSSProperties {
-  const [box, setBox] = useState<{ off: number; size: number } | null>(null);
+  const [box, setBox] = useState<{ off: number; size: number } | null>(
+    () => (memoryKey ? glideMemory.get(memoryKey) ?? null : null),
+  );
 
   useLayoutEffect(() => {
     const track = trackRef.current;
@@ -171,9 +189,11 @@ export function useGlide(
     const measure = () => {
       const el = track.querySelector<HTMLElement>(selector);
       if (!el) { setBox(null); return; }
-      setBox(axis === 'y'
+      const next = axis === 'y'
         ? { off: el.offsetTop, size: el.offsetHeight }
-        : { off: el.offsetLeft, size: el.offsetWidth });
+        : { off: el.offsetLeft, size: el.offsetWidth };
+      if (memoryKey) glideMemory.set(memoryKey, next);
+      setBox(next);
     };
     measure();
     // Fonts landing, a sidebar collapsing, a label wrapping: all of them move
@@ -181,7 +201,7 @@ export function useGlide(
     const ro = new ResizeObserver(measure);
     ro.observe(track);
     return () => ro.disconnect();
-  }, [trackRef, selector, axis, dep]);
+  }, [trackRef, selector, axis, dep, memoryKey]);
 
   // Nothing selected — the marker is simply not there, rather than parked at
   // the top of the track waiting to be noticed.

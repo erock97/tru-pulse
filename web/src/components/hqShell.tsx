@@ -114,7 +114,8 @@ export function HqShell({
   // One marker for the whole rail, moved — rather than a highlight that
   // vanishes on one tab and appears on another with nothing joining them.
   const navRef = useRef<HTMLElement | null>(null);
-  const glide = useGlide(navRef, '.side-link.active', 'y', activeKey);
+  // 'side-nav' names the marker across shell remounts — see useGlide.
+  const glide = useGlide(navRef, '.side-link.active', 'y', activeKey, 'side-nav');
 
   /* WHICH WAY YOU JUST TRAVELLED.
 
