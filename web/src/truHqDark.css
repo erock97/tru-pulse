@@ -5149,3 +5149,33 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .cell-roll { animation: none; }
   .tru-dark .dk-tile-rank { transition: none; }
 }
+/* ---- the masthead signatures ---------------------------------------------
+   Every tab opened with the same shape, and the right third of every masthead
+   was dead air. One element answers both: a large, faint instrument drawn in
+   the tab's own temperature, standing in the empty third like a maker's mark —
+   Pulse's heartbeat, Coach's two circles meeting, Rep's track with the last
+   dot still open, Team's roster. Masked SVG, tinted by the same token as the
+   room's flare, so a new tab colour recolours its instrument for free. */
+.tru-dark .dk-mast { position: relative; }
+.tru-dark .dk-mast::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 300px;
+  height: 150px;
+  pointer-events: none;
+  opacity: 0.09;
+  background-color: var(--tab-mid, var(--accent));
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-position: center; mask-position: center;
+}
+.tru-shell[data-tab="pulse"] .dk-mast::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cpolyline%20points%3D%220%2C60%2060%2C60%2078%2C60%2090%2C22%20106%2C98%20120%2C42%20132%2C72%20144%2C60%20240%2C60%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cpolyline%20points%3D%220%2C60%2060%2C60%2078%2C60%2090%2C22%20106%2C98%20120%2C42%20132%2C72%20144%2C60%20240%2C60%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E"); }
+.tru-shell[data-tab="coach"] .dk-mast::after { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Ccircle%20cx%3D%2295%22%20cy%3D%2260%22%20r%3D%2244%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3Ccircle%20cx%3D%22145%22%20cy%3D%2260%22%20r%3D%2244%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Ccircle%20cx%3D%2295%22%20cy%3D%2260%22%20r%3D%2244%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3Ccircle%20cx%3D%22145%22%20cy%3D%2260%22%20r%3D%2244%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3C/svg%3E"); }
+.tru-shell[data-tab="rep"] .dk-mast::after   { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cline%20x1%3D%2220%22%20y1%3D%2260%22%20x2%3D%22220%22%20y2%3D%2260%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22black%22/%3E%3Ccircle%20cx%3D%22130%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22black%22/%3E%3Ccircle%20cx%3D%22190%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3Cline%20x1%3D%22190%22%20y1%3D%2234%22%20x2%3D%22190%22%20y2%3D%2220%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cline%20x1%3D%2220%22%20y1%3D%2260%22%20x2%3D%22220%22%20y2%3D%2260%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22black%22/%3E%3Ccircle%20cx%3D%22130%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22black%22/%3E%3Ccircle%20cx%3D%22190%22%20cy%3D%2260%22%20r%3D%229%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%225%22/%3E%3Cline%20x1%3D%22190%22%20y1%3D%2234%22%20x2%3D%22190%22%20y2%3D%2220%22%20stroke%3D%22black%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E"); }
+.tru-shell[data-tab="team"] .dk-mast::after  { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cg%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22180%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2286%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2286%22%20r%3D%2211%22/%3E%3C/g%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20240%20120%22%3E%3Cg%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22180%22%20cy%3D%2240%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2286%22%20r%3D%2211%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2286%22%20r%3D%2211%22/%3E%3C/g%3E%3C/svg%3E"); }
+@media (max-width: 1100px) {
+  .tru-dark .dk-mast::after { display: none; }
+}

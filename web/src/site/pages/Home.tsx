@@ -126,7 +126,11 @@ export default function Home() {
     if (!vid) return;
     let url: string | null = null;
     let gone = false;
-    void fetch('/tru-orbit.mp4')
+    /* A phone pays 2.4 MB, a desktop 5.4 — chosen by the screen that will
+       actually show it. Same all-intra encode either way, so the scrub is
+       identical; only the pixels differ. */
+    const src = window.innerWidth < 760 ? '/tru-orbit-m.mp4' : '/tru-orbit.mp4';
+    void fetch(src)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((b) => {
         if (gone) return;
@@ -135,7 +139,7 @@ export default function Home() {
       })
       .catch(() => {
         // Worst case the scene is its own poster — a still opening, never a hole.
-        if (!gone) vid.src = '/tru-orbit.mp4';
+        if (!gone) vid.src = src;
       });
     return () => {
       gone = true;
@@ -557,16 +561,16 @@ export default function Home() {
           <figure className="fh-shot reveal d1">
             <img src="/shot-pulse.webp" width="1240" height="649" loading="lazy" decoding="async"
                  alt="TRU Pulse showing a team roster ranked by leads per contract, with the agents who need a conversation flagged above the table." />
-            <figcaption><b>Pulse.</b> Who got no contact, what is stuck, and who is quietly slipping.</figcaption>
+            <figcaption><b className="pn-pulse">Pulse.</b> Who got no contact, what is stuck, and who is quietly slipping.</figcaption>
           </figure>
           <figure className="fh-shot reveal d2">
             <img src="/shot-coach.webp" width="1240" height="649" loading="lazy" decoding="async"
                  alt="TRU Coach showing a cohort ranked by coaching health, with the four agents who need a one to one listed above it." />
-            <figcaption><b>Coach.</b> The exact move for this person, this week.</figcaption>
+            <figcaption><b className="pn-coach">Coach.</b> The exact move for this person, this week.</figcaption>
           </figure>
         </div>
         <p className="fh-third reveal d2">
-          <b>Rep.</b> Every agent certified on your program through real drills, not skimmed video.
+          <b className="pn-rep">Rep.</b> Every agent certified on your program through real drills, not skimmed video.
         </p>
       </div></section>
 
@@ -583,6 +587,9 @@ export default function Home() {
       </div></section>
 
       <section className="panel ctaband" id="cta"><div className="wrap">
+        {/* The mark, at rest, over the close — the same object the arrival
+            orbits, ending the page the way the page began. */}
+        <img className="cta-emblem reveal" src="/tru-mark.png" alt="" width="56" height="56" decoding="async" />
         <h2 className="reveal">Think your team is <em>next</em>?</h2>
         <p className="sub reveal d1">
           60 minutes on your real numbers, and the next move. No pitch.

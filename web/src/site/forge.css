@@ -90,9 +90,9 @@
 }
 .truland .tip { position: absolute; width: 0; height: 0; }
 /* Anchored on the vertices themselves, measured off the opening frame. */
-.truland .tip-pulse { left: 50%;   top: 40%; }
-.truland .tip-coach { left: 36%;   top: 84%; }
-.truland .tip-rep   { left: 64.5%; top: 83.5%; }
+.truland .tip-pulse { left: 50%;   top: 30%; }
+.truland .tip-coach { left: 35%;   top: 76%; }
+.truland .tip-rep   { left: 65%;   top: 76%; }
 
 .truland .tip-spark {
   position: absolute;
@@ -1059,4 +1059,20 @@
   .truland .fh-row::after,
   .truland .fh-row dt { transition: none; }
   .truland .fh-row:hover dt { transform: none; }
+}
+
+/* ---- the products wear their temperatures, outside too -------------------
+   Inside the app, Pulse is gold, Coach terracotta, Rep sea. The landing's
+   software section now says the same thing — one identity across the wall. */
+.truland .fh-shot figcaption b.pn-pulse,
+.truland .fh-third b.pn-pulse { color: var(--gold); }
+.truland .fh-shot figcaption b.pn-coach { color: #FF9E76; }
+.truland .fh-third b.pn-rep,
+.truland .fh-shot figcaption b.pn-rep { color: #A8C9B9; }
+
+/* The close gets the mark at rest. */
+.truland .ctaband .cta-emblem {
+  display: block;
+  margin: 0 auto 1.1rem;
+  filter: drop-shadow(0 0 10px rgba(242, 178, 60, 0.35));
 }

@@ -254,7 +254,7 @@ export function HqShell({
       <main className="main">
         {hideTopbar && (
           <div className="dk-island">
-            <span className="dk-mk"><i>tru</i><b>TRU <em>HQ</em></b></span>
+            <span className="dk-mk"><img className="tru-emblem" src="/tru-mark.png" alt="" width="22" height="22" decoding="async" /><b>TRU <em>HQ</em></b></span>
             {islandSlot && <><span className="dk-div" />{islandSlot}</>}
             <span className="dk-div" />
             <CommandBar
