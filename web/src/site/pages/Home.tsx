@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
+/* THE FILM IS FINGERPRINTED, AND THIS IS A BUG FIX, NOT HOUSEKEEPING.
+
+   Served from /public under a fixed name, the video carried no cache-control
+   header, and Cloudflare's EDGE cached the bytes for hours — per city. The
+   owner reviewed tonight's cuts through his local edge node and saw a film one
+   and two generations old, incognito included, while every probe from here
+   read fresh bytes from a different node. Importing through the bundler gives
+   every cut a hashed URL, so a stale edge is impossible by construction. */
+import orbitDesktopUrl from '../../assets/tru-orbit.mp4';
+import orbitMobileUrl from '../../assets/tru-orbit-m.mp4';
+import orbitPosterUrl from '../../assets/tru-orbit-poster.webp';
 
 /* ============================================================================
    THE ARRIVAL — "first light"
@@ -129,7 +140,7 @@ export default function Home() {
     /* A phone pays 2.4 MB, a desktop 5.4 — chosen by the screen that will
        actually show it. Same all-intra encode either way, so the scrub is
        identical; only the pixels differ. */
-    const src = window.innerWidth < 760 ? '/tru-orbit-m.mp4' : '/tru-orbit.mp4';
+    const src = window.innerWidth < 760 ? orbitMobileUrl : orbitDesktopUrl;
     void fetch(src)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((b) => {
@@ -437,7 +448,7 @@ export default function Home() {
           <video
             className="arrive-scene"
             ref={orbitRef}
-            poster="/tru-orbit-poster.webp"
+            poster={orbitPosterUrl}
             muted
             playsInline
             preload="auto"
