@@ -153,18 +153,14 @@ export default function Home() {
       const iv = setInterval(() => {
         const v = orbitRef.current;
         if (!v) return;
-        dbg.textContent =
-          'src: ' + (v.currentSrc ? v.currentSrc.slice(0, 60) : '(none)') +
-          '
-duration: ' + v.duration.toFixed(2) +
-          '  readyState: ' + v.readyState +
-          '
-seekable: ' + (v.seekable.length ? '0–' + v.seekable.end(0).toFixed(1) + 's' : 'NONE (cannot scrub!)') +
-          '
-currentTime: ' + v.currentTime.toFixed(2) +
-          '  scrollY: ' + Math.round(window.scrollY) +
-          '
-fetch: ' + (dbg.dataset.fetch ?? 'pending…');
+        const nl = String.fromCharCode(10);
+        dbg.textContent = [
+          'src: ' + (v.currentSrc ? v.currentSrc.slice(0, 60) : '(none)'),
+          'duration: ' + v.duration.toFixed(2) + '  readyState: ' + v.readyState,
+          'seekable: ' + (v.seekable.length ? '0-' + v.seekable.end(0).toFixed(1) + 's' : 'NONE (cannot scrub!)'),
+          'currentTime: ' + v.currentTime.toFixed(2) + '  scrollY: ' + Math.round(window.scrollY),
+          'fetch: ' + (dbg.dataset.fetch ?? 'pending…'),
+        ].join(nl);
       }, 400);
       window.addEventListener('beforeunload', () => clearInterval(iv));
     }
