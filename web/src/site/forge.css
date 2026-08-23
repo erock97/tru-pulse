@@ -72,7 +72,20 @@
   z-index: 60;
   margin: 0;
   font-family: var(--serif);
-  font-weight: 800;
+  /* 700, NOT 800, AND THIS IS THE DIFFERENCE BETWEEN A LOGO AND A CARTOON.
+
+     Fraunces ships here as a variable font declaring `font-weight: 500 700`.
+     Asking for 800 does not get a heavier cut — it clamps the axis at 700 and
+     then SYNTHESISES the rest, which is a crude outline smear. At 690px that
+     smear is all you see: the bracketed serifs fatten into blobs, the thick-
+     to-thin contrast that makes this face expensive collapses, and the mark
+     reads as a friendly display face rather than a mark.
+
+     It is also why the light's field and the page disagreed about the T's
+     serifs — the two rasterisers fake bold differently. `font-synthesis: none`
+     makes that class of bug impossible rather than merely fixed. */
+  font-weight: 700;
+  font-synthesis: none;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
@@ -101,28 +114,116 @@
 
    It is on the screen at full strength from the first frame to the last, which
    is why there is no seam anywhere in this hero: there is only ever one object,
-   and it is text. Three previous versions travelled a rendered plate of these
-   letters and every one read as a cut-out, because that is what it was.
+   and it is text.
 
-   The text-shadow is the light's near field. The canvas behind cannot draw it —
-   its backing store is a fraction of the mark's size on screen, which is fine
-   for soft light and hopeless for the hard first millimetre against a stroke.
-   So the core glow is drawn here, where it is resolution-independent, and the
-   canvas takes over from where it fades. */
+   THE LETTERS ARE A MATERIAL, NOT A FILL. This is the fix for "the letters look
+   cartoony while everything else looks detailed", and the diagnosis is simple
+   once said out loud: the room behind them is a photographic render with haze,
+   depth and grain, and the letters were three flat areas of one colour. Flat
+   shapes in front of a rendered environment read as stickers no matter how good
+   the environment is.
+
+   So each run is lit like an object standing under the room's shafts: bright
+   along the cap line where the light lands, deepening to a shadowed bronze at
+   the baseline, with a specular break at the optical middle. Two metals — bone
+   and gold, which is the brand — under ONE lighting model, so they read as two
+   materials in the same room rather than two unrelated colours. */
 .truland .arrive-type {
   display: block;
   position: relative;
   z-index: 2;
-  color: var(--ink);
-  /* Tight on purpose. This is the first millimetre off the stroke, which the
-     canvas cannot resolve — not a second glow on top of the canvas's. Anything
-     wider here and the two collars stack into the even rind that makes an
-     effect like this read as a filter applied to a logo. */
-  text-shadow:
-    0 0 calc(0.03em * var(--pl)) rgba(255, 240, 214, calc(0.75 * var(--pl))),
-    0 0 calc(0.09em * var(--pl)) rgba(255, 220, 147, calc(0.4 * var(--pl)));
 }
-.truland .arrive-type i { font-style: normal; color: var(--gold); }
+.truland .arrive-type b,
+.truland .arrive-type i {
+  font-weight: inherit;
+  font-style: normal;
+  display: inline-block;
+  /* Two layers: a moving specular band over a static vertical material. Both
+     are clipped to the glyphs, so the sheen travels THROUGH the letterforms
+     rather than over the top of them. Technique from 21st's Gradient Shimmer
+     (@mona_biasia) — background-clip on the glyphs, swept by moving the
+     background position — reduced to two CSS layers and no JavaScript. */
+  background-repeat: no-repeat;
+  background-size: 260% 100%, 100% 100%;
+  background-position: -80% 0, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: markSheen 9s cubic-bezier(0.5, 0, 0.5, 1) 1.2s infinite;
+}
+.truland .arrive-type b {
+  background-image:
+    linear-gradient(102deg, transparent 42%, rgba(255, 255, 255, 0.5) 50%, transparent 58%),
+    linear-gradient(180deg,
+      #ffffff 0%,
+      #f6faf4 26%,
+      #dfe8dc 50%,
+      #b9c7bb 74%,
+      #92a396 100%);
+}
+.truland .arrive-type i {
+  background-image:
+    linear-gradient(102deg, transparent 42%, rgba(255, 248, 224, 0.62) 50%, transparent 58%),
+    linear-gradient(180deg,
+      #fff3d6 0%,
+      #ffdb95 24%,
+      #f2b23c 49%,
+      /* the specular break — a hard-ish step at the optical middle is what
+         separates polished metal from a soft two-stop gradient */
+      #e6a52c 53%,
+      #b87c20 80%,
+      #8a5713 100%);
+}
+@keyframes markSheen {
+  0%   { background-position: -80% 0, 0 0; }
+  55%  { background-position: 180% 0, 0 0; }
+  100% { background-position: 180% 0, 0 0; }
+}
+
+/* Thickness and seating. `filter` rather than `text-shadow`, because the fill
+   is transparent here — a text-shadow would be painted straight through the
+   glyphs and muddy the material. `drop-shadow` works off the composited alpha,
+   so it follows the clipped gradient exactly.
+
+   The tight dark contact line is what gives the letters an edge against their
+   own glow. Without it the light bleeds over the silhouette and softens it,
+   which is the other half of reading as low detail. */
+.truland .arrive-type {
+  filter:
+    drop-shadow(0 0.012em 0.006em rgba(26, 14, 2, 0.62))
+    drop-shadow(0 0 calc(0.10em * var(--pl))) ;
+}
+
+/* THE DARK THE LIGHT NEEDS.
+
+   A polished material only reads as polished against something darker than it.
+   With the room, the halo and the ambient all filling this area, everything
+   behind the letters had drifted to a mid-brown wash — so the gold had nothing
+   to be brighter THAN, and the mark went muddy no matter how good the gradient
+   was. That is the same mistake in a new place: adding light to fix a contrast
+   problem that was caused by too much light.
+
+   This is the fix, and it is physical rather than cosmetic: the letters stand
+   between you and the haze, so the haze behind them is occluded. A soft dark
+   core under the glow gives the metal its ground back. Under the canvas, over
+   the room — the light still adds on top of it. */
+.truland .arrive-mark::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--glow-frame, 2.4) * 100%);
+  aspect-ratio: var(--glow-aspect, 1024 / 400);
+  translate: -50% calc(-50% + var(--glow-dy, 0em));
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 46% 62% at 50% 50%,
+    rgba(4, 9, 6, 0.82) 0%,
+    rgba(4, 9, 6, 0.55) 45%,
+    rgba(4, 9, 6, 0) 78%);
+  opacity: var(--pl);
+}
 
 /* The light. A canvas sized in multiples of the wordmark it surrounds, so the
    two are locked together by construction and nothing has to be measured off a
@@ -172,7 +273,8 @@
      about because it is fixed too. */
   margin: 14vh auto 2vh;
   font-family: var(--serif);
-  font-weight: 800;
+  font-weight: 700;
+  font-synthesis: none;
   font-size: clamp(3.4rem, 11vw, 7.5rem);
   line-height: 1.15;
   white-space: nowrap;
@@ -494,6 +596,8 @@
   /* The travelling mark is not rendered at all here; `.arrive-still` below is,
      and it sits inside the stage where the hero can lay it out. */
   .truland .arrive-mark { display: none; }
+  .truland .arrive-type b,
+  .truland .arrive-type i { animation: none; background-position: 200% 0, 0 0; }
   /* One frame of the room, not a loop. */
   .truland .arrive-room {
     display: block;
@@ -528,3 +632,101 @@
    container, so sticky works again. Same distinction as the deck's table
    header, which needed the identical fix for the identical reason. */
 .truland { overflow-x: clip; }
+
+/* ---- how everything below the hero arrives -------------------------------
+   The markup has carried `.reveal` and `.d1/.d2/.d3` stagger classes all along
+   and the observer in PublicSite has been adding `.in` to them — but the only
+   rules for those classes live under `.tru-dark`, the app's scope. On this page
+   they matched nothing. Every section below the fold simply appeared, fully
+   formed, the instant it was painted. That is most of why the page went dead
+   the moment the wordmark finished its trip.
+
+   The entrance is depth rather than a fade: things arrive from slightly further
+   away — lower, a shade smaller, and out of focus — and settle. Blur clearing is
+   what makes it read as focus pulling rather than opacity ramping, and it is the
+   cheapest honest depth cue there is. */
+.truland .reveal {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0) scale(0.984);
+  filter: blur(7px);
+  transition:
+    opacity 900ms var(--e),
+    transform 900ms var(--e),
+    filter 900ms var(--e);
+  transition-delay: var(--rd, 0ms);
+  will-change: opacity, transform;
+}
+.truland .reveal.in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+/* Staggered off one shared timing, so a row of three lands as one gesture
+   instead of three independent animations racing. */
+.truland .d1 { --rd: 90ms; }
+.truland .d2 { --rd: 190ms; }
+.truland .d3 { --rd: 290ms; }
+
+/* The cards are surfaces in a lit room, so they answer to the pointer. Small
+   on purpose — a card that leaps is a toy, a card that lifts is furniture. */
+.truland .fh-fig {
+  transition:
+    transform 420ms var(--e),
+    box-shadow 420ms var(--e),
+    border-color 420ms var(--e);
+}
+.truland .fh-fig:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.26),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 26px 50px -28px rgba(0, 0, 0, 0.85);
+}
+
+/* THE NUMBERS ARE THE SAME METAL AS THE WORDMARK.
+
+   The figures are the loudest thing on the page after the mark, and flat white
+   next to a lit wordmark is the same flatness problem one section down. Bone
+   rather than gold, deliberately: the accent is reserved for the one thing that
+   wants a click, and three big gold numerals would spend it. */
+.truland .fh-fig b {
+  background-image: linear-gradient(180deg,
+    #ffffff 0%,
+    #f2f7f0 30%,
+    #d6e0d4 62%,
+    #a9b8ab 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The hero's light does not stop at the fold. A single soft warm pool at the
+   top of the first band carries it over the seam, so the page reads as one lit
+   space that continues rather than a hero followed by sections. */
+.truland .fh-proof { position: relative; }
+.truland .fh-proof::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -14vh;
+  width: min(150vw, 1900px);
+  height: 46vh;
+  translate: -50% 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 50% 50% at 50% 0%,
+    rgba(242, 178, 60, 0.085) 0%,
+    rgba(242, 178, 60, 0.03) 42%,
+    transparent 74%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truland .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .truland .fh-fig { transition: none; }
+  .truland .fh-fig:hover { transform: none; }
+}

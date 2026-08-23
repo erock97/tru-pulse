@@ -371,9 +371,18 @@ void main() {
      alive, never to compete. Every term is roughly a third of what it was, and
      nothing is allowed near white except the embers, which are single pixels. */
   vec3 col = vec3(0.0);
-  col += GOLD * ambient * 0.09;
+  /* THE TWO WIDE TERMS ARE THE MILK, SO THEY ARE THE ONES THAT GET CUT.
+
+     The ambient and the halo are broad and flat by design, which means they
+     raise the floor everywhere at once — including the ground the letters have
+     to be brighter than. No amount of darkness painted underneath can win
+     against them, because this layer ADDS. So the fill comes down hard and the
+     two terms that carry the character stay: the tight bloom that holds the
+     strokes, and the shafts out in the open field. Ethereal, without the haze
+     sitting on the mark itself. */
+  col += GOLD * ambient * 0.04;
   col += WARM * bloom * 0.26;
-  col += GOLD * halo * 0.30;
+  col += GOLD * halo * 0.14;
   col += mix(GOLD, BONE, 0.35) * rays * 0.20;
   col += WARM * ember * 1.7;
 

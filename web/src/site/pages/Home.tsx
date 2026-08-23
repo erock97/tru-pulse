@@ -83,8 +83,8 @@ const OWN = [
 ] as const;
 
 const WHO = [
-  { k: 'Team owners', body: 'Generating leads, and spending the week managing instead of building.' },
-  { k: 'Sales leaders', body: 'You own the number and you want a peer to think with.' },
+  { k: 'Accidental owners', body: 'You built a team faster than you built the system to run it, and the week now runs you.' },
+  { k: 'Established leaders', body: 'You own the number and you have built the thing. You want real support behind you, and a peer to think with.' },
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
@@ -122,7 +122,13 @@ export default function Home() {
   const wordmark = (
     <>
       <MarkGlow text={MARK} fadeRef={glowRef} />
-      <span className="arrive-type">{MARK[0]}<i>{MARK.slice(1)}</i></span>
+      {/* Two runs, two metals, one light. They have to be separate ELEMENTS
+          because a background-clipped gradient clips per element — a bare text
+          node cannot carry its own material. The split is the same one the
+          light's distance field uses, so nothing can drift. */}
+      <span className="arrive-type">
+        <b>{MARK[0]}</b><i>{MARK.slice(1)}</i>
+      </span>
     </>
   );
 
@@ -364,12 +370,12 @@ export default function Home() {
 
           <div className="arrive-copy">
             <h1>
-              Somebody has to run the sales floor.{' '}
-              <em>It should not be you.</em>
+              Team leaders are overwhelmed.{' '}
+              <em>We help them lead.</em>
             </h1>
             <p className="arrive-sub">
-              Fractional sales management for real estate teams. We own accountability,
-              pipeline, and Zillow Preferred conversion.
+              Fractional sales management for real estate teams. We own pipeline
+              accountability and lead conversion — on every platform you already work.
             </p>
             <div className="hcta">
               <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
