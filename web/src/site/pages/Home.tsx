@@ -459,6 +459,11 @@ export default function Home() {
             <i className="air-a" /><i className="air-b" />
             <i className="mote m1" /><i className="mote m2" /><i className="mote m3" />
             <i className="mote m4" /><i className="mote m5" /><i className="mote m6" />
+            <i className="mote m7" /><i className="mote m8" /><i className="mote m9" />
+            {/* The floor keeps the light's rhythm: its reflections drift with
+                the glow bodies above. Sheen, not water — ripples would argue
+                with the stone the film already shows. */}
+            <i className="air-floor" />
           </div>
 
           <div className="arrive-tips" aria-hidden>
