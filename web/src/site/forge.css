@@ -90,9 +90,9 @@
 }
 .truland .tip { position: absolute; width: 0; height: 0; }
 /* Anchored on the vertices themselves, measured off the opening frame. */
-.truland .tip-pulse { left: 50%;   top: 30%; }
-.truland .tip-coach { left: 35%;   top: 76%; }
-.truland .tip-rep   { left: 65%;   top: 76%; }
+.truland .tip-pulse { left: 50%;   top: 40%; }
+.truland .tip-coach { left: 36%;   top: 84%; }
+.truland .tip-rep   { left: 64.5%; top: 83.5%; }
 
 .truland .tip-spark {
   position: absolute;
