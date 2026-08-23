@@ -644,39 +644,14 @@
    header, which needed the identical fix for the identical reason. */
 .truland { overflow-x: clip; }
 
-/* ---- how everything below the hero arrives -------------------------------
-   The markup has carried `.reveal` and `.d1/.d2/.d3` stagger classes all along
-   and the observer in PublicSite has been adding `.in` to them — but the only
-   rules for those classes live under `.tru-dark`, the app's scope. On this page
-   they matched nothing. Every section below the fold simply appeared, fully
-   formed, the instant it was painted. That is most of why the page went dead
-   the moment the wordmark finished its trip.
+/* NOTE ON THE ENTRANCE ANIMATION.
 
-   The entrance is depth rather than a fade: things arrive from slightly further
-   away — lower, a shade smaller, and out of focus — and settle. Blur clearing is
-   what makes it read as focus pulling rather than opacity ramping, and it is the
-   cheapest honest depth cue there is. */
-.truland .reveal {
-  opacity: 0;
-  transform: translate3d(0, 26px, 0) scale(0.984);
-  filter: blur(7px);
-  transition:
-    opacity 900ms var(--e),
-    transform 900ms var(--e),
-    filter 900ms var(--e);
-  transition-delay: var(--rd, 0ms);
-  will-change: opacity, transform;
-}
-.truland .reveal.in {
-  opacity: 1;
-  transform: none;
-  filter: none;
-}
-/* Staggered off one shared timing, so a row of three lands as one gesture
-   instead of three independent animations racing. */
-.truland .d1 { --rd: 90ms; }
-.truland .d2 { --rd: 190ms; }
-.truland .d3 { --rd: 290ms; }
+   `.truland .reveal` is defined in Landing.css, along with its `.d1/.d2/.d3`
+   delays, and the observer in PublicSite has always been driving it. An earlier
+   pass here declared a second copy of all of it, on the belief that the page had
+   no entrance motion at all — that belief came from grepping the wrong files,
+   and it was wrong. Two definitions of the same effect is how they drift, so
+   this one is deleted and the original is tuned where it lives. */
 
 /* The cards are surfaces in a lit room, so they answer to the pointer. Small
    on purpose — a card that leaps is a toy, a card that lifts is furniture. */
@@ -740,4 +715,102 @@
   }
   .truland .fh-fig { transition: none; }
   .truland .fh-fig:hover { transform: none; }
+}
+
+/* ---- the list sections, using the frame ----------------------------------
+   These were a heading with a narrow column of rows under it, which left the
+   right third of a 1440 screen empty and read as unfinished rather than
+   spacious. The heading now holds its own column and stays with you while the
+   rows scroll past it — editorial, and it gives a 56px serif somewhere to live
+   instead of sitting on top of a list it dwarfs.
+
+   Uses the existing markup: the h2 is put in column one spanning every row, and
+   the list and its follow-on link fall into column two. */
+@media (min-width: 900px) {
+  .truland .fh-own .wrap,
+  .truland .fh-who .wrap {
+    display: grid;
+    grid-template-columns: minmax(260px, 32%) 1fr;
+    column-gap: clamp(2.5rem, 5vw, 5.5rem);
+    align-items: start;
+  }
+  .truland .fh-own .h2,
+  .truland .fh-who .h2 {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    position: sticky;
+    /* Clears the fixed header with room to breathe. */
+    top: 8.5rem;
+    margin-top: 0;
+    max-width: 12ch;
+  }
+  .truland .fh-own .fh-list,
+  .truland .fh-who .fh-list {
+    grid-column: 2;
+    margin-top: 0;
+  }
+  .truland .fh-own .fh-more { grid-column: 2; }
+  /* The rows now have the width to use, so the copy is allowed to use it. */
+  .truland .fh-row dd { max-width: 68ch; }
+  .truland .fh-row { grid-template-columns: minmax(190px, 240px) 1fr; }
+}
+
+/* ---- the software, as the centrepiece it should be -----------------------
+   These two screenshots are the strongest proof on the page that the product
+   exists, and they were sitting at 529px inside a 1180px column with a caption
+   under them. They now break out past the text column, sit on a slight
+   perspective so they read as objects on a surface rather than as flat images,
+   and are staggered so the pair has a composition instead of being a row.
+
+   The tilt is small on purpose. Enough to catch the light; not enough to make
+   anyone tilt their head to read a dashboard. */
+@media (min-width: 900px) {
+  .truland .fh-soft .fh-shots {
+    width: min(calc(100vw - 3rem), 1400px);
+    margin-left: 50%;
+    translate: -50% 0;
+    gap: clamp(1.6rem, 3vw, 3rem);
+    perspective: 1800px;
+    margin-top: 3.4rem;
+  }
+  .truland .fh-soft .fh-shot:first-child { transform: translateY(-1.4rem); }
+  .truland .fh-soft .fh-shot:last-child { transform: translateY(1.8rem); }
+}
+.truland .fh-shot img {
+  transform: rotateY(var(--ry, 0deg)) rotateX(1.1deg);
+  transform-origin: 50% 50%;
+  transition: transform 700ms var(--e), box-shadow 700ms var(--e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.2),
+    0 0 0 1px var(--hair-2),
+    /* A warm rim on the lit side, the same corner the hero's light comes from,
+       so the panels belong to the same room as the wordmark. */
+    -1px -1px 0 1px rgba(255, 216, 148, 0.05),
+    0 48px 90px -46px rgba(0, 0, 0, 0.95),
+    0 12px 30px -18px rgba(0, 0, 0, 0.7);
+}
+.truland .fh-soft .fh-shot:first-child img { --ry: 2.2deg; }
+.truland .fh-soft .fh-shot:last-child img { --ry: -2.2deg; }
+.truland .fh-shot:hover img {
+  transform: rotateY(0deg) rotateX(0deg) translateY(-6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.26),
+    0 0 0 1px var(--hair),
+    0 60px 110px -50px rgba(0, 0, 0, 0.98);
+}
+.truland .fh-shot figcaption { margin-top: 1.15rem; font-size: 1rem; }
+
+/* The third product gets a line of its own rather than trailing the pair. */
+.truland .fh-third {
+  margin-top: 2.6rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--hair-2);
+  max-width: 68ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truland .fh-shot img,
+  .truland .fh-shot:hover img { transform: none; transition: none; }
+  .truland .fh-soft .fh-shot:first-child,
+  .truland .fh-soft .fh-shot:last-child { transform: none; }
 }
