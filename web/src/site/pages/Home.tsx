@@ -464,6 +464,7 @@ export default function Home() {
                 the glow bodies above. Sheen, not water — ripples would argue
                 with the stone the film already shows. */}
             <i className="air-floor" />
+            <i className="air-floorband" />
           </div>
 
           <div className="arrive-tips" aria-hidden>

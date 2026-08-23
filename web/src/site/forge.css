@@ -135,19 +135,38 @@
   55%  { transform: translate3d(14px, -34vh, 0);   opacity: 0.5; }
   100% { transform: translate3d(-8px, -58vh, 0);   opacity: 0; }
 }
+/* Turned up from a whisper — the owner could not see the first version at all.
+   A broad warm pool AND a distinct bright band that travels the floor like the
+   beam's reflection sliding across wet-polished stone. */
 .truland .air-floor {
-  left: -15%; right: -15%; top: 68%; bottom: -4%;
+  left: -15%; right: -15%; top: 64%; bottom: -4%;
   width: auto; height: auto;
   background:
-    radial-gradient(60% 90% at 34% 30%, rgba(255, 208, 130, 0.10) 0%, transparent 65%),
-    radial-gradient(45% 80% at 68% 45%, rgba(200, 235, 205, 0.05) 0%, transparent 70%);
-  filter: blur(6px);
-  animation: floorSheen 11s ease-in-out infinite alternate;
+    radial-gradient(62% 95% at 34% 30%, rgba(255, 208, 130, 0.26) 0%, transparent 66%),
+    radial-gradient(48% 85% at 68% 45%, rgba(210, 240, 215, 0.10) 0%, transparent 70%);
+  filter: blur(7px);
+  animation: floorSheen 10s ease-in-out infinite alternate;
 }
 @keyframes floorSheen {
-  from { transform: translate3d(-4%, 0, 0);  opacity: 0.55; }
-  45%  {                                     opacity: 1; }
-  to   { transform: translate3d(4.5%, 1%, 0); opacity: 0.6; }
+  from { transform: translate3d(-6%, 0, 0);   opacity: 0.5; }
+  45%  {                                      opacity: 1; }
+  to   { transform: translate3d(6.5%, 1%, 0); opacity: 0.55; }
+}
+/* The travelling reflection: a soft diagonal blade of light crossing the floor
+   end to end, unmistakably in motion. */
+.truland .air-floorband {
+  left: -30%; top: 70%; bottom: 0;
+  width: 34%; height: auto;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 216, 140, 0.20) 45%, rgba(255, 232, 180, 0.30) 52%, rgba(255, 216, 140, 0.20) 59%, transparent 100%);
+  filter: blur(9px);
+  transform: skewX(-18deg);
+  animation: floorBand 13s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes floorBand {
+  0%   { left: -34%; opacity: 0; }
+  12%  { opacity: 1; }
+  55%  { opacity: 0.85; }
+  100% { left: 108%; opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
