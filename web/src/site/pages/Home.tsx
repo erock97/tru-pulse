@@ -137,18 +137,51 @@ export default function Home() {
     if (!vid) return;
     let url: string | null = null;
     let gone = false;
+
+    /* FIELD DIAGNOSTICS (?debug=1). The owner and this machine have watched
+       two different movies for an afternoon, and his box carries TLS-
+       intercepting security software that can break the blob fetch the scrub
+       depends on. When the fetch dies, the film silently freezes on frame one
+       — which matches his reports exactly. This overlay makes HIS browser
+       testify: fetch outcome, seekable range, live position. */
+    const debug = new URLSearchParams(window.location.search).has('debug');
+    const dbg = debug ? document.createElement('div') : null;
+    if (dbg) {
+      dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,.85);color:#7CFC9A;font:12px/1.5 monospace;padding:10px 12px;border-radius:8px;max-width:92vw;white-space:pre-wrap;';
+      dbg.textContent = 'orbit diag: starting…';
+      document.body.appendChild(dbg);
+      const iv = setInterval(() => {
+        const v = orbitRef.current;
+        if (!v) return;
+        dbg.textContent =
+          'src: ' + (v.currentSrc ? v.currentSrc.slice(0, 60) : '(none)') +
+          '
+duration: ' + v.duration.toFixed(2) +
+          '  readyState: ' + v.readyState +
+          '
+seekable: ' + (v.seekable.length ? '0–' + v.seekable.end(0).toFixed(1) + 's' : 'NONE (cannot scrub!)') +
+          '
+currentTime: ' + v.currentTime.toFixed(2) +
+          '  scrollY: ' + Math.round(window.scrollY) +
+          '
+fetch: ' + (dbg.dataset.fetch ?? 'pending…');
+      }, 400);
+      window.addEventListener('beforeunload', () => clearInterval(iv));
+    }
     /* A phone pays 2.4 MB, a desktop 5.4 — chosen by the screen that will
        actually show it. Same all-intra encode either way, so the scrub is
        identical; only the pixels differ. */
     const src = window.innerWidth < 760 ? orbitMobileUrl : orbitDesktopUrl;
-    void fetch(src)
-      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+    void fetch(src, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
       .then((b) => {
         if (gone) return;
+        if (dbg) dbg.dataset.fetch = 'OK (' + Math.round(b.size / 1024) + ' KB via blob)';
         url = URL.createObjectURL(b);
         vid.src = url;
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        if (dbg) dbg.dataset.fetch = 'FAILED: ' + String(e);
         // Worst case the scene is its own poster — a still opening, never a hole.
         if (!gone) vid.src = src;
       });
