@@ -113,6 +113,41 @@ export default function Home() {
   const [still, setStill] = useState(
     () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
+  /* THE ORBIT IS SCRUBBED FROM A BLOB, AND THIS IS NOT AN OPTIMISATION.
+
+     Cloudflare Pages serves the file with no Accept-Ranges, no Content-Length,
+     and a 200 for a Range request — so the browser marks the media unseekable
+     (seekable stays [0,0]) and silently snaps every currentTime write back to
+     zero. The whole rig worked on the dev server, which honours ranges, and
+     froze on frame zero in production. Verified with curl before believing it.
+
+     Fetched once (3.3 MB), scrubbed as a local object URL — seekable
+     everywhere, no server cooperation required. The poster holds the opening
+     frame until it lands. Skipped entirely under reduced motion, where the
+     scene never shows and the bytes would be pure waste. */
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const vid = orbitRef.current;
+    if (!vid) return;
+    let url: string | null = null;
+    let gone = false;
+    void fetch('/tru-orbit.mp4')
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => {
+        if (gone) return;
+        url = URL.createObjectURL(b);
+        vid.src = url;
+      })
+      .catch(() => {
+        // Worst case the scene is its own poster — a still opening, never a hole.
+        if (!gone) vid.src = '/tru-orbit.mp4';
+      });
+    return () => {
+      gone = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, []);
+
   useEffect(() => {
     const q = matchMedia('(prefers-reduced-motion: reduce)');
     const on = () => setStill(q.matches);
@@ -387,7 +422,6 @@ export default function Home() {
           <video
             className="arrive-scene"
             ref={orbitRef}
-            src="/tru-orbit.mp4"
             poster="/tru-orbit-poster.webp"
             muted
             playsInline
