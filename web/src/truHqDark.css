@@ -220,6 +220,46 @@ html[data-theme="warm"] .tru-dark {
   background: var(--accent-soft);
   border-color: var(--accent-line);
 }
+/* ---- each tab has its own temperature ------------------------------------
+   Four tabs, four voices, all of them colours this system already owns — no
+   new paint. Pulse keeps the brand gold, because it is the flagship and the
+   first room you enter. Coach warms to terracotta: it is the one-to-one tab,
+   the human one. Rep cools to sea: drills, standards, discipline. Team goes
+   near-neutral cream: the back office, where calm is the point.
+
+   The character is carried by LIGHT, not by chrome: the room's flare, the
+   headline's italic word, the active edge in the sidebar, and the tint at the
+   bottom of the big figures all read the same token. Everything else — CTAs,
+   semantics, alerts — keeps its meaning across tabs, which is what stops four
+   temperatures from becoming four brands. The defaults equal today's values,
+   so Pulse is pixel-identical to what shipped yesterday. */
+.tru-dark .tru-shell {
+  --tab-hi: var(--accent-hi);
+  --tab-mid: var(--accent);
+  --tab-flare-a: rgba(255, 240, 205, 0.16);
+  --tab-flare-b: rgba(255, 214, 130, 0.06);
+  --stat-grad: linear-gradient(180deg, #F2F6F1, var(--tab-hi));
+}
+.tru-dark .tru-shell[data-tab="coach"] {
+  --tab-hi: #FFC9AC;
+  --tab-mid: var(--terracotta);
+  --tab-flare-a: rgba(255, 198, 168, 0.15);
+  --tab-flare-b: rgba(255, 139, 98, 0.055);
+}
+.tru-dark .tru-shell[data-tab="rep"] {
+  --tab-hi: var(--sea-hi);
+  --tab-mid: var(--sea);
+  --tab-flare-a: rgba(190, 222, 206, 0.14);
+  --tab-flare-b: rgba(143, 176, 162, 0.055);
+}
+.tru-dark .tru-shell[data-tab="team"],
+.tru-dark .tru-shell[data-tab="admin"] {
+  --tab-hi: #E9F0EA;
+  --tab-mid: #C4D2C6;
+  --tab-flare-a: rgba(226, 240, 230, 0.11);
+  --tab-flare-b: rgba(200, 215, 205, 0.04);
+}
+
 .tru-shell .side-link.active::before {
   content: '';
   position: absolute;
@@ -229,10 +269,10 @@ html[data-theme="warm"] .tru-dark {
   width: 3px;
   height: 18px;
   border-radius: 3px;
-  background: var(--accent-hi);
-  box-shadow: 0 0 10px -1px var(--accent);
+  background: var(--tab-hi, var(--accent-hi));
+  box-shadow: 0 0 10px -1px var(--tab-mid, var(--accent));
 }
-.tru-shell .side-link.active svg { color: var(--accent-hi); }
+.tru-shell .side-link.active svg { color: var(--tab-hi, var(--accent-hi)); }
 .tru-shell .side-soon {
   margin-left: auto;
   font-size: 11px;
@@ -3240,7 +3280,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   font-size: clamp(30px, 3.2vw, 44px); line-height: 1.04; letter-spacing: -0.026em;
   font-weight: 550; color: var(--text-strong); max-width: 24ch; text-wrap: balance;
 }
-.tru-dark .dk-mast h1 em { font-style: italic; color: var(--accent-hi); }
+.tru-dark .dk-mast h1 em { font-style: italic; color: var(--tab-hi, var(--accent-hi)); }
 /* Three lines reserved, for the same reason the headline reserves two: the
    lede runs to 2 lines on Pulse and 3 on Rep, and letting it vary moved the
    whole page up and down as you switched tabs. Reserving both means the bento
@@ -3534,7 +3574,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   inset: auto; left: 63%; top: 30%;
   width: 46vw; height: 46vw; background: none;
   transform: translate(-50%, -50%);
-  background-image: radial-gradient(circle, rgba(255,240,205,0.16) 0%, rgba(255,214,130,0.06) 26%, transparent 62%);
+  /* The stops read the tab's own temperature; the keyed remount makes the new
+     colour flare in on arrival, which is the room changing to receive you. */
+  background-image: radial-gradient(circle, var(--tab-flare-a, rgba(255,240,205,0.16)) 0%, var(--tab-flare-b, rgba(255,214,130,0.06)) 26%, transparent 62%);
   animation: coreFlare 2.6s var(--spring) 1, coreBreathe 14s ease-in-out 2.6s infinite alternate;
 }
 @keyframes coreFlare {
@@ -4756,7 +4798,47 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: none;
   border-color: transparent;
 }
-.tru-dark .tru-shell .side-link.active::before { display: none; }
+.tru-dark /* ---- each tab has its own temperature ------------------------------------
+   Four tabs, four voices, all of them colours this system already owns — no
+   new paint. Pulse keeps the brand gold, because it is the flagship and the
+   first room you enter. Coach warms to terracotta: it is the one-to-one tab,
+   the human one. Rep cools to sea: drills, standards, discipline. Team goes
+   near-neutral cream: the back office, where calm is the point.
+
+   The character is carried by LIGHT, not by chrome: the room's flare, the
+   headline's italic word, the active edge in the sidebar, and the tint at the
+   bottom of the big figures all read the same token. Everything else — CTAs,
+   semantics, alerts — keeps its meaning across tabs, which is what stops four
+   temperatures from becoming four brands. The defaults equal today's values,
+   so Pulse is pixel-identical to what shipped yesterday. */
+.tru-dark .tru-shell {
+  --tab-hi: var(--accent-hi);
+  --tab-mid: var(--accent);
+  --tab-flare-a: rgba(255, 240, 205, 0.16);
+  --tab-flare-b: rgba(255, 214, 130, 0.06);
+  --stat-grad: linear-gradient(180deg, #F2F6F1, var(--tab-hi));
+}
+.tru-dark .tru-shell[data-tab="coach"] {
+  --tab-hi: #FFC9AC;
+  --tab-mid: var(--terracotta);
+  --tab-flare-a: rgba(255, 198, 168, 0.15);
+  --tab-flare-b: rgba(255, 139, 98, 0.055);
+}
+.tru-dark .tru-shell[data-tab="rep"] {
+  --tab-hi: var(--sea-hi);
+  --tab-mid: var(--sea);
+  --tab-flare-a: rgba(190, 222, 206, 0.14);
+  --tab-flare-b: rgba(143, 176, 162, 0.055);
+}
+.tru-dark .tru-shell[data-tab="team"],
+.tru-dark .tru-shell[data-tab="admin"] {
+  --tab-hi: #E9F0EA;
+  --tab-mid: #C4D2C6;
+  --tab-flare-a: rgba(226, 240, 230, 0.11);
+  --tab-flare-b: rgba(200, 215, 205, 0.04);
+}
+
+.tru-shell .side-link.active::before { display: none; }
 
 /* ---- 2. The same, for the window tabs ------------------------------------
    This is the one control that changes every figure on the page, so the

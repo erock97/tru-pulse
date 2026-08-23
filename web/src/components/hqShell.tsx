@@ -172,7 +172,7 @@ export function HqShell({
     links.push({ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin });
   }
   return (
-    <div className="tru-shell" ref={shellRef}>
+    <div className="tru-shell" data-tab={activeKey} ref={shellRef}>
       {/* The room. ONE copy of the render, drifting slowly.
           A second mirrored copy was tried and read exactly as what it was —
           the same picture twice, strands everywhere. Clever, and sloppy.
