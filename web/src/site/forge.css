@@ -35,7 +35,7 @@
   /* Dense on purpose. The 360 is unchanged — the same arc simply lives in a
      third less scroll, after the first cut read as lengthy. The feel knob is
      HERE, not in the video: scroll distance per camera-degree. */
-  height: 260dvh;
+  height: 300dvh;
 }
 .truland .arrive-stage {
   position: sticky;
