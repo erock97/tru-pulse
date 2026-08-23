@@ -22,7 +22,12 @@ export default function SiteHeader({ current }: { current: PublicView }) {
 
   return (
     <nav className="nav" id="nav"><div className="wrap">
-      <a className="brand" href="/" aria-label={`${BUSINESS.brandFull} home`}>T<span className="r">RU</span></a>
+      <a className="brand" href="/" aria-label={`${BUSINESS.brandFull} home`}>
+        {/* The Tripod. Three bars, each carrying the other two — the mark the
+            arrival sequence orbits, at rest where the sequence ends. */}
+        <img className="brand-mark" src="/tru-mark.png" alt="" width="26" height="26" decoding="async" />
+        T<span className="r">RU</span>
+      </a>
       <div className="nlinks">
         {link('/services', 'Services')}
         {link('/about', 'About')}

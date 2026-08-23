@@ -235,6 +235,15 @@ export default function Home() {
          at 34dvh its beams were raking across the headline. */
       mark.style.setProperty('--dy', `${vh * 0.31 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
+
+      /* Where the scene lands: the header lockup's centre, as an offset from
+         the viewport centre the scene starts on. Measured off the real brand,
+         so it survives any header change. */
+      const arriveEl = arriveRef.current;
+      if (arriveEl) {
+        arriveEl.style.setProperty('--bx', `${r.left + r.width / 2 - vw / 2}px`);
+        arriveEl.style.setProperty('--by', `${r.top + r.height / 2 - vh / 2}px`);
+      }
     };
 
     measure();
@@ -297,25 +306,29 @@ export default function Home() {
 
          Beat two: the scene hands the frame to the live page and the existing
          travel carries mark and light into the header. */
-      const orbit = Math.max(0, Math.min(1, v / 0.52));
+      const orbit = Math.max(0, Math.min(1, v / 0.62));
       const vid = orbitRef.current;
       if (vid && vid.duration > 0 && vid.readyState >= 2) {
         const t = orbit * Math.max(0.001, vid.duration - 0.05);
         // Seeking is not free; a re-seek under a 48th of a second buys nothing.
         if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
       }
-      // The scene owns the screen through the orbit, then yields over a short
-      // overlap so there is never a frame with nobody on stage.
-      const scene = 1 - Math.max(0, Math.min(1, (v - 0.54) / 0.1));
+      /* BEAT THREE: THE SCENE ITSELF SETTLES. The circle has closed — the
+         orbit ends on the composition it opened on, emblem in front, letters
+         behind — so nothing is handed over or crossfaded. The one object on
+         stage simply zooms out and flies to the header, and the header's own
+         lockup (the same emblem beside the same letters) lights up where it
+         lands. The travelling-mark rig is retired: the scene IS the traveller
+         now. */
+      const settle = Math.max(0, Math.min(1, (v - 0.62) / 0.35));
+      arrive.style.setProperty('--pz', settle.toFixed(4));
+      const scene = settle < 0.72 ? 1 : 1 - Math.min(1, (settle - 0.72) / 0.26);
       arrive.style.setProperty('--ps', scene.toFixed(4));
-      // The words and the travelling mark belong to beat two.
-      const copy = Math.max(0, Math.min(1, (v - 0.55) / 0.09));
+      // The words stand up underneath while the scene is still airborne.
+      const copy = Math.max(0, Math.min(1, (settle - 0.12) / 0.5));
       arrive.style.setProperty('--pc', copy.toFixed(4));
-      // The travelling mark is a beat-two citizen too: invisible while the
-      // camera owns the screen, standing by the time the scene yields.
-      mark?.style.setProperty('--pm', copy.toFixed(4));
 
-      const travel = Math.max(0, Math.min(1, (v - 0.60) / 0.40));
+      const travel = settle;
       /* The light banks down to a FLOOR, not to zero. The brief has always been
          that the mark "settles at the top with that nice glow" — so the glow is
          a thing the mark keeps, not a thing the trip burns off. It runs the

@@ -32,7 +32,7 @@
   position: relative;
   /* Two beats now live in this scroll: ~52% of it walks the camera around the
      Trinity set, the rest carries the mark home to the header. */
-  height: 300dvh;
+  height: 380dvh;
 }
 .truland .arrive-stage {
   position: sticky;
@@ -55,7 +55,17 @@
   z-index: 2;
   pointer-events: none;
   opacity: var(--ps, 1);
-  will-change: opacity;
+  /* The settle: translate the scene's centre onto the header lockup's centre
+     (measured, not guessed) while scaling it down around that same path, so
+     the whole world flies to the top of the page and becomes the logo. The
+     translate is applied before the scale, so the scale shrinks the scene
+     around its already-moving centre and the two compose into one arc. */
+  transform:
+    translate3d(calc(var(--bx, 0px) * var(--pz, 0)), calc(var(--by, 0px) * var(--pz, 0)), 0)
+    scale(calc(1 - 0.88 * var(--pz, 0)));
+  border-radius: calc(var(--pz, 0) * 22px);
+  overflow: hidden;
+  will-change: opacity, transform;
 }
 
 /* The words belong to beat two: the reveal frame is the headline moment, and
@@ -366,12 +376,23 @@
    curve finishes on (0.3 of full). If these two drift apart the swap becomes
    visible as a small dimming, which reads as the animation switching off. */
 .truland .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
   font-variation-settings: 'opsz' 144;
   text-shadow:
     0 0 0.35em rgba(255, 220, 147, 0.30),
     0 0 0.9em rgba(242, 178, 60, 0.22);
+}
+.truland .brand .brand-mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  /* Baked soft-circle alpha; the drop-shadow gives it the same resting warmth
+     the letters carry. */
+  filter: drop-shadow(0 0 6px rgba(242, 178, 60, 0.28));
 }
 .truland.arrive-live .brand { opacity: 0; }
 
@@ -620,7 +641,7 @@
   .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 760px) {
-  .truland .arrive { height: 150dvh; }
+  .truland .arrive { height: 300dvh; }
   .truland .arrive-copy { top: 50dvh; }
   /* The CTAs stack on a phone, so the copy block reaches the bottom of the
      screen and the cue lands on top of the second button. A phone does not
