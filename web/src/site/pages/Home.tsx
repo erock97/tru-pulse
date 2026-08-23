@@ -219,7 +219,7 @@ export default function Home() {
       mark.style.setProperty('--dx', `${vw / 2 - (r.left + (r.width * scale) / 2)}px`);
       /* Higher than the old plate sat, because this one is half again as big:
          at 34dvh its beams were raking across the headline. */
-      mark.style.setProperty('--dy', `${vh * 0.44 - (r.top + r.height / 2)}px`);
+      mark.style.setProperty('--dy', `${vh * 0.5 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
 
 
@@ -304,8 +304,12 @@ export default function Home() {
       arrive.style.setProperty('--tips', Math.max(0, 1 - v / 0.035).toFixed(4));
 
       const settle = Math.max(0, Math.min(1, (v - 0.62) / 0.35));
-      // The lockup crystallises out of the blur as the world lets go of focus…
-      mark?.style.setProperty('--pm', Math.max(0, Math.min(1, (settle - 0.12) / 0.22)).toFixed(4));
+      /* The lockup crystallises THE MOMENT the world lets go of focus — no
+         dead zone. The first cut waited 12% into the settle to start forming
+         it, which left a beat where the scene had begun to melt and nothing
+         sharp had replaced it: the emblem read as disappearing, then
+         reappearing. Something in focus must exist at every scroll position. */
+      mark?.style.setProperty('--pm', Math.max(0, Math.min(1, settle / 0.16)).toFixed(4));
       arrive.style.setProperty('--pz', settle.toFixed(4));
       const scene = settle < 0.72 ? 1 : 1 - Math.min(1, (settle - 0.72) / 0.26);
       arrive.style.setProperty('--ps', scene.toFixed(4));

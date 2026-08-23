@@ -353,6 +353,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  /* The landing swap is a crossfade on ONE clock. Both this and the header
+     brand were computing `transition: all` from unrelated rules, so at the
+     swap the traveller hid on one duration while the brand appeared on
+     another — a blink where neither was fully there. Same property, same
+     222ms, same curve, and because the two boxes are pixel-identical at that
+     moment, their opacities sum to a steady image. */
+  transition: opacity 222ms linear;
 }
 .truland .arrive-mark .brand-mark {
   display: block;
@@ -462,6 +469,7 @@
    curve finishes on (0.3 of full). If these two drift apart the swap becomes
    visible as a small dimming, which reads as the animation switching off. */
 .truland .brand {
+  transition: opacity 222ms linear;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
