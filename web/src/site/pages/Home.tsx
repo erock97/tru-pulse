@@ -396,16 +396,31 @@ export default function Home() {
        words after the first attempt swayed the whole world and tore the tip
        callouts off their vertices. Life belongs to the LIGHT (the overlay
        layered over the scene), never to the camera. */
+    /* LATENCY-PROOF SCRUB. Driven from the owner's own browser, the fault was
+       finally visible: on his machine each seek takes long enough that Chrome
+       queues them, so the film lagged the finger, kept drifting seconds after
+       the scroll stopped, stalled on a frame and then jumped — his "pauses,
+       refreshes, moves on its own". (His GPU also feeds the local models, so
+       decode is slower than any test rig here.) Three rules make the scrub
+       hardware-independent: never issue a seek while one is in flight, seek on
+       film-frame boundaries only, and let the eased value close fast. */
     const syncVideo = (v: number) => {
       const vid = orbitRef.current;
-      if (!vid || !(vid.duration > 0) || vid.readyState < 2) return;
+      if (!vid || !(vid.duration > 0) || vid.readyState < 2 || vid.seeking) return;
       const orbit = Math.max(0, Math.min(1, v / 0.62));
       const t = Math.min(Math.max(orbit * (vid.duration - 0.06), 0.02), vid.duration - 0.06);
-      if (Math.abs(vid.currentTime - t) > 1 / 48) vid.currentTime = t;
+      // Quantise to the film's own 18fps frames: sub-frame seeks buy nothing
+      // and every skipped seek is decode budget returned to the page.
+      const q = Math.round(t * 18) / 18;
+      if (Math.abs(vid.currentTime - q) > 1 / 36) vid.currentTime = q;
     };
 
     const tick = () => {
-      cur += (target - cur) * 0.12;
+      /* The ease closes harder than it used to (0.22/frame), and if the value
+         has fallen far behind — a slow machine mid-flick — it snaps across the
+         bulk of the gap instead of crawling after the scroll has ended. */
+      const gap = target - cur;
+      cur += gap * (Math.abs(gap) > 0.18 ? 0.5 : 0.22);
       if (Math.abs(target - cur) < 0.0006) cur = target;
       apply(cur);
       syncVideo(cur);
