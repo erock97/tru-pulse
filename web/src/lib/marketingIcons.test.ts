@@ -27,10 +27,13 @@ describe('index.html icon and share tags', () => {
   });
 
   it('declares og:image and twitter:image as root-relative so the serving host wins', () => {
-    expect(indexHtml).toMatch(/property="og:image"[^>]+content="\/icon-512\.png"/);
-    expect(indexHtml).toMatch(/name="twitter:image"[^>]+content="\/icon-512\.png"/);
+    // The share card became the Trinity reveal frame when the brand landed
+    // (2026-08-23); the contract is the same — root-relative, host-agnostic —
+    // the file is the approved og-tru.jpg instead of the old app icon.
+    expect(indexHtml).toMatch(/property="og:image"[^>]+content="\/og-tru\.jpg"/);
+    expect(indexHtml).toMatch(/name="twitter:image"[^>]+content="\/og-tru\.jpg"/);
     expect(indexHtml).toMatch(/name="twitter:card"[^>]+content="summary_large_image"/);
-    expect(indexHtml).not.toMatch(/https:\/\/truhq\.co\/icon-512\.png/);
+    expect(indexHtml).not.toMatch(/https:\/\/truhq\.co\/og-tru\.jpg/);
   });
 });
 
