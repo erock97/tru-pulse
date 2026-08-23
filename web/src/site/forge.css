@@ -76,10 +76,11 @@
   will-change: opacity, transform, filter;
 }
 
-/* The tip callouts. Positions are tuned to the opening frame's composition
-   (the only camera position they ever exist at); leader hairlines drop toward
-   each point of the triangle. They enter late and unhurried — the image gets
-   the first second to itself — and leave instantly with the first scroll. */
+/* The tip callouts, with the fanfare they earn. Each point of the Trinity is
+   introduced like a stage light coming up: a spark ignites ON the vertex, a
+   hairline grows out of the spark, and the word arrives out of wide tracking —
+   staged apex first, then the two feet, left to right. Still rest-only: the
+   first pixels of scroll dissolve all of it and the film is wordless again. */
 .truland .arrive-tips {
   position: absolute;
   inset: 0;
@@ -87,39 +88,72 @@
   pointer-events: none;
   opacity: var(--tips, 1);
 }
-.truland .tip {
+.truland .tip { position: absolute; width: 0; height: 0; }
+/* Anchored on the vertices themselves, measured off the opening frame. */
+.truland .tip-pulse { left: 50%;   top: 40%; }
+.truland .tip-coach { left: 36%;   top: 84%; }
+.truland .tip-rep   { left: 64.5%; top: 83.5%; }
+
+.truland .tip-spark {
   position: absolute;
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(237, 242, 236, 0.82);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
-  animation: tipIn 900ms var(--e) backwards;
+  left: -3px; top: -3px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFF3D6 0%, var(--gold) 60%, transparent 75%);
+  box-shadow: 0 0 16px 3px rgba(255, 214, 130, 0.85);
+  animation: tipSpark 700ms var(--e) backwards;
 }
-/* The keyframe animates transform, never `translate` — the apex tip owns a
-   centring translate that an animated `translate` would stomp on. */
-.truland .tip::before {
-  content: '';
+.truland .tip-line {
   position: absolute;
+  left: -0.5px;
   width: 1px;
-  height: 34px;
-  background: linear-gradient(180deg, rgba(242, 178, 60, 0) 0%, rgba(242, 178, 60, 0.75) 100%);
+  animation: tipLine 500ms var(--e) backwards;
 }
-/* Apex — Pulse, the flagship at the top of the triangle. */
-.truland .tip-pulse { left: 50%; top: 33%; translate: -50% 0; animation-delay: 1100ms; }
-.truland .tip-pulse::before { left: 50%; top: calc(100% + 8px); }
-/* The two feet. Their leaders rise from below, pointing up at the corners. */
-.truland .tip-coach { left: 27%; top: 87%; animation-delay: 1350ms; }
-.truland .tip-coach::before { left: 100%; margin-left: 10px; bottom: calc(100% - 26px); rotate: 32deg; }
-.truland .tip-rep { left: 67%; top: 87%; animation-delay: 1600ms; }
-.truland .tip-rep::before { right: 100%; margin-right: 10px; bottom: calc(100% - 26px); rotate: -32deg; }
-@keyframes tipIn {
-  from { opacity: 0; transform: translateY(7px); }
+.truland .tip-word {
+  position: absolute;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #F5EFE2;
+  text-shadow:
+    0 0 16px rgba(242, 178, 60, 0.5),
+    0 1px 10px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  animation: tipWord 800ms var(--e) backwards;
+}
+/* Apex: the line rises, the word sits above it. */
+.truland .tip-pulse .tip-line { bottom: 8px; height: 44px; transform-origin: 50% 100%;
+  background: linear-gradient(0deg, rgba(242,178,60,.8), rgba(242,178,60,0)); }
+.truland .tip-pulse .tip-word { bottom: 60px; left: 50%; translate: -50% 0; }
+/* Feet: the lines drop, the words sit beneath. */
+.truland .tip-coach .tip-line, .truland .tip-rep .tip-line { top: 8px; height: 30px; transform-origin: 50% 0%;
+  background: linear-gradient(180deg, rgba(242,178,60,.8), rgba(242,178,60,0)); }
+.truland .tip-coach .tip-word, .truland .tip-rep .tip-word { top: 46px; left: 50%; translate: -50% 0; }
+
+/* The running order: apex, left foot, right foot — spark, then line, then word. */
+.truland .tip-pulse .tip-spark { animation-delay: 950ms; }
+.truland .tip-pulse .tip-line  { animation-delay: 1120ms; }
+.truland .tip-pulse .tip-word  { animation-delay: 1260ms; }
+.truland .tip-coach .tip-spark { animation-delay: 1330ms; }
+.truland .tip-coach .tip-line  { animation-delay: 1500ms; }
+.truland .tip-coach .tip-word  { animation-delay: 1640ms; }
+.truland .tip-rep .tip-spark   { animation-delay: 1710ms; }
+.truland .tip-rep .tip-line    { animation-delay: 1880ms; }
+.truland .tip-rep .tip-word    { animation-delay: 2020ms; }
+
+@keyframes tipSpark {
+  0%   { opacity: 0; transform: scale(0.2); }
+  55%  { opacity: 1; transform: scale(1.7); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes tipLine { from { transform: scaleY(0); } }
+@keyframes tipWord {
+  from { opacity: 0; letter-spacing: 0.46em; transform: translateY(7px); }
 }
 @media (max-width: 760px) {
-  .truland .tip-coach { left: 16%; }
-  .truland .tip-rep { left: 74%; }
+  .truland .tip-word { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .truland .arrive-tips { display: none; }
@@ -311,37 +345,30 @@
     drop-shadow(0 0 calc(0.10em * var(--pl))) ;
 }
 
-/* THE DARK THE LIGHT NEEDS.
-
-   A polished material only reads as polished against something darker than it.
-   With the room, the halo and the ambient all filling this area, everything
-   behind the letters had drifted to a mid-brown wash — so the gold had nothing
-   to be brighter THAN, and the mark went muddy no matter how good the gradient
-   was. That is the same mistake in a new place: adding light to fix a contrast
-   problem that was caused by too much light.
-
-   This is the fix, and it is physical rather than cosmetic: the letters stand
-   between you and the haze, so the haze behind them is occluded. A soft dark
-   core under the glow gives the metal its ground back. Under the canvas, over
-   the room — the light still adds on top of it. */
-.truland .arrive-mark::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: calc(var(--glow-frame, 2.4) * 100%);
-  aspect-ratio: var(--glow-aspect, 1024 / 400);
-  translate: -50% calc(-50% + var(--glow-dy, 0em));
-  z-index: 0;
-  pointer-events: none;
-  /* Pushed down and right, away from the source. Shadow does not sit centred
-     under an object lit from one side. */
-  background: radial-gradient(
-    ellipse 46% 62% at 54% 56%,
-    rgba(4, 9, 6, 0.84) 0%,
-    rgba(4, 9, 6, 0.56) 45%,
-    rgba(4, 9, 6, 0) 78%);
-  opacity: var(--pl);
+/* The traveller is the lockup itself — icon beside wordmark, identical markup
+   and metrics to the header brand, so the landing is a pixel swap. The old
+   dark-core backdrop died with the giant hero wordmark; the lockup carries its
+   own alpha and needs no ground. */
+.truland .arrive-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.truland .arrive-mark .brand-mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 0 6px rgba(242, 178, 60, 0.28));
+}
+.truland .arrive-mark .brand-word { color: var(--ink); }
+.truland .arrive-mark .brand-word .r { color: var(--gold); }
+/* Airborne it burns a little brighter than it will at rest; --pl banks it down
+   to exactly the header's resting glow by the time it lands. */
+.truland .arrive-mark .brand-word {
+  text-shadow:
+    0 0 calc(0.28em * var(--pl, 0.3)) rgba(255, 220, 147, calc(0.55 * var(--pl, 0.3))),
+    0 0 0.35em rgba(255, 220, 147, 0.3),
+    0 0 0.9em rgba(242, 178, 60, 0.22);
 }
 
 /* The light. A canvas sized in multiples of the wordmark it surrounds, so the
@@ -391,7 +418,9 @@
 
 .truland .arrive-still {
   position: relative;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
   width: max-content;
   /* Clears the fixed header, which the travelling mark never has to think
      about because it is fixed too. */

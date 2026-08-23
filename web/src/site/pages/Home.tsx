@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
-import MarkGlow, { GLOW_FRAME, GLOW_ASPECT } from '../MarkGlow';
 
 /* ============================================================================
    THE ARRIVAL — "first light"
@@ -88,10 +87,6 @@ const WHO = [
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
-/* The wordmark, in one place. It is set here, drawn by the live type, and
-   turned into the light's distance field — one string, three uses, so they
-   cannot fall out of step. */
-const MARK = 'TRU';
 
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
@@ -155,18 +150,6 @@ export default function Home() {
     return () => q.removeEventListener('change', on);
   }, []);
 
-  const wordmark = (
-    <>
-      <MarkGlow text={MARK} fadeRef={glowRef} />
-      {/* Two runs, two metals, one light. They have to be separate ELEMENTS
-          because a background-clipped gradient clips per element — a bare text
-          node cannot carry its own material. The split is the same one the
-          light's distance field uses, so nothing can drift. */}
-      <span className="arrive-type">
-        <b>{MARK[0]}</b><i>{MARK.slice(1)}</i>
-      </span>
-    </>
-  );
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
      and how much bigger its opening state is.
@@ -212,6 +195,10 @@ export default function Home() {
          the handover between them does not change size. */
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      /* The traveller opens as a lockup at centre stage, roughly three times
+         header size — an object the hand can believe left the scene — and the
+         path is still measured against the real brand, so the landing stays
+         pixel-exact whatever the header does. */
       /* Sized off the LIGHT, not off the letters. The glow canvas is GLOW_FRAME
          times the wordmark's width and half that in height, and it is the thing
          that reaches the edge of the screen first — size to the letters alone
@@ -223,8 +210,7 @@ export default function Home() {
          is what was keeping the wordmark small. It is NOT allowed to run off
          the top and bottom, because that is where the headline and the header
          are. Hence the two different multipliers. */
-      const glowW = Math.min(vw * 1.22, vh * 0.72 * GLOW_ASPECT);
-      const scale = Math.max(1.6, Math.min(26, glowW / GLOW_FRAME / r.width));
+      const scale = 3.1;
 
       /* `transform-origin` is the mark's own left edge, so after scaling by S
          its centre sits at `left + width * S / 2`, not `left + width / 2`.
@@ -233,7 +219,7 @@ export default function Home() {
       mark.style.setProperty('--dx', `${vw / 2 - (r.left + (r.width * scale) / 2)}px`);
       /* Higher than the old plate sat, because this one is half again as big:
          at 34dvh its beams were raking across the headline. */
-      mark.style.setProperty('--dy', `${vh * 0.31 - (r.top + r.height / 2)}px`);
+      mark.style.setProperty('--dy', `${vh * 0.44 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
 
 
@@ -318,6 +304,8 @@ export default function Home() {
       arrive.style.setProperty('--tips', Math.max(0, 1 - v / 0.035).toFixed(4));
 
       const settle = Math.max(0, Math.min(1, (v - 0.62) / 0.35));
+      // The lockup crystallises out of the blur as the world lets go of focus…
+      mark?.style.setProperty('--pm', Math.max(0, Math.min(1, (settle - 0.12) / 0.22)).toFixed(4));
       arrive.style.setProperty('--pz', settle.toFixed(4));
       const scene = settle < 0.72 ? 1 : 1 - Math.min(1, (settle - 0.72) / 0.26);
       arrive.style.setProperty('--ps', scene.toFixed(4));
@@ -325,7 +313,8 @@ export default function Home() {
       const copy = Math.max(0, Math.min(1, (settle - 0.12) / 0.5));
       arrive.style.setProperty('--pc', copy.toFixed(4));
 
-      const travel = settle;
+      // …and makes its trip on the back half of the settle.
+      const travel = Math.max(0, Math.min(1, (settle - 0.34) / 0.62));
       /* The light banks down to a FLOOR, not to zero. The brief has always been
          that the mark "settles at the top with that nice glow" — so the glow is
          a thing the mark keeps, not a thing the trip burns off. It runs the
@@ -340,12 +329,6 @@ export default function Home() {
         mark.style.setProperty('--p', v.toFixed(4));
         mark.style.setProperty('--pl', light.toFixed(4));
         glowRef.current = light;
-        // The light's loop parks itself when it has nothing left to draw, so it
-        // has to be woken when scrolling back up relights the mark.
-        if (light > 0.001) {
-          const c = mark.querySelector<HTMLCanvasElement & { __wake?: () => void }>('.arrive-glow');
-          c?.__wake?.();
-        }
         mark.style.setProperty('--pt', travel.toFixed(4));
         /* A class, not an inline opacity. An inline style beats the entry
            animation's own opacity, and writing one on the first frame is what
@@ -446,9 +429,13 @@ export default function Home() {
               after a beat, and the first pixel of scroll dissolves them. The
               pause gets the meaning; the scroll gets the cinema. */}
           <div className="arrive-tips" aria-hidden>
-            <span className="tip tip-pulse">Pulse</span>
-            <span className="tip tip-coach">Coach</span>
-            <span className="tip tip-rep">Rep</span>
+            {(['pulse', 'coach', 'rep'] as const).map((k) => (
+              <span className={`tip tip-${k}`} key={k}>
+                <i className="tip-spark" />
+                <i className="tip-line" />
+                <b className="tip-word">{k}</b>
+              </span>
+            ))}
           </div>
 
           <video
@@ -468,7 +455,12 @@ export default function Home() {
           {/* Reduced motion only. The same wordmark under the same light,
               standing still and in the flow of the hero instead of travelling
               into the header. */}
-          {still && <div className="arrive-still" aria-hidden>{wordmark}</div>}
+          {still && (
+            <div className="arrive-still" aria-hidden>
+              <img className="brand-mark" src="/tru-mark.png" alt="" width="42" height="42" decoding="async" />
+              <b className="brand-word">T<span className="r">RU</span></b>
+            </div>
+          )}
 
           <div className="arrive-copy">
             <h1>
@@ -499,9 +491,17 @@ export default function Home() {
           has to outlive it: it is still moving when the stage has released and
           it finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
+      {/* THE TRAVELLER, REBORN. Retired when the video flew to the header;
+          back now because the owner wanted the OBJECT to make that trip — just
+          never a shrinking frame. This is the lockup itself: the emblem cutout
+          (real alpha, no rectangle to betray it) beside the live wordmark,
+          crystallising sharp at centre while the world behind it melts to
+          backdrop, then riding the measured path onto the header's own lockup
+          and swapping with it at a pixel-exact landing. */}
       {!still && (
         <div className="arrive-mark" ref={markRef} aria-hidden>
-          {wordmark}
+          <img className="brand-mark" src="/tru-mark.png" alt="" width="26" height="26" decoding="async" />
+          <b className="brand-word">T<span className="r">RU</span></b>
         </div>
       )}
 
