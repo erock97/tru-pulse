@@ -97,50 +97,75 @@
   to   { opacity: 1; }
 }
 
-/* The live type, under the light. It is invisible until beat one hands over,
-   and it is the thing that actually makes the trip — a raster landing on a
-   typeset target would never coincide, and coinciding is the entire trick. */
+/* The live type. THE wordmark — not a stand-in that a picture hands over to.
+
+   It is on the screen at full strength from the first frame to the last, which
+   is why there is no seam anywhere in this hero: there is only ever one object,
+   and it is text. Three previous versions travelled a rendered plate of these
+   letters and every one read as a cut-out, because that is what it was.
+
+   The text-shadow is the light's near field. The canvas behind cannot draw it —
+   its backing store is a fraction of the mark's size on screen, which is fine
+   for soft light and hopeless for the hard first millimetre against a stroke.
+   So the core glow is drawn here, where it is resolution-independent, and the
+   canvas takes over from where it fades. */
 .truland .arrive-type {
   display: block;
+  position: relative;
+  z-index: 2;
   color: var(--ink);
-  opacity: var(--pl);
+  /* Tight on purpose. This is the first millimetre off the stroke, which the
+     canvas cannot resolve — not a second glow on top of the canvas's. Anything
+     wider here and the two collars stack into the even rind that makes an
+     effect like this read as a filter applied to a logo. */
+  text-shadow:
+    0 0 calc(0.03em * var(--pl)) rgba(255, 240, 214, calc(0.75 * var(--pl))),
+    0 0 calc(0.09em * var(--pl)) rgba(255, 220, 147, calc(0.4 * var(--pl)));
 }
 .truland .arrive-type i { font-style: normal; color: var(--gold); }
 
-/* The plate. Sized in the page as a percentage of the typeset mark, so the lit
-   letters and the live letters are exactly the same width and the handover
-   between them changes the surface without moving the object.
+/* The light. A canvas sized in multiples of the wordmark it surrounds, so the
+   two are locked together by construction and nothing has to be measured off a
+   rendered file ever again.
 
-   No blend mode and no mask: both files carry a real alpha channel baked from
-   their own luminance, so the dark ground is absent from the file and the page
-   shows through exactly. Two earlier attempts failed here — a radial mask only
-   softens the edge of a rectangle that is still there, and `mix-blend-mode:
-   screen` on this element measurably DARKENED the page, because the element
-   carries a transform, a transform makes a stacking context, and a blend
-   inside one composites against a backdrop that is empty. */
-.truland .arrive-art {
+   It sits BEHIND the type and paints nothing inside the letterforms, so what
+   you see is light leaving the glyphs rather than glyphs punched out of a lit
+   panel. `--glow-dy` lines the canvas's centre up with the ink centre of the
+   type rather than with its line box, which are not the same point for
+   all-caps and are a visible fraction of an em apart at this size. */
+.truland .arrive-still {
+  position: relative;
+  display: block;
+  width: max-content;
+  /* Clears the fixed header, which the travelling mark never has to think
+     about because it is fixed too. */
+  margin: 14vh auto 2vh;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: clamp(3.4rem, 11vw, 7.5rem);
+  line-height: 1.15;
+  white-space: nowrap;
+  --pl: 1;
+}
+
+.truland .arrive-glow {
   position: absolute;
   left: 50%;
   top: 50%;
+  z-index: 1;
+  width: calc(var(--glow-frame, 2.4) * 100%);
   height: auto;
-  translate: -50% -50%;
-  /* THE LIGHT DISPERSES, IT DOES NOT CROSS-FADE.
-
-     Fading a rendered Didone into live Playfair at the same size showed both
-     alphabets at once for the length of the fade, and two sets of the same
-     three letters half a stroke apart is a double exposure, not a handover.
-     Blooming and blurring as it goes means what leaves the screen reads as
-     light dissipating rather than as a second wordmark — and what is left
-     underneath was never in competition with it. */
-  transform: scale(calc(1 + 0.16 * var(--pl)));
-  filter: blur(calc(var(--pl) * 18px));
-  opacity: calc(1 - var(--pl));
+  aspect-ratio: var(--glow-aspect, 1024 / 400);
+  translate: -50% calc(-50% + var(--glow-dy, 0em));
   pointer-events: none;
-  will-change: opacity, transform, filter;
+  /* Its own alpha is the whole story — there is no ground in the file, so there
+     is no rectangle, so there is nothing to hide with a mask or a blend mode.
+     Both of those were tried on the old plate and neither worked: the mark
+     carries a transform, a transform makes a stacking context, and a blend
+     inside one composites against a backdrop that is empty. */
+  opacity: var(--pl);
+  will-change: opacity;
 }
-/* The still is the poster and the fallback. Once the clip is running it is
-   redundant, and two plates at once would double the glow. */
-.truland .arrive-mark.has-clip .arrive-art:not(.arrive-art-clip) { opacity: 0; }
 
 /* The header's real wordmark stays hidden until the travelling one has landed
    on it, then they swap with nothing in between. */
@@ -424,6 +449,8 @@
     overflow: visible;
     padding-bottom: 8vh;
   }
+  /* The travelling mark is not rendered at all here; `.arrive-still` below is,
+     and it sits inside the stage where the hero can lay it out. */
   .truland .arrive-mark { display: none; }
   .truland.arrive-live .brand { opacity: 1; }
   .truland .arrive-veil { opacity: 0.5; }
@@ -437,18 +464,6 @@
     animation: none;
     margin: 0 auto;
     padding-top: 2vh;
-  }
-  /* The plate still opens the page — it is simply a picture rather than a
-     transition, printed above the words at a size that fits. */
-  .truland .arrive-stage::before {
-    content: '';
-    display: block;
-    width: min(88vw, 46rem);
-    aspect-ratio: 3108 / 1333;
-    /* Tight, because the plate is half again the size it used to be and the
-       old spacing pushed the CTAs under the fold of their own hero. */
-    margin: 6vh auto -4vh;
-    background: url('/tru-firstlight.webp') center / contain no-repeat;
   }
 }
 

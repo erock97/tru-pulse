@@ -1,22 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
+import MarkGlow, { GLOW_FRAME, GLOW_ASPECT } from '../MarkGlow';
 
 /* ============================================================================
    THE ARRIVAL — "first light"
    ----------------------------------------------------------------------------
-   Two beats, one object, three quarters of a screen of scroll.
+   One object, one path, three quarters of a screen of scroll.
 
-   BEAT ONE, before you touch anything: the mark is not drawn, it is LIT. A
-   rendered plate of dawn light coming through mist, with the letterforms
-   standing in the gap the light leaves. It breathes. Then the light contracts
-   into the letters and hands over to live type at exactly the same size and
-   place, so the surface changes while the object does not.
+   THE WORDMARK IS ALWAYS LIVE TYPE. Not for purity — because every version of
+   this that used a rendered plate of the letters read as a cut-out pasted onto
+   the page, and no amount of feathering fixed it. Three of them shipped. The
+   last one also turned out to hold no motion at all: the "moving" plate
+   measured 0.03 of 255 mean change between frames, a still image in a video
+   container. So the letters are the site's own Fraunces from the first frame to
+   the last, crisp at 17x because text is not resampled, and there is no
+   handover between two surfaces because there is only ever one.
 
-   BEAT TWO, as you scroll: that live type travels and shrinks along one path
-   until it is sitting exactly where the header's own wordmark sits, at exactly
-   its size, and the two swap. The words rise into the middle behind it and the
-   veil over the page's room lifts, so the site is assembling itself while the
-   mark is still moving rather than appearing once it has finished.
+   THE LIGHT IS COMPUTED FROM THE LETTERS. `MarkGlow` builds a distance field
+   from these exact glyph outlines and renders bloom, shafts and embers off it
+   every frame. The light therefore comes OUT of the letterforms — it is derived
+   from their shape — and it genuinely moves, because it is a noise field being
+   integrated in real time rather than a clip being replayed.
+
+   AS YOU SCROLL, that lit type travels and shrinks along one path until it is
+   sitting exactly where the header's own wordmark sits, at exactly its size,
+   and the two swap. The light banks down as it goes, so the mark settles into
+   the header rather than arriving there still burning. The words rise into the
+   middle behind it and the veil over the page's room lifts, so the site is
+   assembling itself while the mark is still moving rather than appearing once
+   it has finished.
 
    Three things the previous version got wrong, worth keeping written down:
 
@@ -76,64 +88,43 @@ const WHO = [
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
-/* The plate, and the same plate moving.
-
-   Both are generated art with the dark ground removed rather than composited
-   with a blend mode. `mix-blend-mode: screen` was tried and measurably DARKENED
-   the page here — the mark carries a transform, a transform makes a stacking
-   context, and a blend inside one composites against a backdrop that is empty.
-   Baking the plate's own luminance into an alpha channel sidesteps the whole
-   argument: there is no rectangle in either file, so there is no edge to hide.
-
-   The still is the poster and the honest fallback. The clip is an upgrade that
-   is only switched on where it is known to render correctly. */
-const ART_STILL = '/tru-firstlight.webp';
-const ART_CLIP = '/tru-firstlight.webm';
-
-/* The letters occupy 71.4% of the plate's width, dead centre on both axes —
-   measured off the file, not guessed. Sizing the plate at 1/0.714 of the typeset
-   mark is what makes the lit letters and the live letters exactly the same
-   width, which is the only reason the handover between them is invisible.
-
-   THE PLATE WAS RE-RENDERED BIGGER. The first one gave the letters 55% of its
-   width and spent the rest on beams and fog, so a plate that fitted the screen
-   put a wordmark on it that did not feel like one. This one is the same scene
-   at the same lighting, recomposed so the letters carry the frame. Everything
-   downstream is driven off these three numbers, so re-measuring a new plate is
-   the whole of swapping one in. */
-const ART_LETTER_FRACTION = 0.7143;
-const ART_FRAME = `${(100 / ART_LETTER_FRACTION).toFixed(1)}%`;
-/* 3108 × 1333, the frame the plate was rendered and centred at. */
-const ART_ASPECT = 3108 / 1333;
-
-/* Alpha in WebM is a VP9 side-track. Chromium and Firefox composite it; Safari
-   plays the video and ignores the alpha, which would put a black slab over the
-   hero — worse than no clip at all. So the clip is opt-in for engines known to
-   handle it, and everywhere else the still stands, which is the same picture
-   without the drift. */
-function clipIsSafeHere(): boolean {
-  const v = document.createElement('video');
-  if (v.canPlayType('video/webm; codecs="vp9"') !== 'probably') return false;
-  const ua = navigator.userAgent;
-  const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Android|Edg/.test(ua);
-  return !isSafari;
-}
+/* The wordmark, in one place. It is set here, drawn by the live type, and
+   turned into the light's distance field — one string, three uses, so they
+   cannot fall out of step. */
+const MARK = 'TRU';
 
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
   const markRef = useRef<HTMLDivElement | null>(null);
-  const [hasClip, setHasClip] = useState(false);
-
+  /* How lit the mark is, written by the scroll rig and read by the light on its
+     own frame. A ref rather than state on purpose: this changes sixty times a
+     second, and re-rendering the page that often to dim a glow is how a smooth
+     idea ships as a stutter. */
+  const glowRef = useRef(1);
+  /* Reduced motion changes WHERE the mark lives, not just how it behaves, so it
+     has to be a render decision rather than a stylesheet one. The travelling
+     mark is a sibling AFTER the hero section — it has to be, because it outlives
+     the pinned stage and finishes its trip in the header. Restyling that same
+     element to sit still therefore drops it into normal flow below the whole
+     hero, under the fold, after the buttons. Rendering a static one inside the
+     stage instead puts it where a reader expects it, and only one of the two
+     ever exists, so there is still exactly one WebGL context. */
+  const [still, setStill] = useState(
+    () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
   useEffect(() => {
-    if (!clipIsSafeHere()) return;
-    // Probed rather than assumed, so a clip that fails to load degrades to the
-    // still instead of leaving a hole where the mark should be.
-    const v = document.createElement('video');
-    v.preload = 'metadata';
-    v.onloadeddata = () => setHasClip(true);
-    v.oncanplay = () => setHasClip(true);
-    v.src = ART_CLIP;
+    const q = matchMedia('(prefers-reduced-motion: reduce)');
+    const on = () => setStill(q.matches);
+    q.addEventListener('change', on);
+    return () => q.removeEventListener('change', on);
   }, []);
+
+  const wordmark = (
+    <>
+      <MarkGlow text={MARK} fadeRef={glowRef} />
+      <span className="arrive-type">{MARK[0]}<i>{MARK.slice(1)}</i></span>
+    </>
+  );
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
      and how much bigger its opening state is.
@@ -179,8 +170,19 @@ export default function Home() {
          the handover between them does not change size. */
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const artW = Math.min(vw * 0.92, vh * 0.5 * ART_ASPECT);
-      const scale = Math.max(1.6, Math.min(26, (artW * ART_LETTER_FRACTION) / r.width));
+      /* Sized off the LIGHT, not off the letters. The glow canvas is GLOW_FRAME
+         times the wordmark's width and half that in height, and it is the thing
+         that reaches the edge of the screen first — size to the letters alone
+         and the shafts get guillotined by the viewport, which is the one way
+         this effect can still read as a rectangle. Both axes are clamped,
+         because a wide short window has width to spare and no height. */
+      /* The light is allowed to run off the sides — its outer edge is the
+         faintest part of it, and holding the whole canvas inside the viewport
+         is what was keeping the wordmark small. It is NOT allowed to run off
+         the top and bottom, because that is where the headline and the header
+         are. Hence the two different multipliers. */
+      const glowW = Math.min(vw * 1.22, vh * 0.72 * GLOW_ASPECT);
+      const scale = Math.max(1.6, Math.min(26, glowW / GLOW_FRAME / r.width));
 
       /* `transform-origin` is the mark's own left edge, so after scaling by S
          its centre sits at `left + width * S / 2`, not `left + width / 2`.
@@ -236,14 +238,27 @@ export default function Home() {
          which is a downgrade you cannot un-see. Held until the mark is roughly
          half way home, the type is small enough that its weight reads as it was
          drawn to, and the light travels with the mark instead of leaving it. */
-      const light = Math.max(0, Math.min(1, (v - 0.56) / 0.24));
+      /* The light holds while the mark is big and banks down over the second
+         half of the trip, so it SETTLES into the header instead of arriving
+         there still burning. It is not a handover any more — there is nothing
+         to hand over to, the type has been the type the whole way — so this
+         curve is free to be about the feel of landing rather than about hiding
+         a seam. */
       const travel = Math.max(0, Math.min(1, (v - 0.14) / 0.86));
+      const light = 1 - Math.max(0, Math.min(1, (travel - 0.35) / 0.5));
 
       arrive.style.setProperty('--p', v.toFixed(4));
       arrive.style.setProperty('--pt', travel.toFixed(4));
       if (mark) {
         mark.style.setProperty('--p', v.toFixed(4));
         mark.style.setProperty('--pl', light.toFixed(4));
+        glowRef.current = light;
+        // The light's loop parks itself when it has nothing left to draw, so it
+        // has to be woken when scrolling back up relights the mark.
+        if (light > 0.001) {
+          const c = mark.querySelector<HTMLCanvasElement & { __wake?: () => void }>('.arrive-glow');
+          c?.__wake?.();
+        }
         mark.style.setProperty('--pt', travel.toFixed(4));
         /* A class, not an inline opacity. An inline style beats the entry
            animation's own opacity, and writing one on the first frame is what
@@ -309,6 +324,11 @@ export default function Home() {
               already standing on. Nothing crossfades to somewhere else. */}
           <div className="arrive-veil" aria-hidden />
 
+          {/* Reduced motion only. The same wordmark under the same light,
+              standing still and in the flow of the hero instead of travelling
+              into the header. */}
+          {still && <div className="arrive-still" aria-hidden>{wordmark}</div>}
+
           <div className="arrive-copy">
             <h1>
               Somebody has to run the sales floor.{' '}
@@ -338,30 +358,11 @@ export default function Home() {
           has to outlive it: it is still moving when the stage has released and
           it finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
-      <div className={`arrive-mark${hasClip ? ' has-clip' : ''}`} ref={markRef} aria-hidden>
-        <span className="arrive-type">T<i>RU</i></span>
-        <img
-          className="arrive-art"
-          src={ART_STILL}
-          alt=""
-          width="1920"
-          height="815"
-          decoding="async"
-          style={{ width: ART_FRAME }}
-        />
-        {hasClip && (
-          <video
-            className="arrive-art arrive-art-clip"
-            src={ART_CLIP}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            style={{ width: ART_FRAME }}
-          />
-        )}
-      </div>
+      {!still && (
+        <div className="arrive-mark" ref={markRef} aria-hidden>
+          {wordmark}
+        </div>
+      )}
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">
         <h2 className="h2 reveal">
