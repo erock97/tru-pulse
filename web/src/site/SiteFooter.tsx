@@ -32,6 +32,15 @@ export default function SiteFooter() {
           <a href={`mailto:${BUSINESS.contactEmail}`}>{BUSINESS.contactEmail}</a>
         </address>
 
+        {/* The legal three. A payment processor expects these to resolve and the
+            site has been serving them from a branch that never merged, so they
+            are linked from here rather than living only in a sitemap. */}
+        <nav className="sitefoot-legal" aria-label="Legal">
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
+          <a href="/refund-policy">Refund &amp; Cancellation</a>
+        </nav>
+
         <p className="sitefoot-copy">© {year} {BUSINESS.legalEntity}. All rights reserved.</p>
       </div>
       <script

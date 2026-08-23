@@ -7,9 +7,17 @@ import Home from './pages/Home';
 import Services from './pages/Services';
 import About from './pages/About';
 import Apply from './pages/Apply';
+import Work from './pages/Work';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import RefundPolicy from './pages/RefundPolicy';
 import NotFound from './pages/NotFound';
 import '../pages/Landing.css';
 import './site.css';
+// Last, so its token overrides win on source order. See the note at the top of
+// the file: this is the whole marketing palette moving onto the app's.
+import './forest.css';
+import './forge.css';
 
 export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
   '/': {
@@ -31,6 +39,24 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
     title: 'Apply to work with us — TRU',
     description:
       'Five short questions about your team. We review every application personally and reply within two business days.',
+  },
+  '/work': {
+    title: 'Work — TRU',
+    description:
+      'What changes when the operating system actually runs. Three engagements, and what we built in each.',
+  },
+  '/privacy': {
+    title: 'Privacy Policy — TRU',
+    description: 'What we collect, how we use it, and the choices you have.',
+  },
+  '/terms': {
+    title: 'Terms of Service — TRU',
+    description: 'The terms governing your use of truhq.co.',
+  },
+  '/refund-policy': {
+    title: 'Refund & Cancellation Policy — TRU',
+    description:
+      'The 90-day initial term, the 48-hour refund window, how to cancel, and how per-deal payouts work.',
   },
 };
 
@@ -113,6 +139,10 @@ export default function PublicSite({ route }: { route: PublicView }) {
         {route === '/services' && <Services />}
         {route === '/about' && <About />}
         {route === '/apply' && <Apply />}
+        {route === '/work' && <Work />}
+        {route === '/privacy' && <Privacy />}
+        {route === '/terms' && <Terms />}
+        {route === '/refund-policy' && <RefundPolicy />}
         {route === 'not-found' && <NotFound />}
       </main>
       <SiteFooter />

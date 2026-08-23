@@ -1,12 +1,20 @@
-// The unified TRU mark: the animated "tru" ball (from the Coaching app) + the TRU
-// wordmark (gold RU, from HQ). One lockup used across the suite. Colors inherit, so
-// it reads on the dark sidebar and the light top bar alike.
+// The unified TRU lockup: the Trinity emblem + the TRU wordmark (gold RU).
+// The emblem replaced the old animated "tru" ball on 2026-08-23, when the brand
+// got its first real mark — the Tripod: three machined bars, each carrying the
+// other two, one for each of Pulse, Coach and Rep. Same asset the landing
+// page's arrival sequence orbits, so inside and outside finally wear one mark.
 export function TruLogo({ size = 30, wordSize = 20, sub }: { size?: number; wordSize?: number; sub?: string }) {
   return (
     <span className="tru-mark">
-      <span className="tru-ball" style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
-        <span>tru</span>
-      </span>
+      <img
+        className="tru-emblem"
+        src="/tru-mark.png"
+        alt=""
+        width={size}
+        height={size}
+        decoding="async"
+        style={{ width: size, height: size }}
+      />
       <span className="tru-word" style={{ fontSize: wordSize }}>
         T<span className="r">RU</span>{sub ? <span className="sub">{sub}</span> : null}
       </span>

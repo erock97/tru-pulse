@@ -10,12 +10,20 @@
 # Unknown paths that are not a real file get the SPA shell as 404 so the
 # client can render NotFound instead of looking like a successful home load.
 
-/services     /services/    308
-/about        /about/       308
-/apply        /apply/       308
+/services       /services/       308
+/work           /work/           308
+/about          /about/          308
+/apply          /apply/          308
+/privacy        /privacy/        308
+/terms          /terms/          308
+/refund-policy  /refund-policy/  308
 
-/services/    /index.html   200
-/about/       /index.html   200
-/apply/       /index.html   200
+/services/       /index.html   200
+/work/           /index.html   200
+/about/          /index.html   200
+/apply/          /index.html   200
+/privacy/        /index.html   200
+/terms/          /index.html   200
+/refund-policy/  /index.html   200
 
 /*            /index.html   404

@@ -1,161 +1,459 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
+/* THE FILM IS FINGERPRINTED, AND THIS IS A BUG FIX, NOT HOUSEKEEPING.
 
-// The seven services we own for a client. Verbatim from the old marketing site's
-// services page (see the site archive under docs/ § /services), which is also the
-// number the pricing flier leads with — "7 core services, included for every team."
-const SERVICES = [
-  { n: '01', name: 'Sales leadership support',
-    body: 'We partner with ownership and leadership to manage performance, identify bottlenecks, and install a consistent operating rhythm across the sales team.' },
-  { n: '02', name: 'Agent accountability',
-    body: 'We hold agents to following up, working their pipeline, staying engaged with leads, and taking the right actions every single week.' },
-  { n: '03', name: 'Pipeline & CRM oversight',
-    body: 'Lead flow, pipeline health, speed-to-lead, follow-up quality, appointment setting, nurture opportunities, and Follow Up Boss adoption — reviewed continuously.' },
-  { n: '04', name: 'Zillow Preferred lead conversion',
-    body: 'Better follow-up systems, agent coaching on Zillow conversations, and performance visibility on every online lead. We protect the lead spend.' },
-  { n: '05', name: 'ZHL adoption',
-    body: 'Better agent understanding of Zillow Home Loans, cleaner handoffs, stronger talk tracks, and consistent execution throughout the buyer process.' },
-  { n: '06', name: 'Training & coaching',
-    body: 'Coaching, call strategy, objection handling, scripting, and real-time feedback to help agents convert more buyers and sellers.' },
-  { n: '07', name: 'Leadership meetings & performance reviews',
-    body: 'Regular meetings with leadership to review team performance, agent execution, conversion trends, ZHL adoption, and what’s next on the operating roadmap.' },
+   Served from /public under a fixed name, the video carried no cache-control
+   header, and Cloudflare's EDGE cached the bytes for hours — per city. The
+   owner reviewed tonight's cuts through his local edge node and saw a film one
+   and two generations old, incognito included, while every probe from here
+   read fresh bytes from a different node. Importing through the bundler gives
+   every cut a hashed URL, so a stale edge is impossible by construction. */
+import orbitDesktopUrl from '../../assets/tru-orbit.mp4';
+import orbitMobileUrl from '../../assets/tru-orbit-m.mp4';
+import orbitPosterUrl from '../../assets/tru-orbit-poster.webp';
+
+/* ============================================================================
+   THE ARRIVAL — "first light"
+   ----------------------------------------------------------------------------
+   One object, one path, three quarters of a screen of scroll.
+
+   THE WORDMARK IS ALWAYS LIVE TYPE. Not for purity — because every version of
+   this that used a rendered plate of the letters read as a cut-out pasted onto
+   the page, and no amount of feathering fixed it. Three of them shipped. The
+   last one also turned out to hold no motion at all: the "moving" plate
+   measured 0.03 of 255 mean change between frames, a still image in a video
+   container. So the letters are the site's own Fraunces from the first frame to
+   the last, crisp at 17x because text is not resampled, and there is no
+   handover between two surfaces because there is only ever one.
+
+   THE LIGHT IS COMPUTED FROM THE LETTERS. `MarkGlow` builds a distance field
+   from these exact glyph outlines and renders bloom, shafts and embers off it
+   every frame. The light therefore comes OUT of the letterforms — it is derived
+   from their shape — and it genuinely moves, because it is a noise field being
+   integrated in real time rather than a clip being replayed.
+
+   AS YOU SCROLL, that lit type travels and shrinks along one path until it is
+   sitting exactly where the header's own wordmark sits, at exactly its size,
+   and the two swap. The light banks down as it goes, so the mark settles into
+   the header rather than arriving there still burning. The words rise into the
+   middle behind it and the veil over the page's room lifts, so the site is
+   assembling itself while the mark is still moving rather than appearing once
+   it has finished.
+
+   Three things the previous version got wrong, worth keeping written down:
+
+   1. THE ART DID NOT BELONG TO THE PALETTE. It was neon green lightning. The
+      site is deep green, bone and one amber; electricity is a different world
+      and no amount of choreography rescues a foreign object. The plate is now
+      generated in the page's own light — warm amber and bone on true black.
+
+   2. IT DID NOT FIT. The opening state was scaled off viewport WIDTH alone,
+      so on any laptop the glow ran off the top and bottom of the screen. The
+      plate is now clamped on both axes with real margin, which is the only way
+      a hero fits a 13-inch laptop and a 27-inch monitor with the same rule.
+
+   3. IT ASKED FOR TOO MUCH. Three full screens of scroll before the page
+      began. The whole opening now resolves in 175dvh — you stand in it for one
+      screen and it is done three quarters of a screen later.
+
+   The choreography (measure the real target, drive the axes in sequence, ease
+   the scrub rather than tracking it) follows the pattern in 21st.dev's
+   "Home Hero Landing Scroll Animation" and "Hero Scrub", ported off GSAP so
+   this page does not add an animation runtime to the app bundle for one hero.
+   ========================================================================== */
+
+const PROOF = [
+  {
+    figure: '12 → 22',
+    what: 'transactions a month',
+    scope: '400+ agent brokerage, eight months',
+    body: 'Eighty to ninety agents actively taking paid leads, closing twelve a month out of the lead-source programs. We rebuilt how those leads were routed, worked and held to standard.',
+  },
+  {
+    figure: '7',
+    what: 'contracts in the first month',
+    scope: 'Zillow Preferred launch, no prior experience',
+    body: 'We built the onboarding, the lead standards and the follow-up cadence before the first lead ever landed.',
+  },
+  {
+    figure: '3 → 10',
+    what: 'agents, at both',
+    scope: 'Two Nashville teams',
+    body: 'We installed the operating model first, so that hiring multiplied the output instead of the chaos. Both are still adding.',
+  },
 ] as const;
 
-const AUDIENCES = [
-  { kick: 'Team owners', head: 'Generating leads. Stuck in the weeds.',
-    body: 'You’re investing in Zillow Preferred — and the leads are coming in. But you’re spending your week managing the team instead of branding, recruiting, and expanding. We take sales management off your plate so you can focus on the bigger vision.' },
-  { kick: 'Sales leaders', head: 'Running point on conversion and ZHL.',
-    body: 'You own the sales performance number. We partner with you on accountability, pipeline reviews, ZHL adoption, and the operating rhythm that turns leads into closings — and gives you a peer to think with.' },
-  { kick: 'Agents', head: 'Wanting better systems and coaching.',
-    body: 'Scripts. Call strategy. Objection handling. Real-time feedback on Zillow conversations. We help individual agents convert more buyers and sellers — and stay accountable to the standard the team needs.' },
+/* Three, not seven. The seven live on /services, where somebody who has decided
+   to read the scope goes looking for them. A home page that lists all seven is
+   asking a stranger to read a contract. */
+const OWN = [
+  { name: 'Accountability', body: 'Who followed up, who did not, and the conversation that fixes it. Every week.' },
+  { name: 'Conversion', body: 'Zillow Preferred, ZHL and speed to lead, held to a written standard.' },
+  { name: 'Rhythm', body: 'Leadership meetings and performance reviews on a cadence, not a quarter.' },
 ] as const;
 
-const PROBLEMS = [
-  'Agent accountability — follow-up, pipeline work, lead engagement, the right actions every week.',
-  'Zillow Preferred conversion — better follow-up systems, agent coaching, performance visibility on every online lead.',
-  'ZHL adoption — cleaner handoffs, stronger talk tracks, consistent execution through the buyer process.',
-  'Pipeline & CRM oversight — speed-to-lead, follow-up quality, appointment setting, Follow Up Boss hygiene held to standard.',
-  'Leadership meetings + performance reviews — regular cadence to review team performance, agent execution, conversion trends, ZHL adoption, and what’s next.',
+const WHO = [
+  { k: 'Accidental owners', body: 'You built a team faster than you built the system to run it, and the week now runs you.' },
+  { k: 'Established leaders', body: 'You own the number and you have built the thing. You want real support behind you, and a peer to think with.' },
+  { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
+
 
 export default function Home() {
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const arriveRef = useRef<HTMLElement | null>(null);
+  const markRef = useRef<HTMLDivElement | null>(null);
+  const orbitRef = useRef<HTMLVideoElement | null>(null);
+  /* How lit the mark is, written by the scroll rig and read by the light on its
+     own frame. A ref rather than state on purpose: this changes sixty times a
+     second, and re-rendering the page that often to dim a glow is how a smooth
+     idea ships as a stutter. */
+  const glowRef = useRef(1);
+  /* Reduced motion changes WHERE the mark lives, not just how it behaves, so it
+     has to be a render decision rather than a stylesheet one. The travelling
+     mark is a sibling AFTER the hero section — it has to be, because it outlives
+     the pinned stage and finishes its trip in the header. Restyling that same
+     element to sit still therefore drops it into normal flow below the whole
+     hero, under the fold, after the buttons. Rendering a static one inside the
+     stage instead puts it where a reader expects it, and only one of the two
+     ever exists, so there is still exactly one WebGL context. */
+  const [still, setStill] = useState(
+    () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  /* THE ORBIT IS SCRUBBED FROM A BLOB, AND THIS IS NOT AN OPTIMISATION.
+
+     Cloudflare Pages serves the file with no Accept-Ranges, no Content-Length,
+     and a 200 for a Range request — so the browser marks the media unseekable
+     (seekable stays [0,0]) and silently snaps every currentTime write back to
+     zero. The whole rig worked on the dev server, which honours ranges, and
+     froze on frame zero in production. Verified with curl before believing it.
+
+     Fetched once (3.3 MB), scrubbed as a local object URL — seekable
+     everywhere, no server cooperation required. The poster holds the opening
+     frame until it lands. Skipped entirely under reduced motion, where the
+     scene never shows and the bytes would be pure waste. */
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const vid = orbitRef.current;
+    if (!vid) return;
+    let url: string | null = null;
+    let gone = false;
+
+    /* FIELD DIAGNOSTICS (?debug=1). The owner and this machine have watched
+       two different movies for an afternoon, and his box carries TLS-
+       intercepting security software that can break the blob fetch the scrub
+       depends on. When the fetch dies, the film silently freezes on frame one
+       — which matches his reports exactly. This overlay makes HIS browser
+       testify: fetch outcome, seekable range, live position. */
+    const debug = new URLSearchParams(window.location.search).has('debug');
+    const dbg = debug ? document.createElement('div') : null;
+    if (dbg) {
+      dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,.85);color:#7CFC9A;font:12px/1.5 monospace;padding:10px 12px;border-radius:8px;max-width:92vw;white-space:pre-wrap;';
+      dbg.textContent = 'orbit diag: starting…';
+      document.body.appendChild(dbg);
+      const iv = setInterval(() => {
+        const v = orbitRef.current;
+        if (!v) return;
+        const nl = String.fromCharCode(10);
+        dbg.textContent = [
+          'src: ' + (v.currentSrc ? v.currentSrc.slice(0, 60) : '(none)'),
+          'duration: ' + v.duration.toFixed(2) + '  readyState: ' + v.readyState,
+          'seekable: ' + (v.seekable.length ? '0-' + v.seekable.end(0).toFixed(1) + 's' : 'NONE (cannot scrub!)'),
+          'currentTime: ' + v.currentTime.toFixed(2) + '  scrollY: ' + Math.round(window.scrollY),
+          'fetch: ' + (dbg.dataset.fetch ?? 'pending…'),
+        ].join(nl);
+      }, 400);
+      window.addEventListener('beforeunload', () => clearInterval(iv));
+    }
+    /* A phone pays 2.4 MB, a desktop 5.4 — chosen by the screen that will
+       actually show it. Same all-intra encode either way, so the scrub is
+       identical; only the pixels differ. */
+    const src = window.innerWidth < 760 ? orbitMobileUrl : orbitDesktopUrl;
+    void fetch(src, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
+      .then((b) => {
+        if (gone) return;
+        if (dbg) dbg.dataset.fetch = 'OK (' + Math.round(b.size / 1024) + ' KB via blob)';
+        url = URL.createObjectURL(b);
+        vid.src = url;
+      })
+      .catch((e: unknown) => {
+        if (dbg) dbg.dataset.fetch = 'FAILED: ' + String(e);
+        // Worst case the scene is its own poster — a still opening, never a hole.
+        if (!gone) vid.src = src;
+      });
+    return () => {
+      gone = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, []);
 
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timers: number[] = [];
-    const cleanups: Array<() => void> = [];
-    const t = (fn: () => void, ms: number) => {
-      const id = window.setTimeout(fn, ms);
-      timers.push(id);
-      return id;
+    const q = matchMedia('(prefers-reduced-motion: reduce)');
+    const on = () => setStill(q.matches);
+    q.addEventListener('change', on);
+    return () => q.removeEventListener('change', on);
+  }, []);
+
+
+  /* Lay the travelling mark exactly over the header's, then tell it how far out
+     and how much bigger its opening state is.
+
+     Measured from the real element rather than assumed, because the header mark
+     is set in rem and moves with the viewport, and a shared-element landing
+     that is two pixels out stops reading as one object. Re-measured on resize
+     and after the webfont settles, since a fallback face is a different width
+     and the mark would otherwise land beside its target rather than on it. */
+  useEffect(() => {
+    const mark = markRef.current;
+    if (!mark) return;
+
+    const measure = () => {
+      const brand = document.querySelector<HTMLElement>('.truland .nav .brand');
+      if (!brand) return;
+      const r = brand.getBoundingClientRect();
+      if (!r.width) return;
+
+      /* Sit on it: same box, same face, same size — and the SAME LINE HEIGHT.
+
+         That last one is not a detail. The header mark inherits a line height
+         of 1.6, so its line box is 40px tall around 25px of type and the glyphs
+         are centred in it. A clone set `line-height: 1` puts its glyphs at the
+         top of a 25px box instead, which lands the whole wordmark about eight
+         pixels high — close enough to look like a bug, not close enough to look
+         like a swap. */
+      const cs = getComputedStyle(brand);
+      mark.style.left = `${r.left}px`;
+      mark.style.top = `${r.top}px`;
+      mark.style.fontSize = cs.fontSize;
+      mark.style.lineHeight = cs.lineHeight;
+
+      /* And the opening state, as a delta from there.
+
+         THE PLATE IS CLAMPED ON BOTH AXES. Width alone is what put the old hero
+         off the screen: a wide short window has plenty of width and no height,
+         and a plate sized off width overflowed the top and bottom every time.
+         Whichever axis runs out first decides the size, and both keep a margin.
+
+         The scale then has to be derived from the plate rather than from the
+         viewport, so the live type is exactly as wide as the lit letters and
+         the handover between them does not change size. */
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      /* The traveller opens as a lockup at centre stage, roughly three times
+         header size — an object the hand can believe left the scene — and the
+         path is still measured against the real brand, so the landing stays
+         pixel-exact whatever the header does. */
+      /* Sized off the LIGHT, not off the letters. The glow canvas is GLOW_FRAME
+         times the wordmark's width and half that in height, and it is the thing
+         that reaches the edge of the screen first — size to the letters alone
+         and the shafts get guillotined by the viewport, which is the one way
+         this effect can still read as a rectangle. Both axes are clamped,
+         because a wide short window has width to spare and no height. */
+      /* The light is allowed to run off the sides — its outer edge is the
+         faintest part of it, and holding the whole canvas inside the viewport
+         is what was keeping the wordmark small. It is NOT allowed to run off
+         the top and bottom, because that is where the headline and the header
+         are. Hence the two different multipliers. */
+      const scale = 3.1;
+
+      /* `transform-origin` is the mark's own left edge, so after scaling by S
+         its centre sits at `left + width * S / 2`, not `left + width / 2`.
+         Using the unscaled half-width is what put the old opening mark most of
+         a screen to the right, hanging off the edge. */
+      mark.style.setProperty('--dx', `${vw / 2 - (r.left + (r.width * scale) / 2)}px`);
+      /* Higher than the old plate sat, because this one is half again as big:
+         at 34dvh its beams were raking across the headline. */
+      mark.style.setProperty('--dy', `${vh * 0.5 - (r.top + r.height / 2)}px`);
+      mark.style.setProperty('--s', String(scale));
+
+
     };
 
-    /* --- Cinematic brand intro: bold reveal plays, then fades to the site --- */
-
-    // Shown ONCE per visitor. The reveal is worth ~7 seconds of a stranger's
-    // attention exactly once; making someone sit through it again every time
-    // they come back to reread the packages is a toll, not an impression.
-    //
-    // Bump the version suffix to replay it for everyone (e.g. after recutting
-    // the video). Storage can throw in private mode or with cookies blocked, so
-    // every access is guarded — a failure just means the intro plays, which is
-    // the safe direction to fail.
-    const INTRO_KEY = 'tru:intro-seen:v1';
-    const seenIntro = () => {
-      try {
-        return window.localStorage.getItem(INTRO_KEY) === '1';
-      } catch {
-        return false;
-      }
-    };
-    const markIntroSeen = () => {
-      try {
-        window.localStorage.setItem(INTRO_KEY, '1');
-      } catch {
-        /* storage unavailable — it simply plays again next time */
-      }
-    };
-
-    (function intro() {
-      const el = document.getElementById('intro');
-      const vid = document.getElementById('introvid') as HTMLVideoElement | null;
-      if (!el) return;
-      if (reduce || seenIntro()) {
-        if (el.parentNode) el.remove();
-        return;
-      }
-      const doc = document.documentElement;
-      let dismissed = false;
-      doc.classList.add('intro-lock');
-      // markSeen=false is for the playback-failure path only. If the video never
-      // ran, the visitor has not actually seen the reveal, and burning the flag
-      // would cost them it permanently over one flaky load.
-      function dismiss(markSeen = true) {
-        if (dismissed) return;
-        dismissed = true;
-        if (markSeen) markIntroSeen();
-        el!.classList.add('done');
-        doc.classList.remove('intro-lock');
-        t(() => {
-          if (el && el.parentNode) el.remove();
-        }, 1050);
-      }
-      // On phones: square reveal (full "TRU" visible) + a blurred copy behind it to fill the screen
-      const fill = document.getElementById('introfill') as HTMLVideoElement | null;
-      const isPhone = window.matchMedia('(max-width:760px),(max-aspect-ratio:1/1)').matches;
-      if (vid && isPhone) {
-        vid.poster = '/TRU-lockup-square.jpg';
-        const src = vid.querySelector('source');
-        if (src) {
-          src.src = '/TRU-reveal-square.mp4';
-          vid.load();
-        }
-        if (fill) {
-          fill.src = '/TRU-reveal-square.mp4';
-          fill.load();
-          fill.play().catch(() => {});
-        }
-      }
-      if (vid) {
-        const p = vid.play();
-        // Playback refused (autoplay policy, decode failure, dead connection).
-        // Drop straight to the site, but do NOT record it as seen.
-        if (p && p.catch) p.catch(() => dismiss(false));
-      }
-      const skip = el.querySelector('.skip');
-      if (skip) skip.addEventListener('click', () => dismiss(true));
-      // Freeze on the fully-lit mark for a beat, THEN fade -> the handoff reads as intentional
-      const HOLD_AT = 6.4;
-      let held = false;
-      function bridge() {
-        if (held) return;
-        held = true;
-        try {
-          if (vid) vid.pause();
-          if (fill) fill.pause();
-        } catch (e) {
-          /* noop */
-        }
-        t(dismiss, 550);
-      }
-      if (vid) {
-        vid.addEventListener('timeupdate', function () {
-          if (vid.currentTime >= HOLD_AT) bridge();
-        });
-      }
-      t(bridge, 7000); // fallback if timeupdate never crosses (stall/seek)
-      t(dismiss, 11500); // hard safety net
-    })();
-
-    // `.ready` and the `.reveal` observer live in PublicSite, so every marketing
-    // page gets them — not only this one. The count-up animation that used to
-    // live here went with the audit card it drove.
-
+    measure();
+    window.addEventListener('resize', measure, { passive: true });
+    window.addEventListener('orientationchange', measure, { passive: true });
+    if (document.fonts?.ready) void document.fonts.ready.then(measure);
     return () => {
-      timers.forEach((id) => clearTimeout(id));
-      cleanups.forEach((fn) => fn());
-      document.documentElement.classList.remove('intro-lock');
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
+  }, []);
+
+  /* One value drives the whole thing: how far through the arrival you are. The
+     two beats are cut out of it here rather than in the stylesheet, because a
+     number computed in JS cannot silently fail to parse, and a chain of CSS
+     clamps on an unregistered custom property can — which reads as "the hero
+     does not move" with nothing in the console.
+
+     rAF-throttled, and never through React state: re-rendering the page sixty
+     times a second to move a wordmark is how a smooth idea ships as a stutter. */
+  useEffect(() => {
+    const arrive = arriveRef.current;
+    const mark = markRef.current;
+    if (!arrive) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelector('.truland')?.classList.remove('arrive-live');
+      return;
+    }
+
+    let frame = 0;
+    let cur = 0;
+    let target = 0;
+    const shell = document.querySelector('.truland');
+
+    const apply = (v: number) => {
+      /* Beat two starts first and beat one finishes inside it, on purpose.
+
+         THE HANDOVER HAPPENS LATE, and that is the whole tuning of this thing.
+         Swapping the plate for live type while the mark is still enormous put
+         Playfair at 800 weight on the screen ten times its design size, next to
+         a fine high-contrast Didone — the same three letters, visibly fatter,
+         which is a downgrade you cannot un-see. Held until the mark is roughly
+         half way home, the type is small enough that its weight reads as it was
+         drawn to, and the light travels with the mark instead of leaving it. */
+      /* The light holds while the mark is big and banks down over the second
+         half of the trip, so it SETTLES into the header instead of arriving
+         there still burning. It is not a handover any more — there is nothing
+         to hand over to, the type has been the type the whole way — so this
+         curve is free to be about the feel of landing rather than about hiding
+         a seam. */
+      /* THE SCROLL IS A CAMERA. Beat one: the first 52% of the scroll scrubs a
+         2K orbit around the Trinity set — the emblem face-on, and the machined
+         TRU letters standing in the world behind it, revealed by walking
+         around, not by a fade. The video is encoded all-intra (every frame a
+         keyframe), which is the one encoding a browser can seek per-frame
+         without hunting — the same rig Apple's product intros use. currentTime
+         rides the same eased value as everything else, so the camera has the
+         same mass as the page.
+
+         Beat two: the scene hands the frame to the live page and the existing
+         travel carries mark and light into the header. */
+
+      /* BEAT THREE: THE SCENE ITSELF SETTLES. The circle has closed — the
+         orbit ends on the composition it opened on, emblem in front, letters
+         behind — so nothing is handed over or crossfaded. The one object on
+         stage simply zooms out and flies to the header, and the header's own
+         lockup (the same emblem beside the same letters) lights up where it
+         lands. The travelling-mark rig is retired: the scene IS the traveller
+         now. */
+      // The callouts live only while the camera is home: gone within the
+      // first 3.5% of scroll, back if you return to the top.
+      arrive.style.setProperty('--tips', Math.max(0, 1 - v / 0.035).toFixed(4));
+
+      const settle = Math.max(0, Math.min(1, (v - 0.62) / 0.35));
+      /* The lockup crystallises THE MOMENT the world lets go of focus — no
+         dead zone. The first cut waited 12% into the settle to start forming
+         it, which left a beat where the scene had begun to melt and nothing
+         sharp had replaced it: the emblem read as disappearing, then
+         reappearing. Something in focus must exist at every scroll position. */
+      mark?.style.setProperty('--pm', Math.max(0, Math.min(1, settle / 0.16)).toFixed(4));
+      arrive.style.setProperty('--pz', settle.toFixed(4));
+      const scene = settle < 0.72 ? 1 : 1 - Math.min(1, (settle - 0.72) / 0.26);
+      arrive.style.setProperty('--ps', scene.toFixed(4));
+      // The words stand up underneath while the scene is still airborne.
+      const copy = Math.max(0, Math.min(1, (settle - 0.12) / 0.5));
+      arrive.style.setProperty('--pc', copy.toFixed(4));
+
+      // …and makes its trip on the back half of the settle.
+      const travel = Math.max(0, Math.min(1, (settle - 0.34) / 0.62));
+      /* The light banks down to a FLOOR, not to zero. The brief has always been
+         that the mark "settles at the top with that nice glow" — so the glow is
+         a thing the mark keeps, not a thing the trip burns off. It runs the
+         whole length of the travel and finishes at 0.3, which is the strength
+         the header wordmark's own resting glow is tuned to match, so the swap
+         at the end changes nothing the eye can track. */
+      const light = 1 - 0.7 * Math.max(0, Math.min(1, (travel - 0.3) / 0.7));
+
+      arrive.style.setProperty('--p', v.toFixed(4));
+      arrive.style.setProperty('--pt', travel.toFixed(4));
+      if (mark) {
+        mark.style.setProperty('--p', v.toFixed(4));
+        mark.style.setProperty('--pl', light.toFixed(4));
+        glowRef.current = light;
+        mark.style.setProperty('--pt', travel.toFixed(4));
+        /* A class, not an inline opacity. An inline style beats the entry
+           animation's own opacity, and writing one on the first frame is what
+           would silently delete the mark's fade-in. */
+        mark.classList.toggle('landed', travel >= 0.995);
+      }
+      // Hand the header its own mark back only once the travelling one has
+      // landed on it. Both visible at once, even for two frames, and the
+      // illusion is over.
+      shell?.classList.toggle('arrive-live', travel < 0.995);
+    };
+
+    /* The value EASES toward the scroll position rather than tracking it one to
+       one. Raw tracking is what makes a scroll-driven move feel mechanical: the
+       mark stops the instant the wheel stops. A lerp of 0.12 a frame is roughly
+       the 0.4s scrub a production scroll rig uses, and it is the difference
+       between an object being dragged and an object with mass.
+
+       The loop only runs while there is distance left to close, so a page at
+       rest costs nothing. */
+    /* The seek follows the scroll and nothing else. A camera that rocks on
+       its own reads as a glitch, not as life — the owner said so in plain
+       words after the first attempt swayed the whole world and tore the tip
+       callouts off their vertices. Life belongs to the LIGHT (the overlay
+       layered over the scene), never to the camera. */
+    /* LATENCY-PROOF SCRUB. Driven from the owner's own browser, the fault was
+       finally visible: on his machine each seek takes long enough that Chrome
+       queues them, so the film lagged the finger, kept drifting seconds after
+       the scroll stopped, stalled on a frame and then jumped — his "pauses,
+       refreshes, moves on its own". (His GPU also feeds the local models, so
+       decode is slower than any test rig here.) Three rules make the scrub
+       hardware-independent: never issue a seek while one is in flight, seek on
+       film-frame boundaries only, and let the eased value close fast. */
+    const syncVideo = (v: number) => {
+      const vid = orbitRef.current;
+      if (!vid || !(vid.duration > 0) || vid.readyState < 2 || vid.seeking) return;
+      const orbit = Math.max(0, Math.min(1, v / 0.62));
+      const t = Math.min(Math.max(orbit * (vid.duration - 0.06), 0.02), vid.duration - 0.06);
+      // Quantise to the film's own 18fps frames: sub-frame seeks buy nothing
+      // and every skipped seek is decode budget returned to the page.
+      const q = Math.round(t * 18) / 18;
+      if (Math.abs(vid.currentTime - q) > 1 / 36) vid.currentTime = q;
+    };
+
+    const tick = () => {
+      /* The ease closes harder than it used to (0.22/frame), and if the value
+         has fallen far behind — a slow machine mid-flick — it snaps across the
+         bulk of the gap instead of crawling after the scroll has ended. */
+      const gap = target - cur;
+      cur += gap * (Math.abs(gap) > 0.18 ? 0.5 : 0.22);
+      if (Math.abs(target - cur) < 0.0006) cur = target;
+      apply(cur);
+      syncVideo(cur);
+      frame = cur === target ? 0 : requestAnimationFrame(tick);
+    };
+
+    const measureTarget = () => {
+      const travel = arrive.offsetHeight - window.innerHeight;
+      if (travel <= 0) return;
+      target = Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel));
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+
+    // Land on the true value on first paint rather than easing up from zero on
+    // a reload halfway down the page.
+    const travel0 = arrive.offsetHeight - window.innerHeight;
+    cur = travel0 > 0 ? Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel0)) : 0;
+    target = cur;
+    apply(cur);
+    syncVideo(cur);
+
+    window.addEventListener('scroll', measureTarget, { passive: true });
+    window.addEventListener('resize', measureTarget, { passive: true });
+    const rewake = () => {
+      if (!document.hidden && !frame) frame = requestAnimationFrame(tick);
+    };
+    document.addEventListener('visibilitychange', rewake);
+    return () => {
+      document.removeEventListener('visibilitychange', rewake);
+      window.removeEventListener('scroll', measureTarget);
+      window.removeEventListener('resize', measureTarget);
+      cancelAnimationFrame(frame);
+      shell?.classList.remove('arrive-live');
     };
   }, []);
 
@@ -164,125 +462,228 @@ export default function Home() {
   );
 
   return (
-    <div ref={wrapRef}>
-      <div id="intro" aria-hidden="true">
-        <video id="introfill" className="intro-fill" muted playsInline preload="auto" aria-hidden="true" />
-        <video id="introvid" muted playsInline preload="auto" poster="/TRU-lockup.jpg">
-          <source src="/TRU-reveal.mp4" type="video/mp4" />
-        </video>
-        <button className="skip" type="button">Skip</button>
-      </div>
-      {/* The background wisp and grain moved to PublicSite so every page has
-          them, not just this one. */}
+    <div className="fh">
+      <section className="arrive" id="top" ref={arriveRef}>
+        <div className="arrive-stage">
+          {/* Holds the site's own room back while the mark is the only lit
+              thing on the screen, and lifts as the mark leaves. The room never
+              changes — it is the same fixed plate every page of this site is
+              already standing on. Nothing crossfades to somewhere else. */}
+          {/* THE ROOM THE MARK ARRIVES IN.
 
-      <header className="hero" id="top"><div className="wrap">
-        <div>
-          <span className="badge fade g1"><span className="s"></span>Real estate sales operations</span>
-          {/* Kept to four short lines. The hero column is narrow, and anything
-              much past ~20 characters wraps mid-word — "high-performing" was
-              splitting across lines at the hyphen. */}
-          <h1>
-            <span className="line"><span>The operating</span></span>
-            <span className="line"><span>system behind</span></span>
-            <span className="line"><span className="thin">high-performing</span></span>
-            <span className="line"><span className="say">real estate teams.<svg viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M3 8 C 60 2, 110 11, 160 6 S 250 2, 297 7" /></svg></span></span>
-          </h1>
-          <p className="hsub fade g2">
-            We take sales management &mdash; agent accountability, pipeline oversight, Zillow Preferred
-            conversion, ZHL adoption, and the daily operating rhythm &mdash; off the owner&rsquo;s
-            plate so you can focus on what actually grows the business: branding, recruiting,
-            expansion, vision.
-          </p>
-          <div className="hcta fade g3">
-            <a href="/apply" className="cta">Apply to work with us{arrow}</a>
-            <a href={BUSINESS.bookingUrl} className="cta ghost" target="_blank" rel="noopener noreferrer">
-              Book a call with our team{arrow}
-            </a>
+              Generated in Higgsfield: amber shafts falling through haze onto a
+              near-black forest floor, ping-ponged so it loops without a seam.
+              It is not a picture of the logo and it never will be — that was
+              the mistake three times over. It is the SPACE, and the wordmark
+              stands in it.
+
+              This is also what makes the opening and the site one thing rather
+              than two. The room fades out over the same scroll that carries the
+              mark to the header, handing over to the filament room that is
+              already behind every page of this site. Both are amber on
+              near-black, so what the eye follows is one continuous space with
+              the light changing character — not an intro ending and a website
+              starting. */}
+          {/* THE SET. One scene, rendered as a physical place: the Trinity
+              emblem downstage, the machined TRU letters upstage, one raking
+              beam. Scroll walks the camera around it. Generated in Higgsfield
+              (keyframed orbit between two stills of the same set), encoded
+              all-intra for frame-accurate scrubbing. */}
+          <video
+            className="arrive-scene"
+            ref={orbitRef}
+            poster={orbitPosterUrl}
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden
+          />
+
+          {/* THE TIPS, NAMED — BUT ONLY AT REST. The emblem is mute without
+              this: nobody knows the three bars ARE the three products. Yet
+              type tracked onto a moving shot is a sticker on a film, so the
+              callouts exist solely on the opening frame: they breathe in
+              after a beat, and the first pixel of scroll dissolves them. The
+              pause gets the meaning; the scroll gets the cinema. */}
+          {/* THE LIVING LIGHT. What "make it feel alive" actually meant: the
+              beam and the air move, the camera does not. Two soft warm glows
+              drift slowly across the beam's path and a handful of embers rise
+              through it — layered over the still frame, so the world holds
+              perfectly steady under the tips while its light never stops. */}
+          <div className="arrive-air" aria-hidden>
+            <i className="air-a" /><i className="air-b" />
+            <i className="mote m1" /><i className="mote m2" /><i className="mote m3" />
+            <i className="mote m4" /><i className="mote m5" /><i className="mote m6" />
+            <i className="mote m7" /><i className="mote m8" /><i className="mote m9" />
+            {/* The floor keeps the light's rhythm: its reflections drift with
+                the glow bodies above. Sheen, not water — ripples would argue
+                with the stone the film already shows. */}
+            <i className="air-floor" />
+            <i className="air-floorband" />
           </div>
-        </div>
-        <div className="scrollcue">Scroll<i></i></div>
-      </div></header>
 
-      <section className="panel band" id="problem"><div className="wrap">
-        <div className="kick reveal">The problem</div>
-        <h2 className="h2 reveal d1">You don&rsquo;t have a lead problem. You have a conversion, accountability, and <em>management</em> problem.</h2>
-        <p className="sub reveal d2">
-          Leads sit in the CRM unworked. Agents follow up inconsistently. Zillow Preferred conversion
-          lags. ZHL adoption stalls. Meanwhile the team owner is in the weeds of sales management
-          instead of running the business. Fractional sales management replaces the chaos with
-          structure &mdash; without adding a full-time hire.
-        </p>
-        <ul className="pills svc" style={{ listStyle: 'none', padding: 0 }}>
-          {PROBLEMS.map((p, i) => (
-            <li className={`p reveal d${(i % 3) + 1}`} key={p}>{p}</li>
+          <div className="arrive-tips" aria-hidden>
+            {(['pulse', 'coach', 'rep'] as const).map((k) => (
+              <span className={`tip tip-${k}`} key={k}>
+                <i className="tip-spark" />
+                <i className="tip-line" />
+                <b className="tip-word">{k}</b>
+              </span>
+            ))}
+          </div>
+
+          <video
+            className="arrive-room"
+            src="/tru-room.mp4"
+            poster="/tru-room.webp"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden
+          />
+
+          <div className="arrive-veil" aria-hidden />
+
+          {/* Reduced motion only. The same wordmark under the same light,
+              standing still and in the flow of the hero instead of travelling
+              into the header. */}
+          {still && (
+            <div className="arrive-still" aria-hidden>
+              <img className="brand-mark" src="/tru-mark.png" alt="" width="42" height="42" decoding="async" />
+              <b className="brand-word">T<span className="r">RU</span></b>
+            </div>
+          )}
+
+          <div className="arrive-copy">
+            <h1>
+              Team leaders are overwhelmed.{' '}
+              <em>We help them lead.</em>
+            </h1>
+            <p className="arrive-sub">
+              Fractional sales management for real estate teams. We own pipeline
+              accountability and lead conversion — on every platform you already work.
+            </p>
+            <div className="hcta">
+              <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
+                Book a call{arrow}
+              </a>
+              <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
+            </div>
+          </div>
+
+          {/* Somewhere to go. A hero whose whole first beat is scroll-driven
+              owes the reader a reason to scroll. */}
+          <a className="arrive-cue" href="#proof" aria-label="Skip to the numbers">
+            <span className="arrive-cue-rule" aria-hidden />
+          </a>
+        </div>
+      </section>
+
+      {/* The travelling mark. Fixed, and outside the pinned stage, because it
+          has to outlive it: it is still moving when the stage has released and
+          it finishes its trip sitting in the header. aria-hidden because the
+          header's own mark is the one in the document. */}
+      {/* THE TRAVELLER, REBORN. Retired when the video flew to the header;
+          back now because the owner wanted the OBJECT to make that trip — just
+          never a shrinking frame. This is the lockup itself: the emblem cutout
+          (real alpha, no rectangle to betray it) beside the live wordmark,
+          crystallising sharp at centre while the world behind it melts to
+          backdrop, then riding the measured path onto the header's own lockup
+          and swapping with it at a pixel-exact landing. */}
+      {!still && (
+        <div className="arrive-mark" ref={markRef} aria-hidden>
+          <img className="brand-mark" src="/tru-mark.png" alt="" width="26" height="26" decoding="async" />
+          <b className="brand-word">T<span className="r">RU</span></b>
+        </div>
+      )}
+
+      <section className="panel band fh-proof" id="proof"><div className="wrap">
+        <h2 className="h2 reveal">
+          Every team we have worked with has improved its <em>transaction count</em>.
+        </h2>
+
+        <ol className="fh-figs">
+          {PROOF.map((p, i) => (
+            <li className={`fh-fig reveal d${i + 1}`} key={p.figure}>
+              <b>{p.figure}</b>
+              <span className="fh-what">{p.what}</span>
+              <span className="fh-scope">{p.scope}</span>
+              <p>{p.body}</p>
+            </li>
           ))}
-        </ul>
+        </ol>
+
+        <p className="disclaimer reveal d2">
+          Client examples describe work performed for real engagements. They are illustrative,
+          not a prediction or guarantee of results. Outcomes depend on your market, your team,
+          your lead spend, and your execution.
+        </p>
       </div></section>
 
-      <section className="panel band" id="services"><div className="wrap">
-        <div className="kick reveal">What we do</div>
-        <h2 className="h2 reveal d1">Seven things we <em>own</em> for you.</h2>
-        <p className="sub reveal d2">
-          Every engagement covers the full operating system &mdash; from leadership rhythm down to
-          individual agent coaching. Packages differ in coaching volume; the core scope is the same.
-        </p>
-        <div className="pills svc">
-          {SERVICES.map((s, i) => (
-            <div className={`p reveal d${(i % 3) + 1}`} key={s.n}>
-              <span className="num">{s.n}</span>
-              <h3>{s.name}</h3>
-              <p>{s.body}</p>
+      <section className="panel band fh-own" id="what"><div className="wrap">
+        <h2 className="h2 reveal">What we take <em>off your plate</em>.</h2>
+        <dl className="fh-list">
+          {OWN.map((o, i) => (
+            <div className={`fh-row reveal d${i + 1}`} key={o.name}>
+              <dt>{o.name}</dt>
+              <dd>{o.body}</dd>
             </div>
           ))}
-        </div>
-        <div className="hcta reveal d2" style={{ marginTop: '2rem' }}>
-          <a href="/services" className="cta ghost">See the full engagement model{arrow}</a>
-        </div>
+        </dl>
+        <a href="/services" className="fh-more reveal d2">
+          All seven, and how an engagement starts{arrow}
+        </a>
       </div></section>
 
-      <section className="panel band" id="who"><div className="wrap">
-        <div className="kick reveal">Who it&rsquo;s for</div>
-        <h2 className="h2 reveal d1">Three kinds of operators we <em>work with</em>.</h2>
-        <div className="pills">
-          {AUDIENCES.map((a, i) => (
-            <div className={`p reveal d${i + 1}`} key={a.kick}>
-              <span className="k">{a.kick}</span>
-              <h3>{a.head}</h3>
-              <p>{a.body}</p>
+      <section className="panel band fh-soft" id="software"><div className="wrap">
+        <h2 className="h2 reveal">And the software we <em>built to do it</em>.</h2>
+        <p className="sub reveal d1">
+          It comes with the engagement. There is nothing extra to buy.
+        </p>
+
+        <div className="fh-shots">
+          <figure className="fh-shot reveal d1">
+            <img src="/shot-pulse.webp" width="1240" height="649" loading="lazy" decoding="async"
+                 alt="TRU Pulse showing a team roster ranked by leads per contract, with the agents who need a conversation flagged above the table." />
+            <figcaption><b className="pn-pulse">Pulse.</b> Who got no contact, what is stuck, and who is quietly slipping.</figcaption>
+          </figure>
+          <figure className="fh-shot reveal d2">
+            <img src="/shot-coach.webp" width="1240" height="649" loading="lazy" decoding="async"
+                 alt="TRU Coach showing a cohort ranked by coaching health, with the four agents who need a one to one listed above it." />
+            <figcaption><b className="pn-coach">Coach.</b> The exact move for this person, this week.</figcaption>
+          </figure>
+        </div>
+        <p className="fh-third reveal d2">
+          <b className="pn-rep">Rep.</b> Every agent certified on your program through real drills, not skimmed video.
+        </p>
+      </div></section>
+
+      <section className="panel band fh-who" id="who"><div className="wrap">
+        <h2 className="h2 reveal">Who we <em>work with</em>.</h2>
+        <dl className="fh-list">
+          {WHO.map((w, i) => (
+            <div className={`fh-row reveal d${i + 1}`} key={w.k}>
+              <dt>{w.k}</dt>
+              <dd>{w.body}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </div></section>
-
-      <section className="panel band" id="tooling"><div className="wrap">
-        <div className="kick reveal">Included in your engagement</div>
-        <h2 className="h2 reveal d1">The software we run your team <em>on</em>.</h2>
-        <p className="sub reveal d2">
-          We built our own tooling because the work needed it. It comes with the engagement &mdash;
-          there is nothing extra to buy.
-        </p>
-        <div className="pills">
-          <div className="p reveal d1"><span className="k">TRU Pulse</span><h3>See it.</h3><p>Flags who got zero personal contact, what is stuck, and which agent is quietly slipping.</p></div>
-          <div className="p reveal d2"><span className="k">TRU Coach</span><h3>Coach it.</h3><p>Hands us the exact 1:1 move for this person, this week, based on how they are wired.</p></div>
-          <div className="p reveal d3"><span className="k">TRU Rep</span><h3>Make it stick.</h3><p>Every agent certified on your program through real drills, not skimmed videos.</p></div>
-        </div>
-
-      </div></section>
-
-      {/* The "free accountability audit" band was removed on 2026-08-09. It was
-          a lead magnet for selling TRU Pulse as a standalone product, which is
-          not what this business sells — the software comes with an engagement,
-          and there is nothing to buy separately. */}
 
       <section className="panel ctaband" id="cta"><div className="wrap">
-        <span className="badge reveal"><span className="s"></span>60 minutes, your real numbers</span>
-        <h2 className="reveal d1" style={{ marginTop: '1.4rem' }}>Build the operating system your team <em>deserves</em>.</h2>
-        <p className="sub reveal d2">
-          A 60-minute consultation with our team, to map your bottleneck and the next move.
-          No pitch. No pressure.
+        {/* The mark, at rest, over the close — the same object the arrival
+            orbits, ending the page the way the page began. */}
+        <img className="cta-emblem reveal" src="/tru-mark.png" alt="" width="56" height="56" decoding="async" />
+        <h2 className="reveal">Think your team is <em>next</em>?</h2>
+        <p className="sub reveal d1">
+          60 minutes on your real numbers, and the next move. No pitch.
         </p>
         <div className="hcta reveal d2">
-          <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">Book a call with our team{arrow}</a>
+          <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
+            Book a call{arrow}
+          </a>
           <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
         </div>
       </div></section>

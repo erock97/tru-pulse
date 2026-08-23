@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import PublicSite from './site/PublicSite';
-import { matchPublicRoute } from './lib/routes';
+import { resolveView } from './lib/routes';
 import { clearLegacyTokens } from './lib/clearLegacyTokens';
 import './styles.css';
 
@@ -10,13 +10,18 @@ import './styles.css';
 // never signs out is exactly the one still carrying a pre-cutover token.
 clearLegacyTokens();
 
-// /services, /about, and /apply are marketing paths. Resolve them before App
-// mounts so they never flash a login screen. "/" stays the product for
-// signed-in users — matchPublicRoute never claims it. App renders the
-// marketing home itself when signed out. Unknown paths come back as
-// 'not-found' (truthy) so PublicSite can render a real 404 instead of
-// dropping into App, which would show the homepage.
-const publicRoute = matchPublicRoute(window.location.pathname, window.location.hash);
+// Marketing paths resolve before App mounts so they never flash a login screen.
+// "/" is the product on app.truhq.co and the marketing home on truhq.co, which
+// is what `resolveView` decides from the host: App's signed-out face is the
+// login door, correct for the app and catastrophic for the marketing site.
+// Unknown paths come back as 'not-found' (truthy) so PublicSite renders a real
+// 404 rather than dropping into App, which would show the homepage.
+const publicRoute = resolveView(
+  window.location.pathname,
+  window.location.hash,
+  window.location.host,
+  window.location.search,
+);
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

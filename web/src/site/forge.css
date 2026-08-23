@@ -1,0 +1,1175 @@
+/* ============================================================================
+   THE ARRIVAL — "first light"
+   ----------------------------------------------------------------------------
+   Read the block at the top of pages/Home.tsx for what this is and why the two
+   attempts before it failed. What the stylesheet owns:
+
+     --p   how far through the arrival you are, 0 to 1
+     --pl  beat one, the light contracting into the letterform
+     --pt  beat two, the trip to the header
+
+   All three are written by the page, once a frame, on the elements below. The
+   stylesheet owns every transform; the page owns none of them.
+   ========================================================================== */
+
+/* Typed, or every calc() below fails to parse silently — which reads as "the
+   hero does not move" with nothing in the console. */
+@property --p  { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --pl { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --pt { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+/* ---- the stage -----------------------------------------------------------
+   One screen to stand in and three quarters of a screen of travel. The old
+   version asked for three full screens before the page began, which is the
+   single most expensive thing a landing page can do with a stranger's
+   patience. `dvh` not `vh`, so a phone's address bar cannot change the length
+   of the transition halfway through it. */
+.truland .arrive {
+  --p: 0;
+  --pt: 0;
+  --ps: 1;
+  --pc: 0;
+  position: relative;
+  /* Two beats now live in this scroll: ~52% of it walks the camera around the
+     Trinity set, the rest carries the mark home to the header. */
+  /* Dense on purpose. The 360 is unchanged — the same arc simply lives in a
+     third less scroll, after the first cut read as lengthy. The feel knob is
+     HERE, not in the video: scroll distance per camera-degree. */
+  height: 300dvh;
+}
+.truland .arrive-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* THE SCENE — the Trinity set, scrubbed by scroll.
+   Above the room and the veil, below the copy. Its own opacity is the
+   handover: it owns the screen for the whole orbit and yields over a short
+   overlap while the live page stands up underneath it. */
+.truland .arrive-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--ps, 1);
+  /* THE SETTLE IS A DEFOCUS, NOT A FLIGHT. The first cut shrank this element
+     and flew it to the header, and the owner named the failure precisely: it
+     looked like a picture being pushed up the screen. A frame in flight always
+     confesses it is a video. So the frame never moves and never shows an edge:
+     the camera pushes gently INTO the world while it falls out of focus and
+     darkens to the page's own ambient level — the scene stops being the
+     subject and becomes the backdrop, the headline rises over it, and by the
+     time it finishes fading, the site's real room is underneath at the same
+     darkness. The lockup does not fly anywhere; it lights up in the header,
+     where the eye already expects it. */
+  transform: scale(calc(1 + 0.16 * var(--pz, 0)));
+  filter:
+    blur(calc(var(--pz, 0) * 16px))
+    brightness(calc(1 - 0.52 * var(--pz, 0)))
+    saturate(calc(1 - 0.25 * var(--pz, 0)));
+  will-change: opacity, transform, filter;
+}
+
+/* ---- the living air -------------------------------------------------------
+   The owner's brief, in his own image: a man standing in a photograph while
+   wind moves his hair. The subject never moves; the AIR does. So the camera
+   and the frame hold perfectly still, and over them drift two soft warm bodies
+   of light along the beam's own diagonal, with a handful of embers climbing
+   through it. Screen-blended, so they only ever ADD light. Everything rides
+   --ps and dies with the scene. */
+.truland .arrive-air {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--ps, 1);
+  overflow: hidden;
+}
+.truland .arrive-air i {
+  position: absolute;
+  mix-blend-mode: screen;
+}
+.truland .air-a {
+  left: -12%; top: -18%;
+  width: 75vw; height: 75vw;
+  background: radial-gradient(circle, rgba(255, 214, 130, 0.17) 0%, rgba(255, 190, 90, 0.07) 38%, transparent 64%);
+  animation: airDrift 9s ease-in-out infinite alternate;
+}
+.truland .air-b {
+  left: 12%; top: -6%;
+  width: 55vw; height: 55vw;
+  background: radial-gradient(circle, rgba(255, 236, 190, 0.12) 0%, transparent 60%);
+  animation: airDrift 14s ease-in-out -5s infinite alternate-reverse;
+}
+@keyframes airDrift {
+  from { transform: translate3d(-4.5%, -3%, 0) scale(1);      opacity: 0.5; }
+  50%  {                                                       opacity: 1; }
+  to   { transform: translate3d(4%, 2.5%, 0) scale(1.15);      opacity: 0.6; }
+}
+/* The embers: small, few, and patient. They read as dust in the beam. */
+.truland .mote {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 235, 190, 0.95) 0%, rgba(255, 200, 110, 0.4) 60%, transparent 100%);
+  animation: moteRise linear infinite;
+  opacity: 0;
+}
+.truland .m1 { left: 30%; top: 72%; animation-duration: 13s; animation-delay: 0s; }
+.truland .m2 { left: 44%; top: 78%; animation-duration: 17s; animation-delay: 4s; }
+.truland .m3 { left: 56%; top: 74%; animation-duration: 15s; animation-delay: 8s; width: 2px; height: 2px; }
+.truland .m4 { left: 66%; top: 80%; animation-duration: 19s; animation-delay: 2s; }
+.truland .m5 { left: 38%; top: 66%; animation-duration: 21s; animation-delay: 11s; width: 2px; height: 2px; }
+.truland .m6 { left: 61%; top: 68%; animation-duration: 16s; animation-delay: 6s; }
+.truland .m7 { left: 24%; top: 76%; animation-duration: 14s; animation-delay: 9s; }
+.truland .m8 { left: 50%; top: 82%; animation-duration: 18s; animation-delay: 13s; width: 2px; height: 2px; }
+.truland .m9 { left: 71%; top: 72%; animation-duration: 12s; animation-delay: 5s; }
+@keyframes moteRise {
+  0%   { transform: translate3d(0, 0, 0);          opacity: 0; }
+  12%  {                                            opacity: 0.75; }
+  55%  { transform: translate3d(14px, -34vh, 0);   opacity: 0.5; }
+  100% { transform: translate3d(-8px, -58vh, 0);   opacity: 0; }
+}
+/* Turned up from a whisper — the owner could not see the first version at all.
+   A broad warm pool AND a distinct bright band that travels the floor like the
+   beam's reflection sliding across wet-polished stone. */
+.truland .air-floor {
+  left: -15%; right: -15%; top: 64%; bottom: -4%;
+  width: auto; height: auto;
+  background:
+    radial-gradient(62% 95% at 34% 30%, rgba(255, 208, 130, 0.26) 0%, transparent 66%),
+    radial-gradient(48% 85% at 68% 45%, rgba(210, 240, 215, 0.10) 0%, transparent 70%);
+  filter: blur(7px);
+  animation: floorSheen 10s ease-in-out infinite alternate;
+}
+@keyframes floorSheen {
+  from { transform: translate3d(-6%, 0, 0);   opacity: 0.5; }
+  45%  {                                      opacity: 1; }
+  to   { transform: translate3d(6.5%, 1%, 0); opacity: 0.55; }
+}
+/* The travelling reflection: a soft diagonal blade of light crossing the floor
+   end to end, unmistakably in motion. */
+.truland .air-floorband {
+  left: -30%; top: 70%; bottom: 0;
+  width: 34%; height: auto;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 216, 140, 0.20) 45%, rgba(255, 232, 180, 0.30) 52%, rgba(255, 216, 140, 0.20) 59%, transparent 100%);
+  filter: blur(9px);
+  transform: skewX(-18deg);
+  animation: floorBand 13s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes floorBand {
+  0%   { left: -34%; opacity: 0; }
+  12%  { opacity: 1; }
+  55%  { opacity: 0.85; }
+  100% { left: 108%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive-air { display: none; }
+}
+
+/* The tip callouts, with the fanfare they earn. Each point of the Trinity is
+   introduced like a stage light coming up: a spark ignites ON the vertex, a
+   hairline grows out of the spark, and the word arrives out of wide tracking —
+   staged apex first, then the two feet, left to right. Still rest-only: the
+   first pixels of scroll dissolve all of it and the film is wordless again. */
+.truland .arrive-tips {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: var(--tips, 1);
+}
+.truland .tip { position: absolute; width: 0; height: 0; }
+/* Anchored on the vertices themselves, measured off the opening frame. */
+.truland .tip-pulse { left: 50%;   top: 40%; }
+.truland .tip-coach { left: 36%;   top: 84%; }
+.truland .tip-rep   { left: 64.5%; top: 83.5%; }
+
+.truland .tip-spark {
+  position: absolute;
+  left: -3px; top: -3px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFF3D6 0%, var(--gold) 60%, transparent 75%);
+  box-shadow: 0 0 16px 3px rgba(255, 214, 130, 0.85);
+  animation: tipSpark 700ms var(--e) backwards;
+}
+.truland .tip-line {
+  position: absolute;
+  left: -0.5px;
+  width: 1px;
+  animation: tipLine 500ms var(--e) backwards;
+}
+.truland .tip-word {
+  position: absolute;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #F5EFE2;
+  text-shadow:
+    0 0 16px rgba(242, 178, 60, 0.5),
+    0 1px 10px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  animation: tipWord 800ms var(--e) backwards;
+}
+/* Apex: the line rises, the word sits above it. */
+.truland .tip-pulse .tip-line { bottom: 8px; height: 44px; transform-origin: 50% 100%;
+  background: linear-gradient(0deg, rgba(242,178,60,.8), rgba(242,178,60,0)); }
+.truland .tip-pulse .tip-word { bottom: 60px; left: 50%; translate: -50% 0; }
+/* Feet: the lines drop, the words sit beneath. */
+.truland .tip-coach .tip-line, .truland .tip-rep .tip-line { top: 8px; height: 30px; transform-origin: 50% 0%;
+  background: linear-gradient(180deg, rgba(242,178,60,.8), rgba(242,178,60,0)); }
+.truland .tip-coach .tip-word, .truland .tip-rep .tip-word { top: 46px; left: 50%; translate: -50% 0; }
+
+/* The running order: apex, left foot, right foot — spark, then line, then word. */
+.truland .tip-pulse .tip-spark { animation-delay: 950ms; }
+.truland .tip-pulse .tip-line  { animation-delay: 1120ms; }
+.truland .tip-pulse .tip-word  { animation-delay: 1260ms; }
+.truland .tip-coach .tip-spark { animation-delay: 1330ms; }
+.truland .tip-coach .tip-line  { animation-delay: 1500ms; }
+.truland .tip-coach .tip-word  { animation-delay: 1640ms; }
+.truland .tip-rep .tip-spark   { animation-delay: 1710ms; }
+.truland .tip-rep .tip-line    { animation-delay: 1880ms; }
+.truland .tip-rep .tip-word    { animation-delay: 2020ms; }
+
+@keyframes tipSpark {
+  0%   { opacity: 0; transform: scale(0.2); }
+  55%  { opacity: 1; transform: scale(1.7); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes tipLine { from { transform: scaleY(0); } }
+@keyframes tipWord {
+  from { opacity: 0; letter-spacing: 0.46em; transform: translateY(7px); }
+}
+@media (max-width: 760px) {
+  .truland .tip-word { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive-tips { display: none; }
+}
+
+/* The words belong to beat two: the reveal frame is the headline moment, and
+   copy over the orbit would caption a film that is doing fine on its own. */
+.truland .arrive-copy {
+  opacity: var(--pc, 0);
+}
+
+/* The veil, not a room. The site already stands on one fixed plate on every
+   page — see `.truland .bg` in Landing.css. Laying a SECOND room over it is
+   what made the old opening read as a thing bolted to the front of the site.
+   So this darkens the room that is already there while the mark is the only
+   lit object on the screen, and lifts as the mark leaves. Nothing crossfades,
+   because nothing is ever replaced. */
+.truland .arrive-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    112% 86% at 50% 34%,
+    rgba(5, 11, 8, 0.22) 0%,
+    rgba(5, 11, 8, 0.84) 58%,
+    rgba(5, 11, 8, 0.96) 100%);
+  opacity: calc(1 - var(--pt) * 0.8);
+  will-change: opacity;
+}
+
+/* ---- the mark ------------------------------------------------------------
+   A fixed clone laid exactly over the header's wordmark: same box, same face,
+   same size. At --pt 1 it coincides with it perfectly, because it IS its
+   geometry. The opening state only pushes it out and scales it up.
+
+   That is why the maths runs in one direction only. Measuring the big state
+   and animating toward the small one leaves the landing a pixel or two out,
+   and a pixel or two out is exactly what makes a shared-element move read as
+   two elements. */
+.truland .arrive-mark {
+  position: fixed;
+  z-index: 60;
+  margin: 0;
+  font-family: var(--serif);
+  /* 700, NOT 800, AND THIS IS THE DIFFERENCE BETWEEN A LOGO AND A CARTOON.
+
+     Fraunces ships here as a variable font declaring `font-weight: 500 700`.
+     Asking for 800 does not get a heavier cut — it clamps the axis at 700 and
+     then SYNTHESISES the rest, which is a crude outline smear. At 690px that
+     smear is all you see: the bracketed serifs fatten into blobs, the thick-
+     to-thin contrast that makes this face expensive collapses, and the mark
+     reads as a friendly display face rather than a mark.
+
+     It is also why the light's field and the page disagreed about the T's
+     serifs — the two rasterisers fake bold differently. `font-synthesis: none`
+     makes that class of bug impossible rather than merely fixed. */
+  /* THE WORDMARK IS SET IN A DISPLAY FACE. THE REST OF THE SITE IS NOT.
+
+     Fraunces is the site's voice and it is right for headlines, but it was
+     never drawn to be a logo at 690px. Its T hooks its arm terminals downward,
+     its R has a stubby leg, its U swells — deliberate character that reads as
+     warmth at 56px and as a cartoon at twelve times that. Pinning the optical
+     size fixed the STROKES and left the SHAPES, which is why it still read as
+     cheap afterwards.
+
+     Playfair Display is a display Didone: flat bracketed serifs, a drawn R leg,
+     a fine right stroke on the U. It is already in this project's font stack as
+     the fallback, so it costs no bytes. Compared against Fraunces at 500, 600
+     and 700 at 210px before choosing.
+
+     A display face for the mark and a text face for the running copy is normal
+     practice, not a mismatch. The logo is its own artifact. */
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-synthesis: none;
+  /* Kept for the Fraunces fallback path only. Playfair is not a variable font,
+     so the axis is simply ignored when Playfair is the one that loads. */
+  font-variation-settings: 'opsz' 144;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  transform-origin: 0 50%;
+  transform:
+    translate3d(
+      calc(var(--dx, 0px) * (1 - var(--pt))),
+      calc(var(--dy, 0px) * (1 - var(--pt))),
+      0)
+    scale(calc(1 + (var(--s, 1) - 1) * (1 - var(--pt))));
+  will-change: transform;
+  /* Enters with beat two, driven by the same scroll value as the copy. The old
+     load-time fade-in is gone: the opening frame now belongs to the scene, and
+     a wordmark fading in over the orbit would be two heroes on one stage. */
+  opacity: var(--pm, 0);
+}
+/* Landed. The header's own mark takes over here and this one leaves without a
+   frame where both are visible, which would end the illusion. */
+.truland .arrive-mark.landed { opacity: 0; }
+@keyframes markEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* The live type. THE wordmark — not a stand-in that a picture hands over to.
+
+   It is on the screen at full strength from the first frame to the last, which
+   is why there is no seam anywhere in this hero: there is only ever one object,
+   and it is text.
+
+   THE LETTERS ARE A MATERIAL, NOT A FILL. This is the fix for "the letters look
+   cartoony while everything else looks detailed", and the diagnosis is simple
+   once said out loud: the room behind them is a photographic render with haze,
+   depth and grain, and the letters were three flat areas of one colour. Flat
+   shapes in front of a rendered environment read as stickers no matter how good
+   the environment is.
+
+   So each run is lit like an object standing under the room's shafts: bright
+   along the cap line where the light lands, deepening to a shadowed bronze at
+   the baseline, with a specular break at the optical middle. Two metals — bone
+   and gold, which is the brand — under ONE lighting model, so they read as two
+   materials in the same room rather than two unrelated colours. */
+.truland .arrive-type {
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+.truland .arrive-type b,
+.truland .arrive-type i {
+  font-weight: inherit;
+  font-style: normal;
+  display: inline-block;
+  /* Two layers: a moving specular band over a static vertical material. Both
+     are clipped to the glyphs, so the sheen travels THROUGH the letterforms
+     rather than over the top of them. Technique from 21st's Gradient Shimmer
+     (@mona_biasia) — background-clip on the glyphs, swept by moving the
+     background position — reduced to two CSS layers and no JavaScript. */
+  background-repeat: no-repeat;
+  background-size: 260% 100%, 100% 100%;
+  background-position: -80% 0, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: markSheen 9s cubic-bezier(0.5, 0, 0.5, 1) 1.2s infinite;
+}
+.truland .arrive-type b {
+  background-image:
+    linear-gradient(118deg, transparent 42%, rgba(255, 255, 255, 0.5) 50%, transparent 58%),
+    /* 128deg, not 180: the light rakes in from the upper left, so the bright
+       side of every stroke is its upper-left flank and the shadow gathers at
+       the lower right. A top-to-bottom gradient under a raking light is the
+       tell that the letters were coloured rather than lit. */
+    linear-gradient(128deg,
+      #ffffff 0%,
+      #f6faf4 24%,
+      #dbe5d9 50%,
+      #aebeb0 76%,
+      #85978a 100%);
+}
+.truland .arrive-type i {
+  background-image:
+    linear-gradient(118deg, transparent 42%, rgba(255, 248, 224, 0.62) 50%, transparent 58%),
+    linear-gradient(128deg,
+      #fff3d6 0%,
+      #ffdb95 24%,
+      #f2b23c 49%,
+      /* the specular break — a hard-ish step at the optical middle is what
+         separates polished metal from a soft two-stop gradient */
+      #e6a52c 53%,
+      #b87c20 80%,
+      #8a5713 100%);
+}
+@keyframes markSheen {
+  0%   { background-position: -80% 0, 0 0; }
+  55%  { background-position: 180% 0, 0 0; }
+  100% { background-position: 180% 0, 0 0; }
+}
+
+/* Thickness and seating. `filter` rather than `text-shadow`, because the fill
+   is transparent here — a text-shadow would be painted straight through the
+   glyphs and muddy the material. `drop-shadow` works off the composited alpha,
+   so it follows the clipped gradient exactly.
+
+   The tight dark contact line is what gives the letters an edge against their
+   own glow. Without it the light bleeds over the silhouette and softens it,
+   which is the other half of reading as low detail. */
+.truland .arrive-type {
+  filter:
+    drop-shadow(0.007em 0.013em 0.006em rgba(26, 14, 2, 0.66))
+    drop-shadow(0 0 calc(0.10em * var(--pl))) ;
+}
+
+/* The traveller is the lockup itself — icon beside wordmark, identical markup
+   and metrics to the header brand, so the landing is a pixel swap. The old
+   dark-core backdrop died with the giant hero wordmark; the lockup carries its
+   own alpha and needs no ground. */
+.truland .arrive-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* The landing swap is a crossfade on ONE clock. Both this and the header
+     brand were computing `transition: all` from unrelated rules, so at the
+     swap the traveller hid on one duration while the brand appeared on
+     another — a blink where neither was fully there. Same property, same
+     222ms, same curve, and because the two boxes are pixel-identical at that
+     moment, their opacities sum to a steady image. */
+  transition: opacity 222ms linear;
+}
+.truland .arrive-mark .brand-mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 0 6px rgba(242, 178, 60, 0.28));
+}
+.truland .arrive-mark .brand-word { color: var(--ink); }
+.truland .arrive-mark .brand-word .r { color: var(--gold); }
+/* Airborne it burns a little brighter than it will at rest; --pl banks it down
+   to exactly the header's resting glow by the time it lands. */
+.truland .arrive-mark .brand-word {
+  text-shadow:
+    0 0 calc(0.28em * var(--pl, 0.3)) rgba(255, 220, 147, calc(0.55 * var(--pl, 0.3))),
+    0 0 0.35em rgba(255, 220, 147, 0.3),
+    0 0 0.9em rgba(242, 178, 60, 0.22);
+}
+
+/* The light. A canvas sized in multiples of the wordmark it surrounds, so the
+   two are locked together by construction and nothing has to be measured off a
+   rendered file ever again.
+
+   It sits BEHIND the type and paints nothing inside the letterforms, so what
+   you see is light leaving the glyphs rather than glyphs punched out of a lit
+   panel. `--glow-dy` lines the canvas's centre up with the ink centre of the
+   type rather than with its line box, which are not the same point for
+   all-caps and are a visible fraction of an em apart at this size. */
+/* ---- the room ------------------------------------------------------------
+   Sits under everything in the stage and fades out over the travel, so the
+   opening light hands over to the site's own room instead of ending. Driven by
+   the travel rather than by the light curve, because the mark keeps its glow at
+   the top and the room must not. */
+.truland .arrive-room {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The beams originate above the wordmark, which sits at 31dvh, so the light
+     in the plate falls ON the letters rather than behind them. */
+  /* The beam enters top-left and rakes down across the wordmark, so the plate
+     is anchored to that corner rather than centred. */
+  object-position: 32% 26%;
+  /* ABOVE the veil, not under it. The veil's job is to hold back the site's own
+     filament room so the opening reads as one lit object in the dark; it was
+     never meant to dim the opening's own light source, and at z-index 0 it was
+     painting 84% black straight over this. */
+  z-index: 1;
+  pointer-events: none;
+  /* Lower than the old top-down plate. This one is a single hard beam rather
+     than a soft wash, and at the old strength it read as a stripe across the
+     hero instead of as the light in a room. */
+  opacity: calc(0.56 * (1 - var(--pt, 0)));
+  /* Dissolves downward instead of ending. The plate carries floor haze along
+     its bottom edge, which drew a horizontal band across the hero and gave the
+     room a visible bottom — the same rectangle problem in a different layer.
+     Fading it out over the lower half also does the narrative work: the
+     opening's light thins into the page rather than stopping at a line. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 88%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 88%);
+  will-change: opacity;
+}
+
+.truland .arrive-still {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: max-content;
+  /* Clears the fixed header, which the travelling mark never has to think
+     about because it is fixed too. */
+  margin: 14vh auto 2vh;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-synthesis: none;
+  font-size: clamp(3.4rem, 11vw, 7.5rem);
+  line-height: 1.15;
+  white-space: nowrap;
+  --pl: 1;
+}
+
+.truland .arrive-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: calc(var(--glow-frame, 2.4) * 100%);
+  height: auto;
+  aspect-ratio: var(--glow-aspect, 1024 / 400);
+  translate: -50% calc(-50% + var(--glow-dy, 0em));
+  pointer-events: none;
+  /* Its own alpha is the whole story — there is no ground in the file, so there
+     is no rectangle, so there is nothing to hide with a mask or a blend mode.
+     Both of those were tried on the old plate and neither worked: the mark
+     carries a transform, a transform makes a stacking context, and a blend
+     inside one composites against a backdrop that is empty. */
+  opacity: var(--pl);
+  will-change: opacity;
+}
+
+/* The header's real wordmark stays hidden until the travelling one has landed
+   on it, then they swap with nothing in between.
+
+   And it keeps the light. The whole point of the arrival is that the mark
+   settles at the top still carrying a soft glow — so the resting brand wears
+   the same warmth the traveller lands with, at the same strength the light
+   curve finishes on (0.3 of full). If these two drift apart the swap becomes
+   visible as a small dimming, which reads as the animation switching off. */
+.truland .brand {
+  transition: opacity 222ms linear;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+  text-shadow:
+    0 0 0.35em rgba(255, 220, 147, 0.30),
+    0 0 0.9em rgba(242, 178, 60, 0.22);
+}
+.truland .brand .brand-word { font-weight: inherit; }
+.truland .brand .brand-mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  /* Baked soft-circle alpha; the drop-shadow gives it the same resting warmth
+     the letters carry. */
+  filter: drop-shadow(0 0 6px rgba(242, 178, 60, 0.28));
+}
+.truland.arrive-live .brand { opacity: 0; }
+
+/* ---- the words -----------------------------------------------------------
+   Present from the first frame. An opening screen that shows a logo and
+   nothing else asks a stranger to trust that scrolling is worth it, and the
+   way in should never be the thing that is hidden. They settle in on load like
+   the rest of the page, then rise into the middle as the mark leaves — so the
+   page is being built while you watch rather than appearing once the animation
+   has finished.
+
+   `translate` carries the scroll offset and `transform` carries the entry, so
+   the two compose instead of the keyframes overwriting the scroll rig. */
+.truland .arrive-copy {
+  position: absolute;
+  left: 50%;
+  top: 54dvh;
+  width: min(var(--maxw), calc(100% - 3rem));
+  /* Far enough to land on the optical centre, not the geometric one. The block
+     hangs DOWN from `top`, so settling it at 54dvh leaves its middle nearer
+     two thirds down the screen and the finished hero reads bottom-heavy with a
+     lake of nothing under the header. */
+  translate: -50% calc(-15dvh * var(--pt));
+  text-align: center;
+  z-index: 3;
+}
+.truland .arrive-copy h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.026em;
+  color: var(--ink);
+  margin: 0 auto;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.truland .arrive-copy h1 em {
+  font-style: italic;
+  color: var(--gold-soft);
+  display: inline-block;
+  /* "you" has a descender that a 1.1 line-height would clip. */
+  padding-bottom: 0.08em;
+}
+.truland .arrive-copy .arrive-sub {
+  margin: 1.2rem auto 0;
+  max-width: 52ch;
+  font-size: clamp(0.98rem, 1.4vw, 1.12rem);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.truland .arrive-copy .hcta { margin-top: 1.8rem; justify-content: center; }
+@keyframes arriveCopy {
+  from { opacity: 0; transform: translateY(1.4rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Somewhere to go. A hero whose first beat is scroll-driven owes the reader a
+   reason to scroll, and it is gone the moment they take it. */
+.truland .arrive-cue { z-index: 4; }
+.truland .arrive-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.2rem, 3.5vh, 2.4rem);
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  z-index: 4;
+  opacity: clamp(0, calc(1 - var(--pt) * 2.4), 1);
+}
+.truland .arrive-cue-rule {
+  display: block;
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(180deg, transparent, var(--gold-soft) 48%, transparent);
+  animation: cueDrift 2.8s var(--e) infinite;
+}
+.truland .arrive-cue:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+@keyframes cueDrift {
+  0%, 100% { transform: translateY(-5px); opacity: 0.3; }
+  50%      { transform: translateY(5px);  opacity: 1; }
+}
+
+/* ---- the numbers ---------------------------------------------------------
+   The strongest material this business has, and it was on a page the router
+   did not serve. Set as figures, because the point is that they are countable. */
+.truland .fh-figs {
+  list-style: none;
+  margin: 3rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+.truland .fh-fig {
+  padding: 1.9rem 1.7rem 1.7rem;
+  border-radius: 16px;
+  background:
+    linear-gradient(168deg, rgba(226, 240, 230, 0.062) 0%, rgba(226, 240, 230, 0.014) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(16, 29, 21, 0.74) 0%, rgba(9, 17, 12, 0.82) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 0 0 1px var(--hair-2),
+    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+}
+.truland .fh-fig b {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 3.6vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.truland .fh-what {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gold-soft);
+}
+.truland .fh-scope {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.truland .fh-fig p {
+  margin: 1.1rem 0 0;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.truland .fh-proof .disclaimer {
+  margin-top: 1.8rem;
+  max-width: 78ch;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--faint);
+}
+
+/* ---- the two lists -------------------------------------------------------
+   A term and a line on a hairline. Not cards: three text-only cards in a row
+   is the shape every generated page reaches for, and it says less than a list. */
+.truland .fh-list { margin: 2.6rem 0 0; }
+.truland .fh-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 210px) 1fr;
+  gap: 1.6rem;
+  align-items: baseline;
+  padding: 1.3rem 0;
+  border-top: 1px solid var(--hair-2);
+}
+.truland .fh-row:last-child { border-bottom: 1px solid var(--hair-2); }
+.truland .fh-row dt {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.32rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.truland .fh-row dd {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 58ch;
+}
+.truland .fh-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.9rem;
+  font-weight: 650;
+  font-size: 0.98rem;
+  color: var(--gold-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 3px;
+  transition: border-color 0.2s var(--e);
+}
+.truland .fh-more:hover { border-bottom-color: var(--gold); }
+.truland .fh-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 3px; }
+/* `.pea` is the arrow inside a `.cta` pill and takes its size from that pill.
+   On a plain link it collapsed to nothing and the link read as dead text. */
+.truland .fh-more .pea { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; }
+.truland .fh-more .pea svg {
+  width: 15px; height: 15px; fill: none; stroke: currentColor;
+  stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 0.28s var(--e);
+}
+.truland .fh-more:hover .pea svg { transform: translateX(3px); }
+
+/* ---- the product, shown rather than described ---------------------------- */
+.truland .fh-shots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+  margin-top: 2.6rem;
+}
+.truland .fh-shot { margin: 0; }
+.truland .fh-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.17),
+    0 0 0 1px var(--hair-2),
+    0 30px 60px -34px rgba(2, 7, 4, 0.95);
+}
+.truland .fh-shot figcaption {
+  margin-top: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.truland .fh-shot figcaption b,
+.truland .fh-third b { color: var(--ink); font-weight: 650; }
+.truland .fh-third {
+  margin: 1.6rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* ---- the rhythm ----------------------------------------------------------
+   The site's bands are clamp(4.5rem, 9vw, 8rem) top AND bottom, so adjacent
+   sections put up to sixteen rems of nothing between them. Four times over,
+   that is most of the reason the old page needed 5.6 screens for 735 words. */
+.truland .fh .panel.band { padding-block: clamp(3.2rem, 5vw, 4.8rem); }
+.truland .fh .panel.ctaband { padding-block: clamp(3.6rem, 6vw, 5.4rem); }
+.truland .fh .h2 { max-width: 26ch; }
+.truland .fh-proof .h2 { max-width: 32ch; }
+
+@media (max-width: 900px) {
+  .truland .fh-figs,
+  .truland .fh-shots { grid-template-columns: 1fr; }
+  .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
+}
+@media (max-width: 760px) {
+  .truland .arrive { height: 220dvh; }
+  .truland .arrive-copy { top: 50dvh; }
+  /* The CTAs stack on a phone, so the copy block reaches the bottom of the
+     screen and the cue lands on top of the second button. A phone does not
+     need to be told that pages scroll. */
+  .truland .arrive-cue { display: none; }
+}
+/* A laptop is not a tall screen. The copy block is roughly 270px of type and
+   buttons hanging off `top`, so on a short viewport it has to give some back
+   or the second CTA ends up under the fold of its own hero. */
+@media (max-height: 760px) {
+  .truland .arrive-copy { top: 54dvh; }
+  .truland .arrive-copy h1 { font-size: clamp(1.55rem, 2.8vw, 2.1rem); }
+  .truland .arrive-copy .arrive-sub { margin-top: 0.9rem; }
+  .truland .arrive-copy .hcta { margin-top: 1.2rem; }
+}
+
+/* ---- and none of it under reduced motion ---------------------------------
+   The mark sits where it belongs at the size it belongs, and the hero is one
+   still screen: the plate, the words, and no travel, no pinning, no drift. */
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive { height: auto; min-height: 100dvh; }
+  /* `height: 100dvh` + `overflow: hidden` is fine for a pinned stage and a trap
+     for a static one: the plate, the headline and two stacked buttons are
+     taller than a short window, and the stage would silently cut the CTAs off
+     rather than growing. Reduced motion must never mean reduced content. */
+  .truland .arrive-stage {
+    position: relative;
+    display: block;
+    height: auto;
+    overflow: visible;
+    padding-bottom: 8vh;
+  }
+  /* The travelling mark is not rendered at all here; `.arrive-still` below is,
+     and it sits inside the stage where the hero can lay it out. */
+  .truland .arrive-mark { display: none; }
+  .truland .arrive-scene { display: none; }
+  .truland .arrive-copy { opacity: 1; }
+  .truland .arrive-type b,
+  .truland .arrive-type i { animation: none; background-position: 200% 0, 0 0; }
+  /* One frame of the room, not a loop. */
+  .truland .arrive-room {
+    display: block;
+    opacity: 0.46;
+    background: url('/tru-room.webp') 32% 26% / cover no-repeat;
+  }
+  .truland.arrive-live .brand { opacity: 1; }
+  .truland .arrive-veil { opacity: 0.5; }
+  .truland .arrive-cue { display: none; }
+  .truland .arrive-copy {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+    opacity: 1;
+    animation: none;
+    margin: 0 auto;
+    padding-top: 2vh;
+  }
+}
+
+/* ---- why the hero never pinned ------------------------------------------
+   `.truland` is set `overflow-x: hidden` in Landing.css, and `overflow-x:
+   hidden` silently computes `overflow-y: auto`. That makes the whole site a
+   scroll container, and a `position: sticky` child sticks to its nearest
+   scrolling ancestor — which, being that container, never scrolls. So the
+   stage did not pin. It scrolled away like any other section while a fixed
+   wordmark shrank on top of it, which is exactly why the opening read as two
+   unrelated things rather than as one transition.
+
+   `clip` does the same job (no horizontal overflow) WITHOUT creating a scroll
+   container, so sticky works again. Same distinction as the deck's table
+   header, which needed the identical fix for the identical reason. */
+.truland { overflow-x: clip; }
+
+/* NOTE ON THE ENTRANCE ANIMATION.
+
+   `.truland .reveal` is defined in Landing.css, along with its `.d1/.d2/.d3`
+   delays, and the observer in PublicSite has always been driving it. An earlier
+   pass here declared a second copy of all of it, on the belief that the page had
+   no entrance motion at all — that belief came from grepping the wrong files,
+   and it was wrong. Two definitions of the same effect is how they drift, so
+   this one is deleted and the original is tuned where it lives. */
+
+/* The cards are surfaces in a lit room, so they answer to the pointer. Small
+   on purpose — a card that leaps is a toy, a card that lifts is furniture. */
+.truland .fh-fig {
+  transition:
+    transform 420ms var(--e),
+    box-shadow 420ms var(--e),
+    border-color 420ms var(--e);
+}
+.truland .fh-fig:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.26),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
+    0 26px 50px -28px rgba(0, 0, 0, 0.85);
+}
+
+/* THE NUMBERS ARE THE SAME METAL AS THE WORDMARK.
+
+   The figures are the loudest thing on the page after the mark, and flat white
+   next to a lit wordmark is the same flatness problem one section down. Bone
+   rather than gold, deliberately: the accent is reserved for the one thing that
+   wants a click, and three big gold numerals would spend it. */
+.truland .fh-fig b {
+  background-image: linear-gradient(180deg,
+    #ffffff 0%,
+    #f2f7f0 30%,
+    #d6e0d4 62%,
+    #a9b8ab 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* The hero's light does not stop at the fold. A single soft warm pool at the
+   top of the first band carries it over the seam, so the page reads as one lit
+   space that continues rather than a hero followed by sections. */
+.truland .fh-proof { position: relative; }
+.truland .fh-proof::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -14vh;
+  width: min(150vw, 1900px);
+  height: 46vh;
+  translate: -50% 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 50% 50% at 50% 0%,
+    rgba(242, 178, 60, 0.085) 0%,
+    rgba(242, 178, 60, 0.03) 42%,
+    transparent 74%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truland .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .truland .fh-fig { transition: none; }
+  .truland .fh-fig:hover { transform: none; }
+}
+
+/* ---- the list sections, using the frame ----------------------------------
+   These were a heading with a narrow column of rows under it, which left the
+   right third of a 1440 screen empty and read as unfinished rather than
+   spacious. The heading now holds its own column and stays with you while the
+   rows scroll past it — editorial, and it gives a 56px serif somewhere to live
+   instead of sitting on top of a list it dwarfs.
+
+   Uses the existing markup: the h2 is put in column one spanning every row, and
+   the list and its follow-on link fall into column two. */
+@media (min-width: 900px) {
+  .truland .fh-own .wrap,
+  .truland .fh-who .wrap {
+    display: grid;
+    grid-template-columns: minmax(260px, 32%) 1fr;
+    column-gap: clamp(2.5rem, 5vw, 5.5rem);
+    align-items: start;
+  }
+  .truland .fh-own .h2,
+  .truland .fh-who .h2 {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    position: sticky;
+    /* Clears the fixed header with room to breathe. */
+    top: 8.5rem;
+    margin-top: 0;
+    max-width: 12ch;
+  }
+  .truland .fh-own .fh-list,
+  .truland .fh-who .fh-list {
+    grid-column: 2;
+    margin-top: 0;
+  }
+  .truland .fh-own .fh-more { grid-column: 2; }
+  /* The rows now have the width to use, so the copy is allowed to use it. */
+  .truland .fh-row dd { max-width: 68ch; }
+  .truland .fh-row { grid-template-columns: minmax(190px, 240px) 1fr; }
+}
+
+/* ---- the software, as the centrepiece it should be -----------------------
+   These two screenshots are the strongest proof on the page that the product
+   exists, and they were sitting at 529px inside a 1180px column with a caption
+   under them. They now break out past the text column, sit on a slight
+   perspective so they read as objects on a surface rather than as flat images,
+   and are staggered so the pair has a composition instead of being a row.
+
+   The tilt is small on purpose. Enough to catch the light; not enough to make
+   anyone tilt their head to read a dashboard. */
+@media (min-width: 900px) {
+  .truland .fh-soft .fh-shots {
+    width: min(calc(100vw - 3rem), 1400px);
+    margin-left: 50%;
+    translate: -50% 0;
+    gap: clamp(1.6rem, 3vw, 3rem);
+    perspective: 1800px;
+    margin-top: 3.4rem;
+  }
+  .truland .fh-soft .fh-shot:first-child { transform: translateY(-1.4rem); }
+  .truland .fh-soft .fh-shot:last-child { transform: translateY(1.8rem); }
+}
+.truland .fh-shot img {
+  transform: rotateY(var(--ry, 0deg)) rotateX(1.1deg);
+  transform-origin: 50% 50%;
+  transition: transform 700ms var(--e), box-shadow 700ms var(--e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.2),
+    0 0 0 1px var(--hair-2),
+    /* A warm rim on the lit side, the same corner the hero's light comes from,
+       so the panels belong to the same room as the wordmark. */
+    -1px -1px 0 1px rgba(255, 216, 148, 0.05),
+    0 48px 90px -46px rgba(0, 0, 0, 0.95),
+    0 12px 30px -18px rgba(0, 0, 0, 0.7);
+}
+.truland .fh-soft .fh-shot:first-child img { --ry: 2.2deg; }
+.truland .fh-soft .fh-shot:last-child img { --ry: -2.2deg; }
+.truland .fh-shot:hover img {
+  transform: rotateY(0deg) rotateX(0deg) translateY(-6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.26),
+    0 0 0 1px var(--hair),
+    0 60px 110px -50px rgba(0, 0, 0, 0.98);
+}
+.truland .fh-shot figcaption { margin-top: 1.15rem; font-size: 1rem; }
+
+/* The third product gets a line of its own rather than trailing the pair. */
+.truland .fh-third {
+  margin-top: 2.6rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--hair-2);
+  max-width: 68ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truland .fh-shot img,
+  .truland .fh-shot:hover img { transform: none; transition: none; }
+  .truland .fh-soft .fh-shot:first-child,
+  .truland .fh-soft .fh-shot:last-child { transform: none; }
+}
+
+/* ---- the header on a phone -----------------------------------------------
+   The nav drops its link list below 760px but keeps the brand, the login link
+   and a CTA whose label is a full sentence. On a 390px screen that is wider
+   than the bar, so once the travelling mark lands and the brand becomes
+   visible, "TRU" and "Client log in" sit on top of each other.
+
+   It only ever showed after scrolling, because the brand is hidden until the
+   mark arrives — which is why it survived this long. Nothing is removed: the
+   pieces are just sized to fit the bar they are in. */
+@media (max-width: 560px) {
+  .truland .nav .nright { gap: 0.55rem; }
+  .truland .nav .login {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .truland .nav .cta {
+    font-size: 0.78rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+    gap: 0.45rem;
+  }
+  .truland .nav .cta .pea { width: 24px; height: 24px; }
+  .truland .nav .cta .pea svg { width: 12px; height: 12px; }
+  .truland .brand { font-size: 1.28rem; }
+}
+
+/* ---- the rows, given some life ------------------------------------------
+   These were a term and a line on a hairline: correct, readable, and inert.
+   They are three of the most important sentences on the page — the moment a
+   reader decides whether this is about them — so they are allowed to respond.
+
+   An index in the margin, the hairline lighting from the left as the row is
+   entered, and the term shifting a hair toward the reader. Nothing moves far
+   enough to be a effect; it is the difference between a printed list and a
+   surface someone is standing in front of. */
+.truland .fh-row {
+  position: relative;
+  counter-increment: fhrow;
+  transition: background 420ms var(--e);
+}
+.truland .fh-list { counter-reset: fhrow; }
+.truland .fh-row::before {
+  content: counter(fhrow, decimal-leading-zero);
+  position: absolute;
+  left: -2.6rem;
+  top: 1.5rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  opacity: 0;
+  transition: opacity 420ms var(--e), transform 420ms var(--e);
+  transform: translateX(6px);
+}
+.truland .fh-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold), rgba(242, 178, 60, 0));
+  transition: width 620ms var(--e);
+}
+.truland .fh-row:hover::after { width: 100%; }
+.truland .fh-row:hover::before { opacity: 1; transform: none; }
+.truland .fh-row dt { transition: transform 420ms var(--e), color 420ms var(--e); }
+.truland .fh-row:hover dt { transform: translateX(4px); }
+
+@media (max-width: 900px) {
+  .truland .fh-row::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .fh-row,
+  .truland .fh-row::before,
+  .truland .fh-row::after,
+  .truland .fh-row dt { transition: none; }
+  .truland .fh-row:hover dt { transform: none; }
+}
+
+/* ---- the products wear their temperatures, outside too -------------------
+   Inside the app, Pulse is gold, Coach terracotta, Rep sea. The landing's
+   software section now says the same thing — one identity across the wall. */
+.truland .fh-shot figcaption b.pn-pulse,
+.truland .fh-third b.pn-pulse { color: var(--gold); }
+.truland .fh-shot figcaption b.pn-coach { color: #FF9E76; }
+.truland .fh-third b.pn-rep,
+.truland .fh-shot figcaption b.pn-rep { color: #A8C9B9; }
+
+/* The close gets the mark at rest. */
+.truland .ctaband .cta-emblem {
+  display: block;
+  margin: 0 auto 1.1rem;
+  filter: drop-shadow(0 0 10px rgba(242, 178, 60, 0.35));
+}

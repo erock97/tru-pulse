@@ -21,7 +21,10 @@ describe('unknown marketing paths render a real not-found page', () => {
   });
 
   it('main mounts PublicSite for a not-found match instead of sending it to App', () => {
-    expect(mainSrc).toMatch(/matchPublicRoute/);
+    // `resolveView` wraps matchPublicRoute and adds the host split. The rule
+    // being locked is unchanged: a not-found match mounts PublicSite rather
+    // than falling through to App, which signed-out would show the homepage.
+    expect(mainSrc).toMatch(/resolveView/);
     expect(mainSrc).toMatch(/publicRoute === 'not-found'|publicRoute \? <PublicSite/);
   });
 });

@@ -8,9 +8,11 @@ const FLEX_AS_PROGRAM = /Zillow\s*\/\s*Flex|Zillow Flex conversion|investing in 
 
 describe('Preferred is the current program name on public marketing pages', () => {
   it('homepage sells Preferred conversion, not Flex', () => {
-    expect(homePage).toMatch(/Zillow Preferred lead conversion/);
-    expect(homePage).toMatch(/Zillow Preferred conversion/);
-    expect(homePage).toMatch(/investing in Zillow Preferred/);
+    // The rule is the program NAME, not any particular sentence. Pinning three
+    // exact phrases from one draft made every rewrite of the homepage fail
+    // even when it sold Preferred correctly, which teaches the next person to
+    // delete the test rather than to keep the rule.
+    expect(homePage).toMatch(/Zillow Preferred/);
     expect(homePage).not.toMatch(FLEX_AS_PROGRAM);
     expect(homePage).not.toMatch(/\bFlex\b/);
   });

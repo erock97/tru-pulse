@@ -28,6 +28,10 @@ a{ color:var(--gold-dk); cursor:pointer; text-decoration:none; }
 @keyframes tru-float{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-4px); } }
 @keyframes tru-shine{ 0%{ left:-70%; } 55%{ left:135%; } 100%{ left:135%; } }
 .tru-mark{ display:inline-flex; align-items:center; gap:10px; }
+/* The Trinity emblem (replaced the animated ball 2026-08-23) — soft-circle
+   alpha is baked into the asset; the glow matches the wordmark's rest state. */
+.tru-emblem{ display:block; border-radius:50%; flex-shrink:0;
+  filter: drop-shadow(0 0 6px rgba(242,178,60,.3)); }
 .tru-ball{ position:relative; overflow:hidden; border-radius:50%; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 32% 26%,#F0C674,#D97706 46%,#8A5A12 100%);
