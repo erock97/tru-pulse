@@ -199,6 +199,13 @@ uniform float uTime;     // seconds
 uniform float uFade;     // 1 while the mark owns the screen, 0 once it lands
 uniform float uIgnite;   // 0 -> 1 over the first moment on the page
 uniform float uRange;
+uniform float uAspect;
+
+/* WHERE THE LIGHT IS. Everything directional below reads this one vector, and
+   the room plate, the material gradient on the letters and this shader all have
+   to agree about it or the mark stops looking like it is standing in the scene.
+   Pointing TOWARD the source: up and to the left. */
+const vec2 LIGHT = vec2(-0.482, -0.876);
 
 /* Positive outside the glyph, negative inside, in texture pixels. */
 float sdf(vec2 uv) { return (0.5 - texture(uSDF, uv).r) * 2.0 * uRange; }
@@ -263,6 +270,23 @@ void main() {
      halo is still alive at the distances where the core has gone. The noise
      then modulates BRIGHTNESS rather than reach, which can only make light
      stronger or weaker where it already is — it can never open a hole. */
+  /* WHICH WAY THIS PIECE OF THE FIELD FACES.
+
+     The gradient of a distance field points straight away from the nearest
+     edge, so dotting it with the light direction gives the same quantity a
+     surface normal would: +1 on the side of a stroke that faces the light, -1
+     on the side turned away. That is the whole of modelling, and it is what
+     makes a raking light read as raking rather than as an even collar.
+
+     Two extra samples. Cheap for what it buys. */
+  vec2 e = vec2(1.6 / uAspect, 1.6) * 0.004;
+  vec2 grad = normalize(vec2(
+    sdf(uv + vec2(e.x, 0.0)) - sdf(uv - vec2(e.x, 0.0)),
+    sdf(uv + vec2(0.0, e.y)) - sdf(uv - vec2(0.0, e.y))) + 1e-5);
+  // 1 where the field faces the light, 0.18 where it faces away — not 0,
+  // because a shadow side in a hazy room is dim, never black.
+  float facing = mix(0.18, 1.0, clamp(dot(grad, LIGHT) * 0.5 + 0.5, 0.0, 1.0));
+
   float core = exp(-max(d, 0.0) / 18.0);
   float mid  = exp(-max(d, 0.0) / 78.0);
   /* WEIGHTED TOWARD THE MID FIELD, WHICH IS A CONTRAST DECISION, NOT A TASTE ONE.
@@ -273,8 +297,8 @@ void main() {
      spread as dirt on the letters rather than as light around them. Flattening
      the ratio costs some drama at the outline and buys a wordmark that is lit
      all over, which is what being in a light actually looks like. */
-  float bloom = outward * (core * 0.46 * (0.70 + 0.42 * lick)
-                         + mid * 0.62 * (0.74 + 0.46 * lick));
+  float bloom = outward * facing * (core * 0.46 * (0.70 + 0.42 * lick)
+                                  + mid * 0.62 * (0.74 + 0.46 * lick));
 
   // The far light, which is what puts the wordmark in a room rather than on a
   // background. Wide, slow, and almost flat.
@@ -285,45 +309,29 @@ void main() {
      could not come from a filter: what it draws depends on which letters lie
      between this pixel and the middle, so the shafts fan out of the gaps
      between the strokes the way real light through a stencil does. */
-  vec2 c = vec2(0.5);
-  vec2 dir = uv - c;
+  /* SHAFTS THAT OBEY THE SOURCE.
+
+     They used to march toward the middle of the canvas, which made the mark
+     look self-lit and radially symmetrical — fine for a glowing sign, wrong for
+     an object standing in a raking light. Marching TOWARD the light instead and
+     accumulating the ink in the way means a pixel finds ink only when it lies
+     on the far side of a stroke from the source. So every letter trails light
+     down and to the right, all of them parallel, none of them radial. That
+     parallelism is what the eye reads as one distant source. */
+  vec2 stepv = vec2(LIGHT.x / uAspect, LIGHT.y) * (0.075 / 20.0);
   float jitter = hash(uv * 512.0 + uTime);
   float rays = 0.0, w = 1.0, wsum = 0.0;
   for (int i = 0; i < 20; i++) {
-    float t = (float(i) + jitter) / 20.0;
-    vec2 p = c + dir * (1.0 - t * 0.62);
-    /* SOFT COVERAGE, NOT A COVERAGE TEST.
-
-       Reading each sample as in-ink-or-not is very nearly a binary, and twenty
-       binaries summed is a staircase: as a sightline swings past the edge of a
-       stroke the total jumps, and the jump draws a hard-edged wedge in the
-       light. That is what put crisp black triangles under the arm of the T,
-       and no amount of retuning the falloffs could remove them because they
-       were never a falloff. Letting each sample fade over thirty pixels makes
-       the sum continuous in the sightline's angle, which is the only thing
-       that was wrong with it. */
+    vec2 p = uv + stepv * (float(i) + jitter);
     rays += smoothstep(20.0, -6.0, sdf(p)) * w;
     wsum += w;
-    w *= 0.90;
+    w *= 0.93;
   }
   rays /= max(wsum, 1e-4);
-  /* SHAFTS ARE A FAR-FIELD EFFECT. THIS LINE IS WHY THE T LOOKED WRONG.
-
-     The sweep marches from this pixel back toward the mark counting ink, so
-     within a few pixels of a stroke the count is dominated by that stroke's own
-     local shape — and it traced hard, spiky wedges around the T's foot serifs
-     that read as torn black shapes stuck to the letter. Isolating the term
-     proved it: the wedges were entirely in the shaft channel, and the interior
-     mask underneath them was clean.
-
-     Light behaves the same way. You see shafts in the haze at a distance from a
-     source, never clinging to it — up close there is only glow. So the shafts
-     are held off until well clear of the ink, and the near field is left to the
-     bloom, which is smooth by construction. */
+  // Held off until clear of the ink — up close there is only glow.
   rays *= smoothstep(14.0, 105.0, d);
-  rays *= smoothstep(0.02, 0.40, length(dir * vec2(1.0, 2.0)));
-  // Shimmer by angle, so neighbouring shafts brighten independently.
-  rays *= 0.42 + 0.78 * fbm(vec2(atan(dir.y, dir.x) * 3.0, uTime * 0.22));
+  // Shimmer along the beam, so the streaks breathe instead of sitting still.
+  rays *= 0.42 + 0.78 * fbm(vec2(dot(uv, vec2(uAspect, 1.0)) * 5.0, uTime * 0.22));
 
   /* Embers. One cell of a coarse grid may hold one, it rises, it dies, and the
      cell's own hash decides whether it exists at all — so they do not pulse in
@@ -496,12 +504,28 @@ export default function MarkGlow({ text, fadeRef }: Props) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    /* THE FIELD WAS UPSIDE DOWN. FOR EVERY VERSION OF THIS SO FAR.
+
+       WebGL puts the first row of uploaded data at v = 0, and v = 0 is the
+       BOTTOM of the viewport — so a texture built from a 2D canvas, whose first
+       row is its top, arrives vertically mirrored unless you say otherwise.
+       Nobody notices on a glow, because a blur around three letters looks
+       plausible around the same three letters flipped. It shows up only where
+       the field has strong local structure: the T's crossbar landed at the
+       T's foot, which is exactly where those jagged black wedges were.
+
+       I blamed the wedges on canvas synthesising the bold weight. That was
+       wrong. Removing the interior mask hid them rather than fixing them, and
+       the light has been modelling a mirrored wordmark the whole time. Proved
+       by rendering glyph coverage alone and looking at where the crossbar sat. */
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
     const uTime = gl.getUniformLocation(prog, 'uTime');
     const uFade = gl.getUniformLocation(prog, 'uFade');
     const uIgnite = gl.getUniformLocation(prog, 'uIgnite');
     gl.uniform1i(gl.getUniformLocation(prog, 'uSDF'), 0);
     gl.uniform1f(gl.getUniformLocation(prog, 'uRange'), SDF_RANGE);
+    gl.uniform1f(gl.getUniformLocation(prog, 'uAspect'), GLOW_ASPECT);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

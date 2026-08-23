@@ -153,18 +153,22 @@
 }
 .truland .arrive-type b {
   background-image:
-    linear-gradient(102deg, transparent 42%, rgba(255, 255, 255, 0.5) 50%, transparent 58%),
-    linear-gradient(180deg,
+    linear-gradient(118deg, transparent 42%, rgba(255, 255, 255, 0.5) 50%, transparent 58%),
+    /* 128deg, not 180: the light rakes in from the upper left, so the bright
+       side of every stroke is its upper-left flank and the shadow gathers at
+       the lower right. A top-to-bottom gradient under a raking light is the
+       tell that the letters were coloured rather than lit. */
+    linear-gradient(128deg,
       #ffffff 0%,
-      #f6faf4 26%,
-      #dfe8dc 50%,
-      #b9c7bb 74%,
-      #92a396 100%);
+      #f6faf4 24%,
+      #dbe5d9 50%,
+      #aebeb0 76%,
+      #85978a 100%);
 }
 .truland .arrive-type i {
   background-image:
-    linear-gradient(102deg, transparent 42%, rgba(255, 248, 224, 0.62) 50%, transparent 58%),
-    linear-gradient(180deg,
+    linear-gradient(118deg, transparent 42%, rgba(255, 248, 224, 0.62) 50%, transparent 58%),
+    linear-gradient(128deg,
       #fff3d6 0%,
       #ffdb95 24%,
       #f2b23c 49%,
@@ -190,7 +194,7 @@
    which is the other half of reading as low detail. */
 .truland .arrive-type {
   filter:
-    drop-shadow(0 0.012em 0.006em rgba(26, 14, 2, 0.62))
+    drop-shadow(0.007em 0.013em 0.006em rgba(26, 14, 2, 0.66))
     drop-shadow(0 0 calc(0.10em * var(--pl))) ;
 }
 
@@ -217,10 +221,12 @@
   translate: -50% calc(-50% + var(--glow-dy, 0em));
   z-index: 0;
   pointer-events: none;
+  /* Pushed down and right, away from the source. Shadow does not sit centred
+     under an object lit from one side. */
   background: radial-gradient(
-    ellipse 46% 62% at 50% 50%,
-    rgba(4, 9, 6, 0.82) 0%,
-    rgba(4, 9, 6, 0.55) 45%,
+    ellipse 46% 62% at 54% 56%,
+    rgba(4, 9, 6, 0.84) 0%,
+    rgba(4, 9, 6, 0.56) 45%,
     rgba(4, 9, 6, 0) 78%);
   opacity: var(--pl);
 }
@@ -247,14 +253,19 @@
   object-fit: cover;
   /* The beams originate above the wordmark, which sits at 31dvh, so the light
      in the plate falls ON the letters rather than behind them. */
-  object-position: 50% 22%;
+  /* The beam enters top-left and rakes down across the wordmark, so the plate
+     is anchored to that corner rather than centred. */
+  object-position: 32% 26%;
   /* ABOVE the veil, not under it. The veil's job is to hold back the site's own
      filament room so the opening reads as one lit object in the dark; it was
      never meant to dim the opening's own light source, and at z-index 0 it was
      painting 84% black straight over this. */
   z-index: 1;
   pointer-events: none;
-  opacity: calc(0.62 * (1 - var(--pt, 0)));
+  /* Lower than the old top-down plate. This one is a single hard beam rather
+     than a soft wash, and at the old strength it read as a stripe across the
+     hero instead of as the light in a room. */
+  opacity: calc(0.56 * (1 - var(--pt, 0)));
   /* Dissolves downward instead of ending. The plate carries floor haze along
      its bottom edge, which drew a horizontal band across the hero and gave the
      room a visible bottom — the same rectangle problem in a different layer.
@@ -601,8 +612,8 @@
   /* One frame of the room, not a loop. */
   .truland .arrive-room {
     display: block;
-    opacity: 0.62;
-    background: url('/tru-room.webp') 50% 22% / cover no-repeat;
+    opacity: 0.46;
+    background: url('/tru-room.webp') 32% 26% / cover no-repeat;
   }
   .truland.arrive-live .brand { opacity: 1; }
   .truland .arrive-veil { opacity: 0.5; }
