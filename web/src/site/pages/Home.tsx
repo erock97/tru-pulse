@@ -245,7 +245,13 @@ export default function Home() {
          curve is free to be about the feel of landing rather than about hiding
          a seam. */
       const travel = Math.max(0, Math.min(1, (v - 0.14) / 0.86));
-      const light = 1 - Math.max(0, Math.min(1, (travel - 0.35) / 0.5));
+      /* The light banks down to a FLOOR, not to zero. The brief has always been
+         that the mark "settles at the top with that nice glow" — so the glow is
+         a thing the mark keeps, not a thing the trip burns off. It runs the
+         whole length of the travel and finishes at 0.3, which is the strength
+         the header wordmark's own resting glow is tuned to match, so the swap
+         at the end changes nothing the eye can track. */
+      const light = 1 - 0.7 * Math.max(0, Math.min(1, (travel - 0.3) / 0.7));
 
       arrive.style.setProperty('--p', v.toFixed(4));
       arrive.style.setProperty('--pt', travel.toFixed(4));
@@ -322,6 +328,33 @@ export default function Home() {
               thing on the screen, and lifts as the mark leaves. The room never
               changes — it is the same fixed plate every page of this site is
               already standing on. Nothing crossfades to somewhere else. */}
+          {/* THE ROOM THE MARK ARRIVES IN.
+
+              Generated in Higgsfield: amber shafts falling through haze onto a
+              near-black forest floor, ping-ponged so it loops without a seam.
+              It is not a picture of the logo and it never will be — that was
+              the mistake three times over. It is the SPACE, and the wordmark
+              stands in it.
+
+              This is also what makes the opening and the site one thing rather
+              than two. The room fades out over the same scroll that carries the
+              mark to the header, handing over to the filament room that is
+              already behind every page of this site. Both are amber on
+              near-black, so what the eye follows is one continuous space with
+              the light changing character — not an intro ending and a website
+              starting. */}
+          <video
+            className="arrive-room"
+            src="/tru-room.mp4"
+            poster="/tru-room.webp"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden
+          />
+
           <div className="arrive-veil" aria-hidden />
 
           {/* Reduced motion only. The same wordmark under the same light,

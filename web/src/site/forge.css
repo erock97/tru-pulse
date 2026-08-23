@@ -133,6 +133,37 @@
    panel. `--glow-dy` lines the canvas's centre up with the ink centre of the
    type rather than with its line box, which are not the same point for
    all-caps and are a visible fraction of an em apart at this size. */
+/* ---- the room ------------------------------------------------------------
+   Sits under everything in the stage and fades out over the travel, so the
+   opening light hands over to the site's own room instead of ending. Driven by
+   the travel rather than by the light curve, because the mark keeps its glow at
+   the top and the room must not. */
+.truland .arrive-room {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The beams originate above the wordmark, which sits at 31dvh, so the light
+     in the plate falls ON the letters rather than behind them. */
+  object-position: 50% 22%;
+  /* ABOVE the veil, not under it. The veil's job is to hold back the site's own
+     filament room so the opening reads as one lit object in the dark; it was
+     never meant to dim the opening's own light source, and at z-index 0 it was
+     painting 84% black straight over this. */
+  z-index: 1;
+  pointer-events: none;
+  opacity: calc(0.62 * (1 - var(--pt, 0)));
+  /* Dissolves downward instead of ending. The plate carries floor haze along
+     its bottom edge, which drew a horizontal band across the hero and gave the
+     room a visible bottom — the same rectangle problem in a different layer.
+     Fading it out over the lower half also does the narrative work: the
+     opening's light thins into the page rather than stopping at a line. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 88%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 46%, transparent 88%);
+  will-change: opacity;
+}
+
 .truland .arrive-still {
   position: relative;
   display: block;
@@ -168,7 +199,18 @@
 }
 
 /* The header's real wordmark stays hidden until the travelling one has landed
-   on it, then they swap with nothing in between. */
+   on it, then they swap with nothing in between.
+
+   And it keeps the light. The whole point of the arrival is that the mark
+   settles at the top still carrying a soft glow — so the resting brand wears
+   the same warmth the traveller lands with, at the same strength the light
+   curve finishes on (0.3 of full). If these two drift apart the swap becomes
+   visible as a small dimming, which reads as the animation switching off. */
+.truland .brand {
+  text-shadow:
+    0 0 0.35em rgba(255, 220, 147, 0.30),
+    0 0 0.9em rgba(242, 178, 60, 0.22);
+}
 .truland.arrive-live .brand { opacity: 0; }
 
 /* ---- the words -----------------------------------------------------------
@@ -452,6 +494,12 @@
   /* The travelling mark is not rendered at all here; `.arrive-still` below is,
      and it sits inside the stage where the hero can lay it out. */
   .truland .arrive-mark { display: none; }
+  /* One frame of the room, not a loop. */
+  .truland .arrive-room {
+    display: block;
+    opacity: 0.62;
+    background: url('/tru-room.webp') 50% 22% / cover no-repeat;
+  }
   .truland.arrive-live .brand { opacity: 1; }
   .truland .arrive-veil { opacity: 0.5; }
   .truland .arrive-cue { display: none; }

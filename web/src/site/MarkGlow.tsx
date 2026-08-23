@@ -232,17 +232,24 @@ void main() {
                    fbm(uv * 3.0 + vec2(5.2, 3.1 - uTime * 0.05)));
   float lick = fbm(uv * 6.0 + flow * 1.4 + vec2(uTime * 0.05, -uTime * 0.13));
 
-  /* Nothing is painted inside the letterforms — the live type is there, and the
-     light has to leave the glyphs to read as coming off them.
+  /* THE INTERIOR MASK IS GONE, AND THAT IS A ROBUSTNESS FIX.
 
-     THE RAMP HAS TO FINISH AT THE OUTLINE, NOT PAST IT. Fading out to d = +14
-     put the mask's dark half OUTSIDE the letters, which opened an unlit gap
-     between each glyph and its own light: a ring of black following the
-     letterforms, with the glow starting beyond it. On a dark page that is
-     indistinguishable from a drop shadow, and a drop shadow is exactly what
-     something pasted onto a background has. The ramp lives entirely inside the
-     ink now, so the brightest light is in contact with the stroke. */
-  float outward = smoothstep(-14.0, -1.0, d);
+     There used to be a mask here suppressing light inside the glyphs. Its only
+     visible job was invisible: the live type is opaque and sits on top, so
+     light painted under it cannot be seen. What the mask DID do was turn every
+     disagreement between the field and the DOM into a black hole.
+
+     And they do disagree. Canvas 2D synthesises the 800 weight slightly fatter
+     than the real variable axis the page renders, and the excess lands on the
+     serif brackets — so the T grew two jagged black wedges at its foot, which
+     is the "the T looks wrong" everyone could see and nobody could name.
+     Isolating the terms into separate colour channels showed the mask dark
+     exactly there.
+
+     Without it, a field that is a shade fat simply lights a little further
+     under a letter that already covers it. The failure mode goes from a torn
+     black shape to nothing at all. */
+  float outward = 1.0;
 
   /* THREE FALLOFFS, NOT ONE WITH A MOVING RADIUS.
 
@@ -300,6 +307,20 @@ void main() {
     w *= 0.90;
   }
   rays /= max(wsum, 1e-4);
+  /* SHAFTS ARE A FAR-FIELD EFFECT. THIS LINE IS WHY THE T LOOKED WRONG.
+
+     The sweep marches from this pixel back toward the mark counting ink, so
+     within a few pixels of a stroke the count is dominated by that stroke's own
+     local shape — and it traced hard, spiky wedges around the T's foot serifs
+     that read as torn black shapes stuck to the letter. Isolating the term
+     proved it: the wedges were entirely in the shaft channel, and the interior
+     mask underneath them was clean.
+
+     Light behaves the same way. You see shafts in the haze at a distance from a
+     source, never clinging to it — up close there is only glow. So the shafts
+     are held off until well clear of the ink, and the near field is left to the
+     bloom, which is smooth by construction. */
+  rays *= smoothstep(14.0, 105.0, d);
   rays *= smoothstep(0.02, 0.40, length(dir * vec2(1.0, 2.0)));
   // Shimmer by angle, so neighbouring shafts brighten independently.
   rays *= 0.42 + 0.78 * fbm(vec2(atan(dir.y, dir.x) * 3.0, uTime * 0.22));
@@ -315,7 +336,7 @@ void main() {
   float life = fract(uTime * (0.10 + 0.16 * h) + h * 7.0);
   vec2 sp = fract(gp) - vec2(0.5 + 0.26 * sin((h + uTime * 0.2) * 6.2832), 1.15 - life * 2.0);
   float near = exp(-max(sdf((gi + 0.5) / vec2(26.0, 13.0)), 0.0) / 65.0);
-  float ember = exp(-dot(sp, sp) * 300.0) * (1.0 - life) * near * step(0.62, h);
+  float ember = exp(-dot(sp, sp) * 300.0) * (1.0 - life) * near * step(0.78, h);
 
   const vec3 GOLD = vec3(0.949, 0.698, 0.235);
   const vec3 WARM = vec3(1.000, 0.863, 0.576);
@@ -340,12 +361,21 @@ void main() {
      define is the whole fix. */
   float ambient = outward * exp(-max(d, 0.0) / 210.0);
 
+  /* RESTRAINT IS THE SPEC, NOT A TASTE.
+
+     At the previous weights the glow was the subject and the wordmark was
+     something floating in it: the letters' own colours shifted under the
+     halation, the white T read as damaged against the furnace behind it, and
+     the whole thing was "way too bright" — Eric's words, and he was right. The
+     letters are the logo. The light's entire job is to make them look bold and
+     alive, never to compete. Every term is roughly a third of what it was, and
+     nothing is allowed near white except the embers, which are single pixels. */
   vec3 col = vec3(0.0);
-  col += GOLD * ambient * 0.22;
-  col += WARM * bloom * 0.66;
-  col += GOLD * halo * 0.72;
-  col += mix(GOLD, BONE, 0.42) * rays * 0.46;
-  col += WARM * ember * 2.4;
+  col += GOLD * ambient * 0.09;
+  col += WARM * bloom * 0.26;
+  col += GOLD * halo * 0.30;
+  col += mix(GOLD, BONE, 0.35) * rays * 0.20;
+  col += WARM * ember * 1.7;
 
   /* THE LIGHT MUST REACH ZERO BEFORE THE CANVAS DOES.
 
