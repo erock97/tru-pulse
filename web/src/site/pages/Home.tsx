@@ -2,21 +2,42 @@ import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
 
 /* ============================================================================
-   THE ARRIVAL
+   THE ARRIVAL — "first light"
    ----------------------------------------------------------------------------
-   The wordmark opens at half the width of the screen and, as you scroll, moves
-   and shrinks until it is sitting exactly where the header's own wordmark
-   sits, at exactly its size. Then the two swap and the page is there.
+   Two beats, one object, three quarters of a screen of scroll.
 
-   The previous version of this was a video of molten letters that cooled into
-   the page. It failed for a reason worth keeping written down: a crossfade has
-   no object in common on either side of it, so there is nothing for the eye to
-   follow, and the opening reads as a separate thing bolted to the front of the
-   site no matter how well the colours are matched. Continuity is not a colour
-   problem. One thing has to survive the boundary.
+   BEAT ONE, before you touch anything: the mark is not drawn, it is LIT. A
+   rendered plate of dawn light coming through mist, with the letterforms
+   standing in the gap the light leaves. It breathes. Then the light contracts
+   into the letters and hands over to live type at exactly the same size and
+   place, so the surface changes while the object does not.
 
-   Everything below serves that: measure the real header mark, hand the CSS the
-   delta, and let one custom property drive the trip.
+   BEAT TWO, as you scroll: that live type travels and shrinks along one path
+   until it is sitting exactly where the header's own wordmark sits, at exactly
+   its size, and the two swap. The words rise into the middle behind it and the
+   veil over the page's room lifts, so the site is assembling itself while the
+   mark is still moving rather than appearing once it has finished.
+
+   Three things the previous version got wrong, worth keeping written down:
+
+   1. THE ART DID NOT BELONG TO THE PALETTE. It was neon green lightning. The
+      site is deep green, bone and one amber; electricity is a different world
+      and no amount of choreography rescues a foreign object. The plate is now
+      generated in the page's own light — warm amber and bone on true black.
+
+   2. IT DID NOT FIT. The opening state was scaled off viewport WIDTH alone,
+      so on any laptop the glow ran off the top and bottom of the screen. The
+      plate is now clamped on both axes with real margin, which is the only way
+      a hero fits a 13-inch laptop and a 27-inch monitor with the same rule.
+
+   3. IT ASKED FOR TOO MUCH. Three full screens of scroll before the page
+      began. The whole opening now resolves in 175dvh — you stand in it for one
+      screen and it is done three quarters of a screen later.
+
+   The choreography (measure the real target, drive the axes in sequence, ease
+   the scrub rather than tracking it) follows the pattern in 21st.dev's
+   "Home Hero Landing Scroll Animation" and "Hero Scrub", ported off GSAP so
+   this page does not add an animation runtime to the app bundle for one hero.
    ========================================================================== */
 
 const PROOF = [
@@ -55,53 +76,56 @@ const WHO = [
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
-/* The rendered wordmark, if one has been produced. Dropping the file into
-   web/public is the whole install: the hero probes for it and lights the layer
-   up only if it loads, so a missing render is not a broken hero, it is the
-   typeset mark exactly as it is today.
+/* The plate, and the same plate moving.
 
-   The render is used for the BIG state only. It hands over to the live type
-   partway through the travel, because the thing the mark has to land on is the
-   header's own wordmark, which is text. A raster arriving on a typeset target
-   would not coincide, and coinciding is the entire trick. The surface
-   simplifying as the object becomes interface is the right reading anyway: it
-   starts as a rendered thing and resolves into the product. */
-const MARK_RENDER = '/tru-mark.webp';
-/* The strike itself. A still cannot strike, which is the whole reason the first
-   attempt read as "letters with lightning around them" rather than as anything
-   happening: it was a photograph. This is a five-second loop of the discharge
-   actually moving, generated from the still above so the letterforms are
-   identical and it can cross-fade into it without a jump.
+   Both are generated art with the dark ground removed rather than composited
+   with a blend mode. `mix-blend-mode: screen` was tried and measurably DARKENED
+   the page here — the mark carries a transform, a transform makes a stacking
+   context, and a blend inside one composites against a backdrop that is empty.
+   Baking the plate's own luminance into an alpha channel sidesteps the whole
+   argument: there is no rectangle in either file, so there is no edge to hide.
 
-   It carries a REAL ALPHA CHANNEL rather than being composited with a blend
-   mode. Two earlier attempts failed on that: a radial mask only softens the
-   edge of a rectangle that is still there, and `mix-blend-mode: screen` on the
-   fixed, transformed mark measurably DARKENED the page instead of lightening
-   it - with the page frozen, a spot reading 77,58,32 came back 71,58,25 under
-   screen when the arithmetic says it can only ever brighten. Rather than fight
-   a compositing path, the clip's own luminance was baked into an alpha channel
-   with ffmpeg, so the glow is genuinely transparent where it is dark and there
-   is no rectangle in the file at all. */
-const MARK_CLIP = '/tru-mark.webm';
+   The still is the poster and the honest fallback. The clip is an upgrade that
+   is only switched on where it is known to render correctly. */
+const ART_STILL = '/tru-firstlight.webp';
+const ART_CLIP = '/tru-firstlight.webm';
+
+/* The letters occupy 55.0% of the plate's width, dead centre on both axes —
+   measured off the file, not guessed. Sizing the plate at 1/0.55 of the typeset
+   mark is what makes the lit letters and the live letters exactly the same
+   width, which is the only reason the handover between them is invisible. */
+const ART_LETTER_FRACTION = 0.55;
+const ART_FRAME = `${(100 / ART_LETTER_FRACTION).toFixed(1)}%`;
+/* 1920 × 815, the frame the plate was rendered at. */
+const ART_ASPECT = 1920 / 815;
+
+/* Alpha in WebM is a VP9 side-track. Chromium and Firefox composite it; Safari
+   plays the video and ignores the alpha, which would put a black slab over the
+   hero — worse than no clip at all. So the clip is opt-in for engines known to
+   handle it, and everywhere else the still stands, which is the same picture
+   without the drift. */
+function clipIsSafeHere(): boolean {
+  const v = document.createElement('video');
+  if (v.canPlayType('video/webm; codecs="vp9"') !== 'probably') return false;
+  const ua = navigator.userAgent;
+  const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Android|Edg/.test(ua);
+  return !isSafari;
+}
 
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
-  const markRef = useRef<HTMLParagraphElement | null>(null);
-  const [hasRender, setHasRender] = useState(false);
+  const markRef = useRef<HTMLDivElement | null>(null);
   const [hasClip, setHasClip] = useState(false);
 
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => setHasRender(img.naturalWidth > 0);
-    img.src = MARK_RENDER;
-
-    // Probed rather than assumed, so a missing clip degrades to the still and a
-    // missing still degrades to live type. Neither is a broken hero.
+    if (!clipIsSafeHere()) return;
+    // Probed rather than assumed, so a clip that fails to load degrades to the
+    // still instead of leaving a hole where the mark should be.
     const v = document.createElement('video');
     v.preload = 'metadata';
-    v.oncanplay = () => setHasClip(true);
     v.onloadeddata = () => setHasClip(true);
-    v.src = MARK_CLIP;
+    v.oncanplay = () => setHasClip(true);
+    v.src = ART_CLIP;
   }, []);
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
@@ -129,29 +153,46 @@ export default function Home() {
 
       /* And the opening state, as a delta from there.
 
-         The scale has to be inside the centring. `transform-origin` is the
-         mark's own left edge, so after scaling by S its centre has moved to
-         `left + width * S / 2`, not `left + width / 2`. Using the unscaled
-         half-width put the opening mark most of a screen to the right and
-         hanging off the edge. */
-      const scale = Math.max(2, Math.min(16, (window.innerWidth * 0.44) / r.width));
-      mark.style.setProperty('--dx', `${window.innerWidth / 2 - (r.left + (r.width * scale) / 2)}px`);
-      mark.style.setProperty('--dy', `${window.innerHeight * 0.42 - (r.top + r.height / 2)}px`);
+         THE PLATE IS CLAMPED ON BOTH AXES. Width alone is what put the old hero
+         off the screen: a wide short window has plenty of width and no height,
+         and a plate sized off width overflowed the top and bottom every time.
+         Whichever axis runs out first decides the size, and both keep a margin.
+
+         The scale then has to be derived from the plate rather than from the
+         viewport, so the live type is exactly as wide as the lit letters and
+         the handover between them does not change size. */
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const artW = Math.min(vw * 0.72, vh * 0.4 * ART_ASPECT);
+      const scale = Math.max(1.6, Math.min(22, (artW * ART_LETTER_FRACTION) / r.width));
+
+      /* `transform-origin` is the mark's own left edge, so after scaling by S
+         its centre sits at `left + width * S / 2`, not `left + width / 2`.
+         Using the unscaled half-width is what put the old opening mark most of
+         a screen to the right, hanging off the edge. */
+      mark.style.setProperty('--dx', `${vw / 2 - (r.left + (r.width * scale) / 2)}px`);
+      mark.style.setProperty('--dy', `${vh * 0.38 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
     };
 
     measure();
     window.addEventListener('resize', measure, { passive: true });
+    window.addEventListener('orientationchange', measure, { passive: true });
     if (document.fonts?.ready) void document.fonts.ready.then(measure);
-    return () => window.removeEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
   }, []);
 
-  /* One value drives the whole thing: how far through the arrival you are.
-     Written straight onto the element as a custom property, so the stylesheet
-     owns every transform and this owns none of them. rAF-throttled, so a burst
-     of scroll events costs one write per frame and never touches React state,
-     which at sixty frames a second would re-render the page instead of moving
-     a wordmark. */
+  /* One value drives the whole thing: how far through the arrival you are. The
+     two beats are cut out of it here rather than in the stylesheet, because a
+     number computed in JS cannot silently fail to parse, and a chain of CSS
+     clamps on an unregistered custom property can — which reads as "the hero
+     does not move" with nothing in the console.
+
+     rAF-throttled, and never through React state: re-rendering the page sixty
+     times a second to move a wordmark is how a smooth idea ships as a stutter. */
   useEffect(() => {
     const arrive = arriveRef.current;
     const mark = markRef.current;
@@ -162,6 +203,41 @@ export default function Home() {
       return;
     }
 
+    let frame = 0;
+    let cur = 0;
+    let target = 0;
+    const shell = document.querySelector('.truland');
+
+    const apply = (v: number) => {
+      /* Beat two starts first and beat one finishes inside it, on purpose.
+
+         THE HANDOVER HAPPENS LATE, and that is the whole tuning of this thing.
+         Swapping the plate for live type while the mark is still enormous put
+         Playfair at 800 weight on the screen ten times its design size, next to
+         a fine high-contrast Didone — the same three letters, visibly fatter,
+         which is a downgrade you cannot un-see. Held until the mark is roughly
+         half way home, the type is small enough that its weight reads as it was
+         drawn to, and the light travels with the mark instead of leaving it. */
+      const light = Math.max(0, Math.min(1, (v - 0.56) / 0.24));
+      const travel = Math.max(0, Math.min(1, (v - 0.14) / 0.86));
+
+      arrive.style.setProperty('--p', v.toFixed(4));
+      arrive.style.setProperty('--pt', travel.toFixed(4));
+      if (mark) {
+        mark.style.setProperty('--p', v.toFixed(4));
+        mark.style.setProperty('--pl', light.toFixed(4));
+        mark.style.setProperty('--pt', travel.toFixed(4));
+        /* A class, not an inline opacity. An inline style beats the entry
+           animation's own opacity, and writing one on the first frame is what
+           would silently delete the mark's fade-in. */
+        mark.classList.toggle('landed', travel >= 0.995);
+      }
+      // Hand the header its own mark back only once the travelling one has
+      // landed on it. Both visible at once, even for two frames, and the
+      // illusion is over.
+      shell?.classList.toggle('arrive-live', travel < 0.995);
+    };
+
     /* The value EASES toward the scroll position rather than tracking it one to
        one. Raw tracking is what makes a scroll-driven move feel mechanical: the
        mark stops the instant the wheel stops. A lerp of 0.12 a frame is roughly
@@ -170,21 +246,6 @@ export default function Home() {
 
        The loop only runs while there is distance left to close, so a page at
        rest costs nothing. */
-    let frame = 0;
-    let cur = 0;
-    let target = 0;
-    const shell = document.querySelector('.truland');
-
-    const apply = (v: number) => {
-      arrive.style.setProperty('--p', v.toFixed(4));
-      if (mark) mark.style.setProperty('--p', v.toFixed(4));
-      // Hand the header its own mark back only once the travelling one has
-      // landed on it. Both visible at once, even for two frames, and the
-      // illusion is over.
-      shell?.classList.toggle('arrive-live', v < 0.99);
-      if (mark) mark.style.opacity = v < 0.99 ? '1' : '0';
-    };
-
     const tick = () => {
       cur += (target - cur) * 0.12;
       if (Math.abs(target - cur) < 0.0006) cur = target;
@@ -224,10 +285,11 @@ export default function Home() {
     <div className="fh">
       <section className="arrive" id="top" ref={arriveRef}>
         <div className="arrive-stage">
-          {/* The product's own room render. The mark is lit by the same source
-              the app is lit by, and it fades into the room the page already
-              has underneath, which is the same room. */}
-          <div className="arrive-light" aria-hidden />
+          {/* Holds the site's own room back while the mark is the only lit
+              thing on the screen, and lifts as the mark leaves. The room never
+              changes — it is the same fixed plate every page of this site is
+              already standing on. Nothing crossfades to somewhere else. */}
+          <div className="arrive-veil" aria-hidden />
 
           <div className="arrive-copy">
             <h1>
@@ -245,33 +307,43 @@ export default function Home() {
               <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
             </div>
           </div>
+
+          {/* Somewhere to go. A hero whose whole first beat is scroll-driven
+              owes the reader a reason to scroll. */}
+          <a className="arrive-cue" href="#proof" aria-label="Skip to the numbers">
+            <span className="arrive-cue-rule" aria-hidden />
+          </a>
         </div>
       </section>
 
-      {/* The travelling mark. Fixed, outside the pinned stage, because it has to
-          outlive it: it is still moving when the stage has released, and it
-          finishes its trip sitting in the header. aria-hidden because the
+      {/* The travelling mark. Fixed, and outside the pinned stage, because it
+          has to outlive it: it is still moving when the stage has released and
+          it finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
-      <p
-        className={`arrive-mark${hasRender ? ' has-render' : ''}${hasClip ? ' has-clip' : ''}`}
-        ref={markRef}
-        aria-hidden
-      >
-        <span>T<i className="r">RU</i></span>
-        {hasRender && <img className="arrive-render" src={MARK_RENDER} alt="" decoding="async" />}
+      <div className={`arrive-mark${hasClip ? ' has-clip' : ''}`} ref={markRef} aria-hidden>
+        <span className="arrive-type">T<i>RU</i></span>
+        <img
+          className="arrive-art"
+          src={ART_STILL}
+          alt=""
+          width="1920"
+          height="815"
+          decoding="async"
+          style={{ width: ART_FRAME }}
+        />
         {hasClip && (
           <video
-            className="arrive-clip"
-            src={MARK_CLIP}
+            className="arrive-art arrive-art-clip"
+            src={ART_CLIP}
             autoPlay
             muted
             loop
             playsInline
             preload="auto"
-            aria-hidden
+            style={{ width: ART_FRAME }}
           />
         )}
-      </p>
+      </div>
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">
         <h2 className="h2 reveal">

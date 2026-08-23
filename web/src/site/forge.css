@@ -1,68 +1,34 @@
 /* ============================================================================
-   THE ARRIVAL
+   THE ARRIVAL — "first light"
    ----------------------------------------------------------------------------
-   The first attempt at this was a video: molten letters cut into black
-   obsidian, playing full-bleed, cooling into the page. It was the wrong idea
-   twice over.
+   Read the block at the top of pages/Home.tsx for what this is and why the two
+   attempts before it failed. What the stylesheet owns:
 
-   It did not belong to the palette. The stone is warm black and the letters
-   are orange; the site is deep green, bone and amber. Two colour worlds, with
-   the seam in the first six inches of the page.
+     --p   how far through the arrival you are, 0 to 1
+     --pl  beat one, the light contracting into the letterform
+     --pt  beat two, the trip to the header
 
-   And it did not belong to the PAGE. Whatever you crossfade a video into, the
-   viewer is watching one picture replaced by a different picture. There is no
-   object in common, so there is nothing to follow across the boundary, and it
-   reads as an intro bolted to the front rather than as the top of the site.
-   Cooling its colours down did not fix that, because the colours were never
-   the problem.
-
-   What the sites this wants to stand next to actually do is simpler and much
-   harder to fake: ONE THING SURVIVES. An object is established at full size,
-   and as you scroll it becomes a real element of the interface. Nothing
-   dissolves. You can follow it the whole way.
-
-   So the wordmark is the object. It opens at half the width of the screen, lit
-   from behind by the same render the product's room is lit by, and as you
-   scroll it travels and shrinks until it is sitting exactly where the header's
-   own wordmark sits, at exactly its size. The header solidifies around it and
-   the page is simply there.
-
-   Nothing crossfades. The room behind it never changes, because it is the same
-   room all the way down and the same room as app.truhq.co. The only thing that
-   moves is the mark, and it lands somewhere real.
+   All three are written by the page, once a frame, on the elements below. The
+   stylesheet owns every transform; the page owns none of them.
    ========================================================================== */
 
-/* `--p` is how far through the arrival you are, 0 to 1, written by the page. It
-   needs a type or every calc() below fails to parse silently, which reads as
-   "the hero does not move" with nothing in the console. */
-@property --p {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
+/* Typed, or every calc() below fails to parse silently — which reads as "the
+   hero does not move" with nothing in the console. */
+@property --p  { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --pl { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --pt { syntax: '<number>'; inherits: true; initial-value: 0; }
 
-/* ---- the travel ----------------------------------------------------------
-   The mark is a FIXED clone laid exactly over the header's wordmark: same box,
-   same face, same size. At --p 1 it coincides with it perfectly, because it is
-   its geometry. The opening state only pushes it to the middle of the screen
-   and scales it up.
-
-   That is why the maths runs in one direction only. Measuring the big state
-   and animating toward the small one leaves the landing a pixel or two out,
-   and a pixel or two out is exactly what makes a shared-element move read as
-   two elements. --dx, --dy and --s are measured from the header, once, and
-   again on resize. */
+/* ---- the stage -----------------------------------------------------------
+   One screen to stand in and three quarters of a screen of travel. The old
+   version asked for three full screens before the page began, which is the
+   single most expensive thing a landing page can do with a stranger's
+   patience. `dvh` not `vh`, so a phone's address bar cannot change the length
+   of the transition halfway through it. */
 .truland .arrive {
   --p: 0;
+  --pt: 0;
   position: relative;
-  /* THREE screens: one to stand in, two of travel. 150dvh was the single
-     biggest reason this read as "nothing happens" - half a viewport is not
-     enough scroll for a choreography to have a beginning, a middle and an end,
-     so the mark appeared to jump rather than to move. A production
-     scroll-scrubbed hero gives itself four; three is the least this needs.
-     `dvh` not `vh`, so a phone's address bar cannot change the length of the
-     transition halfway through it. */
-  height: 300dvh;
+  height: 175dvh;
 }
 .truland .arrive-stage {
   position: sticky;
@@ -72,23 +38,35 @@
   isolation: isolate;
 }
 
-/* The light. The product's own room render, held back and drifting, so the
-   mark is lit by the source the app is lit by rather than by a gradient
-   invented for the marketing site. It fades into the room the page already
-   has underneath it, which is the same room. */
-.truland .arrive-light {
+/* The veil, not a room. The site already stands on one fixed plate on every
+   page — see `.truland .bg` in Landing.css. Laying a SECOND room over it is
+   what made the old opening read as a thing bolted to the front of the site.
+   So this darkens the room that is already there while the mark is the only
+   lit object on the screen, and lifts as the mark leaves. Nothing crossfades,
+   because nothing is ever replaced. */
+.truland .arrive-veil {
   position: absolute;
-  inset: -14%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: url('/trinity.webp') 58% 34% / cover no-repeat;
-  opacity: calc(0.52 - var(--p) * 0.52);
-  transform: scale(calc(1.04 + var(--p) * 0.1));
-  will-change: transform, opacity;
+  background: radial-gradient(
+    112% 86% at 50% 34%,
+    rgba(5, 11, 8, 0.22) 0%,
+    rgba(5, 11, 8, 0.84) 58%,
+    rgba(5, 11, 8, 0.96) 100%);
+  opacity: calc(1 - var(--pt) * 0.8);
+  will-change: opacity;
 }
 
-/* The mark. Positioned by the page onto the header's wordmark, then pushed out
-   to the middle of the screen by the opening state. */
+/* ---- the mark ------------------------------------------------------------
+   A fixed clone laid exactly over the header's wordmark: same box, same face,
+   same size. At --pt 1 it coincides with it perfectly, because it IS its
+   geometry. The opening state only pushes it out and scales it up.
+
+   That is why the maths runs in one direction only. Measuring the big state
+   and animating toward the small one leaves the landing a pixel or two out,
+   and a pixel or two out is exactly what makes a shared-element move read as
+   two elements. */
 .truland .arrive-mark {
   position: fixed;
   z-index: 60;
@@ -101,78 +79,96 @@
   transform-origin: 0 50%;
   transform:
     translate3d(
-      calc(var(--dx, 0px) * (1 - var(--p))),
-      calc(var(--dy, 0px) * (1 - var(--p))),
+      calc(var(--dx, 0px) * (1 - var(--pt))),
+      calc(var(--dy, 0px) * (1 - var(--pt))),
       0)
-    scale(calc(1 + (var(--s, 1) - 1) * (1 - var(--p))));
+    scale(calc(1 + (var(--s, 1) - 1) * (1 - var(--pt))));
   will-change: transform;
   /* Something happens before any scrolling. A hero whose only motion is
      scroll-driven shows a still frame to anyone who lands and does not move,
      which is most people for the first second. */
-  animation: markEnter 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards;
+  animation: markEnter 1500ms cubic-bezier(0.16, 1, 0.3, 1) 80ms backwards;
 }
+/* Landed. The header's own mark takes over here and this one leaves without a
+   frame where both are visible, which would end the illusion. */
+.truland .arrive-mark.landed { opacity: 0; }
 @keyframes markEnter {
-  from { opacity: 0; filter: brightness(2.2); }
-  40%  { opacity: 1; }
-  to   { opacity: 1; filter: brightness(1); }
-}
-.truland .arrive-mark .r { font-style: normal; color: var(--gold); }
-/* The gold half must survive the sheen's background-clip, which paints the
-   whole span transparent. It gets its own clip so both halves are lit. */
-.truland .arrive-mark span .r {
-  background-image: linear-gradient(
-    100deg,
-    var(--gold) 0%, var(--gold) 38%, var(--gold-soft) 50%, var(--gold) 62%, var(--gold) 100%);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: arriveSheen 5.5s var(--e) 0.6s infinite;
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* A sheen crossing the letters while they are large: the room's light moving
-   over the mark. It stops mattering once the mark is small, so it is gone by
-   the time it reaches the header. */
-.truland .arrive-mark span {
-  background-image: linear-gradient(
-    100deg,
-    var(--ink) 0%,
-    var(--ink) 38%,
-    var(--gold-soft) 50%,
-    var(--ink) 62%,
-    var(--ink) 100%);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: arriveSheen 5.5s var(--e) 0.6s infinite;
+/* The live type, under the light. It is invisible until beat one hands over,
+   and it is the thing that actually makes the trip — a raster landing on a
+   typeset target would never coincide, and coinciding is the entire trick. */
+.truland .arrive-type {
+  display: block;
+  color: var(--ink);
+  opacity: var(--pl);
 }
-@keyframes arriveSheen {
-  0%, 100% { background-position: 130% 0; }
-  55%      { background-position: -30% 0; }
+.truland .arrive-type i { font-style: normal; color: var(--gold); }
+
+/* The plate. Sized in the page as a percentage of the typeset mark, so the lit
+   letters and the live letters are exactly the same width and the handover
+   between them changes the surface without moving the object.
+
+   No blend mode and no mask: both files carry a real alpha channel baked from
+   their own luminance, so the dark ground is absent from the file and the page
+   shows through exactly. Two earlier attempts failed here — a radial mask only
+   softens the edge of a rectangle that is still there, and `mix-blend-mode:
+   screen` on this element measurably DARKENED the page, because the element
+   carries a transform, a transform makes a stacking context, and a blend
+   inside one composites against a backdrop that is empty. */
+.truland .arrive-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: auto;
+  translate: -50% -50%;
+  /* THE LIGHT DISPERSES, IT DOES NOT CROSS-FADE.
+
+     Fading a rendered Didone into live Playfair at the same size showed both
+     alphabets at once for the length of the fade, and two sets of the same
+     three letters half a stroke apart is a double exposure, not a handover.
+     Blooming and blurring as it goes means what leaves the screen reads as
+     light dissipating rather than as a second wordmark — and what is left
+     underneath was never in competition with it. */
+  transform: scale(calc(1 + 0.16 * var(--pl)));
+  filter: blur(calc(var(--pl) * 18px));
+  opacity: calc(1 - var(--pl));
+  pointer-events: none;
+  will-change: opacity, transform, filter;
 }
+/* The still is the poster and the fallback. Once the clip is running it is
+   redundant, and two plates at once would double the glow. */
+.truland .arrive-mark.has-clip .arrive-art:not(.arrive-art-clip) { opacity: 0; }
 
 /* The header's real wordmark stays hidden until the travelling one has landed
-   on it, then they swap with nothing in between. Two frames showing both, or
-   neither, and the whole illusion is gone. */
+   on it, then they swap with nothing in between. */
 .truland.arrive-live .brand { opacity: 0; }
 
-/* The words assemble UNDER the mark as it leaves rather than replacing it, so
-   the page is being built while you watch. Same reading the deck gives when
-   its cards settle in. */
+/* ---- the words -----------------------------------------------------------
+   Present from the first frame. An opening screen that shows a logo and
+   nothing else asks a stranger to trust that scrolling is worth it, and the
+   way in should never be the thing that is hidden. They settle in on load like
+   the rest of the page, then rise into the middle as the mark leaves — so the
+   page is being built while you watch rather than appearing once the animation
+   has finished.
+
+   `translate` carries the scroll offset and `transform` carries the entry, so
+   the two compose instead of the keyframes overwriting the scroll rig. */
 .truland .arrive-copy {
   position: absolute;
   left: 50%;
-  bottom: clamp(3rem, 12vh, 8rem);
-  transform: translate3d(-50%, 0, 0);
+  top: 54dvh;
   width: min(var(--maxw), calc(100% - 3rem));
-  /* Present from the first frame. An opening screen that shows a logo and
-     nothing else asks a stranger to trust that scrolling is worth it, and the
-     way in should never be the thing that is hidden. It settles in on load
-     like the rest of the page and then simply stays. */
-  animation: arriveCopy 1000ms var(--e) 900ms backwards;
+  /* Far enough to land on the optical centre, not the geometric one. The block
+     hangs DOWN from `top`, so settling it at 54dvh leaves its middle nearer
+     two thirds down the screen and the finished hero reads bottom-heavy with a
+     lake of nothing under the header. */
+  translate: -50% calc(-15dvh * var(--pt));
   text-align: center;
   z-index: 3;
+  animation: arriveCopy 1000ms var(--e) 700ms backwards;
 }
 .truland .arrive-copy h1 {
   font-family: var(--serif);
@@ -201,8 +197,35 @@
 }
 .truland .arrive-copy .hcta { margin-top: 1.8rem; justify-content: center; }
 @keyframes arriveCopy {
-  from { opacity: 0; transform: translate3d(-50%, 1.4rem, 0); }
-  to   { opacity: 1; transform: translate3d(-50%, 0, 0); }
+  from { opacity: 0; transform: translateY(1.4rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Somewhere to go. A hero whose first beat is scroll-driven owes the reader a
+   reason to scroll, and it is gone the moment they take it. */
+.truland .arrive-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.2rem, 3.5vh, 2.4rem);
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  z-index: 4;
+  opacity: clamp(0, calc(1 - var(--pt) * 2.4), 1);
+}
+.truland .arrive-cue-rule {
+  display: block;
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(180deg, transparent, var(--gold-soft) 48%, transparent);
+  animation: cueDrift 2.8s var(--e) infinite;
+}
+.truland .arrive-cue:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+@keyframes cueDrift {
+  0%, 100% { transform: translateY(-5px); opacity: 0.3; }
+  50%      { transform: translateY(5px);  opacity: 1; }
 }
 
 /* ---- the numbers ---------------------------------------------------------
@@ -368,278 +391,70 @@
   .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 760px) {
-  .truland .arrive { height: 240dvh; }
+  .truland .arrive { height: 150dvh; }
+  .truland .arrive-copy { top: 50dvh; }
+  /* The CTAs stack on a phone, so the copy block reaches the bottom of the
+     screen and the cue lands on top of the second button. A phone does not
+     need to be told that pages scroll. */
+  .truland .arrive-cue { display: none; }
+}
+/* A laptop is not a tall screen. The copy block is roughly 270px of type and
+   buttons hanging off `top`, so on a short viewport it has to give some back
+   or the second CTA ends up under the fold of its own hero. */
+@media (max-height: 760px) {
+  .truland .arrive-copy { top: 54dvh; }
+  .truland .arrive-copy h1 { font-size: clamp(1.55rem, 2.8vw, 2.1rem); }
+  .truland .arrive-copy .arrive-sub { margin-top: 0.9rem; }
+  .truland .arrive-copy .hcta { margin-top: 1.2rem; }
 }
 
 /* ---- and none of it under reduced motion ---------------------------------
    The mark sits where it belongs at the size it belongs, and the hero is one
-   still screen. No travel, no sheen, no pinning. */
+   still screen: the plate, the words, and no travel, no pinning, no drift. */
 @media (prefers-reduced-motion: reduce) {
   .truland .arrive { height: auto; min-height: 100dvh; }
-  .truland .arrive-stage { position: relative; }
+  /* `height: 100dvh` + `overflow: hidden` is fine for a pinned stage and a trap
+     for a static one: the plate, the headline and two stacked buttons are
+     taller than a short window, and the stage would silently cut the CTAs off
+     rather than growing. Reduced motion must never mean reduced content. */
+  .truland .arrive-stage {
+    position: relative;
+    display: block;
+    height: auto;
+    overflow: visible;
+    padding-bottom: 8vh;
+  }
   .truland .arrive-mark { display: none; }
   .truland.arrive-live .brand { opacity: 1; }
-  .truland .arrive-light { opacity: 0.4; transform: none; }
+  .truland .arrive-veil { opacity: 0.5; }
+  .truland .arrive-cue { display: none; }
   .truland .arrive-copy {
     position: relative;
     left: auto;
-    bottom: auto;
-    transform: none;
+    top: auto;
+    translate: none;
     opacity: 1;
     animation: none;
     margin: 0 auto;
-    padding-top: 22vh;
+    padding-top: 24vh;
   }
-}
-
-/* ---- the rendered mark, when there is one --------------------------------
-   Sits exactly over the typeset mark, same box, and hands back to the type
-   partway through the travel. The handover happens while the mark is still
-   large and moving, so the eye is following position rather than surface and
-   the change of material goes unnoticed; by the time it reaches the header it
-   is live text landing on live text.
-
-   Not a crossfade between two PLACES, which is the thing that failed. Same
-   object, same trajectory, one surface resolving into another. */
-.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.66 - var(--p)) * 4, 1)); }
-.truland .arrive-render,
-.truland .arrive-clip {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  /* 21:9 with the letters occupying about 70% of the frame, so the frame is
-     sized ~1.45x the typeset mark for the letters inside to land on roughly
-     the same footprint. It scales with the mark, being a child of the
-     transformed element. */
-  width: 145%;
-  height: auto;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-
-  /* No blend mode, no mask. Both assets carry a real alpha channel baked from
-     their own luminance, so the dark ground is literally absent from the file
-     and the page shows through it exactly. The two things tried before this -
-     a radial mask, then `mix-blend-mode: screen` - both left a visible panel,
-     the second one because screen on this fixed transformed element darkened
-     the backdrop rather than lightening it. */
-}
-
-/* The still is the poster. It holds the frame until the clip can play, and it
-   is what a browser that blocks autoplay is left with - a lit mark rather than
-   a hole. Once the clip is running the still is redundant. */
-.truland .arrive-render { opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1); }
-.truland .arrive-mark.has-clip .arrive-render { opacity: 0; }
-
-/* The clip: the strike, actually moving. */
-.truland .arrive-clip {
-  opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1);
-  object-fit: cover;
-}
-@media (prefers-reduced-motion: reduce) {
-  .truland .arrive-mark.has-render span { opacity: 1; }
-  .truland .arrive-mark { animation: none; }
-  .truland .arrive-render,
-  .truland .arrive-clip { display: none; }
-}
-
-/* ---- the rendered mark, when there is one --------------------------------
-   Sits exactly over the typeset mark, same box, and hands back to the type
-   partway through the travel. The handover happens while the mark is still
-   large and moving, so the eye is following position rather than surface and
-   the change of material goes unnoticed; by the time it reaches the header it
-   is live text landing on live text.
-
-   Not a crossfade between two PLACES, which is the thing that failed. Same
-   object, same trajectory, one surface resolving into another. */
-.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.66 - var(--p)) * 4, 1)); }
-.truland .arrive-render,
-.truland .arrive-clip {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  /* 21:9 with the letters occupying about 70% of the frame, so the frame is
-     sized ~1.45x the typeset mark for the letters inside to land on roughly
-     the same footprint. It scales with the mark, being a child of the
-     transformed element. */
-  width: 145%;
-  height: auto;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-
-  /* THE BOX PROBLEM, SOLVED PROPERLY. The first version tried to hide a
-     rectangle behind a radial mask, and a mask only ever softens an edge - the
-     render's ground was still a different darkness from the page's, so it read
-     as a panel laid on top.
-
-     Both assets are generated on PURE BLACK now, and `screen` makes black
-     exactly transparent: result = 1-(1-a)(1-b), and where b is 0 the result is
-     the page, untouched, to the pixel. Only emitted light survives. There is no
-     edge left to feather because there is no rectangle.
-
-     The blend does NOT go here, though. `.arrive-mark` carries a transform, and
-     a transform creates a stacking context, so a blend mode on a child of it
-     composites against that context's own backdrop - which is empty - and
-     nothing happens. The rectangle stayed exactly as black as it was rendered
-     while `getComputedStyle` reported `screen` the whole time. It has to go on
-     the transformed element itself, below. */
-}
-
-/* The still is the poster. It holds the frame until the clip can play, and it
-   is what a browser that blocks autoplay is left with - a lit mark rather than
-   a hole. Once the clip is running the still is redundant. */
-.truland .arrive-render { opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1); }
-.truland .arrive-mark.has-clip .arrive-render { opacity: 0; }
-
-/* The clip: the strike, actually moving. */
-.truland .arrive-clip {
-  opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1);
-  object-fit: cover;
-}
-@media (prefers-reduced-motion: reduce) {
-  .truland .arrive-mark.has-render span { opacity: 1; }
-  .truland .arrive-mark { animation: none; }
-  .truland .arrive-render,
-  .truland .arrive-clip { display: none; }
-}
-
-/* ---- the strike -----------------------------------------------------------
-   Green lightning, in the room's own colours. The bolts are `--good` (the sea
-   green the product uses for "this is fine") with an amber core, because pure
-   green light on a green ground disappears; the hot centre is what makes it
-   read as electricity rather than as a drawn line.
-
-   Every bolt draws itself with stroke-dashoffset, which is the one honest way
-   to make a line arrive along its own length. They come in a beat apart, and
-   the strike order is the "shoo, shoo, shoo" - four of them, ~140ms each, all
-   done inside the first second.
-
-   Then three fade and one stays. The one that stays is straightened by scroll
-   into the hairline under the header, which is the whole point: the last frame
-   of the opening is a piece of the interface, so there is no moment where an
-   animation finished and a website started. */
-.truland .arrive-bolts {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  pointer-events: none;
-  overflow: visible;
-}
-.truland .arrive-bolts path {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  /* NOT non-scaling-stroke. At 1600px wide a 1.6px hairline is a scratch on
-     the glass, which is precisely the "drawn artwork reads as scribbles"
-     failure the product's own notes warn about. The stroke scales with the
-     box so a bolt is a bolt at any width. */
-}
-
-/* The bolt: a hot core with the green around it, which is what a real
-   discharge looks like and what stops this reading as a drawn zigzag. */
-.truland .bolt {
-  stroke: rgba(214, 245, 226, 0.96);
-  stroke-width: 2.6;
-  filter: drop-shadow(0 0 5px rgba(160, 240, 190, 1))
-          drop-shadow(0 0 16px rgba(120, 210, 160, 0.8))
-          drop-shadow(0 0 44px rgba(96, 168, 124, 0.55));
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: strike 1.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.truland .bolt.keeper {
-  stroke: #EAFFF2;
-  stroke-width: 3.2;
-  filter: drop-shadow(0 0 6px rgba(180, 255, 210, 1))
-          drop-shadow(0 0 20px rgba(120, 220, 165, 0.85))
-          drop-shadow(0 0 56px rgba(96, 168, 124, 0.6));
-  /* It does not fade, because it becomes the rule. */
-  animation: strikeKeep 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.truland .bolt-glow {
-  stroke: rgba(120, 210, 160, 0.34);
-  stroke-width: 22;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: strikeKeep 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  /* Gone by the time the bolt is a hairline: a rule on a page does not bloom. */
-  opacity: clamp(0, calc(1 - var(--p) * 2.4), 1);
-}
-
-/* Four strikes, a beat apart. The keeper lands second, so the eye is already
-   on it when the other three go. */
-.truland .bolt.b0 { animation-delay: 120ms; }
-.truland .bolt.keeper,
-.truland .bolt-glow { animation-delay: 300ms; }
-.truland .bolt.b2 { animation-delay: 460ms; }
-.truland .bolt.b3 { animation-delay: 620ms; }
-
-@keyframes strike {
-  0%   { stroke-dashoffset: 1; opacity: 0; }
-  9%   { stroke-dashoffset: 0; opacity: 1; }
-  16%  { opacity: 0.35; }
-  22%  { opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
-}
-@keyframes strikeKeep {
-  0%   { stroke-dashoffset: 1; opacity: 0; }
-  14%  { stroke-dashoffset: 0; opacity: 1; }
-  24%  { opacity: 0.4; }
-  32%  { opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 1; }
-}
-
-/* The room answers each strike. One shared flash rather than a glow per bolt,
-   so the screen brightens the way a room does, not the way four lines do. */
-.truland .arrive-stage::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(70% 50% at 50% 42%, rgba(190, 232, 205, 0.5), transparent 68%);
-  opacity: 0;
-  animation: strikeFlash 1.5s linear backwards;
-}
-@keyframes strikeFlash {
-  0%, 7%    { opacity: 0; }
-  9%        { opacity: 0.5; }
-  13%       { opacity: 0.06; }
-  20%       { opacity: 0.42; }
-  27%       { opacity: 0.04; }
-  31%       { opacity: 0.3; }
-  42%       { opacity: 0.03; }
-  46%       { opacity: 0.22; }
-  100%      { opacity: 0; }
-}
-
-/* The mark is lit BY the strike rather than sitting in front of it: it arrives
-   dark and the discharge is what brings it up. */
-.truland .arrive-mark { animation: markLit 1.5s linear backwards; }
-@keyframes markLit {
-  0%, 8%  { opacity: 0.06; }
-  10%     { opacity: 1; }
-  15%     { opacity: 0.35; }
-  21%     { opacity: 1; }
-  28%     { opacity: 0.5; }
-  33%     { opacity: 1; }
-  100%    { opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .truland .arrive-bolts,
-  .truland .arrive-stage::after { display: none; }
-  .truland .bolt,
-  .truland .bolt-glow,
-  .truland .arrive-mark { animation: none; }
+  /* The plate still opens the page — it is simply a picture rather than a
+     transition, printed above the words at a size that fits. */
+  .truland .arrive-stage::before {
+    content: '';
+    display: block;
+    width: min(72vw, 34rem);
+    aspect-ratio: 1920 / 815;
+    margin: 12vh auto -6vh;
+    background: url('/tru-firstlight.webp') center / contain no-repeat;
+  }
 }
 
 /* ---- why the hero never pinned ------------------------------------------
    `.truland` is set `overflow-x: hidden` in Landing.css, and `overflow-x:
    hidden` silently computes `overflow-y: auto`. That makes the whole site a
    scroll container, and a `position: sticky` child sticks to its nearest
-   scrolling ancestor - which, being that container, never scrolls. So the
+   scrolling ancestor — which, being that container, never scrolls. So the
    stage did not pin. It scrolled away like any other section while a fixed
    wordmark shrank on top of it, which is exactly why the opening read as two
    unrelated things rather than as one transition.
