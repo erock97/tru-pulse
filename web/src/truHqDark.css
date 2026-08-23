@@ -3722,9 +3722,35 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    list loading; a page that slides across reads as somewhere you have arrived.
    Long and heavily eased so it decelerates into place rather than stopping. */
 .tru-dark .dk-page { animation: pageSettle 620ms cubic-bezier(0.16, 1, 0.3, 1); }
+/* `--dir` is +1 when you moved DOWN the sidebar and -1 when you moved back up,
+   and it is set on the shell before this node draws. So the page arrives from
+   the side you came from instead of arriving from the right forever. Horizontal
+   on purpose: the cards settle vertically, and keeping the two on separate axes
+   is what makes the pair read as choreography rather than as one big shove. */
 @keyframes pageSettle {
-  from { opacity: 0; transform: translate3d(30px, 0, 0) scale(0.995); }
+  from { opacity: 0; transform: translate3d(calc(var(--dir, 1) * 34px), 0, 0) scale(0.995); }
   to   { opacity: 1; transform: none; }
+}
+
+/* THE ROOM PANS AGAINST YOU, AND THAT IS THE WHOLE TRICK.
+
+   The room never unmounts — it is the one thing on screen that is genuinely
+   continuous across a tab change — so moving IT is what turns four arrivals
+   into one space. It shifts opposite to the incoming page and eases back, which
+   is what a camera does when it whips to follow you and overshoots slightly.
+
+   The `to` state is the room's own resting transform, parallax included, so
+   there is no jump at the end when the animation hands the property back. */
+.tru-dark .tru-shell.tab-moved .tru-room-move {
+  animation: roomPan 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes roomPan {
+  from { transform: translate3d(calc(var(--dir, 1) * -30px), calc(var(--sy, 0) * 0.045px), 0); }
+  to   { transform: translate3d(0, calc(var(--sy, 0) * 0.045px), 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .tru-shell.tab-moved .tru-room-move { animation: none; }
 }
 
 /* And the cards settling into it. One shared keyframe, one shared curve, and

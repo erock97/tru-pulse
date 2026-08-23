@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { TruLogo } from './TruLogo';
 import { Avatar, Icon } from './hqUi';
@@ -32,6 +32,26 @@ export interface ShellNav {
 
 /** The dark unified HQ shell: sidebar + slim top bar. Wired to the REAL
  *  product-open callbacks (not a hash router) so nothing about routing changes. */
+/* WHICH TAB YOU WERE ON LAST — AND WHY IT LIVES OUT HERE.
+
+   Every page renders its OWN HqShell on its own route, so a tab change unmounts
+   this component and mounts a fresh one. A ref inside it is therefore reborn as
+   -1 on every single change, which reads as "first arrival" every time — which
+   is exactly the bug: the direction was computed, found no previous tab, and
+   fell back to the undirected entrance. Forever.
+
+   Module scope survives the remount. Only one shell is ever mounted, so there
+   is nothing to key it by. */
+let lastTabIndex = -1;
+/* The direction is remembered alongside the index, and that is not redundant.
+
+   React StrictMode invokes effects twice in development. The second invocation
+   read the index the first one had just stored, concluded you had not moved,
+   and tore the animation class back off — so the whole thing worked and then
+   immediately undid itself, every time. Deriving the direction only when the
+   index actually CHANGES makes a repeat invocation harmless. */
+let lastDir = 0;
+
 export function HqShell({
   orgName,
   role = 'Admin',
@@ -95,6 +115,45 @@ export function HqShell({
   // vanishes on one tab and appears on another with nothing joining them.
   const navRef = useRef<HTMLElement | null>(null);
   const glide = useGlide(navRef, '.side-link.active', 'y', activeKey);
+
+  /* WHICH WAY YOU JUST TRAVELLED.
+
+     The tabs already had one coordinated arrival, but every tab arrived the
+     same way whether you had moved down the sidebar or back up it — and an
+     arrival with no direction and no departure reads as four separate screens
+     rather than one room you are moving through.
+
+     The sidebar is an ordered list, so the order IS the geography. Going down
+     it moves you one way along the floor and going back up moves you the other,
+     and everything that animates on a tab change reads this one number: the
+     page enters from the side you came from, and the room pans against it and
+     settles, the way a camera does when it whips to keep up with you.
+
+     Written straight to the DOM in a layout effect rather than held in state,
+     because the variable has to be on the element BEFORE the new page draws its
+     first frame. A state round-trip would land a frame late, which is precisely
+     long enough to see. */
+  useLayoutEffect(() => {
+    const order = ['pulse', 'coach', 'rep', 'team', 'admin'];
+    const i = order.indexOf(activeKey);
+    const el = shellRef.current;
+    if (!el || i < 0) return;
+    if (i !== lastTabIndex) {
+      // First paint is an arrival from nowhere, not a move. It keeps the
+      // entrance it has always had; only a real tab-to-tab move gets one.
+      lastDir = lastTabIndex < 0 ? 0 : Math.sign(i - lastTabIndex);
+      lastTabIndex = i;
+    }
+    const dir = lastDir;
+    el.style.setProperty('--dir', String(dir === 0 ? 1 : dir));
+    el.classList.remove('tab-moved');
+    if (dir !== 0) {
+      // Force a reflow so the class can be re-added on a tab you are returning
+      // to, where React changes nothing else and the animation would not restart.
+      void el.offsetWidth;
+      el.classList.add('tab-moved');
+    }
+  }, [activeKey]);
   const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = [
     { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
     { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
