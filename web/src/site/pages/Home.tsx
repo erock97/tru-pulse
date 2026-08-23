@@ -1,36 +1,38 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
 
 /* ============================================================================
-   THE ARRIVAL
+   THE ARRIVAL — "first light"
    ----------------------------------------------------------------------------
-   The wordmark, set bold and very large, and nothing else. As you scroll it
-   travels and shrinks along one path until it is sitting exactly where the
-   header's own wordmark sits, at exactly its size, and the two swap. The words
-   rise into the middle behind it and the veil over the page's room lifts, so
-   the site is assembling itself while the mark is still moving rather than
-   appearing once it has finished.
+   Two beats, one object, three quarters of a screen of scroll.
 
-   IT IS THE SAME OBJECT ALL THE WAY DOWN. That is the whole idea and every
-   version that failed, failed by breaking it:
+   BEAT ONE, before you touch anything: the mark is not drawn, it is LIT. A
+   rendered plate of dawn light coming through mist, with the letterforms
+   standing in the gap the light leaves. It breathes. Then the light contracts
+   into the letters and hands over to live type at exactly the same size and
+   place, so the surface changes while the object does not.
 
-   1. A VIDEO OF MOLTEN LETTERS cooling into the page. A crossfade has no
-      object in common on either side of it, so there is nothing to follow and
-      the opening reads as an intro bolted to the front of the site.
+   BEAT TWO, as you scroll: that live type travels and shrinks along one path
+   until it is sitting exactly where the header's own wordmark sits, at exactly
+   its size, and the two swap. The words rise into the middle behind it and the
+   veil over the page's room lifts, so the site is assembling itself while the
+   mark is still moving rather than appearing once it has finished.
 
-   2. NEON GREEN LIGHTNING. Not the palette — the site is deep green, bone and
-      one amber — and scaled off viewport WIDTH alone, so on any laptop it ran
-      off the top and bottom of the screen. It also asked for three full
-      screens of scroll before the page began.
+   Three things the previous version got wrong, worth keeping written down:
 
-   3. A RENDERED PLATE OF LIGHT that handed over to live type mid-flight.
-      Beautiful, and one object too many: two different serifs cross-fading
-      through each other is a double exposure, and the plate had to be sized,
-      clamped, alpha-baked and browser-gated to earn its place. The letters do
-      not need lighting to be the thing on the screen.
+   1. THE ART DID NOT BELONG TO THE PALETTE. It was neon green lightning. The
+      site is deep green, bone and one amber; electricity is a different world
+      and no amount of choreography rescues a foreign object. The plate is now
+      generated in the page's own light — warm amber and bone on true black.
 
-   So there is one element now, and it is type from the first frame to the
-   last. The only thing that changes is where it is and how big.
+   2. IT DID NOT FIT. The opening state was scaled off viewport WIDTH alone,
+      so on any laptop the glow ran off the top and bottom of the screen. The
+      plate is now clamped on both axes with real margin, which is the only way
+      a hero fits a 13-inch laptop and a 27-inch monitor with the same rule.
+
+   3. IT ASKED FOR TOO MUCH. Three full screens of scroll before the page
+      began. The whole opening now resolves in 175dvh — you stand in it for one
+      screen and it is done three quarters of a screen later.
 
    The choreography (measure the real target, drive the axes in sequence, ease
    the scrub rather than tracking it) follows the pattern in 21st.dev's
@@ -74,9 +76,64 @@ const WHO = [
   { k: 'Agents', body: 'Scripts, call strategy and real feedback. Not another pep talk.' },
 ] as const;
 
+/* The plate, and the same plate moving.
+
+   Both are generated art with the dark ground removed rather than composited
+   with a blend mode. `mix-blend-mode: screen` was tried and measurably DARKENED
+   the page here — the mark carries a transform, a transform makes a stacking
+   context, and a blend inside one composites against a backdrop that is empty.
+   Baking the plate's own luminance into an alpha channel sidesteps the whole
+   argument: there is no rectangle in either file, so there is no edge to hide.
+
+   The still is the poster and the honest fallback. The clip is an upgrade that
+   is only switched on where it is known to render correctly. */
+const ART_STILL = '/tru-firstlight.webp';
+const ART_CLIP = '/tru-firstlight.webm';
+
+/* The letters occupy 71.4% of the plate's width, dead centre on both axes —
+   measured off the file, not guessed. Sizing the plate at 1/0.714 of the typeset
+   mark is what makes the lit letters and the live letters exactly the same
+   width, which is the only reason the handover between them is invisible.
+
+   THE PLATE WAS RE-RENDERED BIGGER. The first one gave the letters 55% of its
+   width and spent the rest on beams and fog, so a plate that fitted the screen
+   put a wordmark on it that did not feel like one. This one is the same scene
+   at the same lighting, recomposed so the letters carry the frame. Everything
+   downstream is driven off these three numbers, so re-measuring a new plate is
+   the whole of swapping one in. */
+const ART_LETTER_FRACTION = 0.7143;
+const ART_FRAME = `${(100 / ART_LETTER_FRACTION).toFixed(1)}%`;
+/* 3108 × 1333, the frame the plate was rendered and centred at. */
+const ART_ASPECT = 3108 / 1333;
+
+/* Alpha in WebM is a VP9 side-track. Chromium and Firefox composite it; Safari
+   plays the video and ignores the alpha, which would put a black slab over the
+   hero — worse than no clip at all. So the clip is opt-in for engines known to
+   handle it, and everywhere else the still stands, which is the same picture
+   without the drift. */
+function clipIsSafeHere(): boolean {
+  const v = document.createElement('video');
+  if (v.canPlayType('video/webm; codecs="vp9"') !== 'probably') return false;
+  const ua = navigator.userAgent;
+  const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Android|Edg/.test(ua);
+  return !isSafari;
+}
+
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
   const markRef = useRef<HTMLDivElement | null>(null);
+  const [hasClip, setHasClip] = useState(false);
+
+  useEffect(() => {
+    if (!clipIsSafeHere()) return;
+    // Probed rather than assumed, so a clip that fails to load degrades to the
+    // still instead of leaving a hole where the mark should be.
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadeddata = () => setHasClip(true);
+    v.oncanplay = () => setHasClip(true);
+    v.src = ART_CLIP;
+  }, []);
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
      and how much bigger its opening state is.
@@ -99,11 +156,11 @@ export default function Home() {
       /* Sit on it: same box, same face, same size — and the SAME LINE HEIGHT.
 
          That last one is not a detail. The header mark inherits a line height
-         of 1.6, so its line box is 40px tall around 25px of type, and glyphs
+         of 1.6, so its line box is 40px tall around 25px of type and the glyphs
          are centred in it. A clone set `line-height: 1` puts its glyphs at the
          top of a 25px box instead, which lands the whole wordmark about eight
-         pixels high — close enough to look like a bug and not close enough to
-         look like a swap. */
+         pixels high — close enough to look like a bug, not close enough to look
+         like a swap. */
       const cs = getComputedStyle(brand);
       mark.style.left = `${r.left}px`;
       mark.style.top = `${r.top}px`;
@@ -112,30 +169,27 @@ export default function Home() {
 
       /* And the opening state, as a delta from there.
 
-         CLAMPED ON BOTH AXES. Width alone is what put an earlier version of
-         this hero off the screen: a wide short window has plenty of width and
-         no height, so a mark sized off width alone overflowed the top and the
-         bottom every time. Whichever axis runs out first decides the size, and
-         both keep a real margin.
+         THE PLATE IS CLAMPED ON BOTH AXES. Width alone is what put the old hero
+         off the screen: a wide short window has plenty of width and no height,
+         and a plate sized off width overflowed the top and bottom every time.
+         Whichever axis runs out first decides the size, and both keep a margin.
 
-         The height clamp is expressed against CAP HEIGHT — derived from the
-         font size, not from the element's box. The box is a 1.6 line height
-         around the type, so measuring it clamps against half a screen of empty
-         leading and leaves the letters a third smaller than they were asked to
-         be. Playfair's capitals come to roughly 0.7em; that is the number. */
+         The scale then has to be derived from the plate rather than from the
+         viewport, so the live type is exactly as wide as the lit letters and
+         the handover between them does not change size. */
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const cap = parseFloat(cs.fontSize) * 0.7;
-      const byWidth = (vw * 0.8) / r.width;
-      const byHeight = (vh * 0.27) / cap;
-      const scale = Math.max(1.6, Math.min(26, Math.min(byWidth, byHeight)));
+      const artW = Math.min(vw * 0.92, vh * 0.5 * ART_ASPECT);
+      const scale = Math.max(1.6, Math.min(26, (artW * ART_LETTER_FRACTION) / r.width));
 
       /* `transform-origin` is the mark's own left edge, so after scaling by S
          its centre sits at `left + width * S / 2`, not `left + width / 2`.
          Using the unscaled half-width is what put the old opening mark most of
          a screen to the right, hanging off the edge. */
       mark.style.setProperty('--dx', `${vw / 2 - (r.left + (r.width * scale) / 2)}px`);
-      mark.style.setProperty('--dy', `${vh * 0.34 - (r.top + r.height / 2)}px`);
+      /* Higher than the old plate sat, because this one is half again as big:
+         at 34dvh its beams were raking across the headline. */
+      mark.style.setProperty('--dy', `${vh * 0.31 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
     };
 
@@ -173,15 +227,23 @@ export default function Home() {
     const shell = document.querySelector('.truland');
 
     const apply = (v: number) => {
-      /* A short dead band at the top before anything moves. Without it the mark
-         starts sliding on the first pixel of scroll, which reads as twitchy —
-         a hero should hold its ground for a moment before it gives it up. */
-      const travel = Math.max(0, Math.min(1, (v - 0.1) / 0.9));
+      /* Beat two starts first and beat one finishes inside it, on purpose.
+
+         THE HANDOVER HAPPENS LATE, and that is the whole tuning of this thing.
+         Swapping the plate for live type while the mark is still enormous put
+         Playfair at 800 weight on the screen ten times its design size, next to
+         a fine high-contrast Didone — the same three letters, visibly fatter,
+         which is a downgrade you cannot un-see. Held until the mark is roughly
+         half way home, the type is small enough that its weight reads as it was
+         drawn to, and the light travels with the mark instead of leaving it. */
+      const light = Math.max(0, Math.min(1, (v - 0.56) / 0.24));
+      const travel = Math.max(0, Math.min(1, (v - 0.14) / 0.86));
 
       arrive.style.setProperty('--p', v.toFixed(4));
       arrive.style.setProperty('--pt', travel.toFixed(4));
       if (mark) {
         mark.style.setProperty('--p', v.toFixed(4));
+        mark.style.setProperty('--pl', light.toFixed(4));
         mark.style.setProperty('--pt', travel.toFixed(4));
         /* A class, not an inline opacity. An inline style beats the entry
            animation's own opacity, and writing one on the first frame is what
@@ -247,11 +309,6 @@ export default function Home() {
               already standing on. Nothing crossfades to somewhere else. */}
           <div className="arrive-veil" aria-hidden />
 
-          {/* The mark, printed in the flow. Hidden unless the reader has asked
-              for reduced motion, in which case the travelling clone is off and
-              this is the opening: the same picture, standing still. */}
-          <p className="arrive-still" aria-hidden>T<i>RU</i></p>
-
           <div className="arrive-copy">
             <h1>
               Somebody has to run the sales floor.{' '}
@@ -281,8 +338,29 @@ export default function Home() {
           has to outlive it: it is still moving when the stage has released and
           it finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
-      <div className="arrive-mark" ref={markRef} aria-hidden>
+      <div className={`arrive-mark${hasClip ? ' has-clip' : ''}`} ref={markRef} aria-hidden>
         <span className="arrive-type">T<i>RU</i></span>
+        <img
+          className="arrive-art"
+          src={ART_STILL}
+          alt=""
+          width="1920"
+          height="815"
+          decoding="async"
+          style={{ width: ART_FRAME }}
+        />
+        {hasClip && (
+          <video
+            className="arrive-art arrive-art-clip"
+            src={ART_CLIP}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={{ width: ART_FRAME }}
+          />
+        )}
       </div>
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">
