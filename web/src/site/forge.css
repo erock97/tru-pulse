@@ -58,17 +58,71 @@
   z-index: 2;
   pointer-events: none;
   opacity: var(--ps, 1);
-  /* The settle: translate the scene's centre onto the header lockup's centre
-     (measured, not guessed) while scaling it down around that same path, so
-     the whole world flies to the top of the page and becomes the logo. The
-     translate is applied before the scale, so the scale shrinks the scene
-     around its already-moving centre and the two compose into one arc. */
-  transform:
-    translate3d(calc(var(--bx, 0px) * var(--pz, 0)), calc(var(--by, 0px) * var(--pz, 0)), 0)
-    scale(calc(1 - 0.88 * var(--pz, 0)));
-  border-radius: calc(var(--pz, 0) * 22px);
-  overflow: hidden;
-  will-change: opacity, transform;
+  /* THE SETTLE IS A DEFOCUS, NOT A FLIGHT. The first cut shrank this element
+     and flew it to the header, and the owner named the failure precisely: it
+     looked like a picture being pushed up the screen. A frame in flight always
+     confesses it is a video. So the frame never moves and never shows an edge:
+     the camera pushes gently INTO the world while it falls out of focus and
+     darkens to the page's own ambient level — the scene stops being the
+     subject and becomes the backdrop, the headline rises over it, and by the
+     time it finishes fading, the site's real room is underneath at the same
+     darkness. The lockup does not fly anywhere; it lights up in the header,
+     where the eye already expects it. */
+  transform: scale(calc(1 + 0.16 * var(--pz, 0)));
+  filter:
+    blur(calc(var(--pz, 0) * 16px))
+    brightness(calc(1 - 0.52 * var(--pz, 0)))
+    saturate(calc(1 - 0.25 * var(--pz, 0)));
+  will-change: opacity, transform, filter;
+}
+
+/* The tip callouts. Positions are tuned to the opening frame's composition
+   (the only camera position they ever exist at); leader hairlines drop toward
+   each point of the triangle. They enter late and unhurried — the image gets
+   the first second to itself — and leave instantly with the first scroll. */
+.truland .arrive-tips {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: var(--tips, 1);
+}
+.truland .tip {
+  position: absolute;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(237, 242, 236, 0.82);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  animation: tipIn 900ms var(--e) backwards;
+}
+/* The keyframe animates transform, never `translate` — the apex tip owns a
+   centring translate that an animated `translate` would stomp on. */
+.truland .tip::before {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(180deg, rgba(242, 178, 60, 0) 0%, rgba(242, 178, 60, 0.75) 100%);
+}
+/* Apex — Pulse, the flagship at the top of the triangle. */
+.truland .tip-pulse { left: 50%; top: 33%; translate: -50% 0; animation-delay: 1100ms; }
+.truland .tip-pulse::before { left: 50%; top: calc(100% + 8px); }
+/* The two feet. Their leaders rise from below, pointing up at the corners. */
+.truland .tip-coach { left: 27%; top: 87%; animation-delay: 1350ms; }
+.truland .tip-coach::before { left: 100%; margin-left: 10px; bottom: calc(100% - 26px); rotate: 32deg; }
+.truland .tip-rep { left: 67%; top: 87%; animation-delay: 1600ms; }
+.truland .tip-rep::before { right: 100%; margin-right: 10px; bottom: calc(100% - 26px); rotate: -32deg; }
+@keyframes tipIn {
+  from { opacity: 0; transform: translateY(7px); }
+}
+@media (max-width: 760px) {
+  .truland .tip-coach { left: 16%; }
+  .truland .tip-rep { left: 74%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truland .arrive-tips { display: none; }
 }
 
 /* The words belong to beat two: the reveal frame is the headline moment, and

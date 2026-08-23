@@ -236,14 +236,7 @@ export default function Home() {
       mark.style.setProperty('--dy', `${vh * 0.31 - (r.top + r.height / 2)}px`);
       mark.style.setProperty('--s', String(scale));
 
-      /* Where the scene lands: the header lockup's centre, as an offset from
-         the viewport centre the scene starts on. Measured off the real brand,
-         so it survives any header change. */
-      const arriveEl = arriveRef.current;
-      if (arriveEl) {
-        arriveEl.style.setProperty('--bx', `${r.left + r.width / 2 - vw / 2}px`);
-        arriveEl.style.setProperty('--by', `${r.top + r.height / 2 - vh / 2}px`);
-      }
+
     };
 
     measure();
@@ -320,6 +313,10 @@ export default function Home() {
          lockup (the same emblem beside the same letters) lights up where it
          lands. The travelling-mark rig is retired: the scene IS the traveller
          now. */
+      // The callouts live only while the camera is home: gone within the
+      // first 3.5% of scroll, back if you return to the top.
+      arrive.style.setProperty('--tips', Math.max(0, 1 - v / 0.035).toFixed(4));
+
       const settle = Math.max(0, Math.min(1, (v - 0.62) / 0.35));
       arrive.style.setProperty('--pz', settle.toFixed(4));
       const scene = settle < 0.72 ? 1 : 1 - Math.min(1, (settle - 0.72) / 0.26);
@@ -441,6 +438,18 @@ export default function Home() {
             preload="auto"
             aria-hidden
           />
+
+          {/* THE TIPS, NAMED — BUT ONLY AT REST. The emblem is mute without
+              this: nobody knows the three bars ARE the three products. Yet
+              type tracked onto a moving shot is a sticker on a film, so the
+              callouts exist solely on the opening frame: they breathe in
+              after a beat, and the first pixel of scroll dissolves them. The
+              pause gets the meaning; the scroll gets the cinema. */}
+          <div className="arrive-tips" aria-hidden>
+            <span className="tip tip-pulse">Pulse</span>
+            <span className="tip tip-coach">Coach</span>
+            <span className="tip tip-rep">Rep</span>
+          </div>
 
           <video
             className="arrive-room"
