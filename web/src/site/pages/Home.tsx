@@ -67,16 +67,41 @@ const WHO = [
    simplifying as the object becomes interface is the right reading anyway: it
    starts as a rendered thing and resolves into the product. */
 const MARK_RENDER = '/tru-mark.webp';
+/* The strike itself. A still cannot strike, which is the whole reason the first
+   attempt read as "letters with lightning around them" rather than as anything
+   happening: it was a photograph. This is a five-second loop of the discharge
+   actually moving, generated from the still above so the letterforms are
+   identical and it can cross-fade into it without a jump.
+
+   It carries a REAL ALPHA CHANNEL rather than being composited with a blend
+   mode. Two earlier attempts failed on that: a radial mask only softens the
+   edge of a rectangle that is still there, and `mix-blend-mode: screen` on the
+   fixed, transformed mark measurably DARKENED the page instead of lightening
+   it - with the page frozen, a spot reading 77,58,32 came back 71,58,25 under
+   screen when the arithmetic says it can only ever brighten. Rather than fight
+   a compositing path, the clip's own luminance was baked into an alpha channel
+   with ffmpeg, so the glow is genuinely transparent where it is dark and there
+   is no rectangle in the file at all. */
+const MARK_CLIP = '/tru-mark.webm';
 
 export default function Home() {
   const arriveRef = useRef<HTMLElement | null>(null);
   const markRef = useRef<HTMLParagraphElement | null>(null);
   const [hasRender, setHasRender] = useState(false);
+  const [hasClip, setHasClip] = useState(false);
 
   useEffect(() => {
     const img = new Image();
     img.onload = () => setHasRender(img.naturalWidth > 0);
     img.src = MARK_RENDER;
+
+    // Probed rather than assumed, so a missing clip degrades to the still and a
+    // missing still degrades to live type. Neither is a broken hero.
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.oncanplay = () => setHasClip(true);
+    v.onloadeddata = () => setHasClip(true);
+    v.src = MARK_CLIP;
   }, []);
 
   /* Lay the travelling mark exactly over the header's, then tell it how far out
@@ -137,31 +162,57 @@ export default function Home() {
       return;
     }
 
-    let frame = 0;
-    const paint = () => {
-      frame = 0;
-      const travel = arrive.offsetHeight - window.innerHeight;
-      if (travel <= 0) return;
-      const p = Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel));
-      arrive.style.setProperty('--p', p.toFixed(4));
-      if (mark) mark.style.setProperty('--p', p.toFixed(4));
+    /* The value EASES toward the scroll position rather than tracking it one to
+       one. Raw tracking is what makes a scroll-driven move feel mechanical: the
+       mark stops the instant the wheel stops. A lerp of 0.12 a frame is roughly
+       the 0.4s scrub a production scroll rig uses, and it is the difference
+       between an object being dragged and an object with mass.
 
+       The loop only runs while there is distance left to close, so a page at
+       rest costs nothing. */
+    let frame = 0;
+    let cur = 0;
+    let target = 0;
+    const shell = document.querySelector('.truland');
+
+    const apply = (v: number) => {
+      arrive.style.setProperty('--p', v.toFixed(4));
+      if (mark) mark.style.setProperty('--p', v.toFixed(4));
       // Hand the header its own mark back only once the travelling one has
       // landed on it. Both visible at once, even for two frames, and the
       // illusion is over.
-      document.querySelector('.truland')?.classList.toggle('arrive-live', p < 0.985);
-      if (mark) mark.style.opacity = p < 0.985 ? '1' : '0';
+      shell?.classList.toggle('arrive-live', v < 0.99);
+      if (mark) mark.style.opacity = v < 0.99 ? '1' : '0';
     };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(paint); };
 
-    paint();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
+    const tick = () => {
+      cur += (target - cur) * 0.12;
+      if (Math.abs(target - cur) < 0.0006) cur = target;
+      apply(cur);
+      frame = cur === target ? 0 : requestAnimationFrame(tick);
+    };
+
+    const measureTarget = () => {
+      const travel = arrive.offsetHeight - window.innerHeight;
+      if (travel <= 0) return;
+      target = Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel));
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+
+    // Land on the true value on first paint rather than easing up from zero on
+    // a reload halfway down the page.
+    const travel0 = arrive.offsetHeight - window.innerHeight;
+    cur = travel0 > 0 ? Math.max(0, Math.min(1, (window.scrollY - arrive.offsetTop) / travel0)) : 0;
+    target = cur;
+    apply(cur);
+
+    window.addEventListener('scroll', measureTarget, { passive: true });
+    window.addEventListener('resize', measureTarget, { passive: true });
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('scroll', measureTarget);
+      window.removeEventListener('resize', measureTarget);
       cancelAnimationFrame(frame);
-      document.querySelector('.truland')?.classList.remove('arrive-live');
+      shell?.classList.remove('arrive-live');
     };
   }, []);
 
@@ -201,9 +252,25 @@ export default function Home() {
           outlive it: it is still moving when the stage has released, and it
           finishes its trip sitting in the header. aria-hidden because the
           header's own mark is the one in the document. */}
-      <p className={`arrive-mark${hasRender ? ' has-render' : ''}`} ref={markRef} aria-hidden>
+      <p
+        className={`arrive-mark${hasRender ? ' has-render' : ''}${hasClip ? ' has-clip' : ''}`}
+        ref={markRef}
+        aria-hidden
+      >
         <span>T<i className="r">RU</i></span>
         {hasRender && <img className="arrive-render" src={MARK_RENDER} alt="" decoding="async" />}
+        {hasClip && (
+          <video
+            className="arrive-clip"
+            src={MARK_CLIP}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            aria-hidden
+          />
+        )}
       </p>
 
       <section className="panel band fh-proof" id="proof"><div className="wrap">

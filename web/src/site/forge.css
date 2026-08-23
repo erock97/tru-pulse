@@ -55,10 +55,14 @@
 .truland .arrive {
   --p: 0;
   position: relative;
-  /* One screen of arrival, half a screen of travel. `dvh` not `vh`, so a
-     phone's address bar cannot change the length of the transition halfway
-     through it. */
-  height: 150dvh;
+  /* THREE screens: one to stand in, two of travel. 150dvh was the single
+     biggest reason this read as "nothing happens" - half a viewport is not
+     enough scroll for a choreography to have a beginning, a middle and an end,
+     so the mark appeared to jump rather than to move. A production
+     scroll-scrubbed hero gives itself four; three is the least this needs.
+     `dvh` not `vh`, so a phone's address bar cannot change the length of the
+     transition halfway through it. */
+  height: 300dvh;
 }
 .truland .arrive-stage {
   position: sticky;
@@ -102,6 +106,15 @@
       0)
     scale(calc(1 + (var(--s, 1) - 1) * (1 - var(--p))));
   will-change: transform;
+  /* Something happens before any scrolling. A hero whose only motion is
+     scroll-driven shows a still frame to anyone who lands and does not move,
+     which is most people for the first second. */
+  animation: markEnter 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards;
+}
+@keyframes markEnter {
+  from { opacity: 0; filter: brightness(2.2); }
+  40%  { opacity: 1; }
+  to   { opacity: 1; filter: brightness(1); }
 }
 .truland .arrive-mark .r { font-style: normal; color: var(--gold); }
 /* The gold half must survive the sheen's background-clip, which paints the
@@ -157,7 +170,7 @@
      nothing else asks a stranger to trust that scrolling is worth it, and the
      way in should never be the thing that is hidden. It settles in on load
      like the rest of the page and then simply stays. */
-  animation: arriveCopy 900ms var(--e) 520ms backwards;
+  animation: arriveCopy 1000ms var(--e) 900ms backwards;
   text-align: center;
   z-index: 3;
 }
@@ -355,7 +368,7 @@
   .truland .fh-row { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 @media (max-width: 760px) {
-  .truland .arrive { height: 132dvh; }
+  .truland .arrive { height: 240dvh; }
 }
 
 /* ---- and none of it under reduced motion ---------------------------------
@@ -388,29 +401,45 @@
 
    Not a crossfade between two PLACES, which is the thing that failed. Same
    object, same trajectory, one surface resolving into another. */
-.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.62 - var(--p)) * 4, 1)); }
-.truland .arrive-render {
+.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.66 - var(--p)) * 4, 1)); }
+.truland .arrive-render,
+.truland .arrive-clip {
   position: absolute;
   left: 50%;
   top: 50%;
-  /* The render is 21:9 and its letters occupy about 70% of that frame, so the
-     frame is sized ~1.45x the typeset mark for the letters inside to land on
-     roughly the same footprint. It scales with the mark, because it is a child
-     of the transformed element. */
+  /* 21:9 with the letters occupying about 70% of the frame, so the frame is
+     sized ~1.45x the typeset mark for the letters inside to land on roughly
+     the same footprint. It scales with the mark, being a child of the
+     transformed element. */
   width: 145%;
   height: auto;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  opacity: clamp(0, calc((0.62 - var(--p)) * 4), 1);
-  /* Feathered, or it is a rectangle sitting on a page. The render's ground is
-     the same near-black green as the hero's, so once the edges dissolve there
-     is no box left to see - only the letters and the discharge. */
-  -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
-  mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
+
+  /* No blend mode, no mask. Both assets carry a real alpha channel baked from
+     their own luminance, so the dark ground is literally absent from the file
+     and the page shows through it exactly. The two things tried before this -
+     a radial mask, then `mix-blend-mode: screen` - both left a visible panel,
+     the second one because screen on this fixed transformed element darkened
+     the backdrop rather than lightening it. */
+}
+
+/* The still is the poster. It holds the frame until the clip can play, and it
+   is what a browser that blocks autoplay is left with - a lit mark rather than
+   a hole. Once the clip is running the still is redundant. */
+.truland .arrive-render { opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1); }
+.truland .arrive-mark.has-clip .arrive-render { opacity: 0; }
+
+/* The clip: the strike, actually moving. */
+.truland .arrive-clip {
+  opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1);
+  object-fit: cover;
 }
 @media (prefers-reduced-motion: reduce) {
   .truland .arrive-mark.has-render span { opacity: 1; }
-  .truland .arrive-render { display: none; }
+  .truland .arrive-mark { animation: none; }
+  .truland .arrive-render,
+  .truland .arrive-clip { display: none; }
 }
 
 /* ---- the rendered mark, when there is one --------------------------------
@@ -422,29 +451,55 @@
 
    Not a crossfade between two PLACES, which is the thing that failed. Same
    object, same trajectory, one surface resolving into another. */
-.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.62 - var(--p)) * 4, 1)); }
-.truland .arrive-render {
+.truland .arrive-mark.has-render span { opacity: calc(1 - clamp(0, (0.66 - var(--p)) * 4, 1)); }
+.truland .arrive-render,
+.truland .arrive-clip {
   position: absolute;
   left: 50%;
   top: 50%;
-  /* The render is 21:9 and its letters occupy about 70% of that frame, so the
-     frame is sized ~1.45x the typeset mark for the letters inside to land on
-     roughly the same footprint. It scales with the mark, because it is a child
-     of the transformed element. */
+  /* 21:9 with the letters occupying about 70% of the frame, so the frame is
+     sized ~1.45x the typeset mark for the letters inside to land on roughly
+     the same footprint. It scales with the mark, being a child of the
+     transformed element. */
   width: 145%;
   height: auto;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  opacity: clamp(0, calc((0.62 - var(--p)) * 4), 1);
-  /* Feathered, or it is a rectangle sitting on a page. The render's ground is
-     the same near-black green as the hero's, so once the edges dissolve there
-     is no box left to see - only the letters and the discharge. */
-  -webkit-mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
-  mask-image: radial-gradient(ellipse 56% 52% at 50% 48%, #000 34%, transparent 100%);
+
+  /* THE BOX PROBLEM, SOLVED PROPERLY. The first version tried to hide a
+     rectangle behind a radial mask, and a mask only ever softens an edge - the
+     render's ground was still a different darkness from the page's, so it read
+     as a panel laid on top.
+
+     Both assets are generated on PURE BLACK now, and `screen` makes black
+     exactly transparent: result = 1-(1-a)(1-b), and where b is 0 the result is
+     the page, untouched, to the pixel. Only emitted light survives. There is no
+     edge left to feather because there is no rectangle.
+
+     The blend does NOT go here, though. `.arrive-mark` carries a transform, and
+     a transform creates a stacking context, so a blend mode on a child of it
+     composites against that context's own backdrop - which is empty - and
+     nothing happens. The rectangle stayed exactly as black as it was rendered
+     while `getComputedStyle` reported `screen` the whole time. It has to go on
+     the transformed element itself, below. */
+}
+
+/* The still is the poster. It holds the frame until the clip can play, and it
+   is what a browser that blocks autoplay is left with - a lit mark rather than
+   a hole. Once the clip is running the still is redundant. */
+.truland .arrive-render { opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1); }
+.truland .arrive-mark.has-clip .arrive-render { opacity: 0; }
+
+/* The clip: the strike, actually moving. */
+.truland .arrive-clip {
+  opacity: clamp(0, calc((0.66 - var(--p)) * 4), 1);
+  object-fit: cover;
 }
 @media (prefers-reduced-motion: reduce) {
   .truland .arrive-mark.has-render span { opacity: 1; }
-  .truland .arrive-render { display: none; }
+  .truland .arrive-mark { animation: none; }
+  .truland .arrive-render,
+  .truland .arrive-clip { display: none; }
 }
 
 /* ---- the strike -----------------------------------------------------------
@@ -579,3 +634,17 @@
   .truland .bolt-glow,
   .truland .arrive-mark { animation: none; }
 }
+
+/* ---- why the hero never pinned ------------------------------------------
+   `.truland` is set `overflow-x: hidden` in Landing.css, and `overflow-x:
+   hidden` silently computes `overflow-y: auto`. That makes the whole site a
+   scroll container, and a `position: sticky` child sticks to its nearest
+   scrolling ancestor - which, being that container, never scrolls. So the
+   stage did not pin. It scrolled away like any other section while a fixed
+   wordmark shrank on top of it, which is exactly why the opening read as two
+   unrelated things rather than as one transition.
+
+   `clip` does the same job (no horizontal overflow) WITHOUT creating a scroll
+   container, so sticky works again. Same distinction as the deck's table
+   header, which needed the identical fix for the identical reason. */
+.truland { overflow-x: clip; }
