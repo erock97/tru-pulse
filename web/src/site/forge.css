@@ -814,3 +814,28 @@
   .truland .fh-soft .fh-shot:first-child,
   .truland .fh-soft .fh-shot:last-child { transform: none; }
 }
+
+/* ---- the header on a phone -----------------------------------------------
+   The nav drops its link list below 760px but keeps the brand, the login link
+   and a CTA whose label is a full sentence. On a 390px screen that is wider
+   than the bar, so once the travelling mark lands and the brand becomes
+   visible, "TRU" and "Client log in" sit on top of each other.
+
+   It only ever showed after scrolling, because the brand is hidden until the
+   mark arrives — which is why it survived this long. Nothing is removed: the
+   pieces are just sized to fit the bar they are in. */
+@media (max-width: 560px) {
+  .truland .nav .nright { gap: 0.55rem; }
+  .truland .nav .login {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .truland .nav .cta {
+    font-size: 0.78rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+    gap: 0.45rem;
+  }
+  .truland .nav .cta .pea { width: 24px; height: 24px; }
+  .truland .nav .cta .pea svg { width: 12px; height: 12px; }
+  .truland .brand { font-size: 1.28rem; }
+}
