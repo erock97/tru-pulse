@@ -84,25 +84,27 @@
      It is also why the light's field and the page disagreed about the T's
      serifs — the two rasterisers fake bold differently. `font-synthesis: none`
      makes that class of bug impossible rather than merely fixed. */
+  /* THE WORDMARK IS SET IN A DISPLAY FACE. THE REST OF THE SITE IS NOT.
+
+     Fraunces is the site's voice and it is right for headlines, but it was
+     never drawn to be a logo at 690px. Its T hooks its arm terminals downward,
+     its R has a stubby leg, its U swells — deliberate character that reads as
+     warmth at 56px and as a cartoon at twelve times that. Pinning the optical
+     size fixed the STROKES and left the SHAPES, which is why it still read as
+     cheap afterwards.
+
+     Playfair Display is a display Didone: flat bracketed serifs, a drawn R leg,
+     a fine right stroke on the U. It is already in this project's font stack as
+     the fallback, so it costs no bytes. Compared against Fraunces at 500, 600
+     and 700 at 210px before choosing.
+
+     A display face for the mark and a text face for the running copy is normal
+     practice, not a mismatch. The logo is its own artifact. */
+  font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
   font-synthesis: none;
-  /* PIN THE OPTICAL SIZE. THIS IS THE "CARTOONY" FIX.
-
-     Fraunces is a variable face with an `opsz` axis, and `font-optical-sizing`
-     defaults to auto — which resolves the axis from the SPECIFIED font size,
-     not the size you end up seeing. The mark is specified at ~25px and blown up
-     twelvefold by a transform, so the page has been showing Fraunces' SMALL
-     TEXT cut at 690px: heavy slab serifs, thick even strokes, almost no
-     thick-to-thin. That cut is drawn to survive being tiny. Enormous, it is a
-     cartoon.
-
-     Pinned to 144 it draws the display cut instead — fine hairlines, flat sharp
-     serifs, real contrast. Same font, same weight, same everything else.
-     Verified against a specimen rendering both cuts at identical final size.
-
-     The header's own wordmark is pinned too, because the travelling mark lands
-     on it and swaps; two different optical cuts at that moment is a visible
-     change of weight right at the join. */
+  /* Kept for the Fraunces fallback path only. Playfair is not a variable font,
+     so the axis is simply ignored when Playfair is the one that loads. */
   font-variation-settings: 'opsz' 144;
   line-height: 1;
   white-space: nowrap;
@@ -301,10 +303,9 @@
   /* Clears the fixed header, which the travelling mark never has to think
      about because it is fixed too. */
   margin: 14vh auto 2vh;
-  font-family: var(--serif);
+  font-family: 'Playfair Display', Georgia, serif;
   font-weight: 700;
   font-synthesis: none;
-  font-variation-settings: 'opsz' 144;
   font-size: clamp(3.4rem, 11vw, 7.5rem);
   line-height: 1.15;
   white-space: nowrap;
@@ -339,6 +340,8 @@
    curve finishes on (0.3 of full). If these two drift apart the swap becomes
    visible as a small dimming, which reads as the animation switching off. */
 .truland .brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
   font-variation-settings: 'opsz' 144;
   text-shadow:
     0 0 0.35em rgba(255, 220, 147, 0.30),
