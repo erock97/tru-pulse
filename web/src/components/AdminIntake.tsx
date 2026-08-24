@@ -7,10 +7,10 @@ import { adminIntake, adminResendInvite, type IntakeResult } from '../lib/api';
 // get two separate logins — see the design spec for why.
 
 interface TeamRow { name: string; fubKey: string; subdomain: string }
-interface LeaderRow { name: string; email: string; teamIndex: number }
+interface LeaderRow { name: string; email: string; teamIndex: number; role: 'leader' | 'admin' }
 
 const emptyTeam = (): TeamRow => ({ name: '', fubKey: '', subdomain: '' });
-const emptyLeader = (): LeaderRow => ({ name: '', email: '', teamIndex: 0 });
+const emptyLeader = (): LeaderRow => ({ name: '', email: '', teamIndex: 0, role: 'leader' });
 
 export function AdminIntake() {
   const [orgName, setOrgName] = useState('');
@@ -47,6 +47,7 @@ export function AdminIntake() {
           name: l.name.trim(),
           email: l.email.trim(),
           teamIndex: Math.min(l.teamIndex, teams.length - 1),
+          role: l.role,
         })),
       }));
     } catch (err) {
@@ -131,9 +132,10 @@ export function AdminIntake() {
         + Add another Follow Up Boss account
       </button>
 
-      <h4 style={{ margin: '20px 0 6px' }}>Team leaders</h4>
+      <h4 style={{ margin: '20px 0 6px' }}>Team leaders & admins</h4>
       <p style={{ color: 'var(--text-60)', fontSize: 13, marginTop: 0 }}>
-        Each leader gets their own login and their own set-password email.
+        Each person gets their own login and their own set-password email. The
+        role is what their login will be.
       </p>
       {leaders.map((l, i) => (
         <div className="row2" key={i}>
@@ -144,6 +146,13 @@ export function AdminIntake() {
           <div className="grow">
             <label>Email</label>
             <input type="email" value={l.email} onChange={(e) => setLeader(i, { email: e.target.value })} placeholder="dana@acme.com" required />
+          </div>
+          <div>
+            <label>Role</label>
+            <select value={l.role} onChange={(e) => setLeader(i, { role: e.target.value as 'leader' | 'admin' })}>
+              <option value="leader">Team leader</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
           {teams.length > 1 && (
             <div className="grow">
@@ -158,7 +167,7 @@ export function AdminIntake() {
         </div>
       ))}
       <button type="button" className="link" onClick={() => setLeaders((ls) => [...ls, emptyLeader()])}>
-        + Add another team leader
+        + Add another person
       </button>
 
       {error && <div className="err" style={{ marginTop: 12 }}>{error}</div>}

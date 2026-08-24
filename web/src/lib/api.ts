@@ -1217,7 +1217,7 @@ export interface IntakeResult { orgId: string; teamIds: string[]; leaders: Intak
 export async function adminIntake(input: {
   orgName: string;
   teams: Array<{ name: string; fubKey: string; subdomain?: string }>;
-  leaders: Array<{ name: string; email: string; teamIndex: number }>;
+  leaders: Array<{ name: string; email: string; teamIndex: number; role?: 'leader' | 'admin' }>;
 }): Promise<IntakeResult> {
   const res = await workerFetch('/admin/intake', {
     method: 'POST',
