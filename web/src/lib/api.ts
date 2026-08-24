@@ -1242,11 +1242,25 @@ export interface AgentCommitment {
   status: 'done' | 'partial' | 'missed' | null;
   created_at: string;
 }
+/** Where this agent stands on text messages. Mirrors worker/src/agentHome.ts.
+ *  Only the last four digits ever reach the browser. */
+export interface AgentSms {
+  last_four: string;
+  has_phone: boolean;
+  consent_at: string | null;
+  opt_out_at: string | null;
+  prompted_at: string | null;
+  reachable: boolean;
+}
+
 export interface AgentHome {
   agent: { id: string; name: string } | null;
   assessment: { code: string; personal_code: string | null; taken_at: string } | null;
   welcome_seen_at: string | null;
   gated: boolean;
+  /** Null when db/hq_sms_consent.sql has not been run — the feature hides itself
+   *  entirely rather than half-working. */
+  sms: AgentSms | null;
   commitments: AgentCommitment[];
   latest_checkin: string | null;
   hasEverMet: boolean;
@@ -1267,6 +1281,31 @@ export async function setCommitmentDone(id: string, done: boolean): Promise<void
 
 export async function markWelcomeSeen(): Promise<void> {
   await workerFetch('/agent/welcome-seen', { method: 'POST', body: '{}' });
+}
+
+// ── Text messages ────────────────────────────────────────────────────────────
+// The browser sends a phone number and nothing else. The consent wording, its
+// version and the IP are all stamped by the Worker from its own copy — see
+// worker/src/agentRoutes.ts. Do not "helpfully" start posting the consent text
+// from here; a consent record the client can author proves nothing.
+
+export async function smsOptIn(phone: string): Promise<void> {
+  const res = await workerFetch('/agent/sms/opt-in', {
+    method: 'POST', body: JSON.stringify({ phone }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'That didn’t save — try again.');
+}
+
+export async function smsOptOut(): Promise<void> {
+  const res = await workerFetch('/agent/sms/opt-out', { method: 'POST', body: '{}' });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'We could not turn that off.');
+}
+
+/** "Not now." Records that we asked and stops the onboarding step reappearing. */
+export async function smsDecline(): Promise<void> {
+  await workerFetch('/agent/sms/decline', { method: 'POST', body: '{}' });
 }
 
 /** The in-account assessment submit. The public link's twin lives in

@@ -7,9 +7,10 @@
 // showing a cheerful zero that reads like the agent's own failure.
 import { useEffect, useState } from 'react';
 import {
-  loadCourse, setCommitmentDone,
+  agentHome, loadCourse, setCommitmentDone,
   type AgentHome, type AgentIdentity, type CourseModule,
 } from '../lib/api';
+import { SmsConsentForm } from './AgentSms';
 import { pace, PACE_LABEL } from '../lib/agentPace';
 
 export default function AgentHomeView({ agent, home, onHome, onOpenModule }: {
@@ -121,6 +122,25 @@ export default function AgentHomeView({ agent, home, onHome, onOpenModule }: {
           </ul>
         )}
       </section>
+
+      {/*
+        Text messages. This card is not a nicety — an agent must be able to switch
+        SMS off from inside the product at any moment, without emailing anyone and
+        without hunting for it. Replying STOP works too, but somebody who has
+        deleted the thread has no message left to reply to.
+
+        Hidden entirely when `sms` is null, which means db/hq_sms_consent.sql has
+        not been run in this environment yet.
+      */}
+      {home.sms && (
+        <section className="ag-card">
+          <h2 className="ag-h2">Text messages</h2>
+          <SmsConsentForm
+            sms={home.sms}
+            onSaved={() => { void agentHome().then(onHome).catch(() => undefined); }}
+          />
+        </section>
+      )}
     </main>
   );
 }

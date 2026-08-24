@@ -15,6 +15,7 @@ import AgentWelcome from './AgentWelcome';
 import AgentCourse from './AgentCourse';
 import AgentHomeView from './AgentHome';
 import AgentCoach from './AgentCoach';
+import AgentSmsStep from './AgentSms';
 
 type Tab = 'home' | 'coach' | 'rep';
 const LABEL: Record<Tab, string> = { home: 'Home', coach: 'Coach', rep: 'Training' };
@@ -37,11 +38,15 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
   // The gate. A new agent sees the welcome, then the assessment, and cannot reach
   // Home, Coach or Training until it is done — no skip, no dismiss. An agent who
   // predates the cutover (`gated` false) never sees any of this.
+  //
+  // The text-message step that follows is deliberately NOT part of that gate: it
+  // is offered once and can be walked past. See agentStage.ts.
   const stage = home
     ? agentStage({
         hasAssessment: !!home.assessment,
         welcomeSeen: !!home.welcome_seen_at,
         isNewAccount: home.gated,
+        smsAsked: home.sms ? home.sms.prompted_at != null : null,
       })
     : null;
 
@@ -61,6 +66,13 @@ export default function AgentShell({ agent }: { agent: AgentIdentity }) {
         onDone={() => { void agentHome().then(setHome); }}
       />
     );
+  }
+
+  if (home && stage === 'sms' && home.sms) {
+    // Refetch rather than patching state locally: whether they said yes or no,
+    // the authoritative answer to "have we asked" now lives in the database, and
+    // guessing it here is how a consent screen ends up shown twice.
+    return <AgentSmsStep sms={home.sms} onDone={() => { void agentHome().then(setHome); }} />;
   }
 
   const course = (

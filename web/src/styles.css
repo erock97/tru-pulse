@@ -401,6 +401,46 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ag-next-title{ font-size:14px; font-weight:650; color:var(--ac-text); }
 .ag-next-go{ font-size:12.5px; font-weight:700; color:var(--gold-lt); white-space:nowrap; }
 
+/* agent SMS consent — the onboarding step and the Home card share one form.
+   The consent line is deliberately full size and full contrast: shrinking the
+   disclosure to fine print is the single most common reason an A2P campaign gets
+   rejected on the screenshot alone. */
+.ag-sms{ display:flex; flex-direction:column; gap:12px; }
+.ag-sms-card{ max-width:520px; text-align:left; }
+.ag-sms-card .asx-h1, .ag-sms-card .asx-sub, .ag-sms-card .asx-eyebrow{ text-align:left; }
+.ag-sms-eg{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.ag-sms-eg li{ position:relative; padding-left:16px; font-size:13.5px; line-height:1.55; color:var(--ac-text); }
+.ag-sms-eg li::before{ content:"·"; position:absolute; left:4px; color:var(--gold-lt); font-weight:800; }
+.ag-sms-fine{ font-size:12.5px; line-height:1.6; color:var(--ac-text-60); margin:0; }
+.ag-sms-fine a{ color:var(--gold-lt); }
+.ag-sms-on{ font-size:14px; line-height:1.6; color:var(--ac-text); margin:0; }
+.ag-sms-field{ display:flex; flex-direction:column; gap:6px; }
+.ag-sms-field span{ font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  font-weight:800; color:var(--ac-text-60); }
+.ag-sms-field input{ width:100%; box-sizing:border-box; padding:12px 14px; border-radius:12px;
+  background:rgba(255,255,255,.04); border:1px solid var(--ac-border-soft);
+  color:var(--ac-text); font-size:16px; /* 16px stops iOS zooming the page on focus */ }
+.ag-sms-field input:focus{ outline:none; border-color:var(--gold-dk); background:rgba(169,121,31,.07); }
+.ag-sms-field input[aria-invalid="true"]{ border-color:#ec8b89; }
+.ag-sms-warn{ font-size:12.5px; color:#ec8b89; }
+.ag-sms-ok{ font-size:12.5px; color:var(--ac-text-60); }
+.ag-sms-consent{ display:flex; align-items:flex-start; gap:11px; cursor:pointer;
+  padding:14px; border-radius:12px; background:rgba(255,255,255,.03);
+  border:1px solid var(--ac-border-soft); }
+.ag-sms-consent input{ margin-top:2px; width:18px; height:18px; accent-color:var(--gold);
+  flex-shrink:0; cursor:pointer; }
+.ag-sms-consent span{ font-size:13px; line-height:1.6; color:var(--ac-text); }
+.ag-sms-consent a{ color:var(--gold-lt); white-space:nowrap; }
+.ag-sms .asx-cta:disabled{ opacity:.45; cursor:not-allowed; }
+/* Turning messages off is never styled as the scary option — it is the recipient's
+   right, and a button that looks like a mistake discourages using it. */
+.ag-sms-off{ align-self:flex-start; background:none; cursor:pointer;
+  border:1px solid var(--ac-border-soft); border-radius:99px; padding:9px 16px;
+  font-size:13px; font-weight:650; color:var(--ac-text);
+  transition:border-color .15s ease, background .15s ease; }
+.ag-sms-off:hover{ border-color:var(--gold-dk); background:rgba(169,121,31,.08); }
+.ag-sms-off:disabled{ opacity:.5; cursor:default; }
+
 /* agent coach — their own read of the assessment */
 .ag-profile{ margin:0; }
 .ag-profile dt{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:800;
