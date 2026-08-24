@@ -16,6 +16,7 @@ import { identityChanged, userIdOf } from '../lib/authIdentity';
 import {
   agentBrief,
   briefRangeLabel,
+  channelLabel,
   loadCoachBrief,
   NOT_ENOUGH_REVIEWED,
 } from '../lib/coachBriefData';
@@ -101,11 +102,11 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
         <li key={i}>
           {f.quote && <blockquote>“{f.quote}”</blockquote>}
           <span className="brief-evidence-meta">
-            {f.leadName && (f.leadUrl
+            {channelLabel(f.channel)}
+            {f.leadName && <>{f.channel ? ' with ' : ''}{f.leadUrl
               ? <a href={f.leadUrl} target="_blank" rel="noreferrer">{f.leadName}</a>
-              : f.leadName)}
+              : f.leadName}</>}
             {f.occurredAt && <> · {dateLabel(f.occurredAt)}</>}
-            {f.channel && <> · {f.channel}</>}
           </span>
         </li>
       ))}
@@ -318,7 +319,7 @@ function PrintPoints({ label, points }: { label: string; points: BriefPointView[
               {p.evidence.map((f, j) => (
                 <p className="bp-evidence" key={j}>
                   {f.quote && <>“{f.quote}” — </>}
-                  {f.leadName}{f.occurredAt && <>, {dateLabel(f.occurredAt)}</>}{f.channel && <> ({f.channel})</>}
+                  {f.leadName}{f.occurredAt && <>, {dateLabel(f.occurredAt)}</>}{channelLabel(f.channel) && <> ({channelLabel(f.channel)})</>}
                 </p>
               ))}
             </li>

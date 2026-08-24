@@ -7,6 +7,7 @@
 // arrives here is safe to show.
 import { isDemo, workerFetch } from './api';
 import {
+  channelLabel,
   findingsByIndex,
   pointEvidence,
   NOT_ENOUGH_REVIEWED,
@@ -19,7 +20,7 @@ import type {
   CoachBrief,
 } from '../../../shared/coachBrief';
 
-export { NOT_ENOUGH_REVIEWED };
+export { channelLabel, NOT_ENOUGH_REVIEWED };
 export type { BriefAgent, BriefFinding, BriefPoint };
 
 /** One row of coach_weekly_reports as the data route returns it. */

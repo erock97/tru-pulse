@@ -270,11 +270,42 @@ export function findingsByIndex(brief: CoachBrief): Map<number, BriefFinding> {
   return new Map(brief.findings.map((f) => [f.findingIndex, f]));
 }
 
-/** The evidence behind one coaching point, in the report's own order. */
+/** The evidence behind one coaching point, in the report's own order.
+ *  The sender sometimes emits the same interaction under several finding
+ *  indexes (seen live: one FUB note arriving as three findings), which renders
+ *  as the same quote repeated under one point. Two findings that agree on
+ *  lead, time and quote ARE the same interaction, so only the first shows. */
 export function pointEvidence(point: BriefPoint, byIndex: Map<number, BriefFinding>): BriefFinding[] {
-  return point.findingIndexes
-    .map((i) => byIndex.get(i))
-    .filter((f): f is BriefFinding => f !== undefined);
+  const seen = new Set<string>();
+  const out: BriefFinding[] = [];
+  for (const i of point.findingIndexes) {
+    const f = byIndex.get(i);
+    if (!f) continue;
+    const key = `${f.leadName ?? ''} ${f.occurredAt ?? ''} ${f.quote ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+  }
+  return out;
+}
+
+/** What kind of interaction this evidence is, in words a leader reads at a
+ *  glance — "call" alone did not read as a phone call in live use. Unknown
+ *  channels pass through capitalized rather than hidden. */
+export function channelLabel(channel: string | undefined): string | null {
+  if (!channel) return null;
+  const c = channel.trim().toLowerCase();
+  const KNOWN: Record<string, string> = {
+    call: 'Phone call',
+    text: 'Text message',
+    sms: 'Text message',
+    note: 'FUB note',
+    email: 'Email',
+    voicemail: 'Voicemail',
+  };
+  if (KNOWN[c]) return KNOWN[c];
+  const t = channel.trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
 }
 
 /** Eric's rule: a blank section means "not enough reviewed", never a failure.

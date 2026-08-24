@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   briefStatusFor,
+  channelLabel,
   findingsByIndex,
   matchAgents,
   normalizeAgentName,
@@ -160,5 +161,50 @@ describe('evidence resolution', () => {
     );
     expect(evidence).toHaveLength(1);
     expect(evidence[0].quote).toBe('Second piece of evidence');
+  });
+
+  it('shows a duplicated interaction once (same lead, time and quote under several indexes)', () => {
+    // Seen live: one FUB note arrived as three findings with different indexes.
+    const dup = {
+      agentName: 'Cara Benak', leadName: 'Sadie Fine',
+      occurredAt: '2026-08-17T15:28:29Z', channel: 'note',
+      quote: 'Did not show last week. Timeline pushed to ~6 months.',
+    };
+    const byIndex = new Map([
+      [4, { findingIndex: 4, ...dup }],
+      [5, { findingIndex: 5, ...dup }],
+      [6, { findingIndex: 6, ...dup }],
+    ]);
+    const evidence = pointEvidence({ text: 'x', findingIndexes: [4, 5, 6] }, byIndex);
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0].findingIndex).toBe(4);
+  });
+
+  it('keeps genuinely different findings from the same lead', () => {
+    const base = { agentName: 'Cara Benak', leadName: 'Philip Watt', occurredAt: '2026-08-17T18:08:47Z', channel: 'call' };
+    const byIndex = new Map([
+      [119, { findingIndex: 119, ...base, quote: 'First remark on the call' }],
+      [120, { findingIndex: 120, ...base, quote: 'A different remark on the same call' }],
+    ]);
+    expect(pointEvidence({ text: 'x', findingIndexes: [119, 120] }, byIndex)).toHaveLength(2);
+  });
+});
+
+describe('channelLabel', () => {
+  it('names the known channels in plain words', () => {
+    expect(channelLabel('call')).toBe('Phone call');
+    expect(channelLabel('text')).toBe('Text message');
+    expect(channelLabel('sms')).toBe('Text message');
+    expect(channelLabel('note')).toBe('FUB note');
+    expect(channelLabel('email')).toBe('Email');
+    expect(channelLabel('voicemail')).toBe('Voicemail');
+  });
+
+  it('passes unknown channels through capitalized rather than hiding them', () => {
+    expect(channelLabel('zoom')).toBe('Zoom');
+  });
+
+  it('returns null for a missing channel', () => {
+    expect(channelLabel(undefined)).toBeNull();
   });
 });
