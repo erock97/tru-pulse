@@ -1514,9 +1514,17 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .cell-strikes.s3 { color: var(--terracotta); background: rgba(192, 107, 79, 0.12); border-color: rgba(192, 107, 79, 0.4); }
 .tru-dark .cell-strikes.s2 { color: var(--accent-hi); background: var(--accent-soft); border-color: var(--accent-line); }
 .tru-dark .cell-caret { color: var(--text-50); font-size: 12px; margin-left: 4px; }
-.tru-dark .src-chips { display: inline-flex; gap: 8px; flex-wrap: wrap; }
-.tru-dark .src-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text-60); }
+.tru-dark .src-chips { display: inline-flex; gap: 4px 10px; flex-wrap: wrap; }
+.tru-dark .src-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text); }
 .tru-dark .src-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+/* The source has to be named, not just coloured — a dot is not a label. */
+.tru-dark .src-chip em { font-style: normal; font-weight: 550; color: var(--text-60); }
+
+/* Hover card: the full source mix under the total. */
+.tru-dark .ps-hcard-srcs { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11.5px; color: var(--text-60); margin: -6px 0 11px; }
+.tru-dark .ps-hcard-srcs span { display: inline-flex; align-items: center; gap: 4px; }
+.tru-dark .ps-hcard-srcs i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.tru-dark .ps-hcard-srcs b { color: var(--text); }
 
 /* Drill-down row (real per-lead detail, restyled dark) */
 .tru-dark .ps-drill { padding: 4px 2px 14px; }
@@ -3277,6 +3285,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .rs-ln { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 7px 0; font-size: 13px; }
 .tru-dark .rs-ln s { text-decoration: none; color: var(--text-60); }
 .tru-dark .rs-ln b { font-weight: 700; color: var(--text-strong); }
+
+/* The lead total, broken out by source: indented under the total it explains,
+   with a rule down the left so it reads as part of that number, not as more
+   pipeline stats. */
+.tru-dark .rs-srcs { margin: 0 0 4px 10px; padding-left: 12px; border-left: 1px solid var(--border-soft); }
+.tru-dark .rs-src { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; font-size: 12.5px; }
+.tru-dark .rs-src i { width: 7px; height: 7px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+.tru-dark .rs-src s { text-decoration: none; color: var(--text-50); flex: 1; }
+.tru-dark .rs-src b { font-weight: 650; color: var(--text); }
 .tru-dark .rs-msg { margin: 12px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--text-60); font-style: italic; }
 .tru-dark .rs-msg b { color: var(--text-strong); font-weight: 700; font-style: normal; }
 .tru-dark .rs-ln b.rs-dim { color: var(--text-40); font-weight: 500; }

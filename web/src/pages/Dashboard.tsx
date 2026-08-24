@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent 
 import { loadDashboard, saveSettings, setAgentPause, signOutClean, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel, recordedOfferPersons } from '../../../shared/offerEvidence';
-import { CountUp, SOURCE_COLORS } from '../components/viz';
+import { CountUp, SOURCE_COLORS, shortSource } from '../components/viz';
 import { FubConnect } from '../components/FubConnect';
 import { HowThisWorks } from '../components/HowThisWorks';
 import { HqShell } from '../components/hqShell';
@@ -852,7 +852,9 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
           <table className="tru-table">
             <thead>
               <tr>
-                <th>Agent</th><th className="col-source">By source</th><th className="col-leads">Leads</th>
+                {/* Total first, then what it's made of — reading the breakout
+                    before the number invited "42 leads" to be read as one source. */}
+                <th>Agent</th><th className="col-leads">Leads</th><th className="col-source">By source</th>
                 <th>Zero</th><th className="col-stuck">Stuck</th><th className="col-worked">Worked</th><th>Strikes</th>
               </tr>
             </thead>
@@ -870,16 +872,17 @@ function TeamHealth({ nodes, drill, strikeLimit, onRefresh }: { nodes: AgentNode
                           <span className="cell-caret">{isOpen ? '▾' : '▸'}</span>
                         </span>
                       </td>
+                      <td className="col-leads">{a.total}</td>
                       <td className="col-source">
                         <span className="src-chips">
                           {[...a.srcs.entries()].sort((x, y) => y[1] - x[1]).map(([sn, n]) => (
                             <span className="src-chip" key={sn} title={`${sn} · ${n} lead${n === 1 ? '' : 's'}`}>
-                              <i style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />{n}
+                              <i style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />
+                              <em>{shortSource(sn)}</em>{n}
                             </span>
                           ))}
                         </span>
                       </td>
-                      <td className="col-leads">{a.total}</td>
                       <td className={`col-zero${a.zero > 0 ? ' cell-warn' : ''}`}>{a.zero}</td>
                       <td className="col-stuck">{a.stuck}</td>
                       <td className="col-worked"><span className={`cell-worked ${a.workedPct < 60 ? 'low' : ''}`}>{a.workedPct}%</span></td>
@@ -1118,9 +1121,18 @@ function HoverCard({ node, pos, onPick }: { node: AgentNode; pos: Pos; onPick: (
         <b>{node.workedPct}%</b> worked
       </div>
       <div className="ps-hcard-stats">
-        <span>{node.total} leads</span>
-        <span>{node.source}</span>
+        <span><b>{node.total}</b> leads</span>
         <span className={node.strikes >= 2 ? 'warn' : ''}>{node.strikes} strike{node.strikes === 1 ? '' : 's'}</span>
+      </div>
+      {/* Every source, not the dominant one. The old card put the total beside
+          a single source name, which read as "all 42 came from Zillow". */}
+      <div className="ps-hcard-srcs">
+        {[...node.srcs.entries()].sort((a, b) => b[1] - a[1]).map(([sn, n]) => (
+          <span key={sn}>
+            <i style={{ background: SOURCE_COLORS[sn] ?? SOURCE_COLORS.Other }} />
+            {shortSource(sn)} <b>{n}</b>
+          </span>
+        ))}
       </div>
       <button className="ps-hcard-btn" onClick={() => onPick(node.agent)}>
         <Icon name="pulse" size={14} /> Open agent
@@ -1325,7 +1337,7 @@ function AgentDrill({ node, drill, onRefresh }: { node: AgentNode; drill: Drill;
       </div>
       {srcRows.length > 0 && (
         <div className="ps-drill-src">
-          <span className="ps-drill-src-lbl">BY SOURCE</span>
+          <span className="ps-drill-src-lbl">{node.total} LEADS, BY SOURCE</span>
           {srcRows.map(([name, n]) => (
             <span className="ps-drill-src-chip" key={name}>
               <i style={{ background: SOURCE_COLORS[name] ?? SOURCE_COLORS.Other }} />

@@ -32,6 +32,10 @@ export interface Row {
   agentId: string | null;
   name: string;
   leads: number;
+  /** `leads` broken out by lead source. A bare total was being read as one
+   *  source's number — 42 leads meant 36 Zillow and 6 Realtor.com MVIP, and
+   *  nothing on the page said so. */
+  srcs: Map<string, number>;
   worked: number;
   workedPct: number;
   stuck: number;
@@ -249,7 +253,8 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
         r = {
           agentId: c?.id ?? null,
           name: owner,
-          leads: 0, worked: 0, workedPct: 0, stuck: 0, offers: 0, contracts: 0,
+          leads: 0, srcs: new Map<string, number>(),
+          worked: 0, workedPct: 0, stuck: 0, offers: 0, contracts: 0,
           perContract: null,
           lastDays: c && c.lastDays < 99 ? c.lastDays : null,
           arch: c?.quad ?? null,
@@ -262,6 +267,8 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
         bucket.set(key, r);
       }
       r.leads += 1;
+      const sf = l.source_family || 'Other';
+      r.srcs.set(sf, (r.srcs.get(sf) ?? 0) + 1);
       const cls = stageClass(l.stage);
       if (isOfferPlus(cls)) r.offers += 1;
       if (isClosing(cls)) r.contracts += 1;
