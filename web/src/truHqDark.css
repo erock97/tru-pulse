@@ -3882,6 +3882,17 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tm-invite:disabled { opacity: 0.4; cursor: default; }
 .tru-dark .tm-sent { font: 600 12px/1.2 var(--hq-font); color: var(--sea); }
 
+/* The one bulk action on the page gets the accent; every per-row button
+   stays quiet so the table doesn't shout 30 times. */
+.tru-dark .tm-invite-all {
+  padding: 11px 20px; border-radius: 999px; cursor: pointer; border: 0;
+  font: 800 13.5px/1 var(--hq-font); color: #1a1206; background: var(--accent);
+  transition: filter .2s var(--ease), transform .2s var(--ease);
+}
+.tru-dark .tm-invite-all:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.tru-dark .tm-invite-all:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.tru-dark .tm-invite-all:disabled { opacity: 0.75; cursor: default; }
+
 /* Instructional copy, so it gets a reading measure rather than the masthead's
    narrow one — a 45-character column above a full-width table looked broken. */
 .tru-dark .tm-main .dk-sub { max-width: 74ch; }
