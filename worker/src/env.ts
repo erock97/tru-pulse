@@ -7,6 +7,10 @@ export interface Env {
   SUPABASE_ANON_KEY: string;          // used to validate a caller's user token
   FUB_ENC_KEY: string;                // base64 of a 32-byte AES-GCM key
   ADMIN_TOKEN: string;                // guards ops routes (manual provision / sync-all)
+  COACH_INGEST_TOKEN?: string;        // guards POST /coach/weekly-report (the Hermes
+                                      // laptop's brief sends) — deliberately NOT
+                                      // ADMIN_TOKEN so a leaked report key can submit
+                                      // coaching reports and nothing else
   RESEND_API_KEY?: string;            // Resend — shared by the brief and invite mail
   BRIEF_FROM?: string;                // weekly Leadership Brief sender, e.g. "TRU Pulse <pulse@truhq.co>"
   INVITE_FROM?: string;               // leader set-password invites, e.g. "TRU HQ <hq@truhq.co>"

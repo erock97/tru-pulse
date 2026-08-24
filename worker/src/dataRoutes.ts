@@ -203,6 +203,28 @@ export async function handleDataRoutes(
     return json({ teams }, 200, cors);
   }
 
+  // ── Coach: the weekly coaching brief (the Hermes report). ──
+  // RLS only exposes rows that are status='published' AND in the caller's org, so
+  // held reports and personal on-demand runs are invisible here by construction.
+  // One trip: the history list (no payloads — they're big) plus the full report the
+  // caller wants — the latest by default, or ?reportId= for a past week.
+  if (url.pathname === '/data/coach/brief' && req.method === 'GET') {
+    const META_COLS = 'id,team_id,team_slug,week_start,week_end,generated_at,received_at';
+    const reports = await db.select(
+      'coach_weekly_reports',
+      `select=${META_COLS}&order=week_end.desc,generated_at.desc&limit=60`,
+    ) as Array<{ id: string }>;
+    const requestedId = url.searchParams.get('reportId');
+    if (requestedId && !UUID_RE.test(requestedId)) {
+      return json({ error: 'invalid reportId' }, 422, cors);
+    }
+    const wantedId = requestedId ?? reports[0]?.id ?? null;
+    const full = wantedId
+      ? await db.select('coach_weekly_reports', `select=*&id=eq.${wantedId}&limit=1`)
+      : [];
+    return json({ reports, report: (full as unknown[])[0] ?? null }, 200, cors);
+  }
+
   // ── Rep: one agent's own practice attempts. ──
   if (url.pathname === '/data/rep/practice' && req.method === 'GET') {
     const agentId = url.searchParams.get('agentId') ?? '';

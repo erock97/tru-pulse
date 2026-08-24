@@ -1,0 +1,282 @@
+// The weekly coaching brief — the contract between the Hermes automation (an
+// external sender, via the Worker's POST /coach/weekly-report) and the Coach tab.
+//
+// Everything here is pure: validation, name matching, and evidence resolution,
+// shared by the Worker (ingest) and the web app (rendering) so the two can never
+// drift. No imports, no I/O.
+
+// ── Payload types ───────────────────────────────────────────────────────────
+
+export interface BriefMetrics {
+  reviewedContacts: number;
+  substantiveContacts: number;
+  // Initial-outreach behavior: how the agent FIRST touched each reviewed lead.
+  callFirst: number;
+  textFirst: number;
+  noOutreach: number;
+  unclassified: number;
+}
+
+/** One coaching point. `findingIndexes` ties it to its evidence (findings[]). */
+export interface BriefPoint {
+  text: string;
+  /** The "Coach:" line — how to coach this point, when the report includes one. */
+  coach?: string;
+  findingIndexes: number[];
+}
+
+export interface BriefAgent {
+  agentName: string;
+  metrics: Partial<BriefMetrics>;
+  doingRight: BriefPoint[];
+  opportunities: BriefPoint[];
+  objections: BriefPoint[];
+  coachingActions: BriefPoint[];
+}
+
+/** One piece of evidence: the exact interaction backing a coaching point. */
+export interface BriefFinding {
+  findingIndex: number;
+  agentName: string;
+  leadName?: string;
+  leadUrl?: string;
+  occurredAt?: string;
+  channel?: string;
+  quote?: string;
+}
+
+export interface BriefRun {
+  runId: string;
+  trigger: string;          // 'weekly' publishes; anything else is stored only
+  teamId: string;           // the laptop's team slug, e.g. 'costigan'
+  teamName?: string;
+  startDate: string;        // YYYY-MM-DD
+  endDate: string;          // YYYY-MM-DD
+  generatedAt?: string;
+  status?: string;
+}
+
+export interface CoachBrief {
+  schemaVersion: string;
+  run: BriefRun;
+  agents: BriefAgent[];
+  findings: BriefFinding[];
+}
+
+// ── Validation ──────────────────────────────────────────────────────────────
+// Coerce generously (a point may arrive as a plain string), reject clearly.
+// A rejected payload must 4xx so the laptop's retry loop doesn't spin on it.
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_AGENTS = 200;
+const MAX_FINDINGS = 5000;
+const MAX_POINTS_PER_LIST = 100;
+
+type Raw = Record<string, unknown>;
+
+function asString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() ? v.trim() : undefined;
+}
+function asCount(v: unknown): number | undefined {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : undefined;
+}
+
+/** A point may be a string or an object; index lists may be absent. */
+function coercePoint(v: unknown): BriefPoint | null {
+  if (typeof v === 'string') {
+    const text = v.trim();
+    return text ? { text, findingIndexes: [] } : null;
+  }
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Raw;
+  const text = asString(o.text) ?? asString(o.detail) ?? asString(o.title) ?? asString(o.summary);
+  if (!text) return null;
+  const idxRaw = Array.isArray(o.findingIndexes) ? o.findingIndexes
+    : Array.isArray(o.findings) ? o.findings : [];
+  const findingIndexes = idxRaw
+    .map((n) => asCount(n))
+    .filter((n): n is number => n !== undefined);
+  const point: BriefPoint = { text, findingIndexes };
+  const coach = asString(o.coach) ?? asString(o.coachLine) ?? asString(o.coaching);
+  if (coach) point.coach = coach;
+  return point;
+}
+
+function coercePoints(v: unknown): BriefPoint[] {
+  if (!Array.isArray(v)) return [];
+  return v.slice(0, MAX_POINTS_PER_LIST)
+    .map(coercePoint)
+    .filter((p): p is BriefPoint => p !== null);
+}
+
+function coerceMetrics(v: unknown): Partial<BriefMetrics> {
+  if (!v || typeof v !== 'object') return {};
+  const o = v as Raw;
+  const out: Partial<BriefMetrics> = {};
+  (['reviewedContacts', 'substantiveContacts', 'callFirst', 'textFirst', 'noOutreach', 'unclassified'] as const)
+    .forEach((k) => {
+      const n = asCount(o[k]);
+      if (n !== undefined) out[k] = n;
+    });
+  return out;
+}
+
+export type BriefValidation =
+  | { ok: true; brief: CoachBrief }
+  | { ok: false; errors: string[] };
+
+export function validateCoachBrief(raw: unknown): BriefValidation {
+  const errors: string[] = [];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, errors: ['payload must be a JSON object'] };
+  }
+  const o = raw as Raw;
+  const runRaw = (o.run && typeof o.run === 'object' ? o.run : {}) as Raw;
+
+  const runId = asString(runRaw.runId);
+  if (!runId) errors.push('run.runId is required');
+  const teamId = asString(runRaw.teamId);
+  if (!teamId) errors.push('run.teamId (the team slug) is required');
+  const startDate = asString(runRaw.startDate);
+  if (!startDate || !DATE_RE.test(startDate)) errors.push('run.startDate must be YYYY-MM-DD');
+  const endDate = asString(runRaw.endDate);
+  if (!endDate || !DATE_RE.test(endDate)) errors.push('run.endDate must be YYYY-MM-DD');
+
+  const agentsRaw = Array.isArray(o.agents) ? o.agents : null;
+  if (!agentsRaw) errors.push('agents[] is required (may be empty)');
+  if (agentsRaw && agentsRaw.length > MAX_AGENTS) errors.push(`agents[] exceeds ${MAX_AGENTS}`);
+
+  const findingsRaw = Array.isArray(o.findings) ? o.findings : [];
+  if (findingsRaw.length > MAX_FINDINGS) errors.push(`findings[] exceeds ${MAX_FINDINGS}`);
+
+  const agents: BriefAgent[] = (agentsRaw ?? []).slice(0, MAX_AGENTS).flatMap((a) => {
+    if (!a || typeof a !== 'object') return [];
+    const ao = a as Raw;
+    const agentName = asString(ao.agentName) ?? asString(ao.name);
+    if (!agentName) return [];
+    return [{
+      agentName,
+      metrics: coerceMetrics(ao.metrics),
+      doingRight: coercePoints(ao.doingRight),
+      opportunities: coercePoints(ao.opportunities),
+      objections: coercePoints(ao.objections),
+      coachingActions: coercePoints(ao.coachingActions),
+    }];
+  });
+  if (agentsRaw && agentsRaw.length > 0 && agents.length === 0) {
+    errors.push('agents[] contained no usable entries (each needs agentName)');
+  }
+
+  const findings: BriefFinding[] = findingsRaw.slice(0, MAX_FINDINGS).flatMap((f, i) => {
+    if (!f || typeof f !== 'object') return [];
+    const fo = f as Raw;
+    const agentName = asString(fo.agentName);
+    if (!agentName) return [];
+    const finding: BriefFinding = {
+      findingIndex: asCount(fo.findingIndex) ?? i,
+      agentName,
+    };
+    const leadName = asString(fo.leadName); if (leadName) finding.leadName = leadName;
+    const leadUrl = asString(fo.leadUrl); if (leadUrl) finding.leadUrl = leadUrl;
+    const occurredAt = asString(fo.occurredAt); if (occurredAt) finding.occurredAt = occurredAt;
+    const channel = asString(fo.channel); if (channel) finding.channel = channel;
+    const quote = asString(fo.quote); if (quote) finding.quote = quote;
+    return [finding];
+  });
+
+  if (errors.length) return { ok: false, errors };
+  return {
+    ok: true,
+    brief: {
+      schemaVersion: asString(o.schemaVersion) ?? '1.0',
+      run: {
+        runId: runId as string,
+        trigger: asString(runRaw.trigger) ?? 'weekly',
+        teamId: teamId as string,
+        teamName: asString(runRaw.teamName),
+        startDate: startDate as string,
+        endDate: endDate as string,
+        generatedAt: asString(runRaw.generatedAt),
+        status: asString(runRaw.status),
+      },
+      agents,
+      findings,
+    },
+  };
+}
+
+// ── Publishing policy ───────────────────────────────────────────────────────
+// Scheduled weekly runs publish into the Coach tab; personal on-demand runs are
+// stored (same schema) but never shown, per the handoff. A report whose team
+// slug isn't mapped yet is held regardless, and publishes when it resolves.
+
+export function briefStatusFor(trigger: string, teamResolved: boolean): 'published' | 'held' {
+  return trigger === 'weekly' && teamResolved ? 'published' : 'held';
+}
+
+// ── Agent matching ──────────────────────────────────────────────────────────
+// By normalized name, only among the named team's agents. An ambiguous or
+// unknown name is never guessed — it stays unlinked and is reported back to the
+// sender so the mismatch is visible in the laptop's logs.
+
+export function normalizeAgentName(name: string): string {
+  return name
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')   // strip diacritics
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export interface AgentMatchResult {
+  /** agentName → agents.id, only for unambiguous matches. */
+  links: Record<string, string>;
+  matched: string[];
+  unmatched: string[];
+  ambiguous: string[];
+}
+
+export function matchAgents(
+  briefAgentNames: string[],
+  roster: Array<{ id: string; name: string }>,
+): AgentMatchResult {
+  const byNorm = new Map<string, string[]>();
+  for (const r of roster) {
+    const key = normalizeAgentName(r.name);
+    if (!key) continue;
+    byNorm.set(key, [...(byNorm.get(key) ?? []), r.id]);
+  }
+  const links: Record<string, string> = {};
+  const matched: string[] = [];
+  const unmatched: string[] = [];
+  const ambiguous: string[] = [];
+  for (const name of briefAgentNames) {
+    const ids = byNorm.get(normalizeAgentName(name)) ?? [];
+    if (ids.length === 1) {
+      links[name] = ids[0];
+      matched.push(name);
+    } else if (ids.length === 0) {
+      unmatched.push(name);
+    } else {
+      ambiguous.push(name);
+    }
+  }
+  return { links, matched, unmatched, ambiguous };
+}
+
+// ── Evidence resolution (rendering) ─────────────────────────────────────────
+
+export function findingsByIndex(brief: CoachBrief): Map<number, BriefFinding> {
+  return new Map(brief.findings.map((f) => [f.findingIndex, f]));
+}
+
+/** The evidence behind one coaching point, in the report's own order. */
+export function pointEvidence(point: BriefPoint, byIndex: Map<number, BriefFinding>): BriefFinding[] {
+  return point.findingIndexes
+    .map((i) => byIndex.get(i))
+    .filter((f): f is BriefFinding => f !== undefined);
+}
+
+/** Eric's rule: a blank section means "not enough reviewed", never a failure.
+ *  Rendering must show this line rather than an empty box. */
+export const NOT_ENOUGH_REVIEWED = 'Not enough reviewed this week';
