@@ -162,17 +162,10 @@ export function TeamBriefSection({ onOpenAgent }: {
   const [printing, setPrinting] = useState(false);
   const view = bundle?.latest ?? null;
 
-  if (loading && !view) return null; // never a spinner for an optional section
-  if (!view) {
-    return (
-      <div className="dk-sec brief-sec">
-        <h2>The weekly brief</h2>
-        <p className="brief-none">
-          No coaching brief yet — the first one appears here after the weekly review runs.
-        </p>
-      </div>
-    );
-  }
+  // No published brief for this org → no section at all. Teams that aren't on
+  // the weekly review (most customers) must never see an empty "no brief"
+  // frame; the section simply starts existing the week their first report lands.
+  if (!view) return null;
 
   return (
     <div className="dk-sec brief-sec">
