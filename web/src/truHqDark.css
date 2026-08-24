@@ -5320,3 +5320,46 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   }
   body.brief-printing .brief-print-bar { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHONE LAYOUT — Coach (and the shell rules that were being overridden).
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  /* The sidebar-plate rule above (.tru-dark .tru-shell .side, height:100vh)
+     out-specifies the 860px collapse in the RESPONSIVE block, so phones were
+     getting a full blank screen of sidebar before any content. Re-assert the
+     collapse at the same specificity, and drop the plate art — it was sized
+     for a tall panel, not a slim header strip. */
+  .tru-dark .tru-shell .side { position: static; height: auto; }
+  .tru-dark .tru-shell .side::before { display: none; }
+
+  /* ---- The Coach cohort table. The Pulse phone rules force table-layout:
+     fixed, which crushes Coach's SEVEN columns into ~55px each and the cells
+     overlap into garble. Keep the three a phone can use — agent (pace is
+     already the sub-line under the name), coaching health, last 1:1 — and
+     hide the rest; they all remain on desktop and inside the drill-in. ---- */
+  .tru-dark .dk-table .tru-table th:nth-child(2),
+  .tru-dark .dk-table .tru-table tbody td:nth-child(2),
+  .tru-dark .dk-table .tru-table th:nth-child(3),
+  .tru-dark .dk-table .tru-table tbody td:nth-child(3),
+  .tru-dark .dk-table .tru-table th:nth-child(6),
+  .tru-dark .dk-table .tru-table tbody td:nth-child(6),
+  .tru-dark .dk-table .tru-table th:nth-child(7),
+  .tru-dark .dk-table .tru-table tbody td:nth-child(7) { display: none; }
+  /* The footer strip summarises columns that are now hidden, and every number
+     in it already sits in the tiles above. */
+  .tru-dark .dk-table .tru-table tfoot { display: none; }
+  .tru-dark .dk-table .rs-who { min-width: 0; }
+  .tru-dark .dk-table .rs-who .ch-rank { display: none; }
+  .tru-dark .dk-table .cell-name { white-space: normal; }
+
+  /* The weekly brief scan: give the priority line its own row and keep the
+     name row from crowding. */
+  .tru-dark .brief-scan-row { padding: 12px 4px; }
+}
+
+@media (max-width: 860px) {
+  /* The base th rule says nowrap; under table-layout:fixed the crowded headings
+     print over each other instead of wrapping. Let them wrap on a phone. */
+  .tru-dark .dk-table .tru-table thead th { white-space: normal; }
+}
