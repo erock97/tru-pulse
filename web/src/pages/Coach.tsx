@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
@@ -17,8 +17,6 @@ import {
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
   type CommitmentReview, type CommitmentStatus, type MetStatus,
 } from '../lib/coachData';
-import { AG, CG, TRAIT_LABELS, type Pole } from '../lib/assessmentData';
-import { fitFor } from '../lib/channelFit';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import { Strip } from '../components/rosterViz';
 import {
@@ -26,6 +24,7 @@ import {
 } from '../components/deckFocus';
 import { Odometer } from '../components/odometer';
 import { AgentBriefPanel, TeamBriefSection } from '../components/CoachBrief';
+import AgentProfile from './AgentProfile';
 import { useFlip } from '../lib/deckMotion';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
 import '../truHqDark.css';
@@ -104,7 +103,10 @@ export default function Coach(props: {
   org: { id: string; name: string };
   onHome?: () => void;
   openAgentId?: string | null;
+  /** 'sheet' (default) = the 1:1 prep sheet; 'profile' = the full personality profile. */
+  openView?: 'sheet' | 'profile';
   onOpenAgent?: (id: string | null) => void;
+  onOpenProfile?: (id: string) => void;
 }) {
   // One focus scope around the whole page, so the marks in the lead tile, the
   // bars in the small tiles and the rows in the cohort table are three faces
@@ -120,12 +122,16 @@ function CoachDeck({
   org,
   onHome,
   openAgentId = null,
+  openView = 'sheet',
   onOpenAgent,
+  onOpenProfile,
 }: {
   org: { id: string; name: string };
   onHome?: () => void;
   openAgentId?: string | null;
+  openView?: 'sheet' | 'profile';
   onOpenAgent?: (id: string | null) => void;
+  onOpenProfile?: (id: string) => void;
 }) {
   const [roster, setRoster] = useState<RosterAgent[] | null>(() => readCoachCache(org.id));
   const [err, setErr] = useState<string | null>(null);
@@ -135,8 +141,14 @@ function CoachDeck({
   // navigates instead of setting local state. Falls back to local state only
   // when rendered without a router (the ?demo=1 preview).
   const [localOpenId, setLocalOpenId] = useState<string | null>(null);
+  const [localView, setLocalView] = useState<'sheet' | 'profile'>('sheet');
   const openId = onOpenAgent ? openAgentId : localOpenId;
-  const setOpenId = onOpenAgent ?? setLocalOpenId;
+  const setOpenId = onOpenAgent
+    ?? ((id: string | null) => { setLocalOpenId(id); setLocalView('sheet'); });
+  // Which face of the open agent: their 1:1 prep sheet or the full profile.
+  const view = onOpenProfile ? openView : localView;
+  const openProfile = onOpenProfile
+    ?? ((id: string) => { setLocalOpenId(id); setLocalView('profile'); });
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
   const focus = useDeckFocus();
@@ -338,11 +350,14 @@ function CoachDeck({
         <div className="coach-canvas dk-main" ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
 
-          {openAgent ? (
+          {openAgent && view === 'profile' ? (
+            <AgentProfile agent={openAgent} onBack={() => setOpenId(openAgent.id)} />
+          ) : openAgent ? (
             <AgentDrill
               agent={openAgent}
               cohort={derived ? derived.withHealth.map((x) => ({ id: x.a.id, health: x.health })) : []}
               teamHealth={derived ? derived.teamHealth : null}
+              onOpenProfile={() => openProfile(openAgent.id)}
             />
           ) : (
             <>
@@ -629,11 +644,6 @@ function needsReason(a: RosterAgent): string {
    deriveProfile) + goals + check-in history.
    ============================================================ */
 
-/* ---- Display titles for the 4 divergence axes (energy/approach/deal/decision). ---- */
-const AXIS_TITLE: Record<string, string> = {
-  energy: 'Energy', approach: 'Approach', deal: 'Deal Style', decision: 'Decisions',
-};
-
 // NOTE: the old deterministic "talking points" list (FeedForward-style, built
 // from archetype signal/unlock + pace + last focus) that used to render
 // beside the old yes/no OneOnOneSheet is retired by Block 4b's design
@@ -760,11 +770,12 @@ function useSavedFlag(): [string | null, (label?: string) => void] {
   return [flag, flash];
 }
 
-function AgentDrill({ agent, teamHealth }: {
+function AgentDrill({ agent, teamHealth, onOpenProfile }: {
   agent: RosterAgent;
   /** Everyone's coaching health, so this one can be shown in context. */
   cohort: Array<{ id: string; health: number }>;
   teamHealth: number | null;
+  onOpenProfile: () => void;
 }) {
   // Channel fit is pure derivation from the assessment code — no request, no
   // state. Computed here so both the list and the "against the grain" line
@@ -776,8 +787,6 @@ function AgentDrill({ agent, teamHealth }: {
   const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
   const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
   const [writeErr, setWriteErr] = useState<string | null>(null);
-  const fit = useMemo(() => fitFor(profile?.code ?? null), [profile?.code]);
-  const worst = fit.length ? fit[fit.length - 1] : null;
 
   // Remember where the leader was in THIS agent's sheet. Restoring on mount is
   // what makes returning from another tab land on the same line rather than the
@@ -946,180 +955,24 @@ function AgentDrill({ agent, teamHealth }: {
         setCommitments={setCommitments}
         doneCount={doneCount}
       />
-      {/* WHO THEY ARE — every assessment-derived panel, folded away. None of
-          this changes between visits; it is reference, not weekly workflow, so
-          it costs one click instead of five screens of scrolling. */}
-      <ProfileFold sub={`${agent.archName} · ${agent.quad}`}>
-
-        {/* THE 1:1 PLAYBOOK — always present for an assessed agent (business code). */}
-        {profile && CG[profile.code] && (
-          <section className="card ad-panel">
-            <div className="ad-panel-head">
-              <h3>How to run their 1:1</h3>
-              <span className="panel-sub">{agent.archName}</span>
-            </div>
-            <ul className="ad-wired">
-              <li><span className="ad-wired-tag drive">Communicate</span><p>{CG[profile.code].communicate}</p></li>
-              <li><span className="ad-wired-tag drive">Motivate</span><p>{CG[profile.code].motivate}</p></li>
-              <li><span className="ad-wired-tag blind">Hold accountable</span><p>{CG[profile.code].accountable}</p></li>
-              <li><span className="ad-wired-tag blind">In conflict</span><p>{CG[profile.code].conflict}</p></li>
-              <li><span className="ad-wired-tag drive">FeedForward ask</span><p>{CG[profile.code].feedforward}</p></li>
-            </ul>
-          </section>
-        )}
-
-        <div className="ad-grid" style={{ marginTop: 22 }}>
-          {/* The four AG fields — strength, watch-for, growth edge, challenge —
-              answer "where will they struggle, where will they do well". They
-              are written to the agent, so they are labelled as what that agent
-              is told rather than silently re-voiced. */}
-          <section className="card ad-panel ad-strengths">
-            <div className="ad-panel-head">
-              <h3>Where they win, where they slip</h3>
-              <span className="panel-sub">{profile ? `${profile.quad} · ${profile.law}` : agent.quad}</span>
-            </div>
-            {profile && AG[profile.code] ? (
-              <ul className="ad-swot">
-                <li className="is-good">
-                  <span className="ad-swot-k">Where they do well</span>
-                  <p>{AG[profile.code].sup}</p>
-                </li>
-                <li className="is-risk">
-                  <span className="ad-swot-k">Where they slip</span>
-                  <p>{AG[profile.code].watch}</p>
-                </li>
-                <li className="is-work">
-                  <span className="ad-swot-k">The work with them</span>
-                  <p>{AG[profile.code].edge}</p>
-                </li>
-                <li className="is-watch">
-                  <span className="ad-swot-k">Warning sign</span>
-                  <p>{profile.signal}</p>
-                </li>
-              </ul>
-            ) : (
-              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading…</p>
-            )}
-          </section>
-
-          {/* Where they will actually win business, scored off the same four
-              axes the assessment already measures. */}
-          <section className="card ad-panel ad-strengths">
-            <div className="ad-panel-head">
-              <h3>Where they’ll win business</h3>
-              <span className="panel-sub">
-                {profile ? profile.code.split('-').map((c) => TRAIT_LABELS[c as Pole]).join(' · ') : 'scored on their assessment'}
-              </span>
-            </div>
-            {fit.length > 0 ? (
-              <>
-                <ol className="ad-fit">
-                  {fit.slice(0, 3).map(({ channel, score, matched }) => (
-                    <li key={channel.key}>
-                      <div className="ad-fit-top">
-                        <span className="ad-fit-name">{channel.name}</span>
-                        <span className="ad-fit-traits">
-                          {matched.map((m) => TRAIT_LABELS[m]).join(' + ')}
-                        </span>
-                      </div>
-                      <span className="ad-fit-bar" aria-hidden>
-                        <i style={{ width: `${Math.round(score * 100)}%` }} />
-                      </span>
-                      <p>{channel.because}</p>
-                    </li>
-                  ))}
-                </ol>
-                {worst && (
-                  <div className="ad-fit-against">
-                    <span className="ad-swot-k">Against the grain — {worst.channel.name}</span>
-                    <p>{worst.channel.cost}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>
-                No assessment on file yet, so there is nothing to score this on.
-              </p>
-            )}
-          </section>
-        </div>
-
-        {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
-            (Task 7's baseline assessment). Old-site, business-only agents simply
-            don't render these — no crash, no empty headings. */}
-        {profile && profile.divergences.length > 0 && (
-          <div className="ad-grid" style={{ marginTop: 22 }}>
-            <section className="card ad-panel">
-              <div className="ad-panel-head">
-                <h3>Where they diverge</h3>
-                <span className="panel-sub">{profile.divergences.length} of 4 axes</span>
-              </div>
-              <ul className="ad-wired">
-                {profile.divergences.map((d) => (
-                  <li key={d.axis}>
-                    <span className="ad-wired-tag blind">{AXIS_TITLE[d.axis]}</span>
-                    <p>In life they’re {d.personalLabel.toLowerCase()}, but at work they show up {d.workLabel.toLowerCase()}.</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-        )}
-
-        <div className="ad-grid ad-grid-tail" style={{ marginTop: 22 }}>
-          <section className="card ad-panel">
-            <div className="ad-panel-head">
-              <h3>Their profile</h3>
-              <span className="panel-sub">{profile ? `${profile.confLabel} · ${profile.confPct}% confidence` : agent.archName}</span>
-            </div>
-            {profile ? (
-              <>
-                <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 18 }}>{profile.tagline}</p>
-                <div className="ad-dims">
-                  {profile.dimStatus.map((d) => (
-                    <div key={d.label} className="ad-dim">
-                      <span className="ad-dim-mark" style={{ color: d.color }}>{d.mark}</span>
-                      <span className="ad-dim-label">{d.label}</span>
-                      <span className="ad-dim-status" style={{ color: d.color }}>{d.statusLabel}</span>
-                    </div>
-                  ))}
-                </div>
-                {profile.shift && (
-                  <div className="ad-shift">
-                    <b>{profile.shift.dim}</b> shifted {profile.shift.from} → {profile.shift.to} ({profile.shift.when})
-                  </div>
-                )}
-              </>
-            ) : (
-              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading profile…</p>
-            )}
-          </section>
-        </div>
-
-      </ProfileFold>
+      {/* WHO THEY ARE — one quiet doorway. The deep personality material lives
+          on its own page (AgentProfile): valuable, loved, and deliberately out
+          of the weekly workflow's face. */}
+      <section className="ad-fold">
+        <button type="button" className="ad-fold-head" onClick={onOpenProfile}>
+          <span className="ad-fold-title">
+            <span className="ad-fold-h">Who {first} is &amp; how to coach them</span>
+            <span className="panel-sub">{agent.archName} · {agent.quad} · the full personality profile</span>
+          </span>
+          <span className="ad-fold-caret">Open the profile</span>
+        </button>
+      </section>
 
     </>
   );
 }
 
-/* The fold that holds every assessment-derived panel on the agent sheet.
-   Collapsed by default: this material never changes between visits, and the
-   sheet's job is this week — the brief and the 1:1. */
-function ProfileFold({ sub, children }: { sub: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <section className="ad-fold">
-      <button type="button" className="ad-fold-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span className="ad-fold-title">
-          <span className="ad-fold-h">Who they are &amp; how to coach them</span>
-          <span className="panel-sub">{sub}</span>
-        </span>
-        <span className="ad-fold-caret" aria-hidden>{open ? 'Fold away' : 'Open'}</span>
-      </button>
-      {open && <div className="ad-fold-body">{children}</div>}
-    </section>
-  );
-}
+
 
 /* ============================================================
    RUN THIS 1:1 — the structured leadership form (Block 4b), built to

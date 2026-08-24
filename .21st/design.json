@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "project": {
+    "name": "TRU HQ (tru-pulse)",
+    "productType": "B2B coaching platform for real-estate team leaders",
+    "stack": ["React 18", "Vite", "plain CSS — web/src/truHqDark.css IS the design system"]
+  },
+  "sources": {
+    "tokens": ["web/src/truHqDark.css (:root ~30-75; per-tab temperature ~226-275)"],
+    "components": ["web/src/components/*", "deck classes in truHqDark.css (dk-*, ad-*, rs-*)"],
+    "assets": ["web/public/tru-mark.png (the Tripod emblem)"],
+    "instructions": ["AGENTS.md", "CLAUDE.md"]
+  },
+  "design": {
+    "colorMode": "dark-only",
+    "colors": {
+      "base": "dark green family (#0A130D-ish) via var(--base)",
+      "surface": "var(--card) / var(--lift), 1px var(--border)",
+      "text": "var(--text), var(--text-60), var(--text-50)",
+      "accent": "#F2B23C gold app-wide",
+      "coachTab": "terracotta ONLY via var(--tab-mid)/var(--tab-hi)/var(--tab-soft)/var(--tab-line) — never raw hex"
+    },
+    "typography": {
+      "display": "serif display for page titles (.dk-mast h1 pattern)",
+      "labels": "11-12px uppercase letterspaced section keys (.ad-swot-k)"
+    },
+    "spacing": {},
+    "radius": { "cards": "10-12px" },
+    "shadows": {},
+    "motion": { "note": "restrained; never put .reveal on components that mount after data loads" },
+    "density": "calm, editorial; full-width bands in deliberate reading order, not card mosaics"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [
+      ".dk-mast (eyebrow + serif h1 + sub)",
+      ".card.ad-panel + .ad-panel-head (h3 + .panel-sub)",
+      ".ad-swot / .ad-wired / .ad-fit content lists",
+      ".ad-vitals one-line stat band",
+      ".ad-fold collapsed reference section",
+      ".brief-points left-rule bullets",
+      "ScaleMarks / Strip / Odometer / Ring / Avatar (web/src/components)"
+    ],
+    "patterns": ["hash routing #/coach/<agentId>; pages render their own HqShell"]
+  },
+  "constraints": {
+    "must": [
+      "Wear the Coach tab temperature via --tab-* custom properties",
+      "Hierarchy over decoration; one deliberate reading order per page",
+      "Real product copy; empty states say what they mean"
+    ],
+    "avoid": [
+      "AI-slop tells Eric explicitly hates: drawer cards, misshapen box mosaics, glass effects, decorative gradients, emoji feature grids, uniform rounded-card dashboards",
+      "New arbitrary hex values when a token exists",
+      "Equal-weight card grids where everything shouts"
+    ]
+  },
+  "decisions": [
+    "2026-08-23: Coach agent sheet is a prep sheet — weekly brief on top with inline evidence, 1:1 workzone next, reference folded (Eric approved, PR #47).",
+    "2026-08-23: Personality material gets its own designed Profile view entered from the agent sheet — valuable, but never in the weekly workflow's face (Eric)."
+  ]
+}

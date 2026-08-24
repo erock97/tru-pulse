@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { coachRoute, parseCoachAgentId, isCoachRoute } from './coachRoute';
+import { coachProfileRoute, coachRoute, parseCoachAgentId, parseCoachView, isCoachRoute } from './coachRoute';
 
 describe('coachRoute', () => {
   it('builds the roster route when no agent is open', () => {
@@ -32,6 +32,25 @@ describe('parseCoachAgentId', () => {
   });
   it('ignores a query string', () => {
     expect(parseCoachAgentId('/coach/a1?x=1')).toBe('a1');
+  });
+});
+
+describe('profile view routes', () => {
+  it('builds the profile route', () => {
+    expect(coachProfileRoute('a1')).toBe('/coach/a1/profile');
+  });
+  it('the profile route still names its agent', () => {
+    expect(parseCoachAgentId('/coach/a1/profile')).toBe('a1');
+    expect(parseCoachAgentId('/coach/a%2Fb%3Fc/profile')).toBe('a/b?c');
+  });
+  it('tells the sheet from the profile', () => {
+    expect(parseCoachView('/coach/a1')).toBe('sheet');
+    expect(parseCoachView('/coach/a1/profile')).toBe('profile');
+    expect(parseCoachView('/coach/a1/profile?x=1')).toBe('profile');
+  });
+  it('a bare /coach/profile is an agent named profile, not a view', () => {
+    // An agent id is a uuid in real data; this guards the parser's edges.
+    expect(parseCoachAgentId('/coach/profile')).toBe('profile');
   });
 });
 

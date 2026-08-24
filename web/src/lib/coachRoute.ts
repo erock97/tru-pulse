@@ -23,11 +23,24 @@ export function isCoachRoute(route: string): boolean {
 export function parseCoachAgentId(route: string): string | null {
   const p = pathOf(route);
   if (!p.startsWith('/coach/')) return null;
-  const raw = p.slice('/coach/'.length);
+  let raw = p.slice('/coach/'.length);
+  if (!raw) return null;
+  // `/coach/<id>/profile` still names the same agent; the trailing segment is
+  // which VIEW of them is open (see parseCoachView).
+  if (raw.endsWith('/profile')) raw = raw.slice(0, -'/profile'.length);
   if (!raw) return null;
   try {
     return decodeURIComponent(raw);
   } catch {
     return raw; // a malformed escape is still better than crashing the route
   }
+}
+
+/** Which view of the open agent: their 1:1 prep sheet, or the full Profile. */
+export function parseCoachView(route: string): 'sheet' | 'profile' {
+  return pathOf(route).endsWith('/profile') ? 'profile' : 'sheet';
+}
+
+export function coachProfileRoute(agentId: string): string {
+  return `/coach/${encodeURIComponent(agentId)}/profile`;
 }

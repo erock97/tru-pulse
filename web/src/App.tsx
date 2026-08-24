@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { onAuthChange, onPasswordRecovery, exchangeLink, type AuthState } from './lib/auth';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import { userIdOf, identityChanged } from './lib/authIdentity';
-import { isCoachRoute, parseCoachAgentId, coachRoute } from './lib/coachRoute';
+import { isCoachRoute, parseCoachAgentId, parseCoachView, coachRoute, coachProfileRoute } from './lib/coachRoute';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
@@ -153,7 +153,9 @@ export default function App() {
             org={o}
             onHome={() => go('/')}
             openAgentId={parseCoachAgentId(route)}
+            openView={parseCoachView(route)}
             onOpenAgent={(id) => go(coachRoute(id))}
+            onOpenProfile={(id) => go(coachProfileRoute(id))}
           />
         )
       : route === '/rep'
