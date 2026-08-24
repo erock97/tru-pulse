@@ -10,7 +10,8 @@ import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
-import { readCookie, withFreshToken } from './session.js';
+import { readCookie, readSession, withFreshToken } from './session.js';
+import { handleAutomationRoutes } from './automation/routes.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -662,6 +663,31 @@ export default {
       if (!userId) return json({ error: 'unauthorized' }, 401);
       const adminRows = await database.select('admins', `id=eq.${userId}&select=id`);
       if (!adminRows.length) return json({ error: 'forbidden' }, 403);
+
+      // TRU Agents. Mounted here so it inherits the admins check above and can
+      // never be reached without it. Returns null for anything it does not own,
+      // so every existing /admin route below is untouched.
+      //
+      // The extra guard: a platform owner who is ACTING AS a team is refused.
+      // The admins lookup already fails for an impersonated session, because the
+      // cookie shim resolves the effective user — but these routes are the ones
+      // that will eventually write to a customer's CRM, and "you are currently
+      // pretending to be someone else" is exactly the state in which nobody
+      // should be arming an automation. Refusing on the session's SHAPE rather
+      // than on who it resolves to means this holds even if the person being
+      // impersonated happens to be an admin themselves.
+      if (url.pathname.startsWith('/admin/automations')) {
+        const ownerSess = await readSession(env, readCookie(req));
+        if (ownerSess?.returnSid) {
+          return json({ error: 'not available while acting as a team' }, 409);
+        }
+        const automationRes = await handleAutomationRoutes(req, env, url, {
+          userId,
+          database,
+          json: (body: unknown, status?: number) => json(body, status),
+        });
+        if (automationRes) return automationRes;
+      }
 
       if (url.pathname === '/admin/leaders' && req.method === 'GET') {
         const [leaders, teams, orgs] = await Promise.all([

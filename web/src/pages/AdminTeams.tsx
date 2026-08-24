@@ -88,6 +88,12 @@ export default function AdminTeams({
                 that team's HQ as its leader; the sidebar then carries an exit back here.
               </p>
             </div>
+            <button
+              className="ad-btn"
+              onClick={() => { window.location.hash = '/admin/agents'; }}
+            >
+              Agents
+            </button>
           </header>
 
           <div className="dk-sec">
