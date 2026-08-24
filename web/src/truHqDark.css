@@ -5476,3 +5476,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   margin-top: 18px; padding: 10px 14px; border-left: 2px solid var(--tab-line, var(--border));
   background: var(--tab-soft, transparent); border-radius: 0 8px 8px 0; max-width: 62ch;
 }
+
+/* The narrative connective tissue of the profile (case-file rewrite). */
+.tru-dark .pf-lede {
+  margin: 22px 0 0; max-width: 60ch;
+  font-size: 16.5px; line-height: 1.65; color: var(--text);
+}
+.tru-dark .pf-bridge {
+  margin: 0 0 18px; max-width: 60ch;
+  font-size: 15.5px; line-height: 1.6; color: var(--text-60); font-style: italic;
+}

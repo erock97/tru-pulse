@@ -96,6 +96,65 @@ export const CONTRAST_PROSE: Record<Axis, Record<string, string>> = {
 
 const AXIS_ORDER: Axis[] = ['energy', 'approach', 'deal', 'decision'];
 
+// ── Plain-speech building blocks for the narrative profile ──────────────────
+// Eric's rule: no axis taxonomy, no framework vocabulary in user-facing copy.
+// The page says what a pole MEANS, in a sentence, third person.
+
+/** How each personal pole reads in the opening "day to day" sentence. */
+export const AXIS_PHRASES: Record<Axis, Partial<Record<Pole, string>>> = {
+  energy: { P: 'gains energy from being around people', T: 'recharges away from the crowd' },
+  approach: { Pro: 'goes after what they want instead of waiting', Rec: 'lets things come and meets them as they arrive' },
+  deal: { R: 'invests deep in a chosen few', V: 'keeps a wide, easy circle' },
+  decision: { D: 'decides with their head', I: 'decides with their heart' },
+};
+
+/** The recovered divergence insights, recast in third person for the leader's
+ *  page (the originals speak to the agent as "you"). Keyed '<life>><work>'. */
+export const CONTRAST_THIRD: Record<Axis, Record<string, string>> = {
+  energy: {
+    'T>P': 'they recharge in quiet, yet the business runs on constant connection — the output is real and so is the energy bill, so protect their recovery time',
+    'P>T': 'they are energized by people, yet the work is heads-down — watch for isolation, and build connection into their week',
+  },
+  approach: {
+    'Rec>Pro': 'by nature they let things come, yet professionally they push outbound — effective, and it takes discipline to sustain',
+    'Pro>Rec': 'they are a natural initiator running an attraction-based business — that drive belongs in building, not waiting',
+  },
+  deal: {
+    'R>V': 'they are wired for a deep few, yet the model runs on volume — feeling spread thin is the risk, so systematize the breadth',
+    'V>R': 'they love a wide circle, yet the business rewards depth — the move is slower and deeper with fewer',
+  },
+  decision: {
+    'I>D': 'they trust their gut personally but operate on data at work — a discipline they built, worth trusting',
+    'D>I': 'they think head-first in an instinct-led craft — help their read of people catch up to their analysis',
+  },
+};
+
+export interface ContrastLine { axis: Axis; line: string }
+
+/** Every diverging axis as a third-person sentence fragment, in axis order. */
+export function contrastLines(personalCode: string, workCode: string): ContrastLine[] {
+  const pp = personalCode.split('-');
+  const pr = workCode.split('-');
+  const out: ContrastLine[] = [];
+  AXIS_ORDER.forEach((axis, i) => {
+    if (pp[i] && pr[i] && pp[i] !== pr[i]) {
+      const line = CONTRAST_THIRD[axis][`${pp[i]}>${pr[i]}`];
+      if (line) out.push({ axis, line });
+    }
+  });
+  return out;
+}
+
+/** The "day to day" wiring sentence for the opening paragraph. */
+export function wiringSentence(firstName: string, personalCode: string): string {
+  const letters = personalCode.split('-');
+  const parts = AXIS_ORDER
+    .map((axis, i) => AXIS_PHRASES[axis][letters[i] as Pole])
+    .filter((p): p is string => Boolean(p));
+  if (parts.length < 4) return '';
+  return `Day to day, ${firstName} ${parts[0]}, ${parts[1]}, ${parts[2]}, and ${parts[3]}.`;
+}
+
 /** The divergence prose for one axis given both codes ('P-Pro-R-D' strings). */
 export function contrastProse(axis: Axis, personalCode: string, workCode: string): string {
   const i = AXIS_ORDER.indexOf(axis);

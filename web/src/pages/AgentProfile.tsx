@@ -1,39 +1,29 @@
-// The full personality profile — one agent, read properly.
+// The full personality profile — one agent, read like a case file.
 //
-// This page exists because the deep readout matters to Eric and to team leads
-// ("that read me to a T") but does NOT belong in the weekly workflow's face.
-// The 1:1 prep sheet links here; this page takes the room a real portrait
-// needs. Composition is a typeset dossier in calm full-width bands — portrait
-// first, then the axes, then where life and work diverge, then what to DO with
-// all of it (channels, coaching) — never a mosaic of equal-weight cards.
+// Eric's brief, after rejecting the first cut: no axis taxonomy, no framework
+// vocabulary, no exhibits — "imagine you were a doctor handed a background on
+// someone; it should read like a story, one part segueing into the next."
+// So the spine of this page is PROSE: the recovered portrait flows into a
+// plain-speech account of how they're wired and what changes at work, then the
+// two structured moments that earn their structure (the trait evidence Eric
+// liked, and the ranked channel list), each entered by a bridge sentence, and
+// it closes on coaching guidance said in plain words.
 //
-// The portrait content is the RECOVERED original (lib/personalityDeep.ts):
-// per-type character paragraph + evidenced strengths and blind spots, keyed by
-// the agent's personal (life) code, with the professional archetype supplying
-// the work-self half.
+// Content sources: lib/personalityDeep.ts (recovered originals), AG/CG
+// (assessment write-ups; AG speaks to the agent as "you", so the page QUOTES
+// it — "the assessment puts it to them straight" — instead of re-voicing).
 import { useEffect, useState } from 'react';
 import type { Profile, RosterAgent } from '../lib/coachData';
 import { loadProfile } from '../lib/coachData';
-import { AG, CG, PERSONAL_TYPES, WORK_LABELS, type Pole } from '../lib/assessmentData';
+import { AG, CG, PERSONAL_TYPES } from '../lib/assessmentData';
 import {
   CHANNEL_NAMES,
   CHANNEL_RX,
   CHANNEL_WHY,
   PERSONAL_DEEP,
-  contrastProse,
+  contrastLines,
+  wiringSentence,
 } from '../lib/personalityDeep';
-import type { Axis } from '../lib/assessmentData';
-
-const AXIS_ROWS: Array<{ axis: Axis; title: string; poles: [Pole, Pole] }> = [
-  { axis: 'energy', title: 'Energy', poles: ['P', 'T'] },
-  { axis: 'approach', title: 'Drive', poles: ['Pro', 'Rec'] },
-  { axis: 'deal', title: 'Bonds', poles: ['R', 'V'] },
-  { axis: 'decision', title: 'Decisions', poles: ['D', 'I'] },
-];
-
-function letterAt(code: string, axisIndex: number): Pole | null {
-  return (code.split('-')[axisIndex] as Pole) ?? null;
-}
 
 export default function AgentProfile({ agent, onBack }: {
   agent: RosterAgent;
@@ -54,9 +44,17 @@ export default function AgentProfile({ agent, onBack }: {
   const personalName = personalCode ? PERSONAL_TYPES[personalCode]?.name : null;
   const first = agent.name.split(' ')[0];
   const rx = CHANNEL_RX[workCode];
-  const diverging = personalCode
-    ? AXIS_ROWS.filter((_r, i) => letterAt(personalCode, i) !== letterAt(workCode, i))
-    : [];
+  const ag = AG[workCode];
+  const cg = CG[workCode];
+  const contrasts = personalCode ? contrastLines(personalCode, workCode) : [];
+
+  // The "what changes at work" sentence(s), woven rather than sectioned.
+  const workShift = !personalCode ? null
+    : contrasts.length === 0
+      ? `And work doesn't change ${first} — the person in the office is the same one at home, which makes them easy to read and their pace sustainable.`
+      : contrasts.length === 1
+        ? `At work, one thing changes: ${contrasts[0].line}.`
+        : `At work, ${contrasts.length === 2 ? 'two things change' : 'a few things change'}: ${contrasts.map((c) => c.line).join('. And ')}.`;
 
   return (
     <div className="pf">
@@ -71,27 +69,35 @@ export default function AgentProfile({ agent, onBack }: {
         </div>
       </header>
 
-      {/* ── The portrait — who they are, before any job title ── */}
-      {deep ? (
-        <section className="pf-band pf-portrait-band">
-          <span className="pf-k">Who {first} is</span>
-          <p className="pf-portrait">{deep.desc}</p>
-        </section>
-      ) : (
-        <section className="pf-band">
-          <span className="pf-k">Who {first} is</span>
-          <p className="pf-portrait">{profile?.tagline ?? agent.archName}</p>
-          <p className="pf-quiet">
-            {first} hasn’t taken the baseline (life) assessment yet — when they do, this
-            page gains their full personal portrait, trait evidence, and the read on how
-            their work self differs from their natural one.
-          </p>
-        </section>
-      )}
+      {/* ── The read — one continuous opening ── */}
+      <section className="pf-band pf-portrait-band">
+        <span className="pf-k">Who {first} is</span>
+        {deep ? (
+          <>
+            <p className="pf-portrait">{deep.desc}</p>
+            {personalCode && (
+              <p className="pf-lede">
+                {wiringSentence(first, personalCode)}
+                {workShift ? ` ${workShift}` : ''}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="pf-portrait">{profile?.tagline ?? agent.archName}</p>
+            <p className="pf-quiet">
+              {first} hasn’t taken the baseline (life) assessment yet — once they do,
+              this page opens with their full personal portrait and the read on how
+              their work self differs from their natural one.
+            </p>
+          </>
+        )}
+      </section>
 
-      {/* ── The traits, with the behavior you'd actually see ── */}
+      {/* ── The evidence — the one structured moment Eric asked to keep ── */}
       {deep && (
         <section className="pf-band">
+          <p className="pf-bridge">Here’s the same person, trait by trait — with the behavior you’ll actually see.</p>
           <div className="pf-cols">
             <div>
               <span className="pf-k">At their best</span>
@@ -113,74 +119,28 @@ export default function AgentProfile({ agent, onBack }: {
         </section>
       )}
 
-      {/* ── The four axes — where they sit, at work and in life ── */}
-      <section className="pf-band">
-        <span className="pf-k">The four axes</span>
-        {personalCode && (
-          <p className="pf-legend">
-            <i className="pf-dot is-work" /> at work · <i className="pf-dot is-life" /> in life
-          </p>
-        )}
-        <div className="pf-axes">
-          {AXIS_ROWS.map((row, i) => {
-            const work = letterAt(workCode, i);
-            const life = personalCode ? letterAt(personalCode, i) : null;
-            return (
-              <div className="pf-axis" key={row.axis}>
-                <span className="pf-axis-title">{row.title}</span>
-                <span className={work === row.poles[0] ? 'pf-pole is-on' : 'pf-pole'}>{WORK_LABELS[row.poles[0]]}</span>
-                <span className="pf-track" aria-hidden>
-                  {work && <i className={`pf-dot is-work ${work === row.poles[0] ? 'at-left' : 'at-right'}`} />}
-                  {life && life !== work && <i className={`pf-dot is-life ${life === row.poles[0] ? 'at-left' : 'at-right'}`} />}
-                  {life && life === work && <i className={`pf-dot is-life is-stacked ${life === row.poles[0] ? 'at-left' : 'at-right'}`} />}
-                </span>
-                <span className={work === row.poles[1] ? 'pf-pole is-on' : 'pf-pole'}>{WORK_LABELS[row.poles[1]]}</span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── Where life and work part ways ── */}
-      {personalCode && (
+      {/* ── The work chapter — quoted, because AG speaks to the agent ── */}
+      {ag && (
         <section className="pf-band">
-          <span className="pf-k">Work self, life self</span>
-          {diverging.length === 0 ? (
-            <p className="pf-prose">
-              {first} works the way they live — all four axes aligned. What you see in
-              the office is who they actually are, which makes them easy to read and
-              their pace sustainable.
+          <span className="pf-k">{first} at work</span>
+          <p className="pf-prose">
+            Put that person in a real-estate business and this is what happens. The
+            assessment puts it to {first} straight: “{ag.sup}” The slip it flags:
+            “{ag.watch}” And the work it prescribes: “{ag.edge}”
+          </p>
+          {profile?.signal && (
+            <p className="pf-prose" style={{ marginTop: 12 }}>
+              For you as their lead, the early warning sign reads: {profile.signal}
             </p>
-          ) : (
-            <ul className="pf-contrast">
-              {diverging.map((row) => (
-                <li key={row.axis}>
-                  <b>{row.title}</b>
-                  <p>{contrastProse(row.axis, personalCode, workCode)}</p>
-                </li>
-              ))}
-            </ul>
           )}
         </section>
       )}
 
-      {/* ── The work self ── */}
-      {AG[workCode] && (
-        <section className="pf-band">
-          <span className="pf-k">On the job — {agent.archName}</span>
-          <ul className="pf-traits is-work-swot">
-            <li><b>Where they do well</b><p>{AG[workCode].sup}</p></li>
-            <li><b>Where they slip</b><p>{AG[workCode].watch}</p></li>
-            <li><b>The work with them</b><p>{AG[workCode].edge}</p></li>
-            {profile?.signal && <li><b>Warning sign</b><p>{profile.signal}</p></li>}
-          </ul>
-        </section>
-      )}
-
-      {/* ── Where they'll win business ── */}
+      {/* ── Where the business comes from — flows out of who they are ── */}
       {rx && (
         <section className="pf-band">
-          <span className="pf-k">Where {first} will win business</span>
+          <span className="pf-k">Where the business comes from</span>
+          <p className="pf-bridge">All of that points {first}’s lead generation in one direction.</p>
           <ol className="pf-channels">
             {rx.top.map((key) => (
               <li key={key}>
@@ -193,22 +153,22 @@ export default function AgentProfile({ agent, onBack }: {
           {rx.avoid.length > 0 && (
             <p className="pf-quiet">
               Against the grain: {rx.avoid.map((k) => CHANNEL_NAMES[k] ?? k).join(' · ')} —
-              possible, but it costs {first} more energy per deal than the list above.
+              possible, but each deal there costs {first} more energy than the list above.
             </p>
           )}
         </section>
       )}
 
-      {/* ── How to coach them ── */}
-      {CG[workCode] && (
+      {/* ── Coaching them — plain speech, no framework vocabulary ── */}
+      {cg && (
         <section className="pf-band">
-          <span className="pf-k">How to coach {first}</span>
+          <span className="pf-k">Coaching {first}</span>
           <ul className="pf-traits is-coach">
-            <li><b>Communicate</b><p>{CG[workCode].communicate}</p></li>
-            <li><b>Motivate</b><p>{CG[workCode].motivate}</p></li>
-            <li><b>Hold accountable</b><p>{CG[workCode].accountable}</p></li>
-            <li><b>In conflict</b><p>{CG[workCode].conflict}</p></li>
-            <li><b>FeedForward ask</b><p>{CG[workCode].feedforward}</p></li>
+            <li><b>Talking with them</b><p>{cg.communicate}</p></li>
+            <li><b>What moves them</b><p>{cg.motivate}</p></li>
+            <li><b>Holding them to it</b><p>{cg.accountable}</p></li>
+            <li><b>When it gets tense</b><p>{cg.conflict}</p></li>
+            <li><b>A question worth asking</b><p>{cg.feedforward}</p></li>
           </ul>
         </section>
       )}
