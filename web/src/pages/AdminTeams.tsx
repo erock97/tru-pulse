@@ -27,14 +27,27 @@ export default function AdminTeams({
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
+  // One tile per TEAM, never per login. A team can have several leaders
+  // (Synergy has two), and a tile per leader read as two separate companies.
+  // Every leader of a team lands in the same HQ, so acting as the first one
+  // is acting as the team; the other names still show so it's clear who's in.
+  const teams = useMemo(() => {
+    const by = new Map<string, { team: string; org: string; leaders: AdminLeader[] }>();
+    for (const l of leaders) {
+      const g = by.get(l.team_name);
+      if (g) g.leaders.push(l);
+      else by.set(l.team_name, { team: l.team_name, org: l.org_name, leaders: [l] });
+    }
+    return [...by.values()].sort((a, b) => a.org.localeCompare(b.org) || a.team.localeCompare(b.team));
+  }, [leaders]);
+
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const list = needle
-      ? leaders.filter((l) =>
-        `${l.team_name} ${l.org_name} ${l.name} ${l.email}`.toLowerCase().includes(needle))
-      : leaders;
-    return [...list].sort((a, b) => a.org_name.localeCompare(b.org_name) || a.team_name.localeCompare(b.team_name));
-  }, [leaders, q]);
+    if (!needle) return teams;
+    return teams.filter((t) =>
+      `${t.team} ${t.org} ${t.leaders.map((l) => `${l.name} ${l.email}`).join(' ')}`
+        .toLowerCase().includes(needle));
+  }, [teams, q]);
 
   const orgs = useMemo(() => new Set(leaders.map((l) => l.org_name)).size, [leaders]);
 
@@ -68,16 +81,16 @@ export default function AdminTeams({
               <span className="dk-eyebrow"><i />Platform owner</span>
               <h1>Act as <em>any team</em>.</h1>
               <p className="dk-sub">
-                {leaders.length} {leaders.length === 1 ? 'leader' : 'leaders'} across {orgs}{' '}
+                {teams.length} {teams.length === 1 ? 'team' : 'teams'} across {orgs}{' '}
                 {orgs === 1 ? 'organisation' : 'organisations'}. Choosing one signs you into
-                their HQ as them; the sidebar then carries an exit back here.
+                that team's HQ as its leader; the sidebar then carries an exit back here.
               </p>
             </div>
           </header>
 
           <div className="dk-sec">
             <h2>Teams</h2>
-            <p>{shown.length === leaders.length ? 'all of them' : `${shown.length} matching`}</p>
+            <p>{shown.length === teams.length ? 'all of them' : `${shown.length} matching`}</p>
             <span className="dk-key">
               <input
                 className="ad-input adm-search"
@@ -96,24 +109,30 @@ export default function AdminTeams({
             </div>
           ) : (
             <div className="dk-focus">
-              {shown.map((l) => (
-                <article
-                  key={l.email}
-                  className="dk-fr adm-row"
-                  tabIndex={0}
-                  onClick={() => act(l.email)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') act(l.email); }}
-                >
-                  <span className="rs-av h-holding">
-                    {l.team_name.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="dk-fr-name">{l.team_name}</span>
-                  <span className="dk-fr-why">{l.org_name} · {l.name} · {l.email}</span>
-                  <span className="dk-fr-do">
-                    {busy === l.email ? 'Signing in…' : 'Act as this team'}
-                  </span>
-                </article>
-              ))}
+              {shown.map((t) => {
+                const doorEmail = t.leaders[0].email;
+                const who = t.leaders.length === 1
+                  ? `${t.leaders[0].name} · ${t.leaders[0].email}`
+                  : t.leaders.map((l) => l.name).join(' & ');
+                return (
+                  <article
+                    key={t.team}
+                    className="dk-fr adm-row"
+                    tabIndex={0}
+                    onClick={() => act(doorEmail)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') act(doorEmail); }}
+                  >
+                    <span className="rs-av h-holding">
+                      {t.team.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="dk-fr-name">{t.team}</span>
+                    <span className="dk-fr-why">{t.org} · {who}</span>
+                    <span className="dk-fr-do">
+                      {busy === doorEmail ? 'Signing in…' : 'Act as this team'}
+                    </span>
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
