@@ -702,6 +702,129 @@ export async function adminLeaders(): Promise<AdminLeader[] | null> {
   }
 }
 
+// ── TRU Agents (platform owner only) ────────────────────────────────────────
+// Every one of these answers `null` or `[]` when the Worker refuses, exactly as
+// adminLeaders() does above. A team lead who types the route sees an empty
+// screen rather than an error banner, because absence is the correct rendering
+// of "this is not yours" — an error would tell them something is here.
+
+/** How autonomous one agent is. `off` is where every one of them starts. */
+export type AutomationMode = 'off' | 'notify_only' | 'ask_first' | 'full_auto';
+
+export interface AutomationType {
+  key: string;
+  label: string;
+  blurb: string;
+  trigger_kind: 'schedule' | 'event';
+  /** The ceiling. Raising it is a migration, not a setting. */
+  max_mode: AutomationMode;
+  channels: string[];
+  capability: string | null;
+  leader_visible: boolean;
+  active: boolean;
+}
+
+export interface AutomationTeam {
+  id: string;
+  name: string;
+  org_id: string;
+  org_name: string;
+  timezone: string;
+  capabilities: string[];
+  last_sync_at: string | null;
+}
+
+export interface Automation {
+  id: string;
+  org_id: string;
+  team_id: string;
+  type_key: string;
+  name: string | null;
+  mode: AutomationMode;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  max_per_day: number;
+  sms_live: boolean;
+  visible_to_leader: boolean;
+  leader_editable: boolean;
+  updated_at: string;
+  /** The number itself never leaves the Worker — only whether one is set. */
+  hasRecipient: boolean;
+  recipientMasked: string | null;
+}
+
+export interface AutomationRun {
+  id: string;
+  team_id: string;
+  automation_id: string | null;
+  type_key: string;
+  trigger: string;
+  mode: string;
+  status: string;
+  actions_proposed: number;
+  actions_executed: number;
+  summary: string | null;
+  started_at: string;
+  finished_at: string | null;
+}
+
+export interface AutomationBoard {
+  types: AutomationType[];
+  teams: AutomationTeam[];
+  automations: Automation[];
+  flags: { automation_enabled: boolean; automation_live_sends: boolean };
+}
+
+export async function automationBoard(): Promise<AutomationBoard | null> {
+  if (isDemo) return null;
+  try {
+    const res = await workerFetch('/admin/automations');
+    if (!res.ok) return null;
+    return (await res.json()) as AutomationBoard;
+  } catch {
+    return null;
+  }
+}
+
+/** Put an agent on a team's shelf. It always arrives switched off. */
+export async function addAutomation(teamId: string, typeKey: string): Promise<Automation> {
+  const res = await workerFetch('/admin/automations', {
+    method: 'POST',
+    body: JSON.stringify({ team_id: teamId, type_key: typeKey }),
+  });
+  const body = (await res.json().catch(() => ({}))) as any;
+  if (!res.ok) throw new Error(body.error || 'Could not add that agent.');
+  return body as Automation;
+}
+
+/** The switch. The Worker refuses anything above the agent's own ceiling. */
+export async function setAutomationMode(id: string, mode: AutomationMode): Promise<void> {
+  const res = await workerFetch(`/admin/automations/${id}/mode`, {
+    method: 'POST',
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as any;
+    throw new Error(body.error || 'Could not change that setting.');
+  }
+}
+
+export async function automationRuns(q: { teamId?: string; automationId?: string; limit?: number } = {}): Promise<AutomationRun[]> {
+  if (isDemo) return [];
+  const params = new URLSearchParams();
+  if (q.teamId) params.set('teamId', q.teamId);
+  if (q.automationId) params.set('automationId', q.automationId);
+  if (q.limit) params.set('limit', String(q.limit));
+  try {
+    const res = await workerFetch(`/admin/automations/runs?${params}`);
+    if (!res.ok) return [];
+    const j = (await res.json()) as { runs?: AutomationRun[] };
+    return j.runs ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /** Become a team leader: the Worker mints a one-time token, we verify it here —
  *  the session in THIS browser becomes theirs (their RLS applies everywhere). */
 export async function adminActAs(email: string): Promise<void> {

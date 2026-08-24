@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
+import AdminAutomations from './pages/AdminAutomations';
 import TeamAdmin from './pages/TeamAdmin';
 import PulseLab from './pages/PulseLab';
 import Lab from './pages/Lab';
@@ -132,7 +133,17 @@ export default function App() {
     // A platform owner has no org of their own, so there is no roster to put
     // in front of them. They get the Admin tab — their own screen, in the same
     // shell as everything else, rather than the retired Home page.
-    adminLeaders && (route === '/' || route === '/pulse' || route === '/admin')
+    // The owner's own screens come FIRST in this chain and are gated on
+    // adminLeaders being non-null — which only happens when the Worker answered
+    // /admin/leaders with 200. A team lead who types #/admin/agents falls
+    // straight through to their roster, because for them this is undefined.
+    adminLeaders && route === '/admin/agents'
+      ? <AdminAutomations
+          onOpenPulse={() => go('/pulse')}
+          onOpenCoach={() => go('/coach')}
+          onOpenRep={() => go('/rep')}
+        />
+    : adminLeaders && (route === '/' || route === '/pulse' || route === '/admin')
       ? <AdminTeams
           leaders={adminLeaders}
           onOpenPulse={() => go('/pulse')}
