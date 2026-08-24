@@ -351,51 +351,204 @@ html[data-theme="warm"] .tru-dark {
   margin-inline: auto;
 }
 
-/* ---------- Login (dark split) ---------- */
-.tru-login {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  background: var(--base);
-  color: var(--text);
-}
-.tru-login-brand {
+/* ---------- Login — the front door (the site's forest room) ----------
+   One centered composition standing in the marketing site's room: the same
+   gradient light (warm source at the head, green coming back off the floor),
+   the Trinity scene settled into the backdrop with the site's own defocus
+   treatment, hairline enclosure, Fraunces headline. The old 50/50 split
+   (video pitch | form) is gone on Eric's verdict: flat, and not the website. */
+.tru-door {
   position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(32px, 5vw, 72px);
-  background: linear-gradient(160deg, #0D2015, #060D09);
-  border-right: 1px solid var(--border-soft);
+  isolation: isolate;
+  padding: clamp(20px, 4vw, 48px);
+  color: var(--text);
+  /* The room itself — the site's .truland .bg recipe, brought across. */
+  background:
+    radial-gradient(88% 46% at 50% 0%, rgba(242, 178, 60, 0.14) 0%, rgba(180, 126, 40, 0.05) 44%, transparent 74%),
+    radial-gradient(78% 42% at 50% 102%, rgba(96, 168, 124, 0.12) 0%, transparent 76%),
+    linear-gradient(178deg, #16351F 0%, #10261A 26%, #0C1D14 54%, #091610 78%, #071009 100%);
 }
-.tru-login-video {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; opacity: 0.5;
-}
-.tru-login-scrim {
-  position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(160deg, rgba(12, 10, 8, 0.5), rgba(12, 10, 8, 0.82));
-}
-.tru-login-glow {
+/* The scene, already settled: pushed into, defocused, darkened to ambient —
+   the exact treatment the site uses when the arrival hands over to the page. */
+.tru-door-scene {
   position: absolute;
   inset: 0;
+  z-index: -2;
+  background: url('/trinity.webp') center / cover no-repeat;
+  transform: scale(1.1);
+  filter: blur(14px) brightness(0.5) saturate(0.8);
+  opacity: 0.55;
+}
+.tru-door-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(760px 520px at 10% -10%, rgba(233, 162, 59, 0.20), transparent 60%),
-    radial-gradient(600px 500px at 92% 118%, rgba(210, 102, 28, 0.12), transparent 60%);
+    radial-gradient(90% 90% at 50% 50%, rgba(3, 9, 6, 0.30) 0%, rgba(3, 9, 6, 0.12) 55%, transparent 85%),
+    linear-gradient(180deg, rgba(2, 6, 4, 0.20) 0%, transparent 32%, rgba(3, 8, 5, 0.42) 100%);
 }
-.tru-login-brand-inner { position: relative; z-index: 2; max-width: 480px; }
-.tru-login-form {
+.tru-door-stage {
+  width: 100%;
+  max-width: 396px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.tru-door-mark { margin-bottom: 26px; }
+.tru-door-title {
+  margin: 0;
+  font-family: var(--hq-serif);
+  font-size: clamp(30px, 4.4vw, 40px);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--on-hero);
+}
+.tru-door-sub {
+  margin: 10px 0 26px;
+  font-size: 15px;
+  color: var(--on-hero-60);
+}
+/* The door itself: a hairline enclosure with the lip highlight the app uses,
+   glass only enough to sit IN the room rather than on top of it. */
+.tru-door-panel {
+  width: 100%;
+  text-align: left;
+  padding: clamp(22px, 3vw, 30px);
+  border-radius: var(--r-card-lg);
+  border: 1px solid rgba(214, 232, 218, 0.14);
+  background: rgba(7, 16, 10, 0.62);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--lip), 0 30px 70px -40px rgba(2, 7, 4, 0.9);
+}
+.tru-door-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-hero);
+  margin-bottom: 6px;
+}
+.tru-door-input {
+  width: 100%;
+  padding: 12px 13px;
+  margin-bottom: 14px;
+  border-radius: var(--r-btn);
+  border: 1px solid rgba(214, 232, 218, 0.16);
+  background: rgba(3, 9, 6, 0.55);
+  color: var(--on-hero);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+.tru-door-input:focus-visible {
+  border-color: rgba(242, 178, 60, 0.55);
+  box-shadow: 0 0 0 3px rgba(242, 178, 60, 0.16);
+}
+.tru-door-forgot {
+  display: inline-block;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--on-hero-60);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.tru-door-forgot:hover { color: var(--on-hero); }
+.tru-door-note {
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+.tru-door-note.is-error { background: rgba(192, 107, 79, 0.14); border: 1px solid rgba(192, 107, 79, 0.4); color: #e0a48c; }
+.tru-door-note.is-ok { background: rgba(74, 124, 111, 0.14); border: 1px solid rgba(74, 124, 111, 0.4); color: #6fbfa9; }
+.tru-door-primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: #1a1206;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 120ms var(--ease), filter 160ms var(--ease);
+}
+.tru-door-primary:hover { filter: brightness(1.06); }
+.tru-door-primary:active { transform: translateY(1px); }
+.tru-door-primary:disabled { opacity: 0.7; cursor: default; }
+.tru-door-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--on-hero-60);
+  font-size: 13px;
+}
+.tru-door-or em { font-style: normal; }
+.tru-door-or span { flex: 1; height: 1px; background: rgba(214, 232, 218, 0.12); }
+.tru-door-google {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(24px, 4vw, 48px);
-  background: var(--panel);
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: var(--r-btn);
+  border: 1px solid rgba(214, 232, 218, 0.18);
+  background: rgba(226, 240, 230, 0.06);
+  color: var(--on-hero);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 160ms var(--ease), transform 120ms var(--ease);
 }
-@media (max-width: 820px) {
-  .tru-login { grid-template-columns: 1fr; }
-  .tru-login-brand { display: none; }
+.tru-door-google:hover { background: rgba(226, 240, 230, 0.1); }
+.tru-door-google:active { transform: translateY(1px); }
+.tru-door-swap {
+  margin: 20px 0 0;
+  font-size: 13px;
+  color: var(--on-hero-60);
+}
+.tru-door-swap button {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--accent-hi);
+  cursor: pointer;
+}
+/* Arrival: the room's light stands up, then the door rises into it.
+   One orchestrated moment, then stillness. */
+@media (prefers-reduced-motion: no-preference) {
+  .tru-door-scene { animation: doorRoomLight 900ms var(--ease) both; }
+  .tru-door-mark,
+  .tru-door-title,
+  .tru-door-sub { animation: doorRise 640ms var(--ease) both; }
+  .tru-door-panel,
+  .tru-door-swap { animation: doorRise 640ms var(--ease) 140ms both; }
+}
+@keyframes doorRoomLight {
+  from { opacity: 0; }
+  to { opacity: 0.55; }
+}
+@keyframes doorRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ---------- Single-card auth (SetPassword / Onboarding): one focused card

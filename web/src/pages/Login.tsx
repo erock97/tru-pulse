@@ -1,11 +1,19 @@
-import { useState, type FormEvent, type CSSProperties } from 'react';
+import { useState, type FormEvent } from 'react';
 import { signIn, signUp, signInWithGoogle, requestPasswordReset } from '../lib/auth';
 import { TruLogo } from '../components/TruLogo';
 import '../truHqDark.css';
 
-// Dark reskin of the sign-in page. Every call goes through lib/auth, which picks the
-// server-held session — so this
-// screen reads the same in both and nothing here knows what a token is.
+// The front door — the marketing site's forest room, with one thing in it.
+//
+// The old screen was a 50/50 split: video pitch on the left, form on the right.
+// Eric's verdict: flat, didn't feel like a piece of the website, and the split
+// itself was the problem. The site's identity is a dark green room lit by a
+// warm source at the head, the Trinity scene settled into the backdrop, bone
+// Fraunces type, hairline enclosures. So the login IS that room now: the scene
+// defocused behind (the site's own settle treatment), one centered door, and
+// nothing selling — the person at this door already owns the product.
+//
+// Every call still goes through lib/auth; nothing here knows what a token is.
 export default function Login() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -63,54 +71,39 @@ export default function Login() {
     setBusy(false);
   }
 
-  const label: CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', marginBottom: 6 };
-  const input: CSSProperties = { width: '100%', padding: '12px 13px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--base)', color: 'var(--text-strong)', fontSize: 15, fontFamily: 'inherit', outline: 'none' };
-  const gold: CSSProperties = { width: '100%', background: 'var(--accent)', color: '#1a1206', fontWeight: 800, border: 0, padding: '12px 18px', borderRadius: 10, cursor: 'pointer', fontSize: 15 };
-  const ghost: CSSProperties = { width: '100%', background: 'var(--card)', color: 'var(--text-strong)', fontWeight: 700, border: '1px solid var(--border)', padding: '12px 18px', borderRadius: 10, cursor: 'pointer', fontSize: 15 };
-  const link: CSSProperties = { color: 'var(--accent-hi)', cursor: 'pointer', fontWeight: 700 };
-  const note: CSSProperties = { borderRadius: 8, padding: '9px 12px', fontSize: 13, margin: '12px 0' };
-
   return (
-    <div className="tru-dark tru-login">
-      <div className="tru-login-brand">
-        <video className="tru-login-video" autoPlay muted loop playsInline poster="/hero-poster.jpg" aria-hidden>
-          <source src="/hero-loop.mp4" type="video/mp4" />
-        </video>
-        <div className="tru-login-scrim" aria-hidden />
-        <div className="tru-login-glow" aria-hidden />
-        <div className="tru-login-brand-inner">
-          <div style={{ marginBottom: 28 }}><TruLogo size={30} wordSize={22} sub="HQ" /></div>
-          <h1 style={{ fontFamily: 'var(--hq-serif)', fontSize: 'clamp(30px,3.8vw,46px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--on-hero)' }}>
-            Your team, one login — Pulse and Coach in one place.
-          </h1>
-          <p style={{ color: 'var(--on-hero-60)', fontSize: 17, marginTop: 16, maxWidth: '46ch' }}>
-            See who's not working your paid leads, coach each agent the way they're wired, and make
-            your move for the week — all from one TRU HQ.
-          </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
-            {[['$51K/yr', 'caught in one audit'], ['6', 'lead sources tracked'], ['4 min', 'to your weekly moves']].map(([n, l]) => (
-              <div key={l} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 16px' }}>
-                <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--accent-hi)' }}>{n}</div>
-                <div style={{ fontSize: 12, color: 'var(--on-hero-60)' }}>{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div className="tru-dark tru-door">
+      {/* The room: gradient light, the settled scene, and the scrim that holds
+          the light off the type. All three are paint, none of them is content. */}
+      <div className="tru-door-scene" aria-hidden />
+      <div className="tru-door-scrim" aria-hidden />
 
-      <div className="tru-login-form">
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          <h2 style={{ fontFamily: 'var(--hq-serif)', fontSize: 30, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-strong)' }}>
-            {mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
-          </h2>
-          <p style={{ color: 'var(--text-60)', fontSize: 14, marginTop: 4 }}>Sign in to your TRU HQ.</p>
-          <form onSubmit={submit} style={{ marginTop: 22 }}>
-            <label style={label}>Email</label>
-            <input style={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-            <div style={{ height: 14 }} />
-            <label style={label}>Password</label>
+      <main className="tru-door-stage">
+        <div className="tru-door-mark"><TruLogo size={34} wordSize={24} sub="HQ" /></div>
+
+        <h1 className="tru-door-title">
+          {mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
+        </h1>
+        <p className="tru-door-sub">
+          {mode === 'signin' ? 'Sign in to your TRU HQ.' : 'Set a password and you are in.'}
+        </p>
+
+        <div className="tru-door-panel">
+          <form onSubmit={submit}>
+            <label className="tru-door-label" htmlFor="door-email">Email</label>
             <input
-              style={input}
+              id="door-email"
+              className="tru-door-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+            <label className="tru-door-label" htmlFor="door-password">Password</label>
+            <input
+              id="door-password"
+              className="tru-door-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -118,27 +111,37 @@ export default function Login() {
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             />
             {mode === 'signin' && (
-              <a style={{ display: 'block', marginTop: 10, color: 'var(--text-60)', fontSize: 13, cursor: 'pointer' }} onClick={forgot}>Forgot password?</a>
+              <button type="button" className="tru-door-forgot" onClick={forgot}>Forgot password?</button>
             )}
-            {error && <div style={{ ...note, background: 'rgba(192,107,79,0.14)', border: '1px solid rgba(192,107,79,0.4)', color: '#e0a48c' }}>{error}</div>}
-            {notice && <div style={{ ...note, background: 'rgba(74,124,111,0.14)', border: '1px solid rgba(74,124,111,0.4)', color: '#6fbfa9' }}>{notice}</div>}
-            <button style={{ ...gold, marginTop: 16 }} disabled={busy} type="submit">
-              {busy ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            {error && <div className="tru-door-note is-error" role="alert">{error}</div>}
+            {notice && <div className="tru-door-note is-ok" role="status">{notice}</div>}
+            <button className="tru-door-primary" disabled={busy} type="submit">
+              {busy ? 'One moment…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0', color: 'var(--text-50)', fontSize: 13 }}>
-            <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} /> or <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
-          </div>
-          <button style={ghost} onClick={google}>Continue with Google</button>
-          <p style={{ textAlign: 'center', marginTop: 18, color: 'var(--text-60)', fontSize: 13 }}>
-            {mode === 'signin' ? (
-              <>New here? <a style={link} onClick={() => setMode('signup')}>Create an account</a></>
-            ) : (
-              <>Have an account? <a style={link} onClick={() => setMode('signin')}>Sign in</a></>
-            )}
-          </p>
+
+          <div className="tru-door-or" aria-hidden><span /><em>or</em><span /></div>
+
+          <button className="tru-door-google" onClick={google} type="button">
+            {/* Google's own G — the recognized affordance for this button. */}
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+            </svg>
+            Continue with Google
+          </button>
         </div>
-      </div>
+
+        <p className="tru-door-swap">
+          {mode === 'signin' ? (
+            <>New here? <button type="button" onClick={() => setMode('signup')}>Create an account</button></>
+          ) : (
+            <>Have an account? <button type="button" onClick={() => setMode('signin')}>Sign in</button></>
+          )}
+        </p>
+      </main>
     </div>
   );
 }
