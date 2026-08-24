@@ -15,7 +15,9 @@ import { provision, type ProvisionMember } from './provision.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 
 export interface IntakeTeam { name: string; fubKey: string; subdomain?: string }
-export interface IntakeLeader { name: string; email: string; teamIndex?: number }
+/** role decides the memberships row: 'leader' (default) or 'admin'. Both get
+ *  the same set-password email — the role is what their login will BE. */
+export interface IntakeLeader { name: string; email: string; teamIndex?: number; role?: 'leader' | 'admin' }
 export interface IntakeInput { orgName: string; teams: IntakeTeam[]; leaders: IntakeLeader[] }
 
 export interface IntakeLeaderResult {
@@ -83,7 +85,11 @@ export function validateIntake(
     if (teamIndex < 0 || teamIndex >= teams.length) {
       return { ok: false, error: `${name} is assigned to a Follow Up Boss account that doesn't exist.` };
     }
-    leaders.push({ name, email, teamIndex });
+    const role = l?.role === undefined ? 'leader' : String(l.role);
+    if (role !== 'leader' && role !== 'admin') {
+      return { ok: false, error: `${name} has an unknown role — use "leader" or "admin".` };
+    }
+    leaders.push({ name, email, teamIndex, role });
   }
 
   return { ok: true, value: { orgName, teams, leaders } };
@@ -116,7 +122,7 @@ export async function runIntake(
     .filter((m) => m.userId)
     .map((m) => ({
       userId: m.userId as string,
-      role: 'leader',
+      role: m.leader.role ?? 'leader',
       name: m.leader.name,
       email: m.leader.email,
       teamIndex: m.leader.teamIndex ?? 0,

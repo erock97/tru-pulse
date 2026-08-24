@@ -12,6 +12,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { AdminIntake } from '../components/AdminIntake';
 import { HqShell } from '../components/hqShell';
 import { adminActAs, signOutClean, type AdminLeader } from '../lib/api';
 
@@ -26,6 +27,7 @@ export default function AdminTeams({
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
+  const [adding, setAdding] = useState(false);
 
   // One tile per TEAM, never per login. A team can have several leaders
   // (Synergy has two), and a tile per leader read as two separate companies.
@@ -133,6 +135,29 @@ export default function AdminTeams({
                   </article>
                 );
               })}
+            </div>
+          )}
+
+          {/* ── Add a new team — the same intake that lived on the retired Home
+                 page, now where the platform owner actually starts: name the
+                 brokerage, add each leader or admin with their email and role,
+                 and every one of them is emailed a create-account link. */}
+          <div className="dk-sec" style={{ marginTop: 34 }}>
+            <h2>Add a new team</h2>
+            <p>
+              {adding
+                ? 'Each person below gets their own set-password email.'
+                : 'Set a brokerage up and email its leaders their logins.'}
+            </p>
+            <span className="dk-key">
+              <button className="tm-invite" onClick={() => setAdding((a) => !a)}>
+                {adding ? 'Close' : 'Add a team'}
+              </button>
+            </span>
+          </div>
+          {adding && (
+            <div className="rs-plate dk-table adm-intake">
+              <AdminIntake />
             </div>
           )}
         </div>
