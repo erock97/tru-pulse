@@ -66,7 +66,7 @@ export default function AgentProfile({ agent, onBack }: {
           <p className="dk-sub">{agent.archName} at work{personalName ? ` · ${personalName.toLowerCase()} at heart` : ''}</p>
         </div>
         <div className="dk-mast-do">
-          <button className="btn btn-ghost" onClick={onBack}>← Back to {first}’s 1:1 sheet</button>
+          <button className="ad-profile-link" onClick={onBack}>← Back to {first}’s 1:1 sheet</button>
         </div>
       </header>
 
@@ -83,11 +83,12 @@ export default function AgentProfile({ agent, onBack }: {
           </>
         ) : (
           <>
-            <p className="pf-portrait">{profile?.tagline ?? agent.archName}</p>
-            <p className="pf-quiet">
-              {first} hasn’t taken the baseline (life) assessment yet — once they do,
-              this page opens with their full personal portrait and the read on how
-              their work self differs from their natural one.
+            {/* No baseline yet — and every agent-side write-up speaks as "you",
+                which is the wrong voice on the leader's page. So the opening
+                stays in the work frame until the personal read exists. */}
+            <p className="pf-portrait">
+              {agent.archName}. That’s {first} at work — the personal portrait
+              unlocks when they take the baseline assessment.
             </p>
           </>
         )}

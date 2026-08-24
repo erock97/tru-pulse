@@ -201,7 +201,10 @@ function CoachDeck({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [org.id]);
 
-  useReveal([roster, openId], canvasRef.current);
+  // `view` is a dep because coming BACK from the profile remounts the sheet's
+  // .reveal panels with the same openId — without a re-run, nothing observes
+  // them and the whole sheet sits at opacity 0 ("it kind of blanks out").
+  useReveal([roster, openId, view], canvasRef.current);
 
   // Cohort members added to Coach who haven't taken the assessment yet — a
   // distinct lane, never fabricated archetype data.
@@ -887,6 +890,13 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
               : `Stepping into ${first}'s coaching.`}
           </p>
         </div>
+        {/* The doorway to who they are, where a reader looks first — Eric's
+            call after finding it buried at the bottom of the sheet. */}
+        <div className="dk-mast-do">
+          <button className="ad-profile-link" onClick={onOpenProfile}>
+            {first}’s full profile →
+          </button>
+        </div>
       </header>
 
       {/* The vitals, one quiet line. This replaces four tiles that spent a
@@ -955,19 +965,6 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
         setCommitments={setCommitments}
         doneCount={doneCount}
       />
-      {/* WHO THEY ARE — one quiet doorway. The deep personality material lives
-          on its own page (AgentProfile): valuable, loved, and deliberately out
-          of the weekly workflow's face. */}
-      <section className="ad-fold">
-        <button type="button" className="ad-fold-head" onClick={onOpenProfile}>
-          <span className="ad-fold-title">
-            <span className="ad-fold-h">Who {first} is &amp; how to coach them</span>
-            <span className="panel-sub">{agent.archName} · {agent.quad} · the full personality profile</span>
-          </span>
-          <span className="ad-fold-caret">Open the profile</span>
-        </button>
-      </section>
-
     </>
   );
 }

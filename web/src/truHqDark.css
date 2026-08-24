@@ -5486,3 +5486,19 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   margin: 0 0 18px; max-width: 60ch;
   font-size: 15.5px; line-height: 1.6; color: var(--text-60); font-style: italic;
 }
+
+/* The profile arrives the way every deck page does — same settle, same ease. */
+.tru-dark .pf { animation: pageSettle 620ms cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) { .tru-dark .pf { animation: none; } }
+
+/* The sheet<->profile doorway buttons — the deck's own dark pill, tab-tinted,
+   NOT the light-brand .btn (which lands as a stark white chip on this page). */
+.tru-dark .ad-profile-link {
+  background: var(--tab-soft, var(--lift));
+  color: var(--tab-hi, var(--text));
+  border: 1px solid var(--tab-line, var(--border));
+  border-radius: 999px; font: inherit; font-size: 13.5px; font-weight: 600;
+  padding: 9px 16px; cursor: pointer; white-space: nowrap;
+  transition: background .18s ease, border-color .18s ease;
+}
+.tru-dark .ad-profile-link:hover { background: var(--tab-line, var(--lift)); }
