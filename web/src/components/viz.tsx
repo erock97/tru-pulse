@@ -143,3 +143,15 @@ export const SOURCE_COLORS: Record<string, string> = {
   'Referrals': '#A99BB0',
   'Other': '#6E7A72',
 };
+
+/** Short forms, for places where the source has to be NAMED in a tight space
+ *  (a table cell, a hover card). A colour alone is not a label: a row reading
+ *  "42 leads" beside one dot was read as 42 leads from that one source, when
+ *  it was 36 Zillow and 6 Realtor.com MVIP. */
+const SOURCE_SHORT: Record<string, string> = {
+  'Realtor.com MVIP': 'Realtor MVIP',
+  'Realtor.com': 'Realtor',
+  'Homes.com': 'Homes',
+  'Referrals': 'Referral',
+};
+export const shortSource = (name: string): string => SOURCE_SHORT[name] ?? name;
