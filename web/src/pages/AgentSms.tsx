@@ -1,5 +1,12 @@
-// Text-message consent — the screen an A2P reviewer will be shown, and the record
+// Text-message consent — the form an A2P reviewer will be shown, and the record
 // that makes texting a team member lawful.
+//
+// Rendered in exactly two places: the last step of account creation
+// (SetPassword.tsx), which is where consent is actually collected, and a
+// permanent card on Home, which is how someone changes their mind later. There is
+// deliberately no third prompt anywhere in the product — the campaign we file with
+// the carrier states that consent is collected at account creation, and a stray
+// second ask somewhere else would make that untrue.
 //
 // This screen has an unusual property: it is evidence. Twilio's campaign review
 // asks for a screenshot of exactly this page, and the carrier decides whether to
@@ -46,11 +53,18 @@ const EXAMPLES = [
  * there is exactly one implementation of the checkbox — two would eventually
  * disagree about what was consented to.
  */
-export function SmsConsentForm({ sms, onSaved, onDeclined, declineLabel }: {
+export default function SmsConsentForm({
+  sms, onSaved, onDeclined, declineLabel, ctaClass = 'asx-cta',
+}: {
   sms: AgentSms;
   onSaved: () => void;
+  /** Omit to hide the decline button entirely — the Home card has nothing to
+   *  decline, since not filling it in IS declining. */
   onDeclined?: () => void;
   declineLabel?: string;
+  /** The account-creation card and the agent shell load different stylesheets,
+   *  so the caller says which button class actually exists on its page. */
+  ctaClass?: string;
 }) {
   const [phone, setPhone] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -174,7 +188,7 @@ export function SmsConsentForm({ sms, onSaved, onDeclined, declineLabel }: {
         </span>
       </label>
 
-      <button className="asx-cta" disabled={!canSubmit} onClick={() => void optIn()}>
+      <button className={ctaClass} disabled={!canSubmit} onClick={() => void optIn()}>
         {busy === 'in' ? 'Saving…' : 'Turn on text messages'}
       </button>
 
@@ -189,27 +203,6 @@ export function SmsConsentForm({ sms, onSaved, onDeclined, declineLabel }: {
       </p>
 
       {err && <div className="ag-err">{err}</div>}
-    </div>
-  );
-}
-
-/**
- * The onboarding step. Shown once, after the assessment, and never again — see
- * agentStage.ts for why this is a step and not a gate.
- */
-export default function AgentSmsStep({ sms, onDone }: { sms: AgentSms; onDone: () => void }) {
-  return (
-    <div className="asx-shell tru-dark">
-      <div className="asx-card asx-reveal-card ag-sms-card">
-        <div className="asx-eyebrow">TRU</div>
-        <h1 className="asx-h1">Can your team lead text you?</h1>
-        <p className="asx-sub">
-          Your lead works out of TRU, and some of what they need from you is faster
-          as a text than an email. This is optional — nothing in the product is
-          locked behind it, and you can turn it off whenever you want.
-        </p>
-        <SmsConsentForm sms={sms} onSaved={onDone} onDeclined={onDone} declineLabel="Not now" />
-      </div>
     </div>
   );
 }

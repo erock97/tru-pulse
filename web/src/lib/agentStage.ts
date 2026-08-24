@@ -1,4 +1,4 @@
-export type Stage = 'welcome' | 'assessment' | 'sms' | 'app';
+export type Stage = 'welcome' | 'assessment' | 'app';
 
 /**
  * Where a signed-in agent belongs right now.
@@ -12,27 +12,16 @@ export type Stage = 'welcome' | 'assessment' | 'sms' | 'app';
  * someone who took it through the old public link must never be sent through it
  * again.
  *
- * ── The SMS step is not a gate ───────────────────────────────────────────────
- *
- * Everything above this line is a gate: you cannot reach the product without
- * clearing it. `sms` is different and must stay different. Consent to be texted
- * has to be freely given, and a screen you cannot get past without agreeing is
- * not freely given — it is a toll. So the step appears once, offers a real "not
- * now", and `smsAsked` goes true either way. Asking again later is the Home
- * screen's job, not this function's.
- *
- * `smsAsked` undefined or null means the SMS feature does not exist yet in this
- * deployment (db/hq_sms_consent.sql has not been run). The step is skipped
- * entirely rather than shown against a save path that would fail.
+ * Text-message consent is deliberately NOT a stage here. It is asked once during
+ * account creation (see SetPassword.tsx) and is available forever after from the
+ * card on Home. Two places to be asked would mean two chances to be nagged, and
+ * the campaign registration we file with the carrier says consent is collected at
+ * account creation — so that had better be the only place it happens.
  */
 export function agentStage(i: {
-  hasAssessment: boolean;
-  welcomeSeen: boolean;
-  isNewAccount: boolean;
-  smsAsked?: boolean | null;
+  hasAssessment: boolean; welcomeSeen: boolean; isNewAccount: boolean;
 }): Stage {
+  if (i.hasAssessment) return 'app';
   if (!i.isNewAccount) return 'app';
-  if (!i.hasAssessment) return i.welcomeSeen ? 'assessment' : 'welcome';
-  if (i.smsAsked === false) return 'sms';
-  return 'app';
+  return i.welcomeSeen ? 'assessment' : 'welcome';
 }

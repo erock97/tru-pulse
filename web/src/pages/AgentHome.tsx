@@ -10,7 +10,7 @@ import {
   agentHome, loadCourse, setCommitmentDone,
   type AgentHome, type AgentIdentity, type CourseModule,
 } from '../lib/api';
-import { SmsConsentForm } from './AgentSms';
+import SmsConsentForm from './AgentSms';
 import { pace, PACE_LABEL } from '../lib/agentPace';
 
 export default function AgentHomeView({ agent, home, onHome, onOpenModule }: {

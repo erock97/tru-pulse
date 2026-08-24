@@ -441,6 +441,24 @@ input:focus{ outline:2px solid var(--gold); border-color:var(--gold); }
 .ag-sms-off:hover{ border-color:var(--gold-dk); background:rgba(169,121,31,.08); }
 .ag-sms-off:disabled{ opacity:.5; cursor:default; }
 
+/* The same form on the account-creation card. Two things need saying there:
+   the --ac-* palette is declared on `.ac` and does not exist on the auth page, and
+   `.tru-auth label` is a broad rule that would otherwise flatten both of the
+   form's labels back to display:block. Mapping the palette rather than restyling
+   the form keeps one implementation of the consent checkbox. */
+.tru-auth .ag-sms{
+  --ac-text:var(--text-strong); --ac-text-60:var(--text-60);
+  --ac-border-soft:var(--border-soft); --gold-lt:var(--accent-hi); --gold-dk:var(--accent);
+  margin-top:22px;
+}
+.tru-auth .ag-sms-field{ display:flex; flex-direction:column; gap:6px; margin:0; }
+.tru-auth .ag-sms-field span{ display:block; margin:0; font-size:11px; font-weight:800;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--text-60); }
+.tru-auth .ag-sms-consent{ display:flex; margin:0; font-weight:400; }
+.tru-auth .ag-sms-consent span{ display:inline; margin:0; font-size:13px; font-weight:400; }
+.tru-auth .ag-sms .btn.full{ margin-top:4px; }
+.tru-auth .ag-err{ max-width:none; margin:0; }
+
 /* agent coach — their own read of the assessment */
 .ag-profile{ margin:0; }
 .ag-profile dt{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:800;

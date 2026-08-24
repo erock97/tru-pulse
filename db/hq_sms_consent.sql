@@ -18,7 +18,8 @@
 --
 --   1. Consent is never inferred. Importing a number from Follow Up Boss, or
 --      from anywhere else, is not consent and must never write an opt-in row.
---      The only writer of an 'opt_in' row is the agent's own session.
+--      The only writer of an 'opt_in' row is the agent's own session, from the
+--      last step of account creation or the card on their Home screen.
 --   2. Opt-out is absolute and immediate, and works by PHONE NUMBER rather than
 --      by account — someone who texts STOP may not be signed in, may have left
 --      the team, or may have been given a recycled number. sms_opt_out_by_phone
@@ -81,9 +82,9 @@ alter table agents add column if not exists sms_consent_at      timestamptz;
 alter table agents add column if not exists sms_consent_text    text;
 alter table agents add column if not exists sms_consent_version text;
 alter table agents add column if not exists sms_opt_out_at      timestamptz;
--- Stamped when we have asked, whatever the answer. Keeps the onboarding step from
--- reappearing forever in front of someone who has already said no — a consent
--- prompt you cannot get past is not consent, it is coercion.
+-- Stamped when we have asked, whatever the answer. Consent is asked for exactly
+-- once, at account creation, and this is what guarantees the "exactly once" — a
+-- prompt that returns until you say yes is not consent, it is a toll.
 alter table agents add column if not exists sms_prompted_at     timestamptz;
 
 -- The one definition of "may we text this person". Mirrors isSmsReachable() in
@@ -173,7 +174,7 @@ end $$;
 revoke execute on function agent_sms_opt_out() from public, anon;
 grant  execute on function agent_sms_opt_out() to authenticated;
 
--- "Not now." Stamps that we asked so onboarding moves on, and records the refusal
+-- "Skip". Stamps that we asked so account setup completes, and records the refusal
 -- so the ledger shows we took no for an answer.
 create or replace function agent_sms_decline()
 returns json language plpgsql security definer set search_path = public as $$
