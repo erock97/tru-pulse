@@ -12,6 +12,7 @@ import { handlePublicRoutes } from './publicRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
+import { probeActivity } from './automation/probe.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -281,6 +282,38 @@ export default {
       const state = await database.select('sync_state', 'select=team_id,last_sync_at');
       const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
       return json((teams as Array<{ id: string; name: string }>).map((t) => ({ id: t.id, name: t.name, last_sync_at: lastByTeam.get(t.id) ?? null })));
+    }
+
+    // Admin diagnostic: what does FUB actually report about a lead's calls and
+    // texts? Sits beside probe-events, on the same x-admin-token gate, because
+    // it is a thing you run from a terminal while deciding how to write a rule,
+    // not a product surface.
+    //
+    // It exists for one question. FUB fires an automated action-plan text the
+    // instant a lead arrives, and the speed-to-lead rule has to not count that
+    // as contact. Neither this repo nor the puller has ever confirmed a sender
+    // field on a text message - only id, personId, isIncoming, created,
+    // message. If that is really all there is, "automated" has to be inferred
+    // from the text landing seconds after the lead, which is a guess we then
+    // have to backtest. If FUB does return a creating user on these accounts,
+    // the rule becomes a lookup and the guess disappears. Worth knowing before
+    // writing the detector rather than after. Read-only.
+    if (url.pathname === '/admin/probe-activity' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      const teamId = url.searchParams.get('teamId');
+      if (!teamId) return json({ error: 'teamId required' }, 422);
+      const ids = (url.searchParams.get('personIds') ?? '')
+        .split(',').map((x) => Number(x.trim())).filter((n) => Number.isFinite(n) && n > 0);
+      try {
+        return json(await probeActivity(env, database, {
+          teamId,
+          personIds: ids.length ? ids : undefined,
+          limit: Number(url.searchParams.get('limit') ?? 12),
+          asSystem: url.searchParams.get('asSystem') === '1',
+        }));
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
     }
 
     // Admin diagnostic: probe FUB for a dated stage-change history through the PEOPLE
