@@ -31,11 +31,23 @@ interface Stub {
   upsertCalls: Array<{ table: string; rows: any[] }>;
 }
 
-function stubDb(opts: { priorHits?: any[]; failLeadsOnPond?: boolean; failStageLog?: boolean } = {}): Stub {
+function stubDb(
+  opts: {
+    priorHits?: any[];
+    /** Existing `leads` rows, as the sync reads them back to drive the rotation. */
+    priorLeads?: any[];
+    failLeadsOnPond?: boolean;
+    failStageLog?: boolean;
+  } = {},
+): Stub {
   const upsertCalls: Array<{ table: string; rows: any[] }> = [];
   let leadsAttempt = 0;
   const db = {
-    select: vi.fn(async (table: string) => (table === 'person_stage_log' ? (opts.priorHits ?? []) : [])),
+    select: vi.fn(async (table: string) => {
+      if (table === 'person_stage_log') return opts.priorHits ?? [];
+      if (table === 'leads') return opts.priorLeads ?? [];
+      return [];
+    }),
     insert: vi.fn(async () => ({})),
     update: vi.fn(async () => undefined),
     upsert: vi.fn(async (table: string, rows: any[]) => {
@@ -149,6 +161,112 @@ describe('syncPeople — the accountability flag', () => {
     // the budget default to 'worked' so a budget cap can never manufacture a strike.
     expect(rows.filter((r) => r.flag === 'zero_contact')).toHaveLength(250);
     expect(rows.slice(250).every((r) => r.flag === 'worked')).toBe(true);
+  });
+});
+
+describe('syncPeople — the contact-lookup rotation', () => {
+  // Reading calls + texts costs 2 subrequests, so only 250 leads can be read per
+  // sync. Signature has ~840 inside the horizon. Spending that budget in arrival
+  // order meant the same leads were read every run and the rest were written back
+  // as 'worked' — which does not merely decline to accuse, it ERASES a
+  // zero_contact flag an earlier run had correctly established. The nightly
+  // reconcile sees one frame of that flicker, so a lead was struck only if it
+  // happened to read zero_contact at 07:05. These pin the fix.
+
+  it('keeps a known zero_contact flag when the lead is waiting its turn', async () => {
+    // The bug, stated as a test. This lead was read before and had no contact.
+    // It is in horizon but not in this run's slice, so nothing is re-read — and
+    // what we already knew must survive rather than be overwritten with 'worked'.
+    const readAt = daysAgo(1);
+    const s = stubDb({
+      priorLeads: [{
+        fub_person_id: 1, flag: 'zero_contact', outgoing_texts: 1, calls: 0,
+        contact_checked_at: readAt,
+      }],
+    });
+    // 250 never-read leads sort ahead of it, so lead 1 cannot be in the slice.
+    const others = Array.from({ length: 250 }, (_, i) => person({ id: 1000 + i }));
+    await syncPeople(env, s.db, TEAM, 'k', [...others, person({ id: 1 })]);
+
+    const one = s.leadRows().find((l) => l.fub_person_id === 1);
+    expect(one.flag).toBe('zero_contact');
+    expect(one.outgoing_texts).toBe(1);
+    // Its clock does not move, or it would keep losing its place in the queue.
+    expect(one.contact_checked_at).toBe(readAt);
+    // And it was genuinely never asked about.
+    expect(vi.mocked(fub.countOutgoingTexts).mock.calls.map((c) => c[1])).not.toContain(1);
+  });
+
+  it('spends the budget on the longest-unread leads and skips the freshest', async () => {
+    // 260 leads, all read before. Ids 1-10 were read a minute ago; the rest are
+    // days stale. Only 250 lookups are affordable, so the ten fresh ones are the
+    // ten that wait — the whole point of ordering by staleness.
+    const fresh = Array.from({ length: 10 }, (_, i) => ({
+      fub_person_id: i + 1, flag: 'worked', outgoing_texts: 0, calls: 0,
+      contact_checked_at: new Date(Date.now() - 60_000).toISOString(),
+    }));
+    const stale = Array.from({ length: 250 }, (_, i) => ({
+      fub_person_id: i + 11, flag: 'worked', outgoing_texts: 0, calls: 0,
+      contact_checked_at: daysAgo(5),
+    }));
+    const s = stubDb({ priorLeads: [...fresh, ...stale] });
+    const people = Array.from({ length: 260 }, (_, i) => person({ id: i + 1 }));
+    await syncPeople(env, s.db, TEAM, 'k', people);
+
+    const askedFor = new Set(vi.mocked(fub.countOutgoingTexts).mock.calls.map((c) => c[1]));
+    expect(askedFor.size).toBe(250);
+    for (const id of [1, 5, 10]) expect(askedFor.has(id)).toBe(false);
+    for (const id of [11, 150, 260]) expect(askedFor.has(id)).toBe(true);
+  });
+
+  it('reads never-seen leads before ones it has already read', async () => {
+    // 250 leads read five days ago, plus 10 nobody has ever looked at. A
+    // never-read lead outranks any prior reading however stale, because its flag
+    // is currently an assumption rather than an observation.
+    const seen = Array.from({ length: 250 }, (_, i) => ({
+      fub_person_id: i + 1, flag: 'worked', outgoing_texts: 0, calls: 0,
+      contact_checked_at: daysAgo(5),
+    }));
+    const s = stubDb({ priorLeads: seen });
+    const people = Array.from({ length: 260 }, (_, i) => person({ id: i + 1 }));
+    await syncPeople(env, s.db, TEAM, 'k', people);
+
+    const askedFor = new Set(vi.mocked(fub.countOutgoingTexts).mock.calls.map((c) => c[1]));
+    for (const id of [251, 255, 260]) expect(askedFor.has(id)).toBe(true);
+  });
+
+  it('advances the clock only for leads it actually read', async () => {
+    const s = stubDb();
+    await syncPeople(env, s.db, TEAM, 'k', [
+      person({ id: 1 }),                        // read
+      person({ id: 2, stage: 'New Lead' }),     // stuck: classified from stage alone
+      person({ id: 3, created: daysAgo(60) }),  // past the horizon
+    ]);
+    const by = (id: number) => s.leadRows().find((l) => l.fub_person_id === id);
+    expect(by(1).contact_checked_at).not.toBeNull();
+    expect(by(2).contact_checked_at).toBeNull();
+    expect(by(3).contact_checked_at).toBeNull();
+  });
+
+  it('still refuses to invent a strike for a lead it has never read', async () => {
+    // The original guarantee, unchanged: a lead we have never looked at cannot
+    // produce a strike. Only leads with a prior reading are now preserved.
+    const s = stubDb({ priorLeads: [] });
+    const many = Array.from({ length: 260 }, (_, i) => person({ id: i + 1 }));
+    await syncPeople(env, s.db, TEAM, 'k', many);
+    const skipped = s.leadRows().filter((l) => l.contact_checked_at === null);
+    expect(skipped).toHaveLength(10);
+    expect(skipped.every((l) => l.flag === 'worked')).toBe(true);
+  });
+
+  it('survives the prior-state read failing, without erasing anything it reads', async () => {
+    const s = stubDb();
+    (s.db.select as any).mockImplementation(async (table: string) =>
+      table === 'leads' ? Promise.reject(new Error('boom')) : [],
+    );
+    const r = await syncPeople(env, s.db, TEAM, 'k', [person({ id: 1 })]);
+    expect(r.upserted).toBe(1);
+    expect(s.leadRows()[0].flag).toBe('zero_contact');
   });
 });
 

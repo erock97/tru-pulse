@@ -68,29 +68,112 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
   const rows: any[] = [];
   const nowIso = new Date().toISOString();
   const nowMs = Date.now();
-  // Cap per-sync contact-lookup subrequests (2 each) so a large team's now-complete
-  // cursor pull can't exhaust the Worker subrequest budget mid-run (which would abort
-  // before the upserts land). Budget-skipped recent leads default to 'worked' (never a
-  // false strike) and get properly classified on a later run as budget frees up.
-  let contactBudget = 250;
+
+  // ── Which recent leads get their contact history read this run ──
+  //
+  // Each lookup costs 2 FUB subrequests, so a big team cannot have all of its
+  // in-horizon leads read in one sync — Signature has ~840 inside the 45-day
+  // horizon against a budget of 250. The budget itself was never the bug;
+  // spending it in arrival order was.
+  //
+  // What that cost, in production: roughly the same leads got read every run,
+  // and the rest were written as 'worked' on the reasoning that a skipped lead
+  // should never produce a false strike. But writing 'worked' does not merely
+  // decline to accuse — it ERASES a zero_contact flag an earlier run had
+  // correctly established. So a lead flickered between 'worked' and
+  // 'zero_contact' from one sync to the next, and the nightly 07:05 reconcile
+  // only ever sees one frame of that. A lead was struck only if it happened to
+  // read zero_contact at exactly that moment. Fifteen of Signature's leads
+  // slipped through that way, and the only two teams over this budget were the
+  // only two teams missing strikes at all.
+  //
+  // Two changes, and they only work together:
+  //   1. Spend the budget OLDEST-CHECKED-FIRST, so every in-horizon lead comes
+  //      round on a fixed rotation (~4 syncs, about two hours, for the largest
+  //      team) instead of some never coming round at all.
+  //   2. A skipped lead KEEPS what we already knew about it rather than being
+  //      overwritten with 'worked'. Only a lead we have genuinely never read
+  //      defaults to 'worked', which preserves the original "never a false
+  //      strike" guarantee for the one case it was actually protecting.
+  const CONTACT_BUDGET = 250;
+
+  // Prior state for the in-horizon leads only — filtered server-side, so this is
+  // one page for every real team rather than a 10,000-row all-time pull.
+  const horizonIso = new Date(nowMs - CONTACT_HORIZON_MS).toISOString();
+  const priorRows = (await database
+    .select(
+      'leads',
+      `team_id=eq.${team.id}&fub_created=gte.${horizonIso}` +
+        '&select=fub_person_id,flag,outgoing_texts,calls,contact_checked_at',
+    )
+    .catch(() => [] as any[])) as Array<{
+    fub_person_id: number;
+    flag: string | null;
+    outgoing_texts: number | null;
+    calls: number | null;
+    contact_checked_at: string | null;
+  }>;
+  const prior = new Map(priorRows.map((r) => [Number(r.fub_person_id), r]));
+
+  // Every lead whose flag depends on reading its calls/texts. Stuck and
+  // offer-or-better classify from stage alone and never spend a lookup.
+  const needsLookup = inScope.filter((p) => {
+    const st = String(p.stage ?? '');
+    if (isStuckStage(st)) return false;
+    if (isOfferPlus(stageClass(st))) return false;
+    const createdMs = p.created ? Date.parse(p.created) : NaN;
+    return Number.isNaN(createdMs) || nowMs - createdMs <= CONTACT_HORIZON_MS;
+  });
+
+  // Never-read first, then longest-unread. The id tie-break keeps the order
+  // deterministic, so a retried sync spends its budget on the same leads rather
+  // than reshuffling and starving a different slice each time.
+  needsLookup.sort((a, b) => {
+    const ta = prior.get(Number(a.id))?.contact_checked_at;
+    const tb = prior.get(Number(b.id))?.contact_checked_at;
+    if (!ta && !tb) return Number(a.id) - Number(b.id);
+    if (!ta) return -1;
+    if (!tb) return 1;
+    const d = Date.parse(ta) - Date.parse(tb);
+    return d !== 0 ? d : Number(a.id) - Number(b.id);
+  });
+
+  const lookupIds = new Set(needsLookup.slice(0, CONTACT_BUDGET).map((p) => Number(p.id)));
   for (const p of inScope) {
     const stage = String(p.stage ?? '');
     const tags: string[] = Array.isArray(p.tags) ? p.tags.map((t: any) => String(t)) : [];
     const createdMs = p.created ? Date.parse(p.created) : NaN;
     const recent = Number.isNaN(createdMs) || (nowMs - createdMs) <= CONTACT_HORIZON_MS;
+    const before = prior.get(Number(p.id));
     let outgoingTexts = 0;
     let calls = 0;
     let flag: string;
+    // Null means "we have never read this lead's contact history", which is a
+    // different thing from "we read it and it was clean". Only a lead we actually
+    // read gets its timestamp advanced, and that timestamp is what drives the
+    // rotation on the next run.
+    let contactCheckedAt: string | null = before?.contact_checked_at ?? null;
     if (isStuckStage(stage)) {
       flag = 'stuck';
     } else if (isOfferPlus(stageClass(stage))) {
       flag = 'worked';
-    } else if (recent && contactBudget > 0) {
-      contactBudget--;
+    } else if (recent && lookupIds.has(Number(p.id))) {
       outgoingTexts = await countOutgoingTexts(fubKey, p.id);
       calls = await countCalls(fubKey, p.id);
       flag = classifyLead({ stage, tags, outgoingTexts, calls });
+      contactCheckedAt = nowIso;
+    } else if (recent && before?.contact_checked_at) {
+      // In horizon, waiting its turn in the rotation, and we have read it before.
+      // Keep what we already know. Overwriting this with 'worked' is precisely what
+      // used to erase a real zero_contact flag before the nightly reconcile could
+      // act on it.
+      outgoingTexts = before.outgoing_texts ?? 0;
+      calls = before.calls ?? 0;
+      flag = before.flag ?? 'worked';
     } else {
+      // Either past the horizon, or in horizon but never yet read. Assume worked —
+      // this is the case the original guarantee was for, and it still holds: a lead
+      // we have never looked at cannot produce a strike.
       flag = 'worked';
     }
     rows.push({
@@ -109,6 +192,7 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
       flag,
       outgoing_texts: outgoingTexts,
       calls,
+      contact_checked_at: contactCheckedAt,
       synced_at: nowIso,
     });
 
