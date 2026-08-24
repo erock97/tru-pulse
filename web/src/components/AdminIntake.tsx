@@ -38,8 +38,10 @@ export function AdminIntake() {
     try {
       setResult(await adminIntake({
         orgName: orgName.trim(),
+        // One FUB account (the usual case) simply IS the brokerage — asking
+        // for a second name was answering the same question twice.
         teams: teams.map((t) => ({
-          name: t.name.trim(),
+          name: (teams.length === 1 ? orgName : t.name).trim(),
           fubKey: t.fubKey.trim(),
           ...(t.subdomain.trim() ? { subdomain: t.subdomain.trim() } : {}),
         })),
@@ -115,15 +117,18 @@ export function AdminIntake() {
       <label>Brokerage / team name</label>
       <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Acme Realty" required />
 
-      <h4 style={{ margin: '20px 0 6px' }}>Follow Up Boss accounts</h4>
       {teams.map((t, i) => (
         <div className="row2" key={i}>
+          {/* A single FUB account takes the brokerage's own name; the name
+              field only exists once there are two accounts to tell apart. */}
+          {teams.length > 1 && (
+            <div className="grow">
+              <label>Account name</label>
+              <input value={t.name} onChange={(e) => setTeam(i, { name: e.target.value })} placeholder="Main office" required />
+            </div>
+          )}
           <div className="grow">
-            <label>Account name</label>
-            <input value={t.name} onChange={(e) => setTeam(i, { name: e.target.value })} placeholder="Main office" required />
-          </div>
-          <div className="grow">
-            <label>API key</label>
+            <label>{teams.length > 1 ? 'API key' : 'Follow Up Boss API key'}</label>
             <input value={t.fubKey} onChange={(e) => setTeam(i, { fubKey: e.target.value })} placeholder="fka_…" required />
           </div>
         </div>
