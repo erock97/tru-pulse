@@ -314,6 +314,17 @@ export async function loadOwnProfile(agentId: string): Promise<{ profile: Profil
   };
 }
 
+// ?demo=1 baseline (life) codes, chosen so the preview shows every state the
+// full profile can take: a one-axis divergence (Trevor: decides by data at
+// work, by gut in life), a bigger work/life gap (Dana), and full alignment
+// (Marcus) — plus agents left without one to show the not-yet-taken state.
+const DEMO_PERSONAL_CODES: Record<string, string> = {
+  'demo-c1': 'P-Pro-R-I',
+  'demo-c2': 'T-Rec-V-I',
+  'demo-c4': 'P-Pro-V-I',
+  'demo-c6': 'P-Rec-V-I',
+};
+
 export async function loadProfile(agentId: string): Promise<Profile> {
   // Demo/preview: loadRoster's demo path never touches Supabase, but this
   // function previously always did — for a fake demo-cN id that Supabase
@@ -324,7 +335,7 @@ export async function loadProfile(agentId: string): Promise<Profile> {
   if (isDemo) {
     const demoAgent = demoAgentRows().find((a) => a.id === agentId);
     const rows: AssessmentRow[] = (demoAgent?.assessments || []).map((a) => ({ code: a.code, taken_at: a.taken_at }));
-    return deriveProfile(rows, null, null);
+    return deriveProfile(rows, DEMO_PERSONAL_CODES[agentId] ?? null, null);
   }
   const fetched = await fetchCoachProfile(agentId);
   if (!fetched) throw new Error('Could not load this agent’s profile.');
