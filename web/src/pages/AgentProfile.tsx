@@ -21,8 +21,8 @@ import {
   CHANNEL_RX,
   CHANNEL_WHY,
   PERSONAL_DEEP,
+  PERSONAL_ESSAY,
   contrastLines,
-  wiringSentence,
 } from '../lib/personalityDeep';
 
 export default function AgentProfile({ agent, onBack }: {
@@ -41,6 +41,7 @@ export default function AgentProfile({ agent, onBack }: {
   const workCode = profile?.code ?? agent.code;
   const personalCode = profile?.personalCode ?? agent.personalCode ?? null;
   const deep = personalCode ? PERSONAL_DEEP[personalCode] : null;
+  const essay = personalCode ? PERSONAL_ESSAY[personalCode] : null;
   const personalName = personalCode ? PERSONAL_TYPES[personalCode]?.name : null;
   const first = agent.name.split(' ')[0];
   const rx = CHANNEL_RX[workCode];
@@ -75,12 +76,10 @@ export default function AgentProfile({ agent, onBack }: {
         {deep ? (
           <>
             <p className="pf-portrait">{deep.desc}</p>
-            {personalCode && (
-              <p className="pf-lede">
-                {wiringSentence(first, personalCode)}
-                {workShift ? ` ${workShift}` : ''}
-              </p>
-            )}
+            {essay?.map((para, i) => (
+              <p className="pf-lede" key={i}>{para}</p>
+            ))}
+            {workShift && <p className="pf-lede">{workShift}</p>}
           </>
         ) : (
           <>
