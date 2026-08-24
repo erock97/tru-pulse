@@ -24,8 +24,14 @@ export const SMS_CONSENT_VERSION = '2026-08-24.1';
  *  brand in the message matches the brand on the campaign. */
 export const SMS_BRAND = 'TRU HQ';
 
-/** Where a recipient goes for help. Must be reachable by a human. */
-export const SMS_SUPPORT_EMAIL = 'support@truhq.co';
+/** Where a recipient goes for help. Must be reachable by a human.
+ *
+ *  This is the address already published on truhq.co, deliberately. It was
+ *  support@truhq.co, which nobody has confirmed receives mail — and a HELP reply
+ *  pointing at a dead mailbox is a campaign-review failure, not a typo. Switch it
+ *  once that inbox is confirmed live; the SMS terms page reads its address from
+ *  BUSINESS.contactEmail, so the two must be changed together. */
+export const SMS_SUPPORT_EMAIL = 'Admin@terrasonconsulting.com';
 
 /** The public SMS terms page. Linked from the checkbox and from the HELP reply. */
 export const SMS_TERMS_URL = 'https://truhq.co/sms-terms';
