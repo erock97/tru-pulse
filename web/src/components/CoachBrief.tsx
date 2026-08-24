@@ -158,7 +158,7 @@ export function TeamBriefSection({ onOpenAgent }: {
   onOpenAgent?: (agentId: string) => void;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
-  const { bundle, loading } = useBrief(reportId);
+  const { bundle } = useBrief(reportId);
   const [printing, setPrinting] = useState(false);
   const view = bundle?.latest ?? null;
 
