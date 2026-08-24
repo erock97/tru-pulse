@@ -32,13 +32,17 @@ export default function SiteFooter() {
           <a href={`mailto:${BUSINESS.contactEmail}`}>{BUSINESS.contactEmail}</a>
         </address>
 
-        {/* The legal three. A payment processor expects these to resolve and the
-            site has been serving them from a branch that never merged, so they
-            are linked from here rather than living only in a sitemap. */}
+        {/* The legal four. A payment processor expects the first three to
+            resolve and the site has been serving them from a branch that never
+            merged, so they are linked from here rather than living only in a
+            sitemap. SMS Terms is linked for a different reason: a carrier
+            reviewing the A2P campaign looks for it reachable from the footer,
+            not only from the URL the registration cites. */}
         <nav className="sitefoot-legal" aria-label="Legal">
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/refund-policy">Refund &amp; Cancellation</a>
+          <a href="/sms-terms">SMS Terms</a>
         </nav>
 
         <p className="sitefoot-copy">© {year} {BUSINESS.legalEntity}. All rights reserved.</p>
