@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { adminActAs, isDemo, signOutClean, type AdminLeader } from '../lib/api';
 import { FubConnect } from '../components/FubConnect';
 import { AdminConnections } from '../components/AdminConnections';
@@ -125,6 +125,20 @@ export default function Home({
   const [pick, setPick] = useState('');
   const [acting, setActing] = useState(false);
   const [actErr, setActErr] = useState('');
+
+  // One picker row per COMPANY, not per login. A team can have several leaders
+  // (Synergy has two) and every leader of a team sees the same HQ, so listing
+  // each login read as separate businesses. Acting as the first leader is
+  // acting as the team; the other names still show so it's clear who's inside.
+  const actAsTeams = useMemo(() => {
+    const byTeam = new Map<string, { team: string; email: string; names: string[] }>();
+    for (const l of adminLeaders ?? []) {
+      const g = byTeam.get(l.team_name);
+      if (g) g.names.push(l.name);
+      else byTeam.set(l.team_name, { team: l.team_name, email: l.email, names: [l.name] });
+    }
+    return [...byTeam.values()];
+  }, [adminLeaders]);
   async function actAs() {
     if (!pick || acting) return;
     setActing(true);
@@ -260,9 +274,9 @@ export default function Home({
               <div className="hh-actas-row">
                 <select value={pick} onChange={(e) => setPick(e.target.value)}>
                   <option value="">Select a team…</option>
-                  {adminLeaders.map((l) => (
-                    <option key={l.id} value={l.email}>
-                      {l.team_name} · {l.name}
+                  {actAsTeams.map((t) => (
+                    <option key={t.team} value={t.email}>
+                      {t.team} · {t.names.join(' & ')}
                     </option>
                   ))}
                 </select>
