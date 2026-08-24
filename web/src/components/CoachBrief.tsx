@@ -11,6 +11,8 @@
 // a failure — so it always renders the "not enough reviewed" line, never an
 // empty box and never an error.
 import { useEffect, useMemo, useState } from 'react';
+import { onAuthChange } from '../lib/auth';
+import { identityChanged, userIdOf } from '../lib/authIdentity';
 import {
   agentBrief,
   briefRangeLabel,
@@ -28,8 +30,20 @@ import type {
 
 /* ── One shared load per page view ──────────────────────────────────────────
    The roster section and (after a click-through) the agent panel both need the
-   same latest bundle; cache the promise so the page asks the Worker once. */
+   same latest bundle; cache the promise so the page asks the Worker once.
+
+   The cache MUST die when the person changes. Sign-out, sign-in and admin
+   act-as all swap the session without reloading the page, and a brief fetched
+   under the previous identity is another team's report. The roster and
+   dashboard caches key by org; this one holds a promise before any org is
+   known, so it subscribes to auth instead and drops itself on any change. */
 let latestBundle: Promise<BriefBundle> | null = null;
+let bundleUser: string | null | undefined;
+onAuthChange((s) => {
+  const id = userIdOf(s);
+  if (identityChanged(bundleUser, id)) latestBundle = null;
+  bundleUser = id;
+});
 function loadLatestOnce(): Promise<BriefBundle> {
   if (!latestBundle) {
     latestBundle = loadCoachBrief().catch((e) => {
