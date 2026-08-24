@@ -136,6 +136,45 @@ export default function TeamAdmin({
         (x.id === m.id ? { ...x, invitedAt: x.invitedAt ?? new Date().toISOString() } : x)));
     });
 
+  // ── Invite everyone at once ──────────────────────────────────────────────
+  // Eligible = on the team, has an email, never been sent a login. Re-sends
+  // stay per-row on purpose: a bulk re-send would spam people who simply
+  // haven't gotten around to signing in yet.
+  const eligible = useMemo(
+    () => (rows ?? []).filter((m) => !m.excluded && m.email && !m.invitedAt),
+    [rows],
+  );
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
+  const [bulkSaid, setBulkSaid] = useState('');
+
+  async function inviteAll() {
+    if (bulk || eligible.length === 0) return;
+    setErr('');
+    setBulkSaid('');
+    const list = [...eligible];
+    setBulk({ done: 0, total: list.length });
+    let sent = 0;
+    let failed = 0;
+    // One at a time, deliberately: each invite mints a login and sends an
+    // email, and a burst of parallel calls is how rate limits eat half a team.
+    for (const m of list) {
+      try {
+        const r = await inviteAgent(m.id);
+        sent += 1;
+        setSaid((s) => ({ ...s, [m.id]: `Sent to ${r.email}` }));
+        setRows((rs) => (rs ?? []).map((x) =>
+          (x.id === m.id ? { ...x, invitedAt: x.invitedAt ?? new Date().toISOString() } : x)));
+      } catch {
+        failed += 1;
+      }
+      setBulk((b) => (b ? { ...b, done: b.done + 1 } : b));
+    }
+    setBulk(null);
+    setBulkSaid(failed === 0
+      ? `All ${sent} ${sent === 1 ? 'invite' : 'invites'} sent.`
+      : `${sent} sent · ${failed} did not go through — use Send login on those rows to retry.`);
+  }
+
   const TABS: Array<[Filter, string, number]> = [
     ['all', 'On the team', counts.on],
     ['off', 'No login sent', counts.off],
@@ -187,6 +226,18 @@ export default function TeamAdmin({
                   </>}
               </p>
             </div>
+            {(eligible.length > 0 || bulk || bulkSaid) && (
+              <div className="dk-mast-do">
+                {bulkSaid && <span className="tm-sent">{bulkSaid}</span>}
+                {(eligible.length > 0 || bulk) && (
+                  <button className="tm-invite-all" disabled={!!bulk} onClick={inviteAll}>
+                    {bulk
+                      ? `Sending ${Math.min(bulk.done + 1, bulk.total)} of ${bulk.total}…`
+                      : `Send all ${eligible.length} ${eligible.length === 1 ? 'invite' : 'invites'}`}
+                  </button>
+                )}
+              </div>
+            )}
           </header>
 
           {err && <div className="ad-inline-err" style={{ marginBottom: 14 }}>{err}</div>}
