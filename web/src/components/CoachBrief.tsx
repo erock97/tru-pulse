@@ -99,7 +99,13 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
   );
 }
 
-function PointList({ points, tone }: { points: BriefPointView[]; tone: 'good' | 'work' | 'watch' }) {
+function PointList({ points, tone, evidenceInline = false }: {
+  points: BriefPointView[];
+  tone: 'good' | 'work' | 'watch';
+  /** true → the quote/lead/date is printed under every point (the agent sheet,
+   *  where the evidence IS the product); false → one click deep (compact uses). */
+  evidenceInline?: boolean;
+}) {
   const [open, setOpen] = useState<number | null>(null);
   if (points.length === 0) {
     return <p className="brief-none">{NOT_ENOUGH_REVIEWED}.</p>;
@@ -110,7 +116,9 @@ function PointList({ points, tone }: { points: BriefPointView[]; tone: 'good' | 
         <li key={i}>
           <p className="brief-point-text">{p.text}</p>
           {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
-          {p.evidence.length > 0 && (
+          {p.evidence.length > 0 && (evidenceInline ? (
+            <EvidenceList evidence={p.evidence} />
+          ) : (
             <>
               <button
                 className="brief-evidence-toggle"
@@ -121,7 +129,7 @@ function PointList({ points, tone }: { points: BriefPointView[]; tone: 'good' | 
               </button>
               {open === i && <EvidenceList evidence={p.evidence} />}
             </>
-          )}
+          ))}
         </li>
       ))}
     </ul>
@@ -214,9 +222,10 @@ export function TeamBriefSection({ onOpenAgent }: {
 
 /* ════════ One agent's brief, inside the drill-in sheet ════════ */
 
-export function AgentBriefPanel({ agentId, agentName }: {
+export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: {
   agentId: string;
   agentName: string;
+  evidenceInline?: boolean;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
@@ -232,7 +241,10 @@ export function AgentBriefPanel({ agentId, agentName }: {
   if (!view) return null;
 
   return (
-    <section className="card ad-panel reveal brief-panel" data-delay="180">
+    // No `reveal` class here: this panel mounts AFTER its data loads, which is
+    // after the page's reveal observer has already swept — it would stay at
+    // opacity 0 forever and read as a giant hole in the page.
+    <section className="card ad-panel brief-panel">
       <div className="ad-panel-head">
         <h3>The weekly coaching brief</h3>
         <span className="panel-sub">
@@ -251,19 +263,19 @@ export function AgentBriefPanel({ agentId, agentName }: {
           <div className="brief-cols">
             <div>
               <span className="ad-swot-k">Keep doing</span>
-              <PointList points={mine.doingRight} tone="good" />
+              <PointList points={mine.doingRight} tone="good" evidenceInline={evidenceInline} />
             </div>
             <div>
               <span className="ad-swot-k">Priority opportunities</span>
-              <PointList points={mine.opportunities} tone="work" />
+              <PointList points={mine.opportunities} tone="work" evidenceInline={evidenceInline} />
             </div>
             <div>
               <span className="ad-swot-k">Objections heard</span>
-              <PointList points={mine.objections} tone="watch" />
+              <PointList points={mine.objections} tone="watch" evidenceInline={evidenceInline} />
             </div>
             <div>
               <span className="ad-swot-k">This week’s coaching plan</span>
-              <PointList points={mine.coachingActions} tone="work" />
+              <PointList points={mine.coachingActions} tone="work" evidenceInline={evidenceInline} />
             </div>
           </div>
         </>

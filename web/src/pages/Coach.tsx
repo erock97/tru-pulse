@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
@@ -760,7 +760,7 @@ function useSavedFlag(): [string | null, (label?: string) => void] {
   return [flag, flash];
 }
 
-function AgentDrill({ agent, cohort, teamHealth }: {
+function AgentDrill({ agent, teamHealth }: {
   agent: RosterAgent;
   /** Everyone's coaching health, so this one can be shown in context. */
   cohort: Array<{ id: string; health: number }>;
@@ -880,46 +880,21 @@ function AgentDrill({ agent, cohort, teamHealth }: {
         </div>
       </header>
 
-      <section className="dk-bento">
-        {/* A number on its own says nothing — 73 is only meaningful against the
-            people around it. Every dot is a colleague, the marked line is the
-            team, and the tile stops being a 400px box holding one figure. */}
-        <div className="rs-plate dk-tile dk-tile-lead">
-          <span className="k">Coaching health</span>
-          <span className="v">{health}</span>
-          {cohort.length > 1 && teamHealth !== null && (
-            <ScaleMarks
-              marks={cohort.map((c) => ({
-                key: c.id,
-                value: c.health,
-                tone: c.id === agent.id ? 'warn' : c.health >= 60 ? 'ok' : c.health >= 40 ? 'none' : 'bad',
-              }))}
-              line={teamHealth}
-              lo={0}
-              hi={100}
-              lineLabel={`team ${teamHealth}`}
-            />
-          )}
-          <span className="u">
-            {cohort.length > 1
-              ? 'every dot is an agent · the line is the team'
-              : 'check-in freshness, assessment recency, and how settled the profile is'}
-          </span>
-        </div>
-        {([
-          ['Since last check-in', agent.lastDays >= 99 ? 'never' : `${agent.lastDays}d`,
-            agent.lastDays >= 99 ? 'no 1:1 on record' : 'last sat down'],
-          ['Assessments taken', String(agent.takes), 'all time'],
-          ['Since last assessment', agent.days >= 99 ? 'never' : `${agent.days}d`, 'profile freshness'],
-          ['Pace', agent.pace, 'against the cohort'],
-        ] as const).map(([k, v, u]) => (
-          <div className="rs-plate dk-tile" key={k}>
-            <span className="k">{k}</span>
-            <span className="v">{v}</span>
-            <span className="u">{u}</span>
-          </div>
-        ))}
-      </section>
+      {/* The vitals, one quiet line. This replaces four tiles that spent a
+          full screen on numbers that only need a glance — the page belongs to
+          this week's brief and the 1:1 (Eric's two priorities for Coach). */}
+      <div className="ad-vitals">
+        <span className="ad-vital">
+          <b>{health}</b> coaching health{teamHealth !== null ? <i> · team {teamHealth}</i> : null}
+        </span>
+        <span className="ad-vital">
+          <b>{agent.lastDays >= 99 ? 'never' : `${agent.lastDays}d`}</b> since last 1:1
+        </span>
+        <span className="ad-vital"><b style={{ color: agent.paceColor }}>{agent.pace}</b></span>
+        <span className="ad-vital">
+          <b>{agent.days >= 99 ? 'never' : `${agent.days}d`}</b> since assessed
+        </span>
+      </div>
 
       {/* Coaching data is read-only on some logins (RLS). Losing this in the
           reformat would have hidden a real failure behind a sheet that just
@@ -931,135 +906,13 @@ function AgentDrill({ agent, cohort, teamHealth }: {
       )}
 
 
-      {/* PROFILE + HOW-TO-COACH (kept) */}
-      <div className="ad-grid">
-
-        {/* The four AG fields — strength, watch-for, growth edge, challenge —
-            were authored per archetype and rendered NOWHERE on the leader's
-            sheet. They are the half that answers "where will they struggle,
-            where will they do well", which is the question a leader actually
-            arrives with. They are written to the agent, so they are labelled
-            as what that agent is told rather than silently re-voiced. */}
-        <section className="card ad-panel reveal ad-strengths" data-delay="120">
-          <div className="ad-panel-head">
-            <h3>Where they win, where they slip</h3>
-            <span className="panel-sub">{profile ? `${profile.quad} · ${profile.law}` : agent.quad}</span>
-          </div>
-          {profile && AG[profile.code] ? (
-            <ul className="ad-swot">
-              <li className="is-good">
-                <span className="ad-swot-k">Where they do well</span>
-                <p>{AG[profile.code].sup}</p>
-              </li>
-              <li className="is-risk">
-                <span className="ad-swot-k">Where they slip</span>
-                <p>{AG[profile.code].watch}</p>
-              </li>
-              <li className="is-work">
-                <span className="ad-swot-k">The work with them</span>
-                <p>{AG[profile.code].edge}</p>
-              </li>
-              <li className="is-watch">
-                <span className="ad-swot-k">Warning sign</span>
-                <p>{profile.signal}</p>
-              </li>
-            </ul>
-          ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading…</p>
-          )}
-        </section>
-
-        {/* Where they will actually win business. Scored off the same four
-            axes the assessment already measures, and the matched traits are
-            printed next to each reason so a leader can see the working instead
-            of trusting a number. */}
-        <section className="card ad-panel reveal ad-strengths" data-delay="150">
-          <div className="ad-panel-head">
-            <h3>Where they’ll win business</h3>
-            <span className="panel-sub">
-              {profile ? profile.code.split('-').map((c) => TRAIT_LABELS[c as Pole]).join(' · ') : 'scored on their assessment'}
-            </span>
-          </div>
-          {fit.length > 0 ? (
-            <>
-              <ol className="ad-fit">
-                {fit.slice(0, 3).map(({ channel, score, matched }) => (
-                  <li key={channel.key}>
-                    <div className="ad-fit-top">
-                      <span className="ad-fit-name">{channel.name}</span>
-                      <span className="ad-fit-traits">
-                        {matched.map((m) => TRAIT_LABELS[m]).join(' + ')}
-                      </span>
-                    </div>
-                    <span className="ad-fit-bar" aria-hidden>
-                      <i style={{ width: `${Math.round(score * 100)}%` }} />
-                    </span>
-                    <p>{channel.because}</p>
-                  </li>
-                ))}
-              </ol>
-              {worst && (
-                <div className="ad-fit-against">
-                  <span className="ad-swot-k">Against the grain — {worst.channel.name}</span>
-                  <p>{worst.channel.cost}</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>
-              No assessment on file yet, so there is nothing to score this on.
-            </p>
-          )}
-        </section>
-      </div>
-
-      {/* THE WEEKLY BRIEF — this agent's slice of the Hermes report: what to
-          keep doing, what to fix (with the exact call as evidence), objections
-          heard, and the week's plan. Renders nothing when no brief system runs
-          for this team; renders "not enough reviewed" when the report simply
-          had nothing on them — that distinction is deliberate. */}
-      <AgentBriefPanel agentId={agent.id} agentName={agent.name} />
-
-      {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
-          (Task 7's baseline assessment). Old-site, business-only agents simply
-          don't render these two cards — no crash, no empty headings. */}
-      {profile && profile.divergences.length > 0 && (
-        <div className="ad-grid" style={{ marginTop: 22 }}>
-          {profile && profile.divergences.length > 0 && (
-            <section className="card ad-panel">
-              <div className="ad-panel-head">
-                <h3>Where they diverge</h3>
-                <span className="panel-sub">{profile.divergences.length} of 4 axes</span>
-              </div>
-              <ul className="ad-wired">
-                {profile.divergences.map((d) => (
-                  <li key={d.axis}>
-                    <span className="ad-wired-tag blind">{AXIS_TITLE[d.axis]}</span>
-                    <p>In life they’re {d.personalLabel.toLowerCase()}, but at work they show up {d.workLabel.toLowerCase()}.</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
-      )}
-
-      {/* THE 1:1 PLAYBOOK — always present for an assessed agent (business code). */}
-      {profile && CG[profile.code] && (
-        <section className="card ad-panel" style={{ marginTop: 22 }}>
-          <div className="ad-panel-head">
-            <h3>How to run their 1:1</h3>
-            <span className="panel-sub">{agent.archName}</span>
-          </div>
-          <ul className="ad-wired">
-            <li><span className="ad-wired-tag drive">Communicate</span><p>{CG[profile.code].communicate}</p></li>
-            <li><span className="ad-wired-tag drive">Motivate</span><p>{CG[profile.code].motivate}</p></li>
-            <li><span className="ad-wired-tag blind">Hold accountable</span><p>{CG[profile.code].accountable}</p></li>
-            <li><span className="ad-wired-tag blind">In conflict</span><p>{CG[profile.code].conflict}</p></li>
-            <li><span className="ad-wired-tag drive">FeedForward ask</span><p>{CG[profile.code].feedforward}</p></li>
-          </ul>
-        </section>
-      )}
+      {/* THE WEEKLY BRIEF — the top of the page, in full detail with the
+          evidence visible. This is the reason a leader opens this sheet: the
+          in-depth read on where this agent is struggling, with the exact call
+          or note to point at. Renders nothing when no brief system runs for
+          this team; renders "not enough reviewed" when the report simply had
+          nothing on them — that distinction is deliberate. */}
+      <AgentBriefPanel agentId={agent.id} agentName={agent.name} evidenceInline />
 
       {/* 2. RUN THIS 1:1 — structured leadership form (Block 4b), replacing the
           old yes/no OneOnOneSheet. Writes: checkins + checkin_items + checkin_leader
@@ -1093,39 +946,178 @@ function AgentDrill({ agent, cohort, teamHealth }: {
         setCommitments={setCommitments}
         doneCount={doneCount}
       />
-      {/* Last, deliberately. It describes who they are; everything above it is
-          what to DO about that, which is what a leader opened this for. */}
-      <div className="ad-grid ad-grid-tail">
-        <section className="card ad-panel reveal" data-delay="60">
-          <div className="ad-panel-head">
-            <h3>Their profile</h3>
-            <span className="panel-sub">{profile ? `${profile.confLabel} · ${profile.confPct}% confidence` : agent.archName}</span>
-          </div>
-          {profile ? (
-            <>
-              <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 18 }}>{profile.tagline}</p>
-              <div className="ad-dims">
-                {profile.dimStatus.map((d) => (
-                  <div key={d.label} className="ad-dim">
-                    <span className="ad-dim-mark" style={{ color: d.color }}>{d.mark}</span>
-                    <span className="ad-dim-label">{d.label}</span>
-                    <span className="ad-dim-status" style={{ color: d.color }}>{d.statusLabel}</span>
+      {/* WHO THEY ARE — every assessment-derived panel, folded away. None of
+          this changes between visits; it is reference, not weekly workflow, so
+          it costs one click instead of five screens of scrolling. */}
+      <ProfileFold sub={`${agent.archName} · ${agent.quad}`}>
+
+        {/* THE 1:1 PLAYBOOK — always present for an assessed agent (business code). */}
+        {profile && CG[profile.code] && (
+          <section className="card ad-panel">
+            <div className="ad-panel-head">
+              <h3>How to run their 1:1</h3>
+              <span className="panel-sub">{agent.archName}</span>
+            </div>
+            <ul className="ad-wired">
+              <li><span className="ad-wired-tag drive">Communicate</span><p>{CG[profile.code].communicate}</p></li>
+              <li><span className="ad-wired-tag drive">Motivate</span><p>{CG[profile.code].motivate}</p></li>
+              <li><span className="ad-wired-tag blind">Hold accountable</span><p>{CG[profile.code].accountable}</p></li>
+              <li><span className="ad-wired-tag blind">In conflict</span><p>{CG[profile.code].conflict}</p></li>
+              <li><span className="ad-wired-tag drive">FeedForward ask</span><p>{CG[profile.code].feedforward}</p></li>
+            </ul>
+          </section>
+        )}
+
+        <div className="ad-grid" style={{ marginTop: 22 }}>
+          {/* The four AG fields — strength, watch-for, growth edge, challenge —
+              answer "where will they struggle, where will they do well". They
+              are written to the agent, so they are labelled as what that agent
+              is told rather than silently re-voiced. */}
+          <section className="card ad-panel ad-strengths">
+            <div className="ad-panel-head">
+              <h3>Where they win, where they slip</h3>
+              <span className="panel-sub">{profile ? `${profile.quad} · ${profile.law}` : agent.quad}</span>
+            </div>
+            {profile && AG[profile.code] ? (
+              <ul className="ad-swot">
+                <li className="is-good">
+                  <span className="ad-swot-k">Where they do well</span>
+                  <p>{AG[profile.code].sup}</p>
+                </li>
+                <li className="is-risk">
+                  <span className="ad-swot-k">Where they slip</span>
+                  <p>{AG[profile.code].watch}</p>
+                </li>
+                <li className="is-work">
+                  <span className="ad-swot-k">The work with them</span>
+                  <p>{AG[profile.code].edge}</p>
+                </li>
+                <li className="is-watch">
+                  <span className="ad-swot-k">Warning sign</span>
+                  <p>{profile.signal}</p>
+                </li>
+              </ul>
+            ) : (
+              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading…</p>
+            )}
+          </section>
+
+          {/* Where they will actually win business, scored off the same four
+              axes the assessment already measures. */}
+          <section className="card ad-panel ad-strengths">
+            <div className="ad-panel-head">
+              <h3>Where they’ll win business</h3>
+              <span className="panel-sub">
+                {profile ? profile.code.split('-').map((c) => TRAIT_LABELS[c as Pole]).join(' · ') : 'scored on their assessment'}
+              </span>
+            </div>
+            {fit.length > 0 ? (
+              <>
+                <ol className="ad-fit">
+                  {fit.slice(0, 3).map(({ channel, score, matched }) => (
+                    <li key={channel.key}>
+                      <div className="ad-fit-top">
+                        <span className="ad-fit-name">{channel.name}</span>
+                        <span className="ad-fit-traits">
+                          {matched.map((m) => TRAIT_LABELS[m]).join(' + ')}
+                        </span>
+                      </div>
+                      <span className="ad-fit-bar" aria-hidden>
+                        <i style={{ width: `${Math.round(score * 100)}%` }} />
+                      </span>
+                      <p>{channel.because}</p>
+                    </li>
+                  ))}
+                </ol>
+                {worst && (
+                  <div className="ad-fit-against">
+                    <span className="ad-swot-k">Against the grain — {worst.channel.name}</span>
+                    <p>{worst.channel.cost}</p>
                   </div>
-                ))}
+                )}
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>
+                No assessment on file yet, so there is nothing to score this on.
+              </p>
+            )}
+          </section>
+        </div>
+
+        {/* PERSONAL PROFILE + DIVERGENCE — only for agents with a personal_code
+            (Task 7's baseline assessment). Old-site, business-only agents simply
+            don't render these — no crash, no empty headings. */}
+        {profile && profile.divergences.length > 0 && (
+          <div className="ad-grid" style={{ marginTop: 22 }}>
+            <section className="card ad-panel">
+              <div className="ad-panel-head">
+                <h3>Where they diverge</h3>
+                <span className="panel-sub">{profile.divergences.length} of 4 axes</span>
               </div>
-              {profile.shift && (
-                <div className="ad-shift">
-                  <b>{profile.shift.dim}</b> shifted {profile.shift.from} → {profile.shift.to} ({profile.shift.when})
+              <ul className="ad-wired">
+                {profile.divergences.map((d) => (
+                  <li key={d.axis}>
+                    <span className="ad-wired-tag blind">{AXIS_TITLE[d.axis]}</span>
+                    <p>In life they’re {d.personalLabel.toLowerCase()}, but at work they show up {d.workLabel.toLowerCase()}.</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        )}
+
+        <div className="ad-grid ad-grid-tail" style={{ marginTop: 22 }}>
+          <section className="card ad-panel">
+            <div className="ad-panel-head">
+              <h3>Their profile</h3>
+              <span className="panel-sub">{profile ? `${profile.confLabel} · ${profile.confPct}% confidence` : agent.archName}</span>
+            </div>
+            {profile ? (
+              <>
+                <p style={{ color: 'var(--text-60)', fontSize: 15, marginBottom: 18 }}>{profile.tagline}</p>
+                <div className="ad-dims">
+                  {profile.dimStatus.map((d) => (
+                    <div key={d.label} className="ad-dim">
+                      <span className="ad-dim-mark" style={{ color: d.color }}>{d.mark}</span>
+                      <span className="ad-dim-label">{d.label}</span>
+                      <span className="ad-dim-status" style={{ color: d.color }}>{d.statusLabel}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </>
-          ) : (
-            <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading profile…</p>
-          )}
-        </section>
-      </div>
+                {profile.shift && (
+                  <div className="ad-shift">
+                    <b>{profile.shift.dim}</b> shifted {profile.shift.from} → {profile.shift.to} ({profile.shift.when})
+                  </div>
+                )}
+              </>
+            ) : (
+              <p style={{ color: 'var(--text-60)', fontSize: 15 }}>Loading profile…</p>
+            )}
+          </section>
+        </div>
+
+      </ProfileFold>
 
     </>
+  );
+}
+
+/* The fold that holds every assessment-derived panel on the agent sheet.
+   Collapsed by default: this material never changes between visits, and the
+   sheet's job is this week — the brief and the 1:1. */
+function ProfileFold({ sub, children }: { sub: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="ad-fold">
+      <button type="button" className="ad-fold-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="ad-fold-title">
+          <span className="ad-fold-h">Who they are &amp; how to coach them</span>
+          <span className="panel-sub">{sub}</span>
+        </span>
+        <span className="ad-fold-caret" aria-hidden>{open ? 'Fold away' : 'Open'}</span>
+      </button>
+      {open && <div className="ad-fold-body">{children}</div>}
+    </section>
   );
 }
 

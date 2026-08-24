@@ -5363,3 +5363,35 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
      print over each other instead of wrapping. Let them wrap on a phone. */
   .tru-dark .dk-table .tru-table thead th { white-space: normal; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGENT SHEET, REFOCUSED — the vitals line and the profile fold.
+   The sheet's job is "what do I do with this person this week": the brief and
+   the 1:1 own the page; assessment-derived reference folds away below.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tru-dark .ad-vitals {
+  display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: baseline;
+  margin: 0 0 24px; padding: 12px 16px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--card);
+  font-size: 13.5px; color: var(--text-60);
+}
+.tru-dark .ad-vital b { color: var(--text); font-weight: 660; font-size: 15px; margin-right: 4px; }
+.tru-dark .ad-vital i { font-style: normal; color: var(--text-60); }
+
+.tru-dark .ad-fold { margin-top: 26px; border-top: 1px solid var(--border); }
+.tru-dark .ad-fold-head {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  gap: 14px; padding: 18px 4px; background: none; border: 0; cursor: pointer;
+  text-align: left; font: inherit; color: var(--text);
+}
+.tru-dark .ad-fold-title { display: flex; flex-direction: column; gap: 3px; }
+.tru-dark .ad-fold-h { font-size: 16px; font-weight: 660; }
+.tru-dark .ad-fold-caret {
+  flex-shrink: 0; font-size: 12.5px; font-weight: 600;
+  color: var(--tab-mid, var(--terracotta));
+  padding: 5px 12px; border: 1px solid var(--tab-line, var(--border)); border-radius: 8px;
+  background: var(--tab-soft, transparent);
+}
+.tru-dark .ad-fold-head:hover .ad-fold-caret { background: var(--tab-line, var(--lift)); }
+.tru-dark .ad-fold-body { padding-bottom: 8px; }
