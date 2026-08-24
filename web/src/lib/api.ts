@@ -1079,6 +1079,18 @@ export async function submitCohortAssessment(input: {
  *  can supply it. A row with an invite date and no sign-in is someone whose
  *  email went out and who never showed up: the single most useful state on the
  *  page, and one nothing else in TRU HQ could display. */
+/** What a Follow Up Boss user IS on this team. FUB reports leaders, admins
+ *  and pond/lead accounts as users right alongside the agents, and only the
+ *  'agent' role may ever receive a bulk invite (login + assessment). Set once
+ *  by a leader on the Team tab; 'lead' is pre-filled for known team leaders. */
+export type TeamRole = 'agent' | 'lead' | 'admin' | 'pond';
+export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
+  agent: 'Agent',
+  lead: 'Team lead',
+  admin: 'Admin',
+  pond: 'Pond account',
+};
+
 export interface TeamMember {
   id: string;
   name: string;
@@ -1091,6 +1103,7 @@ export interface TeamMember {
   paused: boolean;
   invitedAt: string | null;
   signedInAt: string | null;
+  role: TeamRole;
 }
 
 /** ?demo=1 fixtures. Shaped like a real Follow Up Boss import rather than a
@@ -1107,9 +1120,10 @@ function demoTeam(): TeamMember[] {
     id: name.toLowerCase().replace(/\W+/g, '-'),
     name, email, teamId: 't1', teamName: 'Signature Realty',
     excluded: false, coaching: false, paused: false,
-    invitedAt: null, signedInAt: null, ...o,
+    invitedAt: null, signedInAt: null, role: 'agent', ...o,
   });
   return [
+    one('Yolanda Reyes-Cole', 'yolanda@example.com', { role: 'lead', invitedAt: day(60), signedInAt: day(1) }),
     one('Marisol Aguirre', 'marisol@example.com', { invitedAt: day(41), signedInAt: day(2), coaching: true }),
     one('Priya Raghunathan', 'priya@example.com', { invitedAt: day(38), signedInAt: day(19), coaching: true }),
     one('Devon Ashworth', 'devon@example.com', { invitedAt: day(12) }),
@@ -1117,7 +1131,8 @@ function demoTeam(): TeamMember[] {
     one('Halle Brightman', 'halle@example.com', { coaching: true }),
     one('Rob Vandermolen', 'rob@example.com', { paused: true }),
     one('Tomás Ferreira', null),
-    one('Janice Kolb', 'janice@example.com', { excluded: true }),
+    one('Iron 65 Pond', 'pond@example.com', { role: 'pond' }),
+    one('Janice Kolb', 'janice@example.com', { excluded: true, role: 'admin' }),
     one('First Meridian Lending', 'apps@example.com', { excluded: true }),
   ];
 }
@@ -1141,7 +1156,17 @@ export async function loadTeamRoster(): Promise<TeamMember[]> {
     paused: !!a.is_paused,
     invitedAt: (a.invited_at as string | null) ?? null,
     signedInAt: (a.signed_in_at as string | null) ?? null,
+    // Databases that predate the role column simply report everyone as agent.
+    role: (['agent', 'lead', 'admin', 'pond'].includes(String(a.role)) ? a.role : 'agent') as TeamRole,
   }));
+}
+
+export async function setTeamRole(agentId: string, role: TeamRole): Promise<void> {
+  if (isDemo) return;
+  const res = await workerFetch('/data/coach/agent-flags', {
+    method: 'POST', body: JSON.stringify({ agentId, role }),
+  });
+  if (!res.ok) throw new Error('Could not change this person’s role.');
 }
 
 export async function setExcluded(agentId: string, excluded: boolean): Promise<void> {

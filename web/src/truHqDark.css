@@ -3882,6 +3882,35 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tm-invite:disabled { opacity: 0.4; cursor: default; }
 .tru-dark .tm-sent { font: 600 12px/1.2 var(--hq-font); color: var(--sea); }
 
+/* What each FUB user IS. Non-agent roles get the accent tint so a leader,
+   admin or pond account reads differently at a glance — those rows are
+   skipped by bulk invites. */
+.tru-dark .tm-role {
+  padding: 7px 10px; border-radius: var(--r-btn); cursor: pointer;
+  font: 650 12.5px/1 var(--hq-font); color: var(--text);
+  background: var(--card-flat); border: 1px solid var(--border);
+  transition: border-color .2s var(--ease);
+}
+.tru-dark .tm-role:hover:not(:disabled) { border-color: var(--accent-line); }
+.tru-dark .tm-role:disabled { opacity: 0.5; cursor: default; }
+.tru-dark .tm-role.is-nonagent { color: var(--accent-hi); border-color: var(--accent-line); background: var(--accent-soft); }
+
+/* "Send all" shows its recipients before anything sends. */
+.tru-dark .tm-confirm {
+  margin-bottom: 16px; padding: 18px 20px;
+  border-radius: var(--r-card); border: 1px solid var(--accent-line);
+  background: var(--card); box-shadow: var(--lip);
+}
+.tru-dark .tm-confirm-head { margin: 0 0 12px; font: 650 14px/1.4 var(--hq-font); color: var(--text-strong); }
+.tru-dark .tm-confirm-list {
+  list-style: none; margin: 0 0 14px; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px;
+}
+.tru-dark .tm-confirm-list li { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tru-dark .tm-confirm-list b { font: 650 13px/1.3 var(--hq-font); color: var(--text); white-space: nowrap; }
+.tru-dark .tm-confirm-list i { font: 500 12px/1.3 var(--hq-font); font-style: normal; color: var(--text-50); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tru-dark .tm-confirm-do { display: flex; gap: 10px; align-items: center; }
+
 /* The one bulk action on the page gets the accent; every per-row button
    stays quiet so the table doesn't shout 30 times. */
 .tru-dark .tm-invite-all {

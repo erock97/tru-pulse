@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { HqShell } from '../components/hqShell';
 import { Avatar } from '../components/hqUi';
 import {
-  loadTeamRoster, setExcluded, setCoaching, inviteAgent,
-  signOutClean, type TeamMember,
+  loadTeamRoster, setExcluded, setCoaching, setTeamRole, inviteAgent,
+  signOutClean, TEAM_ROLE_LABELS, type TeamMember, type TeamRole,
 } from '../lib/api';
 import '../truHqDark.css';
 
@@ -136,22 +136,40 @@ export default function TeamAdmin({
         (x.id === m.id ? { ...x, invitedAt: x.invitedAt ?? new Date().toISOString() } : x)));
     });
 
+  const changeRole = (m: TeamMember, role: TeamRole) =>
+    commit(m.id, 'role', { role }, () => setTeamRole(m.id, role));
+
   // ── Invite everyone at once ──────────────────────────────────────────────
-  // Eligible = on the team, has an email, never been sent a login. Re-sends
-  // stay per-row on purpose: a bulk re-send would spam people who simply
-  // haven't gotten around to signing in yet.
+  // Eligible = on the team, has an email, never been sent a login, and the
+  // AGENT role. Leaders, admins and pond accounts ride in with the FUB roster
+  // but are not agents — they must never be mailed an agent login and an
+  // assessment, which is the whole point of the Role column.
+  // Re-sends stay per-row on purpose: a bulk re-send would spam people who
+  // simply haven't gotten around to signing in yet.
   const eligible = useMemo(
-    () => (rows ?? []).filter((m) => !m.excluded && m.email && !m.invitedAt),
+    () => (rows ?? []).filter((m) => !m.excluded && m.email && !m.invitedAt && m.role === 'agent'),
     [rows],
   );
   const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   const [bulkSaid, setBulkSaid] = useState('');
+  // The confirm step: the button shows WHO is about to get an email before
+  // anything sends, and any name can be unticked.
+  const [confirming, setConfirming] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  function openConfirm() {
+    if (bulk || eligible.length === 0) return;
+    setBulkSaid('');
+    setPicked(new Set(eligible.map((m) => m.id)));
+    setConfirming(true);
+  }
 
   async function inviteAll() {
-    if (bulk || eligible.length === 0) return;
+    const list = eligible.filter((m) => picked.has(m.id));
+    setConfirming(false);
+    if (bulk || list.length === 0) return;
     setErr('');
     setBulkSaid('');
-    const list = [...eligible];
     setBulk({ done: 0, total: list.length });
     let sent = 0;
     let failed = 0;
@@ -222,7 +240,9 @@ export default function TeamAdmin({
                     {counts.hidden > 0 && <> and {counts.hidden} {counts.hidden === 1 ? 'has' : 'have'} been taken off</>}.
                     {' '}Untick anyone who should not be here — an office manager, a
                     lender, someone who left — and they disappear from Pulse, Coach
-                    and Rep. Their past business still counts toward the team.
+                    and Rep. Their past business still counts toward the team. Set
+                    each person's role once: only agents are included when you send
+                    all invites.
                   </>}
               </p>
             </div>
@@ -230,7 +250,7 @@ export default function TeamAdmin({
               <div className="dk-mast-do">
                 {bulkSaid && <span className="tm-sent">{bulkSaid}</span>}
                 {(eligible.length > 0 || bulk) && (
-                  <button className="tm-invite-all" disabled={!!bulk} onClick={inviteAll}>
+                  <button className="tm-invite-all" disabled={!!bulk || confirming} onClick={openConfirm}>
                     {bulk
                       ? `Sending ${Math.min(bulk.done + 1, bulk.total)} of ${bulk.total}…`
                       : `Send all ${eligible.length} ${eligible.length === 1 ? 'invite' : 'invites'}`}
@@ -241,6 +261,41 @@ export default function TeamAdmin({
           </header>
 
           {err && <div className="ad-inline-err" style={{ marginBottom: 14 }}>{err}</div>}
+
+          {confirming && (
+            <div className="tm-confirm">
+              <p className="tm-confirm-head">
+                These {picked.size === 1 ? 'is the one person' : `are the ${picked.size} people`} about
+                to get a login email. Untick anyone who shouldn't.
+              </p>
+              <ul className="tm-confirm-list">
+                {eligible.map((m) => (
+                  <li key={m.id}>
+                    <label className="tm-check">
+                      <input
+                        type="checkbox"
+                        checked={picked.has(m.id)}
+                        onChange={() => setPicked((p) => {
+                          const n = new Set(p);
+                          if (n.has(m.id)) n.delete(m.id); else n.add(m.id);
+                          return n;
+                        })}
+                      />
+                      <span aria-hidden />
+                    </label>
+                    <b>{m.name}</b>
+                    <i>{m.email}</i>
+                  </li>
+                ))}
+              </ul>
+              <div className="tm-confirm-do">
+                <button className="tm-invite-all" disabled={picked.size === 0} onClick={inviteAll}>
+                  Send {picked.size} {picked.size === 1 ? 'invite' : 'invites'}
+                </button>
+                <button className="tm-invite" onClick={() => setConfirming(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
 
           <div className="dk-sec">
             <h2>Everyone</h2>
@@ -276,6 +331,7 @@ export default function TeamAdmin({
                 <tr>
                   <th className="tm-c-tick" title="Untick to take someone off the team">On the team</th>
                   <th className="tm-c-who">Person</th>
+                  <th className="tm-c-role" title="Only agents are included when you send all invites">Role</th>
                   <th className="tm-c-state">Account</th>
                   <th className="tm-c-tick">In Coach</th>
                   <th className="tm-c-act">Login</th>
@@ -283,11 +339,11 @@ export default function TeamAdmin({
               </thead>
               <tbody>
                 {rows === null && (
-                  <tr><td colSpan={5} className="tm-empty">Loading…</td></tr>
+                  <tr><td colSpan={6} className="tm-empty">Loading…</td></tr>
                 )}
                 {rows !== null && shown.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="tm-empty">
+                    <td colSpan={6} className="tm-empty">
                       {q ? <>Nobody matches “{q}”.</> : 'Nobody in this group.'}
                     </td>
                   </tr>
@@ -321,6 +377,19 @@ export default function TeamAdmin({
                           </div>
                         </div>
                       </td>
+                      <td className="tm-c-role">
+                        <select
+                          className={m.role === 'agent' ? 'tm-role' : 'tm-role is-nonagent'}
+                          value={m.role}
+                          disabled={working === 'role'}
+                          aria-label={`Role for ${m.name}`}
+                          onChange={(e) => changeRole(m, e.target.value as TeamRole)}
+                        >
+                          {(Object.keys(TEAM_ROLE_LABELS) as TeamRole[]).map((r) => (
+                            <option key={r} value={r}>{TEAM_ROLE_LABELS[r]}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="tm-c-state">
                         <span className={`tm-state st-${st.key}`}>{st.label}</span>
                         <div className="rs-sub2">{st.note}</div>
@@ -343,7 +412,9 @@ export default function TeamAdmin({
                             <button
                               className="tm-invite"
                               disabled={!m.email || m.excluded || working === 'invite'}
-                              title={!m.email ? 'Add an email in Follow Up Boss first — the login is sent there.' : undefined}
+                              title={!m.email ? 'Add an email in Follow Up Boss first — the login is sent there.'
+                                : m.role !== 'agent' ? `Marked as ${TEAM_ROLE_LABELS[m.role].toLowerCase()} — bulk invites skip them. This button still sends an agent login if you really mean to.`
+                                  : undefined}
                               onClick={() => invite(m)}
                             >
                               {working === 'invite' ? 'Sending…'

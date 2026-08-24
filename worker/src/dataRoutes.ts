@@ -501,6 +501,17 @@ export async function handleDataRoutes(
         const { ok } = await db.rpc('set_excluded', { p_agent_id: agentId, p_on: !!body.excluded });
         if (!ok) return json({ error: 'not allowed' }, 403, cors);
       }
+      // What this person IS: agent | lead | admin | pond. Decides who bulk
+      // invites may touch. The RPC returns false on refusal rather than
+      // silently not writing, so a refusal surfaces as a 403 here.
+      if (body.role !== undefined) {
+        const role = String(body.role);
+        if (!['agent', 'lead', 'admin', 'pond'].includes(role)) {
+          return json({ error: 'invalid role' }, 422, cors);
+        }
+        const { ok, data } = await db.rpc('set_agent_role', { p_agent_id: agentId, p_role: role });
+        if (!ok || data !== true) return json({ error: 'not allowed' }, 403, cors);
+      }
       return json({ ok: true }, 200, cors);
     }
 
