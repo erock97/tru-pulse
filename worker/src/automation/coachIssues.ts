@@ -181,6 +181,9 @@ export interface ReportFinding {
   agentName?: string;
   leadName?: string;
   occurredAt?: string;
+  /** The words themselves. Without these a rewrite is guessing at its own label. */
+  quote?: string;
+  channel?: string;
 }
 export interface ReportAgent {
   agentName?: string;
@@ -197,6 +200,12 @@ export interface ExtractedIssue {
   leads: string[];
   /** Latest call this point points at, which is what dates the evidence. */
   latestOccurredAt: string | null;
+  /**
+   * What was actually said, per buyer. This is what makes a claim checkable:
+   * "makes the buyer chase her for updates" is only worth putting in front of a
+   * broker if it can point at the buyer texting three times first.
+   */
+  evidence: Array<{ lead: string | null; quote: string; channel: string | null }>;
 }
 
 const asPoint = (p: ReportPoint | string): ReportPoint =>
@@ -238,11 +247,22 @@ export function extractIssues(payload: {
 
         const leads = new Set(out.get(mapKey)?.leads ?? []);
         let latest = out.get(mapKey)?.latestOccurredAt ?? null;
+        const evidence = [...(out.get(mapKey)?.evidence ?? [])];
         for (const i of p.findingIndexes ?? []) {
           const f = findings[i];
           if (!f) continue;
           if (f.leadName) leads.add(f.leadName);
           if (f.occurredAt && (!latest || f.occurredAt > latest)) latest = f.occurredAt;
+          const quote = (f.quote ?? '').trim();
+          // Six is plenty to characterise a habit and keeps the rewrite prompt
+          // from ballooning on an agent with forty findings.
+          if (quote && evidence.length < 6) {
+            evidence.push({
+              lead: f.leadName ?? null,
+              quote: quote.slice(0, 300),
+              channel: f.channel ?? null,
+            });
+          }
         }
 
         out.set(mapKey, {
@@ -252,6 +272,7 @@ export function extractIssues(payload: {
           sourceKind,
           leads: [...leads],
           latestOccurredAt: latest,
+          evidence,
         });
       }
     }
@@ -357,4 +378,200 @@ export function worthRaising(i: {
   if (i.status === 'raised') return false;             // silenced until it recurs
   if (i.status === 'recurring') return true;           // always worth saying
   return i.distinct_leads >= 2;
+}
+
+// ── Writing issues down ─────────────────────────────────────────────────────
+
+import type { Db } from '../db.js';
+import type { Env } from '../env.js';
+import { analyseAgentIssues, canExplain, type IssueToExplain } from './explainIssue.js';
+
+/**
+ * Fold one stored report into the issue memory.
+ *
+ * Safe to run repeatedly over the same report: mergeSighting treats an
+ * unchanged sighting as a duplicate and nothing is written. That matters
+ * because ingest is retried freely upstream and because this is also how a
+ * backfill works.
+ */
+export async function ingestReportIssues(
+  database: Db,
+  report: { team_id: string | null; payload: any; received_at: string },
+): Promise<{ created: number; updated: number; skipped: number; recurred: number }> {
+  const out = { created: 0, updated: 0, skipped: 0, recurred: 0 };
+  if (!report.team_id) return out;
+
+  const teams = await database.select('teams', `id=eq.${report.team_id}&select=id,org_id`);
+  if (!teams.length) return out;
+  const orgId = (teams[0] as any).org_id;
+
+  // The report's own end date, not when it arrived. A report that lands late
+  // still describes the week it describes.
+  const reportDate = String(
+    report.payload?.run?.endDate ?? report.received_at.slice(0, 10),
+  ).slice(0, 10);
+
+  const issues = extractIssues(report.payload ?? {});
+  if (!issues.length) return out;
+
+  const existing = (await database.select(
+    'coach_issues',
+    `team_id=eq.${report.team_id}&select=*`,
+  )) as any[];
+  const byKey = new Map(existing.map((r) => [`${r.agent_name}::${r.issue_key}`, r]));
+
+  for (const issue of issues) {
+    const mapKey = `${issue.agentName}::${issue.issueKey}`;
+    const stored = byKey.get(mapKey) ?? null;
+    const merged = mergeSighting(stored, {
+      reportDate,
+      leads: issue.leads,
+      latestOccurredAt: issue.latestOccurredAt,
+    });
+
+    if (merged.duplicate) { out.skipped++; continue; }
+    if (merged.recurredAfterRaise) out.recurred++;
+
+    const patch = {
+      status: merged.status,
+      times_seen: merged.times_seen,
+      distinct_leads: merged.distinct_leads,
+      occurrences: merged.occurrences,
+      last_seen_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (stored) {
+      const keptEvidence = (stored.evidence ?? []) as any[];
+      await database.update('coach_issues', `id=eq.${stored.id}`, {
+        ...patch,
+        // Backfill rather than replace: an older sighting's words are as good
+        // as a newer one's, and the first six are enough either way.
+        evidence: keptEvidence.length ? keptEvidence : issue.evidence,
+      });
+      out.updated++;
+      if (merged.recurredAfterRaise) {
+        await database.insert('coach_issue_events', {
+          issue_id: stored.id, org_id: orgId, kind: 'recurred',
+          detail: `seen again with ${issue.leads.length} lead(s) after being raised`,
+          report_date: reportDate,
+        });
+      }
+    } else {
+      const row = await database.insert('coach_issues', {
+        ...patch,
+        org_id: orgId,
+        team_id: report.team_id,
+        agent_name: issue.agentName,
+        issue_key: issue.issueKey,
+        title: issue.title,
+        source_kind: issue.sourceKind,
+        evidence: issue.evidence,
+      });
+      await database.insert('coach_issue_events', {
+        issue_id: row.id, org_id: orgId, kind: 'observed',
+        detail: issue.title, report_date: reportDate,
+      });
+      out.created++;
+    }
+  }
+  return out;
+}
+
+/** Replay the stored reports into the issue memory. Idempotent. */
+export async function rebuildIssuesFromReports(database: Db, limit = 40) {
+  const reports = (await database.select(
+    'coach_weekly_reports',
+    `status=eq.published&select=team_id,payload,received_at&order=received_at.asc&limit=${limit}`,
+  )) as any[];
+  const totals = { reports: 0, created: 0, updated: 0, skipped: 0, recurred: 0 };
+  for (const r of reports) {
+    const one = await ingestReportIssues(database, r);
+    totals.reports++;
+    totals.created += one.created;
+    totals.updated += one.updated;
+    totals.skipped += one.skipped;
+    totals.recurred += one.recurred;
+  }
+  return totals;
+}
+
+// ── Plain English, merging, and dropping the coach-facing ──────────────────
+
+/**
+ * Work through the issues that would actually be shown, one agent at a time.
+ *
+ * Only issues with two or more buyers are analysed — there is no point paying to
+ * explain a one-buyer blip nobody will read. Merged issues point at their
+ * survivor rather than being deleted, so the evidence stays and a wrong merge
+ * can be undone.
+ */
+export async function explainPendingIssues(
+  env: Env, database: Db, teamId?: string,
+): Promise<{ agents: number; groups: number; merged: number; coachFacing: number }> {
+  const out = { agents: 0, groups: 0, merged: 0, coachFacing: 0 };
+  if (!canExplain(env)) return out;
+
+  const filter = [
+    'plain=is.null',
+    'distinct_leads=gte.2',
+    'merged_into=is.null',
+    teamId ? `team_id=eq.${teamId}` : null,
+    'select=id,agent_name,title,occurrences,evidence',
+    'order=agent_name.asc',
+    'limit=200',
+  ].filter(Boolean).join('&');
+
+  const rows = (await database.select('coach_issues', filter)) as any[];
+  if (!rows.length) return out;
+
+  const byAgent = new Map<string, any[]>();
+  for (const r of rows) {
+    byAgent.set(r.agent_name, [...(byAgent.get(r.agent_name) ?? []), r]);
+  }
+
+  for (const [agentName, agentRows] of byAgent) {
+    const batch: IssueToExplain[] = agentRows.map((r) => ({
+      id: r.id,
+      agentName: r.agent_name,
+      title: r.title,
+      buyers: [...new Set((r.occurrences ?? []).flatMap((o: any) => o.leads ?? []))] as string[],
+      evidence: (r.evidence ?? []) as any[],
+    }));
+
+    const groups = await analyseAgentIssues(env, agentName, batch);
+    if (!groups.length) continue;
+    out.agents++;
+
+    for (const g of groups) {
+      const [keep, ...folded] = g.ids;
+      const now = new Date().toISOString();
+      // The survivor carries the union of every folded issue's buyers, so the
+      // count a broker sees matches the conversation they are being asked to
+      // have rather than one slice of it.
+      const all = agentRows.filter((r) => g.ids.includes(r.id));
+      const buyers = new Set(all.flatMap((r) =>
+        (r.occurrences ?? []).flatMap((o: any) => o.leads ?? [])));
+      const evidence = all.flatMap((r) => r.evidence ?? []).slice(0, 8);
+
+      await database.update('coach_issues', `id=eq.${keep}`, {
+        plain: g.plain,
+        plain_at: now,
+        coach_facing: g.coachFacing,
+        distinct_leads: buyers.size,
+        evidence,
+        updated_at: now,
+      });
+      out.groups++;
+      if (g.coachFacing) out.coachFacing++;
+
+      for (const id of folded) {
+        await database.update('coach_issues', `id=eq.${id}`, {
+          merged_into: keep, updated_at: now,
+        });
+        out.merged++;
+      }
+    }
+  }
+  return out;
 }
