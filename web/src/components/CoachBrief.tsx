@@ -145,7 +145,7 @@ function PointList({ points, tone }: {
       {points.map((p, i) => (
         <li
           key={i}
-          className="brief-card"
+          className="rs-plate brief-card"
           /* Staggered entry on the app's own .reveal timing tokens, so a column
              assembles rather than appearing. Reduced motion handled in CSS. */
           style={{ animationDelay: `${Math.min(i, 8) * 90}ms` }}
@@ -281,7 +281,7 @@ export function TeamBriefSection({ onOpenAgent }: {
           const reviewed = a.metrics.reviewedContacts;
           return (
             <article
-              className={clickable ? 'brief-agent-card is-link' : 'brief-agent-card'}
+              className={clickable ? 'rs-plate brief-agent-card is-link' : 'rs-plate brief-agent-card'}
               role="listitem"
               key={a.agentName}
               style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
