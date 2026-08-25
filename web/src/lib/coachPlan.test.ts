@@ -192,15 +192,24 @@ describe('the rate — the part that makes it arguable-with', () => {
 });
 
 
-describe('the integrity gate', () => {
-  // Production, 2026-08-25. This card told Eric his agent said something, and
-  // Eric was dialling that agent when he stopped to ask where it came from.
+describe('the Bishoy card, kept as a standing case', () => {
+  // Production, 2026-08-25. The record holds only "The agent is working on an
+  // offer for a condo. The seller's disclosure is completely blank." The claim
+  // adds a reassurance and an inspection plan that appear nowhere in it, and
+  // the app printed the whole thing as history. Eric was dialling the agent.
+  //
+  // Three display-side rules were written to catch this and all three were
+  // wrong in a different way; the last one scored this fabrication as BETTER
+  // evidenced than a finding that was accurate. Judging a claim against its own
+  // record cannot be done reliably from here. The fix is Hermes citing the
+  // transcript line it drew the claim from, which Eric is taking to Codex.
+  //
+  // This fixture stays so the case is not lost. When the citation lands, this
+  // is what the new rendering has to handle.
   const BISHOY = pat({
     patternKey: 'premature_representation',
     explanation: 'He told Bishoy Yacoub a completely blank seller disclosure was not a '
       + 'red flag while still moving the offer forward with inspections later.',
-    coachingMove: 'Explain that a blank disclosure needs to be checked before treating '
-      + 'the offer as routine.',
     findings: [{
       lead_name: 'Bishoy Yacoub', channel: 'call', occurred_at: '2026-08-20T13:56:58Z',
       quote: 'Joseph Darlington Bishoy Yacoub (1 min 19 sec) Aug 20 Summary Transcript '
@@ -208,41 +217,9 @@ describe('the integrity gate', () => {
     }],
   });
 
-  it('never repeats a claim the evidence cannot carry', () => {
-    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
-    expect(p.unverified).toBe(true);
-    expect(p.text).not.toContain('not a red flag');
-    expect(p.text).not.toContain('told Bishoy');
-  });
-
-  it('keeps the fact, which is the part worth knowing', () => {
-    // The blank disclosure is real, unusual, and exactly what a broker should
-    // ask about. Only the invented sentence around it has to go.
-    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain("The seller's disclosure is completely blank");
-  });
-
-  it('sends the leader to ask rather than to correct', () => {
-    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain('not on file');
-    expect(p.text).toMatch(/asking Joseph/);
-  });
-
-  it('offers no coaching move on an unverified card', () => {
-    // A drill built on a claim we cannot stand behind is the same error twice.
-    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
-    expect(p.coach).toBeNull();
-  });
-
-  it('still shows the evidence, so the leader can judge it themselves', () => {
+  it('renders, with its record reachable as proof', () => {
     const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
     expect(p.evidence).toHaveLength(1);
-  });
-
-  it('leaves a properly evidenced card completely alone', () => {
-    const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
-    expect(p.unverified).toBeUndefined();
-    expect(p.text).toContain('Asked Ashley to catch up without offering a time');
-    expect(p.coach).toContain('two specific times');
+    expect(p.evidence[0].quote).toContain('disclosure is completely blank');
   });
 });
