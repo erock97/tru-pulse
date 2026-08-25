@@ -154,9 +154,18 @@ export function renderMorningBrief(input: BriefInput): BriefResult {
     if (shown.length) lines.push(shown.join(', ') + (rest > 0 ? `, +${rest} more` : ''));
   }
 
+  // Untouched outranks stalled, always, however lopsided the counts.
+  //
+  // A lead nobody has called or texted is the thing this whole product exists
+  // to catch; a lead sitting in an early stage has at least been worked. Adding
+  // the two together let ten stalled leads push three uncontacted ones off the
+  // list entirely on Signature's real numbers, which is precisely backwards.
   const needing = others
     .filter((a) => a.untouched > 0 || a.stalled > 0)
-    .sort((a, b) => (b.untouched + b.stalled) - (a.untouched + a.stalled) || a.name.localeCompare(b.name));
+    .sort((a, b) =>
+      b.untouched - a.untouched
+      || b.stalled - a.stalled
+      || a.name.localeCompare(b.name));
 
   if (needing.length) {
     lines.push('');
