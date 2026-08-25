@@ -9,6 +9,22 @@ instead of ageing on a branch nobody knows about.
 
 ---
 
+## 0. Before you write anything that judges an agent conversation
+
+Read **`docs/SALES_DOCTRINE.md`** first. It is what TRU coaches real estate
+agents to do and why, taken directly from Eric.
+
+It applies to coaching briefs, pattern labels, prompts, training modules and
+any copy that tells a leader what to do about an agent. It exists because
+filling those gaps with general sales instincts produced output that was
+confidently wrong — most recently a set of labels that shipped to production
+teaching the opposite of TRU's own first-call framework.
+
+If the doctrine does not cover your case, **ask Eric**. Do not pattern-match
+from general sales knowledge; that is the thing the document overrules.
+
+---
+
 ## 1. Work in your own folder, on your own branch
 
 Never work in a folder another agent is using, and never work directly on `main`.

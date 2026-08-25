@@ -40,23 +40,33 @@ export interface PatternsBundle {
 
 /**
  * Each coaching category as the SUBJECT of a sit-down, finishing the sentence
- * "coach them on…". The same taxonomy has a habit-shaped label in the SMS
- * brief ("no time set to talk again"); this is the coaching-conversation shape
- * of the same idea. An unknown key falls back to its own words rather than
- * being dropped — Hermes owns the taxonomy and can add to it.
+ * "coach them on…".
+ *
+ * THESE ARE NOT WORDING CHOICES. `lead_l/e/a/d` are the four steps of LEAD,
+ * TRU's own first-call framework; the rest map to named failures in
+ * docs/SALES_DOCTRINE.md. An earlier version of this table was written by
+ * guessing what the keys meant, went to production, and told agents the
+ * opposite of what TRU teaches — "being specific when setting meeting times"
+ * for `lead_e`, when E is extending the invitation EARLY in the call. Read the
+ * doctrine before touching a line here.
+ *
+ * An unknown key falls back to its own words rather than being dropped —
+ * Hermes owns the taxonomy and can add to it.
  */
 export const COACH_ON: Record<string, string> = {
-  lead_e: 'being specific when setting meeting times',
-  lead_a: 'asking the questions that surface motivation and timing',
-  lead_l: 'opening every call with who they are',
-  lead_d: 'ending with the plan restated and a follow-up time',
-  call_first: 'calling before texting when a buyer wants to talk',
-  call_quality: 'staying on the line long enough to start a real conversation',
-  next_steps: 'asking for a next step before the conversation ends',
-  objection: 'working an objection instead of letting it end the thread',
-  text_transition: 'talking to a lead before sending property details',
-  negative_property_pivot: 'following bad news with what is still possible',
-  premature_financing: 'holding financing talk until the goals are clear',
+  // The four LEAD steps, in TRU's own words. See docs/SALES_DOCTRINE.md §2.
+  lead_l: 'leading with who they are — name, brokerage, Zillow partner, why they called',
+  lead_e: 'extending the invitation early, with a this-or-that choice',
+  lead_a: 'asking permission, then asking real questions and listening',
+  lead_d: 'delivering the summary back and confirming what happens next',
+
+  call_first: 'why a call comes before a text, not just that it does',
+  call_quality: 'staying on long enough for a conversation to start',
+  next_steps: 'why the buyer did not feel safe committing to anything',
+  objection: 'working through the hard moment instead of retreating from it',
+  text_transition: 'getting to a live conversation before sending details',
+  negative_property_pivot: 'telling the truth and then keeping the meeting alive',
+  premature_financing: 'leaving money alone until the buyer knows them',
   premature_representation: 'promising only what they can actually deliver',
 };
 

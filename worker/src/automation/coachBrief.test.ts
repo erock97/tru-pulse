@@ -24,7 +24,7 @@ describe('what a broker is told', () => {
       teamName: 'Costigan', dateLabel: 'Mon Aug 25',
       patterns: [p({ agentName: 'Cara Benak', thisWeek: 3, recurring: true })],
     });
-    expect(out.body).toContain('Cara: no time set to talk again, 3 this week');
+    expect(out.body).toContain('Cara: no invitation early in the call, 3 this week');
   });
 
   it('leaves the count off a single occurrence', () => {
@@ -33,7 +33,7 @@ describe('what a broker is told', () => {
     const out = renderPatternBrief({
       teamName: 'Costigan', dateLabel: 'Mon Aug 25', patterns: [p({ thisWeek: 1 })],
     });
-    expect(out.body).toContain('Cara: no time set to talk again\n');
+    expect(out.body).toContain('Cara: no invitation early in the call\n');
     expect(out.body).not.toContain('1 this week');
   });
 
@@ -118,7 +118,7 @@ describe('the team-wide line', () => {
       p({ agentName: 'Bob Two', patternKey: 'call_first' }),
       p({ agentName: 'Cal Three', patternKey: 'call_first' }),
     ]);
-    expect(line.line).toBe('3 of 3 agents: texting when the buyer asked for a call.');
+    expect(line.line).toBe('3 of 3 agents: texting where a call was needed.');
   });
 
   it('stays silent when only two share it', () => {
@@ -204,7 +204,7 @@ describe('the same thing, every morning for a week', () => {
     const monday = storeStub([row()]);
     const [first] = await previewCoachBriefs(monday.db, 'Mon Aug 25');
     expect(first.needing).toBe(1);
-    expect(first.body).toContain('Cara: no time set to talk again, 3 this week');
+    expect(first.body).toContain('Cara: no invitation early in the call, 3 this week');
 
     await markBriefed(monday.db, first.patternIds);
     expect(monday.updates[0].patch).toMatchObject({ briefed_occurrences: 3 });
