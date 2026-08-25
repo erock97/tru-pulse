@@ -58,7 +58,7 @@ export interface PatternsBundle {
 export const COACH_ON: Record<string, string> = {
   // The four LEAD steps, in TRU's own words. See docs/SALES_DOCTRINE.md §2.
   lead_l: 'leading with who they are: name, brokerage, Zillow partner, why they called',
-  lead_e: 'extending the invitation early, with a this-or-that choice',
+  lead_e: 'asking for a specific time, with a this-or-that choice',
   lead_a: 'asking permission, then asking real questions and listening',
   lead_d: 'delivering the summary back and confirming what happens next',
 
@@ -120,23 +120,46 @@ export function rateLine(patternKey: string, m: AgentMetrics | undefined): strin
   return null;
 }
 
+const COUNT_WORDS = ['zero', 'once', 'twice', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+
 /**
- * The long-term record, in the sentence — but only once it says something.
+ * The long-term record as a sentence a person would say, naming the contacts.
  *
- * The store opened on 2026-08-25, so for its first week every pattern's
- * first-seen date is days old and "3 times since Aug 25" reads as noise (Eric,
- * on day one: the date was TODAY). Under a week of history the honest words
- * are "this week"; the date earns its place when it is far enough back to be
- * a record rather than a timestamp.
+ * "3 times this week." was Eric's word-for-word example of robotic output. And
+ * worse: the story names ONE lead while the proof holds three different ones,
+ * so a broker reading about Nick McQuinn opens the proof and meets Tiana
+ * Womack and Vincent Walker with no explanation. Naming the contacts in the
+ * sentence is what reconciles the two.
+ *
+ * Once is silence: the story above it already IS the one occurrence, and
+ * "came up once" restates it robotically. The date only appears when it is a
+ * week or more back; before that it is a timestamp, not a record.
  */
 export function record(p: AgentPattern, now = new Date()): string {
   const n = p.occurrences;
-  if (n <= 1) return 'Came up once this week.';
+  if (n <= 1) return '';
   const seen = p.firstSeen ? new Date(p.firstSeen) : null;
   const days = seen ? (now.getTime() - seen.getTime()) / 86_400_000 : 0;
-  if (!seen || days < 7) return `${n} times this week.`;
-  const since = seen.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${n} times since ${since}.`;
+  const when = (!seen || days < 7)
+    ? 'this week'
+    : `since ${seen.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+
+  const leads = [...new Set(
+    p.findings.map((f) => (f.lead_name ?? '').trim()).filter(Boolean),
+  )];
+  const times = n === 2 ? 'twice' : `${COUNT_WORDS[n] ?? n} separate times`;
+
+  if (leads.length >= 2) {
+    const named = leads.slice(0, 3);
+    const list = named.length === 2
+      ? `${named[0]} and ${named[1]}`
+      : `${named.slice(0, -1).join(', ')}, and ${named[named.length - 1]}`;
+    const contacts = leads.length === n
+      ? `with ${list}`
+      : `across ${leads.length} contacts, including ${list}`;
+    return `This has come up ${times} ${when}, ${contacts}.`;
+  }
+  return `This has come up ${times} ${when}.`;
 }
 
 export interface PlanPoint {

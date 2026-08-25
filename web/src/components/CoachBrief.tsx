@@ -150,15 +150,10 @@ function PointList({ points, tone }: {
              assembles rather than appearing. Reduced motion handled in CSS. */
           style={{ animationDelay: `${Math.min(i, 8) * 90}ms` }}
         >
-          <p className="brief-point-text">
-            {/* The category opens the sentence. It used to be an uppercase
-                tracked label above every single card, and that templated
-                rhythm is the clearest "an AI built this" signature there is. */}
-            {(p as { kicker?: string }).kicker && (
-              <span className="brief-lead-in">{(p as { kicker?: string }).kicker}. </span>
-            )}
-            {p.text}
-          </p>
+          {(p as { kicker?: string }).kicker && (
+            <p className="brief-lead-line">{(p as { kicker?: string }).kicker}</p>
+          )}
+          <p className="brief-point-text">{p.text}</p>
           {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
           {p.evidence.length > 0 && (
             <>

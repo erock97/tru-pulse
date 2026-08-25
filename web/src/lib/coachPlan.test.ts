@@ -33,17 +33,17 @@ describe('the sentence a leader acts on', () => {
     // first before texting", which is the failure this was written against.
     const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
     expect(p.text).toBe(
-      'Asked Ashley to catch up without offering a time. 3 times since Aug 18. '
-      + 'Worth sitting down with Joseph this week to talk through extending the '
-      + 'invitation early, with a this-or-that choice, and why it matters rather '
-      + 'than just that we ask for it.',
+      'Asked Ashley to catch up without offering a time. This has come up three '
+      + 'separate times since Aug 18. Worth sitting down with Joseph this week to '
+      + 'talk through asking for a specific time, with a this-or-that choice, and '
+      + 'why it matters rather than just that we ask for it.',
     );
-    expect(p.kicker).toBe('extending the invitation early, with a this-or-that choice');
+    expect(p.kicker).toBe('asking for a specific time, with a this-or-that choice');
   });
 
   it('always says what the conversation is about, even with no story', () => {
     const [p] = buildAgentPlan([pat({ explanation: null })], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain('talk through extending the invitation early');
+    expect(p.text).toContain('talk through asking for a specific time');
     expect(p.text).toContain('why it matters');
   });
 
@@ -60,10 +60,12 @@ describe('the sentence a leader acts on', () => {
     expect(p.coach).toContain('two specific times');
   });
 
-  it('says once means once', () => {
+  it('is silent about a single occurrence', () => {
+    // The story above the count IS the one occurrence; "came up once" would
+    // robotically restate it.
     const [p] = buildAgentPlan(
       [pat({ occurrences: 1, recurring: false })], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain('Came up once this week.');
+    expect(p.text).not.toContain('once');
     expect(p.text).not.toMatch(/\d times/);
   });
 
@@ -71,8 +73,10 @@ describe('the sentence a leader acts on', () => {
     // Day one of the store, every first-seen was today, and "3 times since
     // Aug 25" ON Aug 25 says nothing. The date earns its place at a week out.
     const now = new Date('2026-08-25T20:00:00Z');
-    expect(record(pat({ firstSeen: '2026-08-25T12:00:00Z' }), now)).toBe('3 times this week.');
-    expect(record(pat({ firstSeen: '2026-08-10T12:00:00Z' }), now)).toBe('3 times since Aug 10.');
+    expect(record(pat({ firstSeen: '2026-08-25T12:00:00Z' }), now))
+      .toBe('This has come up three separate times this week.');
+    expect(record(pat({ firstSeen: '2026-08-10T12:00:00Z' }), now))
+      .toBe('This has come up three separate times since Aug 10.');
   });
 
   it('never guesses a pronoun from a name', () => {
@@ -92,7 +96,7 @@ describe('what qualifies and in what order', () => {
       pat({ patternKey: 'call_first', occurrences: 2, recurring: true }),
       pat({ patternKey: 'lead_e', occurrences: 5, recurring: true }),
     ], 'agent-1', 'Joseph Darlington');
-    expect(plan[0].kicker).toBe('extending the invitation early, with a this-or-that choice');
+    expect(plan[0].kicker).toBe('asking for a specific time, with a this-or-that choice');
     expect(plan[2].kicker).toBe('working through the hard moment instead of retreating from it');
   });
 
@@ -120,7 +124,7 @@ describe('what qualifies and in what order', () => {
 
 describe('the taxonomy', () => {
   it('speaks every known category as a coaching subject', () => {
-    expect(coachOn('lead_e')).toBe('extending the invitation early, with a this-or-that choice');
+    expect(coachOn('lead_e')).toBe('asking for a specific time, with a this-or-that choice');
     expect(coachOn('premature_representation')).toBe('promising only what they can actually deliver');
   });
 
@@ -300,5 +304,46 @@ describe('no AI tells in the copy a leader reads', () => {
   it('keeps the category in sentence case, not as a shouted label', () => {
     const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
     expect(p.kicker).toBe(p.kicker!.toLowerCase());
+  });
+});
+
+
+describe('the count names the contacts', () => {
+  // A broker reading a story about Nick McQuinn opened the proof and met Tiana
+  // Womack and Vincent Walker with no explanation. The sentence now reconciles
+  // the story with its proof by naming who else it happened with.
+  const now = new Date('2026-08-25T20:00:00Z');
+  const F = (lead) => ({ lead_name: lead, channel: 'text', occurred_at: '2026-08-20T12:00:00Z', quote: 'q' });
+
+  it('names each contact when the proof spans several', () => {
+    expect(record(pat({
+      occurrences: 3, firstSeen: '2026-08-25T12:00:00Z',
+      findings: [F('Nick McQuinn'), F('Tiana Womack'), F('Vincent Walker')],
+    }), now)).toBe(
+      'This has come up three separate times this week, with Nick McQuinn, Tiana Womack, and Vincent Walker.');
+  });
+
+  it('says twice like a person would', () => {
+    expect(record(pat({
+      occurrences: 2, firstSeen: '2026-08-25T12:00:00Z',
+      findings: [F('Nick McQuinn'), F('Tiana Womack')],
+    }), now)).toBe('This has come up twice this week, with Nick McQuinn and Tiana Womack.');
+  });
+
+  it('distinguishes repeat contacts from separate ones', () => {
+    // Four occurrences across two people is a different story from four
+    // people, and saying otherwise would be the same overclaiming as before.
+    expect(record(pat({
+      occurrences: 4, firstSeen: '2026-08-25T12:00:00Z',
+      findings: [F('Nick McQuinn'), F('Nick McQuinn'), F('Tiana Womack'), F('Tiana Womack')],
+    }), now)).toBe(
+      'This has come up four separate times this week, across 2 contacts, including Nick McQuinn and Tiana Womack.');
+  });
+
+  it('falls back to the plain sentence when the proof holds one name', () => {
+    expect(record(pat({
+      occurrences: 3, firstSeen: '2026-08-25T12:00:00Z',
+      findings: [F('Nick McQuinn')],
+    }), now)).toBe('This has come up three separate times this week.');
   });
 });

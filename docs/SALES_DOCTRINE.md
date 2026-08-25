@@ -442,7 +442,7 @@ was guessed wrong once already, on production, and cost a day.
 | Key | What it means | Coach it as |
 |---|---|---|
 | `lead_l` | **L** — did not lead with who they are | Name, brokerage, Zillow featured partner, why you're calling |
-| `lead_e` | **E** — did not extend the invitation | Ask for the appointment early, this-or-that. NOT "pin them down at the end" |
+| `lead_e` | **E** — did not extend the invitation | Ask for the appointment early, this-or-that. NOT "pin them down at the end". **Only valid on FIRST contact** — see below |
 | `lead_a` | **A** — did not ask and listen | Permission first, then real questions. Rapport before transaction |
 | `lead_d` | **D** — did not deliver the summary | Hand the call back, confirm what's next |
 | `call_first` | Texted where a call was needed | Always carry the why — this is the directive agents most often reject |
@@ -456,6 +456,27 @@ was guessed wrong once already, on production, and cost a day.
 
 An unrecognised key must render in its own words rather than be dropped —
 Hermes owns this taxonomy and can extend it.
+
+### `lead_e` is a first-contact category, and misapplying it makes the coaching moot
+
+Found live on Cara Benak's brief, 2026-08-25. Her card coached "extending the
+invitation early" — but nothing in the evidence showed any of those
+conversations were FIRST contact. E is a first-call technique; cited against a
+mid-relationship conversation it reads as nonsense to a broker, because it is.
+Eric: "it's a moot point... you're misapplying my logic."
+
+Two consequences:
+
+- **Hermes must only tag `lead_e` when the finding is the first live
+  interaction with that lead.** A later conversation that ends without a
+  specific time is `next_steps`, not `lead_e`. Sent to Codex 2026-08-25.
+- **Display labels must not assert what the evidence cannot show.** The
+  broker-facing wording for `lead_e` says "asking for a specific time, with a
+  this-or-that choice" — the part that holds whenever the tag appears —
+  rather than "early", the part only a first call can prove.
+
+The general form of this rule already exists (section 8a): a claim needs
+evidence that can support it. This is the taxonomy-level instance.
 
 ---
 
