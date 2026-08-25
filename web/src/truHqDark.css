@@ -5450,14 +5450,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
      carried their own flat background while sitting beside glass. */
   padding: 22px 24px 20px;
   overflow: hidden;
-  opacity: 0;
-  animation: truAdFadeUp 0.6s var(--ease) forwards;
+  animation: truAdFadeUp 0.6s var(--ease) backwards;
   transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
 }
 .tru-dark .brief-agent-card.is-link { cursor: pointer; }
-.tru-dark .brief-agent-card.is-link:hover,
+.tru-dark .brief-agent-card:hover,
 .tru-dark .brief-agent-card.is-link:focus-visible {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   outline: none;
 }
 
@@ -5500,8 +5499,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   opacity: 1; transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tru-dark .brief-agent-card { opacity: 1; animation: none; }
-  .tru-dark .brief-agent-card.is-link:hover { transform: none; box-shadow: none; }
+  .tru-dark .brief-agent-card { animation: none; }
+  .tru-dark .brief-agent-card:hover { transform: none; box-shadow: none; }
   .tru-dark .brief-agent-go { opacity: 1; transform: none; }
 }
 
@@ -5562,16 +5561,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   border-left: 3px solid transparent;
   transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
 }
-.tru-dark .brief-points > li:hover { transform: translateY(-3px); }
+.tru-dark .brief-points > li:hover { transform: translateY(-2px); }
 .tru-dark .brief-points.is-work > li { border-left-color: var(--tab-mid, var(--terracotta)); }
 .tru-dark .brief-points.is-watch > li { border-left-color: var(--accent); }
 
 .tru-dark .brief-card {
-  opacity: 0;
-  animation: truAdFadeUp 0.6s var(--ease) forwards;
+  animation: truAdFadeUp 0.6s var(--ease) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tru-dark .brief-card { opacity: 1; animation: none; }
+  .tru-dark .brief-card { animation: none; }
   .tru-dark .brief-points > li:hover { transform: none; }
   .tru-dark .brief-agent-card { opacity: 1; animation: none; }
   .tru-dark .brief-agent-card.is-link:hover { transform: none; }
