@@ -116,12 +116,25 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
   );
 }
 
-function PointList({ points, tone, evidenceInline = false }: {
+/**
+ * The evidence is ALWAYS one click deep. See docs/SALES_DOCTRINE.md section 6b.
+ *
+ * It used to print under every point in the agent sheet, on the theory that
+ * the evidence was the product. Reading the result, Eric's verdict was that the
+ * page alternates coaching action, proof, coaching action, proof until the
+ * thread is lost -- the proof is louder than the insight and there is three
+ * times more of it.
+ *
+ *   "The proof should be quiet. The broker wants to see proof, he clicks the
+ *    proof and it shows the proof. But the real insight is the focus of the
+ *    message."
+ *
+ * It still has to BE there -- a finding nobody can verify fails his own test
+ * for a usable one -- but as a footnote the reader opens, never the body.
+ */
+function PointList({ points, tone }: {
   points: BriefPointView[];
   tone: 'good' | 'work' | 'watch';
-  /** true → the quote/lead/date is printed under every point (the agent sheet,
-   *  where the evidence IS the product); false → one click deep (compact uses). */
-  evidenceInline?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(null);
   if (points.length === 0) {
@@ -138,20 +151,20 @@ function PointList({ points, tone, evidenceInline = false }: {
           )}
           <p className="brief-point-text">{p.text}</p>
           {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
-          {p.evidence.length > 0 && (evidenceInline ? (
-            <EvidenceList evidence={p.evidence} />
-          ) : (
+          {p.evidence.length > 0 && (
             <>
               <button
                 className="brief-evidence-toggle"
                 aria-expanded={open === i}
                 onClick={() => setOpen(open === i ? null : i)}
               >
-                {open === i ? 'Hide the evidence' : `See the evidence (${p.evidence.length})`}
+                {open === i
+                  ? 'Hide the proof'
+                  : `Show the proof (${p.evidence.length})`}
               </button>
               {open === i && <EvidenceList evidence={p.evidence} />}
             </>
-          ))}
+          )}
         </li>
       ))}
     </ul>
@@ -305,10 +318,9 @@ onAuthChange(() => { patternsPromise = null; });
 
 /* ════════ One agent's brief, inside the drill-in sheet ════════ */
 
-export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: {
+export function AgentBriefPanel({ agentId, agentName }: {
   agentId: string;
   agentName: string;
-  evidenceInline?: boolean;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
@@ -322,8 +334,8 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
   // The leader's directives, from the habit store. The report's per-lead moves
   // remain the fallback for a week the store has nothing on.
   const plan = useMemo(
-    () => (patterns ? buildAgentPlan(patterns.patterns, agentId, agentName) : []),
-    [patterns, agentId, agentName],
+    () => (patterns ? buildAgentPlan(patterns.patterns, agentId, agentName, mine?.metrics) : []),
+    [patterns, agentId, agentName, mine],
   );
 
   // No brief system in play yet → no panel at all (teams without the weekly
@@ -363,18 +375,18 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
                 the day Hermes starts sending it, this is one lane to add back. */}
             <div className="brief-lane is-work">
               <h4 className="brief-lane-h">Priority opportunities</h4>
-              <PointList points={mine.opportunities} tone="work" evidenceInline={evidenceInline} />
+              <PointList points={mine.opportunities} tone="work" />
             </div>
             <div className="brief-lane is-watch">
               <h4 className="brief-lane-h">Objections heard</h4>
-              <PointList points={mine.objections} tone="watch" evidenceInline={evidenceInline} />
+              <PointList points={mine.objections} tone="watch" />
             </div>
             <div className="brief-lane is-work">
               <h4 className="brief-lane-h">What to do with this agent</h4>
               <PointList
                 points={plan.length ? plan : mine.coachingActions}
                 tone="work"
-                evidenceInline={evidenceInline}
+               
               />
             </div>
           </div>

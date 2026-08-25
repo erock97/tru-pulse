@@ -372,7 +372,7 @@ function CoachDeck({
                 Reviewed in the weekly brief. Not in your Coach cohort yet —
                 use "Add agents to Coach" to run 1:1s and track commitments.
               </p>
-              <AgentBriefPanel agentId={openId!} agentName={briefOnly} evidenceInline />
+              <AgentBriefPanel agentId={openId!} agentName={briefOnly} />
             </div>
           ) : openAgent && view === 'profile' ? (
             <AgentProfile agent={openAgent} onBack={() => setOpenId(openAgent.id)} />
@@ -952,7 +952,7 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
           or note to point at. Renders nothing when no brief system runs for
           this team; renders "not enough reviewed" when the report simply had
           nothing on them — that distinction is deliberate. */}
-      <AgentBriefPanel agentId={agent.id} agentName={agent.name} evidenceInline />
+      <AgentBriefPanel agentId={agent.id} agentName={agent.name} />
 
       {/* 2. RUN THIS 1:1 — structured leadership form (Block 4b), replacing the
           old yes/no OneOnOneSheet. Writes: checkins + checkin_items + checkin_leader

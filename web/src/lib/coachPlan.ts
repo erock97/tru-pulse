@@ -76,6 +76,48 @@ export function coachOn(patternKey: string): string {
 
 const firstName = (full: string): string => full.trim().split(/\s+/)[0] ?? full;
 
+/** The week's first-touch split, as the report counted it. */
+export interface AgentMetrics {
+  callFirst?: number;
+  textFirst?: number;
+  noOutreach?: number;
+}
+
+/**
+ * The proportion behind the habit, in words.
+ *
+ * Eric's model directive does not say "texts too much" -- it says "he
+ * frequently makes about one phone call attempt on average, and the bulk of
+ * his communication is done through text." A rate is what turns an assertion
+ * into something a leader can repeat to the agent without arguing about it.
+ *
+ * Only stated where the numbers actually support it, and only for the habits
+ * it speaks to. A rate attached to the wrong finding is worse than none.
+ */
+export function rateLine(patternKey: string, m: AgentMetrics | undefined): string | null {
+  if (!m) return null;
+  const calls = m.callFirst ?? 0;
+  const texts = m.textFirst ?? 0;
+  const touched = calls + texts;
+  if (touched < 3) return null;   // too few to describe as a tendency
+
+  if (patternKey === 'call_first' || patternKey === 'text_transition') {
+    if (texts > calls) {
+      return calls === 0
+        ? `Every one of ${touched} first touches this week was a text — not a single call.`
+        : `${texts} of ${touched} first touches this week were texts; ${calls} `
+          + `${calls === 1 ? 'was a call' : 'were calls'}.`;
+    }
+    return null;   // they are calling. Do not coach them for it.
+  }
+
+  const untouched = m.noOutreach ?? 0;
+  if (untouched > 0 && untouched >= Math.max(2, touched * 0.15)) {
+    return `${untouched} of ${touched + untouched} new leads got no outreach at all this week.`;
+  }
+  return null;
+}
+
 /**
  * The long-term record, in the sentence — but only once it says something.
  *
@@ -112,7 +154,12 @@ export interface PlanPoint {
  * whose evidence has all aged out belongs in the trend area, not in this
  * week's sit-down list.
  */
-export function buildAgentPlan(all: AgentPattern[], agentId: string, agentName: string): PlanPoint[] {
+export function buildAgentPlan(
+  all: AgentPattern[],
+  agentId: string,
+  agentName: string,
+  metrics?: AgentMetrics,
+): PlanPoint[] {
   const wanted = agentName.trim().toLowerCase();
   const mine = all.filter((p) =>
     p.current
@@ -133,9 +180,17 @@ export function buildAgentPlan(all: AgentPattern[], agentId: string, agentName: 
     // "them", not a guessed pronoun: the roster does not record pronouns, and
     // a wrong guess in a coaching directive lands in front of the person.
     kicker: coachOn(p.patternKey),
-    text: p.explanation
-      ? `Sit down with ${firstName(p.agentName)} this week. ${p.explanation.trim().replace(/[.\s]+$/, '')}. ${record(p)}`
-      : `Sit down with ${firstName(p.agentName)} this week — coach them on ${coachOn(p.patternKey)}. ${record(p)}`,
+    // Built in the order Eric's model directive uses: what we noticed, how
+    // often or how widely, then the sit-down and what it is ABOUT -- the why,
+    // not the instruction. See docs/SALES_DOCTRINE.md section 6a; "tell agent
+    // to call first before texting" is the failure it was written against.
+    text: [
+      p.explanation ? p.explanation.trim().replace(/[.\s]+$/, '') + '.' : null,
+      rateLine(p.patternKey, metrics),
+      record(p),
+      `Worth sitting down with ${firstName(p.agentName)} this week to talk through `
+        + `${coachOn(p.patternKey)} — and why it matters, not just that we ask for it.`,
+    ].filter(Boolean).join(' '),
     coach: p.coachingMove,
     evidence: p.findings
       .filter((f) => f.quote)
