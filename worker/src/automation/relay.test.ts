@@ -5,8 +5,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { Db } from '../db.js';
 import type { Env } from '../env.js';
 import {
-  buildAndClaim, toTaskerText, acknowledge, relayAuthorised,
-  normalisePhone, maskPhone, localDate, handleRelayRoutes, NOTHING,
+  buildAndClaim, toTaskerText, acknowledge, relayAuthorised, relayTokenFrom,
+  normalisePhone, maskPhone, localDate, handleRelayRoutes, isId, NOTHING,
 } from './relay.js';
 
 const NOW = new Date('2026-08-25T13:45:00.000Z');   // 9:45am Eastern
@@ -22,7 +22,7 @@ function stub(over: {
   const updates: Array<{ table: string; query: string; patch: any }> = [];
 
   const patternRows = over.patternRows ?? [{
-    id: 'pat-1', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
+    id: '11111111-1111-4111-8111-111111111111', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
     pattern_key: 'lead_e', explanation: 'Ends texts without a time.',
     occurrences: 3, occurrences_this_window: 3,
     is_current: true, is_recurring: true, brief_worthy: true,
@@ -56,7 +56,7 @@ function stub(over: {
         if (over.alreadyClaimed || inserted.some((r) => r.idempotency_key === row.idempotency_key)) {
           throw new Error('duplicate key value violates unique constraint "brief_sends_idempotency_key_key"');
         }
-        const saved = { id: `send-${inserted.length + 1}`, ...row };
+        const saved = { id: `0000000${inserted.length + 1}-0000-4000-8000-000000000000`, ...row };
         inserted.push(saved);
         return saved;
       }
@@ -126,7 +126,8 @@ describe('a claim that never reached anybody', () => {
 
   it('ignores an acknowledgement for something never claimed', async () => {
     const s = stub();
-    expect(await acknowledge(s.db, ['send-nope'], NOW)).toEqual({ acked: 0, patternsMarked: 0 });
+    expect(await acknowledge(s.db, ['99999999-9999-4999-8999-999999999999'], NOW))
+      .toEqual({ acked: 0, patternsMarked: 0 });
   });
 });
 
@@ -141,7 +142,7 @@ describe('reasons a team is quiet', () => {
   it('sends nothing when nothing has moved since yesterday', async () => {
     const s = stub({
       patternRows: [{
-        id: 'pat-1', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
+        id: '11111111-1111-4111-8111-111111111111', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
         pattern_key: 'lead_e', occurrences: 3, occurrences_this_window: 3,
         is_current: true, is_recurring: true, brief_worthy: false,
         window_start: '2026-08-18', window_end: '2026-08-24',
@@ -160,7 +161,7 @@ describe('reasons a team is quiet', () => {
     // presenting last week's thinking as this morning's is worse than quiet.
     const s = stub({
       patternRows: [{
-        id: 'pat-1', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
+        id: '11111111-1111-4111-8111-111111111111', team_id: 'team-1', agent_id: 'a1', agent_name: 'Cara Benak',
         pattern_key: 'lead_e', occurrences: 3, occurrences_this_window: 3,
         is_current: true, is_recurring: true, brief_worthy: true,
         window_start: '2026-08-11', window_end: '2026-08-17',
@@ -280,5 +281,74 @@ describe('which day it is', () => {
     // UTC would open a second claim window in the middle of the night.
     expect(localDate(new Date('2026-08-26T00:30:00.000Z'))).toBe('2026-08-25');
     expect(localDate(new Date('2026-08-25T13:45:00.000Z'))).toBe('2026-08-25');
+  });
+});
+
+
+describe('ids that reach a database filter', () => {
+  // `id=in.(${ids})` is built by concatenation and is followed by a write, so
+  // an unchecked id is not a failed query -- it is a changed row.
+  it('rejects anything that is not a row id', () => {
+    expect(isId('11111111-1111-4111-8111-111111111111')).toBe(true);
+    expect(isId('send-1')).toBe(false);
+    expect(isId('')).toBe(false);
+    expect(isId(null)).toBe(false);
+    expect(isId(42)).toBe(false);
+  });
+
+  it('rejects an id carrying its own filter', () => {
+    // The actual attack: close the bracket, append a wider condition.
+    expect(isId('11111111-1111-4111-8111-111111111111)&status=eq.sent&x=in.(1')).toBe(false);
+  });
+
+  it('answers 400 and touches nothing', async () => {
+    const s = stub();
+    const url = new URL('https://api.truhq.co/relay/ack?token=sekret');
+    const res = await handleRelayRoutes(
+      new Request(url, { method: 'POST', body: JSON.stringify({ sendIds: [')&status=eq.sent'] }) }),
+      { RELAY_TOKEN: 'sekret' } as Env, s.db, url, NOW);
+    expect(res?.status).toBe(400);
+    expect(s.db.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses the whole request rather than acting on the good half', async () => {
+    // Filtering the bad id out quietly would turn an attack into a partial
+    // success, and hide that somebody tried.
+    const s = stub();
+    const { queued } = await buildAndClaim(s.db, NOW);
+    const url = new URL('https://api.truhq.co/relay/ack?token=sekret');
+    const res = await handleRelayRoutes(
+      new Request(url, { method: 'POST',
+        body: JSON.stringify({ sendIds: [queued[0].sendId, 'not-an-id'] }) }),
+      { RELAY_TOKEN: 'sekret' } as Env, s.db, url, NOW);
+    expect(res?.status).toBe(400);
+    expect(s.db.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('where the token is allowed to travel', () => {
+  // A query string is written to request logs, kept in history, and readable
+  // over a shoulder in a Tasker profile. A header is none of those.
+  const url = new URL('https://api.truhq.co/relay/queue?token=from-query');
+
+  it('prefers an Authorization header', () => {
+    const req = new Request(url, { headers: { authorization: 'Bearer from-header' } });
+    expect(relayTokenFrom(req, url)).toBe('from-header');
+  });
+
+  it('accepts a plain relay header too', () => {
+    const req = new Request(url, { headers: { 'x-relay-token': 'from-header' } });
+    expect(relayTokenFrom(req, url)).toBe('from-header');
+  });
+
+  it('still accepts the query form the phone already sends', () => {
+    // Dropping it would mean the endpoint only works after somebody
+    // successfully edits a header on a phone, which is not a working endpoint.
+    expect(relayTokenFrom(new Request(url), url)).toBe('from-query');
+  });
+
+  it('does not mistake another scheme for a bearer token', () => {
+    const req = new Request(url, { headers: { authorization: 'Basic abc123' } });
+    expect(relayTokenFrom(req, url)).toBe('from-query');
   });
 });

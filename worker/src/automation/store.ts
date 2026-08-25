@@ -151,3 +151,21 @@ export function enabledFor(mode: Mode): boolean {
 export function modeExceedsCeiling(mode: Mode, type: AutomationType): boolean {
   return MODE_RANK[mode] > MODE_RANK[type.max_mode];
 }
+
+/**
+ * Is this actually a row id?
+ *
+ * PostgREST filters are built by concatenation, so `id=in.(${ids})` with an
+ * unchecked value lets a caller close the bracket and append their own filter.
+ * Both places that build such a list are followed by a write, which is what
+ * turns a malformed id from a failed query into a changed row.
+ *
+ * It lives here rather than in either caller because both need it and they
+ * already import each other in one direction. A cycle would leave this
+ * undefined at module-init and silently stop guarding anything.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isId(v: unknown): v is string {
+  return typeof v === 'string' && UUID_RE.test(v);
+}

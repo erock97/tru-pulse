@@ -159,7 +159,7 @@ describe('a category we have not seen before', () => {
 
 function row(over: Record<string, any> = {}) {
   return {
-    id: over.id ?? 'pat-1',
+    id: over.id ?? '11111111-1111-4111-8111-111111111111',
     team_id: 'team-1',
     agent_id: 'a1',
     agent_name: 'Cara Benak',
@@ -226,7 +226,7 @@ describe('the same thing, every morning for a week', () => {
   it('still reports how much is standing behind the quiet', async () => {
     // "Nothing new" must not read as "nothing wrong". The count of what is
     // current is what tells a broker the app is still worth opening.
-    const s = storeStub([row({ brief_worthy: false }), row({ id: 'pat-2', brief_worthy: false })]);
+    const s = storeStub([row({ brief_worthy: false }), row({ id: '22222222-2222-4222-8222-222222222222', brief_worthy: false })]);
     const [brief] = await previewCoachBriefs(s.db, 'Tue Aug 26');
     expect(brief.needing).toBe(0);
     expect(brief.currentPatterns).toBe(2);
@@ -253,12 +253,23 @@ describe('a preview must not consume the send', () => {
 describe('who gets coached', () => {
   it('leaves out the broker and the team lead', async () => {
     const s = storeStub(
-      [row({ id: 'pat-1', agent_id: 'a1', agent_name: 'Cara Benak' }),
-       row({ id: 'pat-2', agent_id: 'a2', agent_name: 'Michelle Pais' })],
+      [row({ agent_id: 'a1', agent_name: 'Cara Benak' }),
+       row({ id: '22222222-2222-4222-8222-222222222222', agent_id: 'a2', agent_name: 'Michelle Pais' })],
       [{ id: 'a1', role: 'agent' }, { id: 'a2', role: 'admin' }],
     );
     const [brief] = await previewCoachBriefs(s.db, 'Mon Aug 25');
     expect(brief.named).toEqual(['Cara']);
     expect(brief.currentPatterns).toBe(1);
+  });
+});
+
+
+describe('a pattern id that is not an id', () => {
+  it('is never concatenated into a filter', async () => {
+    // The row it came from is ours, which is an argument for trusting it and
+    // not a reason to: the query that follows is a write.
+    const s = storeStub([row({ id: 'pat-1' })]);
+    expect(await markBriefed(s.db, ['pat-1'])).toBe(0);
+    expect(s.db.update).not.toHaveBeenCalled();
   });
 });

@@ -30,6 +30,9 @@
 import type { Db } from '../db.js';
 import type { Env } from '../env.js';
 import { previewCoachBriefs, markBriefed, type TeamBrief } from './coachBrief.js';
+import { isId } from './store.js';
+
+export { isId };
 
 /** The format Eric's existing Tasker profile already parses. */
 const REC_SEP = '@@@NEXT@@@';
@@ -55,6 +58,23 @@ function timingSafeEqual(a: string, b: string): boolean {
 export function relayAuthorised(token: string | null, env: Env): boolean {
   if (!env.RELAY_TOKEN) return false;
   return timingSafeEqual(token ?? '', env.RELAY_TOKEN);
+}
+
+/**
+ * The token, from a header if the caller sends one, otherwise the query string.
+ *
+ * A header is the better place for it: a query string is written to request
+ * logs, kept in history, and shows up in a screen share of a Tasker profile.
+ * The query form stays supported because it is what the existing phone
+ * automation speaks, and an endpoint that only works after somebody
+ * successfully edits a header on a phone is an endpoint that does not work.
+ *
+ * Header first, so moving over is a change on the phone alone.
+ */
+export function relayTokenFrom(req: Request, url: URL): string | null {
+  const bearer = req.headers.get('authorization');
+  if (bearer && /^Bearer\s/i.test(bearer)) return bearer.replace(/^Bearer\s+/i, '');
+  return req.headers.get('x-relay-token') ?? url.searchParams.get('token');
 }
 
 /** Phone last four only. Full numbers live in the database and nowhere else. */
@@ -206,6 +226,10 @@ export async function acknowledge(
   now: Date,
 ): Promise<{ acked: number; patternsMarked: number }> {
   if (!sendIds.length) return { acked: 0, patternsMarked: 0 };
+  // Rejected outright, not filtered down. A caller sending one malformed id is
+  // not a caller whose other ids we should act on -- and a silent filter turns
+  // an attack into a partial success.
+  if (!sendIds.every(isId)) throw new Error('acknowledge: ids must be uuids');
 
   const rows = (await database.select(
     'brief_sends',
@@ -242,7 +266,7 @@ export async function handleRelayRoutes(
 
   if (!url.pathname.startsWith('/relay/')) return null;
 
-  if (!relayAuthorised(url.searchParams.get('token'), env)) {
+  if (!relayAuthorised(relayTokenFrom(req, url), env)) {
     return json({ error: 'unauthorized' }, 401);
   }
 
@@ -272,10 +296,9 @@ export async function handleRelayRoutes(
   // POST /relay/ack?token=...   body: { sendIds: [...] }
   if (url.pathname === '/relay/ack' && req.method === 'POST') {
     const body = await req.json().catch(() => ({}));
-    const ids = Array.isArray((body as any)?.sendIds)
-      ? ((body as any).sendIds as unknown[]).filter((x): x is string => typeof x === 'string')
-      : [];
-    return json(await acknowledge(database, ids, now));
+    const raw = Array.isArray((body as any)?.sendIds) ? ((body as any).sendIds as unknown[]) : [];
+    if (!raw.every(isId)) return json({ error: 'sendIds must be uuids' }, 400);
+    return json(await acknowledge(database, raw as string[], now));
   }
 
   return json({ error: 'not found' }, 404);
