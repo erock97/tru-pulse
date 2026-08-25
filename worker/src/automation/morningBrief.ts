@@ -61,7 +61,20 @@ export interface BriefInput {
   pondLeads: number;
   /** How stale the underlying sync is, in hours. Null means we have never synced. */
   syncAgeHours: number | null;
-  /** Set when the recipient is themselves carrying untouched leads. */
+  /**
+   * The team leader this is going to. They are left OUT of the brief entirely —
+   * not in the roster, and no line about their own leads.
+   *
+   * A team leader works leads themselves, often a lot of them, and that is not
+   * the thing this message is for. The brief answers "who do I need to chase
+   * this morning", and the answer is never yourself. Scott Moore holds more
+   * untouched leads than his whole team put together; a brief that led with that
+   * every morning would be telling him something he already knows, in place of
+   * the thing he opened it for.
+   *
+   * Their leads still count in the day's total, because that number is the
+   * team's intake and stays true.
+   */
   recipientName?: string;
   appUrl?: string;
 }
@@ -121,18 +134,19 @@ export function renderMorningBrief(input: BriefInput): BriefResult {
   }
 
   const me = input.recipientName ? toGsm7(input.recipientName) : null;
-  // The roster is a list of OTHER people. A team lead who holds leads themselves
-  // would otherwise be most of their own brief every morning, which is both
-  // useless and a bit insulting; they get one collapsed line instead.
+  // Everything below is about OTHER people. The leader is dropped from the
+  // roster and from the named breakdown alike.
   const others = input.agents.filter((a) => !me || toGsm7(a.name) !== me);
-  const mine = me ? input.agents.find((a) => toGsm7(a.name) === me) : undefined;
 
+  // The total still counts everyone, including the leader's own leads. That
+  // number is the team's intake for the day and stays true; it is the only
+  // place they appear, and they appear as a number rather than a name.
   const totalNew = input.agents.reduce((n, a) => n + a.newLeads, 0) + input.pondLeads;
 
   lines.push('');
   lines.push(`New leads (24h): ${totalNew}`);
   if (totalNew > 0) {
-    const top = [...input.agents].filter((a) => a.newLeads > 0)
+    const top = others.filter((a) => a.newLeads > 0)
       .sort((a, b) => b.newLeads - a.newLeads || a.name.localeCompare(b.name));
     const shown = top.slice(0, 3).map((a) => `${toGsm7(a.name)} ${a.newLeads}`);
     const rest = top.length - shown.length;
@@ -156,17 +170,9 @@ export function renderMorningBrief(input: BriefInput): BriefResult {
     if (needing.length > 3) lines.push(`+${needing.length - 3} more in the app`);
   }
 
-  if (mine && (mine.untouched > 0 || mine.stalled > 0)) {
-    lines.push('');
-    const bits: string[] = [];
-    if (mine.untouched > 0) bits.push(`${plural(mine.untouched, 'lead')} with no call or text`);
-    if (mine.stalled > 0) bits.push(`${plural(mine.stalled, 'lead')} in Lead stage`);
-    lines.push(`Yours: ${bits.join(', ')}.`);
-  }
-
   // A quiet day still arrives. A brief that only shows up on bad days becomes a
   // thing people dread, and then ignore.
-  if (totalNew === 0 && !needing.length && !(mine && (mine.untouched || mine.stalled))) {
+  if (totalNew === 0 && !needing.length) {
     return {
       body: `${head}\nNo new leads overnight and nothing needs outreach. All clear.`,
       segments: segments(`${head}\nNo new leads overnight and nothing needs outreach. All clear.`),
