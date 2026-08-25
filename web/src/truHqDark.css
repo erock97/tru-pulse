@@ -5583,11 +5583,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 /* The category opens the sentence. Never an uppercase tracked label above
    every card: that eyebrow-on-everything rhythm is the AI-built signature. */
-/* The masthead's own trick -- one serif italic amber phrase inside normal
-   text ("Mostly independents,") -- reused as the category lead-in. */
-.tru-dark .brief-lead-in {
-  font-family: var(--hq-serif); font-style: italic; font-weight: 550;
-  font-size: 19px; letter-spacing: -0.015em; color: var(--accent-hi);
+/* The category as its own line above the story, in the masthead's serif
+   italic amber. Inline it read as a broken first sentence; as a line it is
+   unmistakably a label, without the uppercase-eyebrow tell. */
+.tru-dark p.brief-lead-line {
+  margin: 0 0 8px; font-family: var(--hq-serif); font-style: italic;
+  font-weight: 550; font-size: 19px; line-height: 1.3;
+  letter-spacing: -0.015em; color: var(--accent-hi);
 }
 .tru-dark p.brief-coach {
   margin: 12px 0 0; font-size: 15.5px; line-height: 1.55;
