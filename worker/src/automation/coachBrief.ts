@@ -29,6 +29,7 @@
 
 import { isGsm7, segments, toGsm7 } from './morningBrief.js';
 import type { Db } from '../db.js';
+import { isId } from './store.js';
 
 /** One stored habit, as `coach_patterns_live` holds it. */
 export interface BriefPattern {
@@ -322,11 +323,16 @@ export async function previewCoachBriefs(
  * identical week changes no count, and therefore says nothing.
  */
 export async function markBriefed(database: Db, patternIds: string[]): Promise<number> {
-  if (!patternIds.length) return 0;
+  // These go straight into a PostgREST filter. They come from a column we
+  // wrote ourselves, which is an argument for trusting them and not a reason
+  // to: the check costs nothing and it means one bad row cannot rewrite the
+  // query that follows it.
+  const ids = patternIds.filter(isId);
+  if (!ids.length) return 0;
   const now = new Date().toISOString();
   const counts = (await database.select(
     'coach_patterns_live',
-    `id=in.(${patternIds.join(',')})&select=id,occurrences`,
+    `id=in.(${ids.join(',')})&select=id,occurrences`,
   )) as any[];
   for (const row of counts) {
     await database.update('coach_patterns', `id=eq.${row.id}`, {
