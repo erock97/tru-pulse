@@ -5470,52 +5470,68 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: var(--tab-soft, rgba(255,139,98,.08));
   border-radius: 0 8px 8px 0;
 }
-/* The agent brief: four category lanes, read LEFT TO RIGHT. Each lane owns a
-   real header -- the categories are the structure of the panel, and at 10px
-   uppercase they were disappearing into the points they were meant to
-   organise. Wide screens get all four across; squeezed, they pair; a phone
-   stacks them. */
+/* The agent brief: TWO lanes, read left to right.
+   Three lanes carried a redundancy -- "priority opportunities" and "what to do
+   with this agent" said the same thing, one as an observation and one as a
+   directive. Two columns means each gets real width, which is most of why the
+   type could not breathe before. */
 .tru-dark .brief-lanes {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px 24px;
-  align-items: start;
+  display: grid; grid-template-columns: 1.25fr 1fr; gap: 30px 34px;
+  align-items: start; margin-top: 4px;
 }
-@media (max-width: 1100px) { .tru-dark .brief-lanes { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 720px)  { .tru-dark .brief-lanes { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .tru-dark .brief-lanes { grid-template-columns: 1fr; } }
+
 .tru-dark .brief-lane-h {
-  margin: 0 0 10px;
-  font: 700 13px/1.2 var(--hq-font); letter-spacing: 0.09em; text-transform: uppercase;
-  padding-bottom: 8px; border-bottom: 2px solid var(--border);
+  margin: 0 0 14px;
+  font: 700 13px/1.2 var(--hq-font); letter-spacing: 0.07em; text-transform: uppercase;
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
 }
-.tru-dark .brief-lane.is-good  .brief-lane-h { color: var(--sea);      border-bottom-color: var(--sea); }
 .tru-dark .brief-lane.is-work  .brief-lane-h { color: var(--accent-hi); border-bottom-color: var(--tab-mid, var(--terracotta)); }
 .tru-dark .brief-lane.is-watch .brief-lane-h { color: var(--text-60);  border-bottom-color: var(--text-40); }
 
-/* One point = one card. The stream version put five points in a lane with
-   nothing but spacing between them, and Eric could not tell which quote
-   belonged to which point -- a card boundary is the answer to that, not
-   cleverer spacing. */
-.tru-dark .brief-points { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 14px; }
+.tru-dark .brief-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+
+/* One point, one card. Lifts on hover so the page answers the pointer -- the
+   panel read as dead partly because nothing on it ever moved. */
 .tru-dark .brief-points > li {
-  padding: 12px 14px 12px 14px;
+  padding: 16px 18px;
   background: var(--panel, rgba(255,255,255,.025));
   border: 1px solid var(--border);
   border-left: 3px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
+  transition: transform .22s var(--ease), border-color .22s var(--ease),
+              background .22s var(--ease);
 }
-.tru-dark .brief-points.is-good > li { border-left-color: var(--sea); }
+.tru-dark .brief-points > li:hover {
+  transform: translateY(-2px);
+  background: var(--lift, rgba(255,255,255,.045));
+  border-color: var(--text-40);
+}
 .tru-dark .brief-points.is-work > li { border-left-color: var(--tab-mid, var(--terracotta)); }
 .tru-dark .brief-points.is-watch > li { border-left-color: var(--accent); }
 
-/* Hierarchy: the POINT is the product; the quote is its footnote. The old
-   sizes had that inverted -- 14.5px dim text over a 13.5px boxed quote that
-   read louder than the point it supported. */
-.tru-dark .brief-kicker {
-  display: block; margin-bottom: 5px;
-  font: 700 10.5px/1 var(--hq-font); letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--tab-mid, var(--terracotta));
+/* Cards assemble on arrival, staggered by an inline delay per card. */
+@keyframes briefCardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.tru-dark .brief-card {
+  opacity: 0;
+  animation: briefCardIn .55s var(--ease) forwards;
 }
-.tru-dark .brief-point-text { margin: 0; font-size: 15.5px; line-height: 1.55; font-weight: 600; color: var(--text); }
-.tru-dark .brief-coach { margin: 7px 0 0; font-size: 14px; line-height: 1.5; color: var(--text-80, var(--text)); }
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .brief-card { opacity: 1; animation: none; }
+  .tru-dark .brief-points > li:hover { transform: none; }
+}
+
+/* THE TYPE. Eric: the font is tiny and the whole tab reads as slop. The point
+   is the product, so it gets read-a-paragraph size, not caption size. */
+.tru-dark .brief-point-text {
+  margin: 0; font-size: 17px; line-height: 1.6; font-weight: 500;
+  color: var(--text); letter-spacing: -0.005em;
+}
+/* The coaching category opens the sentence instead of sitting above it as an
+   uppercase tracked label on every card. That eyebrow-on-everything rhythm is
+   the most recognisable AI-built signature and this panel was built from it. */
+.tru-dark .brief-lead-in { color: var(--accent-hi); font-weight: 640; }
+.tru-dark .brief-coach { margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--text-80, var(--text)); }
 .tru-dark .brief-coach b { color: var(--accent-hi); font-weight: 700; }
 
 .tru-dark .brief-evidence-toggle {
@@ -5526,11 +5542,11 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-evidence-toggle:hover { text-decoration: underline; }
 .tru-dark .brief-evidence { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
 .tru-dark .brief-evidence blockquote {
-  margin: 0; padding: 8px 12px; font-size: 13px; line-height: 1.5;
-  color: var(--text-60); background: var(--lift);
-  border-radius: 8px; border: 1px solid var(--border);
+  margin: 0; padding: 10px 14px; font-size: 14.5px; line-height: 1.55;
+  color: var(--text-80, var(--text)); background: var(--lift);
+  border-radius: 10px; border: 1px solid var(--border);
 }
-.tru-dark .brief-evidence-meta { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-60); }
+.tru-dark .brief-evidence-meta { display: block; margin-top: 6px; font-size: 13.5px; color: var(--text-60); }
 .tru-dark .brief-evidence-meta a { color: var(--tab-mid, var(--terracotta)); }
 
 /* ── The printable brief — a paper document over the app ── */
@@ -5766,3 +5782,28 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   transition: background .18s ease, border-color .18s ease;
 }
 .tru-dark .ad-profile-link:hover { background: var(--tab-line, var(--lift)); }
+
+
+/* ---------- Coach roster: collapsible ----------
+   On a forty-agent team the table is the entire page and the weekly brief
+   above it scrolls out of reach. This is a manual switch and it stays where
+   the leader puts it: the screen changes when they change it, never on its own. */
+.tru-dark .dk-roster-toggle {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  margin: 18px 0 10px; padding: 11px 14px;
+  background: transparent; border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text-80, var(--text)); font: 600 14.5px/1 var(--hq-font);
+  cursor: pointer;
+  transition: background .2s var(--ease), border-color .2s var(--ease);
+}
+.tru-dark .dk-roster-toggle:hover { background: var(--lift); border-color: var(--text-40); }
+.tru-dark .dk-roster-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tru-dark .dk-roster-count { margin-left: auto; color: var(--text-60); font-weight: 500; }
+.tru-dark .dk-caret {
+  display: inline-block; font-size: 10px; color: var(--text-60);
+  transition: transform .2s var(--ease);
+}
+.tru-dark .dk-caret.is-open { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .dk-caret { transition: none; }
+}

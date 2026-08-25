@@ -254,7 +254,7 @@ export async function handleDataRoutes(
     const findings = ids.length
       ? ((await svc.select(
           'coach_pattern_findings',
-          `pattern_id=in.(${ids.join(',')})&select=pattern_id,lead_name,channel,occurred_at,quote`
+          `pattern_id=in.(${ids.join(',')})&select=pattern_id,lead_name,lead_url,channel,occurred_at,quote`
           + '&order=occurred_at.desc&limit=400',
         )) as Array<Record<string, unknown>>)
       : [];
@@ -263,7 +263,7 @@ export async function handleDataRoutes(
       const k = String(f.pattern_id);
       if (!byPattern.has(k)) byPattern.set(k, []);
       const bucket = byPattern.get(k)!;
-      if (bucket.length < 5) bucket.push({ lead_name: f.lead_name, channel: f.channel, occurred_at: f.occurred_at, quote: f.quote });
+      if (bucket.length < 5) bucket.push({ lead_name: f.lead_name, lead_url: f.lead_url, channel: f.channel, occurred_at: f.occurred_at, quote: f.quote });
     }
 
     const first = rows[0] as { window_start?: string; window_end?: string } | undefined;

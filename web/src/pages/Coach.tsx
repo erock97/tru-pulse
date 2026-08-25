@@ -143,6 +143,10 @@ function CoachDeck({
   const [localOpenId, setLocalOpenId] = useState<string | null>(null);
   const [localView, setLocalView] = useState<'sheet' | 'profile'>('sheet');
   const [briefAgentName, setBriefAgentName] = useState<string | null>(null);
+  // The roster table. On a 40-agent team it is the whole page, and the brief
+  // above it -- the reason to open this tab -- scrolls off. Collapsed is a
+  // choice the leader makes and keeps; it never collapses itself.
+  const [rosterOpen, setRosterOpen] = useState(true);
   const openId = onOpenAgent ? openAgentId : localOpenId;
   const setOpenId = onOpenAgent
     ?? ((id: string | null) => { setLocalOpenId(id); setLocalView('sheet'); });
@@ -541,7 +545,21 @@ function CoachDeck({
                 </div>
               )}
 
-              <div className="rs-plate dk-table" ref={tableRef}>
+              <button
+                className="dk-roster-toggle"
+                aria-expanded={rosterOpen}
+                onClick={() => setRosterOpen((v) => !v)}
+              >
+                <span className={rosterOpen ? 'dk-caret is-open' : 'dk-caret'} aria-hidden>&#9654;</span>
+                {rosterOpen ? 'Hide the full roster' : 'Show the full roster'}
+                <span className="dk-roster-count">{derived.ranked.length} agents</span>
+              </button>
+
+              <div
+                className={rosterOpen ? 'rs-plate dk-table' : 'rs-plate dk-table is-collapsed'}
+                ref={tableRef}
+                hidden={!rosterOpen}
+              >
                 <table className="tru-table">
                   <thead>
                     <tr>

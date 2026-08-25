@@ -143,13 +143,22 @@ function PointList({ points, tone }: {
   return (
     <ul className={`brief-points is-${tone}`}>
       {points.map((p, i) => (
-        <li key={i}>
-          {/* The category as a small label over the card -- what kind of
-              problem this is, before the sentence says what happened. */}
-          {(p as { kicker?: string }).kicker && (
-            <span className="brief-kicker">{(p as { kicker?: string }).kicker}</span>
-          )}
-          <p className="brief-point-text">{p.text}</p>
+        <li
+          key={i}
+          className="brief-card"
+          /* Staggered entry on the app's own .reveal timing tokens, so a column
+             assembles rather than appearing. Reduced motion handled in CSS. */
+          style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
+        >
+          <p className="brief-point-text">
+            {/* The category opens the sentence. It used to be an uppercase
+                tracked label above every single card, and that templated
+                rhythm is the clearest "an AI built this" signature there is. */}
+            {(p as { kicker?: string }).kicker && (
+              <span className="brief-lead-in">{(p as { kicker?: string }).kicker}. </span>
+            )}
+            {p.text}
+          </p>
           {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
           {p.evidence.length > 0 && (
             <>
@@ -158,9 +167,7 @@ function PointList({ points, tone }: {
                 aria-expanded={open === i}
                 onClick={() => setOpen(open === i ? null : i)}
               >
-                {open === i
-                  ? 'Hide the proof'
-                  : `Show the proof (${p.evidence.length})`}
+                {open === i ? 'Hide the proof' : `Proof (${p.evidence.length})`}
               </button>
               {open === i && <EvidenceList evidence={p.evidence} />}
             </>
@@ -367,27 +374,27 @@ export function AgentBriefPanel({ agentId, agentName }: {
               own heavy header. They were a 2x2 grid with 10px labels, and in
               live use the labels disappeared into the points -- the categories
               are the structure of the whole panel, so they get to look like it. */}
+          {/* TWO columns, not three. "Priority opportunities" and "What to do
+              with this agent" were saying the same thing twice: the second is
+              the first, expanded into a directive. So the directive wins, and
+              the opportunities list only appears when there is no plan to
+              replace it. What is left is the two questions a leader actually
+              has -- what do I do, and what did buyers push back on.
+              No "Keep doing" lane either: zero of the 181 agent reviews ever
+              published carried a single point for it. */}
           <div className="brief-lanes">
-            {/* No "Keep doing" lane. Zero of the 181 agent reviews ever
-                published carried a single point for it -- the analysis does
-                not emit praise -- so the lane was a permanent empty state
-                pretending to be a category. The data still parses and stores;
-                the day Hermes starts sending it, this is one lane to add back. */}
             <div className="brief-lane is-work">
-              <h4 className="brief-lane-h">Priority opportunities</h4>
-              <PointList points={mine.opportunities} tone="work" />
+              <h4 className="brief-lane-h">What to do with this agent</h4>
+              <PointList
+                points={plan.length
+                  ? plan
+                  : (mine.coachingActions.length ? mine.coachingActions : mine.opportunities)}
+                tone="work"
+              />
             </div>
             <div className="brief-lane is-watch">
               <h4 className="brief-lane-h">Objections heard</h4>
               <PointList points={mine.objections} tone="watch" />
-            </div>
-            <div className="brief-lane is-work">
-              <h4 className="brief-lane-h">What to do with this agent</h4>
-              <PointList
-                points={plan.length ? plan : mine.coachingActions}
-                tone="work"
-               
-              />
             </div>
           </div>
         </>

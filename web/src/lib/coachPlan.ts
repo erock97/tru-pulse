@@ -27,6 +27,8 @@ export interface AgentPattern {
   recurring: boolean;
   findings: Array<{
     lead_name: string | null;
+    /** Deep link to the contact in Follow Up Boss. */
+    lead_url?: string | null;
     channel: string | null;
     occurred_at: string | null;
     quote: string | null;
@@ -55,7 +57,7 @@ export interface PatternsBundle {
  */
 export const COACH_ON: Record<string, string> = {
   // The four LEAD steps, in TRU's own words. See docs/SALES_DOCTRINE.md §2.
-  lead_l: 'leading with who they are — name, brokerage, Zillow partner, why they called',
+  lead_l: 'leading with who they are: name, brokerage, Zillow partner, why they called',
   lead_e: 'extending the invitation early, with a this-or-that choice',
   lead_a: 'asking permission, then asking real questions and listening',
   lead_d: 'delivering the summary back and confirming what happens next',
@@ -104,7 +106,7 @@ export function rateLine(patternKey: string, m: AgentMetrics | undefined): strin
   if (patternKey === 'call_first' || patternKey === 'text_transition') {
     if (texts > calls) {
       return calls === 0
-        ? `Every one of ${touched} first touches this week was a text — not a single call.`
+        ? `Every one of ${touched} first touches this week was a text. Not one call.`
         : `${texts} of ${touched} first touches this week were texts; ${calls} `
           + `${calls === 1 ? 'was a call' : 'were calls'}.`;
     }
@@ -138,7 +140,12 @@ export function record(p: AgentPattern, now = new Date()): string {
 }
 
 export interface PlanPoint {
-  /** The coaching category, as a small label over the card. */
+  /**
+   * The coaching category. Rendered as sentence-case body text, never as an
+   * uppercase tracked micro-label above every card -- that templated rhythm is
+   * the single most recognisable "an AI built this" signature, and Eric named
+   * this panel as reading exactly that way.
+   */
   kicker?: string;
   text: string;
   coach: string | null;
@@ -154,6 +161,23 @@ export interface PlanPoint {
  * whose evidence has all aged out belongs in the trend area, not in this
  * week's sit-down list.
  */
+/**
+ * Is this piece of evidence a voicemail rather than a conversation?
+ *
+ * Live case: Erica Stevens's ENTIRE coaching profile was two points built on
+ * one 61-character note, "Left message offering to help her pick up where she
+ * left off." Eric's verdict: there is nothing there to assess an agent on.
+ *
+ * A voicemail still counts as an attempt for persistence (doctrine 5.1). It
+ * cannot support coaching about how a conversation was handled, because no
+ * conversation happened.
+ */
+export function isVoicemail(quote: string | null | undefined): boolean {
+  const q = (quote ?? '').trim().toLowerCase();
+  if (!q) return false;
+  return /^(left (a |another )?(message|vm|voicemail)|voicemail|lvm|left vm)/.test(q);
+}
+
 export function buildAgentPlan(
   all: AgentPattern[],
   agentId: string,
@@ -163,7 +187,9 @@ export function buildAgentPlan(
   const wanted = agentName.trim().toLowerCase();
   const mine = all.filter((p) =>
     p.current
-    && (p.agentId === agentId || p.agentName.trim().toLowerCase() === wanted));
+    && (p.agentId === agentId || p.agentName.trim().toLowerCase() === wanted)
+    // A habit standing entirely on voicemails is not a coachable habit.
+    && !(p.findings.length > 0 && p.findings.every((f) => isVoicemail(f.quote))));
 
   mine.sort((a, b) =>
     Number(b.recurring) - Number(a.recurring)
@@ -177,6 +203,9 @@ export function buildAgentPlan(
         findingIndex: i * 100 + j,
         agentName: p.agentName,
         leadName: f.lead_name ?? undefined,
+        // The whole point of proof is that a leader can go and look. Follow Up
+        // Boss is where they look.
+        leadUrl: f.lead_url ?? undefined,
         occurredAt: f.occurred_at ?? undefined,
         channel: f.channel ?? undefined,
         quote: f.quote ?? undefined,
@@ -197,7 +226,7 @@ export function buildAgentPlan(
         rateLine(p.patternKey, metrics),
         record(p),
         `Worth sitting down with ${who} this week to talk through `
-          + `${coachOn(p.patternKey)} — and why it matters, not just that we ask for it.`,
+          + `${coachOn(p.patternKey)}, and why it matters rather than just that we ask for it.`,
       ].filter(Boolean).join(' '),
       coach: p.coachingMove,
       evidence,
