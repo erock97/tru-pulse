@@ -5509,29 +5509,32 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* Hierarchy: the POINT is the product; the quote is its footnote. The old
    sizes had that inverted -- 14.5px dim text over a 13.5px boxed quote that
    read louder than the point it supported. */
-/* An unverified card is deliberately quieter than a real finding, and says so
-   before its first word. It is a lead to check, not a conclusion to act on. */
+/* An unverified card says what it is, in its label and its dashed edge, and
+   changes NOTHING about its type.
+   The first attempt made these lighter, on the theory that a card you cannot
+   act on should be quieter. On a sheet where some cards qualify and some do
+   not -- Joseph Darlington, 2 of 5 -- that put two type weights in one column
+   and the whole panel read as broken. An agent whose cards happened to be all
+   one kind looked fine, which is how it survived review.
+   Every card is the same size and weight. Status is carried by the label and
+   the border, never by making words harder to read. */
 .tru-dark .brief-points > li.is-unverified {
   border-left-color: var(--text-40) !important;
-  background: transparent;
   border-style: dashed;
 }
 .tru-dark .brief-unverified {
   display: block; margin-bottom: 5px;
   font: 700 10.5px/1 var(--hq-font); letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-50, var(--text-60));
-}
-.tru-dark .brief-points > li.is-unverified .brief-point-text {
-  font-weight: 480; color: var(--text-80, var(--text));
+  color: var(--text-60);
 }
 .tru-dark .brief-kicker {
   display: block; margin-bottom: 5px;
   font: 700 10.5px/1 var(--hq-font); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--tab-mid, var(--terracotta));
 }
-.tru-dark .brief-point-text { margin: 0; font-size: 15.5px; line-height: 1.55; font-weight: 550; color: var(--text); }
+.tru-dark .brief-point-text { margin: 0; font-size: 15.5px; line-height: 1.55; font-weight: 600; color: var(--text); }
 .tru-dark .brief-coach { margin: 7px 0 0; font-size: 14px; line-height: 1.5; color: var(--text-80, var(--text)); }
-.tru-dark .brief-coach b { color: var(--accent-hi); font-weight: 660; }
+.tru-dark .brief-coach b { color: var(--accent-hi); font-weight: 700; }
 
 .tru-dark .brief-evidence-toggle {
   background: none; border: none; padding: 0; margin-top: 5px;
