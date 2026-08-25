@@ -20,6 +20,8 @@ import {
   loadCoachBrief,
   NOT_ENOUGH_REVIEWED,
 } from '../lib/coachBriefData';
+import { workerFetch } from '../lib/api';
+import { buildAgentPlan, type PatternsBundle } from '../lib/coachPlan';
 import type {
   BriefAgentView,
   BriefBundle,
@@ -280,6 +282,22 @@ export function TeamBriefSection({ onOpenAgent }: {
   );
 }
 
+/* ── The ninety-day habit store, one fetch per page view ─────────────────────
+   Same lifecycle as the brief cache above: shared promise, dropped on any auth
+   change so an act-as swap cannot show another org's habits. A failed fetch
+   resolves to null and the plan lane falls back to the report's moves — worse
+   copy, never a blank lane. */
+let patternsPromise: Promise<PatternsBundle | null> | null = null;
+function loadPatterns(): Promise<PatternsBundle | null> {
+  if (!patternsPromise) {
+    patternsPromise = workerFetch('/data/coach/patterns')
+      .then((r) => (r.ok ? (r.json() as Promise<PatternsBundle>) : null))
+      .catch(() => null);
+  }
+  return patternsPromise;
+}
+onAuthChange(() => { patternsPromise = null; });
+
 /* ════════ One agent's brief, inside the drill-in sheet ════════ */
 
 export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: {
@@ -289,10 +307,18 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
+  const [patterns, setPatterns] = useState<PatternsBundle | null>(null);
+  useEffect(() => { let on = true; void loadPatterns().then((b) => { if (on) setPatterns(b); }); return () => { on = false; }; }, [agentId]);
   const view = bundle?.latest ?? null;
   const mine = useMemo(
     () => (view ? agentBrief(view, agentId, agentName) : null),
     [view, agentId, agentName],
+  );
+  // The leader's directives, from the habit store. The report's per-lead moves
+  // remain the fallback for a week the store has nothing on.
+  const plan = useMemo(
+    () => (patterns ? buildAgentPlan(patterns.patterns, agentId, agentName) : []),
+    [patterns, agentId, agentName],
   );
 
   // No brief system in play yet → no panel at all (teams without the weekly
@@ -340,7 +366,11 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
             </div>
             <div className="brief-lane is-work">
               <h4 className="brief-lane-h">What to do with this agent</h4>
-              <PointList points={mine.coachingActions} tone="work" evidenceInline={evidenceInline} />
+              <PointList
+                points={plan.length ? plan : mine.coachingActions}
+                tone="work"
+                evidenceInline={evidenceInline}
+              />
             </div>
           </div>
         </>
