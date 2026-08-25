@@ -239,9 +239,21 @@ What counts, and what does not:
 | | Counts |
 |---|---|
 | Phone call | **Yes** |
+| Phone call that reached nobody, voicemail left | **Yes** |
 | Text the agent wrote | **Yes** |
 | Follow Up Boss automated text | **No** — it is not work the agent did |
 | Email | **No** — "I find email to be a waste of time" |
+
+**An attempt is measured by what the agent did, not by whether the buyer
+answered.** Eric, on voicemail:
+
+> If they've made a call and didn't get a hold of the buyer, that's an attempt,
+> similar to a text message that goes unresponded to.
+
+That principle generalises, and should be applied rather than re-asked: an
+unanswered text is still an attempt, a call that rang out is still an attempt.
+Counting only the ones that connected would punish an agent for a buyer's
+silence, which is the opposite of what this measures.
 
 "Unique and individual" is the operative phrase: five separate attempts, not one
 attempt counted five times because the record duplicated it.
@@ -265,8 +277,16 @@ The target is not excellence, and saying so matters:
 That last clause is a condition, not a footnote. Five empty check-ins is not
 five attempts.
 
-**OPEN, do not guess:** whether a voicemail counts as an attempt in its own
-right; and whether the count resets or continues past week one.
+**NO STANDARD EXISTS past week one.** This is not a gap waiting on a question —
+Eric was asked and his answer was that he has not thought about it yet:
+
+> The standard after week one, I don't have one for you. I haven't thought about
+> that.
+
+So there is nothing to ask for and nothing to infer. Coach the first seven days
+against the five-attempt floor and say nothing about what follows. If the
+product needs a rule there, that is a decision to make with Eric, not a number
+to derive.
 
 ### 2. They do not understand *why*
 
@@ -458,6 +478,8 @@ Hermes owns this taxonomy and can extend it.
 
 ## 9. Still open — ask, do not infer
 
+- What the persistence standard is past week one (see 5.1 — genuinely undecided,
+  not merely unasked).
 - Whether TRU has a taught sequence for anything beyond the first call — the
   first showing, the follow-up, the offer conversation.
 - What "strong introduction" sounds like at the standard TRU expects, beyond
