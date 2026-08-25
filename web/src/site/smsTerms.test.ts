@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+// Read with Vite's `?raw`, not node:fs. Same source text, but it is typed by
+// vite/client, so this file typechecks under the app's tsconfig — which has no
+// Node types and should not grow them for one test.
+import smsTerms from './pages/SmsTerms.tsx?raw';
+import privacy from './pages/Privacy.tsx?raw';
+import footer from './SiteFooter.tsx?raw';
 
 /**
  * The SMS pages are the only pages on this site read by someone other than a
@@ -18,13 +21,6 @@ import { dirname, join } from 'node:path';
  * DOM and would still not prove the words survive into the shipped bundle; the
  * file on disk is the thing that gets built.
  */
-const here = dirname(fileURLToPath(import.meta.url));
-const read = (p: string) => readFileSync(join(here, p), 'utf8');
-
-const smsTerms = read('pages/SmsTerms.tsx');
-const privacy = read('pages/Privacy.tsx');
-const footer = read('SiteFooter.tsx');
-
 /** Collapse JSX whitespace so an assertion is not defeated by a line wrap. */
 const flat = (s: string) => s.replace(/\s+/g, ' ');
 
