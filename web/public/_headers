@@ -45,3 +45,15 @@
   Content-Type: image/png
 /icon-maskable-512.png
   Content-Type: image/png
+
+# ── HTML is never cached ──
+# The bundle files are content-hashed and safe to cache forever, but the HTML
+# shell that names them is not. Browsers were holding index.html for hours, so
+# a freshly deployed fix kept loading LAST deploy's CSS and JS -- Eric spent a
+# day hard-refreshing and being told "it's fixed" while his browser pinned the
+# old shell. no-cache means the browser revalidates the tiny HTML on every
+# load and the hashed assets do the heavy caching.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache

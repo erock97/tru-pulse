@@ -4803,7 +4803,9 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    Once, on arrival. A sweep that loops is a loading skeleton, and this page is
    not loading. */
 .tru-dark .dk-page .dk-tile::before,
-.tru-dark .dk-page .dk-table::before {
+.tru-dark .dk-page .dk-table::before,
+.tru-dark .brief-agent-card::before,
+.tru-dark .brief-points > li::before {
   content: ''; position: absolute; top: -20%; bottom: -20%; left: 0;
   width: 34%; pointer-events: none; z-index: 0;
   /* The RESTING state is off the right-hand edge — the same place the sweep
@@ -5443,23 +5445,19 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   gap: 18px;
 }
 .tru-dark .brief-agent-card {
-  position: relative;
-  padding: 20px 22px 18px;
-  background: var(--panel, rgba(255,255,255,.03));
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  /* Surface comes from .rs-plate -- the same glass, hairline and radius as
+     every tile above. These cards read as slapped-in precisely because they
+     carried their own flat background while sitting beside glass. */
+  padding: 22px 24px 20px;
+  overflow: hidden;
   opacity: 0;
   animation: truAdFadeUp 0.6s var(--ease) forwards;
-  transition: transform .24s var(--ease), border-color .24s var(--ease),
-              background .24s var(--ease), box-shadow .24s var(--ease);
+  transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
 }
 .tru-dark .brief-agent-card.is-link { cursor: pointer; }
 .tru-dark .brief-agent-card.is-link:hover,
 .tru-dark .brief-agent-card.is-link:focus-visible {
-  transform: translateY(-4px);
-  background: var(--lift, rgba(255,255,255,.05));
-  border-color: var(--tab-mid, var(--terracotta));
-  box-shadow: 0 18px 40px -24px #000;
+  transform: translateY(-3px);
   outline: none;
 }
 
@@ -5467,21 +5465,27 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; margin-bottom: 10px;
 }
-/* The name at the same weight and size as a Pulse tile name. */
+/* The name in the deck's serif, the same voice as every tile value. */
 .tru-dark .brief-agent-name {
-  margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.015em;
-  color: var(--text-strong);
+  margin: 0; font-family: var(--hq-serif); font-size: 24px; font-weight: 550;
+  letter-spacing: -0.028em; color: var(--text-strong);
 }
-.tru-dark .brief-agent-stats { display: flex; gap: 12px; flex-shrink: 0; }
-.tru-dark .brief-stat { font-size: 14.5px; color: var(--text-60); white-space: nowrap; }
-.tru-dark .brief-stat b { font-size: 17px; font-weight: 700; color: var(--text-strong); }
-.tru-dark .brief-stat.is-watch b { color: var(--accent); }
+.tru-dark .brief-agent-stats { display: flex; gap: 14px; flex-shrink: 0; align-items: baseline; }
+.tru-dark .brief-stat {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-40); font-weight: 700; white-space: nowrap;
+}
+.tru-dark .brief-stat b {
+  font-family: var(--hq-serif); font-size: 19px; font-weight: 550;
+  letter-spacing: -0.02em; color: var(--text-strong); margin-right: 4px;
+}
+.tru-dark .brief-stat.is-watch b { color: var(--accent-hi); }
 
 /* The coaching line, full width, wrapping. Never an ellipsis: cutting the one
    sentence the card exists to deliver was the old layout's worst habit. */
 .tru-dark p.brief-agent-pri {
-  margin: 0; font-size: 17px; line-height: 1.5; font-weight: 500;
-  color: var(--text-80, var(--text));
+  margin: 0; font-size: 16px; line-height: 1.6; font-weight: 420;
+  color: var(--text-80, var(--text)); letter-spacing: 0.002em;
 }
 
 /* The invitation, revealed by the card answering the pointer. */
@@ -5535,8 +5539,8 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-lane-h {
   position: relative;
   margin: 0 0 18px; padding-bottom: 12px;
-  font-size: 22px; font-weight: 700; letter-spacing: -0.014em;
-  color: var(--text-strong);
+  font-family: var(--hq-serif); font-size: 23px; font-weight: 550;
+  letter-spacing: -0.024em; color: var(--text-strong);
 }
 /* The rule under each heading DRAWS itself, the same scaleX move the source
    bars on the Pulse panels use. It is the cue that the column has arrived. */
@@ -5552,46 +5556,44 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 
 .tru-dark .brief-points > li {
-  padding: 20px 22px;
-  background: var(--panel, rgba(255,255,255,.025));
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
-  border-radius: 14px;
-  transition: transform .24s var(--ease), border-color .24s var(--ease),
-              background .24s var(--ease), box-shadow .24s var(--ease);
+  /* Glass from .rs-plate; this only sets the rhythm and the tone edge. */
+  padding: 20px 24px;
+  overflow: hidden;
+  border-left: 3px solid transparent;
+  transition: transform 0.55s var(--spring), box-shadow 0.55s var(--spring);
 }
-.tru-dark .brief-points > li:hover {
-  transform: translateY(-3px);
-  background: var(--lift, rgba(255,255,255,.05));
-  border-color: var(--text-40);
-  box-shadow: 0 14px 34px -22px #000;
-}
+.tru-dark .brief-points > li:hover { transform: translateY(-3px); }
 .tru-dark .brief-points.is-work > li { border-left-color: var(--tab-mid, var(--terracotta)); }
 .tru-dark .brief-points.is-watch > li { border-left-color: var(--accent); }
 
-/* Cards arrive one after another on the house fade-up, delay set per card. */
 .tru-dark .brief-card {
   opacity: 0;
   animation: truAdFadeUp 0.6s var(--ease) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .brief-card { opacity: 1; animation: none; }
-  .tru-dark .brief-lane-h::after { animation: none; }
-  .tru-dark .brief-points > li:hover { transform: none; box-shadow: none; }
+  .tru-dark .brief-points > li:hover { transform: none; }
+  .tru-dark .brief-agent-card { opacity: 1; animation: none; }
+  .tru-dark .brief-agent-card.is-link:hover { transform: none; }
 }
 
 /* THE TYPE. Asked for six times and still too small at 17px. The point IS the
    product; it now sits at the scale this app gives anything that matters. */
 .tru-dark p.brief-point-text {
-  margin: 0; font-size: 22px; line-height: 1.5; font-weight: 560;
-  color: var(--text-strong); letter-spacing: -0.016em;
+  margin: 0; font-size: 17px; line-height: 1.62; font-weight: 420;
+  color: var(--text-80, var(--text)); letter-spacing: 0.002em;
 }
 /* The category opens the sentence. Never an uppercase tracked label above
    every card: that eyebrow-on-everything rhythm is the AI-built signature. */
-.tru-dark .brief-lead-in { color: var(--accent-hi); font-weight: 700; }
+/* The masthead's own trick -- one serif italic amber phrase inside normal
+   text ("Mostly independents,") -- reused as the category lead-in. */
+.tru-dark .brief-lead-in {
+  font-family: var(--hq-serif); font-style: italic; font-weight: 550;
+  font-size: 19px; letter-spacing: -0.015em; color: var(--accent-hi);
+}
 .tru-dark p.brief-coach {
-  margin: 14px 0 0; font-size: 18px; line-height: 1.5;
-  color: var(--text-80, var(--text));
+  margin: 12px 0 0; font-size: 15.5px; line-height: 1.55;
+  color: var(--text-60);
 }
 .tru-dark p.brief-coach b { color: var(--accent-hi); font-weight: 700; }
 
@@ -5603,7 +5605,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-evidence-toggle:hover { text-decoration: underline; }
 .tru-dark .brief-evidence { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
 .tru-dark .brief-evidence blockquote {
-  margin: 0; padding: 14px 18px; font-size: 17px; line-height: 1.55;
+  margin: 0; padding: 12px 16px; font-size: 15px; line-height: 1.55;
   color: var(--text-80, var(--text)); background: var(--lift);
   border-radius: 10px; border: 1px solid var(--border);
 }
