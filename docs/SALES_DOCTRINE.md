@@ -464,15 +464,80 @@ Hermes owns this taxonomy and can extend it.
 1. **Never coach securing the time at the end.** The invitation is step E.
 2. **Always carry the why.** An instruction without a reason will be ignored.
 3. **Behavior, not motive** — until the ninety-day memory earns it.
-4. **A claim needs evidence that can support it.** A one-line call summary
-   cannot prove what an agent did *not* say. Absence from a summary is not
-   evidence of absence. (Live problem: 44 of 58 call quotes are FUB summaries,
-   not speech. Flagged to Hermes 2026-08-25.)
+4. **A claim needs evidence that can support it — this is the highest rule
+   here, above being useful.** See section 8a.
 5. **No guessed pronouns.** The roster does not record them. Use "them".
 6. **Leaders and agents are different people.** Team leads, brokers and office
    staff are analysed but not coached in agent-facing output.
 7. **Say it once.** A habit that has not moved since yesterday is still true
    and still in the app; repeating it daily trains people to stop reading.
+
+---
+
+## 8a. Data integrity — the rule that outranks being useful
+
+On 2026-08-25 the Coach tab told Eric that Joseph Darlington *"told Bishoy
+Yacoub a completely blank seller disclosure was not a red flag while still
+moving the offer forward with inspections later."*
+
+The entire evidence was Follow Up Boss's one-line summary of a 79-second call:
+
+> "The agent is working on an offer for a condo. The seller's disclosure is
+> completely blank."
+
+Two facts. The reassurance, the inspections, the framing — all written by the
+analysis and presented as something the agent said. Eric was dialling that agent
+when he stopped to ask where it came from.
+
+### Why this is existential and not a bug
+
+> The minute there's a data integrity problem, or the data is not legit, is the
+> minute this starts to fail. A broker starts to say "you know what, I looked
+> like an idiot in front of that person, your data was wrong, and I don't trust
+> it." And now, even if it sounds good, I'm going to take three and four extra
+> steps to confirm it. And now we're back in a place where this is not actually
+> saving that broker time. It does not become a value add.
+
+A single fabricated claim does not cost one row. It converts the product from a
+time-saver into a thing that must be double-checked, which is worse than not
+having it.
+
+### The rule
+
+**A claim about what somebody SAID requires somebody's WORDS.** No exception for
+a claim that is probably true, useful, or important.
+
+A third-person summary — "the agent explained", "the lead expressed" — describes
+a conversation. It cannot establish a phrase, a tone, or the absence of either.
+This applies with equal force to negative claims: *"she never offered a time"* is
+a statement about a whole call, and a one-line summary would not have mentioned
+it either way.
+
+### What happens instead
+
+Nothing is deleted. `shared/claimCheck.ts` gates every coaching lane:
+
+| Verdict | Condition | Display |
+|---|---|---|
+| `backed` | somebody's actual words are on file | the claim, as written |
+| `observational` | the claim needs no transcript — a channel, a gap, a count | unchanged |
+| `unsupported` | asserts speech, only a call description on file | **the record, and a question** |
+
+An `unsupported` card shows what the record actually shows, states plainly that
+the words are not on file, offers **no** coaching move, and sends the leader to
+ask rather than to correct. It is visibly marked and deliberately quieter than a
+real finding.
+
+The underlying fact is kept, because it is usually the valuable part. The blank
+disclosure on that condo is real, unusual and worth a broker's attention. Only
+the invented sentence around it goes.
+
+### The upstream fix
+
+This is a display-side guard, not a cure. Hermes should quote the transcript
+where one exists, and should not emit behavioural claims a summary cannot
+support. Sent to Codex 2026-08-25. Until then TRU HQ refuses to repeat what it
+cannot show.
 
 ---
 

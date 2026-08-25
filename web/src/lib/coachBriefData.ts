@@ -6,6 +6,7 @@
 // table already hides held rows and personal on-demand runs, so everything that
 // arrives here is safe to show.
 import { isDemo, workerFetch } from './api';
+import { claimSupport, recordShows } from '../../../shared/claimCheck';
 import {
   channelLabel,
   findingsByIndex,
@@ -43,6 +44,8 @@ export interface BriefPointView {
   text: string;
   coach: string | null;
   evidence: BriefFinding[];
+  /** The evidence cannot carry the claim. See shared/claimCheck.ts. */
+  unverified?: boolean;
 }
 
 export interface BriefAgentView {
@@ -116,6 +119,21 @@ export function toView(row: BriefReportRow): BriefView | null {
           // happened and that lane is the to-do -- the same sentence in both
           // is the redundancy Eric already threw one lane out over.
           const v = opportunityAsPoint(o, byIndex, byId);
+          // Same integrity gate as the plan lane (shared/claimCheck.ts): a
+          // claim about what somebody SAID, with only a call description on
+          // file, is not repeated. The record is shown instead.
+          if (claimSupport(v.text, v.evidence.map((f) => f.quote)) === 'unsupported') {
+            const shows = recordShows(v.evidence.map((f) => f.quote));
+            return {
+              text: shows
+                ? `The record shows: ${shows} The call was not transcribed, so what `
+                  + 'was actually said is not on file.'
+                : 'Flagged here, but nothing on file shows what was said.',
+              coach: null,
+              evidence: v.evidence,
+              unverified: true,
+            };
+          }
           return { ...v, coach: null };
         });
 

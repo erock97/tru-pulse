@@ -12,6 +12,7 @@
 // one directive per habit, worst first, with the latest concrete drill as the
 // sub-line and the actual conversations as evidence.
 import type { BriefFinding } from '../../../shared/coachBrief';
+import { claimSupport, recordShows } from '../../../shared/claimCheck';
 
 export interface AgentPattern {
   agentId: string | null;
@@ -143,6 +144,12 @@ export interface PlanPoint {
   text: string;
   coach: string | null;
   evidence: BriefFinding[];
+  /**
+   * The analysis asserted what somebody said, and the only evidence on file is
+   * a description of the call. The card shows the record and asks rather than
+   * repeating a claim nobody can stand behind.
+   */
+  unverified?: boolean;
 }
 
 /**
@@ -170,29 +177,9 @@ export function buildAgentPlan(
     || b.occurrences - a.occurrences
     || a.patternKey.localeCompare(b.patternKey));
 
-  return mine.map((p, i) => ({
-    // The directive leads with WHAT HAPPENED, in the analysis's own specific
-    // words — "he asked Shannon if she'd changed her mind, blaming her
-    // silence" — because "coach them on asking the questions that surface
-    // motivation" is a category, and Eric called the category version vague
-    // to its face. The category still names the card via `kicker`, so the
-    // lane stays scannable; the sentence carries the story.
-    // "them", not a guessed pronoun: the roster does not record pronouns, and
-    // a wrong guess in a coaching directive lands in front of the person.
-    kicker: coachOn(p.patternKey),
-    // Built in the order Eric's model directive uses: what we noticed, how
-    // often or how widely, then the sit-down and what it is ABOUT -- the why,
-    // not the instruction. See docs/SALES_DOCTRINE.md section 6a; "tell agent
-    // to call first before texting" is the failure it was written against.
-    text: [
-      p.explanation ? p.explanation.trim().replace(/[.\s]+$/, '') + '.' : null,
-      rateLine(p.patternKey, metrics),
-      record(p),
-      `Worth sitting down with ${firstName(p.agentName)} this week to talk through `
-        + `${coachOn(p.patternKey)} — and why it matters, not just that we ask for it.`,
-    ].filter(Boolean).join(' '),
-    coach: p.coachingMove,
-    evidence: p.findings
+  return mine.map((p, i) => {
+    const quotes = p.findings.map((f) => f.quote);
+    const evidence = p.findings
       .filter((f) => f.quote)
       .map((f, j) => ({
         findingIndex: i * 100 + j,
@@ -201,6 +188,55 @@ export function buildAgentPlan(
         occurredAt: f.occurred_at ?? undefined,
         channel: f.channel ?? undefined,
         quote: f.quote ?? undefined,
-      } as BriefFinding)),
-  }));
+      } as BriefFinding));
+    const who = firstName(p.agentName);
+
+    // THE INTEGRITY GATE. If the analysis asserted what somebody said and the
+    // only evidence on file is a description of the call, the claim does not
+    // get repeated. Live example this was written for: "He told Bishoy Yacoub
+    // a completely blank seller disclosure was not a red flag" -- backed by a
+    // 79-second call whose stored evidence reads only "The agent is working on
+    // an offer for a condo. The seller's disclosure is completely blank."
+    //
+    // A broker who repeats a fabricated quote to their own agent stops
+    // trusting every other row on this page, permanently. So the card shows
+    // what the record shows, says plainly that the words are not on file, and
+    // sends them to ask.
+    if (claimSupport(p.explanation, quotes) === 'unsupported') {
+      const shows = recordShows(quotes);
+      return {
+        kicker: coachOn(p.patternKey),
+        unverified: true,
+        text: shows
+          ? `The record shows: ${shows} This call was not transcribed, so what `
+            + `${who} actually said is not on file. Worth asking ${who} how they `
+            + `handled it before treating it as a coaching point.`
+          : `Something was flagged for ${who} here, but the call was not `
+            + `transcribed and nothing on file shows what was said. Worth asking `
+            + `${who} directly rather than acting on this.`,
+        coach: null,
+        evidence,
+      };
+    }
+
+    return {
+      // The directive leads with WHAT HAPPENED, in the analysis's own specific
+      // words, because the category version alone reads as vague. The category
+      // names the card via `kicker`, so the lane stays scannable.
+      kicker: coachOn(p.patternKey),
+      // Built in the order Eric's model directive uses: what we noticed, how
+      // often or how widely, then the sit-down and what it is ABOUT -- the why,
+      // not the instruction. See docs/SALES_DOCTRINE.md section 6a.
+      // "them", not a guessed pronoun: the roster does not record pronouns.
+      text: [
+        p.explanation ? p.explanation.trim().replace(/[.\s]+$/, '') + '.' : null,
+        rateLine(p.patternKey, metrics),
+        record(p),
+        `Worth sitting down with ${who} this week to talk through `
+          + `${coachOn(p.patternKey)} — and why it matters, not just that we ask for it.`,
+      ].filter(Boolean).join(' '),
+      coach: p.coachingMove,
+      evidence,
+    };
+  });
 }

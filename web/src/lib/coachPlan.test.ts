@@ -190,3 +190,59 @@ describe('the rate — the part that makes it arguable-with', () => {
     expect(p.text).toContain('11 of 12 first touches this week were texts');
   });
 });
+
+
+describe('the integrity gate', () => {
+  // Production, 2026-08-25. This card told Eric his agent said something, and
+  // Eric was dialling that agent when he stopped to ask where it came from.
+  const BISHOY = pat({
+    patternKey: 'premature_representation',
+    explanation: 'He told Bishoy Yacoub a completely blank seller disclosure was not a '
+      + 'red flag while still moving the offer forward with inspections later.',
+    coachingMove: 'Explain that a blank disclosure needs to be checked before treating '
+      + 'the offer as routine.',
+    findings: [{
+      lead_name: 'Bishoy Yacoub', channel: 'call', occurred_at: '2026-08-20T13:56:58Z',
+      quote: 'Joseph Darlington Bishoy Yacoub (1 min 19 sec) Aug 20 Summary Transcript '
+        + "The agent is working on an offer for a condo. The seller's disclosure is completely blank.",
+    }],
+  });
+
+  it('never repeats a claim the evidence cannot carry', () => {
+    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
+    expect(p.unverified).toBe(true);
+    expect(p.text).not.toContain('not a red flag');
+    expect(p.text).not.toContain('told Bishoy');
+  });
+
+  it('keeps the fact, which is the part worth knowing', () => {
+    // The blank disclosure is real, unusual, and exactly what a broker should
+    // ask about. Only the invented sentence around it has to go.
+    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
+    expect(p.text).toContain("The seller's disclosure is completely blank");
+  });
+
+  it('sends the leader to ask rather than to correct', () => {
+    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
+    expect(p.text).toContain('not on file');
+    expect(p.text).toMatch(/asking Joseph/);
+  });
+
+  it('offers no coaching move on an unverified card', () => {
+    // A drill built on a claim we cannot stand behind is the same error twice.
+    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
+    expect(p.coach).toBeNull();
+  });
+
+  it('still shows the evidence, so the leader can judge it themselves', () => {
+    const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
+    expect(p.evidence).toHaveLength(1);
+  });
+
+  it('leaves a properly evidenced card completely alone', () => {
+    const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
+    expect(p.unverified).toBeUndefined();
+    expect(p.text).toContain('Asked Ashley to catch up without offering a time');
+    expect(p.coach).toContain('two specific times');
+  });
+});
