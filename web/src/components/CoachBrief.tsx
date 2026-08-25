@@ -325,10 +325,11 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
               live use the labels disappeared into the points -- the categories
               are the structure of the whole panel, so they get to look like it. */}
           <div className="brief-lanes">
-            <div className="brief-lane is-good">
-              <h4 className="brief-lane-h">Keep doing</h4>
-              <PointList points={mine.doingRight} tone="good" evidenceInline={evidenceInline} />
-            </div>
+            {/* No "Keep doing" lane. Zero of the 181 agent reviews ever
+                published carried a single point for it -- the analysis does
+                not emit praise -- so the lane was a permanent empty state
+                pretending to be a category. The data still parses and stores;
+                the day Hermes starts sending it, this is one lane to add back. */}
             <div className="brief-lane is-work">
               <h4 className="brief-lane-h">Priority opportunities</h4>
               <PointList points={mine.opportunities} tone="work" evidenceInline={evidenceInline} />
@@ -338,7 +339,7 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
               <PointList points={mine.objections} tone="watch" evidenceInline={evidenceInline} />
             </div>
             <div className="brief-lane is-work">
-              <h4 className="brief-lane-h">This week’s coaching plan</h4>
+              <h4 className="brief-lane-h">What to do with this agent</h4>
               <PointList points={mine.coachingActions} tone="work" evidenceInline={evidenceInline} />
             </div>
           </div>
@@ -446,10 +447,9 @@ export function BriefPrintSheet({ view, onClose }: { view: BriefView; onClose: (
               if (m.noOutreach !== undefined) bits.push(`${m.noOutreach} untouched`);
               return bits.length ? <p className="bp-metrics">{bits.join(' · ')}</p> : null;
             })()}
-            <PrintPoints label="Keep doing" points={a.doingRight} />
             <PrintPoints label="Priority opportunities" points={a.opportunities} />
             <PrintPoints label="Objections heard" points={a.objections} />
-            <PrintPoints label="This week’s coaching plan" points={a.coachingActions} />
+            <PrintPoints label="What to do with this agent" points={a.coachingActions} />
           </section>
         ))}
 
