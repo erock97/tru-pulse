@@ -313,6 +313,12 @@ export function TeamBriefSection({ onOpenAgent, cohort }: {
                 'rs-plate', 'brief-agent-card',
                 clickable ? 'is-link' : '',
                 meta?.needsYou ? 'needs-you' : '',
+                /* Tone edges break the sea of identical tiles: ember for the
+                   people who need a leader, amber where buyers pushed back,
+                   and a QUIET card for an agent with nothing to flag -- a calm
+                   week should look calm, not identical to a loaded one. */
+                !meta?.needsYou && a.objections.length > 0 ? 'has-watch' : '',
+                !priority ? 'is-quiet' : '',
               ].filter(Boolean).join(' ')}
               role="listitem"
               key={a.agentName}
@@ -336,6 +342,25 @@ export function TeamBriefSection({ onOpenAgent, cohort }: {
                   )}
                 </span>
               </header>
+              {/* The agent's own first-touch mix, in the page's segmented-strip
+                  language (the Independent/Striver/Achiever bar above). This is
+                  what un-flattens the wall: every card carries a different
+                  shape, and the shape is the behaviour TRU coaches hardest --
+                  calls before texts. Sea = called first, amber = texted. */}
+              {(() => {
+                const c = a.metrics.callFirst ?? 0;
+                const t = a.metrics.textFirst ?? 0;
+                if (c + t < 2) return null;
+                return (
+                  <span className="brief-mix" aria-label={`${c} called first, ${t} texted first`}>
+                    <span className="brief-mix-bar">
+                      {c > 0 && <i className="is-call" style={{ flexGrow: c }} />}
+                      {t > 0 && <i className="is-text" style={{ flexGrow: t }} />}
+                    </span>
+                    <span className="brief-mix-cap"><b>{c}</b> called first · <b>{t}</b> texted</span>
+                  </span>
+                );
+              })()}
               <p className="brief-agent-pri">
                 {priority ?? <i className="brief-none-inline">{emptyPriorityLabel(a)}</i>}
               </p>

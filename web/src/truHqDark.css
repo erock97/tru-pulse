@@ -5893,3 +5893,24 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-agent-meta.is-quiet { color: var(--text-40); font-style: italic; }
 /* The people who need a leader carry the ember edge the old focus row used. */
 .tru-dark .brief-agent-card.needs-you { border-left: 3px solid var(--ember, #ff8b62); }
+
+/* ---------- Per-card first-touch mix ----------
+   The Independent/Striver/Achiever strip's little sibling: two segments, no
+   background track, a different shape on every card. Sea = called first,
+   amber = texted first. This is what breaks the sea of identical tiles. */
+.tru-dark .brief-mix { display: block; margin: 12px 0 12px; }
+.tru-dark .brief-mix-bar {
+  display: flex; height: 5px; border-radius: 999px; overflow: hidden; gap: 2px;
+}
+.tru-dark .brief-mix-bar i { display: block; border-radius: 999px; min-width: 5px; }
+.tru-dark .brief-mix-bar .is-call { background: var(--sea); }
+.tru-dark .brief-mix-bar .is-text { background: var(--tab-mid, var(--terracotta)); opacity: 0.85; }
+.tru-dark .brief-mix-cap { display: block; margin-top: 6px; font-size: 12px; letter-spacing: 0.03em; color: var(--text-40); }
+.tru-dark .brief-mix-cap b { color: var(--text-60); font-weight: 700; }
+
+/* Tone edges and the quiet card. A calm week LOOKS calm: smaller presence,
+   dimmer plate, no pretending it is as loaded as its neighbours. */
+.tru-dark .brief-agent-card.has-watch { border-left: 3px solid var(--accent); }
+.tru-dark .brief-agent-card.is-quiet { opacity: 0.62; padding: 16px 20px 14px; }
+.tru-dark .brief-agent-card.is-quiet .brief-agent-name { font-size: 19px; }
+.tru-dark .brief-agent-card.is-quiet:hover { opacity: 0.95; }
