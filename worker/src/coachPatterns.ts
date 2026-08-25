@@ -224,6 +224,16 @@ export async function coachPipelineHealth(database: Db) {
   ]);
 
   const stateByTeam = new Map((state as any[]).map((s) => [s.team_id, s]));
+
+  // Reports that arrived carrying a slug no team claims. These are sitting held
+  // where nobody will ever see them, and it is exactly how Scott Moore and
+  // Woosley were silently dropping reports until their slugs were set.
+  const claimed = new Set((teams as any[]).map((t) => t.report_slug).filter(Boolean));
+  const orphanSlugs = new Set(
+    (reports as any[]).filter((r) => !r.team_id && !claimed.has(r.team_slug))
+      .map((r) => r.team_slug),
+  );
+
   const reportsByTeam = new Map<string, any[]>();
   for (const r of reports as any[]) {
     const k = r.team_id ?? `slug:${r.team_slug}`;
@@ -241,7 +251,20 @@ export async function coachPipelineHealth(database: Db) {
     // check that cries wolf about expected states is one nobody reads.
     const notes: string[] = [];
     if (!t.report_slug) {
-      problems.push('no report slug set, so nothing from Hermes can ever match this team');
+      // No slug and nothing arriving means the team simply is not on Hermes
+      // yet. That is a decision somebody made, not a fault, and reporting it as
+      // one every morning trains a person to stop reading this.
+      //
+      // A missing slug WHILE reports arrive under some other name is a
+      // different thing entirely, and that one is real.
+      if (orphanSlugs.size) {
+        problems.push(
+          `reports are arriving under unclaimed slugs (${[...orphanSlugs].join(', ')})`
+          + ' and no team maps them',
+        );
+      } else {
+        notes.push('not connected to Hermes yet');
+      }
     } else if (!mine.length) {
       problems.push('no report received in the last 36 hours');
     } else {
