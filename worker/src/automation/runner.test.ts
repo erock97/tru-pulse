@@ -22,6 +22,7 @@ function stub(over: {
   lastSync?: string | null;
   fresh?: any[]; untouched?: any[]; stalled?: any[];
   deliveryThrows?: boolean;
+  roster?: any[];
 } = {}) {
   const inserts: Array<{ table: string; row: any }> = [];
   const updates: Array<{ table: string; patch: any }> = [];
@@ -36,6 +37,9 @@ function stub(over: {
       if (table === 'automation_runs') return Array(over.runsToday ?? 0).fill({ id: 'r' });
       if (table === 'automation_deliveries') return Array(over.deliveriesHour ?? 0).fill({ id: 'd' });
       if (table === 'automation_capabilities') return [];
+      if (table === 'agents') return over.roster ?? [
+        { name: 'Stuart Gray', role: 'agent', excluded: false, is_paused: false },
+      ];
       if (table === 'sync_state') {
         return over.lastSync === undefined
           ? [{ last_sync_at: new Date().toISOString() }]
@@ -254,5 +258,72 @@ describe('names are cut down before they go anywhere', () => {
 
   it('scrubs an accent rather than paying to send it', () => {
     expect(shortName('Renée Ötzi')).toBe('Renee O.');
+  });
+});
+
+describe('the brief chases agents, and only agents', () => {
+  // Who counts as chaseable is a categorisation question, not a filtering one:
+  // the roster carries a role per person and the brief reads it, rather than
+  // keeping a list of names of its own.
+  const roster = [
+    { name: 'Carey Diec', role: 'agent', excluded: false, is_paused: false },
+    { name: 'Violalyn Atijano', role: 'admin', excluded: false, is_paused: false },
+    { name: 'George Bellino', role: 'lead', excluded: false, is_paused: false },
+    { name: 'Iron 65', role: 'pond', excluded: false, is_paused: false },
+    { name: 'Gone Away', role: 'agent', excluded: true, is_paused: false },
+    { name: 'On Leave', role: 'agent', excluded: false, is_paused: true },
+  ];
+  const everyone = roster.map((r) => ({ assigned_to: r.name }));
+
+  const bodyOf = async () => {
+    const s = stub({ roster, untouched: everyone, stalled: everyone, fresh: everyone });
+    await runOne(env, s.db, AUTO, TEAM, NOW);
+    return s.inserts.find((i) => i.table === 'automation_deliveries')!.row.body as string;
+  };
+
+  it('chases the agent', async () => {
+    expect(await bodyOf()).toContain('Carey D.');
+  });
+
+  it('does not chase an office admin', async () => {
+    // Signature has three. One had ten leads in an early stage, which put her at
+    // the top of that team's brief and pushed an agent with three uncontacted
+    // leads off it entirely.
+    expect(await bodyOf()).not.toMatch(/Violalyn A\. - /);
+  });
+
+  it('does not chase a team leader', async () => {
+    expect(await bodyOf()).not.toMatch(/George B\. - /);
+  });
+
+  it('does not chase a pond, which is not a person', async () => {
+    // Synergy's "Iron 65" was showing sixteen untouched leads. Nobody can be
+    // asked to go and call them.
+    expect(await bodyOf()).not.toMatch(/Iron 65 - /);
+  });
+
+  it('does not chase someone taken off the roster or paused', async () => {
+    // They are not failing to work leads. They were told not to.
+    const body = await bodyOf();
+    expect(body).not.toMatch(/Gone A\. - /);
+    expect(body).not.toMatch(/On L\. - /);
+  });
+
+  it('still counts everyone in the day’s intake', async () => {
+    // Where leads landed is worth knowing whoever caught them. It is only the
+    // chase list that is agents-only.
+    expect(await bodyOf()).toContain('New leads (24h): 6');
+  });
+
+  it('treats a person with no role recorded as an agent', async () => {
+    // Failing open here is right: a roster row that predates roles should still
+    // be chased, not silently dropped from every brief.
+    const s = stub({
+      roster: [{ name: 'Old Row', excluded: false, is_paused: false }],
+      untouched: [{ assigned_to: 'Old Row' }],
+    });
+    await runOne(env, s.db, AUTO, TEAM, NOW);
+    const body = s.inserts.find((i) => i.table === 'automation_deliveries')!.row.body;
+    expect(body).toContain('Old R.');
   });
 });
