@@ -1,6 +1,6 @@
-// The leader-facing plan lane. The reference sentence is Eric's own ask,
-// verbatim: "Sit down with Joseph this week, coach him on the value of being
-// specific when setting meeting times" — the habit, not the incident.
+// The leader-facing plan lane. Every category label here is TRU doctrine, not
+// wording — lead_* are the four LEAD steps. See docs/SALES_DOCTRINE.md before
+// changing a string, and never guess what a pattern key means.
 import { describe, expect, it } from 'vitest';
 import { buildAgentPlan, coachOn, record, type AgentPattern } from './coachPlan';
 
@@ -34,12 +34,12 @@ describe('the sentence a leader acts on', () => {
       // The fixture's first-seen is a week back, so the date has earned its place.
       'Sit down with Joseph this week. Asked Ashley to catch up without offering a time. 3 times since Aug 18.',
     );
-    expect(p.kicker).toBe('being specific when setting meeting times');
+    expect(p.kicker).toBe('extending the invitation early, with a this-or-that choice');
   });
 
   it('falls back to the category sentence when there is no story', () => {
     const [p] = buildAgentPlan([pat({ explanation: null })], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain('coach them on being specific when setting meeting times');
+    expect(p.text).toContain('coach them on extending the invitation early');
   });
 
   it('keeps the concrete drill as the sub-line', () => {
@@ -80,8 +80,8 @@ describe('what qualifies and in what order', () => {
       pat({ patternKey: 'call_first', occurrences: 2, recurring: true }),
       pat({ patternKey: 'lead_e', occurrences: 5, recurring: true }),
     ], 'agent-1', 'Joseph Darlington');
-    expect(plan[0].kicker).toBe('being specific when setting meeting times');
-    expect(plan[2].kicker).toBe('working an objection instead of letting it end the thread');
+    expect(plan[0].kicker).toBe('extending the invitation early, with a this-or-that choice');
+    expect(plan[2].kicker).toBe('working through the hard moment instead of retreating from it');
   });
 
   it('leaves out a habit whose evidence has aged out', () => {
@@ -108,7 +108,7 @@ describe('what qualifies and in what order', () => {
 
 describe('the taxonomy', () => {
   it('speaks every known category as a coaching subject', () => {
-    expect(coachOn('lead_e')).toBe('being specific when setting meeting times');
+    expect(coachOn('lead_e')).toBe('extending the invitation early, with a this-or-that choice');
     expect(coachOn('premature_representation')).toBe('promising only what they can actually deliver');
   });
 

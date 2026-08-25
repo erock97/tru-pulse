@@ -63,17 +63,21 @@ export interface PatternBriefInput {
  * category because we had not heard of it yet is the worse failure.
  */
 export const PATTERN_LABEL: Record<string, string> = {
-  lead_l: 'not saying who they are on the call',
-  lead_e: 'no time set to talk again',
-  lead_a: 'not asking what would move it forward',
-  lead_d: 'ending without restating the plan',
-  call_first: 'texting when the buyer asked for a call',
+  // lead_* are the four LEAD steps. See docs/SALES_DOCTRINE.md section 2 --
+  // an earlier guess at these shipped and coached the opposite of TRU's
+  // framework, most damagingly `lead_e` as "no time set to talk again" when
+  // E is extending the invitation EARLY in the call.
+  lead_l: 'no intro - who they are, why calling',
+  lead_e: 'no invitation early in the call',
+  lead_a: 'no real questions asked',
+  lead_d: 'no summary, no next step confirmed',
+  call_first: 'texting where a call was needed',
   call_quality: 'calls ending before a conversation starts',
-  next_steps: 'no next step asked for',
-  objection: 'letting an objection end the conversation',
+  next_steps: 'conversation ended nowhere',
+  objection: 'folded when it got difficult',
   text_transition: 'sending details before talking to them',
-  negative_property_pivot: 'leaving it at the bad news',
-  premature_financing: 'raising financing before asking what they need',
+  negative_property_pivot: 'left the bad news sitting there',
+  premature_financing: 'money raised before they knew them',
   premature_representation: 'promising what they can only ask for',
 };
 
