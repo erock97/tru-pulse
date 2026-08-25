@@ -5407,7 +5407,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
 /* The recurring "no data" line. Eric's rule: a blank section says this, in
    words, and never renders as an empty box or an error. */
-.tru-dark .brief-none { color: var(--text-60); font-size: 16px; margin: 6px 0 0; }
+.tru-dark p.brief-none, .tru-dark .brief-none { color: var(--text-60); font-size: 16px; margin: 6px 0 0; }
 .tru-dark .brief-none-inline { color: var(--text-60); font-style: normal; }
 
 /* ── The team scan (roster page) ── */
@@ -5479,7 +5479,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
 /* The coaching line, full width, wrapping. Never an ellipsis: cutting the one
    sentence the card exists to deliver was the old layout's worst habit. */
-.tru-dark .brief-agent-pri {
+.tru-dark p.brief-agent-pri {
   margin: 0; font-size: 17px; line-height: 1.5; font-weight: 500;
   color: var(--text-80, var(--text));
 }
@@ -5514,7 +5514,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-panel .ad-panel-head .panel-sub { font-size: 14.5px; color: var(--text-60); }
 .tru-dark .brief-panel .ad-panel-head { align-items: center; gap: 12px; }
 .tru-dark .brief-panel .brief-week-pick { margin-left: auto; }
-.tru-dark .brief-outreach {
+.tru-dark p.brief-outreach {
   color: var(--text-80, var(--text)); font-size: 16px; margin: 2px 0 18px;
   padding: 8px 12px; border-left: 2px solid var(--tab-line, var(--border));
   background: var(--tab-soft, rgba(255,139,98,.08));
@@ -5582,18 +5582,18 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
 /* THE TYPE. Asked for six times and still too small at 17px. The point IS the
    product; it now sits at the scale this app gives anything that matters. */
-.tru-dark .brief-point-text {
+.tru-dark p.brief-point-text {
   margin: 0; font-size: 22px; line-height: 1.5; font-weight: 560;
   color: var(--text-strong); letter-spacing: -0.016em;
 }
 /* The category opens the sentence. Never an uppercase tracked label above
    every card: that eyebrow-on-everything rhythm is the AI-built signature. */
 .tru-dark .brief-lead-in { color: var(--accent-hi); font-weight: 700; }
-.tru-dark .brief-coach {
+.tru-dark p.brief-coach {
   margin: 14px 0 0; font-size: 18px; line-height: 1.5;
   color: var(--text-80, var(--text));
 }
-.tru-dark .brief-coach b { color: var(--accent-hi); font-weight: 700; }
+.tru-dark p.brief-coach b { color: var(--accent-hi); font-weight: 700; }
 
 .tru-dark .brief-evidence-toggle {
   background: none; border: none; padding: 0; margin-top: 12px; font-size: 14.5px;
