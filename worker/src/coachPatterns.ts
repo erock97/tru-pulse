@@ -198,3 +198,108 @@ export async function coachViewFor(database: Db, teamId: string) {
     })),
   };
 }
+
+/**
+ * Did last night's run actually work?
+ *
+ * Nobody is watching at 5am Pacific, and the failure modes here are quiet ones:
+ * a report that arrived but held because a slug drifted, a payload that parsed
+ * but carried no pattern keys, evidence that all deduplicated because Hermes
+ * re-sent an identical window. None of those throw. Each just leaves the Coach
+ * view emptier than it should be, which looks like a quiet week rather than a
+ * broken pipeline.
+ *
+ * So this reports what a person would actually check, per team, in the order
+ * they would check it.
+ */
+export async function coachPipelineHealth(database: Db) {
+  const since = new Date(Date.now() - 36 * 3600_000).toISOString();
+  const [teams, reports, state, patterns] = await Promise.all([
+    database.select('teams', 'is_active=eq.true&select=id,name,report_slug'),
+    database.select('coach_weekly_reports',
+      `received_at=gte.${since}&select=team_id,team_slug,run_id,run_trigger,status,`
+      + `week_start,week_end,generated_at,received_at,payload&order=received_at.desc`),
+    database.select('coach_team_state', 'select=*'),
+    database.select('coach_patterns_live', 'select=team_id,is_current,is_recurring'),
+  ]);
+
+  const stateByTeam = new Map((state as any[]).map((s) => [s.team_id, s]));
+  const reportsByTeam = new Map<string, any[]>();
+  for (const r of reports as any[]) {
+    const k = r.team_id ?? `slug:${r.team_slug}`;
+    reportsByTeam.set(k, [...(reportsByTeam.get(k) ?? []), r]);
+  }
+
+  const out = (teams as any[]).map((t) => {
+    const mine = reportsByTeam.get(t.id) ?? [];
+    const newest = mine[0] ?? null;
+    const s = stateByTeam.get(t.id) ?? null;
+    const live = (patterns as any[]).filter((p) => p.team_id === t.id);
+
+    const problems: string[] = [];
+    // Things worth saying that are not faults. Keeping them apart matters: a
+    // check that cries wolf about expected states is one nobody reads.
+    const notes: string[] = [];
+    if (!t.report_slug) {
+      problems.push('no report slug set, so nothing from Hermes can ever match this team');
+    } else if (!mine.length) {
+      problems.push('no report received in the last 36 hours');
+    } else {
+      const v = newest.payload?.schemaVersion ?? '1.0';
+      const held = newest.status !== 'published';
+      const handRun = newest.run_trigger !== 'daily' && newest.run_trigger !== 'weekly';
+
+      // A hand-run report being held is the system working, not failing - it is
+      // the whole point of rule 1. Only a SCHEDULED report that failed to
+      // publish is a problem.
+      if (held && !handRun) {
+        problems.push(`newest scheduled report is ${newest.status}, not published`);
+      } else if (held && handRun) {
+        notes.push(`newest is a ${newest.run_trigger} run, correctly held`);
+      }
+
+      if (v !== '1.1') {
+        notes.push(`newest is schema ${v}, so it carries no pattern keys - expected until the first daily run`);
+      }
+
+      // The quietest failure of the lot: it parsed, it published, and the Coach
+      // view stayed empty anyway.
+      if (v === '1.1' && !held && !s) {
+        problems.push('report published but nothing was absorbed');
+      }
+      if (s && !held && newest.run_id !== s.last_run_id) {
+        problems.push('the window did not advance to the newest report');
+      }
+    }
+
+    return {
+      team: t.name,
+      slug: t.report_slug,
+      lastReport: newest ? {
+        runId: newest.run_id,
+        trigger: newest.run_trigger,
+        status: newest.status,
+        schema: newest.payload?.schemaVersion ?? '1.0',
+        window: `${newest.week_start} to ${newest.week_end}`,
+        receivedAt: newest.received_at,
+      } : null,
+      absorbedWindow: s ? `${s.window_start} to ${s.window_end}` : null,
+      lastUpdate: s?.generated_at ?? null,
+      patterns: {
+        total: live.length,
+        showingNow: live.filter((p) => p.is_current).length,
+        recurring: live.filter((p) => p.is_recurring).length,
+        inTrendOnly: live.filter((p) => !p.is_current && p.is_recurring).length,
+      },
+      ok: problems.length === 0,
+      problems,
+      notes,
+    };
+  });
+
+  return {
+    checkedAt: new Date().toISOString(),
+    healthy: out.every((t) => t.ok),
+    teams: out,
+  };
+}
