@@ -320,8 +320,39 @@ export async function coachPipelineHealth(database: Db) {
     };
   });
 
+  // Green on its own is ambiguous, and that is a trap worth closing.
+  //
+  // Before the first daily run every team reads OK - correctly, because nothing
+  // is broken - and after a successful run every team also reads OK. Somebody
+  // glancing at a green screen cannot tell "it worked" from "it has not
+  // happened yet", which is the single question they opened this to answer.
+  //
+  // So say it outright, based on whether a daily 1.1 report has actually
+  // landed, rather than leaving it to be inferred from a schema number.
+  const daily = (reports as any[]).filter(
+    (r) => r.run_trigger === 'daily' && (r.payload?.schemaVersion ?? '1.0') === '1.1',
+  );
+  const teamsWithDaily = new Set(daily.map((r) => r.team_id).filter(Boolean));
+  const connected = out.filter((t) => !t.notes.includes('not connected to Hermes yet'));
+
+  let verdict: string;
+  if (!daily.length) {
+    verdict = 'No daily report has arrived yet. Nothing is broken; it has not run.';
+  } else if (teamsWithDaily.size < connected.length) {
+    const missing = connected
+      .filter((t) => !daily.some((r: any) => r.lastSeenTeam === t.team))
+      .length;
+    verdict = `A daily run landed for ${teamsWithDaily.size} of ${connected.length} connected teams.`
+      + (missing ? ' The rest did not receive one.' : '');
+  } else {
+    verdict = `A daily run landed for all ${connected.length} connected teams.`;
+  }
+
   return {
     checkedAt: new Date().toISOString(),
+    // Has the thing you are checking for actually happened?
+    ranToday: daily.length > 0,
+    verdict,
     healthy: out.every((t) => t.ok),
     teams: out,
   };
