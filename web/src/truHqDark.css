@@ -5869,3 +5869,27 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 @media (prefers-reduced-motion: reduce) {
   .tru-dark .dk-caret { transition: none; }
 }
+
+/* The dashboard, folded into the card: archetype, coaching health, last 1:1.
+   This line replaced the whole cohort table below the brief. */
+.tru-dark .brief-agent-meta {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 12px 0 0; font-size: 13.5px; color: var(--text-60);
+}
+.tru-dark .brief-agent-meta .bam-arch {
+  font-style: italic; font-family: var(--hq-serif); font-size: 15px;
+  color: var(--accent-hi); letter-spacing: -0.01em;
+}
+.tru-dark .brief-agent-meta b {
+  font-family: var(--hq-serif); font-size: 15.5px; font-weight: 550;
+  color: var(--text-strong);
+}
+.tru-dark .bam-dot { width: 3px; height: 3px; border-radius: 999px; background: var(--text-40); align-self: center; }
+.tru-dark .bam-needs {
+  margin-left: 2px; padding: 3px 10px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ember, #ff8b62); border: 1px solid currentColor; opacity: 0.9;
+}
+.tru-dark .brief-agent-meta.is-quiet { color: var(--text-40); font-style: italic; }
+/* The people who need a leader carry the ember edge the old focus row used. */
+.tru-dark .brief-agent-card.needs-you { border-left: 3px solid var(--ember, #ff8b62); }

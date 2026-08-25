@@ -243,8 +243,18 @@ const SCAN_COLUMNS: Array<{ label: string; help: string; className: string }> = 
 
 /* ════════ The team scan, on the Coach roster page ════════ */
 
-export function TeamBriefSection({ onOpenAgent }: {
+/** The cohort's half of an agent's card: assessment + 1:1 state. */
+export interface CohortMeta {
+  archName: string;
+  health: number;
+  lastDays: number;
+  needsYou: boolean;
+}
+
+export function TeamBriefSection({ onOpenAgent, cohort }: {
   onOpenAgent?: (agentId: string, agentName: string) => void;
+  /** Keyed by agent id AND lowercased name; absent for unprofiled agents. */
+  cohort?: Map<string, CohortMeta>;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
@@ -275,13 +285,35 @@ export function TeamBriefSection({ onOpenAgent }: {
           looks like it. Cards arrive on the house fade-up, staggered, and the
           coaching line wraps in full instead of being cut. */}
       <div className="brief-scan" role="list" aria-label="Team coaching scan">
-        {view.agents.map((a, i) => {
+        {[...view.agents]
+          .map((a) => ({
+            a,
+            meta: cohort?.get(a.agentId ?? '') ?? cohort?.get(a.agentName.trim().toLowerCase()),
+          }))
+          /* One order for one list: the people who need a leader first, then
+             the coached cohort by health (worst up), then everyone else by how
+             much the week saw of them. This replaces the separate focus row
+             and roster table -- ONE list, sorted by who deserves attention. */
+          .sort((x, y) => {
+            const ax = x.meta?.needsYou ? 0 : x.meta ? 1 : 2;
+            const ay = y.meta?.needsYou ? 0 : y.meta ? 1 : 2;
+            if (ax !== ay) return ax - ay;
+            if (x.meta && y.meta) return x.meta.health - y.meta.health;
+            const wx = (x.a.metrics.reviewedContacts ?? 0) + x.a.objections.length * 3;
+            const wy = (y.a.metrics.reviewedContacts ?? 0) + y.a.objections.length * 3;
+            return wy - wx;
+          })
+          .map(({ a, meta }, i) => {
           const priority = priorityLabel(a);
           const clickable = !!(a.agentId && onOpenAgent);
           const reviewed = a.metrics.reviewedContacts;
           return (
             <article
-              className={clickable ? 'rs-plate brief-agent-card is-link' : 'rs-plate brief-agent-card'}
+              className={[
+                'rs-plate', 'brief-agent-card',
+                clickable ? 'is-link' : '',
+                meta?.needsYou ? 'needs-you' : '',
+              ].filter(Boolean).join(' ')}
               role="listitem"
               key={a.agentName}
               style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
@@ -307,6 +339,21 @@ export function TeamBriefSection({ onOpenAgent }: {
               <p className="brief-agent-pri">
                 {priority ?? <i className="brief-none-inline">{emptyPriorityLabel(a)}</i>}
               </p>
+              {/* The dashboard, folded into the card. This line IS the old
+                  cohort table: archetype, coaching health, last 1:1. Absent for
+                  the unprofiled rather than pretending with dashes. */}
+              {meta ? (
+                <p className="brief-agent-meta">
+                  <span className="bam-arch">{meta.archName}</span>
+                  <span className="bam-dot" aria-hidden />
+                  <span>health <b>{meta.health}</b></span>
+                  <span className="bam-dot" aria-hidden />
+                  <span>{meta.lastDays >= 99 ? 'no 1:1 yet' : meta.lastDays === 0 ? '1:1 today' : `1:1 ${meta.lastDays}d ago`}</span>
+                  {meta.needsYou && <span className="bam-needs">needs you</span>}
+                </p>
+              ) : (
+                <p className="brief-agent-meta is-quiet">Not assessed yet</p>
+              )}
               {clickable && <span className="brief-agent-go" aria-hidden>Open their brief</span>}
             </article>
           );

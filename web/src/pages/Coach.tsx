@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { signOutClean } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
-import { Avatar, Icon, Ring } from '../components/hqUi';
+import { Icon } from '../components/hqUi';
 import { useReveal } from '../hqHooks';
 import {
   loadRoster, teamMix, loadProfile, loadGoalBundle, createGoal, GOAL_DEFAULTS,
@@ -20,7 +20,7 @@ import {
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import { Strip } from '../components/rosterViz';
 import {
-  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
+  DeckFocusProvider, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
 import { Odometer } from '../components/odometer';
 import { AgentBriefPanel, TeamBriefSection } from '../components/CoachBrief';
@@ -59,16 +59,6 @@ function healthOf(a: RosterAgent): number {
 /* ---- Big team-health gauge — focal, ambient glow ---- */
 
 
-function DividerWave() {
-  return (
-    <div className="coach-divider" aria-hidden>
-      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="none" />
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
-      </svg>
-    </div>
-  );
-}
 
 /* ---- Team-mix wiring bar (real teamMix segments) ---- */
 function WiringBar({ segs }: { segs: TeamSeg[] }) {
@@ -146,7 +136,6 @@ function CoachDeck({
   // The roster table. On a 40-agent team it is the whole page, and the brief
   // above it -- the reason to open this tab -- scrolls off. Collapsed is a
   // choice the leader makes and keeps; it never collapses itself.
-  const [rosterOpen, setRosterOpen] = useState(true);
   const openId = onOpenAgent ? openAgentId : localOpenId;
   const setOpenId = onOpenAgent
     ?? ((id: string | null) => { setLocalOpenId(id); setLocalView('sheet'); });
@@ -156,7 +145,7 @@ function CoachDeck({
     ?? ((id: string) => { setLocalOpenId(id); setLocalView('profile'); });
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
-  const focus = useDeckFocus();
+  useDeckFocus();
   /* How often you mean to sit down with each of them. A constant until now.
      Drag the marker on the lead tile and the cohort re-tones against the
      cadence you are asking about — "what would it look like if I saw everyone
@@ -492,167 +481,27 @@ function CoachDeck({
               {/* The Hermes review of last week's Follow Up Boss activity —
                   who to coach on what, with the evidence one click deep. Rows
                   open the agent's sheet, where their full brief lives. */}
-              <TeamBriefSection onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }} />
+              <TeamBriefSection
+                onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
+                cohort={(() => {
+                  const m = new Map();
+                  if (derived) {
+                    const needs = new Set(derived.needsYou.map((x) => x.a.id));
+                    for (const { a, health } of derived.withHealth) {
+                      const meta = { archName: a.archName, health, lastDays: a.lastDays, needsYou: needs.has(a.id) };
+                      m.set(a.id, meta);
+                      m.set(a.name.trim().toLowerCase(), meta);
+                    }
+                  }
+                  return m;
+                })()}
+              />
 
-              {/* ============ THE COHORT ============ */}
-              <div className="dk-sec">
-                <h2>The cohort</h2>
-                <p>
-                  {derived.needsYou.length === 0
-                    ? 'Nobody needs you this week.'
-                    : `${derived.needsYou.length} need you · ${derived.dueCount} due for a re-assessment`}
-                </p>
-                <span className="dk-key">
-                  {focus.quiet ? (
-                    <span className="dk-quiet-out">
-                      Just the {derived.needsYou.length} who need you
-                      <button onClick={() => focus.setQuiet(false)}>Bring it back</button>
-                    </span>
-                  ) : focus.pinned ? (
-                    <span className="dk-pinned">
-                      Holding {roster.find((a) => a.id === focus.pinned)?.name ?? 'one agent'}
-                      <button onClick={() => focus.pin(null)}>Let go</button>
-                    </span>
-                  ) : (
-                    <span className="dk-keys">
-                      <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
-                      <kbd>↵</kbd> <b>open</b>
-                      <kbd>P</kbd> <b>hold</b>
-                      {derived.needsYou.length > 0 && <><kbd>F</kbd> <b>just these</b></>}
-                    </span>
-                  )}
-                  ranked by coaching health · top three marked
-                </span>
-              </div>
 
-              {derived.needsYou.length > 0 && (
-                <div className="dk-focus">
-                  {derived.needsYou.slice(0, 4).map(({ a }) => (
-                    <article
-                      key={a.id}
-                      className={`dk-fr crit${focus.active === a.id ? ' is-on' : ''}`}
-                      tabIndex={0}
-                      {...focusBinding(a.id, focus)}
-                      onClick={() => setOpenId(a.id)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}
-                    >
-                      <span className="rs-av h-past-line">{a.initials}</span>
-                      <span className="dk-fr-name">{a.name}</span>
-                      <span className="dk-fr-why">{needsReason(a)}</span>
-                      <span className="dk-fr-do">Prep the 1:1</span>
-                    </article>
-                  ))}
-                </div>
-              )}
-
-              <button
-                className="dk-roster-toggle"
-                aria-expanded={rosterOpen}
-                onClick={() => setRosterOpen((v) => !v)}
-              >
-                <span className={rosterOpen ? 'dk-caret is-open' : 'dk-caret'} aria-hidden>&#9654;</span>
-                {rosterOpen ? 'Hide the full roster' : 'Show the full roster'}
-                <span className="dk-roster-count">{derived.ranked.length} agents</span>
-              </button>
-
-              <div
-                className={rosterOpen ? 'rs-plate dk-table' : 'rs-plate dk-table is-collapsed'}
-                ref={tableRef}
-                hidden={!rosterOpen}
-              >
-                <table className="tru-table">
-                  <thead>
-                    <tr>
-                      <th>Agent</th><th>Archetype</th><th>Quadrant</th>
-                      <th>Coaching health &#9660;</th><th>Last 1:1</th><th>Assessed</th><th>Pace</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {derived.ranked.map(({ a, health }, i) => (
-                      <tr key={a.id}
-                          data-flip={a.id}
-                          className={[
-                            'rowlink',
-                            focus.active === a.id ? 'is-on' : '',
-                            focus.pinned === a.id ? 'is-pinned' : '',
-                          ].filter(Boolean).join(' ')}
-                          tabIndex={0}
-                          style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
-                          {...focusBinding(a.id, focus)}
-                          onClick={() => setOpenId(a.id)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') setOpenId(a.id); }}>
-                        <td>
-                          <div className="rs-who">
-                            {i < 3 && <span className={`ch-rank r${i + 1}`}>{i + 1}</span>}
-                            <Avatar name={a.name} size={34} tone={i % 5} />
-                            <div>
-                              <div className="cell-name">{a.name}</div>
-                              <div className="rs-sub2">{a.pace}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{a.archName}</td>
-                        <td>{a.quad}</td>
-                        <td>
-                          <div className="rs-rate">
-                            <b>{health}</b>
-                            <Ring pct={health} size={26} label="" color={a.paceColor} />
-                          </div>
-                        </td>
-                        <td className={a.lastDays >= 14 ? 'cell-warn' : ''}>{a.lastLabel}</td>
-                        <td>{a.days >= 99 ? 'never' : `${a.days}d ago`}</td>
-                        <td><span className="rs-tag" style={{ background: 'transparent', color: a.paceColor }}>{a.pace}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td>Cohort</td>
-                      <td colSpan={2}><b>{roster.length} agents</b></td>
-                      <td><b>{derived.teamHealth}</b></td>
-                      <td><b>{derived.needsYou.length} slipping</b></td>
-                      <td><b>{derived.dueCount} due</b></td>
-                      <td><b>{derived.onTrack} on track</b></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
                 </>
               )}
 
-              {pending.length > 0 && (
-                <>
-                  <DividerWave />
-                  <section className="agents-panel reveal">
-                    <div className="panel-head">
-                      <h3>Not yet assessed</h3>
-                      <span className="panel-sub">In your cohort, waiting on their first TRU assessment</span>
-                    </div>
-                    <div className="agents-grid">
-                      {pending.map((a) => (
-                        <article key={a.id} className="card agent" style={{ opacity: 0.78 }}>
-                          <div className="agent-top">
-                            <Avatar name={a.name} size={46} tone={2} />
-                            <span
-                              style={{
-                                fontSize: 12, fontWeight: 700, color: 'var(--accent-hi)',
-                                border: '1px solid var(--accent-line)', background: 'var(--accent-soft)',
-                                borderRadius: 999, padding: '5px 12px', whiteSpace: 'nowrap',
-                              }}
-                            >
-                              Invited
-                            </span>
-                          </div>
-                          <div className="agent-body">
-                            <div className="agent-name">{a.name}</div>
-                            <div className="agent-meta"><span className="agent-type">Awaiting assessment result</span></div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                </>
-              )}
+              {/* 'Not yet assessed' panel folded into the one roster above -- those agents already carry a plain 'Not assessed yet' line, and a second wall of boxes for them was the overpowering-boxes problem. */}
             </>
           )}
         </div>
@@ -673,13 +522,6 @@ function coachNav(onHome?: () => void) {
   };
 }
 
-function needsReason(a: RosterAgent): string {
-  if (a.pace === 'No check-ins') return `${firstName(a.name)} has never had a logged check-in.`;
-  if (a.pace === 'Stalled') return `${firstName(a.name)}’s last check-in was ${a.lastLabel} — the conversation has stalled.`;
-  if (a.pace === 'Slipping') return `${firstName(a.name)} last checked in ${a.lastLabel} and is starting to slip.`;
-  if (a.due) return `${firstName(a.name)} is due for a re-assessment (${a.days}d since the last one).`;
-  return `${firstName(a.name)} could use a touch this week.`;
-}
 
 /* ============================================================
    AGENT DRILL-IN — real profile (archetype + confidence dims from
