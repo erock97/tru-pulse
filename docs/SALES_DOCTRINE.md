@@ -502,42 +502,46 @@ A single fabricated claim does not cost one row. It converts the product from a
 time-saver into a thing that must be double-checked, which is worse than not
 having it.
 
+### What counts as proof
+
+**Follow Up Boss's AI call summaries are good evidence.** Eric, correcting an
+earlier reading of this:
+
+> That AI summary is just as good as a transcript. Please make no mistake,
+> that's not unproven. That is proven. What's not proven is WHERE in the call he
+> said that.
+
+So the summary establishes what happened. It does not establish exact wording or
+where in the conversation something landed. And where a summary exists, a
+transcript exists too, on the same page.
+
 ### The rule
 
-**A claim about what somebody SAID requires somebody's WORDS.** No exception for
-a claim that is probably true, useful, or important.
+**A coaching point that cannot cite its source should not exist.** The analysis
+must quote the line it drew the claim from. If no line supports it, emit the
+observable fact instead and drop the claim.
 
-A third-person summary — "the agent explained", "the lead expressed" — describes
-a conversation. It cannot establish a phrase, a tone, or the absence of either.
-This applies with equal force to negative claims: *"she never offered a time"* is
-a statement about a whole call, and a one-line summary would not have mentioned
-it either way.
+Negative claims are the easiest to get wrong and need the same discipline.
+"She never offered a time" is a statement about an ENTIRE call. It is safe from
+a transcript and never from a summary that simply did not mention it.
 
-### What happens instead
+### This cannot be fixed downstream, and that was proven the hard way
 
-Nothing is deleted. `shared/claimCheck.ts` gates every coaching lane:
+Three display-side rules were written on 2026-08-25 to catch fabricated claims
+by comparing them to their own evidence. All three were wrong, in three
+different ways, and the last one scored the fabricated Bishoy claim as BETTER
+evidenced than a Waseem Sam finding that was entirely accurate, because it
+happened to reuse more nouns from its record.
 
-| Verdict | Condition | Display |
-|---|---|---|
-| `backed` | somebody's actual words are on file | the claim, as written |
-| `observational` | the claim needs no transcript — a channel, a gap, a count | unchanged |
-| `unsupported` | asserts speech, only a call description on file | **the record, and a question** |
+Judging a claim against its evidence after the fact is not reliably solvable by
+the layer that displays it. **Do not try again.** The analysis is the only place
+that knows what it read. The fix is a `sourceQuote` on every opportunity, sent
+to Codex 2026-08-25.
 
-An `unsupported` card shows what the record actually shows, states plainly that
-the words are not on file, offers **no** coaching move, and sends the leader to
-ask rather than to correct. It is visibly marked and deliberately quieter than a
-real finding.
+### What is not affected
 
-The underlying fact is kept, because it is usually the valuable part. The blank
-disclosure on that condo is real, unusual and worth a broker's attention. Only
-the invented sentence around it goes.
-
-### The upstream fix
-
-This is a display-side guard, not a cure. Hermes should quote the transcript
-where one exists, and should not emit behavioural claims a summary cannot
-support. Sent to Codex 2026-08-25. Until then TRU HQ refuses to repeat what it
-cannot show.
+Observable findings need none of this: channel, gaps, counts, who was contacted
+and when. They are safe, and they are most of the product's value.
 
 ---
 
