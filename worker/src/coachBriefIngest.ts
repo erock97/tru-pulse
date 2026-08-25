@@ -7,6 +7,7 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { secretsMatch } from './crypto.js';
+import { absorbReport } from './coachPatterns.js';
 import { briefStatusFor, matchAgents, validateCoachBrief } from '../../shared/coachBrief.js';
 import type { CoachBrief } from '../../shared/coachBrief.js';
 
@@ -114,6 +115,24 @@ export async function handleCoachBriefIngest(
     payload: brief,
     agent_links: links,
   }], 'run_id');
+
+  // Rules 3-10: fold an ACCEPTED report into the ninety-day view. Only on
+  // publish — rule 6 turns on the difference between accepted and merely
+  // received, and a held report advancing the window would have the app claim a
+  // freshness it does not have.
+  //
+  // Wrapped so it can never fail the ingest: the report itself is already
+  // stored, and losing the delivery over a rollup would cost the raw evidence
+  // as well. A failure here is recoverable by replay; a rejected delivery is
+  // not, because the laptop moves on.
+  if (team && status === 'published') {
+    try {
+      const absorbed = await absorbReport(database, team, brief, links);
+      console.log(`coach patterns ${slug}:`, JSON.stringify(absorbed));
+    } catch (e) {
+      console.error(`absorbReport failed for ${slug}:`, e);
+    }
+  }
 
   // Give earlier held reports their second chance — never let it fail the send.
   try {

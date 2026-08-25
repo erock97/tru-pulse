@@ -25,11 +25,31 @@ export interface BriefPoint {
   findingIndexes: number[];
 }
 
+/**
+ * A coaching opportunity in schema 1.1 — the analysis now supplies what this
+ * Worker previously had to infer.
+ *
+ * `explanation` is the plain-English line, written by the model that actually
+ * read the calls. `patternKey` is a stable identity for the habit, so the same
+ * habit recurring next week is recognisable without guessing from wording.
+ * `findingIds` are the durable evidence.
+ */
+export interface BriefOpportunity {
+  findingIndex?: number;
+  findingIds: string[];
+  patternKey?: string;
+  explanation: string;
+  coachingMove?: string;
+}
+
 export interface BriefAgent {
   agentName: string;
   metrics: Partial<BriefMetrics>;
   doingRight: BriefPoint[];
+  /** Schema 1.0 shape, kept so older payloads keep working. */
   opportunities: BriefPoint[];
+  /** Schema 1.1 shape. Empty on 1.0 payloads. */
+  opportunityPoints: BriefOpportunity[];
   objections: BriefPoint[];
   coachingActions: BriefPoint[];
 }
@@ -37,6 +57,15 @@ export interface BriefAgent {
 /** One piece of evidence: the exact interaction backing a coaching point. */
 export interface BriefFinding {
   findingIndex: number;
+  /**
+   * Durable identity across overlapping daily reports (schema 1.1).
+   *
+   * findingIndex is only meaningful inside one report; a rolling seven-day
+   * window re-sends the same call every day with a different index. This is
+   * what makes "the same finding, again" recognisable — and therefore what
+   * stops a week of reports counting one call as seven occurrences.
+   */
+  findingId?: string;
   agentName: string;
   leadName?: string;
   leadUrl?: string;
@@ -109,6 +138,31 @@ function coercePoints(v: unknown): BriefPoint[] {
     .filter((p): p is BriefPoint => p !== null);
 }
 
+/** Schema 1.1 opportunities. Anything without an explanation is not one. */
+function coerceOpportunities(v: unknown): BriefOpportunity[] {
+  if (!Array.isArray(v)) return [];
+  const out: BriefOpportunity[] = [];
+  for (const raw of v.slice(0, MAX_POINTS_PER_LIST)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const o = raw as Raw;
+    const explanation = asString(o.explanation);
+    // No explanation means this is a 1.0 point, handled by coercePoints.
+    if (!explanation) continue;
+    const ids = (Array.isArray(o.findingIds) ? o.findingIds : [])
+      .map((x) => asString(x))
+      .filter((x): x is string => !!x);
+    const entry: BriefOpportunity = { findingIds: ids, explanation };
+    const idx = asCount(o.findingIndex);
+    if (idx !== undefined) entry.findingIndex = idx;
+    const pk = asString(o.patternKey);
+    if (pk) entry.patternKey = pk;
+    const move = asString(o.coachingMove);
+    if (move) entry.coachingMove = move;
+    out.push(entry);
+  }
+  return out;
+}
+
 function coerceMetrics(v: unknown): Partial<BriefMetrics> {
   if (!v || typeof v !== 'object') return {};
   const o = v as Raw;
@@ -159,6 +213,7 @@ export function validateCoachBrief(raw: unknown): BriefValidation {
       metrics: coerceMetrics(ao.metrics),
       doingRight: coercePoints(ao.doingRight),
       opportunities: coercePoints(ao.opportunities),
+      opportunityPoints: coerceOpportunities(ao.opportunities),
       objections: coercePoints(ao.objections),
       coachingActions: coercePoints(ao.coachingActions),
     }];
@@ -174,6 +229,8 @@ export function validateCoachBrief(raw: unknown): BriefValidation {
     if (!agentName) return [];
     const finding: BriefFinding = {
       findingIndex: asCount(fo.findingIndex) ?? i,
+      // Durable across the overlapping daily windows; findingIndex is not.
+      findingId: asString(fo.findingId),
       agentName,
     };
     const leadName = asString(fo.leadName); if (leadName) finding.leadName = leadName;
@@ -210,8 +267,28 @@ export function validateCoachBrief(raw: unknown): BriefValidation {
 // stored (same schema) but never shown, per the handoff. A report whose team
 // slug isn't mapped yet is held regardless, and publishes when it resolves.
 
+// `daily` joins `weekly` from schema 1.1 - Hermes now runs every morning over a
+// rolling seven days rather than once a week. `personal` and `manual` stay
+// hidden: those are runs somebody kicked off by hand to look at something, and a
+// client's Coach tab is not the place for a scratch pad. That is also the
+// deployment gate - a synthetic personal payload must round-trip and stay
+// invisible before the unattended schedule is switched on.
+const PUBLISHING_TRIGGERS = new Set(['weekly', 'daily']);
+
 export function briefStatusFor(trigger: string, teamResolved: boolean): 'published' | 'held' {
-  return trigger === 'weekly' && teamResolved ? 'published' : 'held';
+  return PUBLISHING_TRIGGERS.has(trigger) && teamResolved ? 'published' : 'held';
+}
+
+/**
+ * The universal admin profile carries leads for whoever is covering, so it is
+ * never a person to coach. It must produce no agent card, no trend and no
+ * unmatched-agent warning - a warning would be a standing false alarm on every
+ * report forever.
+ */
+const IGNORED_AGENTS = new Set(['eric and adam']);
+
+export function isIgnoredAgent(name: string): boolean {
+  return IGNORED_AGENTS.has(normalizeAgentName(name));
 }
 
 // ── Agent matching ──────────────────────────────────────────────────────────

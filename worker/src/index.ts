@@ -14,6 +14,8 @@ import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
 import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
+import { previewCoachBriefs } from './automation/coachBrief.js';
+import { explainPendingIssues, rebuildIssuesFromReports } from './automation/coachIssues.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -283,6 +285,45 @@ export default {
       const state = await database.select('sync_state', 'select=team_id,last_sync_at');
       const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
       return json((teams as Array<{ id: string; name: string }>).map((t) => ({ id: t.id, name: t.name, last_sync_at: lastByTeam.get(t.id) ?? null })));
+    }
+
+    // Ops: give every raisable issue a sentence a broker can read. The
+    // analysis writes internal labels - "Same-day text on every no-answer" -
+    // which are real findings that nobody outside the analysis can parse.
+    if (url.pathname === '/admin/coach-issues-explain' && req.method === 'POST') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      try {
+        return json(await explainPendingIssues(env, database, url.searchParams.get('teamId') ?? undefined));
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Ops: replay the stored coach reports into the issue memory. Idempotent -
+    // an unchanged sighting is a no-op - so it is safe to run at any time, and
+    // it is how the ninety-day memory gets seeded from reports that arrived
+    // before it existed.
+    if (url.pathname === '/admin/coach-issues-rebuild' && req.method === 'POST') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      try {
+        return json(await rebuildIssuesFromReports(database));
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Admin diagnostic: the daily brief built from the COACH analysis - the
+    // conversations Hermes scraped and the model read - rather than from lead
+    // counts. Read-only. This is the one a broker is meant to want: what do I
+    // need to do today, and why, in the buyer's own words.
+    if (url.pathname === '/admin/coach-brief-preview' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      try {
+        const label = url.searchParams.get('date') ?? 'Mon Aug 25';
+        return json({ previews: await previewCoachBriefs(database, label) });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
     }
 
     // Admin diagnostic: exactly what every team's morning brief would say right
