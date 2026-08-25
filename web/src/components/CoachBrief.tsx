@@ -131,6 +131,11 @@ function PointList({ points, tone, evidenceInline = false }: {
     <ul className={`brief-points is-${tone}`}>
       {points.map((p, i) => (
         <li key={i}>
+          {/* The category as a small label over the card -- what kind of
+              problem this is, before the sentence says what happened. */}
+          {(p as { kicker?: string }).kicker && (
+            <span className="brief-kicker">{(p as { kicker?: string }).kicker}</span>
+          )}
           <p className="brief-point-text">{p.text}</p>
           {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
           {p.evidence.length > 0 && (evidenceInline ? (

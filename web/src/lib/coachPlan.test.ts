@@ -2,7 +2,7 @@
 // verbatim: "Sit down with Joseph this week, coach him on the value of being
 // specific when setting meeting times" — the habit, not the incident.
 import { describe, expect, it } from 'vitest';
-import { buildAgentPlan, coachOn, type AgentPattern } from './coachPlan';
+import { buildAgentPlan, coachOn, record, type AgentPattern } from './coachPlan';
 
 const pat = (over: Partial<AgentPattern> = {}): AgentPattern => ({
   agentId: 'agent-1',
@@ -25,11 +25,21 @@ const pat = (over: Partial<AgentPattern> = {}): AgentPattern => ({
 });
 
 describe('the sentence a leader acts on', () => {
-  it('names the sit-down, the habit, and the record', () => {
+  it('leads with what actually happened, not the category', () => {
+    // Eric's word for the category version was "vague". The analysis's own
+    // sentence is specific -- a name, a message, what went wrong -- so the
+    // directive carries it, and the category becomes the card's label.
     const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
     expect(p.text).toBe(
-      'Sit down with Joseph this week — coach them on being specific when setting meeting times. 3 times since Aug 18.',
+      // The fixture's first-seen is a week back, so the date has earned its place.
+      'Sit down with Joseph this week. Asked Ashley to catch up without offering a time. 3 times since Aug 18.',
     );
+    expect(p.kicker).toBe('being specific when setting meeting times');
+  });
+
+  it('falls back to the category sentence when there is no story', () => {
+    const [p] = buildAgentPlan([pat({ explanation: null })], 'agent-1', 'Joseph Darlington');
+    expect(p.text).toContain('coach them on being specific when setting meeting times');
   });
 
   it('keeps the concrete drill as the sub-line', () => {
@@ -44,11 +54,22 @@ describe('the sentence a leader acts on', () => {
     expect(p.text).not.toMatch(/\d times/);
   });
 
+  it('never says "since" a date only days old', () => {
+    // Day one of the store, every first-seen was today, and "3 times since
+    // Aug 25" ON Aug 25 says nothing. The date earns its place at a week out.
+    const now = new Date('2026-08-25T20:00:00Z');
+    expect(record(pat({ firstSeen: '2026-08-25T12:00:00Z' }), now)).toBe('3 times this week.');
+    expect(record(pat({ firstSeen: '2026-08-10T12:00:00Z' }), now)).toBe('3 times since Aug 10.');
+  });
+
   it('never guesses a pronoun from a name', () => {
     // A wrong guess in a coaching directive lands in front of the person.
-    const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
-    expect(p.text).toContain('coach them on');
-    expect(p.text).not.toMatch(/\bcoach (him|her)\b/);
+    const [withStory] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
+    const [fallback] = buildAgentPlan([pat({ explanation: null })], 'agent-1', 'Joseph Darlington');
+    expect(fallback.text).toContain('coach them on');
+    for (const t of [withStory.text, fallback.text]) {
+      expect(t).not.toMatch(/\bcoach (him|her)\b/);
+    }
   });
 });
 
@@ -59,8 +80,8 @@ describe('what qualifies and in what order', () => {
       pat({ patternKey: 'call_first', occurrences: 2, recurring: true }),
       pat({ patternKey: 'lead_e', occurrences: 5, recurring: true }),
     ], 'agent-1', 'Joseph Darlington');
-    expect(plan.map((p) => p.text.includes('meeting times'))[0]).toBe(true);
-    expect(plan[2].text).toContain('working an objection');
+    expect(plan[0].kicker).toBe('being specific when setting meeting times');
+    expect(plan[2].kicker).toBe('working an objection instead of letting it end the thread');
   });
 
   it('leaves out a habit whose evidence has aged out', () => {
