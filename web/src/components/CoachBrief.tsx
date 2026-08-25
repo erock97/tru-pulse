@@ -225,6 +225,7 @@ function emptyPriorityLabel(a: BriefAgentView): string {
  * short of reading the code. The titles carry the definition on hover; the
  * words themselves have to survive without it.
  */
+/** Now only the PRINT sheet's table header; the on-screen scan is cards. */
 const SCAN_COLUMNS: Array<{ label: string; help: string; className: string }> = [
   { label: 'Agent', className: 'brief-scan-name',
     help: 'The name on the conversations, as Follow Up Boss records it.' },
@@ -267,37 +268,47 @@ export function TeamBriefSection({ onOpenAgent }: {
         <button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button>
       </span>
 
-      <div className="brief-scan" role="table" aria-label="Team coaching scan">
-        <div className="brief-scan-head" role="row">
-          {SCAN_COLUMNS.map((c) => (
-            <span className={c.className} role="columnheader" key={c.label} title={c.help}>
-              {c.label}
-            </span>
-          ))}
-        </div>
-        {view.agents.map((a) => {
+      {/* One CARD per agent, not a cramped four-column table. The old scan ran
+          names at 15px and the coaching line at 14px truncated to one line
+          with an ellipsis, on the same page where every Pulse tile runs
+          20-22px. This section is the reason a leader opens the tab; it now
+          looks like it. Cards arrive on the house fade-up, staggered, and the
+          coaching line wraps in full instead of being cut. */}
+      <div className="brief-scan" role="list" aria-label="Team coaching scan">
+        {view.agents.map((a, i) => {
           const priority = priorityLabel(a);
           const clickable = !!(a.agentId && onOpenAgent);
+          const reviewed = a.metrics.reviewedContacts;
           return (
-            <div
-              className={clickable ? 'brief-scan-row is-link' : 'brief-scan-row'}
-              role="row"
+            <article
+              className={clickable ? 'brief-agent-card is-link' : 'brief-agent-card'}
+              role="listitem"
               key={a.agentName}
+              style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
               onClick={clickable ? () => onOpenAgent!(a.agentId!, a.agentName) : undefined}
               onKeyDown={clickable ? (e) => { if (e.key === 'Enter') onOpenAgent!(a.agentId!, a.agentName); } : undefined}
               tabIndex={clickable ? 0 : undefined}
             >
-              <span className="brief-scan-name" role="cell">{a.agentName}</span>
-              <span className="brief-scan-cov" role="cell">{coverageLabel(a)}</span>
-              <span className="brief-scan-obj" role="cell">
-                {a.objections.length > 0
-                  ? `${a.objections.length} objection${a.objections.length === 1 ? '' : 's'} heard`
-                  : '—'}
-              </span>
-              <span className="brief-scan-pri" role="cell">
+              <header className="brief-agent-top">
+                <h3 className="brief-agent-name">{a.agentName}</h3>
+                <span className="brief-agent-stats">
+                  {reviewed !== undefined && (
+                    <span className="brief-stat">
+                      <b>{reviewed}</b> reviewed
+                    </span>
+                  )}
+                  {a.objections.length > 0 && (
+                    <span className="brief-stat is-watch">
+                      <b>{a.objections.length}</b> objection{a.objections.length === 1 ? '' : 's'}
+                    </span>
+                  )}
+                </span>
+              </header>
+              <p className="brief-agent-pri">
                 {priority ?? <i className="brief-none-inline">{emptyPriorityLabel(a)}</i>}
-              </span>
-            </div>
+              </p>
+              {clickable && <span className="brief-agent-go" aria-hidden>Open their brief</span>}
+            </article>
           );
         })}
       </div>

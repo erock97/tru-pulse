@@ -5428,36 +5428,73 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-pdf:hover { background: var(--tab-line, var(--lift)); }
 .tru-dark .brief-pdf.is-ghost { background: transparent; color: var(--text-60); border-color: var(--border); }
 
-.tru-dark .brief-scan { margin-top: 14px; border-top: 1px solid var(--border); }
-.tru-dark .brief-scan-row {
-  display: grid; grid-template-columns: 180px 200px 150px 1fr;
-  gap: 14px; align-items: baseline;
-  padding: 11px 10px; border-bottom: 1px solid var(--border);
+/* ---------- The weekly brief: one card per agent ----------
+   This is the section a leader opens the Coach tab FOR, and it was a
+   four-column table running 13.5-15px type with the coaching line cut to one
+   ellipsised line. Cards, at the same scale as the Pulse tiles, arriving on
+   the same fade-up those tiles use. */
+.tru-dark .brief-scan {
+  margin-top: 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
 }
-.tru-dark .brief-scan-row.is-link { cursor: pointer; transition: background .15s ease; }
-.tru-dark .brief-scan-row.is-link:hover,
-.tru-dark .brief-scan-row.is-link:focus-visible { background: var(--tab-soft, rgba(255,139,98,.16)); outline: none; }
-/* Column headers. Same grid as a row so the labels sit over their own cells;
-   quieter than the data, because a header a reader keeps noticing is a header
-   competing with the thing it labels. */
-.tru-dark .brief-scan-head {
-  display: grid; grid-template-columns: 180px 200px 150px 1fr;
-  gap: 14px; align-items: baseline;
-  padding: 9px 10px; border-bottom: 1px solid var(--border);
-  font-size: 11.5px; font-weight: 620; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--text-45, var(--text-60));
+.tru-dark .brief-agent-card {
+  position: relative;
+  padding: 20px 22px 18px;
+  background: var(--panel, rgba(255,255,255,.03));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  opacity: 0;
+  animation: truAdFadeUp 0.6s var(--ease) forwards;
+  transition: transform .24s var(--ease), border-color .24s var(--ease),
+              background .24s var(--ease), box-shadow .24s var(--ease);
 }
-/* The definition is on the title attribute; this is the only cue it is there. */
-.tru-dark .brief-scan-head > span { cursor: help; }
-.tru-dark .brief-scan-name { font-weight: 640; font-size: 15px; }
-.tru-dark .brief-scan-cov, .tru-dark .brief-scan-obj { color: var(--text-60); font-size: 13.5px; }
-.tru-dark .brief-scan-pri {
-  font-size: 14px; color: var(--text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.tru-dark .brief-agent-card.is-link { cursor: pointer; }
+.tru-dark .brief-agent-card.is-link:hover,
+.tru-dark .brief-agent-card.is-link:focus-visible {
+  transform: translateY(-4px);
+  background: var(--lift, rgba(255,255,255,.05));
+  border-color: var(--tab-mid, var(--terracotta));
+  box-shadow: 0 18px 40px -24px #000;
+  outline: none;
 }
-@media (max-width: 900px) {
-  .tru-dark .brief-scan-row { grid-template-columns: 1fr 1fr; }
-  .tru-dark .brief-scan-pri { grid-column: 1 / -1; white-space: normal; }
+
+.tru-dark .brief-agent-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+/* The name at the same weight and size as a Pulse tile name. */
+.tru-dark .brief-agent-name {
+  margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.015em;
+  color: var(--text-strong);
+}
+.tru-dark .brief-agent-stats { display: flex; gap: 12px; flex-shrink: 0; }
+.tru-dark .brief-stat { font-size: 14.5px; color: var(--text-60); white-space: nowrap; }
+.tru-dark .brief-stat b { font-size: 17px; font-weight: 700; color: var(--text-strong); }
+.tru-dark .brief-stat.is-watch b { color: var(--accent); }
+
+/* The coaching line, full width, wrapping. Never an ellipsis: cutting the one
+   sentence the card exists to deliver was the old layout's worst habit. */
+.tru-dark .brief-agent-pri {
+  margin: 0; font-size: 17px; line-height: 1.5; font-weight: 500;
+  color: var(--text-80, var(--text));
+}
+
+/* The invitation, revealed by the card answering the pointer. */
+.tru-dark .brief-agent-go {
+  display: inline-block; margin-top: 12px;
+  font-size: 14px; font-weight: 640; color: var(--tab-hi, var(--terracotta));
+  opacity: 0; transform: translateX(-4px);
+  transition: opacity .22s var(--ease), transform .22s var(--ease);
+}
+.tru-dark .brief-agent-card:hover .brief-agent-go,
+.tru-dark .brief-agent-card:focus-visible .brief-agent-go {
+  opacity: 1; transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tru-dark .brief-agent-card { opacity: 1; animation: none; }
+  .tru-dark .brief-agent-card.is-link:hover { transform: none; box-shadow: none; }
+  .tru-dark .brief-agent-go { opacity: 1; transform: none; }
 }
 
 /* ── The agent panel (drill-in sheet) ── */
@@ -5646,7 +5683,6 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
   /* The weekly brief scan: give the priority line its own row and keep the
      name row from crowding. */
-  .tru-dark .brief-scan-row { padding: 12px 4px; }
 }
 
 @media (max-width: 860px) {
