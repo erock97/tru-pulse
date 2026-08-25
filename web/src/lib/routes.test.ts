@@ -67,7 +67,7 @@ describe('matchPublicRoute', () => {
   it('lists root first so PublicSite can render the marketing home, then every sub-route', () => {
     expect(PUBLIC_ROUTES).toEqual([
       '/', '/services', '/work', '/about', '/apply',
-      '/privacy', '/terms', '/refund-policy',
+      '/privacy', '/terms', '/refund-policy', '/sms-terms',
     ]);
   });
 

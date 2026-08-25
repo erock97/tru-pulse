@@ -1,9 +1,15 @@
 // Public marketing paths that render outside the logged-in product.
 //
-// The legal three (/privacy, /terms, /refund-policy) are NOT optional. They are
-// linked from the footer, a payment processor expects them to resolve, and
-// truhq.co has been serving them from a branch that never merged. Dropping them
-// from this list is how they vanish from the internet.
+// The legal four (/privacy, /terms, /refund-policy, /sms-terms) are NOT
+// optional. They are linked from the footer, a payment processor expects the
+// first three to resolve, and truhq.co has been serving them from a branch that
+// never merged. Dropping them from this list is how they vanish from the
+// internet.
+//
+// /sms-terms carries an extra dependency: a mobile carrier reads it as part of
+// approving the number TRU sends from, and the A2P campaign registration links
+// directly to this URL. If it stops resolving, the campaign is revoked — not
+// merely stale.
 //
 // "/" is listed so PublicSite can render the marketing home, but
 // matchPublicRoute never claims it. The product lives at "/" plus a hash
@@ -20,7 +26,7 @@
 
 export const PUBLIC_ROUTES = [
   '/', '/services', '/work', '/about', '/apply',
-  '/privacy', '/terms', '/refund-policy',
+  '/privacy', '/terms', '/refund-policy', '/sms-terms',
 ] as const;
 export const NOT_FOUND = 'not-found' as const;
 
