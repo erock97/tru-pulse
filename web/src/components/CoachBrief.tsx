@@ -143,7 +143,13 @@ function PointList({ points, tone }: {
   return (
     <ul className={`brief-points is-${tone}`}>
       {points.map((p, i) => (
-        <li key={i}>
+        <li key={i} className={(p as { unverified?: boolean }).unverified ? 'is-unverified' : undefined}>
+          {/* Said plainly on the card, not buried in a tooltip. A leader
+              acting on this one is about to ask a question, not deliver a
+              correction, and they need to know which before they dial. */}
+          {(p as { unverified?: boolean }).unverified && (
+            <span className="brief-unverified">Not verified — no transcript</span>
+          )}
           {/* The category as a small label over the card -- what kind of
               problem this is, before the sentence says what happened. */}
           {(p as { kicker?: string }).kicker && (
