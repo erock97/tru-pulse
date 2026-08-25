@@ -5476,10 +5476,10 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    organise. Wide screens get all four across; squeezed, they pair; a phone
    stacks them. */
 .tru-dark .brief-lanes {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 24px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px 24px;
   align-items: start;
 }
-@media (max-width: 1280px) { .tru-dark .brief-lanes { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1100px) { .tru-dark .brief-lanes { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 720px)  { .tru-dark .brief-lanes { grid-template-columns: 1fr; } }
 .tru-dark .brief-lane-h {
   margin: 0 0 10px;
