@@ -13,7 +13,7 @@ import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
-import { runDueAutomations } from './automation/runner.js';
+import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -283,6 +283,22 @@ export default {
       const state = await database.select('sync_state', 'select=team_id,last_sync_at');
       const lastByTeam = new Map((state as Array<{ team_id: string; last_sync_at: string }>).map((s) => [s.team_id, s.last_sync_at]));
       return json((teams as Array<{ id: string; name: string }>).map((t) => ({ id: t.id, name: t.name, last_sync_at: lastByTeam.get(t.id) ?? null })));
+    }
+
+    // Admin diagnostic: exactly what every team's morning brief would say right
+    // now. Writes nothing, sends nothing, makes no outbound call - it reuses the
+    // renderer the runner uses and simply is not on the send path.
+    //
+    // It exists because "wait until 7:30 tomorrow and see" is not a way to check
+    // whether a message is right, and because the first time a brief is wrong
+    // you want to have found out before a client's phone did.
+    if (url.pathname === '/admin/brief-preview' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      try {
+        return json({ previews: await previewAllBriefs(database, new Date()) });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
     }
 
     // Admin diagnostic: what does FUB actually report about a lead's calls and
