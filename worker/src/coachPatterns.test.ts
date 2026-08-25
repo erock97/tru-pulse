@@ -3,7 +3,7 @@
 // every morning for a week.
 import { describe, it, expect, vi } from 'vitest';
 import type { Db } from './db.js';
-import { absorbReport } from './coachPatterns.js';
+import { absorbReport, coachViewFor } from './coachPatterns.js';
 import { validateCoachBrief } from '../../shared/coachBrief.js';
 
 const TEAM = { id: 'team-1', org_id: 'org-1' };
@@ -229,5 +229,72 @@ describe('evidence we cannot recognise again', () => {
     delete (b.agents[0].opportunityPoints[0] as any).patternKey;
     await absorbReport(s.db, TEAM, b);
     expect(s.patterns.size).toBe(0);
+  });
+});
+
+
+describe('the coach view shows agents, not the people running the team', () => {
+  /** A database holding one live pattern per person named. */
+  function viewStub(people: Array<{ id: string; role: string; name: string }>) {
+    return {
+      select: vi.fn(async (table: string) => {
+        if (table === 'agents') return people.map((p) => ({ id: p.id, role: p.role }));
+        if (table === 'coach_patterns_live') {
+          return people.map((p) => ({
+            agent_id: p.id, agent_name: p.name, pattern_key: 'next_steps',
+            explanation: 'x', coaching_move: 'y',
+            occurrences: 2, occurrences_this_window: 2,
+            is_current: true, is_recurring: true,
+            window_start: '2026-08-18', window_end: '2026-08-24',
+            last_update: '2026-08-25T12:00:00.000Z',
+          }));
+        }
+        return [];
+      }),
+    } as unknown as Db;
+  }
+
+  it('drops the broker and the team lead, keeps the agents', async () => {
+    // Live on 2026-08-25: Signature's broker and an admin, and Woosley's team
+    // lead, each came back with coaching points of their own.
+    const db = viewStub([
+      { id: 'a1', role: 'agent', name: 'Cara Benak' },
+      { id: 'a2', role: 'admin', name: 'Michelle Pais' },
+      { id: 'a3', role: 'lead',  name: 'Carson Woosley' },
+    ]);
+    const view = await coachViewFor(db, 'team-1');
+    expect(view.current.map((r) => r.agent)).toEqual(['Cara Benak']);
+    expect(view.trend).toEqual([]);
+  });
+
+  it('keeps a name the roster does not recognise', async () => {
+    // Hiding evidence because we failed to match somebody is the worse error:
+    // it looks like a quiet week rather than a name needing categorising.
+    const db = {
+      select: vi.fn(async (table: string) => {
+        if (table === 'agents') return [{ id: 'a2', role: 'admin' }];
+        if (table === 'coach_patterns_live') {
+          return [{
+            agent_id: null, agent_name: 'Somebody New',
+            pattern_key: 'next_steps', occurrences: 1, occurrences_this_window: 1,
+            is_current: true, is_recurring: false,
+            window_start: '2026-08-18', window_end: '2026-08-24',
+          }];
+        }
+        return [];
+      }),
+    } as unknown as Db;
+    const view = await coachViewFor(db, 'team-1');
+    expect(view.current.map((r) => r.agent)).toEqual(['Somebody New']);
+  });
+
+  it('still reports the window when every row was filtered out', async () => {
+    // The header says when Coach last updated. A team whose only points belong
+    // to its lead must not read as "never analysed".
+    const db = viewStub([{ id: 'a3', role: 'lead', name: 'Carson Woosley' }]);
+    const view = await coachViewFor(db, 'team-1');
+    expect(view.current).toEqual([]);
+    expect(view.window).toEqual({ start: '2026-08-18', end: '2026-08-24' });
+    expect(view.lastUpdate).toBe('2026-08-25T12:00:00.000Z');
   });
 });

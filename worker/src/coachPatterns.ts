@@ -167,14 +167,30 @@ export async function absorbReport(
  * old is ever presented as new.
  */
 export async function coachViewFor(database: Db, teamId: string) {
-  const rows = (await database.select(
-    'coach_patterns_live',
-    `team_id=eq.${teamId}&select=*&order=occurrences.desc`,
-  )) as any[];
+  const [all, roster] = await Promise.all([
+    database.select(
+      'coach_patterns_live',
+      `team_id=eq.${teamId}&select=*&order=occurrences.desc`,
+    ) as Promise<any[]>,
+    database.select('agents', `team_id=eq.${teamId}&select=id,role`) as Promise<any[]>,
+  ]);
+
+  // Hermes analyses every conversation in the account, which includes the ones
+  // the broker, their team lead and their office staff had. Those are real
+  // observations, but a brief telling a broker to go and coach themselves is
+  // not something they will read twice. So the analysis keeps them and the
+  // view drops them: the row stays in the table, and correcting somebody's
+  // role brings it straight back without a re-ingest.
+  const notCoachable = new Set(
+    roster.filter((a) => a.role && a.role !== 'agent').map((a) => a.id),
+  );
+  // An unmatched name is kept. We do not know who they are, and silently
+  // hiding evidence is worse than showing a row somebody has to categorise.
+  const rows = all.filter((r) => !r.agent_id || !notCoachable.has(r.agent_id));
 
   const current = rows.filter((r) => r.is_current);
   const trend = rows.filter((r) => !r.is_current && r.is_recurring);
-  const state = rows[0];
+  const state = all[0];
 
   return {
     lastUpdate: state?.last_update ?? null,
