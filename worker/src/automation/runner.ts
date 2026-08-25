@@ -354,3 +354,79 @@ export async function runDueAutomations(
   }
   return out;
 }
+
+/**
+ * Render exactly what a team's brief would say, without sending or storing
+ * anything.
+ *
+ * This writes NO run row, NO delivery row, and makes no outbound call. It is
+ * enforced structurally rather than by discipline: it reuses the same
+ * gatherBrief and renderMorningBrief the runner calls, and this module's send
+ * path is simply not on it.
+ *
+ * It exists because "wait until 7:30 tomorrow and see" is not a way to check
+ * whether a message is right, and because the first time a brief is wrong you
+ * want to have found out before a client's phone did.
+ */
+export async function previewBrief(
+  database: Db,
+  team: TeamRow,
+  now: Date,
+  opts: { recipientName?: string; sendAt?: string } = {},
+): Promise<{
+  team: string;
+  timezone: string;
+  localTime: string;
+  sendAt: string;
+  dueNow: boolean;
+  syncAgeHours: number | null;
+  body: string;
+  chars: number;
+  segments: number;
+  skipReason: string | null;
+  agents: BriefAgent[];
+}> {
+  const tz = team.timezone ?? 'America/Los_Angeles';
+  const local = localClock(now, tz);
+  const sendAt = opts.sendAt ?? '07:30';
+  const data = await gatherBrief(database, team, now);
+  const rendered = renderMorningBrief({
+    teamName: team.name,
+    dateLabel: localDateLabel(now, tz),
+    agents: data.agents,
+    pondLeads: data.pondLeads,
+    syncAgeHours: data.syncAgeHours,
+    recipientName: opts.recipientName ? shortName(opts.recipientName) : undefined,
+  });
+  return {
+    team: team.name,
+    timezone: tz,
+    localTime: local.hhmm,
+    sendAt,
+    dueNow: isBriefDue(local, sendAt),
+    syncAgeHours: data.syncAgeHours === null ? null : Math.round(data.syncAgeHours * 100) / 100,
+    body: rendered.body,
+    chars: rendered.body.length,
+    segments: rendered.segments,
+    skipReason: rendered.skipReason,
+    agents: data.agents.sort((a, b) => b.newLeads - a.newLeads || a.name.localeCompare(b.name)),
+  };
+}
+
+/** Preview every active team at once. Read-only. */
+export async function previewAllBriefs(database: Db, now: Date) {
+  const [teams, autos] = await Promise.all([
+    database.select('teams', 'is_active=eq.true&select=id,org_id,name,timezone&order=name'),
+    database.select('automations', "type_key=eq.morning_brief&select=team_id,config,secure_config"),
+  ]);
+  const byTeam = new Map((autos as any[]).map((a) => [a.team_id, a]));
+  const out = [];
+  for (const t of teams as TeamRow[]) {
+    const a = byTeam.get(t.id);
+    out.push(await previewBrief(database, t, now, {
+      recipientName: a?.secure_config?.recipient_name,
+      sendAt: a?.config?.send_at,
+    }));
+  }
+  return out;
+}

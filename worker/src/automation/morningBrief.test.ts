@@ -218,3 +218,40 @@ describe('what a real morning actually looks like', () => {
     expect(r.segments).toBe(2);
   });
 });
+
+describe('uncontacted leads outrank stalled ones', () => {
+  it('lists someone with three uncalled leads above someone with ten stalled', () => {
+    // Signature's real numbers. Adding the two counts together let ten stalled
+    // leads push three uncontacted ones off the list entirely, which is exactly
+    // backwards: a lead nobody has called is the thing this product is for.
+    const r = renderMorningBrief({
+      ...base, teamName: 'Signature Realty',
+      agents: [
+        { name: 'Violalyn A.', newLeads: 1, untouched: 0, stalled: 10 },
+        { name: 'Michelle P.', newLeads: 1, untouched: 0, stalled: 3 },
+        { name: 'Dionna V.', newLeads: 0, untouched: 0, stalled: 2 },
+        { name: 'Carey D.', newLeads: 2, untouched: 3, stalled: 0 },
+        { name: 'Ana N.', newLeads: 0, untouched: 2, stalled: 1 },
+      ],
+    });
+    const lines = r.body.split('\n');
+    const first = lines.findIndex((l) => l.startsWith('Carey D.'));
+    const stalledFirst = lines.findIndex((l) => l.startsWith('Violalyn A.'));
+    expect(first).toBeGreaterThan(-1);
+    expect(first).toBeLessThan(stalledFirst === -1 ? Infinity : stalledFirst);
+    expect(r.body).toContain('Ana N.');
+  });
+
+  it('still falls back to stalled counts when nobody is uncontacted', () => {
+    const r = renderMorningBrief({
+      ...base,
+      agents: [
+        { name: 'Small S.', newLeads: 0, untouched: 0, stalled: 1 },
+        { name: 'Big B.', newLeads: 0, untouched: 0, stalled: 9 },
+      ],
+    });
+    const lines = r.body.split('\n');
+    expect(lines.findIndex((l) => l.startsWith('Big B.')))
+      .toBeLessThan(lines.findIndex((l) => l.startsWith('Small S.')));
+  });
+});
