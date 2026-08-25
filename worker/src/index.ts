@@ -15,6 +15,7 @@ import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
 import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
 import { previewCoachBriefs } from './automation/coachBrief.js';
+import { handleRelayRoutes, maskPhone, normalisePhone } from './automation/relay.js';
 import { coachPipelineHealth } from './coachPatterns.js';
 import { explainPendingIssues, rebuildIssuesFromReports } from './automation/coachIssues.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
@@ -214,6 +215,13 @@ export default {
     const briefIngestResponse = await handleCoachBriefIngest(req, env, url, cors, database);
     if (briefIngestResponse) return briefIngestResponse;
 
+    // The phone relay. Outside /admin/ because Tasker carries no login session,
+    // and on its own token rather than ADMIN_TOKEN: this one sits in a phone
+    // automation and travels in a query string, so it must buy the queue and
+    // nothing else.
+    const relayResponse = await handleRelayRoutes(req, env, database, url);
+    if (relayResponse) return relayResponse;
+
     if (url.pathname === '/health') return json({ ok: true });
 
     // ── Cookie sessions for the routes written before them ──────────────────
@@ -325,6 +333,50 @@ export default {
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
+    }
+
+    // Who the daily brief goes to. A personal mobile number, so it arrives
+    // through this route rather than a migration or a chat message, and comes
+    // back masked to its last four. POST sets it for every active team at once,
+    // which is what phase 1 wants: one recipient, all four teams.
+    if (url.pathname === '/admin/brief-recipient') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+
+      if (req.method === 'GET') {
+        const rows = await database.select(
+          'brief_recipients', 'select=team_id,kind,phone,label,active');
+        const teams = await database.select('teams', 'is_active=eq.true&select=id,name');
+        const nameOf = new Map((teams as any[]).map((t) => [t.id, t.name]));
+        return json({
+          recipients: (rows as any[]).map((r) => ({
+            team: nameOf.get(r.team_id) ?? r.team_id,
+            kind: r.kind, label: r.label, active: r.active, to: maskPhone(r.phone),
+          })),
+        });
+      }
+
+      if (req.method === 'POST') {
+        try {
+          const body = await req.json().catch(() => ({}));
+          const phone = normalisePhone(String((body as any)?.phone ?? ''));
+          if (!phone) {
+            return json({ error: 'phone must be 10 digits, or 11 starting with 1' }, 400);
+          }
+          const label = String((body as any)?.label ?? 'Eric').slice(0, 60);
+          const teams = await database.select('teams', 'is_active=eq.true&select=id,name');
+          await database.upsert(
+            'brief_recipients',
+            (teams as any[]).map((t) => ({
+              team_id: t.id, kind: 'coach_daily', phone, label, active: true,
+            })),
+            'team_id,kind,phone',
+          );
+          return json({ ok: true, teams: (teams as any[]).length, to: maskPhone(phone), label });
+        } catch (e) {
+          return json({ error: String(e) }, 500);
+        }
+      }
+      return json({ error: 'method not allowed' }, 405);
     }
 
     // Admin diagnostic: the daily brief built from the COACH analysis - the
