@@ -1,127 +1,179 @@
-# The Hermes Analysis Contract — full rules for a fresh run
+# The Hermes Analysis Contract v2 — field-level spec for a fresh run
 
-**For Codex.** This consolidates and supersedes every note sent on 2026-08-25
-(call evidence, cite-the-line, lead_e). It exists because Eric spent the day
-defining TRU's actual coaching logic — written down in `docs/SALES_DOCTRINE.md`
-in this repo — and every report currently in the store was produced *before*
-that logic existed. Patching the display cannot fix reasoning that happened
-upstream. The ask: implement these rules in Hermes, then run a **fresh full
-analysis** for all four teams. TRU HQ will reset its derived pattern store the
-day the fresh run lands, so the new reasoning repopulates cleanly instead of
-mixing with the old.
+**For Codex**, who builds the harness that scopes the local model (Qwen) and
+the analyst (Grok) inside Hermes. Supersedes v1 and every note sent 2026-08-25.
 
-Read `docs/SALES_DOCTRINE.md` first. It is Eric's own logic, in his words.
-These are the analysis-side consequences.
+**Why v2 exists:** v1 was written as principles, and principles are for big
+brains. The collection is done by a local model, and Eric's operational
+experience is blunt: *scope it very specifically or it flat out overlooks.*
+So this version is a checklist and an exact payload shape. Every field below
+lands in a specific slot in the TRU HQ display, listed so you can see that
+**the more complete the payload, the less TRU HQ has to invent — and TRU HQ
+inventing things is what every failure today had in common.**
+
+The reasoning behind these rules is `docs/SALES_DOCTRINE.md` (Eric's own
+coaching logic, in his words). This file is the mechanical consequence.
 
 ---
 
-## 1. What a coaching point IS
+## 1. The collection checklist — what the local model captures per conversation
 
-Written **for Eric and the team leader**, never for the agent. The bar, in
-Eric's words: *"I never would have caught that. I clearly understand what the
-problem is. I can go to my agent and have a productive conversation. I have
-the proof of where the thing occurred."*
+One record per conversation, no exceptions, no summarising at collection time.
+Collection gathers; the analyst judges. For EVERY conversation:
 
-- **Every point carries its WHY.** These agents are not trained salespeople.
-  "Call first before texting" without the reason gets ignored, reasonably.
-- **Personable, not shorthand.** Not meeting-notes fragments ("Two specific
-  meeting times"), not vague abstractions. Full sentences a person would say.
-- **A rate beats a count** where the data supports one: "about one phone call
-  attempt on average; the bulk of his communication is through text."
+```
+[ ] channel            call | text | note | voicemail
+[ ] occurredAt         ISO timestamp of the interaction itself
+[ ] leadName           the contact's name as FUB shows it
+[ ] leadUrl            the FUB contact URL (deep link)
+[ ] agentName          exactly as FUB attributes it
+[ ] direction          outbound | inbound
+[ ] durationSeconds    calls only, from the page
+[ ] transcriptText     calls: the FULL transcript block, not the AI summary
+[ ] summaryText        calls: the AI summary too (both exist on the page)
+[ ] bodyText           texts: the verbatim message body
+[ ] isFirstContact     true | false | unknown — is this the EARLIEST
+                       interaction with this lead in the record? Determined
+                       by comparing against the lead's full timeline, never
+                       guessed from the content of the message.
+```
 
-## 2. Every claim cites its source — the hard rule
+Strip FUB interface chrome at collection: thread headers
+("Joseph Darlington Bishoy Yacoub (1 min 19 sec) Aug 20 Summary Transcript"),
+"Suggested Tasks", "Did you find the summary useful?".
 
-**A coaching point that cannot cite its source must not exist.**
+`isFirstContact` is the field the whole taxonomy leans on (§3). If the
+timeline cannot be established, send `unknown` — never guess.
 
-- Where an AI call summary exists, a transcript exists on the same page.
-  **Read the transcript, not only the summary.** Quote the specific line the
-  claim came from in a `sourceQuote` field on the opportunity (plus
-  `sourceChannel`, ideally a timestamp/offset).
-- The summary is proof of *what happened* (Eric: "that AI summary is just as
-  good as a transcript — that is proven"). What it cannot prove is exact
-  wording or *where in the call* something was said. Claims about wording need
-  the transcript line.
-- **Negative claims are the dangerous ones.** "She never offered a time" is a
-  statement about an entire call. It is only safe from a full transcript —
-  never from a summary that simply didn't mention it.
-- The live failure this prevents: Joseph Darlington's card said he "told
-  Bishoy Yacoub a completely blank seller disclosure was not a red flag" —
-  the record holds only "working on an offer for a condo; the seller's
-  disclosure is completely blank." The reassurance was invented and Eric was
-  dialling the agent about it. One of these ends the product's credibility.
+## 2. The opportunity object — exact shape, every field named
 
-## 3. Taxonomy semantics — the `lead_*` keys are the LEAD steps
+```json
+{
+  "patternKey": "lead_e",
+  "isFirstContact": true,
+  "explanation": "Her text to Nick McQuinn asked permission to send listings instead of giving him a chance to pick a specific time to meet.",
+  "coachingMove": "Offer two specific times and ask Nick to choose one.",
+  "sourceQuote": "Want me to put together some listings for you this week?",
+  "sourceChannel": "text",
+  "sourceQuality": "verbatim",
+  "findingIds": ["fnd_..."],
+  "durationSeconds": null
+}
+```
 
-L = lead with who you are · E = extend the invitation (appointment asked for
-EARLY, this-or-that) · A = ask and listen, permission first · D = deliver the
-summary, confirm what's next.
+Field rules, one per line, in the local model's terms:
 
-- **`lead_e` may only be tagged when the finding is the FIRST live interaction
-  with that lead.** It is a first-call technique. Tagged onto a
-  mid-relationship follow-up it reads as nonsense to a broker — this happened
-  live on Cara Benak's brief ("you're misapplying my logic... a moot point").
-  A later conversation ending without a specific time attempt is `next_steps`,
-  or a new key of your choosing for "no specific time proposed, ongoing
-  relationship." The behaviour is coachable; the first-call framing is what
-  invalidates it.
-- The appointment-early rule is a **strong default, not absolute**: flag, do
-  not fail, an agent who read the moment.
+- `patternKey` — from the fixed list in §3 ONLY. Never invent a key.
+- `explanation` — one to three sentences. MUST name the lead. MUST describe
+  what happened in that specific conversation. MUST NOT assert anything the
+  sourceQuote does not show.
+- `coachingMove` — one sentence, imperative, the concrete alternative.
+- `sourceQuote` — **the exact line from the transcript or text body that the
+  claim is based on. If no line supports the claim, DO NOT EMIT THE
+  OPPORTUNITY.** This is the single most important rule in this document.
+- `sourceQuality` — `"verbatim"` when the quote is speech or a message body;
+  `"summary"` when only the AI summary supports it. A `"summary"` source can
+  never carry a claim about exact wording or about something NOT said.
+- Negative claims ("she never offered a time") are claims about an ENTIRE
+  conversation: allowed only with `sourceQuality: "verbatim"` covering the
+  full close of the conversation.
 
-## 4. What does NOT count as evidence or coaching material
+## 3. The pattern keys — definitions the collector can apply
 
-- **A voicemail is an attempt, never a conversation.** It counts toward
-  persistence (five unique attempts in the first seven days from lead
-  arrival; calls and agent-written texts count, FUB automated texts and email
-  do not). It cannot support coaching about conversation technique — Erica
-  Stevens's entire profile was two points built on one six-word voicemail
-  note. Do not emit conversation-technique claims from voicemail-only
-  evidence.
-- **Very short calls** (under ~30s) support "call quality / never reached a
-  conversation" and nothing about technique. Send `durationSeconds` if it is
-  on the page.
-- **Notes written by our own system are not evidence of agent behaviour** —
-  they prove someone flagged something, nothing more.
-- **Coach-facing observations** ("review the recordings") are not agent
-  coaching points. Do not emit them as opportunities.
-- **Do not coach the people running the team.** Brokers, team leads, office
-  staff are analysed but their points must not surface as agent coaching (TRU
-  HQ also filters this; do both).
+`lead_*` are the four steps of LEAD, TRU's first-call framework.
 
-## 5. Consistency — the rule that spans the whole run
+| key | tag when | NEVER tag when |
+|---|---|---|
+| `lead_l` | first contact, agent did not open with name/brokerage/Zillow/why calling | not first contact |
+| `lead_e` | **first contact only** (`isFirstContact: true`), no appointment invitation offered early with a this-or-that choice | `isFirstContact` is false or unknown |
+| `lead_a` | agent skipped permission + real discovery questions | — |
+| `lead_d` | conversation ended without restating plan + confirming next step | — |
+| `next_steps` | ANY later conversation that ended without a specific time attempt | it was first contact (that is `lead_e`) |
+| `call_first` | texted where a call was needed (buyer asked to talk, or a §4-listed subject) | — |
+| `call_quality` | call under ~30s, no conversation reached | to make claims about technique |
+| `objection` | agent retreated when the buyer pushed back | — |
+| `text_transition` | property details sent before any live conversation | — |
+| `negative_property_pivot` | bad news delivered and left sitting, no pivot to what's possible | — |
+| `premature_financing` | money raised before trust/first meeting | — |
+| `premature_representation` | promised what can only be asked for; or "are you working with an agent" as a barrier | — |
 
-Eric's recurring experience: one agent's brief applies the logic correctly and
-ten others don't. Each explanation appears to be generated per-finding in
-isolation. **Whatever enforces these rules must run across ALL agents'
-opportunities in a run, as a final pass** — same category, same reasoning,
-same standard of evidence, every agent. A rule applied to one agent and not
-their neighbour is worse than the rule not existing, because it teaches the
-reader the output is arbitrary.
+The misapplication this table exists to stop, live on Cara Benak's brief:
+`lead_e` tagged on conversations never shown to be first contact. Eric:
+*"you're misapplying my logic... a moot point."*
 
-## 6. Mechanical/schema items
+## 4. Exclusions — evidence that cannot carry coaching
 
-- `findingId` (durable hash) and `patternKey` — keep exactly as they are;
-  the 90-day store keys on them.
-- Add per opportunity: `sourceQuote` (the transcript line), `sourceChannel`,
-  optionally `sourceQuality: "transcript" | "summary"`, optionally
-  `durationSeconds` on call findings.
-- **Trim FUB chrome from quotes**: thread headers ("Joseph Darlington Bishoy
-  Yacoub (1 min 19 sec) Aug 20 Summary Transcript"), "Suggested Tasks",
-  "Did you find the summary useful?".
-- Texts are in good shape — 191 of 192 verbatim. Don't change that path.
-- Schema stays 1.1-compatible; additions are optional fields so old parsing
-  keeps working.
+- **Voicemail-only evidence**: never a technique claim. A voicemail is an
+  attempt (it counts toward the 5-in-7-days persistence floor), not a
+  conversation. Live failure: an agent's entire profile built on one six-word
+  voicemail note.
+- **Short calls** (<~30s): `call_quality` only.
+- **Notes written by our own system**: proof someone flagged something, not
+  proof of agent behaviour.
+- **Coach-facing observations** ("review the recordings"): not opportunities.
+- **Brokers / team leads / office staff**: analysed, never coached in output.
+- **FUB automated texts** (leadFlowRouteId set): not the agent's work.
+- **Email**: not counted for anything.
 
-## 7. The fresh run, and what TRU HQ does when it lands
+## 5. The gold-standard output, verbatim from Eric
 
-1. Codex implements the above and confirms.
-2. Hermes runs a fresh full analysis (all four connected teams, normal 7-day
-   window, new runIds).
-3. **Tell TRU HQ it is a fresh-logic run** — simplest: bump `schemaVersion`
-   to `1.2`, or say so and we key on the runId.
-4. TRU HQ resets the derived pattern store (`coach_patterns`,
-   `coach_pattern_findings`, `coach_team_state`, and the brief-memory
-   columns) immediately before ingesting it, so the new reasoning populates
-   clean. The raw reports table is never touched — history stays.
+This is the register every explanation aims at — specific, personable, a rate
+not just a count, and the why attached:
 
-Nothing here blocks the current daily runs; keep them going until the new
-logic ships.
+> "Aaron has frequently texted leads and is not making any attempted phone
+> call. He frequently makes about one phone call attempt on average, and the
+> bulk of his communication is done through text. Should probably sit down
+> with Aaron this week and talk about why we are leading with text first and
+> the value of why we want to call our leads."
+
+And the anti-pattern, also his, verbatim: *"Coaching plan: Tell agent to call
+first before texting"* — concise, useless, not insight.
+
+## 6. The consistency pass — runs over the whole payload, last
+
+Before sending, one final pass over EVERY agent's opportunities together:
+
+```
+[ ] every opportunity has a sourceQuote                → drop any that don't
+[ ] every lead_e has isFirstContact: true              → retag or drop
+[ ] no voicemail-only technique claims                 → drop
+[ ] no coach-facing points                             → drop
+[ ] no points on brokers/leads/staff                   → drop
+[ ] same behaviour = same patternKey on every agent    → retag
+```
+
+Eric's recurring experience is one agent's brief correct and ten others not,
+because rules were applied per-finding in isolation. This pass is the cure,
+and it must not be skippable.
+
+## 7. Per-agent metrics — what the display's rates are built from
+
+Keep sending, per agent: `callFirst`, `textFirst`, `noOutreach`,
+`reviewedContacts`, `substantiveContacts`. These feed the per-card mix strip
+and the "11 of 15 first touches were texts" rate lines. Add if cheap:
+`attemptsThisWeek` per lead (calls + agent-written texts + voicemails, no
+automated texts, no email) — that makes the five-attempt persistence floor
+measurable upstream too.
+
+## 8. Where each field lands in TRU HQ (so nothing gets invented downstream)
+
+| payload field | display slot |
+|---|---|
+| `patternKey` | the serif italic label line on the card, via a fixed phrase table |
+| `explanation` | the story — the card's body sentence |
+| `coachingMove` | the "Coach:" line |
+| `sourceQuote` + finding quotes | "Proof (n)", collapsed until clicked |
+| finding `leadName`/`leadUrl` | the named, linked contacts in the proof and in "with Nick, Tiana, and Vincent" |
+| metrics | the card's mix strip + rate sentences |
+| `sourceQuality` | (coming) a "from the summary" tag when not verbatim |
+
+## 9. The fresh run
+
+1. Codex implements this and confirms.
+2. Hermes runs a fresh full analysis, all four teams, normal window.
+3. Mark it: `schemaVersion: "1.2"`.
+4. TRU HQ runs `db/hq_coach_fresh_start.sql` immediately before ingest —
+   derived pattern store cleared so new reasoning populates clean; the raw
+   report history untouched.
+
+Keep the current daily runs going until then.
