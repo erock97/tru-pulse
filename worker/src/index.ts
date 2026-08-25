@@ -15,6 +15,7 @@ import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
 import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
 import { previewCoachBriefs } from './automation/coachBrief.js';
+import { coachPipelineHealth } from './coachPatterns.js';
 import { explainPendingIssues, rebuildIssuesFromReports } from './automation/coachIssues.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
@@ -294,6 +295,20 @@ export default {
       if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
       try {
         return json(await explainPendingIssues(env, database, url.searchParams.get('teamId') ?? undefined));
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // Ops: did last night's Hermes run actually work? The failure modes here
+    // are quiet - a slug that drifted, a payload with no pattern keys, evidence
+    // that all deduplicated - and none of them throw. Each just leaves the
+    // Coach view emptier than it should be, which reads as a quiet week rather
+    // than a broken pipeline.
+    if (url.pathname === '/admin/coach-health' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
+      try {
+        return json(await coachPipelineHealth(database));
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
