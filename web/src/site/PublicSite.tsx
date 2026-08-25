@@ -11,6 +11,7 @@ import Work from './pages/Work';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import RefundPolicy from './pages/RefundPolicy';
+import SmsTerms from './pages/SmsTerms';
 import NotFound from './pages/NotFound';
 import '../pages/Landing.css';
 import './site.css';
@@ -57,6 +58,11 @@ export const META: Record<PublicRoute, Omit<PageMeta, 'path'>> = {
     title: 'Refund & Cancellation Policy — TRU',
     description:
       'The 90-day initial term, the 48-hour refund window, how to cancel, and how per-deal payouts work.',
+  },
+  '/sms-terms': {
+    title: 'SMS Terms & Conditions — TRU',
+    description:
+      'Who receives text messages from TRU, how consent is collected, what we send, and how to stop them. Internal team communication only — never marketing, and never to clients or leads.',
   },
 };
 
@@ -143,6 +149,7 @@ export default function PublicSite({ route }: { route: PublicView }) {
         {route === '/privacy' && <Privacy />}
         {route === '/terms' && <Terms />}
         {route === '/refund-policy' && <RefundPolicy />}
+        {route === '/sms-terms' && <SmsTerms />}
         {route === 'not-found' && <NotFound />}
       </main>
       <SiteFooter />

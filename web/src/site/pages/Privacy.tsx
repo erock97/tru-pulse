@@ -26,8 +26,16 @@ export default function Privacy() {
         <p>
           <strong>Information you provide directly.</strong> When you submit our application form we
           collect what you enter: your name, work email address, professional role, team size, and a
-          description of your current operating bottleneck. <strong>We do not ask for or collect a
-          phone number.</strong>
+          description of your current operating bottleneck. <strong>The application form does not
+          ask for a phone number.</strong>
+        </p>
+        <p>
+          <strong>Mobile numbers, from platform users only.</strong> Members of a client team who use
+          our platform at app.truhq.co may choose to give a mobile number in order to receive text
+          messages from their own team leader. That is the only place we collect a phone number, it
+          is always typed by the person themselves, and it is never a condition of using the
+          platform. We do not collect phone numbers from visitors to this website. See our{' '}
+          <a href="/sms-terms">SMS Terms</a> for what those messages contain and how to stop them.
         </p>
         <p>
           <strong>Information collected automatically.</strong> When you visit the site we collect
@@ -63,8 +71,9 @@ export default function Privacy() {
           <li>
             <strong>Service providers</strong> who help us operate the business — Cloudflare
             (hosting and privacy-friendly analytics), Supabase (database), Resend (transactional
-            email), Calendly (scheduling), and Stripe (payment processing for clients). These
-            providers are contractually obligated to protect your data.
+            email), Twilio (text-message delivery for platform users who opted in), Calendly
+            (scheduling), and Stripe (payment processing for clients). These providers are
+            contractually obligated to protect your data.
           </li>
           <li><strong>Legal authorities</strong> when required by law, subpoena, or court order.</li>
           <li>
@@ -72,6 +81,15 @@ export default function Privacy() {
             assets, with notice to you.
           </li>
         </ul>
+        <p>
+          <strong>
+            Mobile phone numbers and SMS consent are never sold, rented, or shared with third parties
+            or affiliates for marketing or promotional purposes.
+          </strong>{' '}
+          A mobile number is shared only with the messaging provider that delivers the message on our
+          behalf, which is contractually barred from using it for any other purpose. No mobile number
+          or record of SMS consent is disclosed to any other party for any reason.
+        </p>
 
         <h2>Cookies and tracking</h2>
         <p>
@@ -100,6 +118,7 @@ export default function Privacy() {
           <li>Request correction of inaccurate information</li>
           <li>Request deletion of your information</li>
           <li>Opt out of marketing communications — use the unsubscribe link in any email, or contact us directly</li>
+          <li>Stop text messages — reply STOP to any message, or switch them off inside the platform</li>
           <li>Restrict or object to certain processing</li>
           <li>Data portability — receive your information in a portable format</li>
         </ul>
