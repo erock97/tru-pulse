@@ -352,6 +352,44 @@ export function findingsByIndex(brief: CoachBrief): Map<number, BriefFinding> {
  *  indexes (seen live: one FUB note arriving as three findings), which renders
  *  as the same quote repeated under one point. Two findings that agree on
  *  lead, time and quote ARE the same interaction, so only the first shows. */
+/** Evidence keyed by the durable id schema 1.1 attaches to every finding. */
+export function findingsById(brief: CoachBrief): Map<string, BriefFinding> {
+  const out = new Map<string, BriefFinding>();
+  for (const f of brief.findings) if (f.findingId) out.set(f.findingId, f);
+  return out;
+}
+
+/**
+ * A schema 1.1 opportunity in the shape the display already knows how to draw.
+ *
+ * 1.1 replaced the free-text `text` with a pair — `explanation` (what happened)
+ * and `coachingMove` (what to do instead) — and pointed at its evidence by
+ * durable id rather than by position in the list. The reading side had no path
+ * for either, so every one of these arrived and rendered as nothing at all.
+ *
+ * Evidence resolves by id first, because that survives a report being resent
+ * with its findings in a different order; `findingIndex` is the fallback for a
+ * sender that omitted the ids.
+ */
+export function opportunityAsPoint(
+  o: BriefOpportunity,
+  byIndex: Map<number, BriefFinding>,
+  byId: Map<string, BriefFinding>,
+): { text: string; coach: string | null; evidence: BriefFinding[] } {
+  const seen = new Set<string>();
+  const evidence: BriefFinding[] = [];
+  const take = (f: BriefFinding | undefined) => {
+    if (!f) return;
+    const key = `${f.leadName ?? ''} ${f.occurredAt ?? ''} ${f.quote ?? ''}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    evidence.push(f);
+  };
+  for (const id of o.findingIds) take(byId.get(id));
+  if (!evidence.length && o.findingIndex !== undefined) take(byIndex.get(o.findingIndex));
+  return { text: o.explanation, coach: o.coachingMove ?? null, evidence };
+}
+
 export function pointEvidence(point: BriefPoint, byIndex: Map<number, BriefFinding>): BriefFinding[] {
   const seen = new Set<string>();
   const out: BriefFinding[] = [];

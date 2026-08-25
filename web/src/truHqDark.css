@@ -5437,6 +5437,18 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-scan-row.is-link { cursor: pointer; transition: background .15s ease; }
 .tru-dark .brief-scan-row.is-link:hover,
 .tru-dark .brief-scan-row.is-link:focus-visible { background: var(--tab-soft, rgba(255,139,98,.16)); outline: none; }
+/* Column headers. Same grid as a row so the labels sit over their own cells;
+   quieter than the data, because a header a reader keeps noticing is a header
+   competing with the thing it labels. */
+.tru-dark .brief-scan-head {
+  display: grid; grid-template-columns: 180px 200px 150px 1fr;
+  gap: 14px; align-items: baseline;
+  padding: 9px 10px; border-bottom: 1px solid var(--border);
+  font-size: 11.5px; font-weight: 620; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-45, var(--text-60));
+}
+/* The definition is on the title attribute; this is the only cue it is there. */
+.tru-dark .brief-scan-head > span { cursor: help; }
 .tru-dark .brief-scan-name { font-weight: 640; font-size: 15px; }
 .tru-dark .brief-scan-cov, .tru-dark .brief-scan-obj { color: var(--text-60); font-size: 13.5px; }
 .tru-dark .brief-scan-pri {

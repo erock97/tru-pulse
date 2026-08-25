@@ -3,7 +3,9 @@ import {
   briefStatusFor,
   channelLabel,
   findingsByIndex,
+  findingsById,
   matchAgents,
+  opportunityAsPoint,
   normalizeAgentName,
   pointEvidence,
   validateCoachBrief,
@@ -206,5 +208,92 @@ describe('channelLabel', () => {
 
   it('returns null for a missing channel', () => {
     expect(channelLabel(undefined)).toBeNull();
+  });
+});
+
+
+describe('a schema 1.1 opportunity reaching a screen', () => {
+  // Live on 2026-08-25: 266 coaching points across four teams sat in the
+  // stored payload while every Coach tab row read "Not enough reviewed this
+  // week". 1.1 moved the wording into `explanation` and the evidence into
+  // `findingIds`, and nothing on the reading side knew about either.
+  const finding = (over: Record<string, unknown> = {}) => ({
+    findingIndex: 0,
+    findingId: 'fnd_aaa',
+    agentName: 'Erica Stevens',
+    leadName: 'Leann',
+    occurredAt: '2026-08-18T15:00:00Z',
+    channel: 'call',
+    quote: 'Happy to help you pick up where you left off.',
+    ...over,
+  }) as any;
+
+  const brief = (findings: any[]) => ({ findings } as any);
+
+  const opp = {
+    findingIds: ['fnd_aaa'],
+    patternKey: 'lead_e',
+    explanation: 'Offered to help but never gave Leann a time to choose.',
+    coachingMove: 'Leave a voicemail offering two times and ask her to pick one.',
+  };
+
+  it('shows the explanation as the point, and the move as the coaching', () => {
+    const b = brief([finding()]);
+    const out = opportunityAsPoint(opp, findingsByIndex(b), findingsById(b));
+    expect(out.text).toBe('Offered to help but never gave Leann a time to choose.');
+    expect(out.coach).toBe('Leave a voicemail offering two times and ask her to pick one.');
+  });
+
+  it('finds its evidence by durable id', () => {
+    const b = brief([finding()]);
+    const out = opportunityAsPoint(opp, findingsByIndex(b), findingsById(b));
+    expect(out.evidence.map((f) => f.quote)).toEqual([
+      'Happy to help you pick up where you left off.',
+    ]);
+  });
+
+  it('finds it by id even when the report reordered its findings', () => {
+    // The reason 1.1 introduced ids. A position is only meaningful within one
+    // delivery; the same call arrives at a different index the next morning.
+    const b = brief([
+      finding({ findingIndex: 0, findingId: 'fnd_other', quote: 'Someone else.' }),
+      finding({ findingIndex: 1, findingId: 'fnd_aaa' }),
+    ]);
+    const out = opportunityAsPoint(opp, findingsByIndex(b), findingsById(b));
+    expect(out.evidence).toHaveLength(1);
+    expect(out.evidence[0].quote).toBe('Happy to help you pick up where you left off.');
+  });
+
+  it('falls back to the index when the sender omitted ids', () => {
+    const b = brief([finding({ findingId: undefined })]);
+    const out = opportunityAsPoint(
+      { ...opp, findingIds: [], findingIndex: 0 }, findingsByIndex(b), findingsById(b));
+    expect(out.evidence).toHaveLength(1);
+  });
+
+  it('still shows the point when its evidence cannot be found', () => {
+    // Missing evidence weakens a coaching point. Hiding the point entirely is
+    // what produced the blank column in the first place.
+    const b = brief([]);
+    const out = opportunityAsPoint(opp, findingsByIndex(b), findingsById(b));
+    expect(out.text).toBe('Offered to help but never gave Leann a time to choose.');
+    expect(out.evidence).toEqual([]);
+  });
+
+  it('shows one interaction once when it arrives under several ids', () => {
+    const b = brief([
+      finding({ findingIndex: 0, findingId: 'fnd_aaa' }),
+      finding({ findingIndex: 1, findingId: 'fnd_bbb' }),
+    ]);
+    const out = opportunityAsPoint(
+      { ...opp, findingIds: ['fnd_aaa', 'fnd_bbb'] }, findingsByIndex(b), findingsById(b));
+    expect(out.evidence).toHaveLength(1);
+  });
+
+  it('leaves the coaching blank rather than inventing one', () => {
+    const b = brief([finding()]);
+    const { coachingMove, ...noMove } = opp;
+    const out = opportunityAsPoint(noMove as any, findingsByIndex(b), findingsById(b));
+    expect(out.coach).toBeNull();
   });
 });
