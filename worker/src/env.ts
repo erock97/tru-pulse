@@ -19,6 +19,9 @@ export interface Env {
                                       // DERIVED per-team token, never this value itself
   WEBHOOK_REQUIRE_SIGNATURE?: string; // '1' → reject webhooks whose FUB-Signature doesn't
                                       // verify. Roll out log-only first (see /webhook/fub).
+  /** '1' stops every automation at send time, without touching the database.
+   *  The backstop for when Postgres itself is the problem. */
+  AUTOMATION_KILL?: string;
   FUB_SYSTEM_KEY?: string;            // FUB system key (X-System-Key) — required to create webhooks
   FUB_SYSTEM_NAME?: string;           // FUB system name (X-System) — defaults to 'TerrasonFUBDashboard' when unset
   // TRU Rep — Live Sim (practice calls). Optional until configured.

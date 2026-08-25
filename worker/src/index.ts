@@ -13,6 +13,7 @@ import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
+import { runDueAutomations } from './automation/runner.js';
 import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
 import { syncTeam, syncPeopleByIds, syncAllActiveTeams, type TeamRow } from './sync.js';
 import { reconcileAllTeams } from './accountability.js';
@@ -1389,6 +1390,16 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const database = db(env);
+    // The brief tick is LIGHT — one indexed select, and on almost every minute
+    // of the day it finds nothing due and returns. It must never pull a full
+    // multi-tenant FUB sync behind it, which is why this handler is now a switch
+    // rather than a sequence. Adding a cron without adding an arm here silently
+    // costs a sync every time it fires.
+    if (controller.cron === '12,24,36,48 * * * *') {
+      const out = await runDueAutomations(env, database, new Date());
+      if (out.length) console.log('automations:', JSON.stringify(out));
+      return;
+    }
     await syncAllActiveTeams(env, database, 180);
     // The daily 07:05 trigger also runs the 3-strike reconcile (after a fresh sync).
     if (controller.cron === '5 7 * * *') {
