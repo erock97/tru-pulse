@@ -252,8 +252,20 @@ attempt counted five times because the record duplicated it.
 > text landed within two seconds of assignment, every unflagged one at eleven
 > minutes or later.
 
-**OPEN, do not guess:** whether the week runs from lead creation or from
-assignment to the agent; whether a voicemail counts as an attempt in its own
+**The week runs from when the lead ARRIVES.** Seven days from arrival, flat.
+Not from assignment to an agent.
+
+The target is not excellence, and saying so matters:
+
+> Can you be better than the average? A little bit better than the average. Not
+> better than the average — a *little bit* better than the average. And if you
+> can put in about five attempts, you should do pretty well in this, provided
+> what you're actually saying is a value, of course.
+
+That last clause is a condition, not a footnote. Five empty check-ins is not
+five attempts.
+
+**OPEN, do not guess:** whether a voicemail counts as an attempt in its own
 right; and whether the count resets or continues past week one.
 
 ### 2. They do not understand *why*
@@ -308,6 +320,97 @@ actively coaching alongside Eric, and they need it.
 Consequence for writing: the voice is one operator to another. Carry the *why*
 (section 5.2), because the leader will have to answer it. Do not write it as a
 message to forward to the agent.
+
+---
+
+## 6a. Readability — the rule most output fails
+
+A team leader who cannot immediately tell what happened and what to do about it
+**abandons the report.** That is the failure mode, and it has two opposite
+causes.
+
+### Too vague, too high-level, too many big words
+
+The leader reads it, does not know what to do with it, and stops opening it.
+
+### Too concise — which is the one AI actually produces
+
+> Coaching plan: Tell agent to call first before texting.
+
+Eric on that: *"That is very concise, but that doesn't really help me. That's
+not insight."*
+
+His diagnosis of why this keeps happening is worth quoting in full, because it
+names the exact habit to avoid:
+
+> Think of it like if I was in a meeting taking notes. I would write shorthand
+> and I would likely put bullet points for topics that I understand, but only I
+> would understand them, because I'm writing shorthand. We don't want to be so
+> concise that we're writing shorthand.
+
+Meeting-notes register is the default failure. It looks efficient and carries
+nothing.
+
+### What good looks like — Eric's own example, verbatim
+
+> "Hey, we notice that Aaron has frequently texted leads and is not making any
+> attempted phone call. He frequently makes about one phone call attempt on
+> average. And the bulk of his communication is done through text. Should
+> probably sit down with Aaron today or sometime this week and talk to him
+> about why we are leading with text first and the value of why we want to call
+> our leads."
+
+Longer than an AI would write, and correct. Take it apart:
+
+| Element | In the example |
+|---|---|
+| The observation, plainly | "has frequently texted leads and is not making any attempted phone call" |
+| **A rate or proportion, not just a count** | "about one phone call attempt on average"; "the bulk of his communication is done through text" |
+| A concrete action with a horizon | "sit down with Aaron today or sometime this week" |
+| **The subject of the conversation — the WHY** | "why we are leading with text first and the value of why we want to call our leads" |
+
+Note what is absent: no jargon, no bullets, no imperative fragment. It is one
+person telling another what they noticed.
+
+### The test
+
+Eric's own bar for a finding worth reading:
+
+> "Oh my gosh, I never would have caught that. I clearly understand what the
+> problem is. I can go to my agent and have a productive conversation about how
+> we get better. I have the proof of where the thing occurred, and exactly what
+> our plan of action is."
+
+Four things in that sentence: **I would have missed it · I understand it · I
+can act on it · I can prove it.** All four, or it is not ready.
+
+Register: **personable and easy to understand.** Concise, but never shorthand.
+
+---
+
+## 6b. Formatting — a report, not a book, and not notes
+
+> An effective report highlights and categorizes problems in order of
+> importance, gives very clear calls to action, and provides proof of the
+> occurrences — but separates them in a way that I don't get lost in the report.
+
+### The proof should be quiet
+
+The current layout alternates: **coaching action, proof, coaching action,
+proof.** The reader loses the thread, because the evidence is as loud as the
+insight and there is three times more of it.
+
+> The proof should be quiet. Like, it should be very little. The broker wants
+> to see proof, he clicks the proof and it shows the proof. But the real
+> insight is the focus of the message. Whatever that insight is, whatever tab
+> it's in, that's the piece we're looking for.
+
+So: **evidence is collapsed by default and opened on demand.** It must be
+present — a finding without provable evidence fails the fourth part of the test
+above — but it is a footnote the leader chooses to open, never the body of the
+page.
+
+The insight is the message. Everything else is support.
 
 ---
 
