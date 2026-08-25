@@ -6,6 +6,8 @@
 import type { Env } from './env.js';
 import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
+import { db as serviceDb } from './db.js';
+import { isId } from './automation/store.js';
 
 // Ids come from the query string, so validate the shape before it reaches a
 // PostgREST filter. Filters AND together so an id can't be widened to another
@@ -223,6 +225,59 @@ export async function handleDataRoutes(
       ? await db.select('coach_weekly_reports', `select=*&id=eq.${wantedId}&limit=1`)
       : [];
     return json({ reports, report: (full as unknown[])[0] ?? null }, 200, cors);
+  }
+
+  // ── Coach: the rolling ninety-day habits behind "What to do with this agent". ──
+  // The pattern store is service-role-only (its view runs as owner, so granting it
+  // to users would leak across orgs -- that grant existed for half a day and is now
+  // revoked). So the caller's org is resolved AS THE USER, where RLS makes `orgs
+  // limit 1` mean "your org", and only then does the service role read patterns,
+  // filtered to that org's id. The caller never controls the filter.
+  if (url.pathname === '/data/coach/patterns' && req.method === 'GET') {
+    const orgs = await db.select<{ id: string }>('orgs', 'select=id&limit=1');
+    const orgId = orgs[0]?.id;
+    if (!orgId) return json({ patterns: [], window: null }, 200, cors);
+
+    const svc = serviceDb(env);
+    const rows = (await svc.select(
+      'coach_patterns_live',
+      `org_id=eq.${orgId}&select=id,agent_id,agent_name,pattern_key,explanation,`
+      + 'coaching_move,first_seen_at,latest_evidence,occurrences,'
+      + 'occurrences_this_window,is_current,is_recurring,window_start,window_end'
+      + '&order=occurrences.desc',
+    )) as Array<Record<string, unknown>>;
+
+    // Evidence for every pattern in one trip, newest first; the web caps what it
+    // shows. Ids come from our own select but are shape-checked anyway -- they
+    // are about to be concatenated into a filter.
+    const ids = rows.map((r) => r.id).filter(isId);
+    const findings = ids.length
+      ? ((await svc.select(
+          'coach_pattern_findings',
+          `pattern_id=in.(${ids.join(',')})&select=pattern_id,lead_name,channel,occurred_at,quote`
+          + '&order=occurred_at.desc&limit=400',
+        )) as Array<Record<string, unknown>>)
+      : [];
+    const byPattern = new Map<string, Array<Record<string, unknown>>>();
+    for (const f of findings) {
+      const k = String(f.pattern_id);
+      if (!byPattern.has(k)) byPattern.set(k, []);
+      const bucket = byPattern.get(k)!;
+      if (bucket.length < 5) bucket.push({ lead_name: f.lead_name, channel: f.channel, occurred_at: f.occurred_at, quote: f.quote });
+    }
+
+    const first = rows[0] as { window_start?: string; window_end?: string } | undefined;
+    return json({
+      window: first ? { start: first.window_start, end: first.window_end } : null,
+      patterns: rows.map((r) => ({
+        agentId: r.agent_id, agentName: r.agent_name, patternKey: r.pattern_key,
+        explanation: r.explanation, coachingMove: r.coaching_move,
+        firstSeen: r.first_seen_at, latestEvidence: r.latest_evidence,
+        occurrences: Number(r.occurrences ?? 0), thisWindow: Number(r.occurrences_this_window ?? 0),
+        current: !!r.is_current, recurring: !!r.is_recurring,
+        findings: byPattern.get(String(r.id)) ?? [],
+      })),
+    }, 200, cors);
   }
 
   // ── Rep: one agent's own practice attempts. ──

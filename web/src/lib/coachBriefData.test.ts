@@ -106,9 +106,15 @@ describe('a week stored after schema 1.1', () => {
     }];
     (row.payload as any).findings[0].findingId = 'fnd_a';
 
-    const point = toView(row)!.agents[0].opportunities[0];
+    const agent = toView(row)!.agents[0];
+    const point = agent.opportunities[0];
     expect(point.text).toBe('Ends texts without offering a time.');
-    expect(point.coach).toBe('Offer two times and ask her to pick one.');
+    // The move is NOT repeated here: it renders once, in the "What to do with
+    // this agent" lane, which is built from it. Duplicating the same sentence
+    // across two lanes is the redundancy one lane was already removed over.
+    expect(point.coach).toBeNull();
     expect(point.evidence[0].quote).toBe('Want me to send some over?');
+    expect(agent.coachingActions[0].text).toBe('Offer two times and ask her to pick one.');
+    expect(agent.coachingActions[0].evidence[0].quote).toBe('Want me to send some over?');
   });
 });

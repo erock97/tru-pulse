@@ -89,3 +89,12 @@ alter table brief_recipients enable row level security;
 alter table brief_sends      enable row level security;
 
 notify pgrst, 'reload schema';
+
+
+-- ── Grants ──────────────────────────────────────────────────────────────────
+-- Same reasoning as hq_coach_patterns.sql: RLS-with-no-policy stops user roles
+-- at the policy layer, but Supabase's default privileges still hand out
+-- table-level SELECT. Revoked so nothing depends on the policy layer being the
+-- only wall — one of these holds a personal phone number and the other holds
+-- full message bodies.
+revoke all on brief_recipients, brief_sends from anon, authenticated;

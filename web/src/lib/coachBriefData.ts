@@ -110,7 +110,32 @@ export function toView(row: BriefReportRow): BriefView | null {
   const opportunitiesOf = (a: BriefAgent): BriefPointView[] =>
     a.opportunities?.length
       ? a.opportunities.map(point)
-      : (a.opportunityPoints ?? []).map((o) => opportunityAsPoint(o, byIndex, byId));
+      : (a.opportunityPoints ?? []).map((o) => {
+          // The move is deliberately NOT shown here. It renders in the
+          // "What to do with this agent" lane instead, so this lane is what
+          // happened and that lane is the to-do -- the same sentence in both
+          // is the redundancy Eric already threw one lane out over.
+          const v = opportunityAsPoint(o, byIndex, byId);
+          return { ...v, coach: null };
+        });
+
+  // Hermes sends every action twice: a headline fragment in coachingActions
+  // ("Two specific meeting times") and the full instruction on the matching
+  // opportunity ("Ask Ashley to choose between two specific times instead of a
+  // general catch-up"). The fragments went in front of a broker and read as
+  // noise. When the full moves exist, the plan lane is built from them; the
+  // fragments only appear for 1.0 reports that have nothing better.
+  const planOf = (a: BriefAgent): BriefPointView[] => {
+    const moves = (a.opportunityPoints ?? []).filter((o) => o.coachingMove);
+    if (moves.length) {
+      return moves.map((o) => ({
+        text: o.coachingMove!,
+        coach: null,
+        evidence: opportunityAsPoint(o, byIndex, byId).evidence,
+      }));
+    }
+    return (a.coachingActions ?? []).map(point);
+  };
   return {
     reportId: row.id,
     weekStart: row.week_start,
@@ -128,7 +153,7 @@ export function toView(row: BriefReportRow): BriefView | null {
       doingRight: (a.doingRight ?? []).map(point),
       opportunities: opportunitiesOf(a),
       objections: (a.objections ?? []).map(point),
-      coachingActions: (a.coachingActions ?? []).map(point),
+      coachingActions: planOf(a),
     })),
   };
 }
