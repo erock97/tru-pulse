@@ -176,3 +176,16 @@ alter table coach_patterns         enable row level security;
 alter table coach_pattern_findings enable row level security;
 
 notify pgrst, 'reload schema';
+
+
+-- ── Grants ──────────────────────────────────────────────────────────────────
+-- The tables above are RLS-on-with-no-policy, which blocks user roles at the
+-- policy layer. The VIEW is different: it runs as its owner, which sidesteps
+-- the tables' RLS entirely — and Supabase's default privileges hand SELECT on
+-- new objects to anon and authenticated. Together those two facts made
+-- coach_patterns_live readable by any authenticated session, across orgs, for
+-- the half-day before this was caught (2026-08-25). The app reads it only
+-- through the Worker's service role, which none of this touches.
+revoke all on coach_patterns_live from anon, authenticated;
+revoke all on coach_team_state, coach_patterns, coach_pattern_findings
+  from anon, authenticated;
