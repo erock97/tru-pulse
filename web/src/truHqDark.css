@@ -5434,8 +5434,12 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
    ellipsised line. Cards, at the same scale as the Pulse tiles, arriving on
    the same fade-up those tiles use. */
 .tru-dark .brief-scan {
+  /* width:100% is load-bearing: the parent .dk-sec is a wrapping flex row, and
+     without it this grid sizes to its content basis -- Eric measured it at
+     three quarters of the page. */
+  width: 100%;
   margin-top: 18px;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 18px;
 }
 .tru-dark .brief-agent-card {
@@ -5499,10 +5503,19 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
 /* ── The agent panel (drill-in sheet) ── */
 .tru-dark .brief-panel { margin-top: 22px; }
+/* The panel's title at masthead scale. A later .dk-page rule demotes every
+   ad-panel h3 to 18px so section heads do not shout; this one panel is the
+   reason the sheet gets opened, and its title leads. */
+.tru-dark .dk-page .brief-panel .ad-panel-head h3,
+.tru-dark .brief-panel .ad-panel-head h3 {
+  font-family: var(--hq-serif); font-size: 26px; font-weight: 550;
+  letter-spacing: -0.022em; color: var(--text-strong);
+}
+.tru-dark .brief-panel .ad-panel-head .panel-sub { font-size: 14.5px; color: var(--text-60); }
 .tru-dark .brief-panel .ad-panel-head { align-items: center; gap: 12px; }
 .tru-dark .brief-panel .brief-week-pick { margin-left: auto; }
 .tru-dark .brief-outreach {
-  color: var(--text-60); font-size: 14px; margin: 2px 0 14px;
+  color: var(--text-80, var(--text)); font-size: 16px; margin: 2px 0 18px;
   padding: 8px 12px; border-left: 2px solid var(--tab-line, var(--border));
   background: var(--tab-soft, rgba(255,139,98,.08));
   border-radius: 0 8px 8px 0;
@@ -5522,7 +5535,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-lane-h {
   position: relative;
   margin: 0 0 18px; padding-bottom: 12px;
-  font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+  font-size: 22px; font-weight: 700; letter-spacing: -0.014em;
   color: var(--text-strong);
 }
 /* The rule under each heading DRAWS itself, the same scaleX move the source
@@ -5570,14 +5583,14 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 /* THE TYPE. Asked for six times and still too small at 17px. The point IS the
    product; it now sits at the scale this app gives anything that matters. */
 .tru-dark .brief-point-text {
-  margin: 0; font-size: 20px; line-height: 1.5; font-weight: 560;
-  color: var(--text-strong); letter-spacing: -0.014em;
+  margin: 0; font-size: 22px; line-height: 1.5; font-weight: 560;
+  color: var(--text-strong); letter-spacing: -0.016em;
 }
 /* The category opens the sentence. Never an uppercase tracked label above
    every card: that eyebrow-on-everything rhythm is the AI-built signature. */
 .tru-dark .brief-lead-in { color: var(--accent-hi); font-weight: 700; }
 .tru-dark .brief-coach {
-  margin: 14px 0 0; font-size: 17px; line-height: 1.5;
+  margin: 14px 0 0; font-size: 18px; line-height: 1.5;
   color: var(--text-80, var(--text));
 }
 .tru-dark .brief-coach b { color: var(--accent-hi); font-weight: 700; }
@@ -5590,11 +5603,11 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-evidence-toggle:hover { text-decoration: underline; }
 .tru-dark .brief-evidence { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
 .tru-dark .brief-evidence blockquote {
-  margin: 0; padding: 12px 16px; font-size: 16px; line-height: 1.55;
+  margin: 0; padding: 14px 18px; font-size: 17px; line-height: 1.55;
   color: var(--text-80, var(--text)); background: var(--lift);
   border-radius: 10px; border: 1px solid var(--border);
 }
-.tru-dark .brief-evidence-meta { display: block; margin-top: 8px; font-size: 14.5px; color: var(--text-60); }
+.tru-dark .brief-evidence-meta { display: block; margin-top: 8px; font-size: 15px; color: var(--text-60); }
 .tru-dark .brief-evidence-meta a { color: var(--tab-mid, var(--terracotta)); }
 
 /* ── The printable brief — a paper document over the app ── */
