@@ -90,7 +90,28 @@ interface TeamRow {
   id: string; org_id: string; name: string; timezone: string | null;
 }
 
-/** Everything the brief needs for one team, in three narrow queries. */
+/**
+ * Everything the brief needs for one team, in a handful of narrow queries.
+ *
+ * Who counts as chaseable is a categorisation question, not a filtering one.
+ * The roster carries a role per person, and the brief reads it rather than
+ * keeping a list of names of its own:
+ *
+ *   agent  — chase them. This is the whole list.
+ *   lead   — runs the team. They work leads themselves, often plenty, and
+ *            telling a team leader to chase a team leader is not useful.
+ *   admin  — office staff who hold leads. Signature has three, and one of them
+ *            had ten leads in an early stage, which put her top of that team's
+ *            brief and pushed an agent with three uncontacted leads off it.
+ *   pond   — not a person at all. Synergy's "Iron 65" was showing sixteen
+ *            untouched leads; nobody can be asked to call them.
+ *
+ * Excluded and paused people drop out too. Someone deliberately taken off the
+ * roster, or paused, is not failing to work leads — they were told not to.
+ *
+ * The day's intake still counts everyone. Where leads landed is worth knowing
+ * whoever caught them; it is only the chase list that is agents-only.
+ */
 export async function gatherBrief(
   database: Db,
   team: TeamRow,
@@ -107,7 +128,7 @@ export async function gatherBrief(
   // Filters pushed into PostgREST rather than pulling the team's whole lead
   // history and filtering in JS. Each of these returns tens of rows; the
   // unfiltered version returns ten thousand for the largest team.
-  const [fresh, untouched, stalled, syncRows] = await Promise.all([
+  const [fresh, untouched, stalled, syncRows, roster] = await Promise.all([
     database.select('leads', `team_id=eq.${team.id}&fub_created=gte.${dayAgo}&select=assigned_to`),
     database.select('leads',
       `team_id=eq.${team.id}&flag=eq.zero_contact&fub_created=lt.${graceAgo}` +
@@ -116,7 +137,16 @@ export async function gatherBrief(
       `team_id=eq.${team.id}&flag=eq.stuck&fub_created=lt.${windowAgo}` +
       `&fub_created=gte.${recentAgo}&assigned_to=not.is.null&select=assigned_to`),
     database.select('sync_state', `team_id=eq.${team.id}&select=last_sync_at`),
+    database.select('agents', `team_id=eq.${team.id}&select=name,role,excluded,is_paused`),
   ]);
+
+  // Names, not ids: `leads.assigned_to` is the FUB display name, so the match
+  // has to happen on the same shape the brief prints.
+  const chaseable = new Set(
+    (roster as any[])
+      .filter((a) => (a.role ?? 'agent') === 'agent' && !a.excluded && !a.is_paused)
+      .map((a) => shortName(String(a.name ?? ''))),
+  );
 
   const byAgent = new Map<string, BriefAgent>();
   const bump = (name: string, k: 'newLeads' | 'untouched' | 'stalled') => {
@@ -131,8 +161,15 @@ export async function gatherBrief(
     if (l.assigned_to) bump(l.assigned_to, 'newLeads');
     else pondLeads += 1; // Real arrivals, but nobody's fault yet.
   }
-  for (const l of untouched as any[]) bump(l.assigned_to, 'untouched');
-  for (const l of stalled as any[]) bump(l.assigned_to, 'stalled');
+  // Only agents get chased. A lead assigned to a team leader, an office admin or
+  // a pond is still a real lead, but it is not something to put in front of a
+  // team leader as a person to go and speak to.
+  for (const l of untouched as any[]) {
+    if (chaseable.has(shortName(String(l.assigned_to ?? '')))) bump(l.assigned_to, 'untouched');
+  }
+  for (const l of stalled as any[]) {
+    if (chaseable.has(shortName(String(l.assigned_to ?? '')))) bump(l.assigned_to, 'stalled');
+  }
 
   const lastSync = (syncRows as any[])[0]?.last_sync_at ?? null;
   const syncAgeHours = lastSync
