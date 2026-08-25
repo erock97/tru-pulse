@@ -135,39 +135,58 @@ describe('a quiet day still arrives', () => {
   });
 });
 
-describe('the recipient is not their own roster', () => {
+describe('the team leader is left out of their own brief', () => {
+  // A team leader works leads themselves, often a lot of them, and that is not
+  // what this message is for. It answers "who do I need to chase this morning",
+  // and the answer is never yourself. Scott Moore holds more untouched leads
+  // than his whole team put together.
   const agents = [
-    { name: 'Scott M.', newLeads: 11, untouched: 27, stalled: 0 },
-    { name: 'Angelica F.', newLeads: 3, untouched: 0, stalled: 0 },
-    { name: 'Theresa M.', newLeads: 1, untouched: 1, stalled: 0 },
+    { name: 'Scott M.', newLeads: 13, untouched: 10, stalled: 0 },
+    { name: 'Angelica F.', newLeads: 2, untouched: 0, stalled: 0 },
+    { name: 'Anthony T.', newLeads: 1, untouched: 0, stalled: 0 },
+    { name: 'Cherelle P.', newLeads: 1, untouched: 0, stalled: 0 },
   ];
-
-  it('collapses the lead’s own leads into one line instead of a wall', () => {
-    // Scott Moore holds 27 untouched leads himself. Without this his brief is
-    // mostly about him every single morning, which is useless to him.
-    const r = renderMorningBrief({
-      ...base, teamName: 'Scott Moore Group', agents, recipientName: 'Scott M.',
-    });
-    expect(r.body).toContain('Yours: 27 leads with no call or text.');
-    expect(r.body).toContain('Theresa M.');
-    // He is not listed in the roster of other people.
-    expect(r.body).not.toMatch(/Needs outreach[\s\S]*Scott M\. -/);
+  const brief = () => renderMorningBrief({
+    ...base, teamName: 'Scott Moore Group', agents, recipientName: 'Scott M.',
   });
 
-  it('still counts their new leads in the day’s total', () => {
-    const r = renderMorningBrief({
-      ...base, teamName: 'Scott Moore Group', agents, recipientName: 'Scott M.',
-    });
-    expect(r.body).toContain('New leads (24h): 15');
+  it('never names them, in the roster or anywhere else', () => {
+    expect(brief().body).not.toContain('Scott M.');
   });
 
-  it('says nothing about them when they are clean', () => {
+  it('says nothing about their own untouched leads', () => {
+    expect(brief().body).not.toContain('Yours');
+    expect(brief().body).not.toContain('10 leads');
+  });
+
+  it('still counts their leads in the day’s intake', () => {
+    // The total is the team's intake and stays true. It is the one place they
+    // appear, as a number rather than a name.
+    expect(brief().body).toContain('New leads (24h): 17');
+  });
+
+  it('leaves the brief quiet when only the leader had anything to report', () => {
     const r = renderMorningBrief({
       ...base,
-      agents: [{ name: 'Jack C.', newLeads: 2, untouched: 0, stalled: 0 }],
-      recipientName: 'Jack C.',
+      agents: [{ name: 'Scott M.', newLeads: 0, untouched: 10, stalled: 4 }],
+      recipientName: 'Scott M.',
     });
-    expect(r.body).not.toContain('Yours:');
+    expect(r.body).toContain('All clear');
+    expect(r.skipReason).toBeNull();
+  });
+
+  it('still lists everyone else who needs chasing', () => {
+    const r = renderMorningBrief({
+      ...base,
+      agents: [
+        { name: 'Scott M.', newLeads: 0, untouched: 10, stalled: 0 },
+        { name: 'Theresa M.', newLeads: 0, untouched: 1, stalled: 0 },
+      ],
+      recipientName: 'Scott M.',
+    });
+    expect(r.body).toContain('Needs outreach: 1');
+    expect(r.body).toContain('Theresa M.');
+    expect(r.body).not.toContain('Scott M.');
   });
 });
 
