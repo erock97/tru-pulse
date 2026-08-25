@@ -66,17 +66,28 @@ export function coachOn(patternKey: string): string {
 
 const firstName = (full: string): string => full.trim().split(/\s+/)[0] ?? full;
 
-/** "3 times since Aug 18" — the long-term record, in the sentence. */
-function record(p: AgentPattern): string {
+/**
+ * The long-term record, in the sentence — but only once it says something.
+ *
+ * The store opened on 2026-08-25, so for its first week every pattern's
+ * first-seen date is days old and "3 times since Aug 25" reads as noise (Eric,
+ * on day one: the date was TODAY). Under a week of history the honest words
+ * are "this week"; the date earns its place when it is far enough back to be
+ * a record rather than a timestamp.
+ */
+export function record(p: AgentPattern, now = new Date()): string {
   const n = p.occurrences;
-  const since = p.firstSeen
-    ? new Date(p.firstSeen).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : null;
   if (n <= 1) return 'Came up once this week.';
-  return since ? `${n} times since ${since}.` : `${n} times on record.`;
+  const seen = p.firstSeen ? new Date(p.firstSeen) : null;
+  const days = seen ? (now.getTime() - seen.getTime()) / 86_400_000 : 0;
+  if (!seen || days < 7) return `${n} times this week.`;
+  const since = seen.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${n} times since ${since}.`;
 }
 
 export interface PlanPoint {
+  /** The coaching category, as a small label over the card. */
+  kicker?: string;
   text: string;
   coach: string | null;
   evidence: BriefFinding[];
@@ -103,9 +114,18 @@ export function buildAgentPlan(all: AgentPattern[], agentId: string, agentName: 
     || a.patternKey.localeCompare(b.patternKey));
 
   return mine.map((p, i) => ({
+    // The directive leads with WHAT HAPPENED, in the analysis's own specific
+    // words — "he asked Shannon if she'd changed her mind, blaming her
+    // silence" — because "coach them on asking the questions that surface
+    // motivation" is a category, and Eric called the category version vague
+    // to its face. The category still names the card via `kicker`, so the
+    // lane stays scannable; the sentence carries the story.
     // "them", not a guessed pronoun: the roster does not record pronouns, and
     // a wrong guess in a coaching directive lands in front of the person.
-    text: `Sit down with ${firstName(p.agentName)} this week — coach them on ${coachOn(p.patternKey)}. ${record(p)}`,
+    kicker: coachOn(p.patternKey),
+    text: p.explanation
+      ? `Sit down with ${firstName(p.agentName)} this week. ${p.explanation.trim().replace(/[.\s]+$/, '')}. ${record(p)}`
+      : `Sit down with ${firstName(p.agentName)} this week — coach them on ${coachOn(p.patternKey)}. ${record(p)}`,
     coach: p.coachingMove,
     evidence: p.findings
       .filter((f) => f.quote)
