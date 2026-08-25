@@ -76,11 +76,13 @@ export interface BriefBundle {
   weeks: BriefWeek[];
 }
 
-function toView(row: BriefReportRow): BriefView | null {
+/** Exported for the test that pins the shapes older reports were stored in. */
+export function toView(row: BriefReportRow): BriefView | null {
   const payload = row.payload;
   if (!payload) return null;
-  const byIndex = findingsByIndex(payload);
-  const byId = findingsById(payload);
+  const safePayload = { ...payload, findings: payload.findings ?? [] };
+  const byIndex = findingsByIndex(safePayload);
+  const byId = findingsById(safePayload);
   const links = row.agent_links ?? {};
   const point = (p: BriefPoint): BriefPointView => ({
     text: p.text,
@@ -97,24 +99,36 @@ function toView(row: BriefReportRow): BriefView | null {
   //
   // The 1.0 list still wins when it has anything, so a mixed or older report
   // renders exactly as it did before.
+  //
+  // `opportunityPoints` is defaulted rather than assumed. The type says it is
+  // always there because the validator always writes it -- but what this
+  // function actually receives is a payload STORED at ingest time, and every
+  // report from before 1.1 landed was stored without the field. Reading it
+  // straight took the whole brief section down when a leader picked an earlier
+  // week: one undefined, one throw, and a section that renders nothing at all
+  // rather than a week that renders badly.
   const opportunitiesOf = (a: BriefAgent): BriefPointView[] =>
-    a.opportunities.length
+    a.opportunities?.length
       ? a.opportunities.map(point)
-      : a.opportunityPoints.map((o) => opportunityAsPoint(o, byIndex, byId));
+      : (a.opportunityPoints ?? []).map((o) => opportunityAsPoint(o, byIndex, byId));
   return {
     reportId: row.id,
     weekStart: row.week_start,
     weekEnd: row.week_end,
     generatedAt: row.generated_at,
     teamName: payload.run.teamName ?? null,
-    agents: payload.agents.map((a) => ({
+    // Every list is defaulted for the same reason: what arrives here is a
+    // payload stored by whatever validator was live the day it was ingested,
+    // not one built by today's. A field added later is simply absent in every
+    // row written before it, and the types cannot see that.
+    agents: (payload.agents ?? []).map((a) => ({
       agentName: a.agentName,
       agentId: links[a.agentName] ?? null,
-      metrics: a.metrics,
-      doingRight: a.doingRight.map(point),
+      metrics: a.metrics ?? {},
+      doingRight: (a.doingRight ?? []).map(point),
       opportunities: opportunitiesOf(a),
-      objections: a.objections.map(point),
-      coachingActions: a.coachingActions.map(point),
+      objections: (a.objections ?? []).map(point),
+      coachingActions: (a.coachingActions ?? []).map(point),
     })),
   };
 }
