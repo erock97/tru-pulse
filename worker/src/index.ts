@@ -329,12 +329,16 @@ export default {
 
     // Admin diagnostic: the daily brief built from the COACH analysis - the
     // conversations Hermes scraped and the model read - rather than from lead
-    // counts. Read-only. This is the one a broker is meant to want: what do I
-    // need to do today, and why, in the buyer's own words.
+    // counts. Read-only, and it marks nothing as said, so looking at what would
+    // go out cannot silence the send that follows. This is the one a broker is
+    // meant to want: which agents do I go and talk to today, and what about.
     if (url.pathname === '/admin/coach-brief-preview' && req.method === 'GET') {
       if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
       try {
-        const label = url.searchParams.get('date') ?? 'Mon Aug 25';
+        const label = url.searchParams.get('date')
+          ?? new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric',
+          }).format(new Date()).replace(',', '');
         return json({ previews: await previewCoachBriefs(database, label) });
       } catch (e) {
         return json({ error: String(e) }, 500);
