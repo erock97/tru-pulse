@@ -2,7 +2,9 @@
 // wording — lead_* are the four LEAD steps. See docs/SALES_DOCTRINE.md before
 // changing a string, and never guess what a pattern key means.
 import { describe, expect, it } from 'vitest';
-import { buildAgentPlan, coachOn, record, rateLine, type AgentPattern } from './coachPlan';
+import {
+  buildAgentPlan, coachOn, record, rateLine, isVoicemail, type AgentPattern,
+} from './coachPlan';
 
 const pat = (over: Partial<AgentPattern> = {}): AgentPattern => ({
   agentId: 'agent-1',
@@ -33,8 +35,8 @@ describe('the sentence a leader acts on', () => {
     expect(p.text).toBe(
       'Asked Ashley to catch up without offering a time. 3 times since Aug 18. '
       + 'Worth sitting down with Joseph this week to talk through extending the '
-      + 'invitation early, with a this-or-that choice — and why it matters, not '
-      + 'just that we ask for it.',
+      + 'invitation early, with a this-or-that choice, and why it matters rather '
+      + 'than just that we ask for it.',
     );
     expect(p.kicker).toBe('extending the invitation early, with a this-or-that choice');
   });
@@ -145,7 +147,7 @@ describe('evidence', () => {
 });
 
 
-describe('the rate — the part that makes it arguable-with', () => {
+describe('the rate, the part that makes it arguable-with', () => {
   // "He frequently makes about one phone call attempt on average, and the bulk
   // of his communication is done through text." A leader can repeat a
   // proportion to an agent; "texts too much" starts an argument.
@@ -158,7 +160,7 @@ describe('the rate — the part that makes it arguable-with', () => {
 
   it('says none when there were none', () => {
     expect(rateLine('call_first', { callFirst: 0, textFirst: 9 }))
-      .toBe('Every one of 9 first touches this week was a text — not a single call.');
+      .toBe('Every one of 9 first touches this week was a text. Not one call.');
   });
 
   it('stays silent when the agent is in fact calling', () => {
@@ -221,5 +223,82 @@ describe('the Bishoy card, kept as a standing case', () => {
     const [p] = buildAgentPlan([BISHOY], 'agent-1', 'Joseph Darlington');
     expect(p.evidence).toHaveLength(1);
     expect(p.evidence[0].quote).toContain('disclosure is completely blank');
+  });
+});
+
+
+describe('a voicemail is an attempt, not a conversation', () => {
+  // Live case: Erica Stevens's ENTIRE coaching profile was two points built on
+  // one 61-character note. Eric: "There were four points dedicated to a six
+  // word voicemail. That is not something we're going to assess an agent on."
+  const VM = 'Left message offering to help her pick up where she left off.';
+
+  it('recognises the note a voicemail leaves behind', () => {
+    expect(isVoicemail(VM)).toBe(true);
+    expect(isVoicemail('Left a message about the Tuesday showing.')).toBe(true);
+    expect(isVoicemail('Voicemail, no answer.')).toBe(true);
+  });
+
+  it('does not mistake a real conversation for one', () => {
+    expect(isVoicemail('The agent walked the buyer through the disclosure.')).toBe(false);
+    expect(isVoicemail('She left the price open until they had spoken.')).toBe(false);
+  });
+
+  it('drops a habit standing entirely on voicemails', () => {
+    const plan = buildAgentPlan([pat({
+      findings: [{ lead_name: 'Leann', channel: 'call', occurred_at: null, quote: VM }],
+    })], 'agent-1', 'Joseph Darlington');
+    expect(plan).toEqual([]);
+  });
+
+  it('keeps a habit that has one real conversation behind it', () => {
+    // A voicemail among real evidence is fine. It still counts as an attempt
+    // for persistence; it just cannot carry the coaching on its own.
+    const plan = buildAgentPlan([pat({
+      findings: [
+        { lead_name: 'Leann', channel: 'call', occurred_at: null, quote: VM },
+        { lead_name: 'Ashley', channel: 'text', occurred_at: null, quote: 'Want to catch up soon?' },
+      ],
+    })], 'agent-1', 'Joseph Darlington');
+    expect(plan).toHaveLength(1);
+  });
+});
+
+describe('proof a leader can act on', () => {
+  it('carries the Follow Up Boss link through to the evidence', () => {
+    // The point of proof is that they can go and look. This is where they look.
+    const [p] = buildAgentPlan([pat({
+      findings: [{
+        lead_name: 'Ashley Calcano',
+        lead_url: 'https://costigan.followupboss.com/2/people/view/8812',
+        channel: 'text', occurred_at: '2026-08-18T15:00:00Z',
+        quote: 'Would you like to catch up soon?',
+      }],
+    })], 'agent-1', 'Joseph Darlington');
+    expect(p.evidence[0].leadUrl).toBe('https://costigan.followupboss.com/2/people/view/8812');
+  });
+
+  it('is fine when there is no link to give', () => {
+    const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
+    expect(p.evidence[0].leadUrl).toBeUndefined();
+  });
+});
+
+describe('no AI tells in the copy a leader reads', () => {
+  it('never emits an em-dash', () => {
+    // The single most recognisable "an AI wrote this" character, and this panel
+    // was full of them.
+    const plan = buildAgentPlan([
+      pat(), pat({ patternKey: 'call_first' }), pat({ patternKey: 'objection' }),
+    ], 'agent-1', 'Joseph Darlington', { callFirst: 0, textFirst: 9 });
+    for (const p of plan) {
+      expect(p.text).not.toMatch(/[—–]/);
+      expect(p.kicker ?? '').not.toMatch(/[—–]/);
+    }
+  });
+
+  it('keeps the category in sentence case, not as a shouted label', () => {
+    const [p] = buildAgentPlan([pat()], 'agent-1', 'Joseph Darlington');
+    expect(p.kicker).toBe(p.kicker!.toLowerCase());
   });
 });
