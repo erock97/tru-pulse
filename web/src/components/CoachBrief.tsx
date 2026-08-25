@@ -148,7 +148,7 @@ function PointList({ points, tone }: {
           className="brief-card"
           /* Staggered entry on the app's own .reveal timing tokens, so a column
              assembles rather than appearing. Reduced motion handled in CSS. */
-          style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
+          style={{ animationDelay: `${Math.min(i, 8) * 90}ms` }}
         >
           <p className="brief-point-text">
             {/* The category opens the sentence. It used to be an uppercase
