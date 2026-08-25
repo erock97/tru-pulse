@@ -148,6 +148,43 @@ door opened.
 
 ---
 
+## 3a. Why the phone, and which conversations must never be a text
+
+TRU pushes calls hard, and agents push back hardest on this instruction —
+"why would I not just text them?" So the reason has to travel with it.
+
+**The claim:** the phone call is the most effective channel. Not a preference.
+Zillow ran the testing years ago, and across **every age demographic** in their
+survey results the finding was the same: people preferred a phone call for
+real-estate-specific matters.
+
+Eric's own caveat, which should be carried honestly rather than hidden:
+
+> Now I understand that things can change over time. Maybe it is different now.
+> This was pre-lots-changed.
+
+What has not changed is the mechanism, and this is the part to coach:
+
+> The best way to control the flow of a conversation is to have them on a phone
+> call.
+
+### The conversations that must not happen over text
+
+Anything that could **alter your ability to meet with them**. Over text the
+agent cannot read the buyer, cannot recover, and cannot steer. Specifically:
+
+- **A lot of detail about the property.** Detail invites an objection the agent
+  is not present to answer.
+- **"The property is under contract — want to look at anything else?"**
+  The canonical blown call (section 4), and it is worse in writing.
+- **Financing.** Eric: *"massive, massive barriers that will turn an online
+  lead off."*
+
+The coaching is never "call because I said so." It is: this specific subject
+can cost you the meeting, and text is where you lose control of it.
+
+---
+
 ## 4. Negative information has a technique
 
 The failure Eric named as most costly, after giving up: an agent hits something
@@ -185,8 +222,39 @@ Both are real and must be named **separately**:
 
 Quality outranks count: ten "just checking in" texts is not persistence.
 
-**OPEN:** no numeric standard has been set for abandonment — how many real
-attempts, over what window, before going quiet is a finding. Do not invent one.
+#### The standard for abandonment
+
+**At least five unique attempts in the first week.** Below that, the agent gave
+up on the lead.
+
+The number is a floor, not a target. Zillow's own data puts the average at
+**12 to 14 follow-ups** from first contact to conclusion. Eric does not expect
+agents to reach that, and TRU does not coach to it:
+
+> Do I expect that those individuals will actually do 12 to 14? Well, no. But
+> it can't be less than five.
+
+What counts, and what does not:
+
+| | Counts |
+|---|---|
+| Phone call | **Yes** |
+| Text the agent wrote | **Yes** |
+| Follow Up Boss automated text | **No** — it is not work the agent did |
+| Email | **No** — "I find email to be a waste of time" |
+
+"Unique and individual" is the operative phrase: five separate attempts, not one
+attempt counted five times because the record duplicated it.
+
+> Implementation note: the automated-text exclusion is already solved.
+> `isAutomatedText()` in `worker/src/automation/contact.ts` reads FUB's
+> `leadFlowRouteId` / `actionPlanId`, verified across two teams — every flagged
+> text landed within two seconds of assignment, every unflagged one at eleven
+> minutes or later.
+
+**OPEN, do not guess:** whether the week runs from lead creation or from
+assignment to the agent; whether a voicemail counts as an attempt in its own
+right; and whether the count resets or continues past week one.
 
 ### 2. They do not understand *why*
 
@@ -287,7 +355,6 @@ Hermes owns this taxonomy and can extend it.
 
 ## 9. Still open — ask, do not infer
 
-- A numeric standard for abandonment (5.1).
 - Whether TRU has a taught sequence for anything beyond the first call — the
   first showing, the follow-up, the offer conversation.
 - What "strong introduction" sounds like at the standard TRU expects, beyond
