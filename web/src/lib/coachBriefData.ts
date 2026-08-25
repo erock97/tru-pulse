@@ -9,6 +9,8 @@ import { isDemo, workerFetch } from './api';
 import {
   channelLabel,
   findingsByIndex,
+  findingsById,
+  opportunityAsPoint,
   pointEvidence,
   NOT_ENOUGH_REVIEWED,
 } from '../../../shared/coachBrief';
@@ -78,12 +80,27 @@ function toView(row: BriefReportRow): BriefView | null {
   const payload = row.payload;
   if (!payload) return null;
   const byIndex = findingsByIndex(payload);
+  const byId = findingsById(payload);
   const links = row.agent_links ?? {};
   const point = (p: BriefPoint): BriefPointView => ({
     text: p.text,
     coach: p.coach ?? null,
     evidence: pointEvidence(p, byIndex),
   });
+
+  // Schema 1.1 sends opportunities as {explanation, coachingMove, findingIds}
+  // rather than as free text, and the validator files those under
+  // `opportunityPoints`. Nothing on this side read that field, so every
+  // coaching point in every 1.1 report rendered as "Not enough reviewed this
+  // week" while its text sat in the payload untouched. Checked live on
+  // 2026-08-25: 266 points across four teams, none of them reaching a screen.
+  //
+  // The 1.0 list still wins when it has anything, so a mixed or older report
+  // renders exactly as it did before.
+  const opportunitiesOf = (a: BriefAgent): BriefPointView[] =>
+    a.opportunities.length
+      ? a.opportunities.map(point)
+      : a.opportunityPoints.map((o) => opportunityAsPoint(o, byIndex, byId));
   return {
     reportId: row.id,
     weekStart: row.week_start,
@@ -95,7 +112,7 @@ function toView(row: BriefReportRow): BriefView | null {
       agentId: links[a.agentName] ?? null,
       metrics: a.metrics,
       doingRight: a.doingRight.map(point),
-      opportunities: a.opportunities.map(point),
+      opportunities: opportunitiesOf(a),
       objections: a.objections.map(point),
       coachingActions: a.coachingActions.map(point),
     })),
@@ -179,6 +196,7 @@ function demoBriefBundle(): BriefBundle {
         p('Speed to lead is elite — first call inside minutes on new connects.', 'Name it out loud in the team meeting; make him the standard.', [0]),
         p('Handles "just looking" without dismissing the lead.', null, [1]),
       ],
+      opportunityPoints: [],
       opportunities: [p('Follow-up cadence goes quiet after day three on non-responders.', 'Set a 3-5-7 touch plan together and inspect it Friday.', [])],
       objections: [p('"We want to wait until spring."', null, [1])],
       coachingActions: [p('Roleplay the wait-until-spring conversation using his own Devonte call as the script.', null, [1])],
@@ -187,6 +205,7 @@ function demoBriefBundle(): BriefBundle {
       agentName: 'Dana Cole',
       metrics: { reviewedContacts: 18, substantiveContacts: 3, callFirst: 4, textFirst: 11, noOutreach: 2, unclassified: 1 },
       doingRight: [p('Consistent same-day responses once a conversation starts.', null, [])],
+      opportunityPoints: [],
       opportunities: [
         p('Texts first on new leads — the phone comes out only after the lead replies.', 'Agree on call-first for all new assignments this week; review the log together Friday.', [2]),
         p('Rate questions get deflected instead of answered with a lender handoff.', 'Script the two-sentence lender bridge and practice it live.', [3]),
@@ -198,6 +217,7 @@ function demoBriefBundle(): BriefBundle {
       agentName: 'Marcus Delgado',
       metrics: { reviewedContacts: 21, substantiveContacts: 6, callFirst: 12, textFirst: 5, noOutreach: 0, unclassified: 4 },
       doingRight: [p('Closes for the appointment with an either/or on nearly every substantive call.', 'Have him teach the close in Friday\'s huddle.', [4])],
+      opportunityPoints: [],
       opportunities: [],
       objections: [],
       coachingActions: [p('Capture one of his appointment closes for the team library.', null, [4])],
@@ -205,7 +225,7 @@ function demoBriefBundle(): BriefBundle {
     {
       agentName: 'Maria Lopez',
       metrics: { reviewedContacts: 2 },
-      doingRight: [], opportunities: [], objections: [], coachingActions: [],
+      doingRight: [], opportunities: [], opportunityPoints: [], objections: [], coachingActions: [],
     },
   ];
 

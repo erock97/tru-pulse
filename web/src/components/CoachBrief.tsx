@@ -175,6 +175,44 @@ function priorityLabel(a: BriefAgentView): string | null {
   return a.opportunities[0]?.text ?? null;
 }
 
+/**
+ * Why this cell is blank, in the words that answer the actual question.
+ *
+ * "Not enough reviewed this week" was doing two jobs, and the second one was a
+ * lie. It is right when nothing of this agent's was read — there was nothing to
+ * judge. It is wrong when conversations WERE read and none of them raised
+ * anything, because it reads as a failure to collect and sends a leader
+ * hunting for missing data that was never missing.
+ */
+function emptyPriorityLabel(a: BriefAgentView): string {
+  const reviewed = a.metrics.reviewedContacts;
+  if (reviewed === undefined || reviewed === 0) return NOT_ENOUGH_REVIEWED;
+  return 'Nothing to flag this week';
+}
+
+/**
+ * What each column means, on screen, where the question gets asked.
+ *
+ * The print sheet has had headers since it was written; the on-screen grid
+ * never did — four unlabelled cells, so "what is this column" had no answer
+ * short of reading the code. The titles carry the definition on hover; the
+ * words themselves have to survive without it.
+ */
+const SCAN_COLUMNS: Array<{ label: string; help: string; className: string }> = [
+  { label: 'Agent', className: 'brief-scan-name',
+    help: 'The name on the conversations, as Follow Up Boss records it.' },
+  { label: 'Reviewed', className: 'brief-scan-cov',
+    help: 'How many of their conversations were read this week, and how many of '
+        + 'those went beyond a one-line exchange. A low number means little to '
+        + 'judge from, not that they did nothing.' },
+  { label: 'Objections', className: 'brief-scan-obj',
+    help: 'Times a buyer raised something real - already have an agent, pausing '
+        + 'the search, not ready. Counted from what they said, not the outcome.' },
+  { label: 'Coaching priority', className: 'brief-scan-pri',
+    help: 'The one habit worth raising with them first. Blank means either '
+        + 'nothing was read, or nothing read raised a concern - the cell says which.' },
+];
+
 /* ════════ The team scan, on the Coach roster page ════════ */
 
 export function TeamBriefSection({ onOpenAgent }: {
@@ -203,6 +241,13 @@ export function TeamBriefSection({ onOpenAgent }: {
       </span>
 
       <div className="brief-scan" role="table" aria-label="Team coaching scan">
+        <div className="brief-scan-head" role="row">
+          {SCAN_COLUMNS.map((c) => (
+            <span className={c.className} role="columnheader" key={c.label} title={c.help}>
+              {c.label}
+            </span>
+          ))}
+        </div>
         {view.agents.map((a) => {
           const priority = priorityLabel(a);
           const clickable = !!(a.agentId && onOpenAgent);
@@ -223,7 +268,7 @@ export function TeamBriefSection({ onOpenAgent }: {
                   : '—'}
               </span>
               <span className="brief-scan-pri" role="cell">
-                {priority ?? <i className="brief-none-inline">{NOT_ENOUGH_REVIEWED}</i>}
+                {priority ?? <i className="brief-none-inline">{emptyPriorityLabel(a)}</i>}
               </span>
             </div>
           );
@@ -368,7 +413,9 @@ export function BriefPrintSheet({ view, onClose }: { view: BriefView; onClose: (
           <h2>Team coaching scan</h2>
           <table>
             <thead>
-              <tr><th>Agent</th><th>Review coverage</th><th>Objections</th><th>Coaching priority</th></tr>
+              {/* Same four labels as the screen, from the same list, so the
+                  printed sheet and the page can never drift apart. */}
+              <tr>{SCAN_COLUMNS.map((c) => <th key={c.label}>{c.label}</th>)}</tr>
             </thead>
             <tbody>
               {view.agents.map((a) => (
@@ -376,7 +423,7 @@ export function BriefPrintSheet({ view, onClose }: { view: BriefView; onClose: (
                   <td>{a.agentName}</td>
                   <td>{coverageLabel(a)}</td>
                   <td>{a.objections.length || '—'}</td>
-                  <td>{priorityLabel(a) ?? NOT_ENOUGH_REVIEWED}</td>
+                  <td>{priorityLabel(a) ?? emptyPriorityLabel(a)}</td>
                 </tr>
               ))}
             </tbody>
