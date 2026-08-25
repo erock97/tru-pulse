@@ -142,6 +142,7 @@ function CoachDeck({
   // when rendered without a router (the ?demo=1 preview).
   const [localOpenId, setLocalOpenId] = useState<string | null>(null);
   const [localView, setLocalView] = useState<'sheet' | 'profile'>('sheet');
+  const [briefAgentName, setBriefAgentName] = useState<string | null>(null);
   const openId = onOpenAgent ? openAgentId : localOpenId;
   const setOpenId = onOpenAgent
     ?? ((id: string | null) => { setLocalOpenId(id); setLocalView('sheet'); });
@@ -306,6 +307,14 @@ function CoachDeck({
 
   const openAgent = roster.find((a) => a.id === openId) || null;
 
+  // An agent named in the weekly brief is not always in the Coach cohort --
+  // the cohort is the lead's hand-picked list, and the brief reviews everyone
+  // with conversations. Live on 2026-08-25: 0 of Scott Moore's 8 briefed
+  // agents were in the cohort, so every click on that team's brief silently
+  // did nothing. When the id has no roster row, this holds the name so a
+  // brief-only sheet can open instead of nothing.
+  const briefOnly = openId && !openAgent ? briefAgentName : null;
+
   // The furthest-out point on the cadence scale, so the lead tile can name it.
   // `lastDays` uses 99 for "never", which is worse than any real number.
   const driftPeak = (() => {
@@ -344,7 +353,7 @@ function CoachDeck({
             : derived && derived.dueCount > 0 ? 'watch'
               : 'calm'
         }
-        islandSlot={openAgent ? (
+        islandSlot={openAgent || briefOnly ? (
           <button className="dk-back" onClick={() => setOpenId(null)}>
             <span aria-hidden>←</span> Team
           </button>
@@ -353,7 +362,19 @@ function CoachDeck({
         <div className="coach-canvas dk-main" ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
 
-          {openAgent && view === 'profile' ? (
+          {briefOnly ? (
+            /* Their coaching brief in full, without the cohort tooling. The
+               1:1 forms and archetype panels need cohort membership to mean
+               anything; the brief only needs the report, which exists. */
+            <div className="dk-sec">
+              <h2>{briefOnly}</h2>
+              <p>
+                Reviewed in the weekly brief. Not in your Coach cohort yet —
+                use "Add agents to Coach" to run 1:1s and track commitments.
+              </p>
+              <AgentBriefPanel agentId={openId!} agentName={briefOnly} evidenceInline />
+            </div>
+          ) : openAgent && view === 'profile' ? (
             <AgentProfile agent={openAgent} onBack={() => setOpenId(openAgent.id)} />
           ) : openAgent ? (
             <AgentDrill
@@ -467,7 +488,7 @@ function CoachDeck({
               {/* The Hermes review of last week's Follow Up Boss activity —
                   who to coach on what, with the evidence one click deep. Rows
                   open the agent's sheet, where their full brief lives. */}
-              <TeamBriefSection onOpenAgent={(id) => setOpenId(id)} />
+              <TeamBriefSection onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }} />
 
               {/* ============ THE COHORT ============ */}
               <div className="dk-sec">

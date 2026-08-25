@@ -5470,10 +5470,25 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   background: var(--tab-soft, rgba(255,139,98,.08));
   border-radius: 0 8px 8px 0;
 }
-.tru-dark .brief-cols {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px 26px;
+/* The agent brief: four category lanes, read LEFT TO RIGHT. Each lane owns a
+   real header -- the categories are the structure of the panel, and at 10px
+   uppercase they were disappearing into the points they were meant to
+   organise. Wide screens get all four across; squeezed, they pair; a phone
+   stacks them. */
+.tru-dark .brief-lanes {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 24px;
+  align-items: start;
 }
-@media (max-width: 900px) { .tru-dark .brief-cols { grid-template-columns: 1fr; } }
+@media (max-width: 1280px) { .tru-dark .brief-lanes { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 720px)  { .tru-dark .brief-lanes { grid-template-columns: 1fr; } }
+.tru-dark .brief-lane-h {
+  margin: 0 0 10px;
+  font: 700 13px/1.2 var(--hq-font); letter-spacing: 0.09em; text-transform: uppercase;
+  padding-bottom: 8px; border-bottom: 2px solid var(--border);
+}
+.tru-dark .brief-lane.is-good  .brief-lane-h { color: var(--sea);      border-bottom-color: var(--sea); }
+.tru-dark .brief-lane.is-work  .brief-lane-h { color: var(--accent-hi); border-bottom-color: var(--tab-mid, var(--terracotta)); }
+.tru-dark .brief-lane.is-watch .brief-lane-h { color: var(--text-60);  border-bottom-color: var(--text-40); }
 
 .tru-dark .brief-points { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 12px; }
 .tru-dark .brief-points > li {

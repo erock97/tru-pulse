@@ -216,7 +216,7 @@ const SCAN_COLUMNS: Array<{ label: string; help: string; className: string }> = 
 /* ════════ The team scan, on the Coach roster page ════════ */
 
 export function TeamBriefSection({ onOpenAgent }: {
-  onOpenAgent?: (agentId: string) => void;
+  onOpenAgent?: (agentId: string, agentName: string) => void;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
@@ -256,8 +256,8 @@ export function TeamBriefSection({ onOpenAgent }: {
               className={clickable ? 'brief-scan-row is-link' : 'brief-scan-row'}
               role="row"
               key={a.agentName}
-              onClick={clickable ? () => onOpenAgent!(a.agentId!) : undefined}
-              onKeyDown={clickable ? (e) => { if (e.key === 'Enter') onOpenAgent!(a.agentId!); } : undefined}
+              onClick={clickable ? () => onOpenAgent!(a.agentId!, a.agentName) : undefined}
+              onKeyDown={clickable ? (e) => { if (e.key === 'Enter') onOpenAgent!(a.agentId!, a.agentName); } : undefined}
               tabIndex={clickable ? 0 : undefined}
             >
               <span className="brief-scan-name" role="cell">{a.agentName}</span>
@@ -320,21 +320,25 @@ export function AgentBriefPanel({ agentId, agentName, evidenceInline = false }: 
       ) : (
         <>
           <OutreachRow a={mine} />
-          <div className="brief-cols">
-            <div>
-              <span className="ad-swot-k">Keep doing</span>
+          {/* Four lanes read LEFT TO RIGHT, one per category, each under its
+              own heavy header. They were a 2x2 grid with 10px labels, and in
+              live use the labels disappeared into the points -- the categories
+              are the structure of the whole panel, so they get to look like it. */}
+          <div className="brief-lanes">
+            <div className="brief-lane is-good">
+              <h4 className="brief-lane-h">Keep doing</h4>
               <PointList points={mine.doingRight} tone="good" evidenceInline={evidenceInline} />
             </div>
-            <div>
-              <span className="ad-swot-k">Priority opportunities</span>
+            <div className="brief-lane is-work">
+              <h4 className="brief-lane-h">Priority opportunities</h4>
               <PointList points={mine.opportunities} tone="work" evidenceInline={evidenceInline} />
             </div>
-            <div>
-              <span className="ad-swot-k">Objections heard</span>
+            <div className="brief-lane is-watch">
+              <h4 className="brief-lane-h">Objections heard</h4>
               <PointList points={mine.objections} tone="watch" evidenceInline={evidenceInline} />
             </div>
-            <div>
-              <span className="ad-swot-k">This week’s coaching plan</span>
+            <div className="brief-lane is-work">
+              <h4 className="brief-lane-h">This week’s coaching plan</h4>
               <PointList points={mine.coachingActions} tone="work" evidenceInline={evidenceInline} />
             </div>
           </div>
