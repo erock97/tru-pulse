@@ -11,6 +11,11 @@ export interface Env {
                                       // laptop's brief sends) — deliberately NOT
                                       // ADMIN_TOKEN so a leaked report key can submit
                                       // coaching reports and nothing else
+  RELAY_TOKEN?: string;               // guards /relay/queue + /relay/ack — the phone
+                                      // relay's own key. Deliberately NOT ADMIN_TOKEN:
+                                      // it lives in a Tasker profile and travels in a
+                                      // query string, so it must buy the day's briefs
+                                      // and nothing else. Unset = the relay is closed.
   RESEND_API_KEY?: string;            // Resend — shared by the brief and invite mail
   BRIEF_FROM?: string;                // weekly Leadership Brief sender, e.g. "TRU Pulse <pulse@truhq.co>"
   INVITE_FROM?: string;               // leader set-password invites, e.g. "TRU HQ <hq@truhq.co>"
