@@ -115,6 +115,69 @@ describe('rule 3 — the same finding, every morning for a week', () => {
   });
 });
 
+describe('schema 1.2 — the quote moved onto the opportunity', () => {
+  const v12 = (findingIds: string[], findings: any[]) => {
+    const v = validateCoachBrief({
+      schemaVersion: '1.2',
+      run: {
+        runId: 'run-12', trigger: 'daily', teamId: 'costigan',
+        startDate: '2026-08-18', endDate: '2026-08-24',
+      },
+      agents: [{
+        agentName: 'Kara',
+        opportunities: [{
+          findingIds, patternKey: 'call_first',
+          explanation: 'Answered a tour request by text instead of calling.',
+          sourceQuote: 'Want me to send you some listings?',
+          sourceQuality: 'verbatim', isFirstContact: false,
+        }],
+      }],
+      findings,
+    });
+    if (!v.ok) throw new Error(`fixture invalid: ${v.errors.join(', ')}`);
+    return v.brief;
+  };
+
+  it('stands the sourceQuote in when the single finding has no quote', async () => {
+    // The 1.2 batch arrived with quotes on opportunities and none on findings;
+    // without this the proof drawer renders contacts with no words behind them.
+    const s = stub();
+    await absorbReport(s.db, TEAM, v12(['fnd_q'], [
+      { findingIndex: 0, findingId: 'fnd_q', agentName: 'Kara', leadName: 'Leann', channel: 'text' },
+    ]));
+    const row = (s.db.insert as any).mock.calls
+      .find(([t]: [string]) => t === 'coach_pattern_findings')?.[1];
+    expect(row.quote).toBe('Want me to send you some listings?');
+  });
+
+  it('never spreads one quote across several findings', async () => {
+    // The quote belongs to ONE conversation. With two findings we cannot tell
+    // which, so neither gets it — attributing words to the wrong call is the
+    // fabrication class this whole schema exists to end.
+    const s = stub();
+    await absorbReport(s.db, TEAM, v12(['fnd_1', 'fnd_2'], [
+      { findingIndex: 0, findingId: 'fnd_1', agentName: 'Kara', leadName: 'A', channel: 'text' },
+      { findingIndex: 1, findingId: 'fnd_2', agentName: 'Kara', leadName: 'B', channel: 'text' },
+    ]));
+    const rows = (s.db.insert as any).mock.calls
+      .filter(([t]: [string]) => t === 'coach_pattern_findings')
+      .map(([, r]: [string, any]) => r);
+    expect(rows).toHaveLength(2);
+    for (const r of rows) expect(r.quote).toBeNull();
+  });
+
+  it('keeps a finding\'s own quote when it has one', async () => {
+    const s = stub();
+    await absorbReport(s.db, TEAM, v12(['fnd_own'], [
+      { findingIndex: 0, findingId: 'fnd_own', agentName: 'Kara', leadName: 'Leann',
+        channel: 'call', quote: 'The exact words from this call.' },
+    ]));
+    const row = (s.db.insert as any).mock.calls
+      .find(([t]: [string]) => t === 'coach_pattern_findings')?.[1];
+    expect(row.quote).toBe('The exact words from this call.');
+  });
+});
+
 describe('rule 7 — grouping', () => {
   it('keeps two agents with the same category apart', async () => {
     // A shared patternKey means the same coaching category, not a collision.
