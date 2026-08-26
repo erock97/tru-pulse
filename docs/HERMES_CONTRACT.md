@@ -71,6 +71,10 @@ Field rules, one per line, in the local model's terms:
   "incredibly shallow" (Eric, 2026-08-26) because a sentence cap was taken as
   the goal. MUST name the lead. MUST describe what happened in that specific
   conversation. MUST NOT assert anything the sourceQuote does not show.
+  And it describes EVENTS, never the analysis: no metaphors standing in for
+  facts ("watched the showing wobble" → "rescheduled twice, then cancelled at
+  4pm"), and no analyst vocabulary — "this set", "this batch", "the window"
+  mean nothing to a team leader. Say "this week" and name the leads.
 - `coachingMove` — one sentence, imperative, the concrete alternative.
 - `sourceQuote` — **the exact line from the transcript or text body that the
   claim is based on. If no line supports the claim, DO NOT EMIT THE
