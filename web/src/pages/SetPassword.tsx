@@ -6,7 +6,8 @@ import {
   SET_PASSWORD_SUB,
   SET_PASSWORD_TITLE,
 } from '../lib/agentHq';
-import { smsState, type AgentSms } from '../lib/api';
+import { claimAgent, smsState, type AgentSms } from '../lib/api';
+import { resolveSmsStep } from '../lib/smsStep';
 import { TruLogo } from '../components/TruLogo';
 import SmsConsent from './SmsConsent';
 import '../truHqDark.css';
@@ -65,13 +66,12 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
     setError('');
     try {
       await savePassword(password);
-      // Should we ask about text messages? Every failure path answers no. Not
-      // being an agent, a dead network, an environment without the migration —
-      // none of them are reasons to hold someone out of the product they just
-      // made an account for. The card on Home catches anyone this skips.
-      const state = await smsState().catch(() => null);
+      // Claim the agent row, THEN read the SMS state. The order is load-bearing
+      // and lives in resolveSmsStep, where a test guards it — getting it wrong
+      // makes every invited agent skip the consent question silently.
+      const state = await resolveSmsStep(claimAgent, smsState);
       setBusy(false);
-      if (state && !state.prompted_at) { setSms(state); return; }
+      if (state) { setSms(state); return; }
       onDone();
     } catch (err) {
       setBusy(false);
