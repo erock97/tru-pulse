@@ -1,0 +1,106 @@
+/* Text-message consent.
+ *
+ * One form, two homes: the account-creation card (.tru-auth) and Agent HQ's Home
+ * tab. Rather than two stylesheets that drift, everything below is written
+ * against local custom properties which each host fills in. Add a host, define
+ * the four tokens, done.
+ *
+ * The consent sentence is deliberately full size and full contrast. Shrinking
+ * the disclosure to fine print is the single most common reason an A2P campaign
+ * is rejected on the screenshot alone — it must not be styled like a footnote,
+ * however much tidier that would look. */
+.sms {
+  --sms-text: var(--text-strong, #fff);
+  --sms-dim: var(--text-60, rgba(255, 255, 255, .62));
+  --sms-line: var(--border-soft, rgba(243, 236, 224, .12));
+  --sms-accent: var(--accent-hi, #F2C079);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.sms-eg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sms-eg li {
+  position: relative; padding-left: 16px;
+  font-size: 13.5px; line-height: 1.55; color: var(--sms-text);
+}
+.sms-eg li::before {
+  content: "·"; position: absolute; left: 4px;
+  color: var(--sms-accent); font-weight: 800;
+}
+
+.sms-fine { font-size: 12.5px; line-height: 1.6; color: var(--sms-dim); margin: 0; }
+.sms-fine a { color: var(--sms-accent); }
+.sms-on { font-size: 14px; line-height: 1.6; color: var(--sms-text); margin: 0; }
+
+.sms-field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.sms-field span {
+  display: block; margin: 0;
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  font-weight: 800; color: var(--sms-dim);
+}
+.sms-field input {
+  width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px;
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--sms-line);
+  color: var(--sms-text);
+  /* 16px exactly: anything smaller makes iOS Safari zoom the page on focus, and
+     the form then sits half off-screen on the device most agents will use. */
+  font-size: 16px;
+}
+.sms-field input:focus {
+  outline: none; border-color: var(--sms-accent); background: rgba(233, 162, 59, .07);
+}
+.sms-field input[aria-invalid="true"] { border-color: #ec8b89; }
+
+.sms-warn { font-size: 12.5px; color: #ec8b89; }
+.sms-ok { font-size: 12.5px; color: var(--sms-dim); }
+.sms-err {
+  margin: 0; padding: 10px 14px; border-radius: 10px;
+  background: rgba(236, 139, 137, .12); color: var(--sms-text); font-size: 13px;
+}
+
+.sms-consent {
+  display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
+  margin: 0; padding: 14px; border-radius: 12px; font-weight: 400;
+  background: rgba(255, 255, 255, .03); border: 1px solid var(--sms-line);
+}
+.sms-consent input {
+  margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;
+  accent-color: var(--sms-accent);
+}
+.sms-consent span {
+  display: inline; margin: 0;
+  font-size: 13px; font-weight: 400; line-height: 1.6; color: var(--sms-text);
+}
+.sms-consent a { color: var(--sms-accent); white-space: nowrap; }
+
+.sms button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Skipping and turning off are never styled as the scary option. Declining is
+   the recipient's right, and a control that looks like a mistake discourages
+   using it — which is precisely the pressure that invalidates consent. */
+.sms-skip, .sms-off {
+  align-self: flex-start; background: none; cursor: pointer;
+  border: 1px solid var(--sms-line); border-radius: 99px; padding: 9px 16px;
+  font-size: 13px; font-weight: 650; color: var(--sms-text);
+  transition: border-color .15s ease, background .15s ease;
+}
+.sms-skip:hover, .sms-off:hover {
+  border-color: var(--sms-accent); background: rgba(233, 162, 59, .08);
+}
+
+/* ── Host: the account-creation card ──────────────────────────────────────── */
+/* `.tru-auth label` is a broad rule that would otherwise flatten both of the
+   form's labels back to display:block and bold them. */
+.tru-auth-sms { margin-top: 22px; }
+.tru-auth .sms-field, .tru-auth .sms-consent { display: flex; margin: 0; }
+.tru-auth .sms-field span { display: block; margin: 0; font-weight: 800; }
+.tru-auth .sms .btn.full { margin-top: 4px; }
+
+/* ── Host: Agent HQ's Home tab ────────────────────────────────────────────── */
+.sms-card { max-width: 620px; }
+.sms-card-h {
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 800; color: var(--accent-hi, #F2C079); margin: 0 0 12px;
+}

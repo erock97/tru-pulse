@@ -1362,3 +1362,53 @@ export async function adminResendInvite(o: {
   if (!res.ok) throw new Error(body.error ?? 'Could not resend the invite.');
   return body as { sent: boolean; link?: string };
 }
+
+// ── Text messages ────────────────────────────────────────────────────────────
+// The browser sends a phone number and nothing else. The consent wording, its
+// version and the IP are all stamped by the Worker from its own copy — see
+// worker/src/smsRoutes.ts. Do not "helpfully" start posting the consent text
+// from here: a consent record the client can author proves nothing.
+
+/** Where this agent stands on text messages. Only the last four digits of the
+ *  number ever reach the browser. Mirrors agent_sms_state() in
+ *  db/hq_sms_consent.sql. */
+export interface AgentSms {
+  last_four: string;
+  has_phone: boolean;
+  consent_at: string | null;
+  opt_out_at: string | null;
+  /** Set once we have asked, whatever the answer. Null means never asked. */
+  prompted_at: string | null;
+  /** The database's own verdict on whether we may text them. Never recompute
+   *  this in the browser. */
+  reachable: boolean;
+}
+
+/** Null for anyone who is not an agent — a leader or an admin. That is not an
+ *  error; every screen reads it as "this person has nothing to opt into". */
+export async function smsState(): Promise<AgentSms | null> {
+  const res = await workerFetch('/sms/state');
+  if (!res.ok) return null;
+  const body = (await res.json().catch(() => ({}))) as { sms?: AgentSms | null };
+  return body.sms ?? null;
+}
+
+export async function smsOptIn(phone: string): Promise<void> {
+  const res = await workerFetch('/sms/opt-in', {
+    method: 'POST', body: JSON.stringify({ phone }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'That didn’t save — try again.');
+}
+
+export async function smsOptOut(): Promise<void> {
+  const res = await workerFetch('/sms/opt-out', { method: 'POST', body: '{}' });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) throw new Error(body.error ?? 'We could not turn that off.');
+}
+
+/** "Skip". Records that we asked, so account setup completes and the question is
+ *  never put to them again. */
+export async function smsDecline(): Promise<void> {
+  await workerFetch('/sms/decline', { method: 'POST', body: '{}' });
+}
