@@ -101,6 +101,25 @@ The misapplication this table exists to stop, live on Cara Benak's brief:
 `lead_e` tagged on conversations never shown to be first contact. Eric:
 *"you're misapplying my logic... a moot point."*
 
+### 3a. Pick the DOMINANT failure — the channel outranks the close
+
+One conversation gets ONE opportunity, tagged with the biggest miss, not the
+easiest one to detect. Ranking rule, applied before choosing any key:
+
+1. **Channel first.** Significant news delivered by text (a home going under
+   contract, bad news of any kind, the buyer asking to talk), or a lead the
+   agent has NEVER called → `call_first`. Bad news left sitting →
+   `negative_property_pivot`. Stop there; do not also tag the missing time.
+2. **`next_steps` only when the channel was right** and the sole miss was
+   ending without a specific time attempt.
+
+Live failure this exists to stop (2026-08-26): 58 of 92 opportunities tagged
+`next_steps`, `call_first` tagged twice across four teams — on rosters whose
+own metrics show texting dominating. "Ended without a time" fires on every
+conversation that ends; without this ranking it buries every bigger concern.
+Eric: *"'They should have offered specific times to connect' — that is the
+smallest concern here."*
+
 ## 4. Exclusions — evidence that cannot carry coaching
 
 - **Voicemail-only evidence**: never a technique claim. A voicemail is an
@@ -140,6 +159,9 @@ Before sending, one final pass over EVERY agent's opportunities together:
 [ ] no coach-facing points                             → drop
 [ ] no points on brokers/leads/staff                   → drop
 [ ] same behaviour = same patternKey on every agent    → retag
+[ ] every next_steps sits on a right-channel conversation (§3a) → retag
+[ ] next_steps is not the majority of the whole batch  → re-run §3a on all
+[ ] no FUB chrome inside any sourceQuote               → strip (§1)
 ```
 
 Eric's recurring experience is one agent's brief correct and ten others not,

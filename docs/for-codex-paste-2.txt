@@ -1,0 +1,53 @@
+CODEX — THREE FIXES BEFORE THE NEXT DAILY RUN (contract addendum, 2026-08-26)
+
+Eric reviewed the first schema 1.2 batch in TRU HQ. The pipeline, evidence
+fields, and validation all worked. Three corrections for the analysis rules,
+in priority order.
+
+1. PICK THE DOMINANT FAILURE — THE CHANNEL OUTRANKS THE CLOSE
+
+The batch tagged next_steps ("ended without a specific time") on 58 of its 92
+opportunities, and call_first only twice across all four teams — on rosters
+whose own metrics show texting dominating. "Ended without a time" fires on
+every conversation that ends, so the analyst is tagging the easiest observable
+miss on everything and burying the one that matters. Eric, on a John Blanquicet
+point where a home going under contract was relayed by TEXT to a lead John had
+never called: "Why is our feedback 'they should have offered specific times to
+connect'? That is the smallest concern here."
+
+New ranking rule, applied BEFORE choosing any patternKey. One conversation
+gets ONE opportunity, tagged with the biggest miss:
+
+  a. Channel first. Significant news delivered by text (a home going under
+     contract, bad news of any kind, the buyer asking to talk), or a lead the
+     agent has NEVER called at any point -> call_first. Bad news left sitting
+     with no pivot to what's possible -> negative_property_pivot. Stop there —
+     do not also mention the missing time offer.
+  b. next_steps ONLY when the conversation happened on the right channel and
+     the sole miss was ending without a specific time attempt.
+
+Add two checks to the final whole-payload consistency pass:
+  - every next_steps sits on a right-channel conversation, else retag
+  - if next_steps is the majority of the whole batch, that is the signal the
+    ranking was skipped — re-apply rule (a)/(b) to every opportunity before
+    sending, never send as-is
+
+2. STRIP FUB CHROME FROM QUOTES
+
+9 of the batch's 92 sourceQuotes carry Follow Up Boss interface text glued to
+the front of the real message, e.g. "Fernanda SilvaRicardo Gonzalez Aug 21 •
+Delivered Reply <actual message>". The contract already requires stripping
+thread headers at collection (section 1) — it needs to actually happen. A
+sourceQuote is the words the person said or typed, nothing else. Add a check:
+no quote contains names+date headers, "Delivered", "Reply", "Summary
+Transcript", or "Suggested Tasks" residue.
+
+3. CONFIRM THE 5AM SCHEDULE SWITCH
+
+The daily 5:00 a.m. command must run the schema 1.2 workflow, not the old 1.1
+path. Confirm the switch is live before tomorrow's run. TRU HQ has hidden
+today's 1.1 reports and displays the 1.2 batch; a 1.1 report arriving tomorrow
+would reappear as "latest" and put the old logic back on screen.
+
+Everything else from the v2 contract stands unchanged. Mark runs schemaVersion
+"1.2" as before — no version bump for this addendum.
