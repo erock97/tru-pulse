@@ -134,13 +134,33 @@ function linkLeads(text: string, evidence: BriefFinding[]): ReactNode {
   return nodes;
 }
 
+/** Past this length a quote is a transcript, not a line — clamp it and let
+    the reader open the rest. Full transcripts arrived with the 1.2 batch
+    (schema's sourceQuote can be an entire call) and rendered as a wall. */
+const QUOTE_CLAMP_CHARS = 420;
+
 function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
   if (evidence.length === 0) return null;
   return (
     <ul className="brief-evidence">
       {evidence.map((f, i) => (
         <li key={i}>
-          {f.quote && <blockquote>“{f.quote}”</blockquote>}
+          {f.quote && (
+            <>
+              <blockquote className={
+                f.quote.length > QUOTE_CLAMP_CHARS && expanded !== i ? 'is-clamped' : undefined
+              }>“{f.quote}”</blockquote>
+              {f.quote.length > QUOTE_CLAMP_CHARS && (
+                <button
+                  className="brief-evidence-toggle"
+                  onClick={() => setExpanded(expanded === i ? null : i)}
+                >
+                  {expanded === i ? 'Show less' : 'Read the whole exchange'}
+                </button>
+              )}
+            </>
+          )}
           <span className="brief-evidence-meta">
             {channelLabel(f.channel)}
             {f.leadName && <>{f.channel ? ' with ' : ''}{f.leadUrl
