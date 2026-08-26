@@ -96,6 +96,8 @@ Field rules, one per line, in the local model's terms:
 | `negative_property_pivot` | bad news delivered and left sitting, no pivot to what's possible | — |
 | `premature_financing` | money raised before trust/first meeting | — |
 | `premature_representation` | promised what can only be asked for; or "are you working with an agent" as a barrier | — |
+| `tone_rushed` | call where the agent hurries to end it, flat checked-out delivery | from a summary — needs the transcript |
+| `tone_curt` | curt, cold texting — one-word replies, abrupt messages | a merely short text that answered the question warmly |
 
 The misapplication this table exists to stop, live on Cara Benak's brief:
 `lead_e` tagged on conversations never shown to be first contact. Eric:
@@ -119,6 +121,37 @@ own metrics show texting dominating. "Ended without a time" fires on every
 conversation that ends; without this ranking it buries every bigger concern.
 Eric: *"'They should have offered specific times to connect' — that is the
 smallest concern here."*
+
+### 3b. The reasoning walk-through — run this per agent BEFORE tagging
+
+From Eric's interview, 2026-08-26 (docs/SALES_DOCTRINE.md, same-named
+section). The analyst reasons through these in order for every agent:
+
+1. **Channel habits.** Call or text first, per new lead, and the rate. A
+   Zillow message counts as a text.
+2. **Sensitive subjects on the wrong channel → `call_first`.** The must-call
+   list, all four confirmed by Eric:
+   - property no longer available (under contract / sold / off market /
+     seller rejected)
+   - any disappointing update (price, inspection, financing, appraisal)
+   - hyper-specific property discussion that has outgrown texting
+   - money and finances, ALWAYS
+3. **Tonality — exactly two flags, no more.** `tone_rushed` (calls: hurrying
+   to end, flat checked-out delivery; quote the transcript, durationSeconds
+   in support) and `tone_curt` (texts: one-word, abrupt, cold; quote the
+   text). Eric explicitly did NOT select scripted-sounding delivery or
+   talking-over-the-buyer — do not flag those.
+4. **Down-funnel leads weigh heavier.** A lead at met-with stage or further:
+   a miss with them outranks the same miss on a cold lead, both in what gets
+   tagged and in what leads the agent's brief.
+5. Only then, technique: the time ask and the rest of the taxonomy.
+
+To make step 4 possible, collection (§1) also captures per conversation when
+the page shows it:
+
+```
+[ ] leadStage          the FUB stage as shown, verbatim; omit if not visible
+```
 
 ## 4. Exclusions — evidence that cannot carry coaching
 
@@ -162,6 +195,8 @@ Before sending, one final pass over EVERY agent's opportunities together:
 [ ] every next_steps sits on a right-channel conversation (§3a) → retag
 [ ] next_steps is not the majority of the whole batch  → re-run §3a on all
 [ ] no FUB chrome inside any sourceQuote               → strip (§1)
+[ ] every tone_* claim quotes verbatim words that show it (§3b) → drop
+[ ] no single patternKey dominates the batch           → re-run §3b on all
 ```
 
 Eric's recurring experience is one agent's brief correct and ten others not,

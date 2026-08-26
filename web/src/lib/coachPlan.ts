@@ -70,6 +70,11 @@ export const COACH_ON: Record<string, string> = {
   negative_property_pivot: 'telling the truth and then keeping the meeting alive',
   premature_financing: 'leaving money alone until the buyer knows them',
   premature_representation: 'promising only what they can actually deliver',
+
+  // Tonality — the two flags Eric chose in the 2026-08-26 interview, and only
+  // these two. See docs/SALES_DOCTRINE.md, "The reasoning walk-through".
+  tone_rushed: 'giving the call real attention instead of hurrying it to a close',
+  tone_curt: 'warmth in their texts — a person, not a one-word reply',
 };
 
 export function coachOn(patternKey: string): string {
