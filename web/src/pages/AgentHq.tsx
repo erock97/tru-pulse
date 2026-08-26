@@ -25,6 +25,9 @@ import {
   type Profile,
 } from '../lib/coachData';
 import { AgentHqShell, goAgentTab } from '../components/agentHqShell';
+import SmsConsent from './SmsConsent';
+import { smsState, type AgentSms } from '../lib/api';
+import './smsConsent.css';
 import { Lesson, Quiz, Result } from './AgentCourse';
 import type { GradeResult } from '../lib/api';
 import '../truHqDark.css';
@@ -46,6 +49,11 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [player, setPlayer] = useState<'lesson' | 'quiz' | 'result'>('lesson');
   const [grade, setGrade] = useState<GradeResult | null>(null);
+  // Null for anyone who is not an agent, and until the first read returns. Either
+  // way the card simply does not render — there is nothing to opt into.
+  const [sms, setSms] = useState<AgentSms | null>(null);
+  const refreshSms = () => { void smsState().then(setSms).catch(() => undefined); };
+  useEffect(refreshSms, []);
 
   const refresh = () => {
     void loadCourse(agent.id).then(setMods);
@@ -119,6 +127,8 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
           {tab === 'home' && (
             <HomeTab
               items={items}
+              sms={sms}
+              onSmsChanged={refreshSms}
               onGo={(t, moduleId) => {
                 goAgentTab(t);
                 if (moduleId) { setPlayer('lesson'); setGrade(null); setActiveId(moduleId); }
@@ -154,34 +164,56 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
 
 function HomeTab({
   items,
+  sms,
+  onSmsChanged,
   onGo,
 }: {
   items: ReturnType<typeof attentionItems>;
+  sms: AgentSms | null;
+  onSmsChanged: () => void;
   onGo: (tab: AgentHqTab, moduleId?: string) => void;
 }) {
+  // The text-message card renders on BOTH paths below, deliberately. An agent
+  // whose queue is clear is exactly the one most likely to come here looking for
+  // the switch, and hiding it behind having outstanding work would mean the only
+  // way to stop messages is to reply STOP to one — which someone who has deleted
+  // the thread cannot do.
+  const smsCard = sms ? (
+    <section className="ah-section sms-card">
+      <h2 className="sms-card-h">Text messages</h2>
+      <SmsConsent sms={sms} onSaved={onSmsChanged} />
+    </section>
+  ) : null;
+
   if (items.length === 0) {
     return (
-      <section className="ah-empty">
-        <div className="ah-empty-ey">All clear</div>
-        <h2>{AGENT_HQ_EMPTY}</h2>
-      </section>
+      <>
+        <section className="ah-empty">
+          <div className="ah-empty-ey">All clear</div>
+          <h2>{AGENT_HQ_EMPTY}</h2>
+        </section>
+        {smsCard}
+      </>
     );
   }
   return (
-    <section className="ah-attn">
-      {items.map((item, i) => (
-        <button
-          key={item.key}
-          className="ah-card"
-          style={{ animationDelay: `${0.06 * i}s` }}
-          onClick={() => onGo(item.tab, item.key.startsWith('training-') ? item.key.slice('training-'.length) : undefined)}
-        >
-          <span className="ah-card-ey">{item.tab === 'training' ? 'Training' : 'Coach'}</span>
-          <span className="ah-card-title">{item.title}</span>
-          <span className="ah-card-detail">{item.detail}</span>
-        </button>
-      ))}
-    </section>
+    <>
+      <section className="ah-attn">
+        {items.map((item, i) => (
+          <button
+            key={item.key}
+            className="ah-card"
+            style={{ animationDelay: `${0.06 * i}s` }}
+            onClick={() => onGo(item.tab, item.key.startsWith('training-') ? item.key.slice('training-'.length) : undefined)}
+          >
+            <span className="ah-card-ey">{item.tab === 'training' ? 'Training' : 'Coach'}</span>
+            <span className="ah-card-title">{item.title}</span>
+            <span className="ah-card-detail">{item.detail}</span>
+          </button>
+        ))}
+      </section>
+      {smsCard}
+    </>
   );
 }
 

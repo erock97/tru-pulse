@@ -9,6 +9,7 @@ import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
+import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
@@ -209,6 +210,13 @@ export default {
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
     );
     if (dataResponse) return dataResponse;
+
+    // Text-message consent. Its own module because the consent ledger is the
+    // record a carrier asks to see, and every write to it should be easy to find.
+    const smsResponse = await handleSmsRoutes(
+      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
+    );
+    if (smsResponse) return smsResponse;
 
     // The Hermes laptop's weekly coaching brief lands here (its own secret; the
     // Coach tab reads the stored result through /data/coach/brief above).
