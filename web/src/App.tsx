@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { onAuthChange, onPasswordRecovery, exchangeLink, type AuthState } from './lib/auth';
+import { onAuthChange, onPasswordRecovery, exchangeLink, signOut, type AuthState } from './lib/auth';
+import { redeemLink } from './lib/redeemLink';
 import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, type AgentIdentity } from './lib/api';
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, parseCoachView, coachRoute, coachProfileRoute } from './lib/coachRoute';
@@ -64,6 +65,10 @@ export default function App() {
   // invite is broken — and long enough to submit the form believing they are
   // changing somebody else's password.
   const [exchanging, setExchanging] = useState(false);
+  // Set when an invite or reset link could not be redeemed. Shown on the login
+  // screen, because silently landing on a sign-in form reads as "the link did
+  // nothing" and people click it again until it truly expires.
+  const [linkFailed, setLinkFailed] = useState(false);
 
   // The signed-in user id we have already reacted to. A ref, not state, so a
   // token refresh cannot schedule a render on its own.
@@ -87,8 +92,32 @@ export default function App() {
       history.replaceState(null, '', window.location.pathname);
       setRecovery(type === 'recovery' || type === 'invite');
       setExchanging(true);
-      exchangeLink(tokenHash, type)
-        .catch(() => { /* an expired link just leaves them on the login screen */ })
+      // END ANY EXISTING SESSION FIRST. This is the important line.
+      //
+      // Clicking an invite or reset link is a claim about who you are, and it can
+      // land in a browser already signed in as somebody else — an agent opening
+      // their invite on a laptop where their team leader is logged in, which is
+      // an ordinary Tuesday in a real estate office.
+      //
+      // Without this, the exchange could verify the token (recording a sign-in
+      // for the invited person) and still fail to establish their session, and
+      // the failure was swallowed by the catch below. The set-password screen
+      // then rendered against the LEADER's session and set the password on the
+      // leader's account. That happened, on the first real invite: the token was
+      // verified at 01:13:02, no password ever reached the invited account, and
+      // the person setting it landed in the other account's view afterwards.
+      //
+      // Signing out first removes the whole class of bug. The worst case becomes
+      // "the link failed and you are signed out", which is recoverable and
+      // obvious, instead of "you silently changed someone else's password".
+      void redeemLink(signOut, () => exchangeLink(tokenHash, type))
+        .then((ok) => {
+          if (ok) return;
+          // An expired or already-used link. They are now signed out, which is
+          // the correct place to be — not inside whoever was here before.
+          setRecovery(false);
+          setLinkFailed(true);
+        })
         .finally(() => setExchanging(false));
     }
     const unsubscribe = onAuthChange((s) => {
@@ -242,7 +271,7 @@ export default function App() {
     // — solid black for the first seconds while a 3MB hero video loads — with
     // no route to the form from it. Marketing lives at truhq.co; this host is
     // the product, and its signed-out face is the door.
-    return <Login />;
+    return <Login linkFailed={linkFailed} />;
   }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;

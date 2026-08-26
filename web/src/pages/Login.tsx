@@ -14,7 +14,7 @@ import '../truHqDark.css';
 // nothing selling — the person at this door already owns the product.
 //
 // Every call still goes through lib/auth; nothing here knows what a token is.
-export default function Login() {
+export default function Login({ linkFailed = false }: { linkFailed?: boolean }) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,12 @@ export default function Login() {
   // than it looks: without this the browser lands back here having silently discarded
   // the reason, which is indistinguishable from the button doing nothing at all.
   const [error, setError] = useState(() => {
+    // An invite or reset link that could not be redeemed. Say so here rather than
+    // showing a bare sign-in form: landing on the door with no explanation reads
+    // as "the link did nothing", and people click it again until it truly expires.
+    if (linkFailed) {
+      return 'That invite or reset link could not be used — it may have expired or already been opened. Ask for a fresh one.';
+    }
     if (typeof window === 'undefined') return '';
     const why = new URLSearchParams(window.location.search).get('auth_error');
     if (!why) return '';
