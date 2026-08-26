@@ -41,7 +41,11 @@ import './smsConsent.css';
 //
 // The step is skipped silently for anyone who is not an agent (a leader or admin
 // resetting their password), and for anyone already asked.
-export default function SetPassword({ onDone }: { onDone: () => void }) {
+export default function SetPassword({ onDone, linkEmail = null }: {
+  onDone: () => void;
+  /** Whose link this is, per the server that verified it. Authoritative. */
+  linkEmail?: string | null;
+}) {
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -51,14 +55,29 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
   // we have never asked about texts. Until then this screen is what it was.
   const [sms, setSms] = useState<AgentSms | null>(null);
 
+  // The session this browser ended up holding. Compared against linkEmail below;
+  // it is NOT what we display.
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   useEffect(() => {
     return onAuthChange((s) => {
-      setEmail(lockedInviteEmail(s?.user.email));
+      setSessionEmail(lockedInviteEmail(s?.user.email));
     });
   }, []);
 
+  // Name the account from the LINK. Asking the browser "who am I?" answers with
+  // whatever session it is carrying, which is a different question — and when the
+  // two disagree, the screen names the wrong person and then writes a password to
+  // them. That happened: an invite showed a colleague's address and set the
+  // password on the colleague's account.
+  useEffect(() => { setEmail(lockedInviteEmail(linkEmail)); }, [linkEmail]);
+
+  // Both known and different: refuse outright rather than guess which is right.
+  const mismatch = !!linkEmail && !!sessionEmail
+    && linkEmail.trim().toLowerCase() !== sessionEmail.trim().toLowerCase();
+
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (mismatch) { setError('This link does not match the account signed in here. Sign out fully and open it again.'); return; }
     if (!email) { setError('This invite did not attach an email. Ask for a fresh invite.'); return; }
     if (password.length < 8) { setError('Use at least 8 characters.'); return; }
     if (password !== confirm) { setError('Those passwords do not match.'); return; }
@@ -125,7 +144,14 @@ export default function SetPassword({ onDone }: { onDone: () => void }) {
           <label>Confirm password</label>
           <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
           {error && <div className="err">{error}</div>}
-          <button className="btn full" disabled={busy || !email} type="submit">
+          {mismatch && (
+            <div className="err">
+              This link was sent to {linkEmail}, but this browser is signed in as{' '}
+              {sessionEmail}. Sign out completely and open the link again — setting a
+              password here would change the wrong account.
+            </div>
+          )}
+          <button className="btn full" disabled={busy || !email || mismatch} type="submit">
             {busy ? '…' : 'Set password & continue'}
           </button>
         </form>

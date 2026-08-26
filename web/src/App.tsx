@@ -69,6 +69,10 @@ export default function App() {
   // screen, because silently landing on a sign-in form reads as "the link did
   // nothing" and people click it again until it truly expires.
   const [linkFailed, setLinkFailed] = useState(false);
+  // The address the redeemed link belongs to, straight from the server. The
+  // set-password screen names the account from THIS, not from "who am I?" —
+  // those are different questions and the answers can disagree.
+  const [linkEmail, setLinkEmail] = useState<string | null>(null);
 
   // The signed-in user id we have already reacted to. A ref, not state, so a
   // token refresh cannot schedule a render on its own.
@@ -110,7 +114,7 @@ export default function App() {
       // Signing out first removes the whole class of bug. The worst case becomes
       // "the link failed and you are signed out", which is recoverable and
       // obvious, instead of "you silently changed someone else's password".
-      void redeemLink(signOut, () => exchangeLink(tokenHash, type))
+      void redeemLink(signOut, async () => { setLinkEmail(await exchangeLink(tokenHash, type)); })
         .then((ok) => {
           if (ok) return;
           // An expired or already-used link. They are now signed out, which is
@@ -252,6 +256,7 @@ export default function App() {
   if (recovery) {
     return (
       <SetPassword
+        linkEmail={linkEmail}
         onDone={() => {
           setRecovery(false);
           if (typeof window !== 'undefined') history.replaceState(null, '', window.location.pathname);

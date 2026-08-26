@@ -56,11 +56,15 @@ export async function actAsReturn(): Promise<{ restored: boolean }> {
   return { restored: !!r.restored };
 }
 
-/** Turn an invite / reset / act-as link into a session. */
-export async function exchange(tokenHash: string, type: string): Promise<void> {
-  await call('/auth/exchange', {
+/** Turn an invite / reset / act-as link into a session.
+ *  Returns the address the link belongs to, per the server. */
+export async function exchange(
+  tokenHash: string, type: string,
+): Promise<{ email: string | null }> {
+  const r = await call<{ email?: string | null }>('/auth/exchange', {
     method: 'POST', body: JSON.stringify({ token_hash: tokenHash, type }),
   });
+  return { email: r?.email ?? null };
 }
 
 export async function setPassword(password: string): Promise<void> {
