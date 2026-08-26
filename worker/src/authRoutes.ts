@@ -303,9 +303,23 @@ export async function handleAuthRoutes(
       body: JSON.stringify({ token_hash: tokenHash, type }),
     });
     if (!res.ok) return json({ error: 'that link is invalid or has expired' }, 401, cors);
-    const newSid = await startSession(env, (await res.json()) as SupabaseSession);
+    const verified = (await res.json()) as SupabaseSession;
+    const newSid = await startSession(env, verified);
     if (!newSid) return json({ error: 'could not start a session' }, 502, cors);
-    return json({ ok: true }, 200, { ...cors, 'Set-Cookie': sessionCookie(newSid, env) });
+    // Return WHOSE link this was.
+    //
+    // The set-password screen used to name the account by asking "who am I?",
+    // which answers with whatever session the browser is carrying. That is a
+    // different question from "who is this link for", and when the two disagree
+    // the screen confidently names the wrong person — and writes a password to
+    // them. This is the authoritative answer, straight from the token that was
+    // just verified, and the screen refuses to render if it disagrees with the
+    // session it ends up holding.
+    return json(
+      { ok: true, email: verified.user?.email ?? null },
+      200,
+      { ...cors, 'Set-Cookie': sessionCookie(newSid, env) },
+    );
   }
 
   // ── Set a password for the signed-in user (finishing an invite, or changing it). ──

@@ -89,9 +89,13 @@ export async function setPassword(password: string): Promise<void> {
 }
 
 /** Turn an invite / reset link into a session. */
-export async function exchangeLink(tokenHash: string, type: string): Promise<void> {
-  await cookieAuth.exchange(tokenHash, type);
+/** Redeem an invite/reset link. Returns the address the link was minted for, as
+ *  the server saw it — NOT whoever the browser happens to be signed in as. The
+ *  set-password screen needs the former and used to show the latter. */
+export async function exchangeLink(tokenHash: string, type: string): Promise<string | null> {
+  const out = await cookieAuth.exchange(tokenHash, type) as { email?: string | null } | undefined;
   await refreshAuth();
+  return out?.email ?? null;
 }
 
 export async function signOut(): Promise<void> {
