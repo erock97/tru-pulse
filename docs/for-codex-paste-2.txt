@@ -1,19 +1,51 @@
-CODEX — ANALYSIS RULES UPDATE BEFORE THE NEXT DAILY RUN (2026-08-26, v2)
+CODEX — RE-RUN THIS WEEK NOW UNDER UPDATED RULES (2026-08-26, v3 — replaces
+every earlier version of this file)
 
-Supersedes the earlier version of this file from today. Eric reviewed the
-first schema 1.2 batch in TRU HQ: pipeline, evidence fields, and validation
-all worked. What follows came from a direct interview with him about the
-REASONING, and it changes how conversations get tagged.
+Eric reviewed the first schema 1.2 batch in TRU HQ. The pipeline, evidence
+fields, and validation all worked. The ANALYSIS needs the corrections below,
+and he wants the same window re-run immediately — not waiting for tomorrow.
 
-1. THE REASONING WALK-THROUGH — RUN PER AGENT, BEFORE TAGGING ANYTHING
+0. RE-RUN NOW
 
-The batch tagged "ended without a specific time" (next_steps) on 58 of its 92
-opportunities, and "should have called" (call_first) twice across four teams.
+Re-run the full Aug 18 through Aug 24 window, all four teams, under
+everything below. New batch id, schemaVersion "1.2", publish in the same
+order as before (signature, costigan, scott-moore, woosley). TRU HQ will
+clear the derived store and swap the board when it lands — no confirmation
+phrase needed this time, just publish. Also apply all of this to the daily
+5:00 a.m. workflow, and confirm that schedule actually runs the 1.2 path,
+not the old 1.1 one.
+
+1. DEPTH — THE OUTPUT GOT SHALLOW, AND THAT IS A DEFECT
+
+Eric on the first batch: "the output got incredibly shallow... prior, it
+wasn't bad, it just wasn't specific enough." Two causes to fix:
+
+  a. The explanation is the STORY, not a compliance sentence. The contract's
+     "one to three sentences" was a floor for evidence discipline and got
+     treated as a target. New rule: three to five sentences when the story
+     needs them — what the buyer wanted, what the agent did, what it cost,
+     and the rate when there is one. The register to aim at, Eric verbatim:
+     "Aaron has frequently texted leads and is not making any attempted
+     phone call. He frequently makes about one phone call attempt on
+     average, and the bulk of his communication is done through text.
+     Should probably sit down with Aaron this week and talk about why we
+     are leading with text first and the value of why we want to call our
+     leads." Specific, personable, a rate not just a count, the why attached.
+  b. The consistency pass must REPORT what it drops — a count per check in
+     the run notes. The first batch produced 92 opportunities where the old
+     logic produced 241 points; nobody can tell how much of that was the
+     quality bar working versus insight silently deleted. Dropping is
+     correct; dropping invisibly is not.
+
+2. THE REASONING WALK-THROUGH — RUN PER AGENT, BEFORE TAGGING
+
+The batch tagged "ended without a specific time" (next_steps) on 58 of 92
+opportunities and "should have called" (call_first) twice across four teams.
 Eric: "That's like the most generic of all of them... it is one of a host of
-things." The analyst must reason through these, in order, for every agent:
+things." Reason through these IN ORDER for every agent:
 
-  a. CHANNEL HABITS. Did they call or text first, per new lead, and at what
-     rate? A Zillow message counts as a text.
+  a. CHANNEL HABITS. Call or text first, per new lead, and at what rate?
+     A Zillow message counts as a text.
   b. SENSITIVE SUBJECTS ON THE WRONG CHANNEL -> call_first. The must-call
      list, all four confirmed by Eric in interview:
        - a property no longer available (under contract, sold, off market,
@@ -31,13 +63,12 @@ things." The analyst must reason through these, in order, for every agent:
      Eric was offered scripted-sounding delivery and talking-over-the-buyer
      and did NOT select them. Do not flag those.
   d. DOWN-FUNNEL LEADS WEIGH HEAVIER. A lead at the met-with stage or
-     further down the funnel: a miss with them outranks the same miss on a
-     cold lead. To support this, collection now also captures leadStage per
-     conversation — the FUB stage as shown, verbatim; omit if not visible.
-  e. Only after all of that: technique — the time ask, this-or-that, and the
-     rest of the taxonomy.
+     further: a miss with them outranks the same miss on a cold lead.
+     Collection now also captures leadStage per conversation — the FUB
+     stage as shown, verbatim; omit if not visible.
+  e. Only after all of that: technique — the time ask and the rest.
 
-2. PICK THE DOMINANT FAILURE — ONE OPPORTUNITY PER CONVERSATION
+3. PICK THE DOMINANT FAILURE — ONE OPPORTUNITY PER CONVERSATION
 
 The channel outranks the close. If the subject was on the must-call list, or
 the agent has NEVER called this lead at any point -> call_first (bad news
@@ -46,13 +77,14 @@ also mention the missing time offer. next_steps ONLY when the conversation
 happened on the right channel and the sole miss was ending without a
 specific time attempt.
 
-Add to the final whole-payload consistency pass:
+Consistency pass additions:
   - every next_steps sits on a right-channel conversation, else retag
   - no single patternKey is the majority of the batch; if one is, the
     walk-through was skipped — redo it on every opportunity before sending
   - every tone_rushed / tone_curt quotes verbatim words that show it, else drop
+  - report a per-check count of everything dropped, in the run notes
 
-3. STRIP FUB CHROME FROM QUOTES
+4. STRIP FUB CHROME FROM QUOTES
 
 9 of 92 sourceQuotes carried Follow Up Boss interface text glued to the front
 of the message, e.g. "Fernanda SilvaRicardo Gonzalez Aug 21 • Delivered Reply
@@ -60,13 +92,5 @@ of the message, e.g. "Fernanda SilvaRicardo Gonzalez Aug 21 • Delivered Reply
 nothing else. Check: no quote contains name+date headers, "Delivered",
 "Reply", "Summary Transcript", or "Suggested Tasks" residue.
 
-4. CONFIRM THE 5AM SCHEDULE SWITCH
-
-The daily 5:00 a.m. command must run the schema 1.2 workflow, not the old 1.1
-path. TRU HQ has hidden today's 1.1 reports and now displays the 1.2 batch; a
-1.1 report arriving tomorrow would reappear as "latest" and put the old logic
-back on screen.
-
-Everything else in the v2 contract stands. Keep schemaVersion "1.2".
-The full reasoning behind all of this: docs/SALES_DOCTRINE.md and
-docs/HERMES_CONTRACT.md sections 3a/3b in the repo, updated today.
+Everything else in the v2 contract stands. Full reasoning:
+docs/SALES_DOCTRINE.md and docs/HERMES_CONTRACT.md in the repo, updated today.

@@ -64,9 +64,13 @@ timeline cannot be established, send `unknown` — never guess.
 Field rules, one per line, in the local model's terms:
 
 - `patternKey` — from the fixed list in §3 ONLY. Never invent a key.
-- `explanation` — one to three sentences. MUST name the lead. MUST describe
-  what happened in that specific conversation. MUST NOT assert anything the
-  sourceQuote does not show.
+- `explanation` — the STORY, at the §5 gold-standard register: what the buyer
+  wanted, what the agent did, what it cost, and the rate when there is one.
+  Three to five sentences when the story needs them — the evidence rules below
+  are a floor on proof, never a target for brevity. The first 1.2 batch read
+  "incredibly shallow" (Eric, 2026-08-26) because a sentence cap was taken as
+  the goal. MUST name the lead. MUST describe what happened in that specific
+  conversation. MUST NOT assert anything the sourceQuote does not show.
 - `coachingMove` — one sentence, imperative, the concrete alternative.
 - `sourceQuote` — **the exact line from the transcript or text body that the
   claim is based on. If no line supports the claim, DO NOT EMIT THE
@@ -198,6 +202,11 @@ Before sending, one final pass over EVERY agent's opportunities together:
 [ ] every tone_* claim quotes verbatim words that show it (§3b) → drop
 [ ] no single patternKey dominates the batch           → re-run §3b on all
 ```
+
+The pass also REPORTS what it dropped: a count per check, in the run notes.
+A quality bar that silently deletes insight looks identical to a team with
+nothing to coach — and "the output got incredibly shallow" is what that
+looks like from Eric's chair. Dropping is correct; dropping invisibly is not.
 
 Eric's recurring experience is one agent's brief correct and ten others not,
 because rules were applied per-finding in isolation. This pass is the cure,
