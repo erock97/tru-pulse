@@ -113,6 +113,13 @@ export async function absorbReport(
         if (f) findings.push(f);
       }
 
+      // Schema 1.2 puts the exact supporting line on the opportunity
+      // (sourceQuote), and its findings may arrive without their own quote.
+      // The quote belongs to ONE conversation, so it only stands in when the
+      // opportunity resolves to exactly one finding — spreading it across
+      // several would attribute words to calls they were never said on.
+      const fallbackQuote = findings.length === 1 ? (opp.sourceQuote ?? null) : null;
+
       for (const f of findings) {
         const findingId = f.findingId;
         // No durable id means we cannot tell tomorrow whether this is the same
@@ -130,7 +137,7 @@ export async function absorbReport(
             lead_name: f.leadName ?? null,
             lead_url: f.leadUrl ?? null,
             channel: f.channel ?? null,
-            quote: f.quote ?? null,
+            quote: f.quote ?? fallbackQuote,
           });
           out.newFindings++;
         } catch {
