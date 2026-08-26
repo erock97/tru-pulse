@@ -302,6 +302,16 @@ insert into admins (id, email)
 values ('d6b9504c-f35e-49c9-af99-6a2de2069db8', 'eric@terrasonconsulting.com')
 on conflict (id) do nothing;
 
+-- Eric's PERSONAL account is a separate auth user from the row above (whose
+-- email was later renamed to admin@terrasonconsulting.com). Google sign-in
+-- lands on the personal account, and without this row it saw no console at
+-- all -- "the Google Auth log-in never shows me your updates", 2026-08-26.
+-- Looked up by email so this survives the account being recreated.
+insert into admins (id, email)
+select u.id, u.email from auth.users u
+where lower(u.email) = 'eric@terrasonconsulting.com'
+on conflict (id) do nothing;
+
 insert into entitlements (org_id, product) values
   ('100630b4-4bd0-4f74-bf70-4bf798f7ef9c', 'coach'),
   ('100630b4-4bd0-4f74-bf70-4bf798f7ef9c', 'pulse'),
