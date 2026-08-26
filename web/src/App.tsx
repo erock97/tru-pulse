@@ -55,6 +55,15 @@ export default function App() {
   const [recovery, setRecovery] = useState<boolean>(
     () => typeof window !== 'undefined' && /type=(recovery|invite)/.test(window.location.hash),
   );
+  // True from the moment we spot an invite token until the exchange settles.
+  //
+  // Without this the set-password screen renders against whatever session the
+  // browser already had, and someone who was signed in as their team leader sees
+  // THAT person's address locked into their own signup form. It corrects itself a
+  // moment later, but "a moment later" is after they have read it and decided the
+  // invite is broken — and long enough to submit the form believing they are
+  // changing somebody else's password.
+  const [exchanging, setExchanging] = useState(false);
 
   // The signed-in user id we have already reacted to. A ref, not state, so a
   // token refresh cannot schedule a render on its own.
@@ -77,8 +86,10 @@ export default function App() {
       // (or in a shared screenshot) outlives the moment it was meant for.
       history.replaceState(null, '', window.location.pathname);
       setRecovery(type === 'recovery' || type === 'invite');
+      setExchanging(true);
       exchangeLink(tokenHash, type)
-        .catch(() => { /* an expired link just leaves them on the login screen */ });
+        .catch(() => { /* an expired link just leaves them on the login screen */ })
+        .finally(() => setExchanging(false));
     }
     const unsubscribe = onAuthChange((s) => {
       // Only publish the session when the PERSON changed. Tab-focus token
@@ -205,6 +216,10 @@ export default function App() {
     return <AgentHq agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
   }
   if (isDemo) return shell({ id: 'demo', name: 'Sample Realty' });
+  if (recovery && exchanging) {
+    // Hold the door until we know whose session this is. See `exchanging` above.
+    return <div className="center-wrap"><div className="spinner" /></div>;
+  }
   if (recovery) {
     return (
       <SetPassword
