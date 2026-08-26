@@ -1,0 +1,25 @@
+CODEX — ONE WRITING RULE FOR THE DAILY WORKFLOW (2026-08-26, small delta)
+
+No re-run needed. Eric's verdict on the deep batch: "This is next level.
+There is nothing like this anywhere." Keep everything exactly as it ran.
+One writing rule to add for the daily runs, from lines he could not parse:
+
+EVERY SENTENCE DESCRIBES EVENTS, NEVER THE ANALYSIS.
+
+Two real failures from the batch, both the same disease:
+
+  - "...then watched the showing wobble for days."
+    A metaphor standing where facts belong. Write what happened:
+    "the showing was rescheduled twice and then cancelled at 4pm."
+    If deleting the metaphor loses the meaning, the facts were never stated.
+
+  - "...she does call other leads in this set."
+    "This set" is the analyst's review batch — a team leader has never heard
+    of a set, a batch, or a window. Write: "she called other leads this same
+    week — Jacky Louis and Sundeep Reddy both got calls."
+
+So: no metaphors in place of facts, and no analyst vocabulary ("set",
+"batch", "window", "sample", "cohort"). The reader is a team leader who was
+not there for any of it. Say "this week" and name the leads.
+
+Everything else stands unchanged. schemaVersion stays "1.2".

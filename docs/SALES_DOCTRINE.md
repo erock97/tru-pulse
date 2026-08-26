@@ -406,6 +406,26 @@ can act on it · I can prove it.** All four, or it is not ready.
 
 Register: **personable and easy to understand.** Concise, but never shorthand.
 
+### The third failure: the analyst's own vocabulary leaking into the prose
+
+Found on the first deep batch, 2026-08-26 — the run Eric called "next level"
+still had lines he could not parse, and both had the same cause: the writer
+describing its own analysis instead of the events.
+
+- *"...then watched the showing wobble for days."* A metaphor standing where
+  facts belong. Say what happened: rescheduled twice, then cancelled at 4pm.
+  If the metaphor were deleted, the reader should lose nothing — here they
+  lost everything, because the facts were never stated.
+- *"...she does call other leads in this set."* "This set" is the analyst's
+  review batch. The reader has never heard of a set, a batch, or a window.
+  Say "she called other leads this same week — Jacky Louis and Sundeep
+  Reddy both got calls."
+
+The rule: **every sentence describes events in the world, never the
+analysis.** No metaphors in place of facts; no words that only mean something
+to the thing that did the reviewing. The reader is a team leader who was not
+there for any of it.
+
 ---
 
 ## 6b. Formatting — a report, not a book, and not notes
