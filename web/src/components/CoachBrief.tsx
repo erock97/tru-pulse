@@ -10,7 +10,7 @@
 // means there was not enough reviewed activity to say anything — it is data, not
 // a failure — so it always renders the "not enough reviewed" line, never an
 // empty box and never an error.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { onAuthChange } from '../lib/auth';
 import { identityChanged, userIdOf } from '../lib/authIdentity';
 import {
@@ -96,6 +96,44 @@ function WeekPicker({ weeks, current, onPick }: {
   );
 }
 
+/**
+ * Link each contact named in a point's prose to their FUB record — quietly.
+ * A team lead reading "Answered Rais Faizan by text" wants to land on Rais
+ * without opening the proof. Exact evidence-name matches only: anything looser
+ * would link words to the wrong person, and only the first mention per contact
+ * so the sentence stays prose rather than a link farm.
+ */
+function linkLeads(text: string, evidence: BriefFinding[]): ReactNode {
+  const leads = new Map<string, string>();
+  for (const f of evidence) {
+    if (f.leadName && f.leadUrl && !leads.has(f.leadName)) leads.set(f.leadName, f.leadUrl);
+  }
+  if (leads.size === 0) return text;
+  // Longest first, so a longer name is never split by a shorter one inside it.
+  const names = [...leads.keys()].sort((a, b) => b.length - a.length);
+  const nodes: ReactNode[] = [];
+  let rest = text;
+  let key = 0;
+  while (rest.length > 0) {
+    let at = -1;
+    let hit = '';
+    for (const n of names) {
+      const i = rest.indexOf(n);
+      if (i !== -1 && (at === -1 || i < at)) { at = i; hit = n; }
+    }
+    if (at === -1) { nodes.push(rest); break; }
+    if (at > 0) nodes.push(rest.slice(0, at));
+    nodes.push(
+      <a key={key++} className="brief-lead-link" href={leads.get(hit)} target="_blank" rel="noreferrer">
+        {hit}
+      </a>,
+    );
+    names.splice(names.indexOf(hit), 1);
+    rest = rest.slice(at + hit.length);
+  }
+  return nodes;
+}
+
 function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
   if (evidence.length === 0) return null;
   return (
@@ -153,8 +191,8 @@ function PointList({ points, tone }: {
           {(p as { kicker?: string }).kicker && (
             <p className="brief-lead-line">{(p as { kicker?: string }).kicker}</p>
           )}
-          <p className="brief-point-text">{p.text}</p>
-          {p.coach && <p className="brief-coach"><b>Coach:</b> {p.coach}</p>}
+          <p className="brief-point-text">{linkLeads(p.text, p.evidence)}</p>
+          {p.coach && <p className="brief-coach"><b>Coach:</b> {linkLeads(p.coach, p.evidence)}</p>}
           {p.evidence.length > 0 && (
             <>
               <button

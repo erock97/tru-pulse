@@ -5597,6 +5597,19 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark p.brief-coach b { color: var(--accent-hi); font-weight: 700; }
 
+/* A named contact in the prose links to their FUB record. Quiet on purpose:
+   the sentence stays a sentence, the underline is the whole signal, and the
+   amber only arrives on hover so the story never competes with its own links. */
+.tru-dark a.brief-lead-link {
+  color: inherit; text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--gold) 40%, transparent);
+  text-decoration-thickness: 1px; text-underline-offset: 3px;
+  transition: color .18s var(--ease, ease), text-decoration-color .18s var(--ease, ease);
+}
+.tru-dark a.brief-lead-link:hover {
+  color: var(--accent-hi); text-decoration-color: var(--accent-hi);
+}
+
 .tru-dark .brief-evidence-toggle {
   background: none; border: none; padding: 0; margin-top: 12px; font-size: 14.5px;
   font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
