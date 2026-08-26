@@ -478,6 +478,40 @@ Two consequences:
 The general form of this rule already exists (section 8a): a claim needs
 evidence that can support it. This is the taxonomy-level instance.
 
+### The biggest miss gets the coaching — and the channel outranks the close
+
+Found live on the first schema 1.2 batch, 2026-08-26. John texted James Duncan
+that 219 Ashland Road had gone under contract — significant news, delivered by
+text, on a lead John had also never called — and the coaching point was that he
+"never offered a specific time to see the other homes." Eric:
+
+> "Why is our feedback 'they should have offered specific times to connect'?
+> That is the smallest concern here."
+
+And the tell that this was systemic, not one bad tag: 58 of that batch's 92
+opportunities were `next_steps`, while `call_first` appeared twice across four
+teams — on rosters whose own metrics show texting dominating. "Ended without a
+time" fires on every conversation that ends, so an analyst with no ranking rule
+tags the easiest observable miss on everything and buries the one that matters.
+
+The rule:
+
+- **One conversation, one opportunity, tagged with the DOMINANT failure** —
+  the thing Eric would actually raise if he heard the call himself.
+- **The channel outranks the close.** If the news warranted a phone call
+  (a home going under contract, bad news of any kind, the buyer asking to
+  talk), or the agent has never called this lead at all, the coaching point
+  is the call — `call_first` — and the missing time offer is not mentioned.
+- **`next_steps` is only the point when the conversation happened on the
+  right channel** and the only miss was ending without a specific time
+  attempt.
+- A batch where `next_steps` dominates everything is the signal this rule is
+  being skipped, not a fact about the teams.
+
+This is not a new preference. The gold-standard output in this document
+(section 6a, Aaron) is entirely about texting instead of calling — the channel
+has been the headline concern since before the taxonomy existed.
+
 ---
 
 ## 8. Rules for anything that produces coaching output
