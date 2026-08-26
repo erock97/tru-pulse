@@ -85,6 +85,52 @@ describe('schema 1.1 payload', () => {
     expect(opp.coachingMove).toContain('specific day');
   });
 
+  it('carries the 1.2 evidence fields through instead of stripping them', () => {
+    // The stored payload IS the raw history. The first 1.2 batch arrived with
+    // sourceQuote / isFirstContact / sourceQuality, and a validator that drops
+    // unknown fields would have destroyed the evidence at the door.
+    const v = validateCoachBrief(payload({
+      schemaVersion: '1.2',
+      agents: [{
+        agentName: 'Kara',
+        opportunities: [{
+          findingIds: ['fnd_aaa'],
+          patternKey: 'lead_e',
+          isFirstContact: true,
+          explanation: 'Ends calls without booking a time.',
+          coachingMove: 'Ask for a specific day and hour before hanging up.',
+          sourceQuote: 'I will send you some listings this week.',
+          sourceChannel: 'call',
+          sourceQuality: 'verbatim',
+          durationSeconds: 214,
+        }],
+      }],
+    }));
+    expect(v.ok).toBe(true);
+    if (!v.ok) return;
+    const opp = v.brief.agents[0].opportunityPoints[0];
+    expect(opp.isFirstContact).toBe(true);
+    expect(opp.sourceQuote).toBe('I will send you some listings this week.');
+    expect(opp.sourceChannel).toBe('call');
+    expect(opp.sourceQuality).toBe('verbatim');
+    expect(opp.durationSeconds).toBe(214);
+  });
+
+  it('keeps isFirstContact: unknown as unknown, never a guess', () => {
+    const v = validateCoachBrief(payload({
+      agents: [{
+        agentName: 'Kara',
+        opportunities: [{
+          findingIds: ['fnd_aaa'], patternKey: 'next_steps',
+          explanation: 'Later conversation ended with no time attempt.',
+          isFirstContact: 'unknown',
+        }],
+      }],
+    }));
+    if (!v.ok) throw new Error('should validate');
+    expect(v.brief.agents[0].opportunityPoints[0].isFirstContact).toBe('unknown');
+  });
+
   it('still accepts a 1.0 payload with no opportunity objects', () => {
     const v = validateCoachBrief(payload({
       schemaVersion: '1.0',

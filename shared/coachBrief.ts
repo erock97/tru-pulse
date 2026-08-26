@@ -40,6 +40,16 @@ export interface BriefOpportunity {
   patternKey?: string;
   explanation: string;
   coachingMove?: string;
+  /**
+   * Schema 1.2 evidence grounding (docs/HERMES_CONTRACT.md §2). The stored
+   * payload is the raw history — dropping these here would lose them forever,
+   * so they pass through even though display work for them is still pending.
+   */
+  isFirstContact?: boolean | 'unknown';
+  sourceQuote?: string;
+  sourceChannel?: string;
+  sourceQuality?: string;
+  durationSeconds?: number;
 }
 
 export interface BriefAgent {
@@ -158,6 +168,19 @@ function coerceOpportunities(v: unknown): BriefOpportunity[] {
     if (pk) entry.patternKey = pk;
     const move = asString(o.coachingMove);
     if (move) entry.coachingMove = move;
+    // Schema 1.2 evidence fields. `unknown` is a legitimate value for
+    // isFirstContact — the contract forbids guessing the timeline.
+    if (o.isFirstContact === true || o.isFirstContact === false || o.isFirstContact === 'unknown') {
+      entry.isFirstContact = o.isFirstContact;
+    }
+    const sourceQuote = asString(o.sourceQuote);
+    if (sourceQuote) entry.sourceQuote = sourceQuote;
+    const sourceChannel = asString(o.sourceChannel);
+    if (sourceChannel) entry.sourceChannel = sourceChannel;
+    const sourceQuality = asString(o.sourceQuality);
+    if (sourceQuality) entry.sourceQuality = sourceQuality;
+    const duration = asCount(o.durationSeconds);
+    if (duration !== undefined) entry.durationSeconds = duration;
     out.push(entry);
   }
   return out;
