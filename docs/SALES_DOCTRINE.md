@@ -512,6 +512,53 @@ This is not a new preference. The gold-standard output in this document
 (section 6a, Aaron) is entirely about texting instead of calling — the channel
 has been the headline concern since before the taxonomy existed.
 
+### The reasoning walk-through — interview of 2026-08-26
+
+Eric, reviewing the first fresh batch: the briefs read as one brief reiterated
+— "specific time, this-or-that" on everything. "That is one of a host of
+things... these are not the biggest call-outs. That's like the most generic of
+all of them." His prescription was a reasoning sequence the analysis should
+actually walk, per agent, before tagging anything:
+
+1. **Channel habits.** Did they call or text first? What percentage of their
+   first contacts went by text or Zillow message? (A Zillow message is a text
+   for this purpose.)
+2. **Sensitive subjects.** Are they handling bad news and important
+   conversations on the right channel? The must-call list, from the interview,
+   all four confirmed:
+   - a property no longer available — under contract, sold, off market, the
+     seller said no. "An agent should never be texting them the properties
+     under contract."
+   - any disappointing update — price problems, inspection issues, financing
+     trouble, appraisal gaps.
+   - hyper-specific property discussion that has outgrown texting.
+   - **money and finances, always.** Budget, lending, pre-approval — phone,
+     period. (Consistent with section 3: private topic, trust first.)
+3. **Tonality.** Two things and only these two — Eric was offered a longer
+   list and picked exactly these, so do not add the others by inference:
+   - **rushed or checked-out energy on calls** — hurrying to end it, flat
+     delivery, sounds like a chore.
+   - **curt or cold texting** — one-word replies, abrupt messages. Tone
+     problems exist in writing too.
+   Not selected, therefore not flagged: scripted-sounding delivery, talking
+   over the buyer.
+4. **Down-funnel leads carry a higher bar.** A lead at the met-with stage or
+   further is definitively important; a miss with them outranks the same miss
+   on a cold lead. (Eric's words: "a lead that is in the met-with stage and
+   down funnel definitely is important.")
+5. Only after all of that: technique — the time ask, this-or-that, and the
+   rest of the taxonomy.
+
+Every tonality claim obeys section 8a like everything else: it needs verbatim
+evidence that shows it — a curt text quotes the text; a rushed call quotes the
+transcript, with the call length in support. No tone claims from summaries.
+
+On brief shape — how many points per agent — Eric left the balance open
+("useful without drowning out the depth"). Standing recommendation, adopted
+2026-08-26: one headline issue per agent chosen by the biggest-miss ranking,
+at most two secondary points visible, everything further behind a
+reader-operated "show more". Depth preserved, one click away, never the wall.
+
 ---
 
 ## 8. Rules for anything that produces coaching output

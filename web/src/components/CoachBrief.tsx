@@ -170,17 +170,25 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
  * It still has to BE there -- a finding nobody can verify fails his own test
  * for a usable one -- but as a footnote the reader opens, never the body.
  */
-function PointList({ points, tone }: {
+function PointList({ points, tone, maxVisible }: {
   points: BriefPointView[];
   tone: 'good' | 'work' | 'watch';
+  /** Show only this many, the rest behind a reader-operated "show more".
+      The 2026-08-26 shape decision: one headline, at most two secondary,
+      depth one click away — never the wall. */
+  maxVisible?: number;
 }) {
   const [open, setOpen] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
   if (points.length === 0) {
     return <p className="brief-none">{NOT_ENOUGH_REVIEWED}.</p>;
   }
+  const hidden = maxVisible && !showAll ? Math.max(0, points.length - maxVisible) : 0;
+  const shown = hidden > 0 ? points.slice(0, maxVisible) : points;
   return (
+    <>
     <ul className={`brief-points is-${tone}`}>
-      {points.map((p, i) => (
+      {shown.map((p, i) => (
         <li
           key={i}
           className="rs-plate brief-card"
@@ -208,6 +216,12 @@ function PointList({ points, tone }: {
         </li>
       ))}
     </ul>
+    {hidden > 0 && (
+      <button className="brief-more" onClick={() => setShowAll(true)}>
+        Show {hidden} more
+      </button>
+    )}
+    </>
   );
 }
 
@@ -506,6 +520,7 @@ export function AgentBriefPanel({ agentId, agentName }: {
                   ? plan
                   : (mine.coachingActions.length ? mine.coachingActions : mine.opportunities)}
                 tone="work"
+                maxVisible={3}
               />
             </div>
             <div className="brief-lane is-watch">
