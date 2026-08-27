@@ -978,7 +978,7 @@ export default {
       const body = (await req.json().catch(() => null)) as any;
       const agentId = String(body?.agentId ?? '').trim();
       if (!agentId) return json({ error: 'agentId required' }, 422);
-      const rows = await database.select('agents', `id=eq.${agentId}&select=id,org_id,email,auth_id,name`);
+      const rows = await database.select('agents', `id=eq.${agentId}&select=id,org_id,email,auth_id,name,coaching_enabled`);
       if (!rows.length) return json({ error: 'agent not found' }, 404);
       const agent = rows[0] as any;
       if (!agent.email) {
@@ -992,8 +992,13 @@ export default {
       const { link, userId: mintedUserId } = await mintAuthLink(env, agent.email, linkType).catch(() => ({ link: '', userId: null }));
       if (!link) return json({ error: 'could not mint invite' }, 502);
       const newUserId = mintedUserId;
+      // Inviting someone IS adding them to Coach. Leaving the two apart meant a
+      // whole team could be invited, arrive, and still be invisible on the Coach
+      // tab because nobody had gone back to the Team tab to tick them in.
       if (!agent.auth_id && newUserId) {
-        await database.update('agents', `id=eq.${agentId}`, { auth_id: newUserId });
+        await database.update('agents', `id=eq.${agentId}`, { auth_id: newUserId, coaching_enabled: true });
+      } else if (!agent.coaching_enabled) {
+        await database.update('agents', `id=eq.${agentId}`, { coaching_enabled: true });
       }
       const orgRows = await database.select('orgs', `id=eq.${agent.org_id}&select=name`);
       const orgName = String((orgRows[0] as { name?: string } | undefined)?.name ?? '').trim() || 'your team';

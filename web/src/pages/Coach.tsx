@@ -207,6 +207,33 @@ function CoachDeck({
     [fullRoster],
   );
 
+  // Everyone in the cohort appears in Coach whether or not they have taken the
+  // assessment. This lane used to render ONLY when the archetype dashboard was
+  // completely empty, so on a part-assessed team the unassessed vanished from
+  // the tab entirely — the owner had invited them, they were ticked into Coach,
+  // and Coach showed no trace of them. It renders in both states now.
+  const pendingLane = pending.length > 0 ? (
+    <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
+      <h3>Your cohort — not yet assessed</h3>
+      <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
+        Everyone you added is here. Open anyone to read their coaching brief now — their
+        archetype, pace and coaching health fill in once they complete the TRU assessment.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20 }}>
+        {pending.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            className="hqbtn hqbtn-ghost hqbtn-sm"
+            onClick={() => { setBriefAgentName(a.name); setOpenId(a.id); }}
+          >
+            {a.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
   async function copyTeamLink(t: TeamLink) {
     const url = `${window.location.origin}/#/assess?t=${t.joinToken}`;
     try {
@@ -379,14 +406,27 @@ function CoachDeck({
           ) : (
             <>
               {roster.length === 0 || !derived || !mix ? (
-                <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
-                  <h3>No profiled agents yet</h3>
-                  <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-                    {pending.length > 0
-                      ? 'Your cohort is added — once they complete the TRU assessment, each one appears here with their archetype, pace, and coaching health.'
-                      : 'Coach shows only the agents you’ve chosen. Tick them in the In Coach column on the Team tab, then have them take the TRU assessment.'}
-                  </p>
-                </div>
+                <>
+                  {/* A team invited this week has real coaching data before it
+                      has a single archetype: the weekly brief reviews everyone
+                      with conversations, assessed or not. Hiding both behind the
+                      empty card told Scott Moore's leader "we have nothing on
+                      your team" in the same week we scraped eight of them. The
+                      brief and the cohort both render here now; the archetype
+                      dashboard above still waits for real assessments. */}
+                  <TeamBriefSection
+                    onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
+                  />
+                  {pendingLane ?? (
+                    <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
+                      <h3>No profiled agents yet</h3>
+                      <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
+                        Coach shows only the agents you’ve chosen. Tick them in the In Coach
+                        column on the Team tab, then have them take the TRU assessment.
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
               {/* ============ MASTHEAD ============ */}
@@ -498,10 +538,13 @@ function CoachDeck({
               />
 
 
+                  {/* The rest of the cohort. The archetype dashboard above is
+                      about assessed people by definition; these are the ones it
+                      cannot describe yet, and they belong on the page all the
+                      same. */}
+                  {pendingLane}
                 </>
               )}
-
-              {/* 'Not yet assessed' panel folded into the one roster above -- those agents already carry a plain 'Not assessed yet' line, and a second wall of boxes for them was the overpowering-boxes problem. */}
             </>
           )}
         </div>
