@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { signOutClean } from '../lib/api';
+import { signOutClean, loadTeamRoster } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
 import { Icon } from '../components/hqUi';
@@ -159,6 +159,9 @@ function CoachDeck({
   const [fullRoster, setFullRoster] = useState<FullRosterRow[]>([]);
   const [teamLinks, setTeamLinks] = useState<TeamLink[]>([]);
   const [copiedTeam, setCopiedTeam] = useState<string | null>(null);
+  // Who has actually arrived. Only the database can answer this — auth.users is
+  // not reachable under RLS — so it comes from the Team tab's roster call.
+  const [arrival, setArrival] = useState<Map<string, { invited: boolean; signedIn: boolean }>>(new Map());
 
   useEffect(() => {
     let live = true;
@@ -182,10 +185,16 @@ function CoachDeck({
     let live = true;
     (async () => {
       try {
-        const [fr, tl] = await Promise.all([loadFullRoster(), loadTeamLinks()]);
+        const [fr, tl, team] = await Promise.all([
+          loadFullRoster(), loadTeamLinks(),
+          loadTeamRoster().catch(() => []),
+        ]);
         if (!live) return;
         setFullRoster(fr);
         setTeamLinks(tl);
+        setArrival(new Map(team.map((m) => [
+          m.id, { invited: !!m.invitedAt, signedIn: !!m.signedInAt },
+        ])));
       } catch {
         // Best-effort: header actions + the "not yet assessed" lane just stay
         // empty/hidden if this fails; the coaching dashboard above is unaffected.
@@ -216,20 +225,37 @@ function CoachDeck({
     <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
       <h3>Your cohort — not yet assessed</h3>
       <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-        Everyone you added is here. Open anyone to read their coaching brief now — their
-        archetype, pace and coaching health fill in once they complete the TRU assessment.
+        Everyone you added is here, with who has accepted their invite and who has not.
+        Open anyone to read their coaching brief now — their archetype, pace and coaching
+        health fill in once they complete the TRU assessment.
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20 }}>
-        {pending.map((a) => (
-          <button
-            key={a.id}
-            type="button"
-            className="hqbtn hqbtn-ghost hqbtn-sm"
-            onClick={() => { setBriefAgentName(a.name); setOpenId(a.id); }}
-          >
-            {a.name}
-          </button>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 20 }}>
+        {pending.map((a) => {
+          const at = arrival.get(a.id);
+          // Three states, and the difference between them is the whole point of
+          // this list: never sent a login, sent and never opened, or in and
+          // simply not assessed yet.
+          const [label, tone] = !at?.invited
+            ? ['No login sent', 'var(--text-40, #6f6a7a)']
+            : at.signedIn
+              ? ['Accepted', 'var(--ok, #7ac77a)']
+              : ['Invited · not accepted', 'var(--warn, #e8c98a)'];
+          return (
+            <button
+              key={a.id}
+              type="button"
+              className="hqbtn hqbtn-ghost"
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                width: '100%', textAlign: 'left', padding: '10px 14px',
+              }}
+              onClick={() => { setBriefAgentName(a.name); setOpenId(a.id); }}
+            >
+              <span>{a.name}</span>
+              <span style={{ color: tone, fontSize: 13 }}>{label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   ) : null;
