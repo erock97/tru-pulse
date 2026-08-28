@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { signOutClean, loadTeamRoster } from '../lib/api';
+import { signOutClean, loadTeamRoster, type TeamMember } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
 import { Icon } from '../components/hqUi';
@@ -11,7 +11,7 @@ import {
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
-  loadFullRoster, loadTeamLinks,
+  loadTeamLinks,
   ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
   type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
@@ -29,9 +29,6 @@ import { useFlip } from '../lib/deckMotion';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
 import '../truHqDark.css';
 
-/* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
-   agents to Coach" picker and to derive the "Not yet assessed" lane. */
-type FullRosterRow = { id: string; name: string; coaching_enabled: boolean; hasAssessment: boolean };
 
 /* ============================================================
    COACH (native) — the standalone Coaching app, reskinned into the
@@ -152,16 +149,15 @@ function CoachDeck({
      weekly?" Nothing is written; it is a question, not a setting. */
   const [cadence, setCadence] = useState<number>(CADENCE_DAYS);
 
-  // Cohort management (Task 8): the full Pulse roster (for the picker + the
-  // "not yet assessed" lane) and each team's public assessment join link.
-  // Both are best-effort — if they fail to load, the main coaching dashboard
-  // (loadRoster, above) still works on its own.
-  const [fullRoster, setFullRoster] = useState<FullRosterRow[]>([]);
+  // Each team's public assessment join link. Best-effort — if it fails to load,
+  // the header action hides and the rest of the page is unaffected.
   const [teamLinks, setTeamLinks] = useState<TeamLink[]>([]);
   const [copiedTeam, setCopiedTeam] = useState<string | null>(null);
-  // Who has actually arrived. Only the database can answer this — auth.users is
-  // not reachable under RLS — so it comes from the Team tab's roster call.
-  const [arrival, setArrival] = useState<Map<string, { invited: boolean; signedIn: boolean }>>(new Map());
+  // The team as Follow Up Boss reports it — everyone, invited or not, assessed or
+  // not. Coach used to be built only from people who had completed the assessment,
+  // which meant a leader with a full FUB roster and live scraped conversations saw
+  // an empty page. This is the list the page is built on now.
+  const [team, setTeam] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     let live = true;
@@ -185,16 +181,13 @@ function CoachDeck({
     let live = true;
     (async () => {
       try {
-        const [fr, tl, team] = await Promise.all([
-          loadFullRoster(), loadTeamLinks(),
+        const [tl, team] = await Promise.all([
+          loadTeamLinks(),
           loadTeamRoster().catch(() => []),
         ]);
         if (!live) return;
-        setFullRoster(fr);
         setTeamLinks(tl);
-        setArrival(new Map(team.map((m) => [
-          m.id, { invited: !!m.invitedAt, signedIn: !!m.signedInAt },
-        ])));
+        setTeam(team);
       } catch {
         // Best-effort: header actions + the "not yet assessed" lane just stay
         // empty/hidden if this fails; the coaching dashboard above is unaffected.
@@ -209,71 +202,88 @@ function CoachDeck({
   // them and the whole sheet sits at opacity 0 ("it kind of blanks out").
   useReveal([roster, openId, view], canvasRef.current);
 
-  // Cohort members added to Coach who haven't taken the assessment yet — a
-  // distinct lane, never fabricated archetype data.
-  const pending = useMemo(
-    () => fullRoster.filter((a) => a.coaching_enabled && !a.hasAssessment),
-    [fullRoster],
-  );
-
   // Everyone in the cohort appears in Coach whether or not they have taken the
   // assessment. This lane used to render ONLY when the archetype dashboard was
   // completely empty, so on a part-assessed team the unassessed vanished from
   // the tab entirely — the owner had invited them, they were ticked into Coach,
   // and Coach showed no trace of them. It renders in both states now.
-  // The cohort's real state, which exists from the day a team is invited — long
-  // before anybody has an archetype. Coach used to have nothing to say until the
-  // first assessment landed and so rendered one apologetic card; these are the
-  // numbers a leader actually needs in that week.
+  /* EVERYONE on the team, which is the list this page should always have been
+     built from. Pond accounts and people a leader has taken off the team are the
+     only omissions — the first is not a person and the second is an explicit
+     decision made on the Team tab.
+
+     Each row carries whatever is actually known about them, in order: their
+     archetype once they have been assessed, otherwise where they are in getting
+     a login. Nothing is inferred and nothing is left out. */
+  const assessedById = useMemo(
+    () => new Map((roster ?? []).map((a) => [a.id, a])), [roster],
+  );
+  const everyone = useMemo(() => team
+    .filter((m) => !m.excluded && m.role !== 'pond')
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      inCoach: m.coaching,
+      invited: !!m.invitedAt,
+      signedIn: !!m.signedInAt,
+      assessed: assessedById.get(m.id) ?? null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)),
+  [team, assessedById]);
+
+  // The counts a leader needs in week one, over the whole team rather than the
+  // handful who happen to have finished an assessment.
   const onboarding = useMemo(() => {
-    const rows = fullRoster.filter((a) => a.coaching_enabled);
-    let accepted = 0, invited = 0, noLogin = 0;
-    for (const a of rows) {
-      const at = arrival.get(a.id);
-      if (!at?.invited) noLogin += 1;
-      else if (at.signedIn) accepted += 1;
+    let accepted = 0, invited = 0, noLogin = 0, assessed = 0;
+    for (const p of everyone) {
+      if (p.assessed) assessed += 1;
+      if (!p.invited) noLogin += 1;
+      else if (p.signedIn) accepted += 1;
       else invited += 1;
     }
-    return { total: rows.length, accepted, invited, noLogin, assessed: rows.length - pending.length };
-  }, [fullRoster, arrival, pending.length]);
+    return { total: everyone.length, accepted, invited, noLogin, assessed };
+  }, [everyone]);
 
-  const pendingLane = pending.length > 0 ? (
-    <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
-      <h3>Your cohort — not yet assessed</h3>
-      <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-        Everyone you added is here, with who has accepted their invite and who has not.
-        Open anyone to read their coaching brief now — their archetype, pace and coaching
-        health fill in once they complete the TRU assessment.
+  /* THE ROSTER. Every person on the team, always rendered — this is the part a
+     leader opens Coach to see. Someone who has been assessed shows their
+     archetype; someone who has not shows where they are in getting a login,
+     which is the only other true thing there is to say about them. Both are
+     one click into their brief, which is built from the scraped Follow Up Boss
+     conversations and exists whether or not they ever take the assessment. */
+  const teamLane = everyone.length > 0 ? (
+    <section className="dk-sec reveal">
+      <h2>Your team</h2>
+      <p style={{ color: 'var(--text-60)', marginTop: 8, marginBottom: 18 }}>
+        Everyone Follow Up Boss reports on this team. Open anyone to read their
+        coaching brief.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 20 }}>
-        {pending.map((a) => {
-          const at = arrival.get(a.id);
-          // Three states, and the difference between them is the whole point of
-          // this list: never sent a login, sent and never opened, or in and
-          // simply not assessed yet.
-          const [label, tone] = !at?.invited
-            ? ['No login sent', 'var(--text-40, #6f6a7a)']
-            : at.signedIn
-              ? ['Accepted', 'var(--ok, #7ac77a)']
-              : ['Invited · not accepted', 'var(--warn, #e8c98a)'];
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {everyone.map((p) => {
+          const [label, tone] = p.assessed
+            ? [p.assessed.archName, 'var(--text-60, #a9a3b4)']
+            : !p.invited
+              ? ['No login sent', 'var(--text-40, #6f6a7a)']
+              : p.signedIn
+                ? ['Accepted · not assessed', 'var(--ok, #7ac77a)']
+                : ['Invited · not accepted', 'var(--warn, #e8c98a)'];
           return (
             <button
-              key={a.id}
+              key={p.id}
               type="button"
               className="hqbtn hqbtn-ghost"
               style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 width: '100%', textAlign: 'left', padding: '10px 14px',
               }}
-              onClick={() => { setBriefAgentName(a.name); setOpenId(a.id); }}
+              onClick={() => { setBriefAgentName(p.name); setOpenId(p.id); }}
             >
-              <span>{a.name}</span>
+              <span>{p.name}</span>
               <span style={{ color: tone, fontSize: 13 }}>{label}</span>
             </button>
           );
         })}
       </div>
-    </div>
+    </section>
   ) : null;
 
   async function copyTeamLink(t: TeamLink) {
@@ -501,12 +511,12 @@ function CoachDeck({
                   <TeamBriefSection
                     onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                   />
-                  {pendingLane ?? (
+                  {teamLane ?? (
                     <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
-                      <h3>No profiled agents yet</h3>
+                      <h3>No team yet</h3>
                       <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-                        Coach shows only the agents you’ve chosen. Tick them in the In Coach
-                        column on the Team tab, then have them take the TRU assessment.
+                        Nobody has come through from Follow Up Boss for this team. Connect
+                        the account on the Team tab and the roster fills in.
                       </p>
                     </div>
                   )}
@@ -622,11 +632,10 @@ function CoachDeck({
               />
 
 
-                  {/* The rest of the cohort. The archetype dashboard above is
-                      about assessed people by definition; these are the ones it
-                      cannot describe yet, and they belong on the page all the
-                      same. */}
-                  {pendingLane}
+                  {/* The whole team, under the archetype dashboard. That
+                      dashboard describes assessed people by definition; this is
+                      everyone, which is what a leader came to see. */}
+                  {teamLane}
                 </>
               )}
             </>
