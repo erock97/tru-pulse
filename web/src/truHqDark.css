@@ -5504,6 +5504,33 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
   .tru-dark .brief-agent-go { opacity: 1; transform: none; }
 }
 
+/* ── Skills training summary (team level, below the roster scan) ── */
+.tru-dark .brief-skills-sec { margin-top: 30px; }
+.tru-dark .brief-skills-grid {
+  width: 100%; margin-top: 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.tru-dark .brief-skill-card { padding: 20px 22px 18px; }
+.tru-dark .brief-skill-h {
+  margin: 0 0 14px; font-family: var(--hq-serif); font-size: 21px; font-weight: 550;
+  letter-spacing: -0.02em; color: var(--accent-hi);
+}
+.tru-dark .brief-skill-agents { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.tru-dark .brief-skill-agent + .brief-skill-agent { padding-top: 16px; border-top: 1px solid var(--border); }
+.tru-dark .brief-skill-agent-link {
+  background: none; border: none; padding: 0; font: inherit;
+  font-family: var(--hq-serif); font-size: 17px; font-weight: 550;
+  letter-spacing: -0.015em; color: var(--text-strong); cursor: pointer;
+}
+.tru-dark .brief-skill-agent-link:not(.is-static):hover,
+.tru-dark .brief-skill-agent-link:not(.is-static):focus-visible { color: var(--tab-hi, var(--terracotta)); }
+.tru-dark .brief-skill-agent-link.is-static { cursor: default; }
+.tru-dark p.brief-skill-detail {
+  margin: 6px 0 0; font-size: 15px; line-height: 1.55;
+  color: var(--text-80, var(--text));
+}
+
 /* ── The agent panel (drill-in sheet) ── */
 .tru-dark .brief-panel { margin-top: 22px; }
 /* The panel's title at masthead scale. A later .dk-page rule demotes every

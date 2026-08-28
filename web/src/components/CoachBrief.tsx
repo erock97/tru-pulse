@@ -308,6 +308,78 @@ const SCAN_COLUMNS: Array<{ label: string; help: string; className: string }> = 
         + 'nothing was read, or nothing read raised a concern - the cell says which.' },
 ];
 
+/* ════════ Skills Training summary, team level ════════
+   Hermes writes a specific skill flag ("Skill opportunity — Confidence.",
+   "Skill opportunity — Service.") right inside its normal per-agent
+   coaching-actions list. That list also carries the report's coachingMove
+   text and, in the agent panel, gets superseded again by the ninety-day habit
+   store the moment either has anything to say -- so a skill flag can be
+   published every week and still never win the one lane it rendered into.
+   coachBriefData.ts now reads the flags straight off the raw payload instead
+   (agentView.skillOpportunities), so they exist on screen independent of
+   whatever wins that lane. This section is where they surface: grouped by
+   skill, one place a leader can see who needs which kind of work this week,
+   without hunting through 15 agent panels for a sentence that starts the
+   same way every time.
+
+   Eric's evidence rule applies here same as everywhere else in the brief: a
+   flag with no resolved finding behind it is dropped, not shown unproven. */
+function SkillsTrainingSection({ view, onOpenAgent }: {
+  view: BriefView;
+  onOpenAgent?: (agentId: string, agentName: string) => void;
+}) {
+  const bySkill = useMemo(() => {
+    const map = new Map<string, Array<{ agentName: string; agentId: string | null; point: BriefPointView }>>();
+    for (const a of view.agents) {
+      for (const s of a.skillOpportunities) {
+        if (s.evidence.length === 0) continue;
+        const list = map.get(s.skill) ?? [];
+        list.push({ agentName: a.agentName, agentId: a.agentId, point: s });
+        map.set(s.skill, list);
+      }
+    }
+    return [...map.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  }, [view]);
+
+  if (bySkill.length === 0) return null;
+
+  return (
+    <div className="dk-sec brief-sec brief-skills-sec">
+      <h2>Skills training this week</h2>
+      <p>Every flagged skill gap, grouped by skill — each one backed by the call or text it came from.</p>
+      <div className="brief-skills-grid">
+        {bySkill.map(([skill, rows]) => (
+          <div className="rs-plate brief-skill-card" key={skill}>
+            <h3 className="brief-skill-h">{skill}</h3>
+            <ul className="brief-skill-agents">
+              {rows.map(({ agentName, agentId, point: p }, i) => {
+                const clickable = !!(agentId && onOpenAgent);
+                return (
+                  <li key={`${agentName}-${i}`} className="brief-skill-agent">
+                    {clickable ? (
+                      <button
+                        type="button"
+                        className="brief-skill-agent-link"
+                        onClick={() => onOpenAgent!(agentId!, agentName)}
+                      >
+                        {agentName}
+                      </button>
+                    ) : (
+                      <span className="brief-skill-agent-link is-static">{agentName}</span>
+                    )}
+                    {p.text && <p className="brief-skill-detail">{linkLeads(p.text, p.evidence)}</p>}
+                    <EvidenceList evidence={p.evidence} />
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ════════ The team scan, on the Coach roster page ════════ */
 
 /** The cohort's half of an agent's card: assessment + 1:1 state. */
@@ -451,6 +523,8 @@ export function TeamBriefSection({ onOpenAgent, cohort }: {
           );
         })}
       </div>
+
+      <SkillsTrainingSection view={view} onOpenAgent={onOpenAgent} />
 
       {printing && <BriefPrintSheet view={view} onClose={() => setPrinting(false)} />}
     </div>

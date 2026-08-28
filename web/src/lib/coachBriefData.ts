@@ -11,6 +11,7 @@ import {
   findingsByIndex,
   findingsById,
   opportunityAsPoint,
+  parseSkillOpportunity,
   pointEvidence,
   NOT_ENOUGH_REVIEWED,
 } from '../../../shared/coachBrief';
@@ -45,6 +46,12 @@ export interface BriefPointView {
   evidence: BriefFinding[];
 }
 
+/** A "Skill opportunity — X." flag, pulled out of coachingActions and kept
+ *  intact regardless of what wins the "what to do with this agent" lane. */
+export interface SkillOpportunityView extends BriefPointView {
+  skill: string;
+}
+
 export interface BriefAgentView {
   agentName: string;
   /** agents.id when the ingest matched this name unambiguously; null otherwise. */
@@ -54,6 +61,9 @@ export interface BriefAgentView {
   opportunities: BriefPointView[];
   objections: BriefPointView[];
   coachingActions: BriefPointView[];
+  /** Never dropped by the coachingMove/habit-store supersession that
+   *  coachingActions goes through below — see planOf(). */
+  skillOpportunities: SkillOpportunityView[];
 }
 
 export interface BriefView {
@@ -136,6 +146,27 @@ export function toView(row: BriefReportRow): BriefView | null {
     }
     return (a.coachingActions ?? []).map(point);
   };
+
+  // Read straight off the raw coachingActions list, before planOf() picks a
+  // winner for the "what to do" lane. A skill flag is real evidence-backed
+  // guidance in its own right; it should never depend on whether the report
+  // also happened to include a coachingMove or a recurring habit-store pattern
+  // this week, both of which pre-empt it there. See docs note on 2026-08-28:
+  // three published skill flags (Confidence x2, Service x1) never reached any
+  // screen because every agent that week also had a coachingMove.
+  const skillOpportunitiesOf = (a: BriefAgent): SkillOpportunityView[] =>
+    (a.coachingActions ?? []).flatMap((raw) => {
+      const parsed = parseSkillOpportunity(raw.text);
+      if (!parsed) return [];
+      const v = point(raw);
+      return [{
+        skill: parsed.skill,
+        text: parsed.detail || v.text,
+        coach: v.coach,
+        evidence: v.evidence,
+      }];
+    });
+
   return {
     reportId: row.id,
     weekStart: row.week_start,
@@ -154,6 +185,7 @@ export function toView(row: BriefReportRow): BriefView | null {
       opportunities: opportunitiesOf(a),
       objections: (a.objections ?? []).map(point),
       coachingActions: planOf(a),
+      skillOpportunities: skillOpportunitiesOf(a),
     })),
   };
 }
