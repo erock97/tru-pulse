@@ -221,6 +221,22 @@ function CoachDeck({
   // completely empty, so on a part-assessed team the unassessed vanished from
   // the tab entirely — the owner had invited them, they were ticked into Coach,
   // and Coach showed no trace of them. It renders in both states now.
+  // The cohort's real state, which exists from the day a team is invited — long
+  // before anybody has an archetype. Coach used to have nothing to say until the
+  // first assessment landed and so rendered one apologetic card; these are the
+  // numbers a leader actually needs in that week.
+  const onboarding = useMemo(() => {
+    const rows = fullRoster.filter((a) => a.coaching_enabled);
+    let accepted = 0, invited = 0, noLogin = 0;
+    for (const a of rows) {
+      const at = arrival.get(a.id);
+      if (!at?.invited) noLogin += 1;
+      else if (at.signedIn) accepted += 1;
+      else invited += 1;
+    }
+    return { total: rows.length, accepted, invited, noLogin, assessed: rows.length - pending.length };
+  }, [fullRoster, arrival, pending.length]);
+
   const pendingLane = pending.length > 0 ? (
     <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
       <h3>Your cohort — not yet assessed</h3>
@@ -437,9 +453,51 @@ function CoachDeck({
                       has a single archetype: the weekly brief reviews everyone
                       with conversations, assessed or not. Hiding both behind the
                       empty card told Scott Moore's leader "we have nothing on
-                      your team" in the same week we scraped eight of them. The
-                      brief and the cohort both render here now; the archetype
-                      dashboard above still waits for real assessments. */}
+                      your team" in the same week we scraped eight of them.
+
+                      The deck keeps its masthead and a row of real tiles here
+                      too. Onboarding IS the state of the team in week one, and
+                      showing a lone apologetic card in its place read as the
+                      product being broken. Nothing on this path is estimated —
+                      every number is a count of rows. */}
+                  {onboarding.total > 0 && (
+                    <>
+                      <header className="dk-mast">
+                        <div>
+                          <span className={onboarding.invited > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
+                            <i />
+                            {onboarding.invited > 0
+                              ? `${onboarding.invited} still to accept`
+                              : 'Everybody is in'}
+                          </span>
+                          <h1>
+                            <em>{onboarding.accepted}</em> of {onboarding.total} in,
+                            and the assessment is what fills this page.
+                          </h1>
+                          <p className="dk-sub">
+                            Archetypes, pace and coaching health appear per person as they
+                            finish the TRU assessment. Everything below is live now.
+                          </p>
+                        </div>
+                        <div className="dk-mast-do">{context}</div>
+                      </header>
+                      <section className="dk-bento">
+                        {([
+                          ['In your cohort', onboarding.total, 'people you added to Coach'],
+                          ['Accepted their invite', onboarding.accepted, 'signed in at least once'],
+                          ['Invited, not accepted', onboarding.invited, 'email delivered, never opened'],
+                          ['No login sent yet', onboarding.noLogin, 'invite them from the Team tab'],
+                          ['Assessed', onboarding.assessed, 'they appear in the dashboard'],
+                        ] as [string, number, string][]).map(([k, v, u]) => (
+                          <div className="rs-plate dk-tile" key={k}>
+                            <span className="k">{k}</span>
+                            <span className="v"><Odometer value={v} /></span>
+                            <span className="u">{u}</span>
+                          </div>
+                        ))}
+                      </section>
+                    </>
+                  )}
                   <TeamBriefSection
                     onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                   />

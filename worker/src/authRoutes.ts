@@ -274,6 +274,27 @@ export async function handleAuthRoutes(
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) {
+      // A 429 here is never the person's fault and they can do nothing about it:
+      // Supabase's built-in mailer is capped at a couple of messages an hour for
+      // the whole project, and a confirmation that cannot be sent fails the whole
+      // signup. The account is created either way, so finish the job ourselves —
+      // mint the confirmation link with the admin API, which sends no mail, and
+      // deliver it through Resend. Verification still happens; only the postman
+      // changes. Every other Supabase error is the person's to act on, so it is
+      // passed through untouched.
+      if (res.status === 429) {
+        try {
+          const { link } = await mintAuthLink(env, email, 'invite');
+          const sent = await sendInviteEmail(env, {
+            to: email, name: email, orgName: 'TRU HQ', link, kind: 'agent',
+          });
+          if (sent) {
+            await clearAttempts(env, ip, email);
+            return json({ ok: true, confirm: true }, 200, cors);
+          }
+        } catch { /* fall through to the message below */ }
+        return json({ error: 'could not send your confirmation email — try again in a minute' }, 502, cors);
+      }
       // Supabase explains the real problem (already registered, breached password,
       // too short); pass it through so the person can act on it.
       const err = (await res.json().catch(() => null)) as { msg?: string; message?: string } | null;
