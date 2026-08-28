@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { signOutClean } from '../lib/api';
+import { signOutClean, loadTeamRoster, type TeamMember } from '../lib/api';
 import { HqShell } from '../components/hqShell';
 import { ScaleMarks } from '../components/scaleMarks';
 import { Icon } from '../components/hqUi';
@@ -11,7 +11,7 @@ import {
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
-  loadFullRoster, loadTeamLinks,
+  loadTeamLinks,
   ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
   type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
@@ -29,9 +29,6 @@ import { useFlip } from '../lib/deckMotion';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
 import '../truHqDark.css';
 
-/* Full-Pulse-roster row (Task 4's loadFullRoster shape) — used by the "Add
-   agents to Coach" picker and to derive the "Not yet assessed" lane. */
-type FullRosterRow = { id: string; name: string; coaching_enabled: boolean; hasAssessment: boolean };
 
 /* ============================================================
    COACH (native) — the standalone Coaching app, reskinned into the
@@ -152,13 +149,15 @@ function CoachDeck({
      weekly?" Nothing is written; it is a question, not a setting. */
   const [cadence, setCadence] = useState<number>(CADENCE_DAYS);
 
-  // Cohort management (Task 8): the full Pulse roster (for the picker + the
-  // "not yet assessed" lane) and each team's public assessment join link.
-  // Both are best-effort — if they fail to load, the main coaching dashboard
-  // (loadRoster, above) still works on its own.
-  const [fullRoster, setFullRoster] = useState<FullRosterRow[]>([]);
+  // Each team's public assessment join link. Best-effort — if it fails to load,
+  // the header action hides and the rest of the page is unaffected.
   const [teamLinks, setTeamLinks] = useState<TeamLink[]>([]);
   const [copiedTeam, setCopiedTeam] = useState<string | null>(null);
+  // The team as Follow Up Boss reports it — everyone, invited or not, assessed or
+  // not. Coach used to be built only from people who had completed the assessment,
+  // which meant a leader with a full FUB roster and live scraped conversations saw
+  // an empty page. This is the list the page is built on now.
+  const [team, setTeam] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     let live = true;
@@ -182,10 +181,13 @@ function CoachDeck({
     let live = true;
     (async () => {
       try {
-        const [fr, tl] = await Promise.all([loadFullRoster(), loadTeamLinks()]);
+        const [tl, team] = await Promise.all([
+          loadTeamLinks(),
+          loadTeamRoster().catch(() => []),
+        ]);
         if (!live) return;
-        setFullRoster(fr);
         setTeamLinks(tl);
+        setTeam(team);
       } catch {
         // Best-effort: header actions + the "not yet assessed" lane just stay
         // empty/hidden if this fails; the coaching dashboard above is unaffected.
@@ -200,12 +202,109 @@ function CoachDeck({
   // them and the whole sheet sits at opacity 0 ("it kind of blanks out").
   useReveal([roster, openId, view], canvasRef.current);
 
-  // Cohort members added to Coach who haven't taken the assessment yet — a
-  // distinct lane, never fabricated archetype data.
-  const pending = useMemo(
-    () => fullRoster.filter((a) => a.coaching_enabled && !a.hasAssessment),
-    [fullRoster],
+  // Everyone in the cohort appears in Coach whether or not they have taken the
+  // assessment. This lane used to render ONLY when the archetype dashboard was
+  // completely empty, so on a part-assessed team the unassessed vanished from
+  // the tab entirely — the owner had invited them, they were ticked into Coach,
+  // and Coach showed no trace of them. It renders in both states now.
+  /* EVERYONE on the team, which is the list this page should always have been
+     built from. Pond accounts and people a leader has taken off the team are the
+     only omissions — the first is not a person and the second is an explicit
+     decision made on the Team tab.
+
+     Each row carries whatever is actually known about them, in order: their
+     archetype once they have been assessed, otherwise where they are in getting
+     a login. Nothing is inferred and nothing is left out. */
+  const assessedById = useMemo(
+    () => new Map((roster ?? []).map((a) => [a.id, a])), [roster],
   );
+  const everyone = useMemo(() => team
+    .filter((m) => !m.excluded && m.role !== 'pond')
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      inCoach: m.coaching,
+      invited: !!m.invitedAt,
+      signedIn: !!m.signedInAt,
+      assessed: assessedById.get(m.id) ?? null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)),
+  [team, assessedById]);
+
+  // The counts a leader needs in week one, over the whole team rather than the
+  // handful who happen to have finished an assessment.
+  const onboarding = useMemo(() => {
+    let accepted = 0, invited = 0, noLogin = 0, assessed = 0;
+    for (const p of everyone) {
+      if (p.assessed) assessed += 1;
+      if (!p.invited) noLogin += 1;
+      else if (p.signedIn) accepted += 1;
+      else invited += 1;
+    }
+    return { total: everyone.length, accepted, invited, noLogin, assessed };
+  }, [everyone]);
+
+  /* THE ROSTER. Every person on the team, always rendered — this is the part a
+     leader opens Coach to see. Someone who has been assessed shows their
+     archetype; someone who has not shows where they are in getting a login,
+     which is the only other true thing there is to say about them. Both are
+     one click into their brief, which is built from the scraped Follow Up Boss
+     conversations and exists whether or not they ever take the assessment. */
+  const teamLane = everyone.length > 0 ? (
+    <div className="dk-sec brief-sec reveal">
+      <h2>Your team</h2>
+      <p>
+        Everyone Follow Up Boss reports on this team
+        {' · '}{everyone.length} {everyone.length === 1 ? 'person' : 'people'}
+      </p>
+      <div className="brief-scan" role="list" aria-label="Team roster">
+        {everyone.map((p, i) => (
+          <article
+            className={[
+              'rs-plate', 'brief-agent-card', 'is-link',
+              /* A person with no assessment is not a problem, so their card is
+                 quiet rather than loud. The loud states on this page mean a
+                 leader is needed; "hasn't taken it yet" does not. */
+              p.assessed ? '' : 'is-quiet',
+            ].filter(Boolean).join(' ')}
+            role="listitem"
+            key={p.id}
+            style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
+            onClick={() => { setBriefAgentName(p.name); setOpenId(p.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setBriefAgentName(p.name); setOpenId(p.id); } }}
+            tabIndex={0}
+          >
+            <header className="brief-agent-top">
+              <h3 className="brief-agent-name">{p.name}</h3>
+              <span className="brief-agent-stats">
+                {p.assessed ? (
+                  <span className="brief-stat">{p.assessed.archName}</span>
+                ) : !p.invited ? (
+                  <span className="brief-stat">No login sent</span>
+                ) : p.signedIn ? (
+                  <span className="brief-stat">Accepted</span>
+                ) : (
+                  <span className="brief-stat is-watch">Invited</span>
+                )}
+              </span>
+            </header>
+            {/* No score, on purpose. Coaching health is built from check-ins and
+                an assessment; inventing one for somebody who has neither would
+                be a number a leader could act on and should not. */}
+            <p className="brief-agent-meta is-quiet">
+              {p.assessed
+                ? `Last 1:1 ${p.assessed.lastLabel} · health ${healthOf(p.assessed)}`
+                : p.signedIn
+                  ? 'Signed in. Their archetype and coaching health appear once they take the TRU assessment.'
+                  : p.invited
+                    ? 'Invite delivered. Nothing to score until they set up their login.'
+                    : 'Not invited yet. Send them a login from the Team tab.'}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   async function copyTeamLink(t: TeamLink) {
     const url = `${window.location.origin}/#/assess?t=${t.joinToken}`;
@@ -379,14 +478,69 @@ function CoachDeck({
           ) : (
             <>
               {roster.length === 0 || !derived || !mix ? (
-                <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
-                  <h3>No profiled agents yet</h3>
-                  <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
-                    {pending.length > 0
-                      ? 'Your cohort is added — once they complete the TRU assessment, each one appears here with their archetype, pace, and coaching health.'
-                      : 'Coach shows only the agents you’ve chosen. Tick them in the In Coach column on the Team tab, then have them take the TRU assessment.'}
-                  </p>
-                </div>
+                <>
+                  {/* A team invited this week has real coaching data before it
+                      has a single archetype: the weekly brief reviews everyone
+                      with conversations, assessed or not. Hiding both behind the
+                      empty card told Scott Moore's leader "we have nothing on
+                      your team" in the same week we scraped eight of them.
+
+                      The deck keeps its masthead and a row of real tiles here
+                      too. Onboarding IS the state of the team in week one, and
+                      showing a lone apologetic card in its place read as the
+                      product being broken. Nothing on this path is estimated —
+                      every number is a count of rows. */}
+                  {onboarding.total > 0 && (
+                    <>
+                      <header className="dk-mast">
+                        <div>
+                          <span className={onboarding.invited > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
+                            <i />
+                            {onboarding.invited > 0
+                              ? `${onboarding.invited} still to accept`
+                              : 'Everybody is in'}
+                          </span>
+                          <h1>
+                            <em>{onboarding.accepted}</em> of {onboarding.total} in,
+                            and the assessment is what fills this page.
+                          </h1>
+                          <p className="dk-sub">
+                            Archetypes, pace and coaching health appear per person as they
+                            finish the TRU assessment. Everything below is live now.
+                          </p>
+                        </div>
+                        <div className="dk-mast-do">{context}</div>
+                      </header>
+                      <section className="dk-bento">
+                        {([
+                          ['In your cohort', onboarding.total, 'people you added to Coach'],
+                          ['Accepted their invite', onboarding.accepted, 'signed in at least once'],
+                          ['Invited, not accepted', onboarding.invited, 'email delivered, never opened'],
+                          ['No login sent yet', onboarding.noLogin, 'invite them from the Team tab'],
+                          ['Assessed', onboarding.assessed, 'they appear in the dashboard'],
+                        ] as [string, number, string][]).map(([k, v, u]) => (
+                          <div className="rs-plate dk-tile" key={k}>
+                            <span className="k">{k}</span>
+                            <span className="v"><Odometer value={v} /></span>
+                            <span className="u">{u}</span>
+                          </div>
+                        ))}
+                      </section>
+                    </>
+                  )}
+                  <TeamBriefSection
+                    onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
+                  />
+                  {teamLane ?? (
+                    <div className="card ps-emptyview reveal" style={{ padding: 40 }}>
+                      <h3>No team yet</h3>
+                      <p style={{ color: 'var(--text-60)', marginTop: 8 }}>
+                        Nobody has come through from Follow Up Boss for this team. Connect
+                        the account on the Team tab and the roster fills in.
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
               {/* ============ MASTHEAD ============ */}
@@ -498,10 +652,12 @@ function CoachDeck({
               />
 
 
+                  {/* The whole team, under the archetype dashboard. That
+                      dashboard describes assessed people by definition; this is
+                      everyone, which is what a leader came to see. */}
+                  {teamLane}
                 </>
               )}
-
-              {/* 'Not yet assessed' panel folded into the one roster above -- those agents already carry a plain 'Not assessed yet' line, and a second wall of boxes for them was the overpowering-boxes problem. */}
             </>
           )}
         </div>
