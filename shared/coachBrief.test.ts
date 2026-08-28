@@ -7,6 +7,7 @@ import {
   matchAgents,
   opportunityAsPoint,
   normalizeAgentName,
+  parseSkillOpportunity,
   pointEvidence,
   validateCoachBrief,
 } from './coachBrief';
@@ -295,5 +296,26 @@ describe('a schema 1.1 opportunity reaching a screen', () => {
     const { coachingMove, ...noMove } = opp;
     const out = opportunityAsPoint(noMove as any, findingsByIndex(b), findingsById(b));
     expect(out.coach).toBeNull();
+  });
+});
+
+describe('parseSkillOpportunity', () => {
+  it('reads the skill name and detail out of the published prefix', () => {
+    const out = parseSkillOpportunity(
+      'Skill opportunity — Confidence. Anthony hedges on price instead of stating it plainly.');
+    expect(out).toEqual({
+      skill: 'Confidence',
+      detail: 'Anthony hedges on price instead of stating it plainly.',
+    });
+  });
+
+  it('accepts a plain hyphen as well as an em dash', () => {
+    expect(parseSkillOpportunity('Skill opportunity - Service. Slow to acknowledge a complaint.'))
+      .toEqual({ skill: 'Service', detail: 'Slow to acknowledge a complaint.' });
+  });
+
+  it('is not fooled by an ordinary coaching-action sentence', () => {
+    expect(parseSkillOpportunity('Roleplay the either/or close using his own call as the script.'))
+      .toBeNull();
   });
 });

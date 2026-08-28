@@ -118,3 +118,56 @@ describe('a week stored after schema 1.1', () => {
     expect(agent.coachingActions[0].evidence[0].quote).toBe('Want me to send some over?');
   });
 });
+
+describe('a skill opportunity flag', () => {
+  // Reproduces the 2026-08-28 report: Hermes published "Skill opportunity —
+  // Confidence." for an agent who, same week, also had a coachingMove on an
+  // unrelated opportunity. planOf() picks the coachingMove for the "what to
+  // do" lane whenever one exists, which used to be the ONLY place a skill
+  // flag could reach the screen -- so it silently vanished every time an
+  // agent had both. skillOpportunities reads the flag independently of that
+  // lane, so it survives.
+  function reportWithSkillFlagAndCoachingMove(): BriefReportRow {
+    const row = storedBeforeV11();
+    (row.payload as any).schemaVersion = '1.1';
+    (row.payload as any).agents[0].coachingActions = [
+      { text: 'Skill opportunity — Confidence. Anthony hedges on price instead of stating it plainly.',
+        findingIndexes: [0] },
+    ];
+    (row.payload as any).agents[0].opportunityPoints = [{
+      findingIds: ['fnd_a'],
+      explanation: 'Ends texts without offering a time.',
+      coachingMove: 'Offer two times and ask her to pick one.',
+    }];
+    (row.payload as any).findings[0].findingId = 'fnd_a';
+    return row;
+  }
+
+  it('is not displaced by a coachingMove that wins the "what to do" lane', () => {
+    const agent = toView(reportWithSkillFlagAndCoachingMove())!.agents[0];
+    // The lane still shows the coachingMove -- unchanged behavior.
+    expect(agent.coachingActions[0].text).toBe('Offer two times and ask her to pick one.');
+    // But the skill flag is not lost with it.
+    expect(agent.skillOpportunities).toHaveLength(1);
+    expect(agent.skillOpportunities[0].skill).toBe('Confidence');
+    expect(agent.skillOpportunities[0].text)
+      .toBe('Anthony hedges on price instead of stating it plainly.');
+  });
+
+  it('keeps its evidence', () => {
+    const agent = toView(reportWithSkillFlagAndCoachingMove())!.agents[0];
+    expect(agent.skillOpportunities[0].evidence[0].quote).toBe('Want me to send some over?');
+  });
+
+  it('still carries the flag when its evidence cannot be resolved', () => {
+    // The data layer never hides a point for lacking evidence (see
+    // opportunityAsPoint's own test for the same rule). It's the team-level
+    // Skills Training summary that must not display a recommendation without
+    // its evidence -- that filter lives in SkillsTrainingSection, not here.
+    const row = reportWithSkillFlagAndCoachingMove();
+    (row.payload as any).agents[0].coachingActions[0].findingIndexes = [];
+    const agent = toView(row)!.agents[0];
+    expect(agent.skillOpportunities[0].skill).toBe('Confidence');
+    expect(agent.skillOpportunities[0].evidence).toEqual([]);
+  });
+});

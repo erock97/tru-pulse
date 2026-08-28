@@ -449,3 +449,29 @@ export function channelLabel(channel: string | undefined): string | null {
 /** Eric's rule: a blank section means "not enough reviewed", never a failure.
  *  Rendering must show this line rather than an empty box. */
 export const NOT_ENOUGH_REVIEWED = 'Not enough reviewed this week';
+
+// ── Skill training flags ────────────────────────────────────────────────────
+// Hermes has no dedicated field for "this agent needs skill X" — it writes the
+// flag as plain prose inside coachingActions, always starting with this exact
+// prefix: "Skill opportunity — Confidence." / "Skill opportunity — Service."
+// Nothing downstream ever looked for that prefix, so these points were just
+// ordinary coaching-action text competing with everything else for one lane —
+// and losing, most weeks. This is the one place that recognizes the prefix so
+// a skill flag can be pulled out and shown on its own, regardless of what won
+// that lane.
+const SKILL_OPPORTUNITY_RE = /^Skill opportunity\s*[—-]\s*([^.]+)\.\s*(.*)$/s;
+
+export interface SkillOpportunity {
+  /** e.g. "Confidence", "Service" — whatever Hermes named after the dash. */
+  skill: string;
+  /** The rest of the sentence, with the "Skill opportunity — X." prefix stripped. */
+  detail: string;
+}
+
+export function parseSkillOpportunity(text: string): SkillOpportunity | null {
+  const m = SKILL_OPPORTUNITY_RE.exec(text.trim());
+  if (!m) return null;
+  const skill = m[1].trim();
+  if (!skill) return null;
+  return { skill, detail: m[2].trim() };
+}
