@@ -14,6 +14,8 @@ import {
   createSession, destroySession, readCookie, readSession, withFreshToken,
   sessionCookie, clearCookie,
 } from './session.js';
+import { mintAuthLink, sendInviteEmail, authUserIdByEmail } from './invite.js';
+import { db as serviceDb } from './db.js';
 
 
 // ── Google sign-in, server-side (PKCE) ──────────────────────────────────────
@@ -358,12 +360,31 @@ export async function handleAuthRoutes(
   if (url.pathname === '/auth/reset-request' && req.method === 'POST') {
     const b = (await req.json().catch(() => null)) as { email?: string } | null;
     const email = String(b?.email ?? '').trim().toLowerCase();
+    // Supabase's own /recover sends the mail through Supabase's built-in SMTP,
+    // which is capped at a couple of messages an hour for the whole project. On a
+    // day when a team is onboarding, that cap is reached in minutes and every
+    // reset after it fails with "email rate limit exceeded" — the agent sees
+    // nothing arrive and concludes the account is broken. Mint the link with the
+    // admin API (which sends no mail) and deliver it through Resend, exactly as
+    // the invite does. No cap, and one sender to reason about.
     if (email) {
-      await fetch(env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/recover', {
-        method: 'POST',
-        headers: { apikey: env.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      }).catch(() => undefined);
+      await (async () => {
+        const known = await authUserIdByEmail(env, email);
+        if (!known) return; // never reveal whether an address has an account
+        const { link } = await mintAuthLink(env, email, 'recovery');
+        // Name their team if we know it, so the mail reads like the invite did.
+        let orgName = 'TRU HQ';
+        let name = email;
+        const rows = await serviceDb(env).select(
+          'agents', `email=ilike.${encodeURIComponent(email)}&select=name,orgs(name)&limit=1`,
+        ).catch(() => [] as any[]);
+        const hit = rows[0] as { name?: string; orgs?: { name?: string } | null } | undefined;
+        if (hit) {
+          name = String(hit.name ?? '').trim() || email;
+          orgName = String(hit.orgs?.name ?? '').trim() || orgName;
+        }
+        await sendInviteEmail(env, { to: email, name, orgName, link, kind: 'agent' });
+      })().catch(() => undefined);
     }
     return json({ ok: true }, 200, cors);
   }
