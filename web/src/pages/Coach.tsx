@@ -251,39 +251,59 @@ function CoachDeck({
      one click into their brief, which is built from the scraped Follow Up Boss
      conversations and exists whether or not they ever take the assessment. */
   const teamLane = everyone.length > 0 ? (
-    <section className="dk-sec reveal">
+    <div className="dk-sec brief-sec reveal">
       <h2>Your team</h2>
-      <p style={{ color: 'var(--text-60)', marginTop: 8, marginBottom: 18 }}>
-        Everyone Follow Up Boss reports on this team. Open anyone to read their
-        coaching brief.
+      <p>
+        Everyone Follow Up Boss reports on this team
+        {' · '}{everyone.length} {everyone.length === 1 ? 'person' : 'people'}
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {everyone.map((p) => {
-          const [label, tone] = p.assessed
-            ? [p.assessed.archName, 'var(--text-60, #a9a3b4)']
-            : !p.invited
-              ? ['No login sent', 'var(--text-40, #6f6a7a)']
-              : p.signedIn
-                ? ['Accepted · not assessed', 'var(--ok, #7ac77a)']
-                : ['Invited · not accepted', 'var(--warn, #e8c98a)'];
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className="hqbtn hqbtn-ghost"
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                width: '100%', textAlign: 'left', padding: '10px 14px',
-              }}
-              onClick={() => { setBriefAgentName(p.name); setOpenId(p.id); }}
-            >
-              <span>{p.name}</span>
-              <span style={{ color: tone, fontSize: 13 }}>{label}</span>
-            </button>
-          );
-        })}
+      <div className="brief-scan" role="list" aria-label="Team roster">
+        {everyone.map((p, i) => (
+          <article
+            className={[
+              'rs-plate', 'brief-agent-card', 'is-link',
+              /* A person with no assessment is not a problem, so their card is
+                 quiet rather than loud. The loud states on this page mean a
+                 leader is needed; "hasn't taken it yet" does not. */
+              p.assessed ? '' : 'is-quiet',
+            ].filter(Boolean).join(' ')}
+            role="listitem"
+            key={p.id}
+            style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
+            onClick={() => { setBriefAgentName(p.name); setOpenId(p.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setBriefAgentName(p.name); setOpenId(p.id); } }}
+            tabIndex={0}
+          >
+            <header className="brief-agent-top">
+              <h3 className="brief-agent-name">{p.name}</h3>
+              <span className="brief-agent-stats">
+                {p.assessed ? (
+                  <span className="brief-stat">{p.assessed.archName}</span>
+                ) : !p.invited ? (
+                  <span className="brief-stat">No login sent</span>
+                ) : p.signedIn ? (
+                  <span className="brief-stat">Accepted</span>
+                ) : (
+                  <span className="brief-stat is-watch">Invited</span>
+                )}
+              </span>
+            </header>
+            {/* No score, on purpose. Coaching health is built from check-ins and
+                an assessment; inventing one for somebody who has neither would
+                be a number a leader could act on and should not. */}
+            <p className="brief-agent-meta is-quiet">
+              {p.assessed
+                ? `Last 1:1 ${p.assessed.lastLabel} · health ${healthOf(p.assessed)}`
+                : p.signedIn
+                  ? 'Signed in. Their archetype and coaching health appear once they take the TRU assessment.'
+                  : p.invited
+                    ? 'Invite delivered. Nothing to score until they set up their login.'
+                    : 'Not invited yet. Send them a login from the Team tab.'}
+            </p>
+          </article>
+        ))}
       </div>
-    </section>
+    </div>
   ) : null;
 
   async function copyTeamLink(t: TeamLink) {
