@@ -11,6 +11,10 @@ export interface Env {
                                       // laptop's brief sends) — deliberately NOT
                                       // ADMIN_TOKEN so a leaked report key can submit
                                       // coaching reports and nothing else
+  ZILLOW_TARGETS_INGEST_TOKEN?: string; // guards POST /zillow/targets (the
+                                      // fub-weekly-reports scraper's target/pacing
+                                      // pushes) — its own secret, same reasoning as
+                                      // COACH_INGEST_TOKEN
   RELAY_TOKEN?: string;               // guards /relay/queue + /relay/ack — the phone
                                       // relay's own key. Deliberately NOT ADMIN_TOKEN:
                                       // it lives in a Tasker profile and travels in a

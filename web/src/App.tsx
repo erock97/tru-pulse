@@ -9,6 +9,7 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
 import AdminAutomations from './pages/AdminAutomations';
+import AdminTargets from './pages/AdminTargets';
 import TeamAdmin from './pages/TeamAdmin';
 import PulseLab from './pages/PulseLab';
 import Lab from './pages/Lab';
@@ -183,6 +184,12 @@ export default function App() {
     // straight through to their roster, because for them this is undefined.
     adminLeaders && route === '/admin/agents'
       ? <AdminAutomations
+          onOpenPulse={() => go('/pulse')}
+          onOpenCoach={() => go('/coach')}
+          onOpenRep={() => go('/rep')}
+        />
+    : adminLeaders && route === '/admin/targets'
+      ? <AdminTargets
           onOpenPulse={() => go('/pulse')}
           onOpenCoach={() => go('/coach')}
           onOpenRep={() => go('/rep')}

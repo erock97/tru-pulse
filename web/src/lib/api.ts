@@ -702,6 +702,41 @@ export async function adminLeaders(): Promise<AdminLeader[] | null> {
   }
 }
 
+// ── Zillow target/pacing dashboard (platform owner only) ────────────────────
+
+export interface ZillowTargetMetric {
+  metric: 'six_month' | 'zhl';
+  target_value: number;
+  actual_value: number;
+  unit: string;
+  period_label: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  source_refresh_date: string | null;
+  captured_at: string;
+}
+
+export interface ZillowTargetTeam {
+  team_id: string;
+  team_name: string;
+  org_name: string;
+  metrics: ZillowTargetMetric[];
+}
+
+/** Every Zillow team's target/pacing snapshot — 403/null unless the caller is
+ *  a platform admin. A team with no scrape yet simply has an empty metrics[]. */
+export async function adminTargets(): Promise<ZillowTargetTeam[] | null> {
+  if (isDemo) return null;
+  try {
+    const res = await workerFetch('/admin/targets', {});
+    if (!res.ok) return null;
+    const j = (await res.json()) as { teams?: ZillowTargetTeam[] };
+    return j.teams ?? [];
+  } catch {
+    return null;
+  }
+}
+
 // ── TRU Agents (platform owner only) ────────────────────────────────────────
 // Every one of these answers `null` or `[]` when the Worker refuses, exactly as
 // adminLeaders() does above. A team lead who types the route sees an empty
