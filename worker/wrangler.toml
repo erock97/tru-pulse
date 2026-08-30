@@ -34,6 +34,8 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1", "12,24,36,48 * * * *"]
 #   SUPABASE_SERVICE_ROLE_KEY    service-role key (bypasses RLS — server-side only)
 #   FUB_ENC_KEY                  base64 of a 32-byte AES-GCM key (encrypts tenant FUB keys)
 #   ADMIN_TOKEN                  guards /provision + manual /sync
+#   COACH_INGEST_TOKEN           guards POST /coach/weekly-report (Hermes laptop sends)
+#   ZILLOW_TARGETS_INGEST_TOKEN  guards POST /zillow/targets (fub-weekly-reports scraper sends)
 #   FUB_SYSTEM_KEY               FUB system key (X-System-Key) — REQUIRED to register webhooks
 #   FUB_SYSTEM_NAME              FUB system name (X-System) — set to 'TruPulse' so Pulse's
 #                                webhooks don't collide with the Terrason dashboard's system.

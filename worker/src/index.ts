@@ -11,6 +11,7 @@ import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
+import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
@@ -222,6 +223,12 @@ export default {
     // Coach tab reads the stored result through /data/coach/brief above).
     const briefIngestResponse = await handleCoachBriefIngest(req, env, url, cors, database);
     if (briefIngestResponse) return briefIngestResponse;
+
+    // The fub-weekly-reports scraper's Zillow target/pacing numbers land here
+    // (its own secret; the admin-only targets dashboard reads the stored
+    // result through GET /admin/targets below).
+    const zillowTargetsResponse = await handleZillowTargetsIngest(req, env, url, cors, database);
+    if (zillowTargetsResponse) return zillowTargetsResponse;
 
     // The phone relay. Outside /admin/ because Tasker carries no login session,
     // and on its own token rather than ADMIN_TOKEN: this one sits in a phone
@@ -875,6 +882,31 @@ export default {
             return { id: l.id, name: l.name, email: l.email, team_name: t?.name ?? '—', org_name: o?.name ?? '—' };
           });
         return json({ leaders: out });
+      }
+
+      // The targets dashboard's one read. Only a handful of teams, so return
+      // everything up front and let the UI filter client-side — same choice
+      // as /admin/leaders above. A team with no snapshot rows yet (scraper
+      // not revived, or slug not seeded) simply has an empty `metrics` array;
+      // that is the correct rendering of "no data", not an error.
+      if (url.pathname === '/admin/targets' && req.method === 'GET') {
+        const [teams, orgs, snapshots] = await Promise.all([
+          database.select('teams', 'select=id,name,org_id&zillow_team_slug=not.is.null'),
+          database.select('orgs', 'select=id,name'),
+          database.select('zillow_targets_snapshot', 'select=*'),
+        ]);
+        const orgById = new Map(orgs.map((o: any) => [o.id, o]));
+        const snapshotsByTeam = new Map<string, any[]>();
+        for (const s of snapshots as any[]) {
+          snapshotsByTeam.set(s.team_id, [...(snapshotsByTeam.get(s.team_id) ?? []), s]);
+        }
+        const out = (teams as any[]).map((t) => ({
+          team_id: t.id,
+          team_name: t.name,
+          org_name: (orgById.get(t.org_id) as any)?.name ?? '—',
+          metrics: snapshotsByTeam.get(t.id) ?? [],
+        }));
+        return json({ teams: out });
       }
 
       // Owner intake — create a brokerage from a FUB key and email each of its
