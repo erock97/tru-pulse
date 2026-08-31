@@ -2,11 +2,9 @@
  * Admin — retainer + per-deal payout, per team.
  *
  * Only a platform owner ever sees this (gated the same way as every other
- * /admin/* screen). The numbers themselves aren't tracked here at all — they
- * come live from TRU Operating System's own database, where Eric already
- * runs this for Terrason Consulting (retainer amounts, rate cards, and the
- * fee-per-closing math). This page is a read-only mirror of that, not a
- * second place to enter or edit any of it.
+ * /admin/* screen). Terrason Consulting's billing used to live in a separate
+ * app (TRU Operating System) — this is that functionality transplanted here:
+ * same tables, same fee-per-closing math, now owned by this database.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -101,7 +99,7 @@ export default function AdminRevenue({
               <span className="dk-eyebrow"><i />Platform owner</span>
               <h1>Team <em>revenue</em>.</h1>
               <p className="dk-sub">
-                Retainer and per-deal payout, per team — mirrored live from TRU Operating System.
+                Retainer and per-deal payout, per team.
                 {result?.status === 'ok' && <>{' '}{teams.length} {teams.length === 1 ? 'team' : 'teams'} tracked.</>}
               </p>
             </div>
@@ -109,13 +107,6 @@ export default function AdminRevenue({
 
           {result === undefined ? (
             <div className="center-wrap"><div className="spinner" /></div>
-          ) : result.status === 'not_configured' ? (
-            <div className="rs-plate dk-table" style={{ padding: 28 }}>
-              <p style={{ margin: 0, color: 'var(--text-60)' }}>
-                Not wired up yet — this page needs a key for TRU Operating System's database,
-                which hasn't been set on the server.
-              </p>
-            </div>
           ) : result.status === 'unavailable' ? (
             <div className="rs-plate dk-table" style={{ padding: 28 }}>
               <p style={{ margin: 0, color: 'var(--text-60)' }}>Couldn't load revenue data.</p>

@@ -738,8 +738,8 @@ export async function adminTargets(): Promise<ZillowTargetTeam[] | null> {
 }
 
 // ── Revenue (platform owner only) ────────────────────────────────────────────
-// Retainer + per-deal payout, read straight out of TRU Operating System's own
-// database — not tracked in TRU HQ. See worker/src/truOsRevenue.ts.
+// Retainer + per-deal payout — ported from TRU Operating System, owned by
+// this database now. See worker/src/revenue.ts.
 
 export interface RevenueDeal {
   id: string;
@@ -763,16 +763,12 @@ export interface RevenueTeam {
 
 export type RevenueResult =
   | { status: 'ok'; teams: RevenueTeam[] }
-  /** The cross-project secret hasn't been set on the Worker yet — distinct
-   *  from "you're not an admin" or a real error, so the page can say so. */
-  | { status: 'not_configured' }
   | { status: 'unavailable' };
 
 export async function adminRevenue(): Promise<RevenueResult> {
   if (isDemo) return { status: 'unavailable' };
   try {
     const res = await workerFetch('/admin/revenue', {});
-    if (res.status === 503) return { status: 'not_configured' };
     if (!res.ok) return { status: 'unavailable' };
     const j = (await res.json()) as { teams?: RevenueTeam[] };
     return { status: 'ok', teams: j.teams ?? [] };
