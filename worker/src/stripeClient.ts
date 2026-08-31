@@ -1,21 +1,29 @@
 // Stripe, called directly. Ported from TRU Operating System's stripe.ts —
-// same account, same discipline. The one difference: the key is a plain
-// wrangler secret here (STRIPE_SECRET_KEY) rather than an Infisical lookup.
+// same account, same discipline, same key resolution: Infisical first (the
+// key lives at /Stripe there — one place Eric rotates without a deploy, one
+// place to look when something 401s), the env var second as a fallback for
+// local runs and the hour after a rotation.
 //
 // Null key means genuinely absent, and every caller must treat that as
 // "cannot act" rather than "act with nothing".
 
 import type { Env } from './env.js';
+import * as infisical from './infisical.js';
 
+export const STRIPE_SECRETS_PATH = '/Stripe';
 const API = 'https://api.stripe.com/v1';
 
-export function getKey(env: Env): string | null {
-  const key = env.STRIPE_SECRET_KEY;
-  return key && !key.includes('xxxx') ? key : null;
+export async function getKey(env: Env): Promise<string | null> {
+  if (infisical.isConfigured(env)) {
+    const fromVault = await infisical.getSecret(env, 'STRIPE_SECRET_KEY', STRIPE_SECRETS_PATH).catch(() => null);
+    if (fromVault) return fromVault;
+  }
+  const fromEnv = env.STRIPE_SECRET_KEY;
+  return fromEnv && !fromEnv.includes('xxxx') ? fromEnv : null;
 }
 
-export function isConfigured(env: Env): boolean {
-  return getKey(env) !== null;
+export async function isConfigured(env: Env): Promise<boolean> {
+  return (await getKey(env)) !== null;
 }
 
 /* Stripe speaks form-encoding, including for nested objects.
@@ -53,8 +61,8 @@ async function call(
   path: string,
   body?: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const key = getKey(env);
-  if (!key) throw new Error('Stripe is not connected — set the STRIPE_SECRET_KEY secret on this worker.');
+  const key = await getKey(env);
+  if (!key) throw new Error('Stripe is not connected — no STRIPE_SECRET_KEY at /Stripe in Infisical, and none on this worker.');
 
   const isGet = method === 'GET';
   const qs = isGet && body ? `?${encode(body).join('&')}` : '';

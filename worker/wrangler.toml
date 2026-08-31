@@ -44,8 +44,10 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1", "12,24,36,48 * * * *"]
 #   RESEND_API_KEY               Resend key (weekly brief + leader invites)
 #   BRIEF_FROM                   weekly Leadership Brief sender — must be @truhq.co
 #   INVITE_FROM                  leader invite sender, e.g. "TRU HQ <hq@truhq.co>"
-#   STRIPE_SECRET_KEY            Stripe secret (the same account TRU OS billed from) —
-#                                admin Revenue invoicing. Unset = invoice actions refuse.
+#   INFISICAL_CLIENT_ID          Infisical Universal Auth machine identity (same one
+#   INFISICAL_CLIENT_SECRET      TRU OS's worker uses) — the Stripe key is read from
+#   INFISICAL_PROJECT_ID         the vault at /Stripe, so it never lives here directly.
+#   STRIPE_SECRET_KEY            fallback only, for local runs; normally unset.
 #   MONEY_FROM                   broker verification + invoice-copy sender, e.g.
 #                                "Terrason Consulting <billing@truhq.co>" — must be
 #                                @truhq.co. Falls back to BRIEF_FROM when unset.

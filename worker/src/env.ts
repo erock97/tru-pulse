@@ -21,9 +21,14 @@ export interface Env {
                                       // query string, so it must buy the day's briefs
                                       // and nothing else. Unset = the relay is closed.
   RESEND_API_KEY?: string;            // Resend — shared by the brief and invite mail
-  STRIPE_SECRET_KEY?: string;         // Stripe (same account TRU OS billed from) — invoice
-                                      // create/send/void on the admin Revenue page. Unset =
-                                      // Stripe actions refuse plainly; reads still work.
+  STRIPE_SECRET_KEY?: string;         // Stripe fallback ONLY — the real key is read from
+                                      // Infisical at /Stripe (see stripeClient.ts). Unset
+                                      // is normal when Infisical is configured.
+  INFISICAL_SITE_URL?: string;        // non-secret; defaults to app.infisical.com
+  INFISICAL_CLIENT_ID?: string;       // Universal Auth machine identity — same identity
+  INFISICAL_CLIENT_SECRET?: string;   // TRU OS's worker uses; read-only on the vault
+  INFISICAL_PROJECT_ID?: string;
+  INFISICAL_ENV?: string;             // non-secret; defaults to 'prod'
   MONEY_FROM?: string;                // broker verification + invoice-copy sender, e.g.
                                       // "Terrason Consulting <billing@truhq.co>". MUST be
                                       // @truhq.co (Resend's only verified domain — anything
