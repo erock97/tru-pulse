@@ -75,6 +75,7 @@ export default function AdminTeams({
         nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
         isAdmin
         onOpenAdmin={() => { window.location.hash = '/admin'; }}
+        onOpenPartnerReporting={() => { window.location.hash = '/admin/targets'; }}
         hideTopbar
       >
         <div className="dk-main">
@@ -88,20 +89,12 @@ export default function AdminTeams({
                 that team's HQ as its leader; the sidebar then carries an exit back here.
               </p>
             </div>
-            <div className="dk-mast-do">
-              <button
-                className="ad-btn"
-                onClick={() => { window.location.hash = '/admin/targets'; }}
-              >
-                Targets
-              </button>
-              <button
-                className="ad-btn"
-                onClick={() => { window.location.hash = '/admin/agents'; }}
-              >
-                Agents
-              </button>
-            </div>
+            <button
+              className="ad-btn"
+              onClick={() => { window.location.hash = '/admin/agents'; }}
+            >
+              Agents
+            </button>
           </header>
 
           <div className="dk-sec">

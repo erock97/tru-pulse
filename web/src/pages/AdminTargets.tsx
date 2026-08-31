@@ -90,21 +90,19 @@ export default function AdminTargets({
         nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
         isAdmin
         onOpenAdmin={() => { window.location.hash = '/admin'; }}
+        onOpenPartnerReporting={() => { window.location.hash = '/admin/targets'; }}
         hideTopbar
       >
         <div className="dk-main">
           <header className="dk-mast">
             <div>
               <span className="dk-eyebrow"><i />Platform owner</span>
-              <h1>Zillow <em>target pacing</em>.</h1>
+              <h1>Partner <em>reporting</em>.</h1>
               <p className="dk-sub">
                 Each team's 6-month and ZHL targets, pulled from their own Zillow report.
                 {teams && <>{' '}{teams.length} {teams.length === 1 ? 'team' : 'teams'} tracked.</>}
               </p>
             </div>
-            <button className="ad-btn" onClick={() => { window.location.hash = '/admin'; }}>
-              Teams
-            </button>
           </header>
 
           {teams === undefined ? (

@@ -62,6 +62,7 @@ export function HqShell({
   nav,
   isAdmin = false,
   onOpenAdmin,
+  onOpenPartnerReporting,
   hideTopbar = false,
   islandSlot,
   mood = 'calm',
@@ -77,6 +78,8 @@ export function HqShell({
   /** Platform owner. Adds an Admin tab that nobody else can see or reach. */
   isAdmin?: boolean;
   onOpenAdmin?: () => void;
+  /** Platform owner only. Cross-team pacing (6-month / ZHL targets). */
+  onOpenPartnerReporting?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -97,6 +100,7 @@ export function HqShell({
   const activeKey = route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
       : route.startsWith('team') ? 'team'
+      : route === 'admin/targets' ? 'partner-reporting'
       : route === 'admin' ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
@@ -135,7 +139,7 @@ export function HqShell({
      first frame. A state round-trip would land a frame late, which is precisely
      long enough to see. */
   useLayoutEffect(() => {
-    const order = ['pulse', 'coach', 'rep', 'team', 'admin'];
+    const order = ['pulse', 'coach', 'rep', 'team', 'partner-reporting', 'admin'];
     const i = order.indexOf(activeKey);
     const el = shellRef.current;
     if (!el || i < 0) return;
@@ -165,6 +169,11 @@ export function HqShell({
   // "invite" used to be scattered across all three.
   if (nav.onOpenTeam) {
     links.push({ key: 'team', label: 'Team', icon: 'roster', onClick: nav.onOpenTeam });
+  }
+  // Cross-team pacing. Platform-owner only — a leader inside one team has no
+  // "every team" view to show.
+  if (isAdmin && onOpenPartnerReporting) {
+    links.push({ key: 'partner-reporting', label: 'Partner Reporting', icon: 'target', onClick: onOpenPartnerReporting });
   }
   // The owner's own tab. Rendered only for a platform owner, and separated
   // from the product tabs because it is about who you are, not what you are
