@@ -22,6 +22,7 @@ import AgentHq from './pages/AgentHq';
 import DeckPreview from './pages/DeckPreview';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
+import ConfirmClosings from './pages/ConfirmClosings';
 import { parseDeckRoute } from './lib/deckRoute';
 
 type Org = { id: string; name: string; plan?: string };
@@ -242,6 +243,15 @@ export default function App() {
       : route === '/lab'
         ? <Lab org={o} onHome={() => go('/')} />
         : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
+
+  // Public broker closing-confirmation link (#/confirm?t=<round_token>) — no
+  // auth, no org. Mounted before every auth check, same as /assess below: the
+  // token in the link IS the credential, and the person holding it has no
+  // account here by design.
+  if (route.startsWith('/confirm')) {
+    const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    return <ConfirmClosings token={q.get('t') ?? ''} />;
+  }
 
   // Public assessment link (#/assess?t=<join_token>) — no auth, no org.
   const assessToken = (() => {

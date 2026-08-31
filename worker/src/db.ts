@@ -51,6 +51,25 @@ export function db(env: Env) {
       });
       if (!res.ok) throw new Error(`update ${table} ${res.status}: ${await res.text()}`);
     },
+    // PostgREST RPC. The 'anon' key variant exists for the broker-verification
+    // functions, which are deliberately anon-executable (the round token is the
+    // credential) — calling them with the anon key means this code path never
+    // carries service-role power it doesn't need.
+    async rpc(fn: string, args: Record<string, unknown>, key: 'service' | 'anon' = 'service'): Promise<any> {
+      const h = key === 'anon'
+        ? { apikey: env.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + env.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }
+        : headers;
+      const res = await fetch(`${base}/rpc/${fn}`, { method: 'POST', headers: h, body: JSON.stringify(args) });
+      const text = await res.text();
+      if (!res.ok) {
+        // PostgREST wraps the function's own raise-exception text in JSON;
+        // surface that message, not the envelope — it is the readable half.
+        let message = `rpc ${fn} ${res.status}`;
+        try { message = (JSON.parse(text) as { message?: string }).message || message; } catch { /* keep default */ }
+        throw new Error(message);
+      }
+      return text ? JSON.parse(text) : null;
+    },
   };
 }
 

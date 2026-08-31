@@ -5971,3 +5971,136 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .brief-agent-card.is-quiet { opacity: 0.62; padding: 16px 20px 14px; }
 .tru-dark .brief-agent-card.is-quiet .brief-agent-name { font-size: 19px; }
 .tru-dark .brief-agent-card.is-quiet:hover { opacity: 0.95; }
+
+/* ============================================================================
+   MONEY CONSOLE — the admin Revenue page (AdminRevenue.tsx + components/revenue)
+   ----------------------------------------------------------------------------
+   Mirrors TRU OS's money panel in THIS shell's vocabulary: same plates, pills
+   and buttons as the rest of the dark app, no new palette. Two colour rules
+   carried over from the original because they encode whose move it is:
+   amber flags are things ERIC still has to do (send the list, price a source),
+   sea flags are things somebody else is sitting on (a round out with a
+   broker). And the big figures are CONFIRMED money — projections only ever
+   appear in small muted type underneath, never added into the number above. */
+.tru-dark .mny-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.tru-dark .mny-bar input[type="month"] {
+  color-scheme: dark; width: auto; padding: 9px 12px; font-size: 14px;
+  background: var(--card-flat); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--r-btn); font-family: inherit;
+}
+.tru-dark .mny-bar .mny-sub { flex-basis: 100%; }
+.tru-dark .mny-sub { color: var(--text-50); font-size: 13px; }
+
+.tru-dark .mny-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.tru-dark .mny-tile {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: 16px 18px;
+}
+.tru-dark .mny-tile .l { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--text-50); }
+.tru-dark .mny-tile .v { font-size: 26px; font-weight: 800; color: var(--text-strong); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.tru-dark .mny-tile.total .v { color: var(--accent-hi); }
+.tru-dark .mny-proj { color: var(--text-50); font-size: 11.5px; margin-top: 3px; font-weight: 500; }
+@media (max-width: 720px) { .tru-dark .mny-tiles { grid-template-columns: 1fr; } }
+
+/* Status pills. Same shape as .pill-strike; the colour names the owner. */
+.tru-dark .mny-flag {
+  display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700;
+  padding: 2px 9px; border-radius: var(--r-pill); border: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.tru-dark .mny-flag.warn { color: var(--accent-hi); background: var(--accent-soft); border-color: var(--accent-line); }
+.tru-dark .mny-flag.sent { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
+.tru-dark .mny-flag.dim { color: var(--text-50); background: var(--panel); }
+
+.tru-dark .mny-table { min-width: 860px; font-size: 14px; }
+.tru-dark .mny-table td.num, .tru-dark .mny-table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tru-dark .mny-team { font-weight: 600; color: var(--text-strong); }
+.tru-dark .mny-caret { display: inline-block; width: 14px; color: var(--text-50); font-size: 11px; }
+.tru-dark .mny-rates { font-size: 12.5px; color: var(--text-60); line-height: 1.5; }
+.tru-dark .mny-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+/* Small action buttons — the .btn CTA is too loud for a table row. */
+.tru-dark .mny-btn {
+  font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px;
+  border-radius: var(--r-btn); border: 1px solid var(--border); cursor: pointer;
+  background: var(--panel); color: var(--text); white-space: nowrap;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.tru-dark .mny-btn:hover { background: var(--hover-fill); border-color: var(--accent-line); }
+.tru-dark .mny-btn:disabled { opacity: 0.5; cursor: default; }
+.tru-dark .mny-btn.yes { border-color: rgba(143, 176, 162, 0.38); color: var(--sea-hi); }
+.tru-dark .mny-btn.no { border-color: rgba(255, 139, 98, 0.4); color: var(--terracotta); }
+.tru-dark .mny-link {
+  background: none; border: 0; padding: 0; font-family: inherit; font-size: 12px;
+  color: var(--text-50); cursor: pointer; text-decoration: underline;
+}
+.tru-dark .mny-link:hover { color: var(--text); }
+.tru-dark .mny-sent-note { font-size: 12px; color: var(--sea-hi); white-space: nowrap; }
+
+/* The drilldown under a team row. */
+.tru-dark .mny-deals-tr > td { background: var(--panel); padding: 4px 14px 14px 28px; }
+.tru-dark .mny-deal {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 10px 2px; border-bottom: 1px solid var(--border-soft); font-size: 13.5px;
+}
+.tru-dark .mny-deal:last-child { border-bottom: 0; }
+.tru-dark .mny-deal-who { font-weight: 600; color: var(--text-strong); }
+.tru-dark .mny-deal-right { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text); }
+.tru-dark .mny-chip {
+  display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 8px;
+  border-radius: var(--r-pill); border: 1px solid var(--border-soft);
+}
+.tru-dark .mny-chip.ok { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
+.tru-dark .mny-chip.wait { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
+.tru-dark .mny-chip.warn { color: var(--accent-hi); background: var(--accent-soft); border-color: var(--accent-line); }
+.tru-dark .mny-chip.dead { color: var(--terracotta); background: rgba(255, 139, 98, 0.12); border-color: rgba(255, 139, 98, 0.4); }
+.tru-dark .mny-chip.moved { color: var(--text-60); background: var(--panel); }
+.tru-dark .mny-chip.locked { color: var(--text-50); background: var(--panel); border-style: dashed; }
+.tru-dark .mny-deal-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; align-items: center; }
+.tru-dark .mny-deal-acts select {
+  font-family: inherit; font-size: 12px; padding: 5px 8px; border-radius: var(--r-btn);
+  background: var(--card-flat); color: var(--text); border: 1px solid var(--border);
+}
+.tru-dark .mny-note { color: var(--text-50); font-size: 13px; padding: 8px 0; }
+.tru-dark .mny-err { color: var(--terracotta); font-size: 13px; padding: 6px 0; }
+
+/* Modals reuse the authoring overlay plates; only the internals are ours. */
+.tru-dark .mny-modal-sub { color: var(--text-60); font-size: 13.5px; margin: 0 0 16px; }
+.tru-dark .mny-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.tru-dark .mny-field label { font-size: 12px; font-weight: 700; color: var(--text-60); text-transform: uppercase; letter-spacing: 0.04em; }
+.tru-dark .mny-field input, .tru-dark .mny-field select {
+  padding: 10px 13px; font-size: 14.5px; width: 100%;
+}
+.tru-dark .mny-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.tru-dark .mny-row .grow { flex: 1; min-width: 140px; }
+.tru-dark .mny-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+.tru-dark .mny-broker-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+.tru-dark .mny-broker-row:last-child { border-bottom: 0; }
+.tru-dark .mny-inv-line {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 13.5px;
+}
+.tru-dark .mny-inv-line:last-child { border-bottom: 0; }
+.tru-dark .mny-inv-total { font-weight: 700; color: var(--text-strong); margin: 10px 0 6px; }
+.tru-dark .mny-ok { color: var(--sea-hi); font-size: 13.5px; padding: 8px 0; }
+
+/* Import: per-file table and the ≤50-row preview. */
+.tru-dark .mny-modes { display: flex; gap: 8px; margin: 0 0 16px; }
+.tru-dark .mny-mode {
+  flex: 1; font-family: inherit; font-size: 13.5px; padding: 10px 14px; cursor: pointer;
+  background: var(--panel); color: var(--text-60); border: 1px solid var(--border-soft);
+  border-radius: var(--r-btn);
+}
+.tru-dark .mny-mode:hover { color: var(--text); border-color: var(--accent-line); }
+.tru-dark .mny-mode.on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-hi); font-weight: 700; }
+.tru-dark .mny-files table, .tru-dark .mny-peek table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tru-dark .mny-files th, .tru-dark .mny-peek th {
+  text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-50); padding: 0 8px 6px 0;
+}
+.tru-dark .mny-files td { padding: 0 8px 8px 0; vertical-align: middle; }
+.tru-dark .mny-peek { max-height: 200px; overflow: auto; border: 1px solid var(--border-soft); border-radius: var(--r-btn); margin-top: 12px; }
+.tru-dark .mny-peek td { padding: 5px 10px; border-bottom: 1px solid var(--border-soft); }
+.tru-dark .mny-peek tr.dup td { color: var(--accent-hi); }
+.tru-dark .mny-report { margin-top: 14px; white-space: pre-wrap; font-size: 13.5px; line-height: 1.6; }

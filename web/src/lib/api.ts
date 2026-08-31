@@ -1487,3 +1487,279 @@ export async function smsOptOut(): Promise<void> {
 export async function smsDecline(): Promise<void> {
   await workerFetch('/sms/decline', { method: 'POST', body: '{}' });
 }
+
+// ── Money (platform owner only) ─────────────────────────────────────────────
+// The Revenue page's console: worker/src/moneyRoutes.ts, mounted inside the
+// /admin gate. Every refusal from those routes is `{ error }` carrying a
+// sentence written FOR the person at the screen ("The retainer must be whole
+// dollars — no cents."), so unlike the older admin wrappers these do not
+// collapse failure to null — the caller needs the sentence, verbatim. Success
+// is `{ ok: true, ...payload }`, refusal `{ ok: false, error }`, consistently
+// across reads and writes.
+
+export type MoneyResult<T> = ({ ok: true } & T) | { ok: false; error: string };
+
+async function moneyCall<T>(path: string, init: RequestInit = {}): Promise<MoneyResult<T>> {
+  // ?demo=1 has no backend and must never look like it billed someone.
+  if (isDemo) return { ok: false, error: 'Billing is not available in the demo.' };
+  try {
+    const res = await workerFetch(path, init);
+    const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+    if (!res.ok) return { ok: false, error: body.error ?? 'Something went wrong.' };
+    // Discriminant last: confirm-deal's own payload carries an `ok` field, and
+    // it must not overwrite the wrapper's.
+    return { ...body, ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the server.' };
+  }
+}
+
+/** Per-team rate row: $rate per closing from this source, first `threshold`
+ *  deals free. Whole dollars everywhere in this section unless a field says
+ *  Cents — the worker refuses decimals with a readable sentence. */
+export interface MoneyRate { source: string; rate: number; threshold: number }
+
+export interface MoneyTeamConfig {
+  id: string;
+  name: string;
+  retainer: number | null;
+  defaultRate: number | null;
+  configured: boolean;
+  rates: MoneyRate[];
+}
+
+/** One team's row in the month overview. All figures are WHOLE DOLLARS.
+ *  `bonus`/`total` are the projection (if every pending deal confirms);
+ *  `bonus_confirmed`/`total_confirmed` are the real number. */
+export interface MoneyOverviewTeam {
+  team: string;
+  configured: boolean;
+  retainer: number;
+  bonus: number;
+  bonus_confirmed: number;
+  total: number;
+  total_confirmed: number;
+  billable: number;
+  unpriced: number;
+  pending: number;
+  confirmed: number;
+  cancelled: number;
+  moved: number;
+}
+
+export interface MoneyOverview {
+  year: number;
+  month: number;
+  earning_year: number;
+  earning_month: number;
+  retainer_total: number;
+  bonus_total: number;
+  bonus_confirmed_total: number;
+  total: number;
+  total_confirmed: number;
+  teams: MoneyOverviewTeam[];
+}
+
+/** A verification round that went out this billing month. */
+export interface MoneyRound { team: string; sentAt: string; closedAt: string | null }
+
+export interface MoneyInvoice {
+  id: string;
+  teamId: string | null;
+  teamName: string | null;
+  closeMonth: string | null;
+  invoiceKind: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  stripeInvoiceId: string | null;
+  hostedInvoiceUrl: string | null;
+  status: string;
+  /** Cents — the one money figure in this section that is. Prefer the label. */
+  amountDueCents: number | null;
+  amountDueLabel: string;
+  dueDate: string | null;
+  paidAt: string | null;
+}
+
+/** One deal in a team's month, whatever became of it. */
+export interface MoneyDeal {
+  id: string;
+  address: string | null;
+  clientName: string | null;
+  agentName: string | null;
+  source: string | null;
+  closeDate: string | null;
+  status: string; // pending | confirmed | cancelled | moved
+  locked: boolean; // already on an invoice
+  dealNumber: number | null;
+  rate: number | null;
+  thresholdDeals: number | null;
+  unpriced: boolean;
+  earned: number | null;
+}
+
+/** The whole page in one call: totals, teams with rate cards, which rounds
+ *  are out, recent invoices. `year`/`month` are the BILLING month. */
+export async function moneyOverview(year: number, month: number): Promise<MoneyResult<{
+  overview: MoneyOverview;
+  teams: MoneyTeamConfig[];
+  rounds: MoneyRound[];
+  invoices: MoneyInvoice[];
+}>> {
+  return moneyCall(`/admin/money/overview?year=${year}&month=${month}`);
+}
+
+/** Every deal in one team's billing month — the drilldown under a row. */
+export async function moneyTeamMonth(team: string, year: number, month: number): Promise<MoneyResult<{
+  team: string;
+  billingMonth: string;
+  earningMonth: string;
+  deals: MoneyDeal[];
+}>> {
+  return moneyCall(`/admin/money/team-month?team=${encodeURIComponent(team)}&year=${year}&month=${month}`);
+}
+
+/** Replace a team's retainer, default rate and FULL rate list. */
+export async function saveTeamPay(input: {
+  teamId: string;
+  retainer: number;
+  defaultRate: number | null;
+  rates: Array<{ source: string; rate: number; thresholdDeals: number }>;
+}): Promise<MoneyResult<{ message: string; teamId: string; rates: number }>> {
+  return moneyCall('/admin/money/team-pay', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Everyone on a team who confirms closings — the send-to-broker recipients. */
+export async function moneyBrokers(team: string): Promise<MoneyResult<{ brokers: Array<{ name: string | null; email: string }> }>> {
+  return moneyCall(`/admin/money/brokers?team=${encodeURIComponent(team)}`);
+}
+
+export async function saveBrokerEmail(team: string, email: string, name?: string): Promise<MoneyResult<{ team: string; email: string }>> {
+  return moneyCall('/admin/money/broker-email', { method: 'POST', body: JSON.stringify({ team, email, name }) });
+}
+
+/** Email a team's brokers their closing list. `toEmail` is a test-send
+ *  override; resending without one carries the SAME link, not a second round. */
+export async function sendBrokerVerification(input: {
+  team: string; year: number; month: number; toEmail?: string;
+}): Promise<MoneyResult<{ team: string; to: string; deals: number; outstanding: number; link: string; messageId: string }>> {
+  return moneyCall('/admin/money/send-verification', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Answer a pending deal from the admin side, same outcomes as the broker page. */
+export async function confirmDealAsAdmin(input: {
+  team: string; year: number; month: number; closingId: string;
+  outcome: 'confirmed' | 'cancelled' | 'moved'; newYear?: number; newMonth?: number;
+}): Promise<MoneyResult<{ ok: boolean; outcome: string; remaining: number; address: string }>> {
+  return moneyCall('/admin/money/confirm-deal', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export interface InvoicePreviewItem {
+  id: string;
+  address: string;
+  agentName: string;
+  closeDate: string | null;
+  source: string | null;
+  /** Cents. Prefer feeLabel. */
+  feeCents: number;
+  feeLabel: string;
+}
+
+/** What an invoice WOULD contain — the confirmed, not-yet-invoiced closings.
+ *  The worker re-reads this server-side before creating anything, so a stale
+ *  preview can inform but never bill. */
+export async function previewTeamInvoice(team: string, year: number, month: number): Promise<MoneyResult<{
+  team: { id: string; name: string };
+  closeMonth: string;
+  preview: { items: InvoicePreviewItem[]; count: number; totalCents: number; totalLabel: string };
+  broker: { email: string; name: string | null } | null;
+}>> {
+  return moneyCall(`/admin/money/preview-team?team=${encodeURIComponent(team)}&year=${year}&month=${month}`);
+}
+
+/** Draft (send:false) or draft-and-send (send:true) the Stripe invoice. */
+export async function invoiceTeam(input: {
+  team: string; year: number; month: number; send: boolean; brokerEmail?: string;
+}): Promise<MoneyResult<{ message: string }>> {
+  return moneyCall('/admin/money/invoice-team', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function sendInvoiceById(invoiceId: string, teamLabel?: string): Promise<MoneyResult<{ message: string }>> {
+  return moneyCall('/admin/money/invoice/send', { method: 'POST', body: JSON.stringify({ invoiceId, teamLabel }) });
+}
+
+export async function voidInvoiceById(invoiceId: string, teamLabel?: string): Promise<MoneyResult<{ message: string }>> {
+  return moneyCall('/admin/money/invoice/void', { method: 'POST', body: JSON.stringify({ invoiceId, teamLabel }) });
+}
+
+/** One batch of closed deals for one team + source. The server skips repeat
+ *  client names and reports them back as `duplicates` rather than erroring. */
+export async function importClosingsBatch(input: {
+  team: string;
+  source: string;
+  deals: Array<{ client_name: string; close_date: string; address?: string; agent_name?: string }>;
+}): Promise<MoneyResult<{
+  team: string;
+  source: string;
+  imported: number;
+  duplicates: Array<{ client_name: string; address: string | null; close_date: string }>;
+}>> {
+  return moneyCall('/admin/money/import', { method: 'POST', body: JSON.stringify(input) });
+}
+
+// ── The broker confirmation page (public — the round token IS the credential) ──
+// Same /public/* path as submitCohortAssessment above: no session, no auth
+// header, just the token. The worker only passes through its known
+// broker-facing refusals ("this link has expired"), so `error` here is always
+// safe to put in front of a broker as-is.
+
+export interface VerifyDeal {
+  id: string;
+  address: string | null;
+  client_name: string | null;
+  source: string | null;
+  close_date: string | null;
+  status: string;
+  locked: boolean;
+}
+
+export interface VerifyListData {
+  team: string;
+  year: number;
+  month: number;
+  closed_at: string | null;
+  deals: VerifyDeal[];
+}
+
+async function publicVerifyCall<T>(action: string, body: Record<string, unknown>): Promise<MoneyResult<T>> {
+  try {
+    const res = await workerFetch(`/public/${action}`, { method: 'POST', body: JSON.stringify(body) });
+    const parsed = (await res.json().catch(() => ({}))) as { data?: T; error?: string };
+    if (!res.ok || parsed.data === undefined || parsed.data === null) {
+      return { ok: false, error: parsed.error ?? 'That link is not valid, or has expired.' };
+    }
+    return { ...parsed.data, ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the server — check your connection and try again.' };
+  }
+}
+
+export async function verifyList(token: string): Promise<MoneyResult<VerifyListData>> {
+  return publicVerifyCall<VerifyListData>('verify-list', { p_token: token });
+}
+
+export async function verifyRespond(
+  token: string,
+  closingId: string,
+  outcome: 'confirmed' | 'cancelled' | 'moved',
+  newYear?: number,
+  newMonth?: number,
+): Promise<MoneyResult<{ id: string; outcome: string; remaining: number; round_closed: boolean }>> {
+  return publicVerifyCall('verify-respond', {
+    p_token: token,
+    p_closing_id: closingId,
+    p_outcome: outcome,
+    p_new_year: newYear ?? null,
+    p_new_month: newMonth ?? null,
+  });
+}

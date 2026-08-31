@@ -15,6 +15,7 @@ import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
 import { fetchRevenue } from './revenue.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
+import { handleMoneyRoutes } from './moneyRoutes.js';
 import { probeActivity } from './automation/probe.js';
 import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
 import { previewCoachBriefs } from './automation/coachBrief.js';
@@ -865,6 +866,23 @@ export default {
           json: (body: unknown, status?: number) => json(body, status),
         });
         if (automationRes) return automationRes;
+      }
+
+      // Money — the admin Revenue page's actions (rate cards, broker
+      // confirmation rounds, deal import, Stripe invoicing). Mounted here so
+      // it inherits the admins check, and refuses impersonated sessions for
+      // the same reason automations does: "you are currently pretending to be
+      // someone else" is exactly the state in which nobody should be billing.
+      if (url.pathname.startsWith('/admin/money/')) {
+        const ownerSess = await readSession(env, readCookie(req));
+        if (ownerSess?.returnSid) {
+          return json({ error: 'not available while acting as a team' }, 409);
+        }
+        const moneyRes = await handleMoneyRoutes(req, env, url, {
+          database,
+          json: (body: unknown, status?: number) => json(body, status),
+        });
+        if (moneyRes) return moneyRes;
       }
 
       if (url.pathname === '/admin/leaders' && req.method === 'GET') {

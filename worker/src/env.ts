@@ -21,6 +21,18 @@ export interface Env {
                                       // query string, so it must buy the day's briefs
                                       // and nothing else. Unset = the relay is closed.
   RESEND_API_KEY?: string;            // Resend — shared by the brief and invite mail
+  STRIPE_SECRET_KEY?: string;         // Stripe fallback ONLY — the real key is read from
+                                      // Infisical at /Stripe (see stripeClient.ts). Unset
+                                      // is normal when Infisical is configured.
+  INFISICAL_SITE_URL?: string;        // non-secret; defaults to app.infisical.com
+  INFISICAL_CLIENT_ID?: string;       // Universal Auth machine identity — same identity
+  INFISICAL_CLIENT_SECRET?: string;   // TRU OS's worker uses; read-only on the vault
+  INFISICAL_PROJECT_ID?: string;
+  INFISICAL_ENV?: string;             // non-secret; defaults to 'prod'
+  MONEY_FROM?: string;                // broker verification + invoice-copy sender, e.g.
+                                      // "Terrason Consulting <billing@truhq.co>". MUST be
+                                      // @truhq.co (Resend's only verified domain — anything
+                                      // else is rejected silently). Falls back to BRIEF_FROM.
   BRIEF_FROM?: string;                // weekly Leadership Brief sender, e.g. "TRU Pulse <pulse@truhq.co>"
   INVITE_FROM?: string;               // leader set-password invites, e.g. "TRU HQ <hq@truhq.co>"
   APPLY_NOTIFY_TO?: string;           // comma-separated recipients for truhq.co/apply submissions

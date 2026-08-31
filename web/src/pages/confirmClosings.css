@@ -1,0 +1,60 @@
+/* The broker closing-confirmation page.
+ *
+ * Deliberately plain and LIGHT: the person opening this is a broker on a phone
+ * between showings, not a user of TRU HQ — no login, no app chrome, no dark
+ * shell. Same standalone-stylesheet pattern as smsConsent.css, scoped under
+ * .confirm-page so none of it can leak into the product.
+ *
+ * Buttons are full-size tap targets and the answer states keep their colour
+ * language from the email flow: green closed, red fell out, teal moved. */
+.confirm-page {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0 16px 64px;
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f6f8;
+  color: #16202e;
+  color-scheme: light;
+  box-sizing: border-box;
+}
+.confirm-page *, .confirm-page *::before, .confirm-page *::after { box-sizing: border-box; }
+
+.confirm-page .cc-wrap { max-width: 640px; margin: 0 auto; }
+.confirm-page header { padding: 28px 0 18px; }
+.confirm-page h1 { font-size: 21px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.confirm-page .cc-sub { color: #5b6b80; font-size: 14px; }
+
+.confirm-page .cc-card {
+  background: #fff; border: 1px solid #e2e6ec; border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.confirm-page .cc-addr { font-weight: 600; }
+.confirm-page .cc-meta { color: #5b6b80; font-size: 13px; margin-top: 2px; }
+.confirm-page .cc-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+
+.confirm-page button {
+  font: inherit; font-size: 14px; padding: 9px 14px; border-radius: 8px;
+  border: 1px solid #cbd3dd; background: #fff; color: #16202e; cursor: pointer;
+}
+.confirm-page button:hover { background: #f2f5f9; }
+.confirm-page button.yes { border-color: #2f855a; color: #2f855a; }
+.confirm-page button.no { border-color: #b23b3b; color: #b23b3b; }
+.confirm-page button:disabled { opacity: 0.5; cursor: default; }
+
+.confirm-page .cc-done { font-size: 14px; font-weight: 600; }
+.confirm-page .cc-done.ok { color: #2f855a; }
+.confirm-page .cc-done.no { color: #b23b3b; }
+.confirm-page .cc-done.moved { color: #1f6f8b; }
+.confirm-page .cc-note { color: #5b6b80; font-size: 13px; margin-top: 6px; }
+
+.confirm-page .cc-banner {
+  background: #fff; border: 1px solid #e2e6ec; border-radius: 12px;
+  padding: 18px; text-align: center; color: #5b6b80;
+}
+.confirm-page .cc-banner.good { border-color: #b7e0c6; background: #f2fbf5; color: #2f855a; }
+
+.confirm-page select {
+  font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid #cbd3dd;
+  background: #fff; color: #16202e;
+}
+.confirm-page footer { color: #8a97a8; font-size: 12px; text-align: center; margin-top: 26px; }
