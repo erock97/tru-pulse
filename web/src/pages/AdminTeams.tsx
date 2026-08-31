@@ -75,7 +75,7 @@ export default function AdminTeams({
         nav={{ onOpenPulse, onOpenCoach, onOpenRep }}
         isAdmin
         onOpenAdmin={() => { window.location.hash = '/admin'; }}
-        onOpenPartnerReporting={() => { window.location.hash = '/admin/targets'; }}
+        onOpenTeamData={() => { window.location.hash = '/admin/targets'; }}
         hideTopbar
       >
         <div className="dk-main">

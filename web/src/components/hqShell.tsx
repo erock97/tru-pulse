@@ -62,7 +62,7 @@ export function HqShell({
   nav,
   isAdmin = false,
   onOpenAdmin,
-  onOpenPartnerReporting,
+  onOpenTeamData,
   hideTopbar = false,
   islandSlot,
   mood = 'calm',
@@ -78,8 +78,9 @@ export function HqShell({
   /** Platform owner. Adds an Admin tab that nobody else can see or reach. */
   isAdmin?: boolean;
   onOpenAdmin?: () => void;
-  /** Platform owner only. Cross-team pacing (6-month / ZHL targets). */
-  onOpenPartnerReporting?: () => void;
+  /** Platform owner only. Cross-team data (6-month / ZHL pacing, and whatever
+   *  else lands in the centralized view later). */
+  onOpenTeamData?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -100,8 +101,10 @@ export function HqShell({
   const activeKey = route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
       : route.startsWith('team') ? 'team'
-      : route === 'admin/targets' ? 'partner-reporting'
-      : route === 'admin' ? 'admin'
+      : route === 'admin/targets' ? 'team-data'
+      // Agents is a sub-screen reached from Admin, not a tab of its own — the
+      // Admin tab stays lit while you're on it.
+      : route === 'admin' || route === 'admin/agents' ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them
@@ -139,7 +142,7 @@ export function HqShell({
      first frame. A state round-trip would land a frame late, which is precisely
      long enough to see. */
   useLayoutEffect(() => {
-    const order = ['pulse', 'coach', 'rep', 'team', 'partner-reporting', 'admin'];
+    const order = ['pulse', 'coach', 'rep', 'team', 'team-data', 'admin'];
     const i = order.indexOf(activeKey);
     const el = shellRef.current;
     if (!el || i < 0) return;
@@ -159,28 +162,24 @@ export function HqShell({
       el.classList.add('tab-moved');
     }
   }, [activeKey]);
-  const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = [
-    { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
-    { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
-    { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
-  ];
-  // Who is on the platform at all. Sits under the three products because it is
-  // the thing you do once, before any of them have anyone in them — and because
-  // "invite" used to be scattered across all three.
-  if (nav.onOpenTeam) {
-    links.push({ key: 'team', label: 'Team', icon: 'roster', onClick: nav.onOpenTeam });
-  }
-  // Cross-team pacing. Platform-owner only — a leader inside one team has no
-  // "every team" view to show.
-  if (isAdmin && onOpenPartnerReporting) {
-    links.push({ key: 'partner-reporting', label: 'Partner Reporting', icon: 'target', onClick: onOpenPartnerReporting });
-  }
-  // The owner's own tab. Rendered only for a platform owner, and separated
-  // from the product tabs because it is about who you are, not what you are
-  // looking at.
-  if (isAdmin && onOpenAdmin) {
-    links.push({ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin });
-  }
+  // A platform owner's OWN login (not yet impersonating anyone) has no team of
+  // its own — Pulse/Coach/Rep have nothing to show until you've picked a team
+  // to act as, so they don't belong here at all. Once you act as a team, this
+  // component isn't even the one rendering (the impersonated team's own pages
+  // render instead), so this branch never fights that view.
+  const links: Array<{ key: string; label: string; icon: string; onClick?: () => void; soon?: boolean }> = isAdmin
+    ? [
+        ...(onOpenAdmin ? [{ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin }] : []),
+        ...(onOpenTeamData ? [{ key: 'team-data', label: 'Team Data', icon: 'target', onClick: onOpenTeamData }] : []),
+      ]
+    : [
+        { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
+        { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
+        { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
+        // Who is on the platform at all. Sits under the three products because
+        // it is the thing you do once, before any of them have anyone in them.
+        ...(nav.onOpenTeam ? [{ key: 'team', label: 'Team', icon: 'roster', onClick: nav.onOpenTeam }] : []),
+      ];
   return (
     <div className="tru-shell" data-tab={activeKey} ref={shellRef}>
       {/* The room. ONE copy of the render, drifting slowly.
@@ -267,6 +266,9 @@ export function HqShell({
             {islandSlot && <><span className="dk-div" />{islandSlot}</>}
             <span className="dk-div" />
             <CommandBar
+              isAdmin={isAdmin}
+              onOpenAdmin={onOpenAdmin}
+              onOpenTeamData={onOpenTeamData}
               onOpenPulse={nav.onOpenPulse}
               onOpenCoach={nav.onOpenCoach}
               onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}

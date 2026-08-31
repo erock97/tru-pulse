@@ -43,8 +43,15 @@ function score(haystack: string, needle: string): number | null {
 }
 
 export function CommandBar({
+  isAdmin, onOpenAdmin, onOpenTeamData,
   onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut,
 }: {
+  /** A platform owner's own login has no Pulse/Coach/Rep of its own — swaps
+   *  the "Go to" group for Admin + Team Data instead of jumping to an empty
+   *  page the sidebar no longer even links to. */
+  isAdmin?: boolean;
+  onOpenAdmin?: () => void;
+  onOpenTeamData?: () => void;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep: () => void;
@@ -110,16 +117,21 @@ export function CommandBar({
   }, [open]);
 
   const all = useMemo<Cmd[]>(() => {
-    const nav: Cmd[] = [
-      { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to', run: onOpenPulse },
-      { id: 'n:coach', label: 'Coach', hint: 'who needs a conversation', group: 'Go to', run: onOpenCoach },
-      { id: 'n:rep', label: 'Rep', hint: 'certification progress', group: 'Go to', run: onOpenRep },
-    ];
-    if (onOpenTeam) nav.push({ id: 'n:team', label: 'Team', hint: 'who is on the platform', group: 'Go to', run: onOpenTeam });
+    const nav: Cmd[] = isAdmin
+      ? [
+          ...(onOpenAdmin ? [{ id: 'n:admin', label: 'Admin', hint: 'act as a team', group: 'Go to' as const, run: onOpenAdmin }] : []),
+          ...(onOpenTeamData ? [{ id: 'n:team-data', label: 'Team Data', hint: 'targets & pacing across every team', group: 'Go to' as const, run: onOpenTeamData }] : []),
+        ]
+      : [
+          { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to' as const, run: onOpenPulse },
+          { id: 'n:coach', label: 'Coach', hint: 'who needs a conversation', group: 'Go to' as const, run: onOpenCoach },
+          { id: 'n:rep', label: 'Rep', hint: 'certification progress', group: 'Go to' as const, run: onOpenRep },
+          ...(onOpenTeam ? [{ id: 'n:team', label: 'Team', hint: 'who is on the platform', group: 'Go to' as const, run: onOpenTeam }] : []),
+        ];
     const actions: Cmd[] = [];
     if (onSignOut) actions.push({ id: 'a:out', label: 'Sign out', group: 'Actions', run: onSignOut });
     return [...nav, ...(people ?? []), ...actions];
-  }, [people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
+  }, [isAdmin, onOpenAdmin, onOpenTeamData, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
 
   const hits = useMemo(() => {
     const needle = q.trim().toLowerCase();
