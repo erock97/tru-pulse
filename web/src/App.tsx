@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
 import AdminAutomations from './pages/AdminAutomations';
 import AdminTargets from './pages/AdminTargets';
+import AdminRevenue from './pages/AdminRevenue';
 import TeamAdmin from './pages/TeamAdmin';
 import PulseLab from './pages/PulseLab';
 import Lab from './pages/Lab';
@@ -190,6 +191,12 @@ export default function App() {
         />
     : adminLeaders && route === '/admin/targets'
       ? <AdminTargets
+          onOpenPulse={() => go('/pulse')}
+          onOpenCoach={() => go('/coach')}
+          onOpenRep={() => go('/rep')}
+        />
+    : adminLeaders && route === '/admin/revenue'
+      ? <AdminRevenue
           onOpenPulse={() => go('/pulse')}
           onOpenCoach={() => go('/coach')}
           onOpenRep={() => go('/rep')}

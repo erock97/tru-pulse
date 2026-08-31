@@ -737,6 +737,50 @@ export async function adminTargets(): Promise<ZillowTargetTeam[] | null> {
   }
 }
 
+// ── Revenue (platform owner only) ────────────────────────────────────────────
+// Retainer + per-deal payout, read straight out of TRU Operating System's own
+// database — not tracked in TRU HQ. See worker/src/truOsRevenue.ts.
+
+export interface RevenueDeal {
+  id: string;
+  agent_name: string | null;
+  address: string | null;
+  source: string | null;
+  close_date: string | null;
+  payout_month: string | null;
+  base_fee: number;
+  earned_fee: number;
+  under_threshold: boolean;
+  status: string;
+}
+
+export interface RevenueTeam {
+  team_id: string;
+  team_name: string;
+  retainer: number;
+  deals: RevenueDeal[];
+}
+
+export type RevenueResult =
+  | { status: 'ok'; teams: RevenueTeam[] }
+  /** The cross-project secret hasn't been set on the Worker yet — distinct
+   *  from "you're not an admin" or a real error, so the page can say so. */
+  | { status: 'not_configured' }
+  | { status: 'unavailable' };
+
+export async function adminRevenue(): Promise<RevenueResult> {
+  if (isDemo) return { status: 'unavailable' };
+  try {
+    const res = await workerFetch('/admin/revenue', {});
+    if (res.status === 503) return { status: 'not_configured' };
+    if (!res.ok) return { status: 'unavailable' };
+    const j = (await res.json()) as { teams?: RevenueTeam[] };
+    return { status: 'ok', teams: j.teams ?? [] };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
+
 // ── TRU Agents (platform owner only) ────────────────────────────────────────
 // Every one of these answers `null` or `[]` when the Worker refuses, exactly as
 // adminLeaders() does above. A team lead who types the route sees an empty

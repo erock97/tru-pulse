@@ -15,6 +15,15 @@ export interface Env {
                                       // fub-weekly-reports scraper's target/pacing
                                       // pushes) — its own secret, same reasoning as
                                       // COACH_INGEST_TOKEN
+  TRU_OS_SUPABASE_URL?: string;        // TRU Operating System's OWN Supabase project
+                                      // (a separate app/database) — where Eric already
+                                      // tracks retainer + per-deal payout settings.
+                                      // GET /admin/revenue reads it directly; this app
+                                      // never writes to it.
+  TRU_OS_SUPABASE_SERVICE_ROLE_KEY?: string; // service-role key for the project above.
+                                      // Read-only use here, but the key itself is full
+                                      // access to that database — guard it like any
+                                      // other service-role key, never log it.
   RELAY_TOKEN?: string;               // guards /relay/queue + /relay/ack — the phone
                                       // relay's own key. Deliberately NOT ADMIN_TOKEN:
                                       // it lives in a Tasker profile and travels in a

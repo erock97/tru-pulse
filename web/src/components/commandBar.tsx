@@ -43,15 +43,16 @@ function score(haystack: string, needle: string): number | null {
 }
 
 export function CommandBar({
-  isAdmin, onOpenAdmin, onOpenTeamData,
+  isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue,
   onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut,
 }: {
   /** A platform owner's own login has no Pulse/Coach/Rep of its own — swaps
-   *  the "Go to" group for Admin + Team Data instead of jumping to an empty
-   *  page the sidebar no longer even links to. */
+   *  the "Go to" group for Admin + Team Data + Revenue instead of jumping to
+   *  an empty page the sidebar no longer even links to. */
   isAdmin?: boolean;
   onOpenAdmin?: () => void;
   onOpenTeamData?: () => void;
+  onOpenRevenue?: () => void;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep: () => void;
@@ -121,6 +122,7 @@ export function CommandBar({
       ? [
           ...(onOpenAdmin ? [{ id: 'n:admin', label: 'Admin', hint: 'act as a team', group: 'Go to' as const, run: onOpenAdmin }] : []),
           ...(onOpenTeamData ? [{ id: 'n:team-data', label: 'Team Data', hint: 'targets & pacing across every team', group: 'Go to' as const, run: onOpenTeamData }] : []),
+          ...(onOpenRevenue ? [{ id: 'n:revenue', label: 'Revenue', hint: 'retainer & per-deal payout', group: 'Go to' as const, run: onOpenRevenue }] : []),
         ]
       : [
           { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to' as const, run: onOpenPulse },
@@ -131,7 +133,7 @@ export function CommandBar({
     const actions: Cmd[] = [];
     if (onSignOut) actions.push({ id: 'a:out', label: 'Sign out', group: 'Actions', run: onSignOut });
     return [...nav, ...(people ?? []), ...actions];
-  }, [isAdmin, onOpenAdmin, onOpenTeamData, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
+  }, [isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
 
   const hits = useMemo(() => {
     const needle = q.trim().toLowerCase();

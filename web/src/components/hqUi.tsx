@@ -160,6 +160,13 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
           <path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none" />
         </svg>
       );
+    case 'money':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.3 2.5-2.3s2.5.8 2.5 2c0 3-5 1.7-5 4.6 0 1.2 1.1 2 2.5 2s2.5-1 2.5-2.3" />
+        </svg>
+      );
     default:
       return null;
   }

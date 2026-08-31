@@ -12,6 +12,7 @@ import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
+import { fetchRevenue } from './truOsRevenue.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { probeActivity } from './automation/probe.js';
@@ -907,6 +908,20 @@ export default {
           metrics: snapshotsByTeam.get(t.id) ?? [],
         }));
         return json({ teams: out });
+      }
+
+      // Retainer + per-deal payout, read straight out of TRU Operating
+      // System's own database (a separate app Eric already uses for this —
+      // see truOsRevenue.ts). 503 if the cross-project secret isn't set yet,
+      // rather than a raw 500 a caller can't tell apart from a real outage.
+      if (url.pathname === '/admin/revenue' && req.method === 'GET') {
+        try {
+          const revenue = await fetchRevenue(env);
+          if (revenue === null) return json({ error: 'revenue source not configured' }, 503);
+          return json({ teams: revenue });
+        } catch (e) {
+          return json({ error: e instanceof Error ? e.message : String(e) }, 502);
+        }
       }
 
       // Owner intake — create a brokerage from a FUB key and email each of its

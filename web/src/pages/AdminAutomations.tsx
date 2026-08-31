@@ -110,6 +110,7 @@ export default function AdminAutomations({
         isAdmin
         onOpenAdmin={() => { window.location.hash = '/admin'; }}
         onOpenTeamData={() => { window.location.hash = '/admin/targets'; }}
+        onOpenRevenue={() => { window.location.hash = '/admin/revenue'; }}
         hideTopbar
       >
         <div className="dk-main">{children}</div>
