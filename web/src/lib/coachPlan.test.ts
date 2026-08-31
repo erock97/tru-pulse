@@ -313,7 +313,7 @@ describe('the count names the contacts', () => {
   // Womack and Vincent Walker with no explanation. The sentence now reconciles
   // the story with its proof by naming who else it happened with.
   const now = new Date('2026-08-25T20:00:00Z');
-  const F = (lead) => ({ lead_name: lead, channel: 'text', occurred_at: '2026-08-20T12:00:00Z', quote: 'q' });
+  const F = (lead: string) => ({ lead_name: lead, channel: 'text', occurred_at: '2026-08-20T12:00:00Z', quote: 'q' });
 
   it('names each contact when the proof spans several', () => {
     expect(record(pat({
