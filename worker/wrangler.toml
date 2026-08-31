@@ -44,6 +44,11 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1", "12,24,36,48 * * * *"]
 #   RESEND_API_KEY               Resend key (weekly brief + leader invites)
 #   BRIEF_FROM                   weekly Leadership Brief sender — must be @truhq.co
 #   INVITE_FROM                  leader invite sender, e.g. "TRU HQ <hq@truhq.co>"
+#   STRIPE_SECRET_KEY            Stripe secret (the same account TRU OS billed from) —
+#                                admin Revenue invoicing. Unset = invoice actions refuse.
+#   MONEY_FROM                   broker verification + invoice-copy sender, e.g.
+#                                "Terrason Consulting <billing@truhq.co>" — must be
+#                                @truhq.co. Falls back to BRIEF_FROM when unset.
 #                                truhq.co is the ONLY domain verified in Resend; any
 #                                other sender domain is rejected SILENTLY.
 

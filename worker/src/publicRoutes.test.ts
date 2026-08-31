@@ -113,3 +113,40 @@ describe('the public agent path', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('the broker confirm actions', () => {
+  it('reach their RPCs with the ANON key, never the service role', async () => {
+    await call('verify-list', { p_token: TOKEN });
+    await call('verify-respond', { p_token: TOKEN, p_closing_id: TOKEN, p_outcome: 'confirmed' });
+    expect(rpcCalls.map((c) => c.fn)).toEqual(['tru_verify_list', 'tru_verify_respond']);
+    for (const c of rpcCalls) {
+      expect(c.args.__auth).toContain('anon-key');
+      expect(c.args.__auth).not.toContain('SERVICE-ROLE');
+    }
+  });
+
+  it('passes through the database\'s KNOWN broker-facing refusals, and only those', async () => {
+    // A known sentence is the broker's UX — "this link has expired" tells them
+    // what to do next, where a generic reply would strand them mid-round.
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response(JSON.stringify({ message: 'this link has expired' }), { status: 400 }),
+    ));
+    let res = await call('verify-list', { p_token: TOKEN });
+    expect(((await res.json()) as any).error).toBe('this link has expired');
+
+    // Anything outside the allowlist still collapses to the generic reply.
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response(JSON.stringify({ message: 'internal: row 42 of closings_v2 missing' }), { status: 400 }),
+    ));
+    res = await call('verify-list', { p_token: TOKEN });
+    expect(((await res.json()) as any).error).toContain('not valid');
+  });
+
+  it('the non-broker actions keep the generic reply even for an allowlisted sentence', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response(JSON.stringify({ message: 'this link has expired' }), { status: 400 }),
+    ));
+    const res = await call('get-agent-home', { p_token: TOKEN });
+    expect(((await res.json()) as any).error).toContain('not valid');
+  });
+});

@@ -21,6 +21,13 @@ export interface Env {
                                       // query string, so it must buy the day's briefs
                                       // and nothing else. Unset = the relay is closed.
   RESEND_API_KEY?: string;            // Resend — shared by the brief and invite mail
+  STRIPE_SECRET_KEY?: string;         // Stripe (same account TRU OS billed from) — invoice
+                                      // create/send/void on the admin Revenue page. Unset =
+                                      // Stripe actions refuse plainly; reads still work.
+  MONEY_FROM?: string;                // broker verification + invoice-copy sender, e.g.
+                                      // "Terrason Consulting <billing@truhq.co>". MUST be
+                                      // @truhq.co (Resend's only verified domain — anything
+                                      // else is rejected silently). Falls back to BRIEF_FROM.
   BRIEF_FROM?: string;                // weekly Leadership Brief sender, e.g. "TRU Pulse <pulse@truhq.co>"
   INVITE_FROM?: string;               // leader set-password invites, e.g. "TRU HQ <hq@truhq.co>"
   APPLY_NOTIFY_TO?: string;           // comma-separated recipients for truhq.co/apply submissions

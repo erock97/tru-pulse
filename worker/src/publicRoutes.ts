@@ -21,6 +21,11 @@ const ALLOWED: Record<string, string[]> = {
   'submit-assessment':    ['p_token', 'p_agent_id', 'p_personal_code', 'p_personal_axes', 'p_business_code', 'p_tallies', 'p_answers'],
   'save-checkin':         ['p_token', 'p_met', 'p_leads', 'p_convos', 'p_win', 'p_focus'],
   'toggle-commitment':    ['p_token', 'p_commitment_id', 'p_done'],
+  // The broker closing-confirmation page (no login; the round token from the
+  // verification email is the credential, and every safety rule — month
+  // binding, closed rounds, invoiced deals — lives inside the functions).
+  'verify-list':          ['p_token'],
+  'verify-respond':       ['p_token', 'p_closing_id', 'p_outcome', 'p_new_year', 'p_new_month'],
 };
 
 /** URL segment → database function name. Kept explicit so a typo can't reach anything. */
@@ -33,7 +38,26 @@ const FN: Record<string, string> = {
   'submit-assessment': 'submit_cohort_assessment',
   'save-checkin': 'agent_save_checkin',
   'toggle-commitment': 'agent_toggle_commitment',
+  'verify-list': 'tru_verify_list',
+  'verify-respond': 'tru_verify_respond',
 };
+
+/* The broker page's refusals are its UX: "this link has expired" and "that
+ * deal has already been invoiced" tell the broker what to do next, and a
+ * generic "not valid" would strand them mid-round. But echoing arbitrary
+ * database text from a token-authorised endpoint can leak whether rows exist,
+ * so only these EXACT known sentences pass through — anything else falls back
+ * to the generic reply. */
+const BROKER_ERROR_ALLOWLIST = new Set([
+  'this link is not valid',
+  'this link has expired',
+  'this list has already been completed',
+  'that deal is not in this list',
+  'that deal has already been invoiced',
+  'which month did it close in?',
+  'outcome must be confirmed, cancelled or moved',
+]);
+const BROKER_ACTIONS = new Set(['verify-list', 'verify-respond']);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -96,7 +120,14 @@ export async function handlePublicRoutes(
 
   if (!res.ok) {
     // Don't echo the database's error text: for a token-authorised endpoint that can
-    // leak whether a token or row exists.
+    // leak whether a token or row exists. The broker confirm actions are the one
+    // exception, and only for their exact known sentences (see the allowlist).
+    if (BROKER_ACTIONS.has(action)) {
+      const raw = await res.text();
+      let message = '';
+      try { message = String((JSON.parse(raw) as { message?: string }).message || ''); } catch { /* generic below */ }
+      if (BROKER_ERROR_ALLOWLIST.has(message)) return json({ error: message }, 400, cors);
+    }
     return json({ error: 'that link is not valid, or has expired' }, 400, cors);
   }
   const text = await res.text();
