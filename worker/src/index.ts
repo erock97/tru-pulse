@@ -898,11 +898,19 @@ export default {
         if (ownerSess?.returnSid) {
           return json({ error: 'not available while acting as a team' }, 409);
         }
-        const contractsRes = await handleContractsRoutes(req, env, url, {
-          userId,
-          database,
-          json: (body: unknown, status?: number) => json(body, status),
-        });
+        // A thrown error must still come back as OUR json (with CORS) — a
+        // naked exception page has no CORS headers, so the browser reports
+        // "could not reach the server" for a request that actually ran.
+        let contractsRes: Response | null = null;
+        try {
+          contractsRes = await handleContractsRoutes(req, env, url, {
+            userId,
+            database,
+            json: (body: unknown, status?: number) => json(body, status),
+          });
+        } catch (e) {
+          return json({ error: e instanceof Error ? e.message : 'something went wrong' }, 500);
+        }
         if (contractsRes) return contractsRes;
       }
 
