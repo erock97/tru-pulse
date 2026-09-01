@@ -167,6 +167,18 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
           <path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.3 2.5-2.3s2.5.8 2.5 2c0 3-5 1.7-5 4.6 0 1.2 1.1 2 2.5 2s2.5-1 2.5-2.3" />
         </svg>
       );
+    // The Contracts tab: a document with a signature line, because the page is
+    // about what gets signed — not a pen (edit already reads as pens) and not
+    // a second sheet-of-lines (roster owns that shape in this sidebar).
+    case 'contract':
+      return (
+        <svg {...common}>
+          <path d="M6 2.5h9l4 4v15H6z" />
+          <path d="M15 2.5v4h4" />
+          <path d="M9 14.8c1.2-2.2 2 1.6 3.1.2s1.6.8 3.4.6" />
+          <path d="M9 18.5h7" />
+        </svg>
+      );
     default:
       return null;
   }

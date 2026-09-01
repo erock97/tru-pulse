@@ -1763,3 +1763,182 @@ export async function verifyRespond(
     p_new_month: newMonth ?? null,
   });
 }
+
+// ── Contracts (platform owner only) ─────────────────────────────────────────
+// The Contracts page's console over TruSign: worker/src/contractsRoutes.ts,
+// mounted inside the /admin gate. Same discipline as the Money wrappers —
+// every refusal is `{ error }` carrying a sentence written FOR the person at
+// the screen (the 409s especially: "Envelope changed — review it again before
+// approving."), so the caller surfaces it verbatim rather than collapsing it
+// to null. The result shape is MoneyResult on purpose: one shape to check,
+// whichever admin console you are in.
+
+async function contractsCall<T>(path: string, init: RequestInit = {}): Promise<MoneyResult<T>> {
+  // ?demo=1 has no backend and must never look like it can reach TruSign.
+  if (isDemo) return { ok: false, error: 'Contracts are not available in the demo.' };
+  try {
+    const res = await workerFetch(path, init);
+    const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+    if (!res.ok) return { ok: false, error: body.error ?? 'Something went wrong.' };
+    // Discriminant last: /prepare's own payload carries an `ok` field, and it
+    // must not overwrite the wrapper's.
+    return { ...body, ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the server.' };
+  }
+}
+
+/** One envelope in TruSign, as the overview lists it.
+ *  status ∈ draft | sent | signed | completed | voided | declined | expired. */
+export interface ContractEnvelope {
+  id: string;
+  title: string;
+  status: string;
+  senderName: string | null;
+  sentAt: string | null;
+  completedAt: string | null;
+  createdAt: string | null;
+  expiresAt: string | null;
+  /** The worker's fingerprint of the envelope's content — approvals are scoped
+   *  to it, so send/void must carry the exact version that was reviewed. */
+  version: string;
+  team: string | null;
+  clientName: string | null;
+  /** Who the contract is currently blocked on. Empty unless out for signature. */
+  waitingOn: Array<{ name: string; email: string }>;
+  /** True when one of those people is Eric. */
+  waitingOnYou: boolean;
+}
+
+/** A prepared draft the worker is holding (30-day TTL). `envelopeId` is null
+ *  only if the TruSign envelope was never created. */
+export interface ContractDraftRecord {
+  id: string;
+  title: string;
+  summary: string;
+  draftText: string;
+  envelopeId: string | null;
+  createdAt: string;
+  state: string;
+  request?: unknown;
+  review?: unknown;
+}
+
+/** The whole tab in one read. The three `requires*` strings are human-readable
+ *  explanations of what credential is missing; null when that side is fine. */
+export interface ContractsOverview {
+  connected: boolean;
+  requires: string | null;
+  envelopes: ContractEnvelope[];
+  drafts: ContractDraftRecord[];
+  keyKind?: 'service' | 'anon';
+  writeConnected: boolean;
+  requiresWrite: string | null;
+  approvalConnected: boolean;
+  requiresApproval: string | null;
+}
+
+/** A signature slot on a template. Fixed name + email means our own side
+ *  (Eric, Adam) — never asked for on the form. */
+export interface ContractTemplateRole {
+  roleKey: string;
+  optional: boolean;
+  label: string;
+  role: string;
+  routingOrder: number;
+  fixedName: string | null;
+  fixedEmail: string | null;
+}
+
+export interface ContractTemplateSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  contractType: string;
+  team: string | null;
+  defaultDurationDays: number | null;
+  roles: ContractTemplateRole[];
+}
+
+export interface ContractTemplateDetail extends ContractTemplateSummary {
+  /** The blanks in the document, deduplicated — one entry per blank name. */
+  placeholders: Array<{ key: string; required: boolean }>;
+}
+
+/** The full review bundle behind one envelope — what approve-and-send is
+ *  approving, straight from TruSign, not from any cached list row. */
+export interface ContractEnvelopeReview extends ContractEnvelope {
+  nativeVersion: string;
+  documents: Array<{ id: string; originalFilename: string; pageCount: number; position: number }>;
+  recipients: Array<{ id: string; name: string; email: string; role: string; routingOrder: number; status: string }>;
+  fields: Array<{
+    id: string; documentId: string; recipientId: string | null;
+    page: number; x: number; y: number; w: number; h: number;
+    type: string; required: boolean;
+  }>;
+}
+
+export interface ContractRecipientInput { name: string; email: string; role: string }
+
+/** With `templateId`, title/terms/draftText are optional — the template IS the
+ *  document. Without one, all three are required and the worker says so. */
+export interface PrepareContractInput {
+  /** Dedupe key: retrying the same submission returns the same draft. */
+  requestId?: string;
+  title?: string;
+  client: string;
+  team?: string | null;
+  contractType: string;
+  templateId?: string | null;
+  durationDays?: number | null;
+  terms?: string;
+  fields?: Record<string, string>;
+  recipients: ContractRecipientInput[];
+  summary: string;
+  draftText?: string;
+}
+
+export async function contractsOverview(): Promise<MoneyResult<ContractsOverview>> {
+  return contractsCall('/admin/contracts/overview');
+}
+
+export async function contractTemplates(): Promise<MoneyResult<{ templates: ContractTemplateSummary[] }>> {
+  return contractsCall('/admin/contracts/templates');
+}
+
+export async function contractTemplate(templateId: string): Promise<MoneyResult<{ template: ContractTemplateDetail }>> {
+  return contractsCall(`/admin/contracts/templates?templateId=${encodeURIComponent(templateId)}`);
+}
+
+export async function contractReview(envelopeId: string): Promise<MoneyResult<{ envelope: ContractEnvelopeReview }>> {
+  return contractsCall(`/admin/contracts/review?envelopeId=${encodeURIComponent(envelopeId)}`);
+}
+
+/** Create a genuine review-only draft envelope in TruSign. Never sends. */
+export async function prepareContractDraft(
+  payload: PrepareContractInput,
+): Promise<MoneyResult<{ id: string; envelope: ContractEnvelopeReview; idempotent?: boolean }>> {
+  return contractsCall('/admin/contracts/prepare', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+/** Record Eric's approval for ONE action on ONE envelope at ONE exact version.
+ *  Returns a one-time token; a 409 means the envelope changed under review. */
+export async function approveContractAction(input: {
+  action: 'send' | 'void'; envelopeId: string; version: string;
+}): Promise<MoneyResult<{ token: string; expiresAt: string }>> {
+  return contractsCall('/admin/contracts/approvals', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Consume the approval and send. A 409 is drift or an already-used token —
+ *  its sentence is written for the screen; show it as-is. */
+export async function sendContract(input: {
+  envelopeId: string; version: string; approvalToken: string;
+}): Promise<MoneyResult<{ message: string }>> {
+  return contractsCall('/admin/contracts/send', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function voidContract(input: {
+  envelopeId: string; version: string; approvalToken: string;
+}): Promise<MoneyResult<{ message: string }>> {
+  return contractsCall('/admin/contracts/void', { method: 'POST', body: JSON.stringify(input) });
+}
