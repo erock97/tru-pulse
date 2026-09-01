@@ -6012,11 +6012,24 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .mny-flag.sent { color: var(--sea-hi); background: var(--sea-soft); border-color: rgba(143, 176, 162, 0.38); }
 .tru-dark .mny-flag.dim { color: var(--text-50); background: var(--panel); }
 
-.tru-dark .mny-table { min-width: 860px; font-size: 14px; }
+.tru-dark .mny-table { width: 100%; min-width: 720px; font-size: 14px; }
+/* NOT sticky, unlike the roster table this plate was borrowed from. The
+   roster's pinned header earns its strip of screen over dozens of scrolling
+   agents; this table is six clients tall, and the pinned bar spent its whole
+   life parked on top of the first row — Costigan was invisible, and the
+   action buttons scrolled under a bar instead of off the screen. */
+.tru-dark .dk-table .mny-table thead th {
+  position: static;
+  background: none;
+  box-shadow: inset 0 -1px 0 var(--border-soft);
+}
 .tru-dark .mny-table td.num, .tru-dark .mny-table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tru-dark .mny-team { font-weight: 600; color: var(--text-strong); }
 .tru-dark .mny-caret { display: inline-block; width: 14px; color: var(--text-50); font-size: 11px; }
-.tru-dark .mny-rates { font-size: 12.5px; color: var(--text-60); line-height: 1.5; }
+/* Capped so the rate card — the only long-text column — wraps instead of
+   shoving Total, Confirmed and the buttons past the right edge of the plate,
+   where overflow-x: clip was quietly eating them on laptop widths. */
+.tru-dark .mny-rates { font-size: 12.5px; color: var(--text-60); line-height: 1.5; max-width: 230px; }
 .tru-dark .mny-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 
 /* Small action buttons — the .btn CTA is too loud for a table row. */
