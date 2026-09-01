@@ -221,7 +221,13 @@ export async function handleContractsRoutes(
       envelopeId: payload.envelopeId,
       version: payload.version,
     });
-    return new Response(ledgerResponse.body, { status: ledgerResponse.status, headers: ledgerResponse.headers });
+    /* Re-emit through the caller's json() rather than passing the Durable
+     * Object's response straight through: the DO's headers carry no CORS,
+     * so the browser refused to READ a perfectly good approval — the token
+     * was issued, the page said "could not reach the server", and the void
+     * never fired. Found live on the first ZZ TEST void. */
+    const issued = await ledgerResponse.json().catch(() => ({ error: 'The approval could not be issued.' }));
+    return json(issued, ledgerResponse.status);
   }
 
   if (path === '/send' && req.method === 'POST') {
