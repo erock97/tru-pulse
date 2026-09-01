@@ -255,6 +255,59 @@ export async function moneyOverview(database: Db, year: number, month: number): 
   return (await database.rpc('tru_money_overview', { p_year: year, p_month: month })) as Record<string, unknown>;
 }
 
+// ── Deleting uploads (feature TRU OS never had) ────────────────────────────
+// A bad upload used to be a Supabase-table-editor job. Two shapes: one deal,
+// or a team's whole month. Both refuse invoiced deals absolutely — a deal an
+// invoice owns is settled money, and deleting it would desync the books from
+// Stripe. Everything else (pending, confirmed, moved, cancelled) may go:
+// the point of a wipe is a clean re-upload.
+
+export async function deleteDeal(database: Db, closingId: string): Promise<{ address: string | null }> {
+  if (!UUID_RE.test(closingId)) throw new Error('Which deal?');
+  const rows = await database.select('closings', `select=id,invoice_id,address,client_name&id=eq.${closingId}`);
+  const row = (rows as { id: string; invoice_id: string | null; address: string | null; client_name: string | null }[])[0];
+  if (!row) throw new Error('That deal is already gone.');
+  if (row.invoice_id) throw new Error('That deal is on an invoice. Void the invoice first if it is genuinely wrong.');
+  await database.del('closings', `id=eq.${closingId}&invoice_id=is.null`);
+  return { address: row.address || row.client_name || null };
+}
+
+/* Clear a team's whole BILLING month of uploads. Translates to the close
+ * month like everything else on this screen. When the wipe leaves the close
+ * month empty, the verification round for it is deleted too — otherwise a
+ * re-upload could never send a fresh broker email ("already sent this
+ * month"), and the old email's link would show a list of nothing. */
+export async function clearMonth(
+  database: Db,
+  { team, year, month }: { team?: string; year?: number; month?: number },
+): Promise<{ team: string; deleted: number; keptInvoiced: number }> {
+  if (!team || !year || !month) throw new Error('Which team and month?');
+  const teamRow = await resolveTeam(database, team);
+  if (!teamRow) throw new Error(`No team called ${team}.`);
+  const close = closeMonthFromBilling(year, month);
+  const first = `${close.yyyyMm}-01`;
+  const nextMonth = close.month === 12 ? `${close.year + 1}-01-01` : `${close.year}-${String(close.month + 1).padStart(2, '0')}-01`;
+  const monthFilter = `team_id=eq.${teamRow.id}&close_date=gte.${first}&close_date=lt.${nextMonth}`;
+
+  const deleted = await database.del('closings', `${monthFilter}&invoice_id=is.null`);
+  const kept = await database.select('closings', `select=id&${monthFilter}`);
+
+  if ((kept as unknown[]).length === 0) {
+    try {
+      await database.del(
+        'closing_verifications',
+        `team_id=eq.${teamRow.id}&close_year=eq.${close.year}&close_month=eq.${close.month}`,
+      );
+    } catch (err) {
+      // The deals are gone either way; a leftover round only blocks the next
+      // send, which will say so plainly.
+      console.warn('[money] clearMonth: round cleanup failed:', (err as Error).message);
+    }
+  }
+
+  return { team: teamRow.name, deleted: (deleted as unknown[]).length, keptInvoiced: (kept as unknown[]).length };
+}
+
 // ── The rate card (feature TRU OS never had: editing an existing team) ─────
 
 /* Whole dollars, and nothing that would land in the ledger as a surprise.

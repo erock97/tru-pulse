@@ -196,3 +196,85 @@ describe('saveTeamPay', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe('deleteDeal', () => {
+  it('refuses a deal an invoice owns — settled money never desyncs from Stripe', async () => {
+    const deletes: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (init?.method === 'DELETE') { deletes.push(url); return ok([]); }
+      if (url.includes('/rest/v1/closings')) {
+        return ok([{ id: 'd1', invoice_id: 'inv-1', address: '1 Main St', client_name: 'Buyer' }]);
+      }
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    const env = baseEnv();
+    const { deleteDeal } = await import('./money.js');
+    await expect(deleteDeal(db(env), '11111111-2222-3333-4444-555555555555')).rejects.toThrow(/on an invoice/);
+    expect(deletes).toHaveLength(0);
+  });
+
+  it('deletes an uninvoiced deal, filtering on invoice_id even at the delete', async () => {
+    let deleted = '';
+    vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (init?.method === 'DELETE') { deleted = url; return ok([{ id: 'd1' }]); }
+      if (url.includes('/rest/v1/closings')) {
+        return ok([{ id: 'd1', invoice_id: null, address: '1 Main St', client_name: 'Buyer' }]);
+      }
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    const env = baseEnv();
+    const { deleteDeal } = await import('./money.js');
+    const gone = await deleteDeal(db(env), '11111111-2222-3333-4444-555555555555');
+    expect(gone.address).toBe('1 Main St');
+    expect(deleted).toContain('invoice_id=is.null');
+  });
+});
+
+describe('clearMonth', () => {
+  it('wipes only the uninvoiced deals of the CLOSE month, and reports what stayed', async () => {
+    let deletedQuery = '';
+    let roundDeleted = '';
+    vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/rest/v1/teams')) return ok([{ id: TEAM, name: 'Costigan' }]);
+      if (url.includes('/rest/v1/closings') && init?.method === 'DELETE') {
+        deletedQuery = url;
+        return ok([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+      }
+      if (url.includes('/rest/v1/closings')) return ok([{ id: 'kept-1' }]); // one invoiced survivor
+      if (url.includes('/rest/v1/closing_verifications') && init?.method === 'DELETE') { roundDeleted = url; return ok([]); }
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    const env = baseEnv();
+    const { clearMonth } = await import('./money.js');
+    // Billing August → close month July.
+    const result = await clearMonth(db(env), { team: 'Costigan', year: 2026, month: 8 });
+    expect(result).toEqual({ team: 'Costigan', deleted: 3, keptInvoiced: 1 });
+    expect(deletedQuery).toContain('close_date=gte.2026-07-01');
+    expect(deletedQuery).toContain('close_date=lt.2026-08-01');
+    expect(deletedQuery).toContain('invoice_id=is.null');
+    // An invoiced deal survived, so the verification round must NOT be touched.
+    expect(roundDeleted).toBe('');
+  });
+
+  it('deletes the verification round only when the month ends up empty', async () => {
+    let roundDeleted = '';
+    vi.stubGlobal('fetch', vi.fn(async (input: any, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url;
+      if (url.includes('/rest/v1/teams')) return ok([{ id: TEAM, name: 'Costigan' }]);
+      if (url.includes('/rest/v1/closings') && init?.method === 'DELETE') return ok([{ id: 'a' }]);
+      if (url.includes('/rest/v1/closings')) return ok([]);
+      if (url.includes('/rest/v1/closing_verifications') && init?.method === 'DELETE') { roundDeleted = url; return ok([]); }
+      throw new Error(`unexpected fetch: ${url}`);
+    }));
+    const env = baseEnv();
+    const { clearMonth } = await import('./money.js');
+    const result = await clearMonth(db(env), { team: 'Costigan', year: 2026, month: 8 });
+    expect(result.deleted).toBe(1);
+    expect(result.keptInvoiced).toBe(0);
+    expect(roundDeleted).toContain('close_year=eq.2026');
+    expect(roundDeleted).toContain('close_month=eq.7');
+  });
+});
