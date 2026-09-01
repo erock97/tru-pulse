@@ -6052,9 +6052,15 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 
 /* The drilldown under a team row. */
 .tru-dark .mny-deals-tr > td { background: var(--panel); padding: 4px 14px 14px 28px; }
+/* Two columns when the plate is wide enough, filling top-to-bottom — a
+   72-deal month reads as two shorter lists instead of one endless scroll.
+   break-inside keeps a deal's buttons glued to its row across the column
+   break; narrow windows fall back to one column on their own. */
+.tru-dark .mny-deal-cols { columns: 2 380px; column-gap: 32px; }
 .tru-dark .mny-deal {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
   padding: 10px 2px; border-bottom: 1px solid var(--border-soft); font-size: 13.5px;
+  break-inside: avoid;
 }
 .tru-dark .mny-deal:last-child { border-bottom: 0; }
 .tru-dark .mny-deal-who { font-weight: 600; color: var(--text-strong); }
