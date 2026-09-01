@@ -46,7 +46,7 @@ export const BLANK_LABELS: Record<string, string> = {
   effective_date: 'Start date',
   client_state: 'Their state',
   client_type: 'Their entity type',
-  agent_count: 'How many agents they have',
+  deal_threshold: 'Free deals each month before the per-deal fee starts (blank = paid from deal one)',
   monthly_retainer: 'Monthly retainer',
   client_signer_title: 'Their title, e.g. Broker of Record',
   lead_sources: 'Lead sources they receive',
