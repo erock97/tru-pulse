@@ -16,6 +16,11 @@ import { fetchRevenue } from './revenue.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { handleMoneyRoutes } from './moneyRoutes.js';
+import { handleContractsRoutes } from './contractsRoutes.js';
+
+// The contract-approval Durable Object must be exported from the entry module
+// for the binding in wrangler.toml to resolve.
+export { ContractApprovalLedger } from './contractApprovalLedger.js';
 import { probeActivity } from './automation/probe.js';
 import { previewAllBriefs, runDueAutomations } from './automation/runner.js';
 import { previewCoachBriefs } from './automation/coachBrief.js';
@@ -883,6 +888,22 @@ export default {
           json: (body: unknown, status?: number) => json(body, status),
         });
         if (moneyRes) return moneyRes;
+      }
+
+      // Contracts — the TruSign control panel (templates, drafts, review,
+      // and the approval-gated send/void). Same impersonation refusal as
+      // money: signing paperwork while acting as a team is exactly wrong.
+      if (url.pathname.startsWith('/admin/contracts/')) {
+        const ownerSess = await readSession(env, readCookie(req));
+        if (ownerSess?.returnSid) {
+          return json({ error: 'not available while acting as a team' }, 409);
+        }
+        const contractsRes = await handleContractsRoutes(req, env, url, {
+          userId,
+          database,
+          json: (body: unknown, status?: number) => json(body, status),
+        });
+        if (contractsRes) return contractsRes;
       }
 
       if (url.pathname === '/admin/leaders' && req.method === 'GET') {
