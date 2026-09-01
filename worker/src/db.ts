@@ -51,6 +51,17 @@ export function db(env: Env) {
       });
       if (!res.ok) throw new Error(`update ${table} ${res.status}: ${await res.text()}`);
     },
+    // DELETE with the rows returned, so the caller can say exactly what went.
+    // PostgREST refuses an unfiltered delete by design — never call this
+    // without a query.
+    async del(table: string, query: string): Promise<any[]> {
+      const res = await fetch(`${base}/${table}?${query}`, {
+        method: 'DELETE',
+        headers: { ...headers, Prefer: 'return=representation' },
+      });
+      if (!res.ok) throw new Error(`delete ${table} ${res.status}: ${await res.text()}`);
+      return res.json();
+    },
     // PostgREST RPC. The 'anon' key variant exists for the broker-verification
     // functions, which are deliberately anon-executable (the round token is the
     // credential) — calling them with the anon key means this code path never

@@ -155,6 +155,25 @@ export async function handleMoneyRoutes(
       );
     }
 
+    if (path === '/delete-deal' && req.method === 'POST') {
+      const gone = await money.deleteDeal(database, String(body!.closingId || ''));
+      return json({ message: `Deleted${gone.address ? ` ${gone.address}` : ''}.` });
+    }
+
+    if (path === '/clear-month' && req.method === 'POST') {
+      const result = await money.clearMonth(database, {
+        team: String(body!.team || ''),
+        year: Number(body!.year),
+        month: Number(body!.month),
+      });
+      return json({
+        message:
+          `Cleared ${result.deleted} deal${result.deleted === 1 ? '' : 's'} for ${result.team}.` +
+          (result.keptInvoiced ? ` ${result.keptInvoiced} stayed — already on an invoice.` : ''),
+        ...result,
+      });
+    }
+
     if (path === '/import' && req.method === 'POST') {
       const result = await importClosings(database, {
         team: String(body!.team || ''),

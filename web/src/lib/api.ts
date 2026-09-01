@@ -1707,6 +1707,21 @@ export async function importClosingsBatch(input: {
   return moneyCall('/admin/money/import', { method: 'POST', body: JSON.stringify(input) });
 }
 
+/** Delete one uploaded deal. The server refuses a deal an invoice owns. */
+export async function deleteDeal(closingId: string): Promise<MoneyResult<{ message: string }>> {
+  return moneyCall('/admin/money/delete-deal', { method: 'POST', body: JSON.stringify({ closingId }) });
+}
+
+/** Wipe a team's whole billing month of uploads (invoiced deals stay). */
+export async function clearMonth(team: string, year: number, month: number): Promise<MoneyResult<{
+  message: string;
+  team: string;
+  deleted: number;
+  keptInvoiced: number;
+}>> {
+  return moneyCall('/admin/money/clear-month', { method: 'POST', body: JSON.stringify({ team, year, month }) });
+}
+
 // ── The broker confirmation page (public — the round token IS the credential) ──
 // Same /public/* path as submitCohortAssessment above: no session, no auth
 // header, just the token. The worker only passes through its known

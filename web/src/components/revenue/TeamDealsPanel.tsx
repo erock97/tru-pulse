@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { confirmDealAsAdmin, moneyTeamMonth, type MoneyDeal } from '../../lib/api';
+import { clearMonth, confirmDealAsAdmin, deleteDeal, moneyTeamMonth, type MoneyDeal } from '../../lib/api';
 import { money, monthOptions } from '../../lib/moneyFormat';
 
 /* Status → chip class + wording. Pending is not here on purpose: its wording
@@ -77,6 +77,39 @@ export function TeamDealsPanel({
     const newMonth = Number(parts[1]);
     if (!newYear || !newMonth) { setNote('Pick the month it actually closed.'); return; }
     void answer(deal, 'moved', { newYear, newMonth });
+  }
+
+  /* Deleting is for fixing a bad upload, and it is permanent — so each path
+   * names exactly what is about to go before anything goes. Invoiced deals
+   * are refused server-side either way. */
+  async function removeDeal(d: MoneyDeal) {
+    const label = d.address || d.clientName || 'this deal';
+    if (!window.confirm(`Delete ${label}? This cannot be undone — re-upload it if it was real.`)) return;
+    setBusyId(d.id);
+    setNote('');
+    const r = await deleteDeal(d.id);
+    setBusyId(null);
+    if (!r.ok) setNote(r.error);
+    await load(true);
+    if (r.ok) onChanged();
+  }
+
+  async function clearAll() {
+    const wipeable = (deals ?? []).filter((d) => !d.locked).length;
+    const invoiced = (deals ?? []).length - wipeable;
+    if (!window.confirm(
+      `Clear ALL ${wipeable} uploaded deal${wipeable === 1 ? '' : 's'} for ${team} this month?` +
+      (invoiced ? ` ${invoiced} invoiced deal${invoiced === 1 ? '' : 's'} will stay.` : '') +
+      ' This cannot be undone — the point is a clean re-upload.',
+    )) return;
+    setBusyId('clear-all');
+    setNote('');
+    const r = await clearMonth(team, year, month);
+    setBusyId(null);
+    if (!r.ok) setNote(r.error);
+    else setNote(r.message);
+    await load(true);
+    if (r.ok) onChanged();
   }
 
   if (error) return <div className="mny-err">Couldn't read these deals — {error}</div>;
@@ -144,10 +177,27 @@ export function TeamDealsPanel({
                 </div>
               )}
             </div>
-            <div className="mny-deal-right">{right}</div>
+            <div className="mny-deal-right">
+              {right}
+              {!d.locked && (
+                <div>
+                  <button type="button" className="mny-link" disabled={busyId !== null}
+                    onClick={() => void removeDeal(d)} aria-label={`Delete ${who}`}>
+                    delete
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         );
       })}
+      {deals.some((d) => !d.locked) && (
+        <div className="mny-deal-acts" style={{ marginTop: 10 }}>
+          <button type="button" className="mny-btn no" disabled={busyId !== null} onClick={() => void clearAll()}>
+            {busyId === 'clear-all' ? 'Clearing…' : 'Clear this month'}
+          </button>
+        </div>
+      )}
       {note && <div className="mny-err">{note}</div>}
     </div>
   );
