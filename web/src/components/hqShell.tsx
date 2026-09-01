@@ -64,6 +64,7 @@ export function HqShell({
   onOpenAdmin,
   onOpenTeamData,
   onOpenRevenue,
+  onOpenContracts,
   hideTopbar = false,
   islandSlot,
   mood = 'calm',
@@ -84,6 +85,8 @@ export function HqShell({
   onOpenTeamData?: () => void;
   /** Platform owner only. Retainer + per-deal payout, mirrored from TRU OS. */
   onOpenRevenue?: () => void;
+  /** Platform owner only. The TruSign contracts console, mirrored from TRU OS. */
+  onOpenContracts?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -106,6 +109,7 @@ export function HqShell({
       : route.startsWith('team') ? 'team'
       : route === 'admin/targets' ? 'team-data'
       : route === 'admin/revenue' ? 'revenue'
+      : route === 'admin/contracts' ? 'contracts'
       // Agents is a sub-screen reached from Admin, not a tab of its own — the
       // Admin tab stays lit while you're on it.
       : route === 'admin' || route === 'admin/agents' ? 'admin'
@@ -146,7 +150,7 @@ export function HqShell({
      first frame. A state round-trip would land a frame late, which is precisely
      long enough to see. */
   useLayoutEffect(() => {
-    const order = ['pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue'];
+    const order = ['pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue', 'contracts'];
     const i = order.indexOf(activeKey);
     const el = shellRef.current;
     if (!el || i < 0) return;
@@ -176,6 +180,7 @@ export function HqShell({
         ...(onOpenAdmin ? [{ key: 'admin', label: 'Admin', icon: 'shield', onClick: onOpenAdmin }] : []),
         ...(onOpenTeamData ? [{ key: 'team-data', label: 'Team Data', icon: 'target', onClick: onOpenTeamData }] : []),
         ...(onOpenRevenue ? [{ key: 'revenue', label: 'Revenue', icon: 'money', onClick: onOpenRevenue }] : []),
+        ...(onOpenContracts ? [{ key: 'contracts', label: 'Contracts', icon: 'contract', onClick: onOpenContracts }] : []),
       ]
     : [
         { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
@@ -275,6 +280,7 @@ export function HqShell({
               onOpenAdmin={onOpenAdmin}
               onOpenTeamData={onOpenTeamData}
               onOpenRevenue={onOpenRevenue}
+              onOpenContracts={onOpenContracts}
               onOpenPulse={nav.onOpenPulse}
               onOpenCoach={nav.onOpenCoach}
               onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}

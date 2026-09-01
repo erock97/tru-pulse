@@ -62,3 +62,16 @@ crons = ["*/30 * * * *", "5 7 * * *", "0 13 * * 1", "12,24,36,48 * * * *"]
 [[kv_namespaces]]
 binding = "SESSIONS"
 id = "d491e3cf16db4de8bd10addcab4d1a3f"
+
+# One-time contract approval tokens (send/void). One Durable Object per actor;
+# a token is scoped to one action + envelope + version, spends once inside a
+# storage transaction, and dies after five minutes. Ported from TRU OS -
+# without this binding the Contracts tab's SEND and VOID stay locked.
+[durable_objects]
+bindings = [
+  { name = "CONTRACT_APPROVALS", class_name = "ContractApprovalLedger" },
+]
+
+[[migrations]]
+tag = "v1-contract-approvals"
+new_sqlite_classes = ["ContractApprovalLedger"]

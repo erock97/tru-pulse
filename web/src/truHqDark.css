@@ -6118,3 +6118,101 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .mny-peek td { padding: 5px 10px; border-bottom: 1px solid var(--border-soft); }
 .tru-dark .mny-peek tr.dup td { color: var(--accent-hi); }
 .tru-dark .mny-report { margin-top: 14px; white-space: pre-wrap; font-size: 13.5px; line-height: 1.6; }
+
+/* ============================================================
+   ADMIN — CONTRACTS (the TruSign console)
+   Built on the money console's register: mny-btn / mny-chip /
+   mny-field / mny-modes are reused as-is, and only what has no
+   equivalent there gets a ctr- class of its own.
+   ============================================================ */
+
+/* Envelope and draft rows — the rp-mgmt-row shape, kept separate because
+   these rows carry a stacked meta line plus a foldable contract body. */
+.tru-dark .ctr-panel { padding: 20px 22px; margin-bottom: 18px; }
+.tru-dark .ctr-panel-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.tru-dark .ctr-panel-head h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-strong); }
+.tru-dark .ctr-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  padding: 13px 0; border-bottom: 1px solid var(--border-soft);
+}
+.tru-dark .ctr-row:last-of-type { border-bottom: none; }
+.tru-dark .ctr-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 320px; }
+.tru-dark .ctr-title { font-weight: 600; font-size: 14.5px; color: var(--text-strong); }
+.tru-dark .ctr-client { font-weight: 500; color: var(--text-60); }
+.tru-dark .ctr-row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* Buttons and links share a row; the anchor needs the button's box. */
+.tru-dark .ctr-row-actions a.mny-btn { text-decoration: none; display: inline-block; }
+
+/* A draft's status chip. Sea text on a neutral ground: not the sea FILL that
+   means "done" (mny-chip.ok), and not amber, which here means "out and
+   waiting on someone". */
+.tru-dark .mny-chip.ctr-draft { color: var(--sea-hi); background: var(--panel); border-color: rgba(143, 176, 162, 0.38); }
+
+/* The honest-state banners: read works but send/void aren't armed. Amber
+   because it is waiting on Eric (a credential), not on a broker. */
+.tru-dark .ctr-banner {
+  color: var(--accent-hi); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: var(--r-btn); padding: 10px 14px; font-size: 13.5px; margin-bottom: 14px;
+}
+
+/* Not-connected empty state: which exact credential is missing, quoted. */
+.tru-dark .ctr-empty { padding: 28px; }
+.tru-dark .ctr-requires { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border-soft); font-size: 13px; }
+.tru-dark .ctr-requires .k {
+  flex: 0 0 130px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-50); padding-top: 2px;
+}
+.tru-dark .ctr-requires .v { color: var(--text-60); }
+
+/* Find + team filter in the mny-bar. */
+.tru-dark .ctr-find { flex: 1 1 220px; min-width: 180px; padding: 9px 12px; font-size: 14px; }
+.tru-dark .ctr-team-filter { padding: 9px 12px; font-size: 13.5px; }
+
+/* A prepared draft's full text, folded by default. pre keeps the contract's
+   own line breaks; the scroll container keeps a 40-page body from eating
+   the list. */
+.tru-dark .ctr-drafttext {
+  white-space: pre-wrap; font-family: inherit; font-size: 12.5px; line-height: 1.6;
+  color: var(--text-60); background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-btn); padding: 12px 14px; margin: 8px 0 0;
+  max-height: 260px; overflow: auto;
+}
+
+/* The wizard's template picker — a stack of choose-one cards. */
+.tru-dark .ctr-templates { display: grid; gap: 8px; margin-bottom: 16px; }
+.tru-dark .ctr-template {
+  display: flex; flex-direction: column; gap: 3px; text-align: left; cursor: pointer;
+  font-family: inherit; padding: 11px 13px; background: var(--panel);
+  border: 1px solid var(--border-soft); border-radius: var(--r-btn); color: var(--text);
+}
+.tru-dark .ctr-template:hover { border-color: var(--accent-line); }
+.tru-dark .ctr-template.on { background: var(--accent-soft); border-color: var(--accent-line); }
+.tru-dark .ctr-template-name { font-weight: 700; font-size: 14px; color: var(--text-strong); }
+.tru-dark .ctr-template-desc { font-size: 12.5px; color: var(--text-60); }
+.tru-dark .ctr-template-meta { font-size: 11.5px; color: var(--text-50); }
+
+/* Section labels inside the wizard (per-role blocks, "the blanks"). */
+.tru-dark .ctr-role-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-50); margin: 12px 0 6px;
+}
+.tru-dark .ctr-blanks { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 560px) { .tru-dark .ctr-blanks { grid-template-columns: 1fr; } }
+.tru-dark .ctr-blanks select { padding: 9px 12px; font-size: 14px; }
+
+/* The final-confirmation warning before approve, and the never-auto-sends
+   note in the wizard. Amber: it is the reader's move, and irreversible. */
+.tru-dark .ctr-warn {
+  color: var(--accent-hi); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: var(--r-btn); padding: 10px 14px; font-size: 13px; margin: 14px 0 0;
+}
+
+/* The review table in the send/void panel. */
+.tru-dark .ctr-review { display: flex; flex-direction: column; }
+.tru-dark .ctr-review-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 13.5px; }
+.tru-dark .ctr-review-row:last-child { border-bottom: none; }
+.tru-dark .ctr-review-row .k {
+  flex: 0 0 130px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-50); padding-top: 2px;
+}
+.tru-dark .ctr-review-row .v { color: var(--text); min-width: 0; }

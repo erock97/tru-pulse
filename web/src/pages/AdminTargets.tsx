@@ -92,6 +92,7 @@ export default function AdminTargets({
         onOpenAdmin={() => { window.location.hash = '/admin'; }}
         onOpenTeamData={() => { window.location.hash = '/admin/targets'; }}
         onOpenRevenue={() => { window.location.hash = '/admin/revenue'; }}
+        onOpenContracts={() => { window.location.hash = '/admin/contracts'; }}
         hideTopbar
       >
         <div className="dk-main">

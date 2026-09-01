@@ -1,5 +1,10 @@
 export interface Env {
-  SESSIONS: KVNamespace;              // server-side login sessions; see wrangler.toml
+  SESSIONS: KVNamespace;              // server-side login sessions; see wrangler.toml.
+                                      // Also holds contract:draft:* (prepared contract
+                                      // drafts, 30-day TTL) and prl:* (public rate limits).
+  CONTRACT_APPROVALS: DurableObjectNamespace; // one-time contract approval tokens
+                                      // (ContractApprovalLedger) — send/void stay locked
+                                      // without it
   AUTH_COOKIE_DOMAIN?: string;        // defaults to host-only on api.truhq.co
   APP_ORIGIN?: string;                // where OAuth returns the user; defaults to app.truhq.co
   SUPABASE_URL: string;
@@ -29,6 +34,15 @@ export interface Env {
   INFISICAL_CLIENT_SECRET?: string;   // TRU OS's worker uses; read-only on the vault
   INFISICAL_PROJECT_ID?: string;
   INFISICAL_ENV?: string;             // non-secret; defaults to 'prod'
+  // TruSign (Contracts) — all optional as env vars: each resolves via
+  // Infisical (/TruSign, /Contracts) when unset, so normally NONE of these
+  // need to be worker secrets.
+  TRUSIGN_SUPABASE_URL?: string;      // TruSign's OWN Supabase project ref
+  TRUSIGN_SUPABASE_SERVICE_KEY?: string; // service_role, used SELECT-only (RLS trap: anon reads as zero rows)
+  TRUSIGN_SUPABASE_ANON_KEY?: string; // fallback only — triggers the honest not-connected path
+  TRUSIGN_JARVIS_M2M_KEY?: string;    // the single write credential, sent as X-Jarvis-Key
+  TRUSIGN_APP_URL?: string;           // non-secret; defaults to https://trusign.pages.dev
+  ERIC_SIGNING_EMAILS?: string;       // comma list; drives the "waiting on you" flag
   MONEY_FROM?: string;                // broker verification + invoice-copy sender, e.g.
                                       // "Terrason Consulting <billing@truhq.co>". MUST be
                                       // @truhq.co (Resend's only verified domain — anything

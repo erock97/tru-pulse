@@ -43,16 +43,17 @@ function score(haystack: string, needle: string): number | null {
 }
 
 export function CommandBar({
-  isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue,
+  isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts,
   onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut,
 }: {
   /** A platform owner's own login has no Pulse/Coach/Rep of its own — swaps
-   *  the "Go to" group for Admin + Team Data + Revenue instead of jumping to
-   *  an empty page the sidebar no longer even links to. */
+   *  the "Go to" group for Admin + Team Data + Revenue + Contracts instead of
+   *  jumping to an empty page the sidebar no longer even links to. */
   isAdmin?: boolean;
   onOpenAdmin?: () => void;
   onOpenTeamData?: () => void;
   onOpenRevenue?: () => void;
+  onOpenContracts?: () => void;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep: () => void;
@@ -123,6 +124,7 @@ export function CommandBar({
           ...(onOpenAdmin ? [{ id: 'n:admin', label: 'Admin', hint: 'act as a team', group: 'Go to' as const, run: onOpenAdmin }] : []),
           ...(onOpenTeamData ? [{ id: 'n:team-data', label: 'Team Data', hint: 'targets & pacing across every team', group: 'Go to' as const, run: onOpenTeamData }] : []),
           ...(onOpenRevenue ? [{ id: 'n:revenue', label: 'Revenue', hint: 'retainer & per-deal payout', group: 'Go to' as const, run: onOpenRevenue }] : []),
+          ...(onOpenContracts ? [{ id: 'n:contracts', label: 'Contracts', hint: 'TruSign envelopes — review, send, void', group: 'Go to' as const, run: onOpenContracts }] : []),
         ]
       : [
           { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to' as const, run: onOpenPulse },
@@ -133,7 +135,7 @@ export function CommandBar({
     const actions: Cmd[] = [];
     if (onSignOut) actions.push({ id: 'a:out', label: 'Sign out', group: 'Actions', run: onSignOut });
     return [...nav, ...(people ?? []), ...actions];
-  }, [isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
+  }, [isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
 
   const hits = useMemo(() => {
     const needle = q.trim().toLowerCase();
