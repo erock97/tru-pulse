@@ -6077,6 +6077,7 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .mny-note { color: var(--text-50); font-size: 13px; padding: 8px 0; }
 .tru-dark .mny-err { color: var(--terracotta); font-size: 13px; padding: 6px 0; }
+.tru-dark .mny-warn { color: var(--accent-hi); font-size: 13px; padding: 6px 0; }
 
 /* Modals reuse the authoring overlay plates; only the internals are ours. */
 .tru-dark .mny-modal-sub { color: var(--text-60); font-size: 13.5px; margin: 0 0 16px; }

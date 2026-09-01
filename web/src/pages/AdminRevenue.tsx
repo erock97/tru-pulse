@@ -333,7 +333,7 @@ export default function AdminRevenue({
         )}
         {importOpen && data && (
           <ImportClosingsModal
-            teams={data.teams.map((t) => t.name)}
+            teams={data.teams}
             onClose={() => setImportOpen(false)}
             onImported={refreshQuiet}
           />
