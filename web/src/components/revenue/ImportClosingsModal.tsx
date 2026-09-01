@@ -7,21 +7,27 @@
  * back.
  *
  * Files: several at once, each keeping its own team + source (an actual
- * account distinction, not a formatting one), but ONE column mapping built
- * from the first file's headers — a batch of files is exports of the same
- * report. Each file is its own write, run one at a time and stopped on the
- * first failure, so a failure partway leaves an honest, ordered account of
- * what actually saved instead of an interleaved one.
+ * account distinction, not a formatting one). Column mapping is guessed PER
+ * HEADER LAYOUT, not once for the batch — the TRU OS importer applied the
+ * first file's mapping to every file, and a second file with its columns in
+ * a different order quietly wrote addresses into the wrong field or dropped
+ * them. Files sharing a layout share one mapping editor; a file with its own
+ * layout gets its own. Each file is its own write, run one at a time and
+ * stopped on the first failure, so a failure partway leaves an honest,
+ * ordered account of what actually saved instead of an interleaved one.
  *
- * The server refuses a repeated client name per team — two of the same
- * address is fine, two of the same client cannot exist — and reports the
- * skips back rather than erroring, so "already on the books" is a warning
- * line here, not a failure.
+ * Duplicates, the rule (Eric's, verbatim in spirit): the same client on two
+ * different addresses is fine, the same address under two names is fine
+ * (buyer and seller) — the same client AND the same address is a duplicate.
+ * The server enforces it (treating a blank address as "can't tell", which
+ * skips rather than double-bills) and reports skips back as "already on the
+ * books". The "(repeat)" flag in the preview follows the same rule, so a
+ * legitimate buyer/seller pair no longer cries wolf.
  */
 
 import { useMemo, useState, type ChangeEvent } from 'react';
 
-import { importClosingsBatch } from '../../lib/api';
+import { importClosingsBatch, type MoneyTeamConfig } from '../../lib/api';
 import { dealsFromRows, guessColumn, parseCSV, type ColumnMapping } from '../../lib/csv';
 import { KNOWN_SOURCES } from './RateCardEditor';
 
@@ -41,13 +47,35 @@ const MAP_FIELDS: Array<{ key: keyof ColumnMapping; label: string }> = [
   { key: 'agent', label: 'Agent (optional)' },
 ];
 
+/* Two files "share a layout" when their headers match, case-insensitively.
+ * The signature is what a mapping is keyed by. */
+const sigOf = (headers: string[]) => headers.map((h) => h.trim().toLowerCase()).join('');
+
+const guessAll = (headers: string[]): ColumnMapping => ({
+  client: guessColumn(headers, 'client'),
+  address: guessColumn(headers, 'address'),
+  date: guessColumn(headers, 'date'),
+  agent: guessColumn(headers, 'agent'),
+});
+
 interface TypedRow { address: string; client: string; date: string }
 const emptyTyped = (): TypedRow => ({ address: '', client: '', date: '' });
+
+/* Does this team's rate card price this source? Matched the way the ledger
+ * matches (trimmed, case-insensitive); a team with a default rate prices
+ * everything. Null = can't tell (unknown team), which warns nobody. */
+function sourceIsPriced(team: MoneyTeamConfig | undefined, source: string): boolean | null {
+  if (!team) return null;
+  if (team.defaultRate !== null) return true;
+  const want = source.trim().toLowerCase();
+  if (!want) return null;
+  return team.rates.some((r) => r.source.trim().toLowerCase() === want);
+}
 
 export function ImportClosingsModal({
   teams, onClose, onImported,
 }: {
-  teams: string[];
+  teams: MoneyTeamConfig[];
   onClose: () => void;
   /** Quiet overview refresh once anything actually saved. */
   onImported: () => void;
@@ -58,11 +86,14 @@ export function ImportClosingsModal({
   const [topTeam, setTopTeam] = useState('');
   const [topSource, setTopSource] = useState('');
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [mapping, setMapping] = useState<ColumnMapping>(EMPTY_MAPPING);
+  const [mappings, setMappings] = useState<Record<string, ColumnMapping>>({});
   const [typedRows, setTypedRows] = useState<TypedRow[]>([emptyTyped()]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [report, setReport] = useState<string[] | null>(null);
+
+  const teamNames = teams.map((t) => t.name);
+  const teamByName = useMemo(() => new Map(teams.map((t) => [t.name, t])), [teams]);
 
   const setFile = (i: number, patch: Partial<FileEntry>) =>
     setFiles((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
@@ -85,39 +116,82 @@ export function ImportClosingsModal({
       return;
     }
     setFiles(good);
-    // Mapping is guessed from the FIRST file and applied to every file.
-    setMapping({
-      client: guessColumn(good[0].headers, 'client'),
-      address: guessColumn(good[0].headers, 'address'),
-      date: guessColumn(good[0].headers, 'date'),
-      agent: guessColumn(good[0].headers, 'agent'),
-    });
+    // One guessed mapping per distinct header layout.
+    const next: Record<string, ColumnMapping> = {};
+    for (const f of good) {
+      const sig = sigOf(f.headers);
+      if (!next[sig]) next[sig] = guessAll(f.headers);
+    }
+    setMappings(next);
     if (bad) setError(`${bad} file${bad === 1 ? ' had' : 's had'} no readable rows and ${bad === 1 ? 'was' : 'were'} skipped.`);
   }
 
   const perFile = useMemo(
-    () => files.map((f) => ({ file: f, ...dealsFromRows(f.rows, mapping) })),
-    [files, mapping],
+    () => files.map((f) => ({ file: f, ...dealsFromRows(f.rows, mappings[sigOf(f.headers)] ?? EMPTY_MAPPING) })),
+    [files, mappings],
   );
 
-  // Same-batch repeated client names, flagged before anything is saved — the
-  // server would skip them anyway, but seeing "(repeat)" here is what catches
-  // the same export dropped in twice.
+  /* The distinct header layouts in this batch, each with the files it covers —
+   * one mapping editor per layout. Almost always exactly one. */
+  const layouts = useMemo(() => {
+    const out: Array<{ sig: string; headers: string[]; fileNames: string[] }> = [];
+    for (const f of files) {
+      const sig = sigOf(f.headers);
+      const hit = out.find((l) => l.sig === sig);
+      if (hit) hit.fileNames.push(f.name);
+      else out.push({ sig, headers: f.headers, fileNames: [f.name] });
+    }
+    return out;
+  }, [files]);
+
+  // Same-batch duplicates, flagged before anything is saved, by the REAL
+  // rule: same client + same close month + the same address (a blank address
+  // on either side can't rule a match out, so it counts as one — mirroring
+  // the server, which would rather skip than double-bill).
   const previewRows = useMemo(() => {
-    const seen = new Set<string>();
-    const dupes = new Set<string>();
     const rows: Array<{ file: string; client: string; address: string; date: string; dup: boolean }> = [];
     for (const p of perFile) {
       for (const d of p.deals) {
-        const k = d.client_name.toLowerCase();
-        if (seen.has(k)) dupes.add(k);
-        seen.add(k);
         rows.push({ file: p.file.name, client: d.client_name, address: d.address, date: d.close_date, dup: false });
       }
     }
-    for (const r of rows) r.dup = dupes.has(r.client.toLowerCase());
-    return { rows, dupeCount: dupes.size };
+    let dupCount = 0;
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = i + 1; j < rows.length; j++) {
+        const a = rows[i]; const b = rows[j];
+        if (a.client.trim().toLowerCase() !== b.client.trim().toLowerCase()) continue;
+        if (a.date.slice(0, 7) !== b.date.slice(0, 7)) continue;
+        const aa = a.address.trim().toLowerCase(); const ba = b.address.trim().toLowerCase();
+        if (aa && ba && aa !== ba) continue; // same client, different addresses — two real deals
+        if (!a.dup) { a.dup = true; dupCount++; }
+        if (!b.dup) { b.dup = true; dupCount++; }
+      }
+    }
+    return { rows, dupCount };
   }, [perFile]);
+
+  /* An unpriced source is the quiet way a month under-bills: the deals land,
+   * show "no rate set", and earn $0 until someone notices. Said HERE, at
+   * import time, instead. */
+  const sourceWarnings = useMemo(() => {
+    const pairs = mode === 'file'
+      ? files.map((f) => ({ team: f.team, source: f.source }))
+      : [{ team: topTeam, source: topSource }];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const p of pairs) {
+      if (!p.team || !p.source.trim()) continue;
+      const k = `${p.team}${p.source.trim().toLowerCase()}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      if (sourceIsPriced(teamByName.get(p.team), p.source) === false) {
+        out.push(
+          `${p.team}'s rate card has no rate for "${p.source.trim()}" — these deals will import, show as unpriced, and earn $0 until that source is on the card (Edit rates).`,
+        );
+      }
+    }
+    return out;
+  }, [mode, files, topTeam, topSource, teamByName]);
 
   const problemCount = perFile.reduce((s, p) => s + p.problems.length, 0);
 
@@ -148,7 +222,10 @@ export function ImportClosingsModal({
       }
       savedAny = savedAny || r.imported > 0;
       let line = `${p.file.name}: saved ${r.imported} for ${r.team} (${r.source}).`;
-      if (r.duplicates.length) line += ` Skipped ${r.duplicates.length} — already on the books.`;
+      if (r.duplicates.length) {
+        const names = r.duplicates.slice(0, 5).map((d) => d.client_name).join(', ');
+        line += ` Skipped ${r.duplicates.length} — already on the books (${names}${r.duplicates.length > 5 ? ', …' : ''}).`;
+      }
       if (p.problems.length) line += ` ${p.problems.length} unreadable row${p.problems.length === 1 ? '' : 's'}.`;
       lines.push(line);
     }
@@ -188,7 +265,7 @@ export function ImportClosingsModal({
     ? (files.length
       ? [
         `${previewRows.rows.length} deal${previewRows.rows.length === 1 ? '' : 's'} ready across ${files.length} file${files.length === 1 ? '' : 's'}`,
-        previewRows.dupeCount ? `${previewRows.dupeCount} repeated client name${previewRows.dupeCount === 1 ? '' : 's'}` : '',
+        previewRows.dupCount ? `${previewRows.dupCount} duplicate${previewRows.dupCount === 1 ? '' : 's'} (same client + address)` : '',
         problemCount ? `${problemCount} unreadable row${problemCount === 1 ? '' : 's'}` : '',
       ].filter(Boolean).join(' · ')
       : '')
@@ -218,7 +295,7 @@ export function ImportClosingsModal({
             <label>Team</label>
             <select value={topTeam} onChange={(e) => setTopTeam(e.target.value)}>
               <option value="">Choose a team…</option>
-              {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+              {teamNames.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="grow mny-field">
@@ -261,7 +338,7 @@ export function ImportClosingsModal({
                           <td>
                             <select value={f.team} onChange={(e) => setFile(i, { team: e.target.value })}>
                               <option value="">Choose…</option>
-                              {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+                              {teamNames.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
                           </td>
                           <td>
@@ -280,25 +357,35 @@ export function ImportClosingsModal({
                   </table>
                 </div>
 
-                <p className="mny-sub" style={{ margin: '14px 0 6px' }}>
-                  Match your columns — shared across every file
-                </p>
-                <div className="mny-row">
-                  {MAP_FIELDS.map(({ key, label }) => (
-                    <div className="grow mny-field" key={key}>
-                      <label>{label}</label>
-                      <select
-                        value={mapping[key] === null ? '' : String(mapping[key])}
-                        onChange={(e) => setMapping((m) => ({ ...m, [key]: e.target.value === '' ? null : Number(e.target.value) }))}
-                      >
-                        <option value="">— none —</option>
-                        {files[0].headers.map((h, i) => (
-                          <option key={i} value={i}>{h || `Column ${i + 1}`}</option>
-                        ))}
-                      </select>
+                {layouts.map((layout) => (
+                  <div key={layout.sig}>
+                    <p className="mny-sub" style={{ margin: '14px 0 6px' }}>
+                      {layouts.length === 1
+                        ? 'Match your columns — shared across every file'
+                        : `Match the columns for ${layout.fileNames.join(', ')} (different layout)`}
+                    </p>
+                    <div className="mny-row">
+                      {MAP_FIELDS.map(({ key, label }) => (
+                        <div className="grow mny-field" key={key}>
+                          <label>{label}</label>
+                          <select
+                            value={mappings[layout.sig]?.[key] === null || mappings[layout.sig]?.[key] === undefined
+                              ? '' : String(mappings[layout.sig][key])}
+                            onChange={(e) => setMappings((m) => ({
+                              ...m,
+                              [layout.sig]: { ...(m[layout.sig] ?? EMPTY_MAPPING), [key]: e.target.value === '' ? null : Number(e.target.value) },
+                            }))}
+                          >
+                            <option value="">— none —</option>
+                            {layout.headers.map((h, i) => (
+                              <option key={i} value={i}>{h || `Column ${i + 1}`}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
 
                 <div className="mny-peek">
                   <table>
@@ -309,7 +396,7 @@ export function ImportClosingsModal({
                       {previewRows.rows.slice(0, 50).map((r, i) => (
                         <tr key={i} className={r.dup ? 'dup' : ''}>
                           <td>{r.file}</td>
-                          <td>{r.client}{r.dup ? ' (repeat)' : ''}</td>
+                          <td>{r.client}{r.dup ? ' (duplicate)' : ''}</td>
                           <td>{r.address}</td>
                           <td>{r.date}</td>
                         </tr>
@@ -353,6 +440,7 @@ export function ImportClosingsModal({
           </>
         )}
 
+        {sourceWarnings.map((w) => <div className="mny-warn" key={w}>{w}</div>)}
         {error && <div className="mny-err">{error}</div>}
         {report && (
           <div className="mny-report">
