@@ -120,6 +120,7 @@ export function TeamDealsPanel({
 
   return (
     <div>
+      <div className="mny-deal-cols">
       {deals.map((d) => {
         const who = d.address || d.clientName || '—';
         const sub = [
@@ -191,6 +192,7 @@ export function TeamDealsPanel({
           </div>
         );
       })}
+      </div>
       {deals.some((d) => !d.locked) && (
         <div className="mny-deal-acts" style={{ marginTop: 10 }}>
           <button type="button" className="mny-btn no" disabled={busyId !== null} onClick={() => void clearAll()}>
