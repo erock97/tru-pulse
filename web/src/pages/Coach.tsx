@@ -8,6 +8,7 @@ import { useReveal } from '../hqHooks';
 import {
   loadRoster, teamMix, loadProfile, loadGoalBundle, createGoal, GOAL_DEFAULTS,
   loadCheckinBundle, loadOpenCommitments, saveStructuredCheckin,
+  loadMeetingPrep, setMeetingPrepStatus,
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
@@ -15,7 +16,7 @@ import {
   ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
   type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
   type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
-  type CommitmentReview, type CommitmentStatus, type MetStatus,
+  type CommitmentReview, type CommitmentStatus, type MetStatus, type MeetingPrep,
 } from '../lib/coachData';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
 import { Strip } from '../components/rosterViz';
@@ -826,6 +827,7 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
   const [commitments, setCommitments] = useState<Commitment[]>([]);
   const [checkins, setCheckins] = useState<CheckinBundle[]>([]);
   const [openCommitments, setOpenCommitments] = useState<CheckinItem[]>([]);
+  const [prep, setPrep] = useState<MeetingPrep | null>(null);
   const [writeErr, setWriteErr] = useState<string | null>(null);
 
   // Remember where the leader was in THIS agent's sheet. Restoring on mount is
@@ -880,15 +882,17 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
         // loadCheckinBundle (Block 4a/4b) enriches each checkins row with its
         // structured children (checkin_items + checkin_leader) so Past 1:1s can
         // render the richer detail without a second round-trip per row.
-        const [p, ci, oc] = await Promise.all([
+        const [p, ci, oc, mp] = await Promise.all([
           loadProfile(agent.id),
           loadCheckinBundle(agent.id),
           loadOpenCommitments(agent.id),
+          loadMeetingPrep(agent.id),
         ]);
         if (!live) return;
         setProfile(p);
         setCheckins(ci);
         setOpenCommitments(oc);
+        setPrep(mp);
         try {
           const gb = await loadGoalBundle(agent.id, agent.teamId);
           if (!live) return;
@@ -977,6 +981,11 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
         agent={agent}
         checkins={checkins}
         openCommitments={openCommitments}
+        prep={prep}
+        onPrepHandled={(id, status) => {
+          setPrep(null);
+          void setMeetingPrepStatus(id, status);
+        }}
         onLogged={(bundle, reviews) => {
           setCheckins((prev) => [bundle, ...applyReviewsToCheckins(prev, reviews, bundle.id)]);
           setOpenCommitments((prev) => {
@@ -1083,11 +1092,16 @@ function MultiAddGroup({
 }
 
 function RunOneOnOneSheet({
-  agent, checkins, openCommitments, onLogged,
+  agent, checkins, openCommitments, prep, onPrepHandled, onLogged,
 }: {
   agent: RosterAgent;
   checkins: CheckinBundle[];
   openCommitments: CheckinItem[];
+  /** The Fathom notetaker's distilled notes for the latest recorded meeting
+   *  with this agent, if one is waiting — offered as a pre-fill, never saved
+   *  on its own. Leader-only data (carries a suggested private note). */
+  prep: MeetingPrep | null;
+  onPrepHandled: (id: string, status: 'applied' | 'dismissed') => void;
   onLogged: (bundle: CheckinBundle, reviews: CommitmentReview[]) => void;
 }) {
   const first = firstName(agent.name);
@@ -1149,6 +1163,30 @@ function RunOneOnOneSheet({
   function setReview(itemId: string, status: CommitmentStatus) {
     update({ reviews: { ...draft.reviews, [itemId]: status } });
   }
+  // Merge the notetaker's distilled notes into the in-progress draft. Additive
+  // and de-duplicated: anything the leader already typed stays; the private
+  // note appends rather than replaces. The 1:1 is still only saved by "Log
+  // this 1:1" — Apply touches the draft and nothing else.
+  function applyPrep() {
+    if (!prep?.distilled) return;
+    const d = prep.distilled;
+    const haveWins = new Set(draft.wins.map((w) => w.trim().toLowerCase()));
+    const haveCommits = new Set(draft.commitments.map((c) => c.trim().toLowerCase()));
+    const pn = d.privateNote.trim();
+    const meetingDate = prep.meetingStart ? prep.meetingStart.slice(0, 10) : '';
+    update({
+      wins: [...draft.wins, ...d.wins.filter((w) => !haveWins.has(w.trim().toLowerCase()))],
+      commitments: [...draft.commitments, ...d.commitments.filter((c) => !haveCommits.has(c.trim().toLowerCase()))],
+      privateNote: pn
+        ? (draft.privateNote.trim() ? `${draft.privateNote.trim()}\n${pn}` : pn)
+        : draft.privateNote,
+      // Date the 1:1 the day the meeting actually happened (never the future).
+      ...(meetingDate && meetingDate <= todayISODate() ? { date: meetingDate } : {}),
+      met: 'yes',
+    });
+    onPrepHandled(prep.id, 'applied');
+  }
+
   function addWin(t: string) { const s = t.trim(); if (s) update({ wins: [...draft.wins, s] }); }
   function removeWin(i: number) { update({ wins: draft.wins.filter((_, idx) => idx !== i) }); }
   function addCommit(t: string) { const s = t.trim(); if (s) update({ commitments: [...draft.commitments, s] }); }
@@ -1321,6 +1359,56 @@ function RunOneOnOneSheet({
               {flag && <span className="ad-saved">{flag}</span>}
             </div>
           </div>
+
+          {/* Notes from the recorded meeting (Fathom), offered as a pre-fill.
+              Apply merges into the draft below — nothing is logged until the
+              leader presses "Log this 1:1", same as always. */}
+          {prep && (
+            <div className="ro-prep">
+              <div className="ro-prep-head">
+                <span className="ro-prep-title">
+                  Meeting notes ready
+                  {prep.meetingStart
+                    ? ` · ${new Date(prep.meetingStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+                    : ''}
+                </span>
+                <button
+                  type="button" className="btn btn-ghost btn-sm ro-prep-btn"
+                  onClick={() => onPrepHandled(prep.id, 'dismissed')}
+                >
+                  Dismiss
+                </button>
+                {prep.distilled && (
+                  <button type="button" className="btn btn-primary btn-sm ro-prep-btn" onClick={applyPrep}>
+                    Fill the form
+                  </button>
+                )}
+              </div>
+              {prep.distilled ? (
+                <div className="ro-prep-body">
+                  {prep.distilled.wins.map((w, i) => (
+                    <p key={`w${i}`} className="ro-prep-line"><b>Win</b> {w}</p>
+                  ))}
+                  {prep.distilled.commitments.map((c, i) => (
+                    <p key={`c${i}`} className="ro-prep-line"><b>Commit</b> {c}</p>
+                  ))}
+                  {prep.distilled.privateNote && (
+                    <p className="ro-prep-line ro-prep-private"><b>Private</b> {prep.distilled.privateNote}</p>
+                  )}
+                  {prep.distilled.wins.length === 0 && prep.distilled.commitments.length === 0 && !prep.distilled.privateNote && (
+                    <p className="ro-prep-line">Nothing concrete surfaced in this recording.</p>
+                  )}
+                </div>
+              ) : prep.distillError ? (
+                <div className="ro-prep-body">
+                  <p className="ro-prep-line">The recording arrived but couldn’t be distilled — the notetaker’s own summary:</p>
+                  {prep.summaryMd && <pre className="ro-prep-raw">{prep.summaryMd}</pre>}
+                </div>
+              ) : (
+                <p className="ro-prep-line">Distilling the recording — give it a minute and reopen {first}.</p>
+              )}
+            </div>
+          )}
 
           <div className="ro-group ro-group-review">
             <div className="ro-group-head">
