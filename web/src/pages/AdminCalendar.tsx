@@ -65,6 +65,136 @@ function whenLabel(iso: string, endIso: string, tz: string | null): string {
   return `${day} · ${t1}–${t2}`;
 }
 
+/** The hours card's edit mode. Local state is a per-day copy of the windows,
+ *  so a half-typed change never touches what is live; nothing saves until
+ *  Save, and Save sends the WHOLE rules object — the worker refuses partial
+ *  merges by design (a half-understood merge is how a lunch break silently
+ *  disappears), so this editor always speaks in complete sentences. */
+function HoursEditor({
+  rules, busy, onSave, onCancel,
+}: {
+  rules: NonNullable<CalendarOverview['rules']>;
+  busy: boolean;
+  onSave: (rules: NonNullable<CalendarOverview['rules']>) => void;
+  onCancel: () => void;
+}) {
+  const [byDay, setByDay] = useState<Array<Array<{ start: string; end: string }>>>(() =>
+    WEEKDAYS.map((_, d) =>
+      (rules.hours ?? [])
+        .filter((h) => Number(h.weekday) === d)
+        .map((h) => ({ start: h.start, end: h.end }))),
+  );
+  const [blocks, setBlocks] = useState(() => (rules.blocks ?? []).map((b) => ({ ...b })));
+  const [nums, setNums] = useState(() => ({
+    slot: String(rules.slot_minutes ?? 30),
+    buffer: String(rules.buffer_minutes ?? 0),
+    // Notice reads in hours out here — nobody thinks in 1440 minutes.
+    noticeHours: String(Math.round((rules.lead_minutes ?? 0) / 60)),
+    horizon: String(rules.horizon_days ?? 30),
+  }));
+
+  function setWindow(d: number, i: number, field: 'start' | 'end', value: string) {
+    setByDay((prev) => prev.map((wins, day) =>
+      day === d ? wins.map((w, j) => (j === i ? { ...w, [field]: value } : w)) : wins));
+  }
+  function addWindow(d: number) {
+    setByDay((prev) => prev.map((wins, day) => (day === d ? [...wins, { start: '09:00', end: '16:00' }] : wins)));
+  }
+  function dropWindow(d: number, i: number) {
+    setByDay((prev) => prev.map((wins, day) => (day === d ? wins.filter((_, j) => j !== i) : wins)));
+  }
+
+  function save() {
+    onSave({
+      // Spread first: anything in the stored rules this editor does not know
+      // about (timezone, a future field) survives the round trip untouched.
+      ...rules,
+      hours: byDay.flatMap((wins, weekday) => wins.map((w) => ({ weekday, start: w.start, end: w.end }))),
+      blocks,
+      slot_minutes: Number(nums.slot),
+      buffer_minutes: Number(nums.buffer),
+      lead_minutes: Math.round(Number(nums.noticeHours) * 60),
+      horizon_days: Number(nums.horizon),
+    });
+  }
+
+  return (
+    <div className="cal-edit">
+      <div className="cal-days" style={{ marginTop: 12 }}>
+        {WEEKDAYS.map((label, d) => (
+          <div key={label} className={`cal-day ${byDay[d].length ? '' : 'off'}`}>
+            <span className="cal-day-n" style={{ paddingTop: 6 }}>{label}</span>
+            <span className="cal-edit-wins">
+              {byDay[d].map((w, i) => (
+                <span key={i} className="cal-edit-win">
+                  <input type="time" value={w.start} aria-label={`${label} window ${i + 1} start`}
+                    onChange={(e) => setWindow(d, i, 'start', e.target.value)} />
+                  –
+                  <input type="time" value={w.end} aria-label={`${label} window ${i + 1} end`}
+                    onChange={(e) => setWindow(d, i, 'end', e.target.value)} />
+                  <button type="button" className="mny-link" aria-label={`Remove ${label} window ${i + 1}`}
+                    onClick={() => dropWindow(d, i)}>×</button>
+                </span>
+              ))}
+              <button type="button" className="mny-link" onClick={() => addWindow(d)}>
+                {byDay[d].length ? '+ add' : '+ make bookable'}
+              </button>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="cal-edit-nums">
+        <label>Slot length (min)
+          <input type="number" min={5} max={480} step={5} value={nums.slot}
+            onChange={(e) => setNums((n) => ({ ...n, slot: e.target.value }))} />
+        </label>
+        <label>Buffer between (min)
+          <input type="number" min={0} max={240} step={5} value={nums.buffer}
+            onChange={(e) => setNums((n) => ({ ...n, buffer: e.target.value }))} />
+        </label>
+        <label>Notice required (hrs)
+          <input type="number" min={0} max={720} value={nums.noticeHours}
+            onChange={(e) => setNums((n) => ({ ...n, noticeHours: e.target.value }))} />
+        </label>
+        <label>Bookable ahead (days)
+          <input type="number" min={1} max={365} value={nums.horizon}
+            onChange={(e) => setNums((n) => ({ ...n, horizon: e.target.value }))} />
+        </label>
+      </div>
+
+      <div className="cal-k" style={{ marginTop: 14 }}>Daily blocks</div>
+      <div className="cal-edit-blocks">
+        {blocks.map((b, i) => (
+          <span key={i} className="cal-edit-win">
+            <input type="text" value={b.label ?? ''} placeholder="lunch" aria-label={`Block ${i + 1} label`}
+              style={{ width: 90 }}
+              onChange={(e) => setBlocks((prev) => prev.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
+            <input type="time" value={b.start} aria-label={`Block ${i + 1} start`}
+              onChange={(e) => setBlocks((prev) => prev.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))} />
+            –
+            <input type="time" value={b.end} aria-label={`Block ${i + 1} end`}
+              onChange={(e) => setBlocks((prev) => prev.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))} />
+            <button type="button" className="mny-link" aria-label={`Remove block ${i + 1}`}
+              onClick={() => setBlocks((prev) => prev.filter((_, j) => j !== i))}>×</button>
+          </span>
+        ))}
+        <button type="button" className="mny-link"
+          onClick={() => setBlocks((prev) => [...prev, { label: '', start: '12:00', end: '12:30' }])}>
+          + add a block
+        </button>
+      </div>
+
+      <div className="cal-type-acts" style={{ marginTop: 14 }}>
+        <button type="button" className="mny-btn yes" disabled={busy} onClick={save}>
+          {busy ? 'Saving…' : 'Save hours'}
+        </button>
+        <button type="button" className="mny-link" onClick={onCancel}>cancel</button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminCalendar({
   onOpenPulse, onOpenCoach, onOpenRep,
 }: {
@@ -78,6 +208,7 @@ export default function AdminCalendar({
   const [note, setNote] = useState('');
   const [copied, setCopied] = useState('');
   const [draft, setDraft] = useState(BLANK);
+  const [editingHours, setEditingHours] = useState(false);
   /* Once the slug has been typed by hand it stops tracking the name.
    * Resets with the draft, so the next new type auto-fills again. */
   const [slugTouched, setSlugTouched] = useState(false);
@@ -277,28 +408,48 @@ export default function AdminCalendar({
 
                 <div className="cal-side">
                   <div className="rs-plate dk-table cal-card">
-                    <div className="cal-k">Your hours</div>
+                    <div className="cal-card-h">
+                      <div className="cal-k">Your hours</div>
+                      {rules && !editingHours && (
+                        <button type="button" className="mny-link" onClick={() => setEditingHours(true)}>edit</button>
+                      )}
+                    </div>
                     <p className="mny-sub" style={{ marginTop: 4 }}>
                       The outer bound — no link can ever offer a time outside these.
+                      {editingHours && ' Live on the page the moment you save.'}
                     </p>
-                    <div className="cal-days">
-                      {days.map(({ label, windows }) => (
-                        <div key={label} className={`cal-day ${windows.length ? '' : 'off'}`}>
-                          <span className="cal-day-n">{label}</span>
-                          <span>{windows.length ? windows.map((w) => `${w.start}–${w.end}`).join(', ') : 'not bookable'}</span>
+                    {editingHours && rules ? (
+                      <HoursEditor
+                        rules={rules}
+                        busy={busy}
+                        onCancel={() => setEditingHours(false)}
+                        onSave={(next) => {
+                          void run(() => saveBookingRules({ rules: next }), 'Hours saved — live now.')
+                            .then((ok) => { if (ok) setEditingHours(false); });
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <div className="cal-days">
+                          {days.map(({ label, windows }) => (
+                            <div key={label} className={`cal-day ${windows.length ? '' : 'off'}`}>
+                              <span className="cal-day-n">{label}</span>
+                              <span>{windows.length ? windows.map((w) => `${w.start}–${w.end}`).join(', ') : 'not bookable'}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="cal-nums">
-                      <span><b>{minutesLabel(rules?.slot_minutes)}</b> slots</span>
-                      <span><b>{minutesLabel(rules?.buffer_minutes)}</b> buffer</span>
-                      <span><b>{minutesLabel(rules?.lead_minutes)}</b> notice</span>
-                      <span><b>{rules?.horizon_days ?? '—'}</b> days ahead</span>
-                    </div>
-                    {(rules?.blocks ?? []).map((b, i) => (
-                      <div key={i} className="mny-note">blocked daily: {b.label || 'block'} {b.start}–{b.end}</div>
-                    ))}
-                    {data.timezone && <div className="mny-note" style={{ marginTop: 6 }}>All times {data.timezone}</div>}
+                        <div className="cal-nums">
+                          <span><b>{minutesLabel(rules?.slot_minutes)}</b> slots</span>
+                          <span><b>{minutesLabel(rules?.buffer_minutes)}</b> buffer</span>
+                          <span><b>{minutesLabel(rules?.lead_minutes)}</b> notice</span>
+                          <span><b>{rules?.horizon_days ?? '—'}</b> days ahead</span>
+                        </div>
+                        {(rules?.blocks ?? []).map((b, i) => (
+                          <div key={i} className="mny-note">blocked daily: {b.label || 'block'} {b.start}–{b.end}</div>
+                        ))}
+                        {data.timezone && <div className="mny-note" style={{ marginTop: 6 }}>All times {data.timezone}</div>}
+                      </>
+                    )}
                   </div>
 
                   <div className="rs-plate dk-table cal-card">
