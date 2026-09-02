@@ -12,6 +12,7 @@ import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
+import { handleFathomIngest } from './fathomIngest.js';
 import { fetchRevenue } from './revenue.js';
 import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
@@ -246,6 +247,12 @@ export default {
     // result through GET /admin/targets below).
     const zillowTargetsResponse = await handleZillowTargetsIngest(req, env, url, cors, database);
     if (zillowTargetsResponse) return zillowTargetsResponse;
+
+    // Fathom's notetaker pushes each finished meeting here (signature-verified,
+    // its own secret). The Coach drill-in reads the stored prep through
+    // /data/coach/meeting-prep; nothing here ever logs a 1:1 by itself.
+    const fathomResponse = await handleFathomIngest(req, env, url, cors, database, ctx);
+    if (fathomResponse) return fathomResponse;
 
     // The phone relay. Outside /admin/ because Tasker carries no login session,
     // and on its own token rather than ADMIN_TOKEN: this one sits in a phone

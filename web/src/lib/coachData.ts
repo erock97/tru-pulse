@@ -1073,6 +1073,73 @@ function mapCheckinLeaderRow(r: CheckinLeaderRow): CheckinLeader {
 }
 
 /* ============================================================
+   MEETING-NOTES PREP — the Fathom notetaker's distilled output for the
+   next 1:1 (worker: POST /fathom/webhook → meeting_preps). LEADER-ONLY,
+   exactly like CheckinLeader: `distilled.privateNote` is a SUGGESTED
+   private note, so no agent-facing view may ever call these. Nothing
+   here writes a check-in — Apply only merges text into the leader's
+   in-progress draft; "Log this 1:1" stays the only save.
+   ============================================================ */
+
+export interface MeetingPrepDistilled { wins: string[]; commitments: string[]; privateNote: string }
+export interface MeetingPrep {
+  id: string;
+  agentId: string;
+  title: string | null;
+  meetingStart: string | null;
+  summaryMd: string | null;                 // Fathom's own summary — the fallback when distill failed
+  distilled: MeetingPrepDistilled | null;   // null while distilling (or failed; see distillError)
+  distillError: string | null;
+  status: 'new' | 'applied' | 'dismissed';
+  createdAt: string;
+}
+
+interface MeetingPrepRow {
+  id: string; agent_id: string; title: string | null; meeting_start: string | null;
+  summary_md: string | null;
+  distilled: { wins?: string[]; commitments?: string[]; private_note?: string } | null;
+  distill_error: string | null; status: MeetingPrep['status']; created_at: string;
+}
+function mapMeetingPrepRow(r: MeetingPrepRow): MeetingPrep {
+  return {
+    id: r.id, agentId: r.agent_id, title: r.title, meetingStart: r.meeting_start,
+    summaryMd: r.summary_md,
+    distilled: r.distilled ? {
+      wins: r.distilled.wins ?? [],
+      commitments: r.distilled.commitments ?? [],
+      privateNote: r.distilled.private_note ?? '',
+    } : null,
+    distillError: r.distill_error, status: r.status, createdAt: r.created_at,
+  };
+}
+
+/** The newest un-handled prep for this agent, or null. Best-effort: the 1:1
+ *  form must render identically when this fails or nothing has arrived. */
+export async function loadMeetingPrep(agentId: string): Promise<MeetingPrep | null> {
+  if (isDemo) return null;
+  try {
+    const res = await workerFetch(`/data/coach/meeting-prep?agentId=${encodeURIComponent(agentId)}`);
+    if (!res.ok) return null;
+    const { preps } = (await res.json()) as { preps: MeetingPrepRow[] | null };
+    return preps?.[0] ? mapMeetingPrepRow(preps[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Mark a prep handled (applied into the draft, or dismissed). Best-effort:
+ *  a refusal leaves it offered again next visit, which is the safe failure. */
+export async function setMeetingPrepStatus(id: string, status: 'applied' | 'dismissed'): Promise<void> {
+  if (isDemo) return;
+  try {
+    await workerFetch('/data/coach/meeting-prep-status', {
+      method: 'POST',
+      body: JSON.stringify({ id, status }),
+    });
+  } catch { /* offered again next visit */ }
+}
+
+/* ============================================================
    AGENT-SIDE 1:1 RECAP — "Your 1:1s" (Block 4c)
    The agent's own read-back of the 1:1s their leader logged. AGENT-SAFE by
    construction: it reads ONLY `checkins` (own rows via checkins_agent_self) +

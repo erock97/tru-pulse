@@ -2661,6 +2661,32 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .ro-add-input { flex: 1; }
 .tru-dark .ro-add-btn { flex-shrink: 0; }
 
+/* meeting-notes prep — the notetaker's distilled pre-fill offer. Sits above
+   the capture groups; accent-tinted so it reads as an offer, not a record. */
+.tru-dark .ro-prep {
+  display: flex; flex-direction: column; gap: 9px; padding: 14px 15px;
+  border-radius: var(--r-card); border: 1px solid var(--accent-line);
+  background: linear-gradient(180deg, var(--accent-soft), transparent 78%);
+}
+.tru-dark .ro-prep-head { display: flex; align-items: center; gap: 8px; }
+.tru-dark .ro-prep-title {
+  flex: 1; min-width: 0; font-size: 12px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-hi);
+}
+.tru-dark .ro-prep-btn { flex-shrink: 0; }
+.tru-dark .ro-prep-body { display: flex; flex-direction: column; gap: 6px; }
+.tru-dark .ro-prep-line { font-size: 14.5px; line-height: 1.5; color: var(--text-strong); }
+.tru-dark .ro-prep-line > b {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-50); margin-right: 7px;
+}
+.tru-dark .ro-prep-private { color: var(--text-80, var(--text)); font-style: italic; }
+.tru-dark .ro-prep-raw {
+  max-height: 220px; overflow: auto; white-space: pre-wrap; font-size: 13px;
+  line-height: 1.5; color: var(--text-80, var(--text)); padding: 10px 12px;
+  border-radius: 11px; border: 1px solid var(--border-soft); background: var(--panel);
+}
+
 /* "from last time" review group — tinted container distinguishes past
    context from the forward-looking capture groups */
 .tru-dark .ro-group-review {

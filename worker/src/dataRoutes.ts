@@ -180,6 +180,20 @@ export async function handleDataRoutes(
     return json({ checkins, items }, 200, cors);
   }
 
+  // ── Coach: the newest un-handled meeting-notes prep for this agent. ──
+  // LEADER-ONLY (meeting_preps has no agent policy — the distilled payload
+  // carries a suggested private note). Never call this from an agent view.
+  if (url.pathname === '/data/coach/meeting-prep' && req.method === 'GET') {
+    const agentId = url.searchParams.get('agentId') ?? '';
+    if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
+    const preps = await db.select(
+      'meeting_preps',
+      'select=id,agent_id,title,meeting_start,summary_md,distilled,distill_error,status,created_at' +
+      `&agent_id=eq.${agentId}&status=eq.new&order=created_at.desc&limit=1`,
+    );
+    return json({ preps }, 200, cors);
+  }
+
   // ── Coach: every agent in the org, for the "Add agents to Coach" picker. ──
   if (url.pathname === '/data/coach/full-roster' && req.method === 'GET') {
     const agents = await db.select(
@@ -522,6 +536,19 @@ export async function handleDataRoutes(
         return ok ? json({ ok: true }, 200, cors) : json({ error: 'not allowed' }, 403, cors);
       }
       return json({ error: 'unknown action' }, 422, cors);
+    }
+
+    // Leader applied or dismissed a meeting-notes prep (RLS decides whose).
+    if (url.pathname === '/data/coach/meeting-prep-status') {
+      const id = String(body.id ?? '');
+      if (!UUID_RE.test(id)) return json({ error: 'invalid id' }, 422, cors);
+      const status = body.status === 'applied' || body.status === 'dismissed' ? body.status : null;
+      if (!status) return json({ error: 'invalid status' }, 422, cors);
+      const rows = await db.update('meeting_preps', `id=eq.${id}`, {
+        status, updated_at: new Date().toISOString(),
+      });
+      if (!rows) return json({ error: 'not allowed' }, 403, cors);
+      return json({ ok: true }, 200, cors);
     }
 
     // Log a structured 1:1. Stays an RPC because it writes the check-in plus its items
