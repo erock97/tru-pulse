@@ -298,18 +298,17 @@ insert into leaders (id, team_id, name, email) values
   ('d5e8bfa9-d7a3-4cd1-8035-6630c66d2aef', '96ddb98f-1fb6-4d99-80f6-20ef615dec34', 'Carson Woosley', 'carson.woosley@compass.com')
 on conflict (id) do nothing;
 
-insert into admins (id, email)
-values ('d6b9504c-f35e-49c9-af99-6a2de2069db8', 'eric@terrasonconsulting.com')
-on conflict (id) do nothing;
-
--- Eric's PERSONAL account is a separate auth user from the row above (whose
--- email was later renamed to admin@terrasonconsulting.com). Google sign-in
--- lands on the personal account, and without this row it saw no console at
--- all -- "the Google Auth log-in never shows me your updates", 2026-08-26.
--- Looked up by email so this survives the account being recreated.
+-- The two admins are PERSONAL accounts: Eric's and Adam's. The shared
+-- admin@terrasonconsulting.com login (user d6b9504c-…, also the Costigan
+-- leader seed above and the booking-calendar owner) had its admins row
+-- REMOVED on 2026-09-02 — one login per person, so an action is always
+-- attributable. Do not re-add it here. Google sign-in lands on the personal
+-- accounts ("the Google Auth log-in never shows me your updates",
+-- 2026-08-26); looked up by email so this survives an account being
+-- recreated.
 insert into admins (id, email)
 select u.id, u.email from auth.users u
-where lower(u.email) = 'eric@terrasonconsulting.com'
+where lower(u.email) in ('eric@terrasonconsulting.com', 'adamt@terrasonconsulting.com')
 on conflict (id) do nothing;
 
 insert into entitlements (org_id, product) values
