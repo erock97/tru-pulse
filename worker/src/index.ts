@@ -18,6 +18,7 @@ import { handleAutomationRoutes } from './automation/routes.js';
 import { handleMoneyRoutes } from './moneyRoutes.js';
 import { handleContractsRoutes } from './contractsRoutes.js';
 import { handleBookingRoutes } from './bookingRoutes.js';
+import { handleLinkCallback } from './calendarLink.js';
 
 // The contract-approval Durable Object must be exported from the entry module
 // for the binding in wrangler.toml to resolve.
@@ -214,6 +215,14 @@ export default {
     // and rate limited — it is the only unauthenticated write surface in the system.
     const publicResponse = await handlePublicRoutes(req, env, url, cors);
     if (publicResponse) return publicResponse;
+
+    // Google's return leg for "Link your calendar" — a top-level browser
+    // navigation, so it can carry no Authorization header. It authenticates
+    // with the one-time state nonce minted behind the admin gate instead,
+    // and every outcome is a redirect back to the app (see calendarLink.ts).
+    if (url.pathname === '/calendar-link/callback' && req.method === 'GET') {
+      return handleLinkCallback(req, env, database, url);
+    }
 
     const dataResponse = await handleDataRoutes(
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
@@ -925,6 +934,7 @@ export default {
           return json({ error: 'not available while acting as a team' }, 409);
         }
         const bookingRes = await handleBookingRoutes(req, env, url, {
+          userId,
           database,
           json: (body: unknown, status?: number) => json(body, status),
         });

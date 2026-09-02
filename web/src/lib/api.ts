@@ -2012,12 +2012,24 @@ export interface UpcomingBooking {
   typeName: string | null;
 }
 
+export interface CalendarLink {
+  provider: 'infisical' | 'google';
+  status: 'live' | 'revoked';
+  googleEmail: string | null;
+}
+
 export interface CalendarOverview {
-  bookable: boolean;
-  timezone: string | null;
-  rules: BookingRules | null;
-  types: MeetingType[];
-  upcoming: UpcomingBooking[];
+  /** True for an admin with no calendar yet — the page shows setup instead. */
+  needsSetup: boolean;
+  bookable?: boolean;
+  timezone?: string | null;
+  rules?: BookingRules | null;
+  types?: MeetingType[];
+  upcoming?: UpcomingBooking[];
+  /** The Google account behind this calendar, if any. Publishing is gated on
+   *  a live one — a published link books real meetings. */
+  link?: CalendarLink | null;
+  linked?: boolean;
   /** The public page each published type lives on — the link is `${bookingBase}?t=${slug}`. */
   bookingBase: string;
 }
@@ -2048,4 +2060,16 @@ export async function updateMeetingType(input: {
 
 export async function deleteMeetingType(id: string): Promise<MoneyResult<{ message: string }>> {
   return calendarCall('/admin/calendar/type/delete', { method: 'POST', body: JSON.stringify({ id }) });
+}
+
+/** First-run: creates this login's own calendar — dark (booking off, three
+ *  draft links) until deliberately opened up. */
+export async function setupCalendar(input: { name: string; timezone?: string }): Promise<MoneyResult<{ message: string }>> {
+  return calendarCall('/admin/calendar/setup', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Mint the Google consent URL for this calendar; the caller sends the
+ *  browser there. */
+export async function startGoogleCalendarLink(): Promise<MoneyResult<{ url: string }>> {
+  return calendarCall('/admin/calendar/google/start', { method: 'POST', body: JSON.stringify({}) });
 }
