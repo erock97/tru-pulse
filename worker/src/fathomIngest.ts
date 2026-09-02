@@ -15,6 +15,20 @@
 import type { Env } from './env.js';
 import type { Db } from './db.js';
 import { secretsMatch } from './crypto.js';
+import * as infisical from './infisical.js';
+
+export const FATHOM_SECRETS_PATH = '/Fathom';
+
+/** Vault first (mirrors stripeClient.getKey: rotate in Infisical, no deploy,
+ *  no wrangler paste), env var as the fallback. Null = the ingest stays
+ *  closed. */
+export async function getWebhookSecret(env: Env): Promise<string | null> {
+  if (infisical.isConfigured(env)) {
+    const fromVault = await infisical.getSecret(env, 'FATHOM_WEBHOOK_SECRET', FATHOM_SECRETS_PATH).catch(() => null);
+    if (fromVault) return fromVault;
+  }
+  return env.FATHOM_WEBHOOK_SECRET || null;
+}
 
 const MAX_BODY_BYTES = 8_000_000;
 // Enough transcript for any real 1:1; a marathon recording gets truncated
@@ -247,12 +261,13 @@ export async function handleFathomIngest(
   });
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 
-  // Fail closed: an unset secret must never make ingest public.
-  if (!env.FATHOM_WEBHOOK_SECRET) return json({ error: 'unauthorized' }, 401);
+  // Fail closed: no secret in the vault or the env means the ingest is shut.
+  const secret = await getWebhookSecret(env);
+  if (!secret) return json({ error: 'unauthorized' }, 401);
 
   const raw = await req.text();
   if (raw.length > MAX_BODY_BYTES) return json({ error: 'payload too large' }, 413);
-  if (!(await verifyFathomSignature(env.FATHOM_WEBHOOK_SECRET, req.headers, raw))) {
+  if (!(await verifyFathomSignature(secret, req.headers, raw))) {
     return json({ error: 'unauthorized' }, 401);
   }
 

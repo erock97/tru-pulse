@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import nodeCrypto from 'node:crypto';
 import {
   handleFathomIngest, verifyFathomSignature, candidateEmails, matchAgent,
-  parseDistilled, distillPrompt,
+  parseDistilled, distillPrompt, getWebhookSecret,
   type FathomMeeting,
 } from './fathomIngest.js';
 import { db } from './db.js';
@@ -191,6 +191,31 @@ describe('handleFathomIngest', () => {
     const res = await handleFathomIngest(signedRequest(body), env, new URL('https://api.truhq.co/fathom/webhook'), cors, db(env), ctx([]));
     expect(await res!.json()).toMatchObject({ ok: true, duplicate: true });
     expect(calls.some((c) => c.url.includes('/meeting_preps') && c.method === 'POST')).toBe(false);
+  });
+});
+
+describe('getWebhookSecret', () => {
+  it('the vault value wins over the env fallback (rotate in Infisical, no deploy)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('universal-auth/login')) {
+        return new Response(JSON.stringify({ accessToken: 'tok', expiresIn: 3600 }), { status: 200 });
+      }
+      if (url.includes('/api/v3/secrets/raw/FATHOM_WEBHOOK_SECRET')) {
+        expect(url).toContain('secretPath=%2FFathom');
+        return new Response(JSON.stringify({ secret: { secretValue: 'whsec_from_vault' } }), { status: 200 });
+      }
+      return new Response('{}', { status: 404 });
+    }));
+    const vaultEnv = {
+      ...env, INFISICAL_CLIENT_ID: 'id', INFISICAL_CLIENT_SECRET: 'cs',
+      INFISICAL_PROJECT_ID: 'proj', INFISICAL_ENV: 'fathom-test-a',
+    } as unknown as Env;
+    expect(await getWebhookSecret(vaultEnv)).toBe('whsec_from_vault');
+  });
+  it('falls back to the env var without the vault, and closes when neither exists', async () => {
+    expect(await getWebhookSecret(env)).toBe(SECRET);
+    expect(await getWebhookSecret({ ...env, FATHOM_WEBHOOK_SECRET: undefined } as unknown as Env)).toBeNull();
   });
 });
 
