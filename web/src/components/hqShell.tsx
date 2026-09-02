@@ -65,6 +65,7 @@ export function HqShell({
   onOpenTeamData,
   onOpenRevenue,
   onOpenContracts,
+  onOpenCalendar,
   hideTopbar = false,
   islandSlot,
   mood = 'calm',
@@ -87,6 +88,9 @@ export function HqShell({
   onOpenRevenue?: () => void;
   /** Platform owner only. The TruSign contracts console, mirrored from TRU OS. */
   onOpenContracts?: () => void;
+  /** Platform owner only. Eric's own booking system — meeting types,
+   *  availability, the public truhq.co/book links. */
+  onOpenCalendar?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -110,6 +114,7 @@ export function HqShell({
       : route === 'admin/targets' ? 'team-data'
       : route === 'admin/revenue' ? 'revenue'
       : route === 'admin/contracts' ? 'contracts'
+      : route === 'admin/calendar' ? 'calendar'
       // Agents is a sub-screen reached from Admin, not a tab of its own — the
       // Admin tab stays lit while you're on it.
       : route === 'admin' || route === 'admin/agents' ? 'admin'
@@ -150,7 +155,7 @@ export function HqShell({
      first frame. A state round-trip would land a frame late, which is precisely
      long enough to see. */
   useLayoutEffect(() => {
-    const order = ['pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue', 'contracts'];
+    const order = ['pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue', 'contracts', 'calendar'];
     const i = order.indexOf(activeKey);
     const el = shellRef.current;
     if (!el || i < 0) return;
@@ -181,6 +186,7 @@ export function HqShell({
         ...(onOpenTeamData ? [{ key: 'team-data', label: 'Team Data', icon: 'target', onClick: onOpenTeamData }] : []),
         ...(onOpenRevenue ? [{ key: 'revenue', label: 'Revenue', icon: 'money', onClick: onOpenRevenue }] : []),
         ...(onOpenContracts ? [{ key: 'contracts', label: 'Contracts', icon: 'contract', onClick: onOpenContracts }] : []),
+        ...(onOpenCalendar ? [{ key: 'calendar', label: 'Calendar', icon: 'calendar', onClick: onOpenCalendar }] : []),
       ]
     : [
         { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
@@ -281,6 +287,7 @@ export function HqShell({
               onOpenTeamData={onOpenTeamData}
               onOpenRevenue={onOpenRevenue}
               onOpenContracts={onOpenContracts}
+              onOpenCalendar={onOpenCalendar}
               onOpenPulse={nav.onOpenPulse}
               onOpenCoach={nav.onOpenCoach}
               onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
