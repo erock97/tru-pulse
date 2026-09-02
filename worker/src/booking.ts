@@ -400,11 +400,22 @@ export async function updateType(
 
   /* THE PUBLISH GATE. A published slug books real meetings onto a real Google
    * Calendar. No live Google link = no calendar to put them on — and the desk
-   * engine's fallback would be the one account it knows, which is Eric's. */
+   * engine's fallback would be the one account it knows, which is Eric's.
+   *
+   * The second check is the harder truth: the desk engine reads exactly ONE
+   * credential (the vault's), so today it can only serve the calendar wired
+   * as provider 'infisical'. A worker-captured Google link is real wiring but
+   * the engine does not read it yet — publishing on the strength of it would
+   * check Eric's busy times and write the meeting to Eric's calendar. This
+   * clause comes out when the engine learns per-owner credentials, not
+   * before. */
   if (body.published === true) {
     const link = await linkForOwner(database, owner);
     if (link?.status !== 'live') {
       refuse('Link a Google calendar first — a published link books real meetings, and this calendar has nowhere to put them yet.');
+    }
+    if (link.provider !== 'infisical') {
+      refuse('This calendar is linked, but the booking engine cannot serve it yet — publishing stays off until it can, so nothing ever books onto the wrong calendar.');
     }
   }
 

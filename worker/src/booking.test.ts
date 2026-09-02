@@ -139,6 +139,13 @@ describe('updateType publish gate', () => {
     expect(patches[0]).toContain(`user_id=eq.${OWNER}`);
   });
 
+  it('a live worker-captured Google link is still refused — the desk engine cannot serve it yet', async () => {
+    const patches = stubs([{ provider: 'google', status: 'live', google_email: 'adamt@terrasonconsulting.com' }]);
+    await expect(updateType(db(env), ADMIN, { id: TYPE, published: true }))
+      .rejects.toThrow(/engine cannot serve it yet/);
+    expect(patches).toHaveLength(0);
+  });
+
   it('UNpublishing needs no link — turning things off is always allowed', async () => {
     const patches = stubs([]);
     await updateType(db(env), ADMIN, { id: TYPE, published: false });
