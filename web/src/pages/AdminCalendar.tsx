@@ -326,6 +326,10 @@ export default function AdminCalendar({
   const types = data?.types ?? [];
   const upcoming = data?.upcoming ?? [];
   const linked = data?.linked === true;
+  /* Publishing needs more than a link: the desk engine that answers "what
+   * times are open" and writes the meeting can only serve the vault-wired
+   * calendar today. The worker refuses anyway; this keeps the button honest. */
+  const canPublish = linked && data?.link?.provider === 'infisical';
 
   return (
     <div className="tru-dark">
@@ -426,8 +430,12 @@ export default function AdminCalendar({
                           </button>
                         </div>
                         <div className="cal-type-acts">
-                          <button type="button" className="mny-link" disabled={busy || (!t.published && !linked)}
-                            title={!t.published && !linked ? 'Link your Google calendar first — a published link books real meetings.' : undefined}
+                          <button type="button" className="mny-link" disabled={busy || (!t.published && !canPublish)}
+                            title={!t.published && !canPublish
+                              ? (linked
+                                ? 'Linked — publishing unlocks once the booking engine can serve this calendar.'
+                                : 'Link your Google calendar first — a published link books real meetings.')
+                              : undefined}
                             onClick={() => void togglePublished(t)}>
                             {t.published ? 'unpublish' : 'publish'}
                           </button>
@@ -438,10 +446,11 @@ export default function AdminCalendar({
                       </div>
                     ))}
                     {types.length === 0 && <div className="mny-note">No meeting types yet.</div>}
-                    {!linked && types.length > 0 && (
+                    {!canPublish && types.length > 0 && (
                       <div className="mny-note">
-                        Drafts can&apos;t publish until a Google calendar is linked — that&apos;s where booked
-                        meetings land.
+                        {linked
+                          ? 'Linked ✓ — these stay drafts until the booking engine can serve this calendar, so nothing ever books onto the wrong one.'
+                          : "Drafts can't publish until a Google calendar is linked — that's where booked meetings land."}
                       </div>
                     )}
                   </div>
