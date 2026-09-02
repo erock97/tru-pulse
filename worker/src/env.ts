@@ -23,7 +23,9 @@ export interface Env {
   FATHOM_WEBHOOK_SECRET?: string;     // verifies POST /fathom/webhook (Fathom notetaker
                                       // meeting pushes) — the whsec_… secret Fathom shows
                                       // when the webhook is created in its settings.
-                                      // Unset = the ingest is closed (fails 401).
+                                      // Fallback ONLY: the real value lives in Infisical
+                                      // at /Fathom (see fathomIngest.getWebhookSecret).
+                                      // Neither set = the ingest is closed (fails 401).
   RELAY_TOKEN?: string;               // guards /relay/queue + /relay/ack — the phone
                                       // relay's own key. Deliberately NOT ADMIN_TOKEN:
                                       // it lives in a Tasker profile and travels in a
