@@ -151,6 +151,7 @@ export default function AdminContracts({
         onOpenTeamData={() => { window.location.hash = '/admin/targets'; }}
         onOpenRevenue={() => { window.location.hash = '/admin/revenue'; }}
         onOpenContracts={() => { window.location.hash = '/admin/contracts'; }}
+        onOpenCalendar={() => { window.location.hash = '/admin/calendar'; }}
         hideTopbar
       >
         <div className="dk-main">

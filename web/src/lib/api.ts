@@ -1957,3 +1957,95 @@ export async function voidContract(input: {
 }): Promise<MoneyResult<{ message: string }>> {
   return contractsCall('/admin/contracts/void', { method: 'POST', body: JSON.stringify(input) });
 }
+
+// ── Calendar (platform owner only) ──────────────────────────────────────────
+// Eric's own booking system — the truhq.co/book page's meeting types and
+// availability, administered from the Calendar tab. worker/src/bookingRoutes.ts,
+// mounted inside the /admin gate. Same MoneyResult discipline: every refusal
+// carries a sentence written for the screen.
+
+async function calendarCall<T>(path: string, init: RequestInit = {}): Promise<MoneyResult<T>> {
+  // ?demo=1 has no backend and must never look like it can change what
+  // strangers can book.
+  if (isDemo) return { ok: false, error: 'The calendar is not available in the demo.' };
+  try {
+    const res = await workerFetch(path, init);
+    const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+    if (!res.ok) return { ok: false, error: body.error ?? 'Something went wrong.' };
+    return { ...body, ok: true };
+  } catch {
+    return { ok: false, error: 'Could not reach the server.' };
+  }
+}
+
+export interface BookingWindow { weekday: number; start: string; end: string }
+
+export interface BookingRules {
+  hours: BookingWindow[];
+  blocks?: Array<{ start: string; end: string; label?: string; weekdays?: number[] }>;
+  slot_minutes?: number;
+  buffer_minutes?: number;
+  lead_minutes?: number;
+  horizon_days?: number;
+  timezone?: string;
+}
+
+export interface MeetingType {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  duration_minutes: number;
+  buffer_minutes: number | null;
+  lead_minutes: number | null;
+  horizon_days: number | null;
+  published: boolean;
+}
+
+export interface UpcomingBooking {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  inviteeName: string | null;
+  inviteeEmail: string | null;
+  inviteeNote: string | null;
+  typeName: string | null;
+}
+
+export interface CalendarOverview {
+  bookable: boolean;
+  timezone: string | null;
+  rules: BookingRules | null;
+  types: MeetingType[];
+  upcoming: UpcomingBooking[];
+  /** The public page each published type lives on — the link is `${bookingBase}?t=${slug}`. */
+  bookingBase: string;
+}
+
+export async function calendarOverview(): Promise<MoneyResult<CalendarOverview>> {
+  return calendarCall('/admin/calendar/overview');
+}
+
+/** Master switch + rules. Sending only { bookable } leaves the hours untouched. */
+export async function saveBookingRules(input: {
+  bookable?: boolean; rules?: BookingRules; timezone?: string;
+}): Promise<MoneyResult<{ message: string }>> {
+  return calendarCall('/admin/calendar/rules', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Always created unpublished — publish is a separate, deliberate step. */
+export async function createMeetingType(input: {
+  slug: string; name: string; description?: string; duration_minutes: number;
+}): Promise<MoneyResult<{ id: string; slug: string }>> {
+  return calendarCall('/admin/calendar/type', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function updateMeetingType(input: {
+  id: string;
+} & Partial<Pick<MeetingType, 'slug' | 'name' | 'description' | 'duration_minutes' | 'published'>>): Promise<MoneyResult<{ message: string }>> {
+  return calendarCall('/admin/calendar/type/update', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function deleteMeetingType(id: string): Promise<MoneyResult<{ message: string }>> {
+  return calendarCall('/admin/calendar/type/delete', { method: 'POST', body: JSON.stringify({ id }) });
+}

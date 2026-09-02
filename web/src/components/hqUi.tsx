@@ -179,6 +179,17 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
           <path d="M9 18.5h7" />
         </svg>
       );
+    // The Calendar tab: a month grid with a marked day, because the page is
+    // about when strangers can take his time — not a clock (clock already
+    // reads as history in this sidebar).
+    case 'calendar':
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5" width="17" height="16" rx="2" />
+          <path d="M3.5 9.5h17M8 2.8V6.2M16 2.8V6.2" />
+          <path d="M8 14h2.6" />
+        </svg>
+      );
     default:
       return null;
   }

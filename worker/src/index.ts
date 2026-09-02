@@ -17,6 +17,7 @@ import { readCookie, readSession, withFreshToken } from './session.js';
 import { handleAutomationRoutes } from './automation/routes.js';
 import { handleMoneyRoutes } from './moneyRoutes.js';
 import { handleContractsRoutes } from './contractsRoutes.js';
+import { handleBookingRoutes } from './bookingRoutes.js';
 
 // The contract-approval Durable Object must be exported from the entry module
 // for the binding in wrangler.toml to resolve.
@@ -912,6 +913,22 @@ export default {
           return json({ error: e instanceof Error ? e.message : 'something went wrong' }, 500);
         }
         if (contractsRes) return contractsRes;
+      }
+
+      // Calendar — Eric's own booking system (meeting types, availability,
+      // the public truhq.co/book links). Same impersonation refusal: a link
+      // published while acting as a team would advertise his calendar under
+      // someone else's account — the 2026-08-09 incident, again.
+      if (url.pathname.startsWith('/admin/calendar/')) {
+        const ownerSess = await readSession(env, readCookie(req));
+        if (ownerSess?.returnSid) {
+          return json({ error: 'not available while acting as a team' }, 409);
+        }
+        const bookingRes = await handleBookingRoutes(req, env, url, {
+          database,
+          json: (body: unknown, status?: number) => json(body, status),
+        });
+        if (bookingRes) return bookingRes;
       }
 
       if (url.pathname === '/admin/leaders' && req.method === 'GET') {
