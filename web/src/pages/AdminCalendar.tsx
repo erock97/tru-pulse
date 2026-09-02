@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { HqShell } from '../components/hqShell';
 import {
   calendarOverview, createMeetingType, deleteMeetingType, saveBookingRules,
-  signOutClean, updateMeetingType,
+  setupCalendar, signOutClean, startGoogleCalendarLink, updateMeetingType,
   type CalendarOverview, type MeetingType,
 } from '../lib/api';
 
@@ -212,6 +212,19 @@ export default function AdminCalendar({
   /* Once the slug has been typed by hand it stops tracking the name.
    * Resets with the draft, so the next new type auto-fills again. */
   const [slugTouched, setSlugTouched] = useState(false);
+  const [setupName, setSetupName] = useState('');
+
+  /* The Google link flow returns by full-page redirect, carrying its outcome
+   * in the query string — read it once, say it, and clean the URL so a reload
+   * doesn't repeat a stale message. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linked = params.get('cal_linked');
+    const failed = params.get('cal_link_error');
+    if (!linked && !failed) return;
+    setNote(linked ? 'Google Calendar linked ✓' : failed || '');
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+  }, []);
 
   const load = useCallback(async (quiet: boolean) => {
     if (!quiet) { setData(undefined); setLoadErr(''); }
@@ -283,6 +296,24 @@ export default function AdminCalendar({
     await run(() => deleteMeetingType(t.id), `"${t.name}" deleted.`);
   }
 
+  async function createOwnCalendar() {
+    await run(() => setupCalendar({
+      name: setupName.trim(),
+      // The person setting up is sitting in their own timezone right now —
+      // better than defaulting everyone to Pacific.
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }), 'Calendar created — booking is off and all three links are drafts until you say otherwise.');
+  }
+
+  async function linkGoogle() {
+    setBusy(true);
+    setNote('');
+    const r = await startGoogleCalendarLink();
+    if (!r.ok) { setNote(r.error); setBusy(false); return; }
+    // Full-page hop to Google's consent screen; it returns to this tab.
+    window.location.href = r.url;
+  }
+
   const days = useMemo(() => {
     const hours = data?.rules?.hours ?? [];
     return WEEKDAYS.map((label, d) => ({
@@ -292,6 +323,9 @@ export default function AdminCalendar({
   }, [data?.rules]);
 
   const rules = data?.rules;
+  const types = data?.types ?? [];
+  const upcoming = data?.upcoming ?? [];
+  const linked = data?.linked === true;
 
   return (
     <div className="tru-dark">
@@ -326,6 +360,33 @@ export default function AdminCalendar({
             <div className="rs-plate dk-table" style={{ padding: 28 }}>
               <p style={{ margin: 0, color: 'var(--text-60)' }}>Couldn&apos;t load the calendar: {loadErr}</p>
             </div>
+          ) : data && data.needsSetup ? (
+            // A fresh admin login has no calendar. Nothing is inherited and
+            // nothing of anyone else's shows — this creates their OWN, dark:
+            // booking off and three draft links until they choose otherwise.
+            <div className="rs-plate dk-table cal-card" style={{ maxWidth: 560 }}>
+              <div className="cal-k">Set up your calendar</div>
+              <p className="mny-sub" style={{ marginTop: 6 }}>
+                This login doesn&apos;t have a calendar yet. Setting one up creates your own booking
+                links and availability — separate from anyone else&apos;s. It starts switched off,
+                with three draft links ready to rename or publish.
+              </p>
+              <div className="cal-new" style={{ gridTemplateColumns: 'minmax(0,1fr) 120px' }}>
+                <input type="text" value={setupName} placeholder="Your first name — e.g. Adam"
+                  aria-label="First name"
+                  onChange={(e) => setSetupName(e.target.value)} />
+                <button type="button" className="mny-btn yes" style={{ gridColumn: 'auto' }}
+                  disabled={busy || !setupName.trim()}
+                  onClick={() => void createOwnCalendar()}>
+                  {busy ? 'Creating…' : 'Create'}
+                </button>
+              </div>
+              <div className="mny-note" style={{ marginTop: 8 }}>
+                You&apos;ll get “1:1 with {setupName.trim().split(/\s+/)[0] || 'you'}”, “New Client
+                Consultation”, and “Strategy Session” as drafts, Mon–Fri 9:00–16:00 in your timezone.
+              </div>
+              {note && <div className="mny-err" style={{ marginTop: 10 }}>{note}</div>}
+            </div>
           ) : data && (
             <>
               <div className="rs-plate dk-table cal-master">
@@ -350,7 +411,7 @@ export default function AdminCalendar({
                     Copy one and send it to anyone — they pick a time inside your hours.
                   </p>
                   <div className="cal-types">
-                    {data.types.map((t) => (
+                    {types.map((t) => (
                       <div key={t.id} className={`cal-type ${t.published ? 'live' : ''}`}>
                         <div className="cal-type-h">
                           <span className="cal-type-name">{t.name}</span>
@@ -365,7 +426,9 @@ export default function AdminCalendar({
                           </button>
                         </div>
                         <div className="cal-type-acts">
-                          <button type="button" className="mny-link" disabled={busy} onClick={() => void togglePublished(t)}>
+                          <button type="button" className="mny-link" disabled={busy || (!t.published && !linked)}
+                            title={!t.published && !linked ? 'Link your Google calendar first — a published link books real meetings.' : undefined}
+                            onClick={() => void togglePublished(t)}>
                             {t.published ? 'unpublish' : 'publish'}
                           </button>
                           <button type="button" className="mny-link" disabled={busy} onClick={() => void remove(t)}>
@@ -374,7 +437,13 @@ export default function AdminCalendar({
                         </div>
                       </div>
                     ))}
-                    {data.types.length === 0 && <div className="mny-note">No meeting types yet.</div>}
+                    {types.length === 0 && <div className="mny-note">No meeting types yet.</div>}
+                    {!linked && types.length > 0 && (
+                      <div className="mny-note">
+                        Drafts can&apos;t publish until a Google calendar is linked — that&apos;s where booked
+                        meetings land.
+                      </div>
+                    )}
                   </div>
 
                   <div className="cal-k" style={{ marginTop: 18 }}>New meeting type</div>
@@ -407,6 +476,27 @@ export default function AdminCalendar({
                 </div>
 
                 <div className="cal-side">
+                  <div className="rs-plate dk-table cal-card">
+                    <div className="cal-k">Google Calendar</div>
+                    {linked ? (
+                      <p className="mny-sub" style={{ marginTop: 6, marginBottom: 0 }}>
+                        Linked ✓ — {data.link?.provider === 'google'
+                          ? <>bookings check and land on <b>{data.link?.googleEmail ?? 'your Google account'}</b>.</>
+                          : 'wired through the vault; bookings check and land on your Google account.'}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mny-sub" style={{ marginTop: 6 }}>
+                          Not linked. Your links can&apos;t go live yet — linking lets bookings avoid
+                          your busy times and land on your real calendar.
+                        </p>
+                        <button type="button" className="mny-btn yes" disabled={busy} onClick={() => void linkGoogle()}>
+                          Link your calendar
+                        </button>
+                      </>
+                    )}
+                  </div>
+
                   <div className="rs-plate dk-table cal-card">
                     <div className="cal-card-h">
                       <div className="cal-k">Your hours</div>
@@ -455,13 +545,13 @@ export default function AdminCalendar({
                   <div className="rs-plate dk-table cal-card">
                     <div className="cal-k">Booked</div>
                     <p className="mny-sub" style={{ marginTop: 4 }}>What people have taken, from today forward.</p>
-                    {data.upcoming.length === 0 ? (
+                    {upcoming.length === 0 ? (
                       <div className="mny-note">Nothing on the books.</div>
                     ) : (
                       <div className="cal-upcoming">
-                        {data.upcoming.map((b) => (
+                        {upcoming.map((b) => (
                           <div key={b.id} className="cal-booking">
-                            <div className="cal-booking-when">{whenLabel(b.startsAt, b.endsAt, data.timezone)}</div>
+                            <div className="cal-booking-when">{whenLabel(b.startsAt, b.endsAt, data.timezone ?? null)}</div>
                             <div>
                               <span className="cal-type-name">{b.inviteeName || b.inviteeEmail || 'someone'}</span>
                               {b.typeName && <span className="mny-sub"> · {b.typeName}</span>}

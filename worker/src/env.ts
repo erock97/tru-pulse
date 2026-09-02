@@ -29,6 +29,10 @@ export interface Env {
   STRIPE_SECRET_KEY?: string;         // Stripe fallback ONLY — the real key is read from
                                       // Infisical at /Stripe (see stripeClient.ts). Unset
                                       // is normal when Infisical is configured.
+  GOOGLE_CAL_CLIENT_ID?: string;      // "Link your calendar" OAuth client — the flow
+  GOOGLE_CAL_CLIENT_SECRET?: string;  // stays dark until both are set AND
+                                      // https://api.truhq.co/calendar-link/callback is
+                                      // registered on that client in the Google console
   INFISICAL_SITE_URL?: string;        // non-secret; defaults to app.infisical.com
   INFISICAL_CLIENT_ID?: string;       // Universal Auth machine identity — same identity
   INFISICAL_CLIENT_SECRET?: string;   // TRU OS's worker uses; read-only on the vault

@@ -1,4 +1,4 @@
-// BOOKING — Eric's own scheduling system, administered from the Calendar tab.
+// BOOKING — the TRU HQ booking system, administered from the Calendar tab.
 //
 // This is a port of TRU OS's routes/groupA/booking.ts onto TRU HQ's worker.
 // The DATA never moved: the public page at truhq.co/book has always read its
@@ -6,6 +6,15 @@
 // only the control panel over it; this file makes TRU HQ the control panel
 // instead. The public page, the Python settlement engine, and the tables are
 // untouched.
+//
+// ── Two admins, two calendars ───────────────────────────────────────────────
+//
+// Every admin administers exactly ONE calendar, and which one is a stored
+// fact in `booking_admins` — never inferred from who is signed in. Eric's
+// personal login runs the original calendar (owned by the old shared admin@
+// user, which the desk engine and the public page are keyed to); Adam's login
+// runs his own. An admin with no mapping yet is in the setup state, and the
+// setup creates their calendar under their OWN user id.
 //
 // ── Why the rules and the types are not equal partners ──────────────────────
 //
@@ -17,18 +26,23 @@
 // The Python settlement engine already composes them that way; this API does not
 // get to disagree with it, so it validates the same direction on write.
 //
-// ── One owner ───────────────────────────────────────────────────────────────
+// ── One owner per query ─────────────────────────────────────────────────────
 //
-// Every query is scoped to a single owner id. On 2026-08-09 two of the four live
-// meeting types turned out to belong to a client's account — created while Eric
-// was signed in as them — and the public page, which had no owner filter, was
-// advertising them as his. One was named "1:1 With Eric" and would have put the
-// meeting on the client's calendar. Nothing here may ever return rows without an
-// owner filter, whether or not row-level security is also doing it.
+// On 2026-08-09 two of the four live meeting types turned out to belong to a
+// client's account — created while Eric was signed in as them — and the public
+// page, which had no owner filter, was advertising them as his. One was named
+// "1:1 With Eric" and would have put the meeting on the client's calendar.
+// Nothing here may ever return rows without an owner filter, whether or not
+// row-level security is also doing it.
 //
-// The owner here is the single scheduling_availability row. If a second row
-// ever appears, every route refuses rather than guessing which calendar is
-// Eric's — the exact failure above, and the refusal names the fix.
+// ── The publish gate ────────────────────────────────────────────────────────
+//
+// A published slug is a live URL that books REAL meetings, and the settlement
+// engine puts every meeting on a real Google Calendar. A calendar with no
+// live Google link (`booking_calendar_links`) may draft types but not publish
+// them: until the link exists there is no calendar to put a booking on, and
+// the engine would fall back to the one Google account it knows — Eric's.
+// That failure mode is the 2026-08-09 incident with the direction reversed.
 
 import type { Db } from './db.js';
 
@@ -139,15 +153,27 @@ export function checkRules(rules: unknown): string | null {
   return null;
 }
 
-/* Whose calendar this is. One scheduling_availability row = one owner; zero or
- * two is a state nobody should write into, so both refuse with the reason. */
-export async function ownerId(database: Db): Promise<string> {
-  const rows = await database.select('scheduling_availability', 'select=user_id');
-  if (rows.length === 0) refuse('No booking calendar exists yet — nothing to administer.');
-  if (rows.length > 1) {
-    refuse('More than one booking calendar exists — refusing to guess which one is yours.');
-  }
-  return String(rows[0].user_id);
+/* Whose calendar this admin runs. A stored mapping, or null = the setup
+ * state. Never a guess: the wrong answer here is someone else's meetings. */
+export async function ownerForAdmin(database: Db, adminId: string): Promise<string | null> {
+  if (!UUID_RE.test(adminId)) return null;
+  const rows = await database.select('booking_admins', `select=owner_id&admin_id=eq.${adminId}`);
+  return rows.length ? String(rows[0].owner_id) : null;
+}
+
+export interface CalendarLink {
+  provider: 'infisical' | 'google';
+  status: 'live' | 'revoked';
+  googleEmail: string | null;
+}
+
+export async function linkForOwner(database: Db, ownerId: string): Promise<CalendarLink | null> {
+  const rows = await database.select(
+    'booking_calendar_links',
+    `select=provider,status,google_email&owner_id=eq.${ownerId}`,
+  );
+  if (!rows.length) return null;
+  return { provider: rows[0].provider, status: rows[0].status, googleEmail: rows[0].google_email ?? null };
 }
 
 export interface MeetingTypeRow {
@@ -175,9 +201,15 @@ export interface UpcomingBooking {
 }
 
 // ── Read everything the panel needs, in one call ────────────────────────────
-export async function bookingOverview(database: Db) {
-  const owner = await ownerId(database);
-  const [availRows, types] = await Promise.all([
+export async function bookingOverview(database: Db, adminId: string) {
+  const owner = await ownerForAdmin(database, adminId);
+  if (!owner) {
+    // Not an error: a fresh admin simply has no calendar yet. The page shows
+    // the setup instead of an empty shell pretending to be one.
+    return { needsSetup: true as const, bookingBase: BOOKING_BASE };
+  }
+
+  const [availRows, types, link] = await Promise.all([
     database.select(
       'scheduling_availability',
       `select=rules,bookable,timezone,updated_at&user_id=eq.${owner}`,
@@ -187,6 +219,7 @@ export async function bookingOverview(database: Db) {
       'select=id,slug,name,description,duration_minutes,buffer_minutes,lead_minutes,horizon_days,published,sort_order,updated_at' +
         `&user_id=eq.${owner}&order=sort_order.asc`,
     ),
+    linkForOwner(database, owner),
   ]);
   const avail = availRows[0] ?? null;
 
@@ -203,11 +236,14 @@ export async function bookingOverview(database: Db) {
   const typeName = new Map((types as MeetingTypeRow[]).map((t) => [t.id, t.name]));
 
   return {
+    needsSetup: false as const,
     bookable: avail?.bookable ?? false,
     timezone: avail?.timezone ?? null,
     rules: avail?.rules ?? null,
     rulesUpdatedAt: avail?.updated_at ?? null,
     types: types as MeetingTypeRow[],
+    link,
+    linked: link?.status === 'live',
     upcoming: bookings.map(
       (b): UpcomingBooking => ({
         id: b.id,
@@ -223,9 +259,79 @@ export async function bookingOverview(database: Db) {
   };
 }
 
+/* The mapping this resolves is load-bearing for every mutation below: resolve
+ * once, refuse loudly when absent. */
+async function requireOwner(database: Db, adminId: string): Promise<string> {
+  const owner = await ownerForAdmin(database, adminId);
+  if (!owner) refuse('This login has no calendar yet — set one up first.');
+  return owner;
+}
+
+// ── Setup: a new admin's own calendar ───────────────────────────────────────
+// Creates the availability row under the ADMIN'S OWN user id, maps them to
+// it, and drafts three starter links. Everything starts dark: bookable=false,
+// all types unpublished — nothing is public until deliberately published,
+// and publishing is gated on a live Google link anyway.
+export async function setupCalendar(
+  database: Db,
+  adminId: string,
+  { name, timezone }: { name?: unknown; timezone?: unknown },
+): Promise<{ message: string }> {
+  if (!UUID_RE.test(adminId)) refuse('No signed-in admin.');
+  const existing = await ownerForAdmin(database, adminId);
+  if (existing) refuse('This login already runs a calendar.');
+
+  const first = String(name ?? '').trim().split(/\s+/)[0] || '';
+  if (!first) refuse('Whose calendar is this? A first name is required.');
+  if (first.length > 40) refuse('That name is too long.');
+  const tz = typeof timezone === 'string' && /^[A-Za-z_]+\/[A-Za-z_/]+$/.test(timezone)
+    ? timezone
+    : 'America/Los_Angeles';
+
+  // A second calendar must not adopt the original one by accident: the admin's
+  // own user id must not already own availability (would mean a mapping was
+  // deleted by hand — a state to look at, not write over).
+  const clash = await database.select('scheduling_availability', `select=user_id&user_id=eq.${adminId}`);
+  if (clash.length) refuse('A calendar already exists for this account but is not mapped — this needs a look, not an overwrite.');
+
+  await database.insert('scheduling_availability', {
+    user_id: adminId,
+    bookable: false,
+    timezone: tz,
+    rules: {
+      hours: [0, 1, 2, 3, 4].map((weekday) => ({ weekday, start: '09:00', end: '16:00' })),
+      blocks: [],
+      timezone: tz,
+      slot_minutes: 30,
+      buffer_minutes: 30,
+      lead_minutes: 1440,
+      horizon_days: 30,
+    },
+    updated_by: 'tru-hq',
+  });
+  await database.insert('booking_admins', { admin_id: adminId, owner_id: adminId });
+
+  const slugName = first.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const starters = [
+    { slug: `1-1-with-${slugName}`, name: `1:1 with ${first}`, duration_minutes: 30, sort_order: 0 },
+    { slug: 'new-client-consultation', name: 'New Client Consultation', duration_minutes: 60, sort_order: 1 },
+    { slug: 'strategy-session', name: 'Strategy Session', duration_minutes: 60, sort_order: 2 },
+  ];
+  for (const t of starters) {
+    await database.insert('meeting_types', { user_id: adminId, published: false, description: null, ...t });
+  }
+
+  return {
+    message:
+      `${first}'s calendar is set up — three draft links, Mon–Fri 9:00–16:00 (${tz}), booking off. ` +
+      'Link a Google calendar to publish anything.',
+  };
+}
+
 // ── The outer bound ─────────────────────────────────────────────────────────
 export async function saveRules(
   database: Db,
+  adminId: string,
   body: { rules?: unknown; bookable?: unknown; timezone?: unknown },
 ): Promise<{ message: string }> {
   if (body.rules !== undefined) {
@@ -237,7 +343,7 @@ export async function saveRules(
   if (typeof body.bookable === 'boolean') patch.bookable = body.bookable;
   if (typeof body.timezone === 'string' && body.timezone) patch.timezone = body.timezone;
 
-  const owner = await ownerId(database);
+  const owner = await requireOwner(database, adminId);
   await database.update('scheduling_availability', `user_id=eq.${owner}`, patch);
   if (typeof body.bookable === 'boolean') {
     return { message: body.bookable ? 'Booking is on.' : 'Booking is off — the page will offer no times.' };
@@ -248,6 +354,7 @@ export async function saveRules(
 // ── Meeting types ───────────────────────────────────────────────────────────
 export async function createType(
   database: Db,
+  adminId: string,
   body: Record<string, unknown>,
 ): Promise<{ id: string; slug: string; published: false }> {
   const bad = checkTypeFields(body, false);
@@ -257,7 +364,7 @@ export async function createType(
    * the moment published flips true, and a type created with the wrong
    * duration would be live before it was ever looked at. Create it, check it,
    * then publish it. */
-  const owner = await ownerId(database);
+  const owner = await requireOwner(database, adminId);
   const row = {
     user_id: owner,
     slug: body.slug,
@@ -279,11 +386,27 @@ export async function createType(
   }
 }
 
-export async function updateType(database: Db, body: Record<string, unknown>): Promise<{ message: string }> {
+export async function updateType(
+  database: Db,
+  adminId: string,
+  body: Record<string, unknown>,
+): Promise<{ message: string }> {
   const id = typeof body.id === 'string' ? body.id : '';
   if (!UUID_RE.test(id)) refuse('Which meeting type? An id is required.');
   const bad = checkTypeFields(body, true);
   if (bad) refuse(bad);
+
+  const owner = await requireOwner(database, adminId);
+
+  /* THE PUBLISH GATE. A published slug books real meetings onto a real Google
+   * Calendar. No live Google link = no calendar to put them on — and the desk
+   * engine's fallback would be the one account it knows, which is Eric's. */
+  if (body.published === true) {
+    const link = await linkForOwner(database, owner);
+    if (link?.status !== 'live') {
+      refuse('Link a Google calendar first — a published link books real meetings, and this calendar has nowhere to put them yet.');
+    }
+  }
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const f of ['slug', 'name', 'description', 'duration_minutes', 'buffer_minutes', 'lead_minutes', 'horizon_days', 'sort_order']) {
@@ -293,12 +416,11 @@ export async function updateType(database: Db, body: Record<string, unknown>): P
 
   // eq('user_id') as well as eq('id'): with a service key nothing else stops
   // this touching another account's row.
-  const owner = await ownerId(database);
   await database.update('meeting_types', `id=eq.${id}&user_id=eq.${owner}`, patch);
   return { message: 'Saved.' };
 }
 
-export async function deleteType(database: Db, id: string): Promise<{ message: string }> {
+export async function deleteType(database: Db, adminId: string, id: string): Promise<{ message: string }> {
   if (!UUID_RE.test(id)) refuse('Which meeting type? An id is required.');
 
   /* Refuse while anything still points at it. A booked meeting whose type
@@ -311,7 +433,7 @@ export async function deleteType(database: Db, id: string): Promise<{ message: s
   if (live.length > 0) {
     refuse(`That type has ${live.length} live booking${live.length === 1 ? '' : 's'}. Unpublish it instead.`);
   }
-  const owner = await ownerId(database);
+  const owner = await requireOwner(database, adminId);
   const gone = await database.del('meeting_types', `id=eq.${id}&user_id=eq.${owner}`);
   if (gone.length === 0) refuse('No meeting type with that id.');
   return { message: `"${gone[0].name}" deleted.` };
