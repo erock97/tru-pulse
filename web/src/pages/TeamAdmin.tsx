@@ -95,7 +95,7 @@ export default function TeamAdmin({
         if (filter === 'waiting') return !m.signedInAt && !!m.invitedAt;
         return true;
       })
-      .filter((m) => !needle || `${m.name} ${m.email ?? ''}`.toLowerCase().includes(needle));
+      .filter((m) => !needle || `${m.name} ${m.email ?? ''} ${m.phone ?? ''}`.toLowerCase().includes(needle));
   }, [rows, q, filter]);
 
   /** Every control on this page follows the same shape: change it on screen
@@ -306,7 +306,7 @@ export default function TeamAdmin({
             <span className="dk-key">
               <input
                 className="ad-input adm-search"
-                placeholder="Search a name or email…"
+                placeholder="Search a name, email, or phone…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
@@ -372,6 +372,7 @@ export default function TeamAdmin({
                             <div className="cell-name">{m.name}</div>
                             <div className="rs-sub2">
                               {m.email || 'no email on file'}
+                              {m.phone && ` · ${m.phone}`}
                               {m.paused && ' · paused'}
                             </div>
                           </div>
