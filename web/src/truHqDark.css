@@ -3875,8 +3875,13 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 .tru-dark .tm-c-state { width: 30%; }
 .tru-dark .tm-c-act { width: 148px; text-align: right; }
 /* Long addresses must not push the columns around. */
-.tru-dark .tm-table .cell-name,
-.tru-dark .tm-table .rs-sub2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tru-dark .tm-table .cell-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* But the email itself is never cut off: a leader reads it to reach someone.
+   Wrap onto a second line instead of ellipsizing. */
+.tru-dark .tm-table .rs-sub2 {
+  white-space: normal; overflow: visible; text-overflow: clip;
+  overflow-wrap: anywhere; max-width: none;
+}
 .tru-dark .tm-empty { padding: 30px 12px; color: var(--text-50); text-align: center; }
 
 /* A row someone has taken off the team. Still legible — you have to be able to
