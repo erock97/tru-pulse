@@ -1,0 +1,132 @@
+/* =====================================================================
+   PROPOSAL — spatial glass, for app.truhq.co's interior only.
+
+   Confirmed with Eric: the product deliberately splits from the
+   marketing site's warm amber-forest palette and mirrors visionOS'
+   material language — dark, cool canvas; content on frosted glass;
+   emphasis from light, not saturated color.
+
+   This is a NEW scope, `.tru-spatial`, not a redefinition of `.tru-dark`.
+   `.tru-dark` (amber-forest) still exists as-is for anything that should
+   stay in that world. Every interior page currently wraps itself in
+   `.tru-dark` (Dashboard, Coach, Rep, TeamAdmin, AgentHq, Login all do) —
+   swapping the wrapper class on those root elements is the actual
+   migration; nothing here touches `.tru-dark`'s own values, so anything
+   not yet migrated keeps working, unchanged, the whole time.
+   ===================================================================== */
+
+.tru-spatial {
+  /* ---- surfaces --------------------------------------------------------
+     Near-black with a faint blue-violet cast — never neutral grey, never
+     pure black. Elevation is layered opacity + blur, not a color change:
+     the SAME canvas color shows through every surface, just with more
+     white mixed in as things get closer to the viewer. */
+  --sp-canvas: #0A0B0F;
+  --sp-surface-1: rgba(255, 255, 255, 0.04); /* resting panel */
+  --sp-surface-2: rgba(255, 255, 255, 0.07); /* raised panel */
+  --sp-surface-3: rgba(255, 255, 255, 0.11); /* floating / focused */
+
+  --sp-glass-fill: rgba(28, 30, 38, 0.55);
+  --sp-glass-blur: blur(24px) saturate(160%);
+  /* The specular — this is the difference between "translucent" and
+     "glass." A highlight on the top edge, a much fainter one on the
+     sides, nothing on the bottom. Light comes from above; without this
+     the panel just looks like a dimmer rectangle. */
+  --sp-glass-edge-top: rgba(255, 255, 255, 0.1);
+  --sp-glass-edge-side: rgba(255, 255, 255, 0.04);
+
+  /* ---- text -------------------------------------------------------------
+     Never pure white — #F5F6F8 reads as considered, #FFFFFF reads as a
+     default. */
+  --sp-text-primary: #F5F6F8;
+  --sp-text-secondary: rgba(245, 246, 248, 0.62);
+  --sp-text-tertiary: rgba(245, 246, 248, 0.38);
+  --sp-text-on-accent: #0A0B0F;
+
+  /* ---- accent and status --------------------------------------------
+     The accent is a LIGHT, not a color — used on at most ~5% of any
+     screen's surface area, on the one thing that matters. Status colors
+     are desaturated on purpose and only ever appear on status, never on
+     chrome (a button, a nav item, a panel background). */
+  --sp-accent: #CFE3FF;
+  --sp-positive: #7FD6A5;
+  --sp-warning: #F2C97D;
+  --sp-critical: #F08A8A;
+
+  /* ---- radius scale ------------------------------------------------
+     One scale, chosen by element size, not by element type. Buttons and
+     inputs are small and get a small radius; sheets and modals are large
+     surfaces and get a radius large enough to read as continuous. */
+  --sp-r-sm: 6px;   /* chips, tags */
+  --sp-r-md: 10px;  /* buttons, inputs */
+  --sp-r-lg: 14px;  /* popovers, menus, tooltips */
+  --sp-r-xl: 20px;  /* cards */
+  --sp-r-2xl: 28px; /* panels, the sidebar */
+  --sp-r-3xl: 40px; /* sheets, modals */
+
+  /* ---- elevation --------------------------------------------------
+     Blur + tint + edge highlight, combined into one box-shadow each so a
+     component picks a level, not a pile of separate values. */
+  --sp-elev-1:
+    inset 0 1px 0 var(--sp-glass-edge-top),
+    0 24px 48px -28px rgba(0, 0, 0, 0.5);
+  --sp-elev-2:
+    inset 0 1px 0 var(--sp-glass-edge-top),
+    inset 1px 0 0 var(--sp-glass-edge-side),
+    inset -1px 0 0 var(--sp-glass-edge-side),
+    0 32px 64px -30px rgba(0, 0, 0, 0.55);
+  --sp-elev-3:
+    inset 0 1px 0 var(--sp-glass-edge-top),
+    inset 1px 0 0 var(--sp-glass-edge-side),
+    inset -1px 0 0 var(--sp-glass-edge-side),
+    0 48px 90px -32px rgba(0, 0, 0, 0.6);
+
+  /* ---- motion --------------------------------------------------------
+     Matches the brief's timing exactly. Named here rather than left as
+     magic numbers in components, same discipline the existing --ease /
+     --spring tokens already model in truHqDark.css. */
+  --sp-ease-enter: cubic-bezier(0.32, 0.72, 0, 1);
+  --sp-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --sp-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* approximates stiffness 400 / damping 30 in pure CSS */
+  --sp-dur-micro: 140ms;
+  --sp-dur-standard: 230ms;
+  --sp-dur-orchestrated: 720ms;
+
+  --sp-font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sp-serif: "Fraunces", "Playfair Display", Georgia, serif;
+
+  background: var(--sp-canvas);
+  color: var(--sp-text-primary);
+  font-family: var(--sp-font);
+}
+
+/* ---- reusable glass surface -------------------------------------------
+   For chrome that floats over content: sidebar, command bar, popovers,
+   sheets. NOT for data tables or dense text — those stay solid
+   (--sp-surface-1/2), matching the brief's own legibility rule. */
+.tru-spatial .sp-glass {
+  background: var(--sp-glass-fill);
+  backdrop-filter: var(--sp-glass-blur);
+  -webkit-backdrop-filter: var(--sp-glass-blur);
+  box-shadow: var(--sp-elev-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tru-spatial * {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---- light theme (org-level toggle, not default) ----------------------
+   Stubbed, not tuned — the brief requires it exist and pass WCAG AA;
+   filling in real values is implementation work, not a planning decision. */
+html[data-theme="light"] .tru-spatial {
+  --sp-canvas: #F4F5F8;
+  --sp-text-primary: #14161B;
+  --sp-text-secondary: rgba(20, 22, 27, 0.64);
+  --sp-text-tertiary: rgba(20, 22, 27, 0.4);
+  --sp-glass-fill: rgba(255, 255, 255, 0.55);
+  --sp-glass-edge-top: rgba(255, 255, 255, 0.7);
+  --sp-glass-edge-side: rgba(20, 22, 27, 0.05);
+}
