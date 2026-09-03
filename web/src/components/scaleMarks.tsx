@@ -50,8 +50,8 @@ export interface ScaleMark {
 
 const TONE: Record<ScaleMark['tone'], string> = {
   bad: 'var(--ember)',
-  warn: 'var(--accent)',
-  ok: 'var(--sea)',
+  warn: 'var(--text-50)',
+  ok: 'var(--text)',
   none: 'var(--text-40)',
 };
 

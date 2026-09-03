@@ -1,17 +1,13 @@
 /* =====================================================================
    TRU HQ — SPATIAL GLASS. The interior's material language.
 
-   Benchmark, checked against apple.com/apple-vision-pro on 2026-09-03
-   rather than remembered: it is a LIGHT, neutral system. White and
-   off-white (#F5F5F7) surfaces, near-black text (#1D1D1F), grey secondary
-   text (#6E6E73 / #86868B), light-grey rounded cards, one blue (#0071E3)
-   for the single thing that wants a click. Colour comes from what sits
-   behind the glass, not from the glass. Dark is reserved for a cinematic
-   moment, not for the everyday screens.
-
-   Two earlier cuts got this wrong — a black room with dark panels, then a
-   violet room with bright panels. Both were tints invented from the
-   brief's numbers. This one is the benchmark.
+   Benchmark, checked against apple.com/apple-vision-pro — the page, not
+   a memory. The LIGHT bands on that page only rest the eye because they
+   sit next to dark photographs of the product. A dashboard of numbers
+   has no photographs, so the same grey is a lamp. Everyday screens use
+   Colour lives behind the glass — the landing's dusk, not a tinted
+   panel. Chrome stays Apple: pale type, one blue (#0071E3), frosted
+   windows. Not forest, not violet, not a Settings-grey cave.
 
    HOW THIS WORKS. Every interior page wraps itself in `.tru-dark` and every
    rule in truHqDark.css reads the same handful of custom properties. This
@@ -19,79 +15,83 @@
    re-themes at once. Below the palette are the surfaces whose SHAPE
    changes: the capsule sidebar, the island, the command bar, the door.
 
-   Glass is earned: blur lives on chrome that floats over content (sidebar,
-   island, command bar, door). Content plates are white, not blurred.
+   Glass is earned: blur lives on chrome that floats, and on the few
+   raised windows (the scale, the people who need you, the roster).
+   The room is the HQ at dusk. Windows are frosted so the evening
+   shows through; a panel is never the same colour as the wall.
    ===================================================================== */
 
 .tru-dark {
-  /* ---- the room ------------------------------------------------------- */
-  --base: #F5F5F7;
-  --panel: #FFFFFF;
-  --card: #FFFFFF;
-  --card-flat: #FAFAFC;
-  --border: rgba(0, 0, 0, 0.10);
-  --border-soft: rgba(0, 0, 0, 0.06);
+  /* ---- the room -------------------------------------------------------
+     Dusk, like the landing. The sky and the warm window are the
+     photograph; the glass on top is Apple. */
+  --base: #1C1F26;
+  --panel: rgba(28, 30, 36, 0.72);
+  --card: rgba(28, 30, 36, 0.72);
+  --card-flat: rgba(22, 24, 28, 0.6);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-soft: rgba(255, 255, 255, 0.08);
 
-  --text: #1D1D1F;
-  --text-60: #6E6E73;
+  --text: #F5F5F7;
+  --text-60: #A1A1A6;
   --text-50: #86868B;
-  --text-40: #A1A1A6;
-  --text-strong: #1D1D1F;
+  --text-40: #6E6E73;
+  --text-strong: #F5F5F7;
 
   /* ---- the accent ------------------------------------------------------
      One blue, on at most one thing per screen. Status keeps its own
      temperature — ember and terracotta stay warm so warmth means "look
-     here"; the sea green stays for the good state. */
+     here". */
   --accent: #0071E3;
   --accent-hi: #0077ED;
-  --accent-soft: rgba(0, 113, 227, 0.10);
-  --accent-line: rgba(0, 113, 227, 0.32);
+  --accent-soft: rgba(0, 113, 227, 0.18);
+  --accent-line: rgba(0, 113, 227, 0.42);
   --on-accent: #FFFFFF;
-  --positive: #34A853;
-  --warning: #C77700;
-  --critical: #D93025;
+  --positive: #30D158;
+  --warning: #FF9F0A;
+  --critical: #FF453A;
   --ember: #E0562A;
   --terracotta: #E07A4F;
   --sea: #3F8F73;
-  --sea-hi: #2F7A60;
-  --sea-soft: rgba(63, 143, 115, 0.12);
+  --sea-hi: #64D2A6;
+  --sea-soft: rgba(63, 143, 115, 0.16);
 
-  --espresso: #1D1D1F;
-  --cream: #FFFFFF;
-  --on-hero: #1D1D1F;
-  --on-hero-60: #6E6E73;
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
-  --hover-fill: rgba(0, 0, 0, 0.04);
-  --hover-fill-soft: rgba(0, 0, 0, 0.025);
-  --avatar-ring: rgba(0, 0, 0, 0.08);
-  --stat-grad: linear-gradient(180deg, #1D1D1F, #3A3A3E);
-  --track-fill: #E8E8ED;
-  --track-fill-2: #EDEDF1;
-  --track-hairline: #E1E1E6;
-  --track-outer: #E8E8ED;
-  --dot-empty: #D8D8DE;
+  --espresso: #F5F5F7;
+  --cream: #2C2C2E;
+  --on-hero: #F5F5F7;
+  --on-hero-60: #A1A1A6;
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, rgba(255,255,255,0.06) 0%, transparent 46%), #1C1F26;
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, rgba(232,176,80,0.12) 0%, transparent 46%), #1C1F26;
+  --hover-fill: rgba(255, 255, 255, 0.06);
+  --hover-fill-soft: rgba(255, 255, 255, 0.04);
+  --avatar-ring: rgba(255, 255, 255, 0.10);
+  --stat-grad: linear-gradient(180deg, #F5F5F7, #A1A1A6);
+  --track-fill: #2C2C2E;
+  --track-fill-2: #3A3A3C;
+  --track-hairline: #3A3A3C;
+  --track-outer: #2C2C2E;
+  --dot-empty: #3A3A3C;
 
   /* ---- glass ------------------------------------------------------------
-     White frosted glass over a light room. The rim is a brighter white on
-     the top edge; the shadow is grey, large and soft — never a hard line. */
-  --glass-fill: rgba(255, 255, 255, 0.72);
-  --glass-blur: blur(30px) saturate(180%);
-  --glass-edge-top: rgba(255, 255, 255, 0.95);
-  --glass-edge-side: rgba(255, 255, 255, 0.6);
+     Frosted glass over a charcoal room. The rim is a faint white
+     hairline on the top edge — that is how you see a window. */
+  --glass-fill: rgba(22, 24, 30, 0.55);
+  --glass-blur: blur(30px) saturate(160%);
+  --glass-edge-top: rgba(255, 255, 255, 0.16);
+  --glass-edge-side: rgba(255, 255, 255, 0.06);
   --glass-edges:
     inset 0 1px 0 var(--glass-edge-top),
     inset 1px 0 0 var(--glass-edge-side),
     inset -1px 0 0 var(--glass-edge-side);
 
   /* ---- elevation -------------------------------------------------------- */
-  --elev-1: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.10);
-  --elev-2: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.05), 0 20px 60px -24px rgba(0, 0, 0, 0.18);
-  --elev-3: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.06), 0 40px 100px -30px rgba(0, 0, 0, 0.25);
-  --lip: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --lift: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --elev-1: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+  --elev-2: var(--glass-edges), 0 0 0 1px rgba(255, 255, 255, 0.10), 0 20px 60px -24px rgba(0, 0, 0, 0.65);
+  --elev-3: var(--glass-edges), 0 0 0 1px rgba(255, 255, 255, 0.12), 0 40px 100px -30px rgba(0, 0, 0, 0.75);
+  --lip: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --lift: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --card-shadow: var(--elev-1);
-  --card-hover-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 16px 40px -18px rgba(0, 0, 0, 0.18);
+  --card-hover-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 16px 40px -18px rgba(0, 0, 0, 0.6);
 
   /* ---- radius scale --------------------------------------------------- */
   --r-btn: 999px;
@@ -111,44 +111,45 @@
 
   background: var(--base);
   color: var(--text);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 /* Tabs keep a voice as a tint, not a paint. */
 .tru-dark .tru-shell {
-  --tab-hi: #1D1D1F;
-  --tab-mid: #1D1D1F;
-  --tab-soft: rgba(0, 0, 0, 0.06);
-  --tab-line: rgba(0, 0, 0, 0.12);
-  --tab-flare-a: rgba(255, 255, 255, 0.9);
-  --tab-flare-b: rgba(255, 255, 255, 0.4);
-  --stat-grad: linear-gradient(180deg, #1D1D1F, #3A3A3E);
+  --tab-hi: #F5F5F7;
+  --tab-mid: #F5F5F7;
+  --tab-soft: rgba(255, 255, 255, 0.06);
+  --tab-line: rgba(255, 255, 255, 0.12);
+  --tab-flare-a: rgba(255, 255, 255, 0.08);
+  --tab-flare-b: rgba(255, 255, 255, 0.02);
+  --stat-grad: linear-gradient(180deg, #F5F5F7, #A1A1A6);
 }
 .tru-dark .tru-shell[data-tab="coach"] {
   --tab-hi: var(--terracotta); --tab-mid: var(--terracotta);
-  --tab-soft: rgba(224, 122, 79, 0.10); --tab-line: rgba(224, 122, 79, 0.3);
-  --tab-flare-a: rgba(255, 220, 205, 0.9); --tab-flare-b: rgba(255, 230, 220, 0.4);
+  --tab-soft: rgba(224, 122, 79, 0.14); --tab-line: rgba(224, 122, 79, 0.35);
+  --tab-flare-a: rgba(255, 255, 255, 0.06); --tab-flare-b: rgba(255, 255, 255, 0.02);
 }
 .tru-dark .tru-shell[data-tab="rep"] {
   --tab-hi: var(--sea-hi); --tab-mid: var(--sea);
-  --tab-soft: var(--sea-soft); --tab-line: rgba(63, 143, 115, 0.3);
-  --tab-flare-a: rgba(215, 240, 228, 0.9); --tab-flare-b: rgba(225, 245, 235, 0.4);
+  --tab-soft: var(--sea-soft); --tab-line: rgba(63, 143, 115, 0.35);
+  --tab-flare-a: rgba(255, 255, 255, 0.06); --tab-flare-b: rgba(255, 255, 255, 0.02);
 }
 .tru-dark .tru-shell[data-tab="team"],
 .tru-dark .tru-shell[data-tab="admin"] {
-  --tab-hi: #1D1D1F; --tab-mid: #1D1D1F;
-  --tab-soft: rgba(0, 0, 0, 0.06); --tab-line: rgba(0, 0, 0, 0.12);
-  --tab-flare-a: rgba(255, 255, 255, 0.9); --tab-flare-b: rgba(255, 255, 255, 0.4);
+  --tab-hi: #F5F5F7; --tab-mid: #F5F5F7;
+  --tab-soft: rgba(255, 255, 255, 0.06); --tab-line: rgba(255, 255, 255, 0.12);
+  --tab-flare-a: rgba(255, 255, 255, 0.08); --tab-flare-b: rgba(255, 255, 255, 0.02);
 }
 
 /* ======================================================================
-   THE ROOM — off-white, with soft daylight. No render, no tint.
+   THE ROOM — Apple grey, with a window at the top. No render, no tint.
+   White radials were bleaching this back to paper.
    ====================================================================== */
 .tru-dark .tru-room i.tru-room-a { display: none; }
 .tru-dark .tru-room i.tru-room-core {
   background-image: radial-gradient(circle, var(--tab-flare-a) 0%, var(--tab-flare-b) 30%, transparent 62%);
   mix-blend-mode: normal;
-  opacity: 0.8;
+  opacity: 0.45;
 }
 .tru-dark .tru-room::before {
   content: '';
@@ -156,9 +157,9 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(70% 55% at 20% 0%, #FFFFFF 0%, transparent 70%),
-    radial-gradient(50% 45% at 90% 100%, #ECECF1 0%, transparent 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F2F2F5 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 .tru-dark .tru-mood .m-calm { background: none; }
 .tru-dark .tru-mood .m-watch {
@@ -168,7 +169,7 @@
   background: radial-gradient(118% 60% at 50% 108%, rgba(224, 86, 42, 0.12), transparent 62%);
 }
 .tru-shell { background: transparent; color: var(--text); }
-body:has(.tru-dark) { background: #F5F5F7; }
+body:has(.tru-dark) { background: #1C1F26; }
 
 /* ======================================================================
    THE SHELL — a floating capsule of icons in white glass.
@@ -205,7 +206,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
 }
 .tru-shell .side-logo {
   padding: 4px 0 14px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex; justify-content: center;
 }
 .tru-shell .side-logo .tru-word { display: none; }
@@ -224,11 +225,11 @@ body:has(.tru-dark) { background: #F5F5F7; }
   transition: background var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
 }
 .tru-shell .side-link svg { width: 22px; height: 22px; }
-.tru-shell .side-link:hover { color: var(--text); background: rgba(0, 0, 0, 0.05); }
+.tru-shell .side-link:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
 .tru-shell .side-link.active {
   color: var(--text);
-  background: #FFFFFF;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 6px 18px -8px rgba(0, 0, 0, 0.2);
+  background: #2C2C2E;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 6px 18px -8px rgba(0, 0, 0, 0.5);
 }
 .tru-shell .side-link.active svg { color: var(--tab-mid); }
 .tru-shell .side-link.active::before { display: none; }
@@ -262,17 +263,17 @@ body:has(.tru-dark) { background: #F5F5F7; }
 }
 .tru-dark .dk-mk b { color: var(--text); }
 .tru-dark .dk-mk b em { color: var(--text-50); }
-.tru-dark .dk-div { background: rgba(0, 0, 0, 0.1); }
-.tru-dark .dk-win { background: rgba(0, 0, 0, 0.05); box-shadow: none; }
+.tru-dark .dk-div { background: rgba(255, 255, 255, 0.10); }
+.tru-dark .dk-win { background: rgba(255, 255, 255, 0.06); box-shadow: none; }
 .tru-dark .dk-win button { color: var(--text-50); }
 .tru-dark .dk-win button:hover { color: var(--text); }
 .tru-dark .dk-win button.on {
-  background: #FFFFFF;
+  background: #2C2C2E;
   color: var(--text);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 4px 12px -6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 4px 12px -6px rgba(0, 0, 0, 0.5);
 }
 .tru-dark .dk-nav button { color: var(--text-50); }
-.tru-dark .dk-nav button.on { color: var(--text); background: rgba(0, 0, 0, 0.06); }
+.tru-dark .dk-nav button.on { color: var(--text); background: rgba(255, 255, 255, 0.08); }
 .tru-dark .dk-who { color: var(--text-50); }
 .tru-dark .dk-who b { color: var(--text); }
 
@@ -282,16 +283,16 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-dark .cb-hint {
   color: var(--text-50);
   border: 0;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
-.tru-dark .cb-hint:hover { color: var(--text); background: rgba(0, 0, 0, 0.08); }
+.tru-dark .cb-hint:hover { color: var(--text); background: rgba(255, 255, 255, 0.10); }
 .tru-dark .cb-hint kbd, .tru-dark .cb kbd {
   color: var(--text-50);
-  background: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #2C2C2E;
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 .tru-dark .cb-scrim {
-  background: rgba(245, 245, 247, 0.55);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: cbFade var(--dur-micro) var(--ease);
@@ -300,7 +301,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
   width: min(640px, calc(100vw - 32px));
   border-radius: 28px;
   border: 0;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(20, 22, 28, 0.72);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--elev-3);
@@ -308,7 +309,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
   transform-origin: 50% 20%;
 }
 @keyframes cbRise { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
-.tru-dark .cb-field { border-bottom: 1px solid rgba(0, 0, 0, 0.08); color: var(--text-50); }
+.tru-dark .cb-field { border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-50); }
 .tru-dark .cb-field input { font-size: 16px; color: var(--text); }
 .tru-dark .cb-field input::placeholder { color: var(--text-40); }
 .tru-dark .cb-group {
@@ -318,26 +319,31 @@ body:has(.tru-dark) { background: #F5F5F7; }
   color: var(--text-50);
 }
 .tru-dark .cb-row { border-radius: 16px; }
-.tru-dark .cb-row.is-sel { background: rgba(0, 0, 0, 0.05); }
+.tru-dark .cb-row.is-sel { background: rgba(255, 255, 255, 0.08); }
 .tru-dark .cb-label { color: var(--text); }
 .tru-dark .cb-sub, .tru-dark .cb-foot, .tru-dark .cb-none { color: var(--text-50); }
 .tru-dark .cb-go { color: var(--accent); }
-.tru-dark .cb-foot { border-top: 1px solid rgba(0, 0, 0, 0.08); }
+.tru-dark .cb-foot { border-top: 1px solid rgba(255, 255, 255, 0.08); }
 
 /* ======================================================================
-   CONTENT PLATES — white, rounded, one soft grey shadow.
+   CONTENT PLATES — frosted windows over the grey room, not paper.
    ====================================================================== */
 .tru-dark .rs-plate,
 .tru-dark .dk-tile,
 .tru-dark .ad-panel,
 .tru-dark .card {
-  background: #FFFFFF;
+  background: rgba(20, 22, 28, 0.55);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-color: transparent;
   border-radius: var(--r-card);
   box-shadow: var(--elev-1);
 }
 .tru-dark .rs-plate:hover,
 .tru-dark .dk-tile:hover { box-shadow: var(--card-hover-shadow); }
+.tru-dark .dk-table {
+  background: rgba(20, 22, 28, 0.72);
+}
 
 /* ======================================================================
    THE DOOR — the one cinematic moment. The brand's own scene, in colour,
@@ -349,9 +355,9 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-door {
   overflow: hidden;
   background:
-    radial-gradient(60% 45% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(50% 40% at 85% 100%, #E6E6EB 0%, rgba(230, 230, 235, 0) 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F1F1F4 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 .tru-dark .tru-door-scene { display: none; }
 .tru-door-scrim { display: none; }
@@ -366,7 +372,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
   padding: clamp(28px, 4vw, 36px);
   border-radius: 40px;
   border: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(20, 22, 28, 0.62);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--elev-3);
@@ -397,14 +403,14 @@ body:has(.tru-dark) { background: #F5F5F7; }
   padding: 0 16px;
   margin-bottom: 16px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #2C2C2E;
   box-shadow: none;
   color: var(--text);
   font-size: 15px;
   transition: box-shadow var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease);
 }
-.tru-dark .tru-door-input:hover { border-color: rgba(0, 0, 0, 0.16); }
+.tru-dark .tru-door-input:hover { border-color: rgba(255, 255, 255, 0.22); }
 .tru-dark .tru-door-input:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
@@ -413,7 +419,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-door-forgot:hover { color: var(--text); }
 .tru-door-note { border-radius: 16px; padding: 10px 14px; font-size: 13px; line-height: 18px; }
 .tru-door-note.is-error { background: rgba(217, 48, 37, 0.08); border: 0; color: var(--critical); }
-.tru-door-note.is-ok { background: rgba(52, 168, 83, 0.10); border: 0; color: #1E7A3C; }
+.tru-door-note.is-ok { background: rgba(48, 209, 88, 0.14); border: 0; color: #30D158; }
 .tru-door-primary {
   height: 46px;
   padding: 0 18px;
@@ -430,18 +436,18 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-door-primary:active { transform: translateY(1px); }
 .tru-door-primary:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--accent-soft), 0 0 0 1px var(--accent); }
 .tru-door-or { color: var(--text-50); margin: 20px 0; }
-.tru-door-or span { background: rgba(0, 0, 0, 0.1); }
+.tru-door-or span { background: rgba(255, 255, 255, 0.12); }
 .tru-door-google {
   height: 46px;
   padding: 0 18px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #2C2C2E;
   color: var(--text);
   font-weight: 500;
   box-shadow: none;
 }
-.tru-door-google:hover { background: #F5F5F7; }
+.tru-door-google:hover { background: #3A3A3C; }
 .tru-door-google:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--accent-soft); }
 
 /* ---- the old dark vignette ---------------------------------------------
@@ -451,8 +457,8 @@ body:has(.tru-dark) { background: #F5F5F7; }
    at the edges. */
 .tru-dark .tru-shell::after {
   background:
-    radial-gradient(80% 40% at 50% -6%, rgba(255, 255, 255, 0.9) 0%, transparent 70%),
-    linear-gradient(180deg, transparent 0%, transparent 80%, rgba(0, 0, 0, 0.03) 100%);
+    radial-gradient(80% 40% at 50% -6%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
+    linear-gradient(180deg, transparent 0%, transparent 80%, rgba(0, 0, 0, 0.4) 100%);
 }
 .tru-dark .tru-room, .tru-dark .tru-mood { z-index: -1; }
 /* The ground itself — truHqDark paints a forest gradient plus a dark bokeh
@@ -462,23 +468,23 @@ body:has(.tru-dark) { background: #F5F5F7; }
   z-index: -2;
   animation: none;
   background:
-    radial-gradient(60% 40% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(50% 40% at 85% 100%, #E9E9EE 0%, rgba(233, 233, 238, 0) 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F4F4F6 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 
 /* Surfaces that carried their own forest gradient rather than reading --card. */
 .tru-dark .dk-table .tru-table thead th {
-  background: #FAFAFC;
+  background: rgba(28, 28, 30, 0.9);
   color: var(--text-50);
-  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 .tru-dark .dk-table .tru-table thead th.sortable.on { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
 .tru-dark .tru-table thead th.sortable:hover { color: var(--text); }
 .tru-dark .rp-journey,
 .tru-dark .rp-canvas.dk-main .rp-journey,
 .tru-dark .dk-page .rp-journey {
-  background: #FFFFFF;
+  background: #2C2C2E;
   border: 0;
   border-radius: var(--r-card);
   box-shadow: var(--elev-1);
@@ -490,11 +496,180 @@ body:has(.tru-dark) { background: #F5F5F7; }
   box-shadow: inset 0 0 0 1px rgba(224, 86, 42, 0.22);
 }
 .tru-dark .dk-eyebrow {
-  background: var(--sea-soft); color: var(--sea-hi);
-  box-shadow: inset 0 0 0 1px rgba(63, 143, 115, 0.22);
+  background: rgba(255, 255, 255, 0.06); color: var(--text-60);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  text-transform: none; letter-spacing: 0.02em; font-weight: 600;
 }
 .tru-dark .dk-mast h1 em { color: var(--tab-mid); }
 .tru-dark .tru-shell[data-tab="pulse"] .dk-mast h1 em { color: var(--accent); }
+
+/* ======================================================================
+   PULSE — leftovers from the forest room. The deck, the scale, the
+   watch rows, the roster marks. Colour only on the person who needs
+   a conversation. Chrome stays grey.
+   ====================================================================== */
+
+/* Small labels: sentence case, like the rest of a light Apple page.
+   Tracking-out caps were a dark-room hardware voice; on white they
+   read as every other SaaS dashboard. */
+.tru-dark .dk-tile .k,
+.tru-dark .dk-tile-rank,
+.tru-dark .tru-table thead th,
+.tru-dark .dk-table .tru-table tfoot td:first-child,
+.tru-dark .rs-tag,
+.tru-dark .rs-grp-k,
+.tru-dark .sm-line b {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+.tru-dark .dk-tile .k { font-size: 11px; color: var(--text-50); }
+.tru-dark .dk-tile .k-do.is-sorting { color: var(--text-50); }
+.tru-dark .dk-tile-rank { font-size: 10px; letter-spacing: 0.01em; }
+.tru-dark .tru-table thead th { font-size: 12px; color: var(--text-50); }
+.tru-dark .rs-tag { font-size: 11px; }
+.tru-dark .rs-grp-k { color: var(--text-50); font-size: 12px; }
+
+/* Five numbers sit on the room. Only the scale is a window — six identical
+   white cards was the flood. */
+.tru-dark .dk-tile:not(.dk-tile-lead) {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.tru-dark .dk-tile:not(.dk-tile-lead):hover {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+.tru-dark .dk-tile:not(.dk-tile-lead).is-sorting {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tru-dark .dk-tile-lead.is-sorting {
+  box-shadow:
+    inset 0 2px 0 var(--accent),
+    var(--elev-1);
+}
+
+/* ---- watch rows: glass, one action in blue ----------------------------- */
+.tru-dark .dk-fr {
+  background: rgba(20, 22, 28, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--elev-1);
+  border-radius: 16px;
+}
+.tru-dark .dk-fr::before { background: rgba(255, 255, 255, 0.16); }
+.tru-dark .dk-fr.crit::before { background: var(--ember); }
+.tru-dark .dk-fr.crit { background: rgba(224, 86, 42, 0.14); }
+.tru-dark .dk-fr:hover { background: #2C2C2E; box-shadow: var(--card-hover-shadow); }
+.tru-dark .dk-fr.crit:hover { background: rgba(224, 86, 42, 0.20); }
+.tru-dark .dk-focus .dk-fr.is-on { background: #2C2C2E; box-shadow: var(--card-hover-shadow); }
+.tru-dark .dk-focus .dk-fr.crit.is-on { background: rgba(224, 86, 42, 0.20); }
+.tru-dark .dk-fr-do { color: var(--accent); }
+
+/* ---- leads-per-contract scale: a grey rail, a black line, ember dots
+   only past the line. The forest halo and coral caption are gone. ----- */
+.tru-dark .sm-rail {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #C7C7CC 8%, #C7C7CC 92%, transparent);
+}
+.tru-dark .sm-line { background: #F5F5F7; width: 2px; }
+.tru-dark .sm-line b {
+  color: var(--text-50); font-size: 11px;
+  background: #2C2C2E;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+.tru-dark .sm-dot {
+  width: 11px; height: 11px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+.tru-dark .sm-dot.is-on {
+  width: 15px; height: 15px;
+  box-shadow: 0 0 0 3px #2C2C2E, 0 0 0 4.5px currentColor, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.tru-dark .sm-dot.is-pinned {
+  box-shadow: 0 0 0 3px #2C2C2E, 0 0 0 4.5px currentColor, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.tru-dark .sm-flag {
+  background: rgba(20, 22, 28, 0.86);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 8px 20px -10px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+}
+.tru-dark .sm-grip {
+  background: #F5F5F7;
+  box-shadow: 0 0 0 1.5px #F5F5F7, 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.tru-dark .sm-line.is-dragging .sm-grip {
+  box-shadow: 0 0 0 2px #F5F5F7, 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Mini scale in the table — same reading as the big one. */
+.tru-dark .rs-scale u,
+.tru-dark .rs-key.line { background: #F5F5F7; }
+.tru-dark .rs-scale i.h-holding { background: #F5F5F7; }
+.tru-dark .rs-scale i.h-behind { background: #86868B; }
+.tru-dark .rs-scale i.h-past-line { background: var(--ember); }
+.tru-dark .rs-scale-lg i { box-shadow: 0 0 0 2px #2C2C2E, 0 1px 3px rgba(0, 0, 0, 0.4); }
+
+/* Avatars, tags, bars: grey for the floor, ember for the person who
+   needs you. No sea, no gold. */
+.tru-dark .rs-av {
+  color: var(--text);
+  background: #2C2C2E;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.tru-dark .rs-av.h-past-line { background: var(--ember); color: #FFFFFF; }
+.tru-dark .rs-av.h-behind { background: #3A3A3C; color: var(--text); }
+.tru-dark .rs-av.h-no-volume { background: #2C2C2E; color: var(--text-50); }
+.tru-dark .rs-tag { box-shadow: none; }
+.tru-dark .rs-tag.h-holding { background: rgba(255, 255, 255, 0.08); color: var(--text-60); }
+.tru-dark .rs-tag.h-behind { background: rgba(255, 255, 255, 0.08); color: var(--text-60); }
+.tru-dark .rs-tag.h-past-line { background: rgba(224, 86, 42, 0.12); color: var(--ember); }
+.tru-dark .rs-tag.h-no-volume { background: transparent; color: var(--text-40); }
+.tru-dark .rs-strip.t-sea i,
+.tru-dark .rs-strip.t-amber i {
+  background: linear-gradient(180deg, #D2D2D7, rgba(210, 210, 215, 0.22));
+}
+.tru-dark .rs-strip.t-ember i {
+  background: linear-gradient(180deg, var(--ember), rgba(224, 86, 42, 0.22));
+}
+
+/* Roster hover / pin: a grey wash, not a gold hairline. */
+.tru-dark .tru-table tbody tr.rowlink:hover td,
+.tru-dark .tru-table tbody tr.row-open td,
+.tru-dark .tru-table tbody tr.is-on td {
+  background: var(--hover-fill-soft);
+  box-shadow: none;
+}
+.tru-dark .tru-table tbody tr.is-pinned td { background: rgba(0, 0, 0, 0.04); }
+.tru-dark .tru-table tbody tr.crit td { background: rgba(224, 86, 42, 0.05); }
+.tru-dark .dk-table .tru-table tfoot td {
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+}
+
+/* The person pane was a dark forest sheet. It is a white glass panel now,
+   same as the command bar — the one blue is the thing you can click. */
+.tru-dark .rs-scrim { background: rgba(0, 0, 0, 0.55); }
+.tru-dark .rs-pane {
+  background: rgba(20, 22, 28, 0.72);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  border-radius: 28px;
+}
+.tru-dark .rs-pill.p,
+.tru-dark .rs-cta {
+  color: #FFFFFF;
+  background: var(--accent);
+  box-shadow: 0 10px 24px -12px rgba(0, 113, 227, 0.6);
+}
+.tru-dark .rs-pill.p span,
+.tru-dark .rs-cta span { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; }
 
 /* ---- reduced motion: opacity only, ≤150ms ------------------------------- */
 @media (prefers-reduced-motion: reduce) {
