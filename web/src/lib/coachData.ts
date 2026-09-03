@@ -117,6 +117,10 @@ export interface RosterAgent extends Pace {
   id: string;
   teamId: string | null;
   name: string;
+  /** False for a cohort member who has not taken the TRU assessment yet. The
+   *  archetype fields below are placeholders on that row; the 1:1 tooling
+   *  (check-ins, commitments, meeting prep) is real and works regardless. */
+  assessed: boolean;
   code: string;
   personalCode: string | null;
   emoji: string;
@@ -147,7 +151,10 @@ interface AgentRow {
   checkins: Array<{ created_at: string; met: unknown; leads: unknown; convos: unknown; focus: string | null }> | null;
 }
 
-export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
+export async function loadRoster(
+  cadenceDays = 90,
+  opts: { includeUnassessed?: boolean } = {},
+): Promise<RosterAgent[]> {
   // Demo/preview: render a believable Sample Realty roster with NO backend, so Coach
   // is previewable on ?demo=1 like every other tab. Never touches Supabase.
   const pcodes: Record<string, string> = {};
@@ -181,21 +188,51 @@ export async function loadRoster(cadenceDays = 90): Promise<RosterAgent[]> {
       // here. Demo rows are marked coaching_enabled below so ?demo=1 keeps rendering.
       if (!agent.coaching_enabled) return null;
       const latest = assessments[0] || null;
-      if (!latest) return null; // not-yet-assessed cohort members show in the "Not yet assessed" lane (derived in Coach.tsx from loadFullRoster), not this archetype roster
-      const code = latest.code;
+      // A cohort member with no assessment has no archetype row for the
+      // dashboard, but a leader still runs 1:1s with them (Karisa, 2026-09-03:
+      // the leader could not open her card to log the 1:1 they had just had).
+      // Coach asks for them and marks them `assessed: false`; every other
+      // caller keeps the archetype-only roster.
+      if (!latest && !opts.includeUnassessed) return null;
+      const code = latest?.code ?? '';
       const ar = archOf(code);
       const lc = llOf(code);
       const lastDays = checkins.length ? daysSince(checkins[0].created_at) : 99;
       const pace = paceFromDays(lastDays, checkins.length > 0);
-      const days = daysSince(latest.taken_at);
+      const days = latest ? daysSince(latest.taken_at) : 99;
       const lastLabel = lastDays >= 99 ? 'never'
         : lastDays === 0 ? 'today'
           : lastDays === 1 ? 'yesterday'
             : lastDays + 'd ago';
+      if (!latest) {
+        return {
+          id: agent.id,
+          teamId: agent.team_id ?? null,
+          name: agent.name,
+          assessed: false,
+          code: '',
+          personalCode: null,
+          emoji: '',
+          color: '#7c8592',
+          archName: 'Not assessed yet',
+          quad: '',
+          initials: initials(agent.name),
+          tileBg: '#7c859222',
+          days,
+          due: false,
+          lastDays,
+          lastLabel,
+          lastFocus: checkins[0]?.focus || '',
+          takes: 0,
+          token: agent.token,
+          ...pace,
+        };
+      }
       return {
         id: agent.id,
         teamId: agent.team_id ?? null,
         name: agent.name,
+        assessed: true,
         code,
         personalCode: pcodes[agent.id] || null,
         emoji: ar.emoji,
