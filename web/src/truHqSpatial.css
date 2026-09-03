@@ -19,16 +19,22 @@
    re-themes at once. Below the palette are the surfaces whose SHAPE
    changes: the capsule sidebar, the island, the command bar, the door.
 
-   Glass is earned: blur lives on chrome that floats over content (sidebar,
-   island, command bar, door). Content plates are white, not blurred.
+   Glass is earned: blur lives on chrome that floats (sidebar, island,
+   command bar, door) AND on the few raised windows. The room itself is
+   Apple's grouped grey (#E8E8ED), not white — white is a window, not
+   the walls. Solid paper-white plates on a paper-white ground was the
+   flood. Tables stay more opaque so a roster can be read.
    ===================================================================== */
 
 .tru-dark {
-  /* ---- the room ------------------------------------------------------- */
-  --base: #F5F5F7;
-  --panel: #FFFFFF;
-  --card: #FFFFFF;
-  --card-flat: #FAFAFC;
+  /* ---- the room -------------------------------------------------------
+     Apple grey 5. The Vision Pro page is this grey with photographs in
+     it, not a field of white cards. Same family as #F5F5F7, one step
+     down so a glass window has somewhere to sit. */
+  --base: #E8E8ED;
+  --panel: #F5F5F7;
+  --card: #F5F5F7;
+  --card-flat: #ECECF0;
   --border: rgba(0, 0, 0, 0.10);
   --border-soft: rgba(0, 0, 0, 0.06);
 
@@ -60,8 +66,8 @@
   --cream: #FFFFFF;
   --on-hero: #1D1D1F;
   --on-hero-60: #6E6E73;
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, rgba(255,255,255,0.5) 0%, transparent 46%), #E8E8ED;
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, rgba(255,255,255,0.4) 0%, transparent 46%), #E8E8ED;
   --hover-fill: rgba(0, 0, 0, 0.04);
   --hover-fill-soft: rgba(0, 0, 0, 0.025);
   --avatar-ring: rgba(0, 0, 0, 0.08);
@@ -85,7 +91,7 @@
     inset -1px 0 0 var(--glass-edge-side);
 
   /* ---- elevation -------------------------------------------------------- */
-  --elev-1: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.10);
+  --elev-1: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 10px 28px -10px rgba(0, 0, 0, 0.14);
   --elev-2: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.05), 0 20px 60px -24px rgba(0, 0, 0, 0.18);
   --elev-3: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.06), 0 40px 100px -30px rgba(0, 0, 0, 0.25);
   --lip: inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -142,13 +148,14 @@
 }
 
 /* ======================================================================
-   THE ROOM — off-white, with soft daylight. No render, no tint.
+   THE ROOM — Apple grey, with a window at the top. No render, no tint.
+   White radials were bleaching this back to paper.
    ====================================================================== */
 .tru-dark .tru-room i.tru-room-a { display: none; }
 .tru-dark .tru-room i.tru-room-core {
   background-image: radial-gradient(circle, var(--tab-flare-a) 0%, var(--tab-flare-b) 30%, transparent 62%);
   mix-blend-mode: normal;
-  opacity: 0.8;
+  opacity: 0.45;
 }
 .tru-dark .tru-room::before {
   content: '';
@@ -156,9 +163,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(70% 55% at 20% 0%, #FFFFFF 0%, transparent 70%),
-    radial-gradient(50% 45% at 90% 100%, #ECECF1 0%, transparent 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F2F2F5 100%);
+    radial-gradient(55% 40% at 18% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 70%),
+    linear-gradient(180deg, #ECECF0 0%, #E4E4EA 100%);
 }
 .tru-dark .tru-mood .m-calm { background: none; }
 .tru-dark .tru-mood .m-watch {
@@ -168,7 +174,7 @@
   background: radial-gradient(118% 60% at 50% 108%, rgba(224, 86, 42, 0.12), transparent 62%);
 }
 .tru-shell { background: transparent; color: var(--text); }
-body:has(.tru-dark) { background: #F5F5F7; }
+body:has(.tru-dark) { background: #E8E8ED; }
 
 /* ======================================================================
    THE SHELL — a floating capsule of icons in white glass.
@@ -291,7 +297,7 @@ body:has(.tru-dark) { background: #F5F5F7; }
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 .tru-dark .cb-scrim {
-  background: rgba(245, 245, 247, 0.55);
+  background: rgba(232, 232, 237, 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: cbFade var(--dur-micro) var(--ease);
@@ -325,19 +331,25 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-dark .cb-foot { border-top: 1px solid rgba(0, 0, 0, 0.08); }
 
 /* ======================================================================
-   CONTENT PLATES — white, rounded, one soft grey shadow.
+   CONTENT PLATES — frosted windows over the grey room, not paper.
    ====================================================================== */
 .tru-dark .rs-plate,
 .tru-dark .dk-tile,
 .tru-dark .ad-panel,
 .tru-dark .card {
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
   border-color: transparent;
   border-radius: var(--r-card);
   box-shadow: var(--elev-1);
 }
 .tru-dark .rs-plate:hover,
 .tru-dark .dk-tile:hover { box-shadow: var(--card-hover-shadow); }
+/* A roster has to be read. More opaque than a tile, still not paper. */
+.tru-dark .dk-table {
+  background: rgba(255, 255, 255, 0.84);
+}
 
 /* ======================================================================
    THE DOOR — the one cinematic moment. The brand's own scene, in colour,
@@ -349,9 +361,8 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-door {
   overflow: hidden;
   background:
-    radial-gradient(60% 45% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(50% 40% at 85% 100%, #E6E6EB 0%, rgba(230, 230, 235, 0) 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F1F1F4 100%);
+    radial-gradient(55% 40% at 30% 0%, rgba(255, 255, 255, 0.45) 0%, transparent 70%),
+    linear-gradient(180deg, #ECECF0 0%, #E4E4EA 100%);
 }
 .tru-dark .tru-door-scene { display: none; }
 .tru-door-scrim { display: none; }
@@ -462,14 +473,13 @@ body:has(.tru-dark) { background: #F5F5F7; }
   z-index: -2;
   animation: none;
   background:
-    radial-gradient(60% 40% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(50% 40% at 85% 100%, #E9E9EE 0%, rgba(233, 233, 238, 0) 70%),
-    linear-gradient(180deg, #F7F7F9 0%, #F4F4F6 100%);
+    radial-gradient(55% 38% at 22% 0%, rgba(255, 255, 255, 0.4) 0%, transparent 70%),
+    linear-gradient(180deg, #ECECF0 0%, #E4E4EA 100%);
 }
 
 /* Surfaces that carried their own forest gradient rather than reading --card. */
 .tru-dark .dk-table .tru-table thead th {
-  background: #FAFAFC;
+  background: rgba(245, 245, 247, 0.72);
   color: var(--text-50);
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
@@ -524,26 +534,43 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-dark .rs-tag { font-size: 11px; }
 .tru-dark .rs-grp-k { color: var(--text-50); font-size: 12px; }
 
-/* The tile driving the sort — a blue hairline, not a gold/forest plate. */
-.tru-dark .dk-tile.is-sorting {
+/* Five numbers sit on the room. Only the scale is a window — six identical
+   white cards was the flood. */
+.tru-dark .dk-tile:not(.dk-tile-lead) {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.tru-dark .dk-tile:not(.dk-tile-lead):hover {
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: none;
+}
+.tru-dark .dk-tile:not(.dk-tile-lead).is-sorting {
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tru-dark .dk-tile-lead.is-sorting {
   box-shadow:
     inset 0 2px 0 var(--accent),
     var(--elev-1);
 }
 
-/* ---- watch rows: white plates, one action in blue --------------------- */
+/* ---- watch rows: glass, one action in blue ----------------------------- */
 .tru-dark .dk-fr {
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   box-shadow: var(--elev-1);
   border-radius: 16px;
 }
 .tru-dark .dk-fr::before { background: rgba(0, 0, 0, 0.12); }
 .tru-dark .dk-fr.crit::before { background: var(--ember); }
-.tru-dark .dk-fr.crit { background: rgba(224, 86, 42, 0.06); }
-.tru-dark .dk-fr:hover { background: #FFFFFF; box-shadow: var(--card-hover-shadow); }
-.tru-dark .dk-fr.crit:hover { background: rgba(224, 86, 42, 0.09); }
-.tru-dark .dk-focus .dk-fr.is-on { background: #FFFFFF; box-shadow: var(--card-hover-shadow); }
-.tru-dark .dk-focus .dk-fr.crit.is-on { background: rgba(224, 86, 42, 0.09); }
+.tru-dark .dk-fr.crit { background: rgba(255, 255, 255, 0.45); }
+.tru-dark .dk-fr:hover { background: rgba(255, 255, 255, 0.72); box-shadow: var(--card-hover-shadow); }
+.tru-dark .dk-fr.crit:hover { background: rgba(255, 236, 230, 0.8); }
+.tru-dark .dk-focus .dk-fr.is-on { background: rgba(255, 255, 255, 0.72); box-shadow: var(--card-hover-shadow); }
+.tru-dark .dk-focus .dk-fr.crit.is-on { background: rgba(255, 236, 230, 0.8); }
 .tru-dark .dk-fr-do { color: var(--accent); }
 
 /* ---- leads-per-contract scale: a grey rail, a black line, ember dots
@@ -596,8 +623,8 @@ body:has(.tru-dark) { background: #F5F5F7; }
    needs you. No sea, no gold. */
 .tru-dark .rs-av {
   color: var(--text);
-  background: #E8E8ED;
-  box-shadow: none;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 .tru-dark .rs-av.h-past-line { background: var(--ember); color: #FFFFFF; }
 .tru-dark .rs-av.h-behind { background: #D8D8DE; color: var(--text); }
@@ -625,13 +652,13 @@ body:has(.tru-dark) { background: #F5F5F7; }
 .tru-dark .tru-table tbody tr.is-pinned td { background: rgba(0, 0, 0, 0.04); }
 .tru-dark .tru-table tbody tr.crit td { background: rgba(224, 86, 42, 0.05); }
 .tru-dark .dk-table .tru-table tfoot td {
-  background: #FAFAFC;
+  background: rgba(232, 232, 237, 0.55);
   color: var(--text);
 }
 
 /* The person pane was a dark forest sheet. It is a white glass panel now,
    same as the command bar — the one blue is the thing you can click. */
-.tru-dark .rs-scrim { background: rgba(245, 245, 247, 0.55); }
+.tru-dark .rs-scrim { background: rgba(232, 232, 237, 0.55); }
 .tru-dark .rs-pane {
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: var(--glass-blur);
