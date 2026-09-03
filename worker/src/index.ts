@@ -10,7 +10,7 @@ import { handleAuthRoutes } from './authRoutes.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
-import { handleCoachBriefIngest } from './coachBriefIngest.js';
+import { handleCoachBriefIngest, handleCoachTeamsList } from './coachBriefIngest.js';
 import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
 import { handleFathomIngest } from './fathomIngest.js';
 import { fetchRevenue } from './revenue.js';
@@ -241,6 +241,11 @@ export default {
     // Coach tab reads the stored result through /data/coach/brief above).
     const briefIngestResponse = await handleCoachBriefIngest(req, env, url, cors, database);
     if (briefIngestResponse) return briefIngestResponse;
+
+    // Desktop-side onboarding looks up a new team's TrueHQ UUID here instead of
+    // querying Supabase directly. Same door, same secret as the brief ingest above.
+    const coachTeamsResponse = await handleCoachTeamsList(req, env, url, cors, database);
+    if (coachTeamsResponse) return coachTeamsResponse;
 
     // The fub-weekly-reports scraper's Zillow target/pacing numbers land here
     // (its own secret; the admin-only targets dashboard reads the stored
