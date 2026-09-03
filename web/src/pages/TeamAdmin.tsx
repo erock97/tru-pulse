@@ -6,6 +6,7 @@ import {
   loadTeamRoster, setExcluded, setCoaching, setTeamRole, inviteAgent,
   signOutClean, TEAM_ROLE_LABELS, type TeamMember, type TeamRole,
 } from '../lib/api';
+import { formatPhone } from '../lib/phone';
 import '../truHqDark.css';
 
 /* ============================================================
@@ -374,7 +375,7 @@ export default function TeamAdmin({
                                 line ran past the ellipsis cutoff and half the
                                 digits vanished. */}
                             {m.phone && (
-                              <div className="rs-sub2">Phone number: {m.phone}</div>
+                              <div className="rs-sub2">Phone number: {formatPhone(m.phone)}</div>
                             )}
                             <div className="rs-sub2">
                               {m.email || 'no email on file'}
