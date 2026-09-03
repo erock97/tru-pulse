@@ -344,17 +344,17 @@ body:has(.tru-dark) { background: #F5F5F7; }
    softened behind a sheet of white glass. Panel rises with a blur-in; the
    fields stagger.
    ====================================================================== */
-.tru-door { background: #E9E9EE; overflow: hidden; }
-.tru-dark .tru-door-scene {
-  animation: none;
-  filter: blur(10px) brightness(0.92) saturate(1.05);
-  opacity: 1;
-  transform: scale(1.08);
-}
-.tru-door-scrim {
+/* No scene. Eric has said more than once he does not want the green
+   backdrop; the door is the same daylight room as everything inside. */
+.tru-door {
+  overflow: hidden;
   background:
-    radial-gradient(60% 60% at 50% 45%, rgba(255, 255, 255, 0.0) 0%, rgba(255, 255, 255, 0.0) 50%, rgba(233, 233, 238, 0.35) 100%);
+    radial-gradient(60% 45% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(50% 40% at 85% 100%, #E6E6EB 0%, rgba(230, 230, 235, 0) 70%),
+    linear-gradient(180deg, #F7F7F9 0%, #F1F1F4 100%);
 }
+.tru-dark .tru-door-scene { display: none; }
+.tru-door-scrim { display: none; }
 .tru-door-stage { max-width: 480px; }
 .tru-door-mark, .tru-door-title, .tru-door-sub, .tru-door-swap { animation: doorRise var(--dur-orchestrated) var(--ease) both; }
 .tru-door-mark { animation-delay: 0ms; }
