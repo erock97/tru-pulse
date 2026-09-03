@@ -42,6 +42,8 @@ export function AgentHqShell({
   return (
     <div className="tru-shell">
       <aside className="side">
+        {/* Same capsule as HqShell: the aside centres it, the glass lives here. */}
+        <div className="side-capsule">
         <div className="side-logo">
           <button onClick={() => onGo('home')} style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0 }} aria-label="Your HQ home">
             <TruLogo size={28} wordSize={20} sub="HQ" />
@@ -72,6 +74,7 @@ export function AgentHqShell({
               Sign out
             </button>
           )}
+        </div>
         </div>
       </aside>
 

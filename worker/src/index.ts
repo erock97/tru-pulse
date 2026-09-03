@@ -59,6 +59,11 @@ const ALLOWED_ORIGINS = new Set([
   'https://app.truhq.co',
   'https://truhq.co',
   'https://www.truhq.co',
+  // A preview of the app on our own domain. The session cookie is SameSite=Lax,
+  // so a *.pages.dev preview can never hold a session — only a truhq.co host
+  // can. This is where a redesign gets reviewed signed in, on real data,
+  // before it reaches app.truhq.co.
+  'https://preview.truhq.co',
 ]);
 const ALLOWED_ORIGIN_PATTERNS = [
   /^http:\/\/localhost(:\d+)?$/,          // local dev (vite)

@@ -1,0 +1,508 @@
+/* =====================================================================
+   TRU HQ — SPATIAL GLASS. The interior's material language.
+
+   Benchmark, checked against apple.com/apple-vision-pro on 2026-09-03
+   rather than remembered: it is a LIGHT, neutral system. White and
+   off-white (#F5F5F7) surfaces, near-black text (#1D1D1F), grey secondary
+   text (#6E6E73 / #86868B), light-grey rounded cards, one blue (#0071E3)
+   for the single thing that wants a click. Colour comes from what sits
+   behind the glass, not from the glass. Dark is reserved for a cinematic
+   moment, not for the everyday screens.
+
+   Two earlier cuts got this wrong — a black room with dark panels, then a
+   violet room with bright panels. Both were tints invented from the
+   brief's numbers. This one is the benchmark.
+
+   HOW THIS WORKS. Every interior page wraps itself in `.tru-dark` and every
+   rule in truHqDark.css reads the same handful of custom properties. This
+   file is loaded LAST and re-points them, so the existing component CSS
+   re-themes at once. Below the palette are the surfaces whose SHAPE
+   changes: the capsule sidebar, the island, the command bar, the door.
+
+   Glass is earned: blur lives on chrome that floats over content (sidebar,
+   island, command bar, door). Content plates are white, not blurred.
+   ===================================================================== */
+
+.tru-dark {
+  /* ---- the room ------------------------------------------------------- */
+  --base: #F5F5F7;
+  --panel: #FFFFFF;
+  --card: #FFFFFF;
+  --card-flat: #FAFAFC;
+  --border: rgba(0, 0, 0, 0.10);
+  --border-soft: rgba(0, 0, 0, 0.06);
+
+  --text: #1D1D1F;
+  --text-60: #6E6E73;
+  --text-50: #86868B;
+  --text-40: #A1A1A6;
+  --text-strong: #1D1D1F;
+
+  /* ---- the accent ------------------------------------------------------
+     One blue, on at most one thing per screen. Status keeps its own
+     temperature — ember and terracotta stay warm so warmth means "look
+     here"; the sea green stays for the good state. */
+  --accent: #0071E3;
+  --accent-hi: #0077ED;
+  --accent-soft: rgba(0, 113, 227, 0.10);
+  --accent-line: rgba(0, 113, 227, 0.32);
+  --on-accent: #FFFFFF;
+  --positive: #34A853;
+  --warning: #C77700;
+  --critical: #D93025;
+  --ember: #E0562A;
+  --terracotta: #E07A4F;
+  --sea: #3F8F73;
+  --sea-hi: #2F7A60;
+  --sea-soft: rgba(63, 143, 115, 0.12);
+
+  --espresso: #1D1D1F;
+  --cream: #FFFFFF;
+  --on-hero: #1D1D1F;
+  --on-hero-60: #6E6E73;
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #FFFFFF 0%, transparent 46%), #F0F0F3;
+  --hover-fill: rgba(0, 0, 0, 0.04);
+  --hover-fill-soft: rgba(0, 0, 0, 0.025);
+  --avatar-ring: rgba(0, 0, 0, 0.08);
+  --stat-grad: linear-gradient(180deg, #1D1D1F, #3A3A3E);
+  --track-fill: #E8E8ED;
+  --track-fill-2: #EDEDF1;
+  --track-hairline: #E1E1E6;
+  --track-outer: #E8E8ED;
+  --dot-empty: #D8D8DE;
+
+  /* ---- glass ------------------------------------------------------------
+     White frosted glass over a light room. The rim is a brighter white on
+     the top edge; the shadow is grey, large and soft — never a hard line. */
+  --glass-fill: rgba(255, 255, 255, 0.72);
+  --glass-blur: blur(30px) saturate(180%);
+  --glass-edge-top: rgba(255, 255, 255, 0.95);
+  --glass-edge-side: rgba(255, 255, 255, 0.6);
+  --glass-edges:
+    inset 0 1px 0 var(--glass-edge-top),
+    inset 1px 0 0 var(--glass-edge-side),
+    inset -1px 0 0 var(--glass-edge-side);
+
+  /* ---- elevation -------------------------------------------------------- */
+  --elev-1: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.10);
+  --elev-2: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.05), 0 20px 60px -24px rgba(0, 0, 0, 0.18);
+  --elev-3: var(--glass-edges), 0 0 0 1px rgba(0, 0, 0, 0.06), 0 40px 100px -30px rgba(0, 0, 0, 0.25);
+  --lip: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --lift: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --card-shadow: var(--elev-1);
+  --card-hover-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 16px 40px -18px rgba(0, 0, 0, 0.18);
+
+  /* ---- radius scale --------------------------------------------------- */
+  --r-btn: 999px;
+  --r-card: 20px;
+  --r-card-lg: 24px;
+  --r-chip: 999px;
+  --r-bezel: 28px;
+  --r-bezel-in: 20px;
+
+  /* ---- motion ----------------------------------------------------------- */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-micro: 140ms;
+  --dur-standard: 230ms;
+  --dur-orchestrated: 720ms;
+
+  background: var(--base);
+  color: var(--text);
+  color-scheme: light;
+}
+
+/* Tabs keep a voice as a tint, not a paint. */
+.tru-dark .tru-shell {
+  --tab-hi: #1D1D1F;
+  --tab-mid: #1D1D1F;
+  --tab-soft: rgba(0, 0, 0, 0.06);
+  --tab-line: rgba(0, 0, 0, 0.12);
+  --tab-flare-a: rgba(255, 255, 255, 0.9);
+  --tab-flare-b: rgba(255, 255, 255, 0.4);
+  --stat-grad: linear-gradient(180deg, #1D1D1F, #3A3A3E);
+}
+.tru-dark .tru-shell[data-tab="coach"] {
+  --tab-hi: var(--terracotta); --tab-mid: var(--terracotta);
+  --tab-soft: rgba(224, 122, 79, 0.10); --tab-line: rgba(224, 122, 79, 0.3);
+  --tab-flare-a: rgba(255, 220, 205, 0.9); --tab-flare-b: rgba(255, 230, 220, 0.4);
+}
+.tru-dark .tru-shell[data-tab="rep"] {
+  --tab-hi: var(--sea-hi); --tab-mid: var(--sea);
+  --tab-soft: var(--sea-soft); --tab-line: rgba(63, 143, 115, 0.3);
+  --tab-flare-a: rgba(215, 240, 228, 0.9); --tab-flare-b: rgba(225, 245, 235, 0.4);
+}
+.tru-dark .tru-shell[data-tab="team"],
+.tru-dark .tru-shell[data-tab="admin"] {
+  --tab-hi: #1D1D1F; --tab-mid: #1D1D1F;
+  --tab-soft: rgba(0, 0, 0, 0.06); --tab-line: rgba(0, 0, 0, 0.12);
+  --tab-flare-a: rgba(255, 255, 255, 0.9); --tab-flare-b: rgba(255, 255, 255, 0.4);
+}
+
+/* ======================================================================
+   THE ROOM — off-white, with soft daylight. No render, no tint.
+   ====================================================================== */
+.tru-dark .tru-room i.tru-room-a { display: none; }
+.tru-dark .tru-room i.tru-room-core {
+  background-image: radial-gradient(circle, var(--tab-flare-a) 0%, var(--tab-flare-b) 30%, transparent 62%);
+  mix-blend-mode: normal;
+  opacity: 0.8;
+}
+.tru-dark .tru-room::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 20% 0%, #FFFFFF 0%, transparent 70%),
+    radial-gradient(50% 45% at 90% 100%, #ECECF1 0%, transparent 70%),
+    linear-gradient(180deg, #F7F7F9 0%, #F2F2F5 100%);
+}
+.tru-dark .tru-mood .m-calm { background: none; }
+.tru-dark .tru-mood .m-watch {
+  background: radial-gradient(112% 56% at 50% 106%, rgba(224, 122, 79, 0.10), transparent 64%);
+}
+.tru-dark .tru-mood .m-hot {
+  background: radial-gradient(118% 60% at 50% 108%, rgba(224, 86, 42, 0.12), transparent 62%);
+}
+.tru-shell { background: transparent; color: var(--text); }
+body:has(.tru-dark) { background: #F5F5F7; }
+
+/* ======================================================================
+   THE SHELL — a floating capsule of icons in white glass.
+   ====================================================================== */
+.tru-shell {
+  grid-template-columns: 96px 1fr;
+  column-gap: 8px;
+  padding-left: 16px;
+}
+.tru-shell .side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin: 0;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 2;
+  color: var(--text);
+}
+.tru-shell .side-capsule {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+  padding: 16px 10px;
+  border-radius: 48px;
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+}
+.tru-shell .side-logo {
+  padding: 4px 0 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex; justify-content: center;
+}
+.tru-shell .side-logo .tru-word { display: none; }
+.tru-shell .side-nav { margin-top: 12px; gap: 4px; flex: 0 0 auto; }
+.tru-shell .side-link {
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border-radius: 24px;
+  border: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-60);
+  transition: background var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+}
+.tru-shell .side-link svg { width: 22px; height: 22px; }
+.tru-shell .side-link:hover { color: var(--text); background: rgba(0, 0, 0, 0.05); }
+.tru-shell .side-link.active {
+  color: var(--text);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 6px 18px -8px rgba(0, 0, 0, 0.2);
+}
+.tru-shell .side-link.active svg { color: var(--tab-mid); }
+.tru-shell .side-link.active::before { display: none; }
+.tru-dark .side-glide { display: none; }
+/* The rendered brass plate that used to sit behind the sidebar. */
+.tru-dark .tru-shell .side::before { display: none; }
+.tru-shell .side-soon { display: none; }
+.tru-shell .side-foot { margin-top: 14px; gap: 8px; align-items: center; }
+.tru-shell .side-user {
+  padding: 4px; border: 0; border-radius: 999px;
+  background: transparent; box-shadow: none; justify-content: center;
+}
+.tru-shell .side-user > div { display: none; }
+.tru-shell .side-link-btn { padding: 6px 0; font-size: 10.5px; color: var(--text-50); text-align: center; }
+.tru-shell .side-link-btn:hover { color: var(--text); }
+.tru-shell .main { padding: 12px clamp(20px, 2.5vw, 32px) 40px; }
+
+/* ======================================================================
+   THE ISLAND
+   ====================================================================== */
+.tru-dark .dk-island {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+}
+.tru-dark .dk-mk i {
+  color: #FFFFFF;
+  background: linear-gradient(155deg, #3A3A3E, #1D1D1F);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.tru-dark .dk-mk b { color: var(--text); }
+.tru-dark .dk-mk b em { color: var(--text-50); }
+.tru-dark .dk-div { background: rgba(0, 0, 0, 0.1); }
+.tru-dark .dk-win { background: rgba(0, 0, 0, 0.05); box-shadow: none; }
+.tru-dark .dk-win button { color: var(--text-50); }
+.tru-dark .dk-win button:hover { color: var(--text); }
+.tru-dark .dk-win button.on {
+  background: #FFFFFF;
+  color: var(--text);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 4px 12px -6px rgba(0, 0, 0, 0.2);
+}
+.tru-dark .dk-nav button { color: var(--text-50); }
+.tru-dark .dk-nav button.on { color: var(--text); background: rgba(0, 0, 0, 0.06); }
+.tru-dark .dk-who { color: var(--text-50); }
+.tru-dark .dk-who b { color: var(--text); }
+
+/* ======================================================================
+   THE COMMAND BAR
+   ====================================================================== */
+.tru-dark .cb-hint {
+  color: var(--text-50);
+  border: 0;
+  background: rgba(0, 0, 0, 0.05);
+}
+.tru-dark .cb-hint:hover { color: var(--text); background: rgba(0, 0, 0, 0.08); }
+.tru-dark .cb-hint kbd, .tru-dark .cb kbd {
+  color: var(--text-50);
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.tru-dark .cb-scrim {
+  background: rgba(245, 245, 247, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: cbFade var(--dur-micro) var(--ease);
+}
+.tru-dark .cb {
+  width: min(640px, calc(100vw - 32px));
+  border-radius: 28px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  animation: cbRise 180ms var(--ease);
+  transform-origin: 50% 20%;
+}
+@keyframes cbRise { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.tru-dark .cb-field { border-bottom: 1px solid rgba(0, 0, 0, 0.08); color: var(--text-50); }
+.tru-dark .cb-field input { font-size: 16px; color: var(--text); }
+.tru-dark .cb-field input::placeholder { color: var(--text-40); }
+.tru-dark .cb-group {
+  padding: 12px 12px 6px;
+  font: 500 12px/1 var(--hq-font);
+  letter-spacing: 0; text-transform: none;
+  color: var(--text-50);
+}
+.tru-dark .cb-row { border-radius: 16px; }
+.tru-dark .cb-row.is-sel { background: rgba(0, 0, 0, 0.05); }
+.tru-dark .cb-label { color: var(--text); }
+.tru-dark .cb-sub, .tru-dark .cb-foot, .tru-dark .cb-none { color: var(--text-50); }
+.tru-dark .cb-go { color: var(--accent); }
+.tru-dark .cb-foot { border-top: 1px solid rgba(0, 0, 0, 0.08); }
+
+/* ======================================================================
+   CONTENT PLATES — white, rounded, one soft grey shadow.
+   ====================================================================== */
+.tru-dark .rs-plate,
+.tru-dark .dk-tile,
+.tru-dark .ad-panel,
+.tru-dark .card {
+  background: #FFFFFF;
+  border-color: transparent;
+  border-radius: var(--r-card);
+  box-shadow: var(--elev-1);
+}
+.tru-dark .rs-plate:hover,
+.tru-dark .dk-tile:hover { box-shadow: var(--card-hover-shadow); }
+
+/* ======================================================================
+   THE DOOR — the one cinematic moment. The brand's own scene, in colour,
+   softened behind a sheet of white glass. Panel rises with a blur-in; the
+   fields stagger.
+   ====================================================================== */
+/* No scene. Eric has said more than once he does not want the green
+   backdrop; the door is the same daylight room as everything inside. */
+.tru-door {
+  overflow: hidden;
+  background:
+    radial-gradient(60% 45% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(50% 40% at 85% 100%, #E6E6EB 0%, rgba(230, 230, 235, 0) 70%),
+    linear-gradient(180deg, #F7F7F9 0%, #F1F1F4 100%);
+}
+.tru-dark .tru-door-scene { display: none; }
+.tru-door-scrim { display: none; }
+.tru-door-stage { max-width: 480px; }
+.tru-door-mark, .tru-door-title, .tru-door-sub, .tru-door-swap { animation: doorRise var(--dur-orchestrated) var(--ease) both; }
+.tru-door-mark { animation-delay: 0ms; }
+.tru-door-title { animation-delay: 60ms; color: var(--text); }
+.tru-door-sub { animation-delay: 120ms; color: var(--text-60); }
+.tru-dark .tru-word .r { color: var(--text); }
+.tru-door .tru-word { color: var(--text); }
+.tru-door-panel {
+  padding: clamp(28px, 4vw, 36px);
+  border-radius: 40px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  animation: doorRise var(--dur-orchestrated) var(--ease) 180ms both;
+}
+.tru-door-swap { animation-delay: 620ms; color: var(--text-60); }
+.tru-door-swap button { color: var(--accent); font-weight: 600; }
+.tru-door-panel form > *, .tru-door-or, .tru-door-google { animation: doorField 420ms var(--ease) both; }
+.tru-door-panel form > :nth-child(1) { animation-delay: 300ms; }
+.tru-door-panel form > :nth-child(2) { animation-delay: 350ms; }
+.tru-door-panel form > :nth-child(3) { animation-delay: 400ms; }
+.tru-door-panel form > :nth-child(4) { animation-delay: 450ms; }
+.tru-door-panel form > :nth-child(5) { animation-delay: 500ms; }
+.tru-door-panel form > :nth-child(n+6) { animation-delay: 540ms; }
+.tru-door-or { animation-delay: 560ms; }
+.tru-door-google { animation-delay: 600ms; }
+@keyframes doorRise {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes doorField { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.tru-door-title { font-weight: 600; letter-spacing: -0.02em; }
+.tru-door-sub { font-size: 15px; line-height: 24px; }
+.tru-door-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.tru-dark .tru-door-input {
+  height: 44px;
+  padding: 0 16px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #FFFFFF;
+  box-shadow: none;
+  color: var(--text);
+  font-size: 15px;
+  transition: box-shadow var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease);
+}
+.tru-dark .tru-door-input:hover { border-color: rgba(0, 0, 0, 0.16); }
+.tru-dark .tru-door-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.tru-door-forgot { color: var(--text-60); font-size: 13px; }
+.tru-door-forgot:hover { color: var(--text); }
+.tru-door-note { border-radius: 16px; padding: 10px 14px; font-size: 13px; line-height: 18px; }
+.tru-door-note.is-error { background: rgba(217, 48, 37, 0.08); border: 0; color: var(--critical); }
+.tru-door-note.is-ok { background: rgba(52, 168, 83, 0.10); border: 0; color: #1E7A3C; }
+.tru-door-primary {
+  height: 46px;
+  padding: 0 18px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 10px 24px -12px rgba(0, 113, 227, 0.6);
+  transition: transform var(--dur-micro) var(--ease), background var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+}
+.tru-door-primary:hover { filter: none; background: var(--accent-hi); box-shadow: 0 14px 30px -12px rgba(0, 113, 227, 0.7); }
+.tru-door-primary:active { transform: translateY(1px); }
+.tru-door-primary:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--accent-soft), 0 0 0 1px var(--accent); }
+.tru-door-or { color: var(--text-50); margin: 20px 0; }
+.tru-door-or span { background: rgba(0, 0, 0, 0.1); }
+.tru-door-google {
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: none;
+}
+.tru-door-google:hover { background: #F5F5F7; }
+.tru-door-google:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--accent-soft); }
+
+/* ---- the old dark vignette ---------------------------------------------
+   truHqDark pins a fixed near-black vignette to the screen's corners (the
+   "floor" of the forest room). In a white room it is a grey wash over
+   everything. Replaced with daylight: a touch of white at the top, nothing
+   at the edges. */
+.tru-dark .tru-shell::after {
+  background:
+    radial-gradient(80% 40% at 50% -6%, rgba(255, 255, 255, 0.9) 0%, transparent 70%),
+    linear-gradient(180deg, transparent 0%, transparent 80%, rgba(0, 0, 0, 0.03) 100%);
+}
+.tru-dark .tru-room, .tru-dark .tru-mood { z-index: -1; }
+/* The ground itself — truHqDark paints a forest gradient plus a dark bokeh
+   field (field.svg) here. In daylight the ground is off-white with a soft
+   window-light source at the top; no texture, no dots. Behind everything. */
+.tru-dark .tru-shell::before {
+  z-index: -2;
+  animation: none;
+  background:
+    radial-gradient(60% 40% at 30% 0%, #FFFFFF 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(50% 40% at 85% 100%, #E9E9EE 0%, rgba(233, 233, 238, 0) 70%),
+    linear-gradient(180deg, #F7F7F9 0%, #F4F4F6 100%);
+}
+
+/* Surfaces that carried their own forest gradient rather than reading --card. */
+.tru-dark .dk-table .tru-table thead th {
+  background: #FAFAFC;
+  color: var(--text-50);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+.tru-dark .dk-table .tru-table thead th.sortable.on { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+.tru-dark .tru-table thead th.sortable:hover { color: var(--text); }
+.tru-dark .rp-journey,
+.tru-dark .rp-canvas.dk-main .rp-journey,
+.tru-dark .dk-page .rp-journey {
+  background: #FFFFFF;
+  border: 0;
+  border-radius: var(--r-card);
+  box-shadow: var(--elev-1);
+}
+
+/* Small print that was tuned for a dark ground. */
+.tru-dark .dk-eyebrow.hot {
+  background: rgba(224, 86, 42, 0.10); color: var(--ember);
+  box-shadow: inset 0 0 0 1px rgba(224, 86, 42, 0.22);
+}
+.tru-dark .dk-eyebrow {
+  background: var(--sea-soft); color: var(--sea-hi);
+  box-shadow: inset 0 0 0 1px rgba(63, 143, 115, 0.22);
+}
+.tru-dark .dk-mast h1 em { color: var(--tab-mid); }
+.tru-dark .tru-shell[data-tab="pulse"] .dk-mast h1 em { color: var(--accent); }
+
+/* ---- reduced motion: opacity only, ≤150ms ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tru-door-mark, .tru-door-title, .tru-door-sub, .tru-door-swap, .tru-door-panel,
+  .tru-door-panel form > *, .tru-door-or, .tru-door-google {
+    animation: doorFadeOnly 150ms ease-out both;
+    animation-delay: 0ms !important;
+  }
+  .tru-dark .cb { animation: doorFadeOnly 150ms ease-out; }
+}
+@keyframes doorFadeOnly { from { opacity: 0; } to { opacity: 1; } }

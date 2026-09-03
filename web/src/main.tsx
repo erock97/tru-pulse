@@ -5,6 +5,9 @@ import PublicSite from './site/PublicSite';
 import { resolveView } from './lib/routes';
 import { clearLegacyTokens } from './lib/clearLegacyTokens';
 import './styles.css';
+// Loaded last on purpose: it re-points the interior's design tokens to the
+// spatial-glass palette and must win the cascade over truHqDark.css.
+import './truHqSpatial.css';
 
 // Before anything renders, and on every load rather than only on sign-out — a user who
 // never signs out is exactly the one still carrying a pre-cutover token.
