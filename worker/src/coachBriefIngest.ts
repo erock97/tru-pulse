@@ -13,13 +13,36 @@ import type { CoachBrief } from '../../shared/coachBrief.js';
 
 const MAX_BODY_BYTES = 4_000_000;
 // The slug goes into a PostgREST filter, so its shape is validated first — same
-// defense-in-depth as UUID_RE on the data routes.
+// defense-in-depth as UUID_RE on the data routes. A TrueHQ team UUID matches this
+// too (it's a lowercase, dashed, alphanumeric string), so the same gate covers both.
 const SLUG_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// Permanent friendly aliases for teams whose TrueHQ UUID is the canonical identifier.
+// New onboarding should prefer sending the UUID directly (see GET /coach/teams);
+// an alias here is for readability and to give an existing desktop config a stable
+// human name. Never point one at a team by name-matching — only by its real UUID,
+// confirmed against TrueHQ, so a same-named duplicate can never be selected.
+const TEAM_ALIASES: Record<string, string> = {
+  'the-synergy-group-nj': '213f7da9-6c3d-425e-86e6-a32d16db32a3',
+  'sb-realty': 'df216d4d-b05e-4ddf-a84e-0d685182d692',
+};
 
 interface TeamRow { id: string; org_id: string }
 
-async function resolveTeam(database: Db, slug: string): Promise<TeamRow | null> {
-  const rows = await database.select('teams', `select=id,org_id&report_slug=eq.${slug}&limit=1`);
+async function fetchTeamById(database: Db, id: string): Promise<TeamRow | null> {
+  const rows = await database.select('teams', `select=id,org_id&id=eq.${id}&limit=1`);
+  return (rows[0] as TeamRow | undefined) ?? null;
+}
+
+/** identifier is whatever run.teamId carried: a TrueHQ team UUID (preferred for new
+ *  teams), one of TEAM_ALIASES, or a legacy report_slug. UUID and alias both resolve
+ *  straight to a team id, so neither can drift onto a different team sharing a name. */
+async function resolveTeam(database: Db, identifier: string): Promise<TeamRow | null> {
+  if (UUID_RE.test(identifier)) return fetchTeamById(database, identifier);
+  const aliasedId = TEAM_ALIASES[identifier];
+  if (aliasedId) return fetchTeamById(database, aliasedId);
+  const rows = await database.select('teams', `select=id,org_id&report_slug=eq.${identifier}&limit=1`);
   return (rows[0] as TeamRow | undefined) ?? null;
 }
 
@@ -149,5 +172,41 @@ export async function handleCoachBriefIngest(
     status,
     teamResolved: team !== null,
     agents: agentsReport,
+  });
+}
+
+/** GET /coach/teams — lets desktop-side onboarding look up a team's TrueHQ UUID
+ *  without touching the database directly. Same door, same secret as the report
+ *  ingest: COACH_INGEST_TOKEN is the reporting/integration credential, deliberately
+ *  not ADMIN_TOKEN, so this stays scoped to reporting setup and nothing else. Only
+ *  the fields an onboarding flow needs — never FUB keys, tokens, or user emails. */
+export async function handleCoachTeamsList(
+  req: Request,
+  env: Env,
+  url: URL,
+  cors: Record<string, string>,
+  database: Db,
+): Promise<Response | null> {
+  if (url.pathname !== '/coach/teams') return null;
+  const json = (obj: unknown, status = 200) => new Response(JSON.stringify(obj), {
+    status, headers: { 'Content-Type': 'application/json', ...cors },
+  });
+  if (req.method !== 'GET') return json({ error: 'GET only' }, 405);
+
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!env.COACH_INGEST_TOKEN || !secretsMatch(token, env.COACH_INGEST_TOKEN)) {
+    return json({ error: 'unauthorized' }, 401);
+  }
+
+  const teams = await database.select('teams', 'select=id,name&is_active=eq.true&order=name.asc') as
+    Array<{ id: string; name: string }>;
+  // fub_connections rows are the only signal this database has for "FUB is connected";
+  // it is known to lag behind TrueHQ (a team can be connected there before a row lands
+  // here), so treat `connected: false` as "not confirmed," not "definitely not connected."
+  const connections = await database.select('fub_connections', 'select=team_id') as Array<{ team_id: string }>;
+  const connectedIds = new Set(connections.map((c) => c.team_id));
+
+  return json({
+    teams: teams.map((t) => ({ teamId: t.id, name: t.name, connected: connectedIds.has(t.id) })),
   });
 }
