@@ -121,7 +121,12 @@ function CoachDeck({
   onOpenAgent?: (id: string | null) => void;
   onOpenProfile?: (id: string) => void;
 }) {
-  const [roster, setRoster] = useState<RosterAgent[] | null>(() => readCoachCache(org.id));
+  // The whole Coach cohort, assessed or not. The dashboard maths below runs
+  // on `roster` (the assessed subset, archetypes are its whole vocabulary);
+  // opening a person uses `cohort`, so a 1:1 can be run and logged with
+  // someone who has not taken the assessment yet.
+  const [cohort, setCohort] = useState<RosterAgent[] | null>(() => readCoachCache(org.id));
+  const roster = useMemo(() => (cohort ? cohort.filter((a) => a.assessed) : null), [cohort]);
   const [err, setErr] = useState<string | null>(null);
   // Which agent's 1:1 is open lives in the ROUTE (see lib/coachRoute), so a
   // refresh or the back button returns to the same sheet. `setOpenId` keeps its
@@ -164,10 +169,10 @@ function CoachDeck({
     let live = true;
     (async () => {
       try {
-        const r = await loadRoster();
+        const r = await loadRoster(undefined, { includeUnassessed: true });
         if (!live) return;
         writeCoachCache(org.id, r);
-        setRoster(r);
+        setCohort(r);
         setErr(null);
       } catch (e) {
         if (!live) return;
@@ -295,11 +300,13 @@ function CoachDeck({
             <p className="brief-agent-meta is-quiet">
               {p.assessed
                 ? `Last 1:1 ${p.assessed.lastLabel} · health ${healthOf(p.assessed)}`
-                : p.signedIn
-                  ? 'Signed in. Their archetype and coaching health appear once they take the TRU assessment.'
-                  : p.invited
-                    ? 'Invite delivered. Nothing to score until they set up their login.'
-                    : 'Not invited yet. Send them a login from the Team tab.'}
+                : p.inCoach
+                  ? 'Open to run and log their 1:1. Archetype and coaching health appear once they take the TRU assessment.'
+                  : p.signedIn
+                    ? 'Signed in. Their archetype and coaching health appear once they take the TRU assessment.'
+                    : p.invited
+                      ? 'Invite delivered. Nothing to score until they set up their login.'
+                      : 'Not invited yet. Send them a login from the Team tab.'}
             </p>
           </article>
         ))}
@@ -398,7 +405,7 @@ function CoachDeck({
     );
   }
 
-  const openAgent = roster.find((a) => a.id === openId) || null;
+  const openAgent = (cohort ?? roster).find((a) => a.id === openId) || null;
 
   // An agent named in the weekly brief is not always in the Coach cohort --
   // the cohort is the lead's hand-picked list, and the brief reviews everyone
@@ -923,21 +930,26 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
           back now lives in the island bar with everything else. */}
       <header className="dk-mast">
         <div>
-          <span className="dk-eyebrow"><i />{agent.archName} · {agent.quad}</span>
+          <span className="dk-eyebrow"><i />{agent.assessed ? `${agent.archName} · ${agent.quad}` : 'Not assessed yet'}</span>
           <h1>{agent.name}</h1>
           <p className="dk-sub">
             {profile
               ? profile.tagline
-              : `Stepping into ${first}'s coaching.`}
+              : agent.assessed
+                ? `Stepping into ${first}'s coaching.`
+                : `Run and log ${first}'s 1:1 now. Their archetype and playbook appear once they take the TRU assessment.`}
           </p>
         </div>
         {/* The doorway to who they are, where a reader looks first — Eric's
-            call after finding it buried at the bottom of the sheet. */}
-        <div className="dk-mast-do">
-          <button className="ad-profile-link" onClick={onOpenProfile}>
-            {first}’s full profile →
-          </button>
-        </div>
+            call after finding it buried at the bottom of the sheet. There is
+            no profile to open until they have been assessed. */}
+        {agent.assessed && (
+          <div className="dk-mast-do">
+            <button className="ad-profile-link" onClick={onOpenProfile}>
+              {first}’s full profile →
+            </button>
+          </div>
+        )}
       </header>
 
       {/* The vitals, one quiet line. This replaces four tiles that spent a
