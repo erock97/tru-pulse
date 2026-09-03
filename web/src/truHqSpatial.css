@@ -1,0 +1,497 @@
+/* =====================================================================
+   TRU HQ — SPATIAL GLASS. The interior's material language.
+
+   Decided with Eric on 2026-09-03: the product deliberately mirrors the
+   visionOS material philosophy — a dim, cool room; content on layered
+   frosted glass; emphasis from LIGHT (a brighter surface, a specular
+   edge) rather than from saturated colour. The marketing site keeps its
+   warm amber-forest system; the two are meant to differ.
+
+   HOW THIS WORKS. Every interior page already wraps itself in `.tru-dark`
+   and every rule in truHqDark.css reads the same handful of custom
+   properties (--base, --card, --accent, --lip …). This file is loaded
+   LAST and re-points those properties, so six thousand lines of existing
+   component CSS re-theme at once without being touched. Below the
+   palette are the few surfaces whose SHAPE changes: the floating
+   sidebar, the island, the command bar, the sign-in door.
+
+   Glass is earned. It lives on chrome that floats over content — the
+   sidebar, the island, the command bar, popovers, the door. Data tables
+   and long text stay on solid surfaces (--card / --panel) for legibility.
+   Three simultaneous blur layers is the ceiling; blur is not free on a
+   mid-range Windows laptop.
+   ===================================================================== */
+
+.tru-dark {
+  /* ---- the room -------------------------------------------------------
+     Near-black with a faint blue-violet cast. Never pure #000, never a grey
+     pretending to be black. Surfaces are white at increasing opacity over
+     this one canvas — the same ground shows through every layer, which is
+     what makes elevation read as depth rather than as a different colour. */
+  --base: #0A0B0F;
+  --panel: #101218;
+  --card: #12141B;
+  --card-flat: #0F1117;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-soft: rgba(255, 255, 255, 0.06);
+
+  --text: #F5F6F8;
+  --text-60: rgba(245, 246, 248, 0.62);
+  --text-50: rgba(245, 246, 248, 0.50);
+  --text-40: rgba(245, 246, 248, 0.38);
+  --text-strong: #F8F9FB; /* never pure white */
+
+  /* ---- the light --------------------------------------------------------
+     The accent is a light, not a colour: pale blue-white, on the one thing
+     on screen that matters. Status keeps its own temperature — ember and
+     terracotta stay warm precisely so that warmth means "look here". */
+  --accent: #CFE3FF;
+  --accent-hi: #E8F1FF;
+  --accent-soft: rgba(207, 227, 255, 0.12);
+  --accent-line: rgba(207, 227, 255, 0.30);
+  --on-accent: #0A0B0F;
+  --positive: #7FD6A5;
+  --warning: #F2C97D;
+  --critical: #F08A8A;
+
+  --espresso: #0F1117;
+  --cream: #F5F6F8;
+  --on-hero: #F5F6F8;
+  --on-hero-60: rgba(245, 246, 248, 0.62);
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, #1A2036 0%, transparent 46%), linear-gradient(150deg, #151A2B 0%, #0A0B0F 72%);
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, #1A2036 0%, transparent 46%), linear-gradient(150deg, #151A2B 0%, #0A0B0F 72%);
+  --hover-fill: rgba(255, 255, 255, 0.05);
+  --hover-fill-soft: rgba(255, 255, 255, 0.035);
+  --avatar-ring: rgba(255, 255, 255, 0.10);
+  --stat-grad: linear-gradient(180deg, #FFFFFF, var(--accent-hi));
+  --track-fill: #1A1D26;
+  --track-fill-2: #171A22;
+  --track-hairline: #14161E;
+  --track-outer: #191C25;
+  --dot-empty: #1E2130;
+
+  /* ---- glass ------------------------------------------------------------
+     The specular is the whole trick. A highlight on the top edge, a fainter
+     one on the sides, none on the bottom: light comes from above, and
+     without it a translucent panel is only a dimmer rectangle. */
+  --glass-fill: rgba(28, 30, 38, 0.55);
+  --glass-blur: blur(24px) saturate(160%);
+  --glass-edge-top: rgba(255, 255, 255, 0.10);
+  --glass-edge-side: rgba(255, 255, 255, 0.04);
+  --glass-edges:
+    inset 0 1px 0 var(--glass-edge-top),
+    inset 1px 0 0 var(--glass-edge-side),
+    inset -1px 0 0 var(--glass-edge-side);
+
+  /* ---- elevation --------------------------------------------------------
+     Large, soft, cool. Replaces the near-black-on-near-black shadows that
+     were mathematically present and visually absent. */
+  --elev-1: inset 0 1px 0 var(--glass-edge-top), 0 0 0 1px var(--border-soft), 0 24px 48px -28px rgba(0, 0, 0, 0.5);
+  --elev-2: var(--glass-edges), 0 0 0 1px var(--border-soft), 0 32px 64px -30px rgba(0, 0, 0, 0.55);
+  --elev-3: var(--glass-edges), 0 0 0 1px var(--border), 0 48px 96px -32px rgba(0, 0, 0, 0.6);
+  --lip: inset 0 1px 0 var(--glass-edge-top);
+  --lift: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --card-shadow: var(--elev-1);
+  --card-hover-shadow: var(--elev-2);
+
+  /* ---- radius scale ---------------------------------------------------
+     By element size, not by element type: 6 / 10 / 14 / 20 / 28 / 40. */
+  --r-btn: 10px;
+  --r-card: 20px;
+  --r-card-lg: 20px;
+  --r-chip: 28px;
+  --r-bezel: 28px;
+  --r-bezel-in: 20px;
+
+  /* ---- motion -----------------------------------------------------------
+     Custom curves, never defaults. Enter settles; exit leaves in a hurry. */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-micro: 140ms;
+  --dur-standard: 230ms;
+  --dur-orchestrated: 720ms;
+
+  background: var(--base);
+}
+
+/* Each tab still has a voice, now in light. Pulse is the flagship and wears
+   the accent itself; Coach keeps its human warmth (terracotta, the one warm
+   thing, because a one-to-one IS warm); Rep stays sea; Team goes neutral. */
+.tru-dark .tru-shell {
+  --tab-hi: var(--accent-hi);
+  --tab-mid: var(--accent);
+  --tab-soft: var(--accent-soft);
+  --tab-line: var(--accent-line);
+  --tab-flare-a: rgba(207, 227, 255, 0.22);
+  --tab-flare-b: rgba(207, 227, 255, 0.07);
+}
+.tru-dark .tru-shell[data-tab="team"],
+.tru-dark .tru-shell[data-tab="admin"] {
+  --tab-hi: #F5F6F8;
+  --tab-mid: #C9CED9;
+  --tab-soft: rgba(245, 246, 248, 0.08);
+  --tab-line: rgba(245, 246, 248, 0.22);
+  --tab-flare-a: rgba(245, 246, 248, 0.16);
+  --tab-flare-b: rgba(245, 246, 248, 0.05);
+}
+
+/* ---- the room, cooled ----------------------------------------------------
+   The render behind everything was a bronze object; in this room it is
+   texture. Desaturated and held back so it never competes with a number. */
+.tru-dark .tru-room i {
+  /* Desaturate first, then swing what warmth survives round to blue, so the
+     render's own bokeh reads as cool light instead of leftover amber. */
+  filter: saturate(0.18) hue-rotate(195deg) brightness(0.42) contrast(1.05);
+}
+.tru-dark .tru-room-a { opacity: 0.26; }
+/* A cool wash over the render: what is left of its warmth becomes texture
+   under blue-violet light rather than a bronze object in a cool room. */
+.tru-dark .tru-room::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 70% 20%, rgba(110, 140, 220, 0.16) 0%, transparent 70%),
+    radial-gradient(50% 40% at 20% 90%, rgba(80, 100, 170, 0.10) 0%, transparent 70%),
+    rgba(10, 11, 15, 0.28);
+}
+
+/* ---- surfaces that were hard-coded green ---------------------------------
+   The deck's plates and panels carry their own gradients rather than reading
+   --card, so the palette switch alone leaves them forest-tinted. Re-pointed
+   here to the same white-over-canvas layering every other surface uses. */
+.tru-dark .rs-plate,
+.tru-dark .dk-tile,
+.tru-dark .ad-panel,
+.tru-dark .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 45%, rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.035);
+  border-color: var(--border-soft);
+  box-shadow: var(--elev-1);
+}
+.tru-dark .rs-plate:hover,
+.tru-dark .dk-tile:hover { box-shadow: var(--elev-2); }
+.tru-dark .tru-mood .m-calm {
+  background: radial-gradient(112% 56% at 50% 106%, rgba(170, 196, 240, 0.07), transparent 64%);
+}
+
+/* ======================================================================
+   THE SHELL — a floating glass sidebar, inset from the edge of the room.
+   ====================================================================== */
+.tru-shell {
+  grid-template-columns: 256px 1fr;
+  column-gap: 8px;
+  padding-left: 12px;
+}
+.tru-shell .side {
+  top: 12px;
+  height: calc(100vh - 24px);
+  margin: 12px 0;
+  padding: 22px 14px;
+  border: 0;
+  border-radius: var(--r-bezel);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 30%),
+    rgba(30, 33, 44, 0.58);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+  z-index: 2;
+}
+.tru-shell .side-logo { padding: 2px 8px 22px; }
+.tru-shell .side-link {
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-60);
+}
+.tru-shell .side-link:hover { color: var(--text-strong); background: var(--hover-fill); }
+.tru-shell .side-link.active {
+  color: var(--text-strong);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.tru-shell .side-link.active::before {
+  left: 0;
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: var(--tab-hi, var(--accent-hi));
+  box-shadow: 0 0 12px -1px var(--tab-mid, var(--accent));
+}
+.tru-shell .side-user {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.tru-shell .main {
+  padding: 12px clamp(24px, 3vw, 32px) 40px;
+}
+
+/* ≤1280: the sidebar becomes an icon rail; the labels go, nothing else does. */
+@media (max-width: 1280px) and (min-width: 861px) {
+  .tru-shell { grid-template-columns: 84px 1fr; }
+  .tru-shell .side { padding: 20px 10px; }
+  .tru-shell .side-link { justify-content: center; padding: 12px 0; gap: 0; }
+  .tru-shell .side-link > span,
+  .tru-shell .side-user > div,
+  .tru-shell .side-logo .tru-word,
+  .tru-shell .side-logo .tru-sub { display: none; }
+  .tru-shell .side-user { justify-content: center; padding: 10px 0; }
+  .tru-shell .side-link-btn { text-align: center; padding: 8px 0; font-size: 12px; }
+}
+
+/* ======================================================================
+   THE ISLAND — the floating bar every deck page starts under.
+   ====================================================================== */
+.tru-dark .dk-island {
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-2);
+}
+.tru-dark .dk-mk i {
+  color: var(--on-accent);
+  background: linear-gradient(155deg, #F2F7FF, #A9C2E8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 14px -7px rgba(207, 227, 255, 0.7);
+}
+.tru-dark .dk-mk b em { color: var(--accent); }
+.tru-dark .dk-win {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.tru-dark .dk-win button.on {
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--text-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.tru-dark .dk-nav button.on { color: var(--text-strong); background: rgba(255, 255, 255, 0.08); }
+
+/* ======================================================================
+   THE COMMAND BAR — the signature interaction. Glass, centred, 640 wide,
+   scale-from-0.96 and fade in 180ms.
+   ====================================================================== */
+.tru-dark .cb-hint {
+  color: var(--text-50);
+  border-color: var(--border-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tru-dark .cb-hint:hover { color: var(--text); border-color: var(--border); background: rgba(255, 255, 255, 0.06); }
+.tru-dark .cb-hint kbd, .tru-dark .cb kbd {
+  color: var(--text-40);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-soft);
+}
+.tru-dark .cb-scrim {
+  background: rgba(6, 7, 10, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: cbFade var(--dur-micro) var(--ease);
+}
+.tru-dark .cb {
+  width: min(640px, calc(100vw - 32px));
+  border-radius: 20px;
+  border: 0;
+  /* Denser than the sidebar's glass on purpose: type you are reading while
+     you type must not have light drifting behind it. Still glass — the room
+     is felt through it, not seen. */
+  background: rgba(28, 30, 38, 0.78);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  animation: cbRise 180ms var(--ease);
+  transform-origin: 50% 20%;
+}
+@keyframes cbRise { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.tru-dark .cb-field { border-bottom-color: var(--border-soft); }
+.tru-dark .cb-field input { font-size: 16px; }
+/* Group heads in sentence case, not tracked-out caps. */
+.tru-dark .cb-group {
+  padding: 12px 12px 6px;
+  font: 500 12px/1 var(--hq-font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-40);
+}
+.tru-dark .cb-row { border-radius: 12px; }
+.tru-dark .cb-row.is-sel { background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+.tru-dark .cb-go { color: var(--accent); }
+.tru-dark .cb-foot { border-top-color: var(--border-soft); }
+
+/* ======================================================================
+   THE DOOR — sign in. Full-viewport canvas, one centred glass panel,
+   480 wide, radius 40. The orchestrated moment: the room's ambient light
+   breathes; the panel rises 8px with a blur-in; the fields stagger.
+   ====================================================================== */
+.tru-door {
+  background:
+    radial-gradient(70% 55% at 50% -12%, rgba(110, 140, 220, 0.34) 0%, rgba(80, 100, 170, 0.10) 45%, transparent 72%),
+    radial-gradient(56% 42% at 50% 112%, rgba(80, 100, 170, 0.20) 0%, transparent 70%),
+    linear-gradient(180deg, #10131E 0%, #0A0B0F 100%);
+}
+/* The wordmark wears the light, not the old gold; the emblem stays the one
+   piece of warm metal in the room. */
+.tru-dark .tru-word .r { color: var(--accent); }
+/* A focal halo behind the door, so the panel stands in light rather than
+   floating in a void. One radial, no drift — the breath above is enough. */
+.tru-door-stage { position: relative; }
+.tru-door-stage::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 150%;
+  height: 120%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(207, 227, 255, 0.10) 0%, rgba(160, 180, 230, 0.04) 40%, transparent 70%);
+}
+/* The breathing light. Its own layer so the breath is one property
+   (opacity) on one element — nothing else on the page repaints for it. */
+.tru-door::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(52% 40% at 50% 8%, rgba(207, 227, 255, 0.16) 0%, transparent 70%),
+    radial-gradient(60% 34% at 50% 104%, rgba(140, 160, 210, 0.08) 0%, transparent 70%);
+  animation: doorBreathe 9s ease-in-out infinite alternate;
+}
+@keyframes doorBreathe { from { opacity: 0.55; } to { opacity: 1; } }
+/* The old door ran a 900ms "room light" animation that filled forward to
+   opacity .55 — an animation's fill beats a plain declaration, which is why
+   the render kept showing through at full strength. Off, and held back. */
+.tru-dark .tru-door-scene {
+  animation: none;
+  filter: blur(26px) saturate(0) brightness(0.3);
+  opacity: 0.12;
+}
+.tru-door-scrim {
+  background:
+    radial-gradient(90% 90% at 50% 50%, rgba(10, 11, 15, 0.2) 0%, rgba(10, 11, 15, 0.1) 55%, transparent 85%),
+    linear-gradient(180deg, rgba(10, 11, 15, 0.2) 0%, transparent 32%, rgba(10, 11, 15, 0.5) 100%);
+}
+.tru-door-stage { max-width: 480px; }
+.tru-door-mark,
+.tru-door-title,
+.tru-door-sub,
+.tru-door-swap {
+  animation: doorRise var(--dur-orchestrated) var(--ease) both;
+}
+.tru-door-mark { animation-delay: 0ms; }
+.tru-door-title { animation-delay: 60ms; }
+.tru-door-sub { animation-delay: 120ms; }
+.tru-door-panel {
+  padding: clamp(28px, 4vw, 36px);
+  border-radius: 40px;
+  border: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0) 40%),
+    rgba(34, 37, 48, 0.58);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--elev-3);
+  animation: doorRise var(--dur-orchestrated) var(--ease) 180ms both;
+}
+.tru-door-swap { animation-delay: 620ms; }
+/* The fields arrive one after another, 50ms apart. */
+.tru-door-panel form > *,
+.tru-door-or,
+.tru-door-google {
+  animation: doorField 420ms var(--ease) both;
+}
+.tru-door-panel form > :nth-child(1) { animation-delay: 300ms; }
+.tru-door-panel form > :nth-child(2) { animation-delay: 350ms; }
+.tru-door-panel form > :nth-child(3) { animation-delay: 400ms; }
+.tru-door-panel form > :nth-child(4) { animation-delay: 450ms; }
+.tru-door-panel form > :nth-child(5) { animation-delay: 500ms; }
+.tru-door-panel form > :nth-child(n+6) { animation-delay: 540ms; }
+.tru-door-or { animation-delay: 560ms; }
+.tru-door-google { animation-delay: 600ms; }
+@keyframes doorRise {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes doorField {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.tru-door-title { font-weight: 600; letter-spacing: -0.02em; }
+.tru-door-sub { font-size: 15px; line-height: 24px; color: var(--text-60); }
+.tru-door-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.tru-dark .tru-door-input {
+  height: 40px;
+  padding: 0 14px;
+  margin-bottom: 16px;
+  border-radius: var(--r-btn);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease), background var(--dur-micro) var(--ease);
+}
+.tru-dark .tru-door-input:hover { background: rgba(255, 255, 255, 0.09); }
+.tru-dark .tru-door-input:focus-visible {
+  border-color: rgba(207, 227, 255, 0.6);
+  box-shadow: 0 0 0 4px rgba(207, 227, 255, 0.12);
+  background: rgba(255, 255, 255, 0.09);
+}
+.tru-door-forgot { color: var(--text-60); font-size: 13px; }
+.tru-door-forgot:hover { color: var(--text); }
+.tru-door-note { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 18px; }
+.tru-door-note.is-error { background: rgba(240, 138, 138, 0.10); border: 1px solid rgba(240, 138, 138, 0.28); color: var(--critical); }
+.tru-door-note.is-ok { background: rgba(127, 214, 165, 0.10); border: 1px solid rgba(127, 214, 165, 0.28); color: var(--positive); }
+.tru-door-primary {
+  height: 44px;
+  padding: 0 18px;
+  margin-top: 8px;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 12px 28px -14px rgba(207, 227, 255, 0.55);
+  transition: transform var(--dur-micro) var(--ease), filter var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+}
+.tru-door-primary:hover { filter: brightness(1.04); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 16px 34px -14px rgba(207, 227, 255, 0.7); }
+.tru-door-primary:active { transform: translateY(1px); }
+.tru-door-primary:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(207, 227, 255, 0.28); }
+.tru-door-or { color: var(--text-40); margin: 20px 0; }
+.tru-door-or span { background: var(--border-soft); }
+.tru-door-google {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.tru-door-google:hover { background: rgba(255, 255, 255, 0.09); }
+.tru-door-google:focus-visible { outline: 0; box-shadow: 0 0 0 4px rgba(207, 227, 255, 0.2); }
+.tru-door-swap { color: var(--text-60); }
+.tru-door-swap button { color: var(--accent); font-weight: 600; }
+
+/* ---- reduced motion: opacity only, ≤150ms, nothing breathes ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tru-door::before { animation: none; opacity: 0.8; }
+  .tru-door-mark, .tru-door-title, .tru-door-sub, .tru-door-swap, .tru-door-panel,
+  .tru-door-panel form > *, .tru-door-or, .tru-door-google {
+    animation: doorFadeOnly 150ms ease-out both;
+    animation-delay: 0ms !important;
+  }
+  .tru-dark .cb { animation: doorFadeOnly 150ms ease-out; }
+}
+@keyframes doorFadeOnly { from { opacity: 0; } to { opacity: 1; } }

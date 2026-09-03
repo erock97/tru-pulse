@@ -57,6 +57,7 @@
   },
   "decisions": [
     "2026-08-23: Coach agent sheet is a prep sheet — weekly brief on top with inline evidence, 1:1 workzone next, reference folded (Eric approved, PR #47).",
-    "2026-08-23: Personality material gets its own designed Profile view entered from the agent sheet — valuable, but never in the weekly workflow's face (Eric)."
+    "2026-08-23: Personality material gets its own designed Profile view entered from the agent sheet — valuable, but never in the weekly workflow's face (Eric).",
+    "2026-09-03: The interior moves to 'spatial glass' — cool blue-violet canvas (#0A0B0F), pale blue-white accent (#CFE3FF) used as a light, frosted glass ONLY on floating chrome (sidebar, island, command bar, sign-in door); tables and text stay solid. Eric asked for the Vision Pro material deliberately; the earlier 'avoid glass effects' note was about gratuitous blur-everywhere, not this. Palette lives in web/src/truHqSpatial.css, loaded last. The marketing site keeps amber-forest on purpose."
   ]
 }
