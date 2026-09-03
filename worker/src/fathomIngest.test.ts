@@ -122,6 +122,12 @@ describe('matchAgent', () => {
     stubPipeline({ agents: [AGENT, { ...AGENT, id: 'other-team-row' }] });
     expect(await matchAgent(db(env), ['trevor@team.com'])).toBeNull();
   });
+  it('only role=agent rows count — a team lead on the invite is not a second match', async () => {
+    const calls = stubPipeline({ agents: [AGENT] });
+    expect(await matchAgent(db(env), ['trevor@team.com', 'lead@team.com'])).toEqual(AGENT);
+    const q = calls.find((c) => c.url.includes('/agents'))?.url ?? '';
+    expect(q).toContain('role=eq.agent');
+  });
 });
 
 describe('handleFathomIngest', () => {
