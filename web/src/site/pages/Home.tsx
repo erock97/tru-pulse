@@ -645,13 +645,29 @@ export default function Home() {
 
         <div className="fh-shots">
           <figure className="fh-shot reveal d1">
-            <img src="/shot-pulse.webp" width="1240" height="649" loading="lazy" decoding="async"
-                 alt="TRU Pulse showing a team roster ranked by leads per contract, with the agents who need a conversation flagged above the table." />
+            {/* THE FRAME. A raw screenshot on a dark page has no edge to be a
+                screenshot AT — it just reads as a rectangle of pixels floating
+                in the same room as everything else. A shallow bezel with the
+                suite's own three dots (gold/coach/rep, the same identity the
+                caption already wears) gives it a boundary and says "this is a
+                window onto the product" before the caption spells it out. */}
+            <div className="fh-shot-frame">
+              <div className="fh-shot-bar" aria-hidden>
+                <i className="dot dot-pulse" /><i className="dot dot-coach" /><i className="dot dot-rep" />
+              </div>
+              <img src="/shot-pulse.webp" width="1240" height="649" loading="lazy" decoding="async"
+                   alt="TRU Pulse showing a team roster ranked by leads per contract, with the agents who need a conversation flagged above the table." />
+            </div>
             <figcaption><b className="pn-pulse">Pulse.</b> Who got no contact, what is stuck, and who is quietly slipping.</figcaption>
           </figure>
           <figure className="fh-shot reveal d2">
-            <img src="/shot-coach.webp" width="1240" height="649" loading="lazy" decoding="async"
-                 alt="TRU Coach showing a cohort ranked by coaching health, with the four agents who need a one to one listed above it." />
+            <div className="fh-shot-frame">
+              <div className="fh-shot-bar" aria-hidden>
+                <i className="dot dot-pulse" /><i className="dot dot-coach" /><i className="dot dot-rep" />
+              </div>
+              <img src="/shot-coach.webp" width="1240" height="649" loading="lazy" decoding="async"
+                   alt="TRU Coach showing a cohort ranked by coaching health, with the four agents who need a one to one listed above it." />
+            </div>
             <figcaption><b className="pn-coach">Coach.</b> The exact move for this person, this week.</figcaption>
           </figure>
         </div>

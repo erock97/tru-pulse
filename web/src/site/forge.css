@@ -682,16 +682,35 @@
   grid-template-columns: repeat(3, 1fr);
 }
 .truland .fh-fig {
+  position: relative;
+  overflow: hidden;
   padding: 1.9rem 1.7rem 1.7rem;
   border-radius: 16px;
   background:
-    linear-gradient(168deg, rgba(226, 240, 230, 0.062) 0%, rgba(226, 240, 230, 0.014) 34%, transparent 68%),
-    linear-gradient(180deg, rgba(16, 29, 21, 0.74) 0%, rgba(9, 17, 12, 0.82) 100%);
+    linear-gradient(168deg, rgba(226, 240, 230, 0.1) 0%, rgba(226, 240, 230, 0.022) 34%, transparent 68%),
+    linear-gradient(180deg, rgba(21, 37, 27, 0.9) 0%, rgba(10, 19, 13, 0.94) 100%);
+  /* The old shadow (rgba(2,7,4,.95), a near-black on a near-black page) never
+     read as a shadow at all — a card and its background were within a few
+     values of luminance of each other, so "elevated" and "flat" looked
+     identical. The fix is not a bigger shadow; it is a shadow with a
+     temperature, the same warm light the hero's beam already owns, so the
+     card visibly lifts off the room instead of just outlining itself. */
   box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.17),
-    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
-    0 0 0 1px var(--hair-2),
-    0 26px 44px -30px rgba(2, 7, 4, 0.95);
+    inset 0 1px 0 rgba(255, 216, 148, 0.22),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.5),
+    0 0 0 1px var(--hair),
+    0 34px 64px -26px rgba(0, 0, 0, 0.8),
+    0 10px 26px -12px rgba(242, 178, 60, 0.1);
+}
+/* A lit edge, not a border — the beam catching the top of the card the way
+   it catches the top of the wordmark, so the three surfaces read as objects
+   standing in the same light rather than three outlined boxes. */
+.truland .fh-fig::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(242, 178, 60, 0.6), rgba(242, 178, 60, 0) 72%);
 }
 .truland .fh-fig b {
   display: block;
@@ -792,15 +811,38 @@
   margin-top: 2.6rem;
 }
 .truland .fh-shot { margin: 0; }
+/* The bezel. Raised the same way the stat cards are (a warmer, brighter
+   surface than the page, not just a darker shadow), so the frame itself is
+   visible before you even register what is inside it. */
+.truland .fh-shot-frame {
+  position: relative;
+  border-radius: 16px;
+  padding: 0.6rem 0.6rem 0;
+  background:
+    linear-gradient(168deg, rgba(226, 240, 230, 0.08) 0%, rgba(226, 240, 230, 0.018) 30%, transparent 60%),
+    linear-gradient(180deg, rgba(24, 41, 30, 0.94) 0%, rgba(11, 20, 14, 0.97) 100%);
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 216, 148, 0.22),
+    0 0 0 1px var(--hair),
+    -1px -1px 0 1px rgba(255, 216, 148, 0.06),
+    0 30px 60px -34px rgba(2, 7, 4, 0.95);
+}
+.truland .fh-shot-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.3rem 0.55rem;
+}
+.truland .fh-shot-bar .dot { display: block; width: 7px; height: 7px; border-radius: 50%; opacity: 0.85; }
+.truland .fh-shot-bar .dot-pulse { background: var(--gold); }
+.truland .fh-shot-bar .dot-coach { background: #FF9E76; }
+.truland .fh-shot-bar .dot-rep { background: #A8C9B9; }
 .truland .fh-shot img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 14px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.17),
-    0 0 0 1px var(--hair-2),
-    0 30px 60px -34px rgba(2, 7, 4, 0.95);
+  border-radius: 10px 10px 0 0;
 }
 .truland .fh-shot figcaption {
   margin-top: 0.9rem;
@@ -928,9 +970,11 @@
 .truland .fh-fig:hover {
   transform: translate3d(0, -4px, 0);
   box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.26),
-    inset 0 -1px 0 rgba(2, 7, 4, 0.45),
-    0 26px 50px -28px rgba(0, 0, 0, 0.85);
+    inset 0 1px 0 rgba(255, 216, 148, 0.32),
+    inset 0 -1px 0 rgba(2, 7, 4, 0.5),
+    0 0 0 1px var(--hair),
+    0 44px 82px -26px rgba(0, 0, 0, 0.85),
+    0 14px 32px -10px rgba(242, 178, 60, 0.16);
 }
 
 /* THE NUMBERS ARE THE SAME METAL AS THE WORDMARK.
@@ -1040,27 +1084,32 @@
   .truland .fh-soft .fh-shot:first-child { transform: translateY(-1.4rem); }
   .truland .fh-soft .fh-shot:last-child { transform: translateY(1.8rem); }
 }
-.truland .fh-shot img {
+.truland .fh-shot-frame {
   transform: rotateY(var(--ry, 0deg)) rotateX(1.1deg);
   transform-origin: 50% 50%;
   transition: transform 700ms var(--e), box-shadow 700ms var(--e);
   box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.2),
-    0 0 0 1px var(--hair-2),
+    inset 0 1px 0 rgba(255, 216, 148, 0.24),
+    0 0 0 1px var(--hair),
     /* A warm rim on the lit side, the same corner the hero's light comes from,
        so the panels belong to the same room as the wordmark. */
-    -1px -1px 0 1px rgba(255, 216, 148, 0.05),
-    0 48px 90px -46px rgba(0, 0, 0, 0.95),
-    0 12px 30px -18px rgba(0, 0, 0, 0.7);
+    -1px -1px 0 1px rgba(255, 216, 148, 0.07),
+    /* The old outer shadow was near-black at 0.95-0.98 opacity sitting on a
+       near-black (#050B08) page — correct math, invisible result. Swapping
+       in a warmer, wider shadow is what actually lifts the frame off the
+       room instead of just outlining it. */
+    0 58px 100px -40px rgba(0, 0, 0, 0.9),
+    0 18px 42px -16px rgba(242, 178, 60, 0.14);
 }
-.truland .fh-soft .fh-shot:first-child img { --ry: 2.2deg; }
-.truland .fh-soft .fh-shot:last-child img { --ry: -2.2deg; }
-.truland .fh-shot:hover img {
+.truland .fh-soft .fh-shot:first-child .fh-shot-frame { --ry: 2.2deg; }
+.truland .fh-soft .fh-shot:last-child .fh-shot-frame { --ry: -2.2deg; }
+.truland .fh-shot:hover .fh-shot-frame {
   transform: rotateY(0deg) rotateX(0deg) translateY(-6px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 216, 148, 0.26),
+    inset 0 1px 0 rgba(255, 216, 148, 0.32),
     0 0 0 1px var(--hair),
-    0 60px 110px -50px rgba(0, 0, 0, 0.98);
+    0 72px 130px -42px rgba(0, 0, 0, 0.95),
+    0 22px 50px -14px rgba(242, 178, 60, 0.2);
 }
 .truland .fh-shot figcaption { margin-top: 1.15rem; font-size: 1rem; }
 
@@ -1073,8 +1122,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .truland .fh-shot img,
-  .truland .fh-shot:hover img { transform: none; transition: none; }
+  .truland .fh-shot-frame,
+  .truland .fh-shot:hover .fh-shot-frame { transform: none; transition: none; }
   .truland .fh-soft .fh-shot:first-child,
   .truland .fh-soft .fh-shot:last-child { transform: none; }
 }
