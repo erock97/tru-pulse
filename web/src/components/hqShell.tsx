@@ -224,6 +224,10 @@ export function HqShell({
         <i className="m-calm" /><i className="m-watch" /><i className="m-hot" />
       </div>
       <aside className="side">
+        {/* The capsule. The aside itself is a full-height column that only
+            centres this; the glass, the rim and the shadow live here, so the
+            capsule is exactly as tall as what it holds. */}
+        <div className="side-capsule">
         <div className="side-logo">
           <button onClick={nav.onHome} style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0 }} aria-label="TRU HQ home">
             <TruLogo size={28} wordSize={20} sub="HQ" />
@@ -272,6 +276,7 @@ export function HqShell({
               Sign out
             </button>
           )}
+        </div>
         </div>
       </aside>
 
