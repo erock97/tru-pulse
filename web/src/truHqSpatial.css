@@ -5,9 +5,9 @@
    a memory. The LIGHT bands on that page only rest the eye because they
    sit next to dark photographs of the product. A dashboard of numbers
    has no photographs, so the same grey is a lamp. Everyday screens use
-   the other half of that page, lifted off pure black so it reads as a
-   dim room: charcoal walls (#1C1C1E), windows a step lighter (#2C2C2E),
-   #F5F5F7 type, one blue. Not forest, not violet.
+   Colour lives behind the glass — the landing's dusk, not a tinted
+   panel. Chrome stays Apple: pale type, one blue (#0071E3), frosted
+   windows. Not forest, not violet, not a Settings-grey cave.
 
    HOW THIS WORKS. Every interior page wraps itself in `.tru-dark` and every
    rule in truHqDark.css reads the same handful of custom properties. This
@@ -17,18 +17,18 @@
 
    Glass is earned: blur lives on chrome that floats, and on the few
    raised windows (the scale, the people who need you, the roster).
-   The room is charcoal. A window is one step lighter, so a panel is
-   never the same colour as the wall.
+   The room is the HQ at dusk. Windows are frosted so the evening
+   shows through; a panel is never the same colour as the wall.
    ===================================================================== */
 
 .tru-dark {
   /* ---- the room -------------------------------------------------------
-     Apple dark, lifted: charcoal walls, #2C2C2E cells. Same family as
-     the Vision Pro technology section, not a void. */
-  --base: #1C1C1E;
-  --panel: #2C2C2E;
-  --card: #2C2C2E;
-  --card-flat: #242426;
+     Dusk, like the landing. The sky and the warm window are the
+     photograph; the glass on top is Apple. */
+  --base: #1C1F26;
+  --panel: rgba(28, 30, 36, 0.72);
+  --card: rgba(28, 30, 36, 0.72);
+  --card-flat: rgba(22, 24, 28, 0.6);
   --border: rgba(255, 255, 255, 0.12);
   --border-soft: rgba(255, 255, 255, 0.08);
 
@@ -42,10 +42,10 @@
      One blue, on at most one thing per screen. Status keeps its own
      temperature — ember and terracotta stay warm so warmth means "look
      here". */
-  --accent: #0A84FF;
-  --accent-hi: #409CFF;
-  --accent-soft: rgba(10, 132, 255, 0.16);
-  --accent-line: rgba(10, 132, 255, 0.4);
+  --accent: #0071E3;
+  --accent-hi: #0077ED;
+  --accent-soft: rgba(0, 113, 227, 0.18);
+  --accent-line: rgba(0, 113, 227, 0.42);
   --on-accent: #FFFFFF;
   --positive: #30D158;
   --warning: #FF9F0A;
@@ -60,8 +60,8 @@
   --cream: #2C2C2E;
   --on-hero: #F5F5F7;
   --on-hero-60: #A1A1A6;
-  --hero-grad: radial-gradient(130% 150% at 12% -25%, rgba(255,255,255,0.06) 0%, transparent 46%), #1C1C1E;
-  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, rgba(255,255,255,0.04) 0%, transparent 46%), #1C1C1E;
+  --hero-grad: radial-gradient(130% 150% at 12% -25%, rgba(255,255,255,0.06) 0%, transparent 46%), #1C1F26;
+  --hero-grad-alt: radial-gradient(130% 150% at 88% -25%, rgba(232,176,80,0.12) 0%, transparent 46%), #1C1F26;
   --hover-fill: rgba(255, 255, 255, 0.06);
   --hover-fill-soft: rgba(255, 255, 255, 0.04);
   --avatar-ring: rgba(255, 255, 255, 0.10);
@@ -75,7 +75,7 @@
   /* ---- glass ------------------------------------------------------------
      Frosted glass over a charcoal room. The rim is a faint white
      hairline on the top edge — that is how you see a window. */
-  --glass-fill: rgba(44, 44, 46, 0.78);
+  --glass-fill: rgba(22, 24, 30, 0.55);
   --glass-blur: blur(30px) saturate(160%);
   --glass-edge-top: rgba(255, 255, 255, 0.16);
   --glass-edge-side: rgba(255, 255, 255, 0.06);
@@ -157,8 +157,9 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(55% 40% at 18% 0%, rgba(255, 255, 255, 0.07) 0%, transparent 70%),
-    linear-gradient(180deg, #252528 0%, #1C1C1E 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 .tru-dark .tru-mood .m-calm { background: none; }
 .tru-dark .tru-mood .m-watch {
@@ -168,7 +169,7 @@
   background: radial-gradient(118% 60% at 50% 108%, rgba(224, 86, 42, 0.12), transparent 62%);
 }
 .tru-shell { background: transparent; color: var(--text); }
-body:has(.tru-dark) { background: #1C1C1E; }
+body:has(.tru-dark) { background: #1C1F26; }
 
 /* ======================================================================
    THE SHELL — a floating capsule of icons in white glass.
@@ -300,7 +301,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
   width: min(640px, calc(100vw - 32px));
   border-radius: 28px;
   border: 0;
-  background: rgba(44, 44, 46, 0.86);
+  background: rgba(20, 22, 28, 0.72);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--elev-3);
@@ -331,9 +332,9 @@ body:has(.tru-dark) { background: #1C1C1E; }
 .tru-dark .dk-tile,
 .tru-dark .ad-panel,
 .tru-dark .card {
-  background: rgba(44, 44, 46, 0.82);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  background: rgba(20, 22, 28, 0.55);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-color: transparent;
   border-radius: var(--r-card);
   box-shadow: var(--elev-1);
@@ -341,7 +342,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
 .tru-dark .rs-plate:hover,
 .tru-dark .dk-tile:hover { box-shadow: var(--card-hover-shadow); }
 .tru-dark .dk-table {
-  background: #2C2C2E;
+  background: rgba(20, 22, 28, 0.72);
 }
 
 /* ======================================================================
@@ -354,8 +355,9 @@ body:has(.tru-dark) { background: #1C1C1E; }
 .tru-door {
   overflow: hidden;
   background:
-    radial-gradient(55% 40% at 30% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
-    linear-gradient(180deg, #252528 0%, #1C1C1E 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 .tru-dark .tru-door-scene { display: none; }
 .tru-door-scrim { display: none; }
@@ -370,7 +372,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
   padding: clamp(28px, 4vw, 36px);
   border-radius: 40px;
   border: 0;
-  background: rgba(44, 44, 46, 0.86);
+  background: rgba(20, 22, 28, 0.62);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--elev-3);
@@ -466,8 +468,9 @@ body:has(.tru-dark) { background: #1C1C1E; }
   z-index: -2;
   animation: none;
   background:
-    radial-gradient(55% 38% at 22% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
-    linear-gradient(180deg, #252528 0%, #1C1C1E 100%);
+    radial-gradient(42% 58% at 78% 38%, rgba(232, 176, 80, 0.42) 0%, rgba(232, 176, 80, 0.08) 34%, transparent 62%),
+    radial-gradient(50% 40% at 18% 0%, rgba(255, 220, 180, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #5C6B7A 0%, #3A4450 32%, #1C1F26 72%, #14161C 100%);
 }
 
 /* Surfaces that carried their own forest gradient rather than reading --card. */
@@ -551,7 +554,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
 
 /* ---- watch rows: glass, one action in blue ----------------------------- */
 .tru-dark .dk-fr {
-  background: rgba(44, 44, 46, 0.82);
+  background: rgba(20, 22, 28, 0.55);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   box-shadow: var(--elev-1);
@@ -590,7 +593,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
   box-shadow: 0 0 0 3px #2C2C2E, 0 0 0 4.5px currentColor, 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 .tru-dark .sm-flag {
-  background: rgba(44, 44, 46, 0.92);
+  background: rgba(20, 22, 28, 0.86);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 8px 20px -10px rgba(0, 0, 0, 0.5);
@@ -653,7 +656,7 @@ body:has(.tru-dark) { background: #1C1C1E; }
    same as the command bar — the one blue is the thing you can click. */
 .tru-dark .rs-scrim { background: rgba(0, 0, 0, 0.55); }
 .tru-dark .rs-pane {
-  background: rgba(44, 44, 46, 0.86);
+  background: rgba(20, 22, 28, 0.72);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--elev-3);
