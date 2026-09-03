@@ -125,12 +125,15 @@ export function candidateEmails(meeting: FathomMeeting): string[] {
 }
 
 /** Exactly-one rule: one invitee matching one coached agent is a 1:1; two or
- *  more matches is a team meeting (no prefill target); zero is unmatched. */
+ *  more matches is a team meeting (no prefill target); zero is unmatched.
+ *  Only `role = agent` rows count: team leads and admins live in the same
+ *  table and sit on most 1:1 invites (a leader running the meeting), and
+ *  they are never the person being coached. */
 export async function matchAgent(database: Db, emails: string[]): Promise<MatchedAgent | null> {
   if (emails.length === 0) return null;
   const filter = emails.map((e) => `email.ilike.${e}`).join(',');
   const rows = await database.select(
-    'agents', `select=id,org_id,team_id,name,email&excluded=eq.false&or=(${filter})`,
+    'agents', `select=id,org_id,team_id,name,email&excluded=eq.false&role=eq.agent&or=(${filter})`,
   ) as MatchedAgent[];
   // Same person can exist on two teams (re-provisioned) — dedupe by email
   // first, and only call it a 1:1 when ONE distinct person matched.
