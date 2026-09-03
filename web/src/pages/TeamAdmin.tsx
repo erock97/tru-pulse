@@ -370,9 +370,14 @@ export default function TeamAdmin({
                           <Avatar name={m.name} size={34} tone={i % 5} />
                           <div>
                             <div className="cell-name">{m.name}</div>
+                            {/* Its own line, above the email: sharing the email's
+                                line ran past the ellipsis cutoff and half the
+                                digits vanished. */}
+                            {m.phone && (
+                              <div className="rs-sub2">Phone number: {m.phone}</div>
+                            )}
                             <div className="rs-sub2">
                               {m.email || 'no email on file'}
-                              {m.phone && ` · ${m.phone}`}
                               {m.paused && ' · paused'}
                             </div>
                           </div>
