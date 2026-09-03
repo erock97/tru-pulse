@@ -1293,6 +1293,9 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string | null;
+  /** From Follow Up Boss, same sync as the email. Display only — logins and
+   *  invites still ride the email. */
+  phone: string | null;
   teamId: string;
   teamName: string;
   /** Taken off the team by a leader. These rows appear ONLY here. */
@@ -1316,13 +1319,13 @@ function demoTeam(): TeamMember[] {
     o: Partial<TeamMember> = {},
   ): TeamMember => ({
     id: name.toLowerCase().replace(/\W+/g, '-'),
-    name, email, teamId: 't1', teamName: 'Signature Realty',
+    name, email, phone: null, teamId: 't1', teamName: 'Signature Realty',
     excluded: false, coaching: false, paused: false,
     invitedAt: null, signedInAt: null, role: 'agent', ...o,
   });
   return [
     one('Yolanda Reyes-Cole', 'yolanda@example.com', { role: 'lead', invitedAt: day(60), signedInAt: day(1) }),
-    one('Marisol Aguirre', 'marisol@example.com', { invitedAt: day(41), signedInAt: day(2), coaching: true }),
+    one('Marisol Aguirre', 'marisol@example.com', { phone: '(555) 204-8817', invitedAt: day(41), signedInAt: day(2), coaching: true }),
     one('Priya Raghunathan', 'priya@example.com', { invitedAt: day(38), signedInAt: day(19), coaching: true }),
     one('Devon Ashworth', 'devon@example.com', { invitedAt: day(12) }),
     one('Curtis Nnadi', 'curtis@example.com'),
@@ -1347,6 +1350,7 @@ export async function loadTeamRoster(): Promise<TeamMember[]> {
     id: String(a.id),
     name: String(a.name ?? ''),
     email: (a.email as string | null) ?? null,
+    phone: (a.phone as string | null) ?? null,
     teamId: String(a.team_id ?? ''),
     teamName: String(a.team_name ?? ''),
     excluded: !!a.excluded,
