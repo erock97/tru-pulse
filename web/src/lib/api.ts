@@ -1025,6 +1025,8 @@ export interface AgentRow {
   // Taken off the team by a leader. Their leads still count in team totals;
   // they stop appearing as a person. See setExcluded().
   excluded?: boolean;
+  /** agent | lead | admin | pond. Older databases report nothing; treat as agent. */
+  role?: string | null;
   is_paused: boolean;
   pause_reason: string | null;   // at_capacity | no_closings | on_leave | coaching | other
   pause_note: string | null;     // free text, used when pause_reason = 'other'
