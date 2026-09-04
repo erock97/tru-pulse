@@ -50,7 +50,7 @@ export async function handleDataRoutes(
       db.select('org_settings', `select=${SETTINGS_COLS}&order=org_id.asc&limit=1`),
       db.selectAll('leads', LEAD_COLS, 'fub_person_id.asc'),
       db.select('accountability_cases', `select=assigned_to,status,opened_at&opened_at=gte.${sinceIso}`),
-      db.select('agents', 'select=id,name,email,phone,excluded,is_paused,pause_reason,pause_note,paused_at'),
+      db.select('agents', 'select=id,name,email,phone,excluded,role,is_paused,pause_reason,pause_note,paused_at'),
       db.select('deals', 'select=team_id,stage,stage_class,price,commission,agent_name,fub_person_id,projected_close,fub_created'),
       db.selectAll('person_stage_log', STAGE_LOG_COLS, 'fub_person_id.asc'),
     ]);

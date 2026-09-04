@@ -276,6 +276,35 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
       if (l.flag !== 'zero_contact') r.worked += 1;
     }
 
+    // Everyone on the team gets a row, leads or not. A brand-new agent has no
+    // leads yet and used to be invisible here (Karisa, 2026-09-04: on the Team
+    // tab, in the Coach cohort, and absent from Pulse). Pond accounts are not
+    // people and admins are not agents; everybody else appears at zero so the
+    // leader can find them, open them, and log the 1:1 they just had.
+    for (const a of raw.agents ?? []) {
+      if (a.excluded) continue;
+      const role = a.role ?? 'agent';
+      if (role === 'pond' || role === 'admin') continue;
+      const key = norm(a.name);
+      if (bucket.has(key)) continue;
+      const c = byName.get(key);
+      const ra = repByName.get(key);
+      bucket.set(key, {
+        agentId: c?.id ?? a.id,
+        name: a.name,
+        leads: 0, srcs: new Map<string, number>(),
+        worked: 0, workedPct: 0, stuck: 0, offers: 0, contracts: 0,
+        perContract: null,
+        lastDays: c && c.lastDays < 99 ? c.lastDays : null,
+        arch: c?.quad ?? null,
+        archName: c?.archName ?? null,
+        health: 'no-volume',
+        cert: ra
+          ? { passed: passedBy.get(ra.id)?.size ?? 0, total: liveModules.length, invited: ra.invited }
+          : null,
+      });
+    }
+
     const list = [...bucket.values()].map((r) => ({
       ...r,
       workedPct: r.leads ? Math.round((r.worked / r.leads) * 100) : 0,
