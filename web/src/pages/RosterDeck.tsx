@@ -245,14 +245,12 @@ function Deck({
           </span>
           <h1>
             {totals.perContract
-              ? <>The floor turns one lead in <em>{rateShown ?? Math.round(totals.perContract)}</em>.</>
+              ? <>One contract per <em>{rateShown ?? Math.round(totals.perContract)}</em> leads.</>
               : <>No contracts in this window yet.</>}
           </h1>
           <p className="dk-sub">
-            Your line is one in {line}. <b>{totals.workedPct}%</b> of {totals.leads} leads have been worked
-            {totals.workedPct >= 95
-              ? <>, so almost nothing is being dropped before the call — what is being lost is being lost on it.</>
-              : <>, so {100 - totals.workedPct}% never got a first touch. Start there before coaching anybody on the call.</>}
+            Your target is one contract per {line} leads. <b>{totals.workedPct}%</b> of {totals.leads} leads are marked worked.
+            {' '}Use the signals below to decide what to review; conversation quality needs interaction evidence.
             {undated > 0 && <> <s className="dk-note">{undated} leads carry no date and sit outside this window.</s></>}
             {departed.names.length > 0 && (
               <> <s className="dk-note">
@@ -334,7 +332,7 @@ function Deck({
         <h2>The roster</h2>
         <p>
           {priorities.length === 0
-            ? 'Nobody needs you this week.'
+            ? 'No priority signals in this view.'
             : `${priorities.length} need you · ${totals.stale} past thirty days without a 1:1`}
         </p>
         <span className="dk-key">

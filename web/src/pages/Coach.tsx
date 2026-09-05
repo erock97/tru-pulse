@@ -561,11 +561,9 @@ function CoachDeck({
                       : 'Everybody is current'}
                   </span>
                   <h1>
-                    {mix.segs[0]
-                      ? <>Mostly <em>{mix.segs[0].label.toLowerCase()}s</em>, and {derived.onTrack} of {roster.length} on track.</>
-                      : <>Your team, at a glance.</>}
+                    The next conversation matters.
                   </h1>
-                  <p className="dk-sub">{mix.note}</p>
+                  <p className="dk-sub">{derived.onTrack} of {roster.length} agents are on track in this view. Review their recent interactions, coaching history, and assessment before choosing how to help.</p>
                 </div>
                 {/* These actions used to live in the shell's top bar, which
                     Coach hides on this view — so both of them, the cohort link
@@ -582,7 +580,7 @@ function CoachDeck({
                     the health score; that is its own tile and its own thing. */}
                 <div className="rs-plate dk-tile dk-tile-lead">
                   <span className="k">Longest without a 1:1</span>
-                  <span className="v">{driftPeak.never ? 'never' : `${driftPeak.days}d`}</span>
+                  <span className="v">{driftPeak.never ? 'Not recorded' : `${driftPeak.days}d`}</span>
                   <ScaleMarks
                     lo={0} hi={cadenceHi} line={cadence}
                     lineLabel={cadence === CADENCE_DAYS ? `your cadence · ${cadence}d` : `trying ${cadence}d`}
