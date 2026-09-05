@@ -85,11 +85,11 @@ export default function AdminTeams({
           <header className="dk-mast">
             <div>
               <span className="dk-eyebrow"><i />Platform owner</span>
-              <h1>Act as <em>any team</em>.</h1>
+              <h1>Your teams.</h1>
               <p className="dk-sub">
                 {teams.length} {teams.length === 1 ? 'team' : 'teams'} across {orgs}{' '}
-                {orgs === 1 ? 'organisation' : 'organisations'}. Choosing one signs you into
-                that team's HQ as its leader; the sidebar then carries an exit back here.
+                {orgs === 1 ? 'organisation' : 'organisations'}. Open a team's workspace to review its people and priorities.
+                A banner identifies the team you are viewing and lets you return here.
               </p>
             </div>
             <button
@@ -107,6 +107,7 @@ export default function AdminTeams({
               <input
                 className="ad-input adm-search"
                 placeholder="Search team, org, or leader…"
+                aria-label="Search teams, organisations, or leaders"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />

@@ -5,6 +5,7 @@ import PublicSite from './site/PublicSite';
 import { resolveView } from './lib/routes';
 import { clearLegacyTokens } from './lib/clearLegacyTokens';
 import './styles.css';
+import './premiumInterior.css';
 
 // Before anything renders, and on every load rather than only on sign-out — a user who
 // never signs out is exactly the one still carrying a pre-cutover token.
@@ -22,6 +23,7 @@ const publicRoute = resolveView(
   window.location.host,
   window.location.search,
 );
+document.documentElement.classList.toggle('tru-premium', !publicRoute);
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

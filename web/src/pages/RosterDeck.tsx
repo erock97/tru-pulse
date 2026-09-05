@@ -37,10 +37,12 @@ import { PersonPane } from '../components/personPane';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys, useRounded,
 } from '../components/deckFocus';
+import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { Odometer } from '../components/odometer';
 import { useFlip, useGlide } from '../lib/deckMotion';
 
 export default function RosterDeck(props: {
+  orgId: string;
   orgName: string;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
@@ -56,8 +58,9 @@ export default function RosterDeck(props: {
 }
 
 function Deck({
-  orgName, onOpenPulse, onOpenCoach, onOpenRep,
+  orgId, orgName, onOpenPulse, onOpenCoach, onOpenRep,
 }: {
+  orgId: string;
   orgName: string;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
@@ -69,7 +72,8 @@ function Deck({
      the line as a parameter and re-derives from the data it has, so moving it
      re-judges the whole page without a request. It is a question you can ask
      of today's numbers, not a setting you are changing. */
-  const [line, setLine] = useState<number>(DEFAULT_LINE);
+  const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
+  const { value: line, setValue: setLine } = target;
   const [win, setWin] = useState<Window>(WINDOWS[3]);
   const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
@@ -185,8 +189,8 @@ function Deck({
   // marker would slide the marker out from under the cursor, and the control
   // would feel like it was resisting you.
   const rates = rows.map((r) => r.perContract).filter((v): v is number => v !== null);
-  const lo = Math.max(0, Math.min(DEFAULT_LINE, ...rates) - 4);
-  const hi = Math.max(DEFAULT_LINE, ...rates) + 6;
+  const lo = Math.max(0, Math.min(DEFAULT_LINE, target.saved, ...rates) - 4);
+  const hi = Math.max(DEFAULT_LINE, target.saved, ...rates) + 6;
   const scale = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
 
   const resort = (key: keyof Row) =>
@@ -245,14 +249,12 @@ function Deck({
           </span>
           <h1>
             {totals.perContract
-              ? <>The floor turns one lead in <em>{rateShown ?? Math.round(totals.perContract)}</em>.</>
+              ? <>One contract per <em>{rateShown ?? Math.round(totals.perContract)}</em> leads.</>
               : <>No contracts in this window yet.</>}
           </h1>
           <p className="dk-sub">
-            Your line is one in {line}. <b>{totals.workedPct}%</b> of {totals.leads} leads have been worked
-            {totals.workedPct >= 95
-              ? <>, so almost nothing is being dropped before the call — what is being lost is being lost on it.</>
-              : <>, so {100 - totals.workedPct}% never got a first touch. Start there before coaching anybody on the call.</>}
+            Your target is one contract per {line} leads. <b>{totals.workedPct}%</b> of {totals.leads} leads are marked worked.
+            {' '}Use the signals below to decide what to review; conversation quality needs interaction evidence.
             {undated > 0 && <> <s className="dk-note">{undated} leads carry no date and sit outside this window.</s></>}
             {departed.names.length > 0 && (
               <> <s className="dk-note">
@@ -283,7 +285,7 @@ function Deck({
               cursor, or with the arrow keys from the table — names them. */}
           <ScaleMarks
             lo={lo} hi={hi} line={line}
-            lineLabel={line === DEFAULT_LINE ? `your line 1 : ${line}` : `trying 1 : ${line}`}
+            lineLabel={`Target · 1 : ${line}`}
             onLineChange={setLine}
             lineName={`your line, currently one in ${line}`}
             marks={rows.map((r) => ({
@@ -296,11 +298,7 @@ function Deck({
                   : r.health === 'holding' ? 'ok' : 'none',
             }))}
           />
-          <span className="u">
-            {line === DEFAULT_LINE
-              ? 'every dot is an agent · drag the line to ask what a different one would mean'
-              : <>reading the floor against <b>1 : {line}</b> · <button className="sm-reset" onClick={() => setLine(DEFAULT_LINE)}>back to 1 : {DEFAULT_LINE}</button></>}
-          </span>
+          <TargetControl target={target} label="Leads per contract" defaultValue={DEFAULT_LINE} />
         </div>
         {tiles.map((t) => (
           <div
@@ -334,7 +332,7 @@ function Deck({
         <h2>The roster</h2>
         <p>
           {priorities.length === 0
-            ? 'Nobody needs you this week.'
+            ? 'No priority signals in this view.'
             : `${priorities.length} need you · ${totals.stale} past thirty days without a 1:1`}
         </p>
         <span className="dk-key">

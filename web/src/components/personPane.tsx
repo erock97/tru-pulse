@@ -5,7 +5,7 @@
  * agent with no record there says so rather than being shown as nought passed.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { SOURCE_COLORS } from './viz';
 import type { Row } from '../lib/rosterData';
@@ -26,7 +26,7 @@ function standAt(v: number, row: Row, line: number, team: number | null): number
 function verdict(row: Row, line: number, team: number | null): string {
   const first = row.name.split(' ')[0];
   if (row.perContract === null) {
-    return `${first} has closed nothing in this window, so there is no rate to judge yet. ${row.leads} leads is the number to watch.`;
+    return `${first} has no contracts recorded in this window, so there is no leads-per-contract rate yet. ${row.leads} leads are in this view.`;
   }
   const rate = Math.round(row.perContract);
   const vsLine = rate > line
@@ -36,7 +36,7 @@ function verdict(row: Row, line: number, team: number | null): string {
     : rate > Math.round(team) ? `, and behind the floor at one in ${Math.round(team)}`
       : rate < Math.round(team) ? `, and ahead of the floor at one in ${Math.round(team)}`
         : `, level with the floor`;
-  return `${first} turns one lead in ${rate} — ${vsLine}${vsTeam}.`;
+  return `${first} has one contract per ${rate} leads — ${vsLine}${vsTeam}.`;
 }
 
 export function PersonPane({
@@ -50,15 +50,27 @@ export function PersonPane({
   /** What the whole floor is running at, so one person can be read against it. */
   teamRate: number | null;
 }) {
-  if (!row) return null;
-  const first = row.name.split(' ')[0];
+  const paneRef = useRef<HTMLElement>(null);
 
   // Escape closes the drill-in. Without it the only way out was the mouse.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    if (!row) return;
+    const previous = document.activeElement as HTMLElement | null;
+    paneRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Tab') return;
+      const controls = paneRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]');
+      if (!controls?.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    return () => { window.removeEventListener('keydown', onKey); previous?.focus(); };
+  }, [onClose, row]);
+  if (!row) return null;
+  const first = row.name.split(' ')[0];
 
   return (
     <>
@@ -66,7 +78,7 @@ export function PersonPane({
           path out — Escape is, wired below — so it stays aria-hidden rather
           than pretending to be a control. */}
       <div className="rs-scrim on" onClick={onClose} aria-hidden />
-      <aside className="rs-pane on">
+      <aside className="rs-pane on" ref={paneRef} role="dialog" aria-modal="true" aria-label={`${row.name} details`}>
         <div className="rs-pane-h">
           <button className="x" onClick={onClose} aria-label="Close">✕</button>
           <h3>{row.name}</h3>
