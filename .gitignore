@@ -13,3 +13,4 @@ graphify-out/
 
 # local dev env, never committed
 web/.env.development.local
+landing-dist/
