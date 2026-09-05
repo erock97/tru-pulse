@@ -92,6 +92,11 @@ html.tru-premium .tru-dark .brief-evidence blockquote { color:var(--text); font-
 html.tru-premium .tru-dark .brief-evidence-meta { color:var(--text-60); }
 html.tru-premium .tru-dark .rs-scrim { z-index:90; }
 html.tru-premium .tru-dark .rs-pane { z-index:100; border:1px solid var(--border); border-radius:6px; }
+/* Keep fixed drill-ins above navigation, without a canvas stacking context. */
+html.tru-premium .tru-dark :is(.main,.dk-main) { z-index:auto; }
+html.tru-premium .tru-dark .tru-shell .side { z-index:20; }
+html.tru-premium .tru-dark .tabbar { z-index:20; }
+html.tru-premium .tru-dark .tru-table thead th { background:#e8e9e1; color:#46554f; }
 html.tru-premium .tru-dark .tabbar { background:#253239; backdrop-filter:none; border-top:1px solid #414d52; }
 html.tru-premium .tru-dark .tabbar-btn { color:#cbd2d0; }
 html.tru-premium .tru-dark .tabbar-btn.active { color:#f2d798; background:#354147; }
