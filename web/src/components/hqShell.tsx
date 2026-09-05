@@ -108,7 +108,7 @@ export function HqShell({
   const route = typeof window !== 'undefined' ? window.location.hash.replace(/^#\/?/, '') : '';
   // '/' lands on the roster now, so an empty hash is Pulse. Home survives only
   // at #/home for the platform-owner "act as team" tile.
-  const activeKey = route.startsWith('coach') ? 'coach'
+  const activeKey = route === 'today' ? 'today' : route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
       : route.startsWith('team') ? 'team'
       : route === 'admin/targets' ? 'team-data'
@@ -189,6 +189,7 @@ export function HqShell({
         ...(onOpenCalendar ? [{ key: 'calendar', label: 'Calendar', icon: 'calendar', onClick: onOpenCalendar }] : []),
       ]
     : [
+        { key: 'today', label: 'Today', icon: 'calendar', onClick: () => { window.location.hash = '/today'; } },
         { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
         { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
         { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },

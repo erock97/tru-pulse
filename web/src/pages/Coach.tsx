@@ -27,7 +27,8 @@ import { Odometer } from '../components/odometer';
 import { AgentBriefPanel, TeamBriefSection } from '../components/CoachBrief';
 import AgentProfile from './AgentProfile';
 import { useFlip } from '../lib/deckMotion';
-import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence } from '../lib/deckMarks';
+import { TargetControl, useSavedTarget } from '../components/TargetControl';
+import { CADENCE_DAYS, cadenceEdge, cadenceMark } from '../lib/deckMarks';
 import '../truHqDark.css';
 
 
@@ -64,19 +65,19 @@ function WiringBar({ segs }: { segs: TeamSeg[] }) {
   return (
     <div className="coach-wire">
       <div className="coach-wire-bar">
-        {segs.map((s) => (
+        {segs.map((s, i) => (
           <div
             key={s.label}
             className="coach-wire-seg"
             title={`${s.label} · ${s.count} (${s.pct}%)`}
-            style={{ flexGrow: s.count, background: s.color }}
+            style={{ flexGrow: s.count, background: ['#66727a', '#9c8659', '#bab5a8'][i % 3] }}
           />
         ))}
       </div>
       <div className="coach-wire-legend">
-        {segs.map((s) => (
+        {segs.map((s, i) => (
           <span key={s.label} className="coach-wire-leg">
-            <i style={{ background: s.color }} /> {s.label} <b>{Math.round((s.count / total) * 100)}%</b>
+            <i style={{ background: ['#66727a', '#9c8659', '#bab5a8'][i % 3] }} /> {s.label} <b>{Math.round((s.count / total) * 100)}%</b>
           </span>
         ))}
       </div>
@@ -153,7 +154,8 @@ function CoachDeck({
      Drag the marker on the lead tile and the cohort re-tones against the
      cadence you are asking about — "what would it look like if I saw everyone
      weekly?" Nothing is written; it is a question, not a setting. */
-  const [cadence, setCadence] = useState<number>(CADENCE_DAYS);
+  const cadenceTarget = useSavedTarget(org.id, 'coaching-cadence-days', CADENCE_DAYS);
+  const { value: cadence, setValue: setCadence } = cadenceTarget;
 
   // Each team's public assessment join link. Best-effort — if it fails to load,
   // the header action hides and the rest of the page is unaffected.
@@ -256,62 +258,21 @@ function CoachDeck({
      which is the only other true thing there is to say about them. Both are
      one click into their brief, which is built from the scraped Follow Up Boss
      conversations and exists whether or not they ever take the assessment. */
+  const [directoryQuery, setDirectoryQuery] = useState('');
   const teamLane = everyone.length > 0 ? (
-    <div className="dk-sec brief-sec reveal">
-      <h2>Your team</h2>
-      <p>
-        Everyone Follow Up Boss reports on this team
-        {' · '}{everyone.length} {everyone.length === 1 ? 'person' : 'people'}
-      </p>
-      <div className="brief-scan" role="list" aria-label="Team roster">
-        {everyone.map((p, i) => (
-          <article
-            className={[
-              'rs-plate', 'brief-agent-card', 'is-link',
-              /* A person with no assessment is not a problem, so their card is
-                 quiet rather than loud. The loud states on this page mean a
-                 leader is needed; "hasn't taken it yet" does not. */
-              p.assessed ? '' : 'is-quiet',
-            ].filter(Boolean).join(' ')}
-            role="listitem"
-            key={p.id}
-            style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
-            onClick={() => { setBriefAgentName(p.name); setOpenId(p.id); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { setBriefAgentName(p.name); setOpenId(p.id); } }}
-            tabIndex={0}
-          >
-            <header className="brief-agent-top">
-              <h3 className="brief-agent-name">{p.name}</h3>
-              <span className="brief-agent-stats">
-                {p.assessed ? (
-                  <span className="brief-stat">{p.assessed.archName}</span>
-                ) : !p.invited ? (
-                  <span className="brief-stat">No login sent</span>
-                ) : p.signedIn ? (
-                  <span className="brief-stat">Accepted</span>
-                ) : (
-                  <span className="brief-stat is-watch">Invited</span>
-                )}
-              </span>
-            </header>
-            {/* No score, on purpose. Coaching health is built from check-ins and
-                an assessment; inventing one for somebody who has neither would
-                be a number a leader could act on and should not. */}
-            <p className="brief-agent-meta is-quiet">
-              {p.assessed
-                ? `Last 1:1 ${p.assessed.lastLabel} · health ${healthOf(p.assessed)}`
-                : p.inCoach
-                  ? 'Open to run and log their 1:1. Archetype and coaching health appear once they take the TRU assessment.'
-                  : p.signedIn
-                    ? 'Signed in. Their archetype and coaching health appear once they take the TRU assessment.'
-                    : p.invited
-                      ? 'Invite delivered. Nothing to score until they set up their login.'
-                      : 'Not invited yet. Send them a login from the Team tab.'}
-            </p>
-          </article>
-        ))}
-      </div>
-    </div>
+    <details className="coach-directory" open={!roster?.length}>
+      <summary>All team members ({everyone.length})</summary>
+      <p>Includes people who do not have a published coaching review.</p>
+      <label className="brief-search">Find a team member<input value={directoryQuery} onChange={e => setDirectoryQuery(e.target.value)} placeholder="Agent name" /></label>
+      <div className="brief-roster-scroll"><table className="brief-roster">
+        <thead><tr><th>Agent</th><th>Assessment / access</th><th>Coach membership</th></tr></thead>
+        <tbody>{everyone.filter(p=>p.name.toLowerCase().includes(directoryQuery.trim().toLowerCase())).map(p=><tr key={p.id}>
+          <th scope="row"><button className="brief-name-button" onClick={()=>{setBriefAgentName(p.name);setOpenId(p.id);}}>{p.name}</button></th>
+          <td>{p.assessed ? p.assessed.archName : !p.invited ? 'No login sent' : p.signedIn ? 'Signed in · not assessed' : 'Invited · not assessed'}</td>
+          <td>{p.inCoach ? 'In Coach' : 'Not in Coach cohort'}</td>
+        </tr>)}</tbody>
+      </table></div>
+    </details>
   ) : null;
 
   async function copyTeamLink(t: TeamLink) {
@@ -430,9 +391,8 @@ function CoachDeck({
      SAME instrument Pulse has, on its own axis. Pulse measures a rate against
      your line; Coach measures elapsed days against your cadence. One reading,
      one gesture, two units. The placement rules live in lib/deckMarks. */
-  const cadenceHi = cadenceEdge(roster);
+  const cadenceHi = Math.max(cadenceEdge(roster), cadenceTarget.saved + 7);
   const cadenceMarks = roster.map((a) => cadenceMark(a, cadenceHi, cadence));
-  const overCadence = pastCadence(roster, cadence);
 
   return (
     <div className="tru-dark">
@@ -455,12 +415,13 @@ function CoachDeck({
         }
         islandSlot={openAgent || briefOnly ? (
           <button className="dk-back" onClick={() => setOpenId(null)}>
-            <span aria-hidden>←</span> Team
+            <span aria-hidden>←</span> Back to all agents
           </button>
         ) : undefined}
       >
         <div className="coach-canvas dk-main" ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
+          {(openAgent || briefOnly) && <button className="coach-return" onClick={() => setOpenId(null)}>← Back to all agents</button>}
 
           {briefOnly ? (
             /* Their coaching brief in full, without the cohort tooling. The
@@ -536,7 +497,7 @@ function CoachDeck({
                       </section>
                     </>
                   )}
-                  <TeamBriefSection
+                  <TeamBriefSection preferredAgent={briefAgentName}
                     onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                   />
                   {teamLane ?? (
@@ -554,16 +515,11 @@ function CoachDeck({
               {/* ============ MASTHEAD ============ */}
               <header className="dk-mast">
                 <div>
-                  <span className={derived.needsYou.length > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
-                    <i />
-                    {derived.needsYou.length > 0
-                      ? `${derived.needsYou.length} need you`
-                      : 'Everybody is current'}
-                  </span>
+                  <span className="dk-eyebrow">Coach · Your people, in focus</span>
                   <h1>
-                    The next conversation matters.
+                    Make the time count.
                   </h1>
-                  <p className="dk-sub">{derived.onTrack} of {roster.length} agents are on track in this view. Review their recent interactions, coaching history, and assessment before choosing how to help.</p>
+                  <p className="dk-sub">Choose a person. Understand the evidence. Prepare a better conversation.</p>
                 </div>
                 {/* These actions used to live in the shell's top bar, which
                     Coach hides on this view — so both of them, the cohort link
@@ -574,6 +530,7 @@ function CoachDeck({
               </header>
 
               {/* ============ THE CADENCE SCALE + THE NUMBERS ============ */}
+              <details className="coach-metrics"><summary>Cadence and team measures · every {cadence} days</summary>
               <section className="dk-bento">
                 {/* The value is the outermost dot on the scale beside it — the
                     person you have gone longest without sitting down with. Not
@@ -583,16 +540,12 @@ function CoachDeck({
                   <span className="v">{driftPeak.never ? 'Not recorded' : `${driftPeak.days}d`}</span>
                   <ScaleMarks
                     lo={0} hi={cadenceHi} line={cadence}
-                    lineLabel={cadence === CADENCE_DAYS ? `your cadence · ${cadence}d` : `trying ${cadence}d`}
+                    lineLabel={`Every ${cadence} days`}
                     onLineChange={setCadence}
                     lineName={`your cadence, currently every ${cadence} days`}
                     marks={cadenceMarks}
                   />
-                  <span className="u">
-                    {cadence === CADENCE_DAYS
-                      ? <>{driftPeak.name} · drag the cadence to ask what a tighter one would mean</>
-                      : <><b>{overCadence}</b> of {roster.length} past a {cadence}-day cadence · <button className="sm-reset" onClick={() => setCadence(CADENCE_DAYS)}>back to {CADENCE_DAYS}d</button></>}
-                  </span>
+                  <TargetControl target={cadenceTarget} label="Days between 1:1s" defaultValue={CADENCE_DAYS} />
                 </div>
                 {/* Four of the five carry the distribution the number
                     summarises, in the same order every time, so a bar in one
@@ -636,12 +589,13 @@ function CoachDeck({
                   made Coach's header 44px taller than Pulse's and pushed the
                   whole page down relative to the other tabs. */}
               <div className="dk-wiring"><WiringBar segs={mix.segs} /></div>
+              </details>
 
               {/* ============ THE WEEKLY BRIEF ============ */}
               {/* The Hermes review of last week's Follow Up Boss activity —
                   who to coach on what, with the evidence one click deep. Rows
                   open the agent's sheet, where their full brief lives. */}
-              <TeamBriefSection
+              <TeamBriefSection preferredAgent={briefAgentName}
                 onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                 cohort={(() => {
                   const m = new Map();

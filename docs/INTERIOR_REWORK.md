@@ -26,3 +26,11 @@ Keep the accepted stone/cream surfaces, slate navigation, serif emphasis, gold a
 Activity: created isolated `feat/premium-interior-rework` from main; implemented app styling, navigation, calendar agenda, factual-copy corrections and drawer accessibility; ran build, typecheck, regression and local browser checks; prepared a preview and PR.
 
 Proposed decision for Eric: accept this visual direction after reviewing the phone preview, then verify Eric's and Adam's actual owner sessions and a live team impersonation round-trip before promoting the interior to production. This proposal is not recorded as an approved production decision.
+
+## Second pass — focused Coach and Today (September 5)
+
+Replaces the published coaching card grid with a searchable people queue and one agent review, preserving source evidence and existing 1:1 forms. Team measures and full directory remain available as disclosures. Adds explicit return navigation. Pulse and Coach targets have explicit browser-local, account/team-scoped save controls. Reduces secondary chart/card decoration and removes remaining green presentation in the affected Coach/Rep surfaces.
+
+Today uses the existing authenticated coaching roster and open-commitment loaders. Recorded check-in gaps determine cadence order, not conversation quality. Commitments are not falsely labelled overdue: the source has no due date. Broker calendar is explicitly not connected yet. This is a first functional Today surface, not a claim that all tasks are integrated.
+
+Validation: typecheck and production build pass. Web suite: 389 pass, 1 existing unrelated Zillow Day 1 HTML hash failure. Browser: Coach search/selection, evidence disclosure, session navigation and return; Today action data; phone layout and fixed navigation verified. Previous target Save/reload verified in demo. Production unchanged.

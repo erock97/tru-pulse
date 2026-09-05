@@ -390,145 +390,43 @@ export interface CohortMeta {
   needsYou: boolean;
 }
 
-export function TeamBriefSection({ onOpenAgent, cohort }: {
+export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   onOpenAgent?: (agentId: string, agentName: string) => void;
-  /** Keyed by agent id AND lowercased name; absent for unprofiled agents. */
   cohort?: Map<string, CohortMeta>;
+  preferredAgent?: string | null;
 }) {
   const [reportId, setReportId] = useState<string | null>(null);
   const { bundle } = useBrief(reportId);
   const [printing, setPrinting] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(preferredAgent ?? '');
   const view = bundle?.latest ?? null;
-
-  // No published brief for this org → no section at all. Teams that aren't on
-  // the weekly review (most customers) must never see an empty "no brief"
-  // frame; the section simply starts existing the week their first report lands.
   if (!view) return null;
-
-  return (
-    <div className="dk-sec brief-sec">
-      <h2>The weekly brief</h2>
-      <p>
-        {briefRangeLabel(view.weekStart, view.weekEnd)}
-        {' · '}{view.agents.length} agent{view.agents.length === 1 ? '' : 's'} reviewed
-      </p>
-      <span className="dk-key brief-actions">
-        <WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} />
-        <button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button>
-      </span>
-
-      {/* One CARD per agent, not a cramped four-column table. The old scan ran
-          names at 15px and the coaching line at 14px truncated to one line
-          with an ellipsis, on the same page where every Pulse tile runs
-          20-22px. This section is the reason a leader opens the tab; it now
-          looks like it. Cards arrive on the house fade-up, staggered, and the
-          coaching line wraps in full instead of being cut. */}
-      <div className="brief-scan" role="list" aria-label="Team coaching scan">
-        {[...view.agents]
-          .map((a) => ({
-            a,
-            meta: cohort?.get(a.agentId ?? '') ?? cohort?.get(a.agentName.trim().toLowerCase()),
-          }))
-          /* One order for one list: the people who need a leader first, then
-             the coached cohort by health (worst up), then everyone else by how
-             much the week saw of them. This replaces the separate focus row
-             and roster table -- ONE list, sorted by who deserves attention. */
-          .sort((x, y) => {
-            const ax = x.meta?.needsYou ? 0 : x.meta ? 1 : 2;
-            const ay = y.meta?.needsYou ? 0 : y.meta ? 1 : 2;
-            if (ax !== ay) return ax - ay;
-            if (x.meta && y.meta) return x.meta.health - y.meta.health;
-            const wx = (x.a.metrics.reviewedContacts ?? 0) + x.a.objections.length * 3;
-            const wy = (y.a.metrics.reviewedContacts ?? 0) + y.a.objections.length * 3;
-            return wy - wx;
-          })
-          .map(({ a, meta }, i) => {
-          const priority = priorityLabel(a);
-          const clickable = !!(a.agentId && onOpenAgent);
-          const reviewed = a.metrics.reviewedContacts;
-          return (
-            <article
-              className={[
-                'rs-plate', 'brief-agent-card',
-                clickable ? 'is-link' : '',
-                meta?.needsYou ? 'needs-you' : '',
-                /* Tone edges break the sea of identical tiles: ember for the
-                   people who need a leader, amber where buyers pushed back,
-                   and a QUIET card for an agent with nothing to flag -- a calm
-                   week should look calm, not identical to a loaded one. */
-                !meta?.needsYou && a.objections.length > 0 ? 'has-watch' : '',
-                !priority ? 'is-quiet' : '',
-              ].filter(Boolean).join(' ')}
-              role="listitem"
-              key={a.agentName}
-              style={{ animationDelay: `${Math.min(i, 10) * 70}ms` }}
-              onClick={clickable ? () => onOpenAgent!(a.agentId!, a.agentName) : undefined}
-              onKeyDown={clickable ? (e) => { if (e.key === 'Enter') onOpenAgent!(a.agentId!, a.agentName); } : undefined}
-              tabIndex={clickable ? 0 : undefined}
-            >
-              <header className="brief-agent-top">
-                <h3 className="brief-agent-name">{a.agentName}</h3>
-                <span className="brief-agent-stats">
-                  {reviewed !== undefined && (
-                    <span className="brief-stat">
-                      <b>{reviewed}</b> reviewed
-                    </span>
-                  )}
-                  {a.objections.length > 0 && (
-                    <span className="brief-stat is-watch">
-                      <b>{a.objections.length}</b> objection{a.objections.length === 1 ? '' : 's'}
-                    </span>
-                  )}
-                </span>
-              </header>
-              {/* The agent's own first-touch mix, in the page's segmented-strip
-                  language (the Independent/Striver/Achiever bar above). This is
-                  what un-flattens the wall: every card carries a different
-                  shape, and the shape is the behaviour TRU coaches hardest --
-                  calls before texts. Sea = called first, amber = texted. */}
-              {(() => {
-                const c = a.metrics.callFirst ?? 0;
-                const t = a.metrics.textFirst ?? 0;
-                if (c + t < 2) return null;
-                return (
-                  <span className="brief-mix" aria-label={`${c} called first, ${t} texted first`}>
-                    <span className="brief-mix-bar">
-                      {c > 0 && <i className="is-call" style={{ flexGrow: c }} />}
-                      {t > 0 && <i className="is-text" style={{ flexGrow: t }} />}
-                    </span>
-                    <span className="brief-mix-cap"><b>{c}</b> called first · <b>{t}</b> texted</span>
-                  </span>
-                );
-              })()}
-              <p className="brief-agent-pri">
-                {priority ?? <i className="brief-none-inline">{emptyPriorityLabel(a)}</i>}
-              </p>
-              {/* The dashboard, folded into the card. This line IS the old
-                  cohort table: archetype, coaching health, last 1:1. Absent for
-                  the unprofiled rather than pretending with dashes. */}
-              {meta ? (
-                <p className="brief-agent-meta">
-                  <span className="bam-arch">{meta.archName}</span>
-                  <span className="bam-dot" aria-hidden />
-                  <span>health <b>{meta.health}</b></span>
-                  <span className="bam-dot" aria-hidden />
-                  <span>{meta.lastDays >= 99 ? 'no 1:1 yet' : meta.lastDays === 0 ? '1:1 today' : `1:1 ${meta.lastDays}d ago`}</span>
-                  {meta.needsYou && <span className="bam-needs">needs you</span>}
-                </p>
-              ) : (
-                <p className="brief-agent-meta is-quiet">Not assessed yet</p>
-              )}
-              {clickable && <span className="brief-agent-go" aria-hidden>Open their brief</span>}
-            </article>
-          );
-        })}
+  const people = [...view.agents].filter(a => (a.agentName+' '+(priorityLabel(a) ?? '')).toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a,b) => Number(!!priorityLabel(b))-Number(!!priorityLabel(a)) || a.agentName.localeCompare(b.agentName));
+  const person = people.find(a => a.agentName === selected) ?? people[0];
+  const meta = person ? cohort?.get(person.agentId ?? '') ?? cohort?.get(person.agentName.trim().toLowerCase()) : undefined;
+  return <section className="dk-sec brief-sec">
+    <div className="brief-workspace-heading"><div><h2>The weekly review</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agents reviewed</p></div>
+      <div className="brief-actions"><WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} /><button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button></div></div>
+    <div className="coaching-workspace">
+      <aside className="coaching-queue" aria-label="People to review"><header><h3>People to review <small>{people.length}</small></h3><label>Find an agent<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name or coaching focus" /></label></header>
+        <div className="coaching-people">{people.map(a=><button key={a.agentId || a.agentName} aria-pressed={person?.agentName===a.agentName} onClick={()=>setSelected(a.agentName)}><strong>{a.agentName}</strong><span>{priorityLabel(a) ?? 'No coaching focus in this report'}</span></button>)}</div>
+        <p className="coaching-order-note">Reported focus first, then alphabetical. This is not a severity ranking.</p>
+      </aside>
+      <div className="coaching-review" key={(view.reportId ?? '')+person?.agentName}>
+        {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Coaching review</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || meta.lastDays>=99 ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
+          {person.agentId && onOpenAgent && <button className="brief-open" onClick={()=>onOpenAgent(person.agentId!,person.agentName)}>Prepare 1:1 →</button>}</header>
+          <div className="coaching-review-body"><h4>What to work on</h4><PointList points={person.coachingActions.length ? person.coachingActions : person.opportunities} tone="work" maxVisible={3} />
+          {!!person.objections.length && <><h4>Where the conversation gets difficult</h4><PointList points={person.objections} tone="watch" maxVisible={2} /></>}
+          {!!person.doingRight.length && <><h4>Keep building on</h4><PointList points={person.doingRight} tone="good" maxVisible={2} /></>}
+          <p className="coaching-order-note">Open the evidence beside each observation before using it in a coaching conversation. A linked source does not by itself establish the claim.</p></div>
+        </> : <div className="coaching-empty"><h3>No agents match</h3><p>Try another name or coaching focus.</p><button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></div>}
       </div>
-
-      <SkillsTrainingSection view={view} onOpenAgent={onOpenAgent} />
-
-      {printing && <BriefPrintSheet view={view} onClose={() => setPrinting(false)} />}
     </div>
-  );
+    <details className="brief-training-details"><summary>Training themes across the team</summary><SkillsTrainingSection view={view} onOpenAgent={onOpenAgent} /></details>
+    {printing && <BriefPrintSheet view={view} onClose={()=>setPrinting(false)} />}
+  </section>;
 }
 
 /* ── The ninety-day habit store, one fetch per page view ─────────────────────

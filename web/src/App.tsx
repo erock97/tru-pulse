@@ -1,3 +1,4 @@
+import Today from './pages/Today';
 import { useEffect, useRef, useState } from 'react';
 import { onAuthChange, onPasswordRecovery, exchangeLink, signOut, type AuthState } from './lib/auth';
 import { redeemLink } from './lib/redeemLink';
@@ -225,12 +226,14 @@ export default function App() {
         />
     : route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
+      : route === '/today'
+      ? <Today org={o} />
       : route === '/home'
       ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
       // `/deck` is NOT listed here on purpose — it belongs to the Zillow slide
       // preview (parseDeckRoute), which is matched earlier.
       : route === '/pulse' || route === '/'
-      ? <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
+      ? <RosterDeck orgId={o.id} orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : isCoachRoute(route)
         ? (
           <Coach
@@ -256,7 +259,7 @@ export default function App() {
       // Design concepts, on live data. Not linked from anywhere.
       : route === '/lab'
         ? <Lab org={o} onHome={() => go('/')} />
-        : <RosterDeck orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
+        : <RosterDeck orgId={o.id} orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />;
 
   // Public broker closing-confirmation link (#/confirm?t=<round_token>) — no
   // auth, no org. Mounted before every auth check, same as /assess below: the
