@@ -53,6 +53,7 @@ export function AgentHqShell({
               key={l.label}
               className={`side-link ${l.key === active ? 'active' : ''}`}
               onClick={l.onClick}
+              aria-current={l.key === active ? 'page' : undefined}
             >
               <Icon name={l.icon} size={20} />
               <span>{l.label}</span>

@@ -107,9 +107,9 @@ export function prioritise(rows: readonly Row[]): Priority[] {
         row: r,
         severity: 'high',
         reason: r.workedPct >= 95
-          ? `Worked ${r.workedPct}% of ${r.leads} leads and closed ${r.contracts}. Nothing is being dropped before the call, so the loss is on it.`
-          : `One contract from ${r.leads} leads, and ${100 - r.workedPct}% of them were never worked.`,
-        action: r.workedPct >= 95 ? 'Listen to a recent call before the next 1:1.' : 'Start with the untouched leads.',
+          ? `${r.contracts} contracts from ${r.leads} leads; ${r.workedPct}% are marked worked. Activity alone does not establish conversation quality.`
+          : `${r.contracts} contracts from ${r.leads} leads; ${100 - r.workedPct}% are flagged as having no contact.`,
+        action: r.workedPct >= 95 ? 'Review recent conversations and pipeline context before choosing a coaching focus.' : 'Check the no-contact leads and their activity history first.',
         approach: approachFor(r),
       });
     } else if (r.stuck > 10) {

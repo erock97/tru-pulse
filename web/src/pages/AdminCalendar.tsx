@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { HqShell } from '../components/hqShell';
+import { CalendarAgenda } from '../components/CalendarAgenda';
 import {
   calendarOverview, createMeetingType, deleteMeetingType, saveBookingRules,
   setupCalendar, signOutClean, startGoogleCalendarLink, updateMeetingType,
@@ -350,10 +351,10 @@ export default function AdminCalendar({
           <header className="dk-mast">
             <div>
               <span className="dk-eyebrow"><i />Platform owner</span>
-              <h1>Your <em>calendar</em>.</h1>
+              <h1>Your calendar.</h1>
               <p className="dk-sub">
-                Your own booking system — the links, the hours behind them, and what people have booked.
-                Changes here are live on truhq.co/book the moment they save.
+                Make room for the conversations that move your teams forward.
+                Manage your bookings, meeting links, and availability here.
               </p>
             </div>
           </header>
@@ -393,6 +394,8 @@ export default function AdminCalendar({
             </div>
           ) : data && (
             <>
+              <CalendarAgenda bookings={upcoming} timezone={data.timezone || 'America/Los_Angeles'} />
+              <div className="dk-sec"><h2>Booking settings</h2><p>Saved changes apply to your public booking page immediately.</p></div>
               <div className="rs-plate dk-table cal-master">
                 <div>
                   <div className="cal-k">Accepting bookings</div>
@@ -403,6 +406,7 @@ export default function AdminCalendar({
                   </div>
                 </div>
                 <button type="button" className={`mny-btn ${data.bookable ? 'yes' : ''}`} disabled={busy}
+                  aria-pressed={!!data.bookable} aria-label="Accepting new bookings"
                   onClick={() => void toggleBookable()}>
                   {data.bookable ? 'ON' : 'OFF'}
                 </button>
@@ -551,9 +555,8 @@ export default function AdminCalendar({
                     )}
                   </div>
 
-                  <div className="rs-plate dk-table cal-card">
-                    <div className="cal-k">Booked</div>
-                    <p className="mny-sub" style={{ marginTop: 4 }}>What people have taken, from today forward.</p>
+                  <details className="rs-plate dk-table cal-card">
+                    <summary className="cal-k">All upcoming bookings ({upcoming.length})</summary>
                     {upcoming.length === 0 ? (
                       <div className="mny-note">Nothing on the books.</div>
                     ) : (
@@ -570,7 +573,7 @@ export default function AdminCalendar({
                         ))}
                       </div>
                     )}
-                  </div>
+                  </details>
                 </div>
               </div>
 

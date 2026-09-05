@@ -177,8 +177,8 @@ export default function AdminContracts({
             <div className="rs-plate dk-table ctr-empty">
               <h2 style={{ marginTop: 0 }}>Connect TruSign</h2>
               <p className="mny-modal-sub" style={{ maxWidth: 640 }}>
-                No fabricated envelopes here — real titles, statuses and dates appear the moment
-                TruSign&apos;s read credential lands, and send/void arm when its write credential lands too.
+                Connect TruSign to review your contracts, signatures, and outstanding requests.
+                Sending and voiding contracts require a separate write connection.
               </p>
               {data.requires && (
                 <div className="ctr-requires">
