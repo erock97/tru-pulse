@@ -13,11 +13,12 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { hasContractMilestone, rawConversionPercent } from './conversionMilestones';
 import { inPulsePeriod, type PulsePeriod } from './pulsePeriod';
 
 import { loadDashboard, loadRep, type RepData } from './api';
 import { loadRoster, type RosterAgent } from './coachData';
-import { isClosing, isOfferPlus, stageClass, isStuckStage } from '../../../shared/flags';
+import { isOfferPlus, stageClass, isStuckStage } from '../../../shared/flags';
 
 /* ── the line ──────────────────────────────────────────────────────────────
    Leads-per-contract worse than this is "past the line". Wants a per-team
@@ -280,7 +281,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
       r.srcs.set(sf, (r.srcs.get(sf) ?? 0) + 1);
       const cls = stageClass(l.stage);
       if (l.history ? !!l.history.offer : isOfferPlus(cls)) r.offers += 1;
-      if (l.history ? !!l.history.uc : isClosing(cls)) r.contracts += 1;
+      if (hasContractMilestone(l)) r.contracts += 1;
       r.met=(r.met??0)+(l.history?.met?1:0);
       r.closed=(r.closed??0)+(l.history ? l.history.closed?1:0 : cls==='closed'?1:0);
       r.nurture=(r.nurture??0)+(l.stage?.toLowerCase()==='nurture'?1:0);
@@ -321,7 +322,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
       ...r,
       workedPct: r.leads ? Math.round((r.worked / r.leads) * 100) : 0,
       perContract: r.contracts ? r.leads / r.contracts : null,
-      rawConversion:r.leads?100*(r.closed??0)/r.leads:0,
+      rawConversion:rawConversionPercent(r.contracts,r.leads)??0,
     }));
 
     const totalLeads = list.reduce((a, r) => a + r.leads, 0);
