@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {calculate,parseStage,defaultMap} from './metrics.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {calculate,parseStage,defaultMap,datedCredits,productionByPeriod} from './metrics.mjs';
 const p={id:1,created:'2026-01-02T12:00:00Z',source:'Zillow Preferred',stage:'Nurture',assignedUserId:9,assignedTo:'Agent'};
 const ev=(id,from,to,date='2026-02-01T12:00:00Z')=>({id,date,description:`Stage changed from ${from} to ${to} by user-id=9`});
 const options={start:'2026-01-01',end:'2026-08-31',timezone:'UTC'};
@@ -16,3 +16,8 @@ test('closed grants cumulative progression but no nurture',()=>assert.deepEqual(
 test('current stage alone never invents historical milestone dates',()=>assert.equal(run([],{...p,stage:'Closed'}).counts.closed,0));
 test('source filter isolates cohort',()=>assert.equal(calculate({people:[p],histories:{}},{...options,source:'Other'}).length,0));
 test('reporting timezone controls date boundaries',()=>{const data={people:[{...p,created:'2026-01-01T02:00:00Z'}],histories:{}};assert.equal(calculate(data,{...options,timezone:'America/Los_Angeles'}).length,0);});
+test('skipped met and offer take contract timestamp',()=>{const rows=datedCredits(p,{stageEvents:[ev('a','Lead','Under Contract')]});assert.equal(rows.length,3);assert.ok(rows.every(r=>r.date==='2026-02-01T12:00:00Z'));assert.equal(rows.find(r=>r.category==='offer').kind,'rule-based');});
+test('earlier met stays in January; skipped offer follows February contract',()=>{const rows=datedCredits(p,{stageEvents:[ev('b','Met with Customer','Under Contract'),ev('a','Lead','Met with Customer','2026-01-15T00:00:00Z')]});assert.equal(rows.find(r=>r.category==='met').date,'2026-01-15T00:00:00Z');assert.equal(rows.find(r=>r.category==='offer').date,'2026-02-01T12:00:00Z');});
+test('pending then contract then close never repeats prior credits',()=>{const rows=datedCredits(p,{stageEvents:[ev('a','Lead','Pending'),ev('b','Pending','Under Contract'),ev('c','Under Contract','Closed','2026-03-01T00:00:00Z')]});assert.equal(rows.length,4);assert.equal(rows.find(r=>r.category==='uc').eventId,'a');});
+test('historical production does not filter by creation month',()=>{const data={people:[p],histories:{1:{stageEvents:[ev('a','Lead','Submitting Offers')]}}};assert.equal(productionByPeriod(data,{start:'2026-02-01',end:'2026-02-28'}).length,2);});
+test('leaving a stage cannot assign a false entry date',()=>assert.equal(datedCredits(p,{stageEvents:[ev('a','Under Contract','Nurture')]}).filter(r=>r.category==='uc').length,0));

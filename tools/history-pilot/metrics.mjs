@@ -37,3 +37,20 @@ export function calculate(data,options) {
  }
  return [...agents.values()].map(a=>({...a,total:a.leads.length,nurturePct:100*a.nurtureNow/a.leads.length})).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
 }
+// First earned credit is stable across reporting windows. Skipped stages receive
+// the qualifying later event's timestamp, per Eric's explicit attribution rule.
+// A departing stage alone proves occupancy, but not when it was first earned.
+export function datedCredits(person,history,mapping=defaultMap) {
+ const result=new Map(),seen=new Set();
+ const events=(history?.stageEvents??[]).map(parseStage).filter(Boolean).sort((a,b)=>new Date(a.date)-new Date(b.date)||String(a.id).localeCompare(String(b.id)));
+ for(const e of events){if(seen.has(e.id))continue;seen.add(e.id);
+  const category=mapping[e.to];if(!categories.includes(category))continue;
+  const earned=category==='nurture'?['nurture']:['met','offer','uc','closed'].slice(0,['met','offer','uc','closed'].indexOf(category)+1);
+  for(const k of earned)if(!result.has(k))result.set(k,{personId:person.id,agentId:String(person.assignedUserId??'unassigned'),agent:person.assignedTo||'Unassigned',category:k,date:e.date,eventId:e.id,description:e.description,basis:category,kind:k===category?'observed':'rule-based'});
+ }
+ return [...result.values()];
+}
+export function productionByPeriod(data,{start,end,timezone='UTC',source='*',mapping=defaultMap}) {
+ if(!start||!end||start>end)throw Error('Choose a valid date range.');
+ return data.people.filter(p=>source==='*'||p.source===source).flatMap(p=>datedCredits(p,data.histories[String(p.id)],mapping)).filter(e=>{const d=day(e.date,timezone);return d>=start&&d<=end;});
+}
