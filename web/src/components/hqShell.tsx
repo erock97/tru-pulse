@@ -203,7 +203,7 @@ export function HqShell({
         ...(nav.onOpenTeam ? [{ key: 'team', label: 'Team', icon: 'roster', onClick: nav.onOpenTeam }] : []),
       ];
   return (
-    <div className="tru-shell" data-tab={activeKey} ref={shellRef}>
+    <div className={`tru-shell${isAdmin ? ' hq-admin' : ''}`} data-tab={activeKey} ref={shellRef}>
       {/* The room. ONE copy of the render, drifting slowly.
           A second mirrored copy was tried and read exactly as what it was —
           the same picture twice, strands everywhere. Clever, and sloppy.
