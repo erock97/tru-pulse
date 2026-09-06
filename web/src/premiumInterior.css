@@ -528,3 +528,9 @@ html.tru-premium .tru-dark .today-commitment-row {display:flex;align-items:cente
 html.tru-premium .tru-dark .today-commitment-row p {flex:1;min-width:0;margin:0;line-height:1.6}
 html.tru-premium .tru-dark .today-commitment-row button {flex-shrink:0;padding:9px 12px}
 @media(max-width:760px){html.tru-premium .tru-dark .coaching-workspace {grid-template-columns:1fr;grid-template-areas:"people" "review"}html.tru-premium .tru-dark .coaching-queue {border-left:0;border-bottom:1px solid #c4b9a7}html.tru-premium .tru-dark .today-commitment-row {align-items:flex-start;flex-wrap:wrap;gap:10px}html.tru-premium .tru-dark .today-commitment-row p {flex-basis:100%}}
+/* The review is a full section, not the wrapping row used for small section titles. */
+html.tru-premium .tru-dark .dk-sec.brief-sec {display:block;width:100%;max-width:none;box-sizing:border-box}
+html.tru-premium .tru-dark .brief-sec > .brief-workspace-heading {width:100%;box-sizing:border-box}
+html.tru-premium .tru-dark .brief-sec > .coaching-workspace {width:100%;box-sizing:border-box}
+html.tru-premium .tru-dark .brief-sec .brief-workspace-heading .brief-actions {margin-left:auto;flex-wrap:wrap}
+@media(max-width:760px){html.tru-premium .tru-dark .brief-sec .brief-workspace-heading .brief-actions {margin-left:0}}
