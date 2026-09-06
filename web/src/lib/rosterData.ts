@@ -30,6 +30,7 @@ export const DEFAULT_LINE = 30;
 export type Health = 'past-line' | 'behind' | 'holding' | 'no-volume';
 
 export interface Row {
+  met?:number;closed?:number;nurture?:number;rawConversion?:number;
   agentId: string | null;
   name: string;
   leads: number;
@@ -61,6 +62,7 @@ export interface Priority {
 }
 
 export interface Totals {
+  closed:number;
   leads: number; worked: number; contracts: number; offers: number; stuck: number;
   workedPct: number; perContract: number | null; pastLine: number; stale: number;
 }
@@ -154,6 +156,7 @@ export function totalsOf(rows: readonly Row[]): Totals {
   const worked = rows.reduce((a, r) => a + r.worked, 0);
   return {
     leads,
+    closed:rows.reduce((sum,r)=>sum+(r.closed??0),0),
     worked,
     contracts: rows.reduce((a, r) => a + r.contracts, 0),
     offers: rows.reduce((a, r) => a + r.offers, 0),
@@ -168,6 +171,7 @@ export function totalsOf(rows: readonly Row[]): Totals {
 }
 
 export interface RosterState {
+  historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
   proof: Map<string, Awaited<ReturnType<typeof loadDashboard>>['leads']>;
   teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
   rows: Row[] | null;
@@ -181,8 +185,9 @@ export interface RosterState {
   totals: Totals | null;
 }
 
-export function useRosterData(line: number, windowDays: PulsePeriod): RosterState {
+export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:string): RosterState {
   const [raw, setRaw] = useState<{
+    historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
     leads: Awaited<ReturnType<typeof loadDashboard>>['leads'];
     agents: Awaited<ReturnType<typeof loadDashboard>>['agents'];
     teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
@@ -199,17 +204,17 @@ export function useRosterData(line: number, windowDays: PulsePeriod): RosterStat
         // and are both allowed to fail: a team with Coach or Rep switched off
         // still gets its pipeline.
         const [data, coach, rep] = await Promise.all([
-          loadDashboard(),
+          loadDashboard(orgId),
           loadRoster().catch((): RosterAgent[] => []),
           loadRep().catch((): RepData | null => null),
         ]);
-        if (alive) setRaw({ leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
+        if (alive) setRaw({ historyInfo:data.historyInfo, leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
       } catch (e) {
         if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [orgId]);
 
   return useMemo(() => {
     if (!raw) return { proof: new Map(), teams: [], rows: null, err, undated: 0, departed: { names: [], leads: 0 }, totals: null };
@@ -274,8 +279,11 @@ export function useRosterData(line: number, windowDays: PulsePeriod): RosterStat
       const sf = l.source_family || 'Other';
       r.srcs.set(sf, (r.srcs.get(sf) ?? 0) + 1);
       const cls = stageClass(l.stage);
-      if (isOfferPlus(cls)) r.offers += 1;
-      if (isClosing(cls)) r.contracts += 1;
+      if (l.history ? !!l.history.offer : isOfferPlus(cls)) r.offers += 1;
+      if (l.history ? !!l.history.uc : isClosing(cls)) r.contracts += 1;
+      r.met=(r.met??0)+(l.history?.met?1:0);
+      r.closed=(r.closed??0)+(l.history ? l.history.closed?1:0 : cls==='closed'?1:0);
+      r.nurture=(r.nurture??0)+(l.stage?.toLowerCase()==='nurture'?1:0);
       if (isStuckStage(l.stage)) r.stuck += 1;
       if (l.flag === 'worked') r.worked += 1;
     }
@@ -313,6 +321,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod): RosterStat
       ...r,
       workedPct: r.leads ? Math.round((r.worked / r.leads) * 100) : 0,
       perContract: r.contracts ? r.leads / r.contracts : null,
+      rawConversion:r.leads?100*(r.closed??0)/r.leads:0,
     }));
 
     const totalLeads = list.reduce((a, r) => a + r.leads, 0);
@@ -331,7 +340,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod): RosterStat
     const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) }));
 
     return {
-      proof, teams: raw.teams,
+      historyInfo:raw.historyInfo, proof, teams: raw.teams,
       rows: withHealth.filter((r) => !gone.has(norm(r.name))),
       // Totals come off the FULL list on purpose. A page that computed them
       // from `rows` would quietly rewrite months you have already reported the

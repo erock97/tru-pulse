@@ -1,0 +1,18 @@
+import {beforeEach,describe,it,expect,vi} from 'vitest';
+import {handleDataRoutes} from './dataRoutes.js';
+import {supabaseAsUser} from './asUser.js';
+import type {Env} from './env.js';
+vi.mock('./asUser.js',()=>({supabaseAsUser:vi.fn()}));
+const select=vi.fn(),get=vi.fn(),put=vi.fn();
+const org='11111111-1111-1111-1111-111111111111';
+const env={SESSIONS:{get,put}} as unknown as Env;
+const call=(path='history',method='GET',body?:unknown,originOk=true)=>{const u=new URL(`https://api.example/data/${path}?orgId=${org}&kind=leads-per-contract`);return handleDataRoutes(new Request(u,{method,...(body?{body:JSON.stringify(body)}:{})}),env,u,{},originOk);};
+describe('private historical evidence and preferences',()=>{
+ beforeEach(()=>{vi.resetAllMocks();vi.mocked(supabaseAsUser).mockResolvedValue({userId:'signed-in-user',select} as unknown as Awaited<ReturnType<typeof supabaseAsUser>>);});
+ it('does not touch private storage without a membership',async()=>{select.mockResolvedValue([]);expect((await call())?.status).toBe(403);expect(get).not.toHaveBeenCalled();});
+ it('fails closed when membership cannot be checked',async()=>{select.mockRejectedValue(Error());expect((await call())?.status).toBe(502);expect(get).not.toHaveBeenCalled();});
+ it('rejects a mismatched stored tenant',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue({orgId:'other'});expect((await call())?.status).toBe(502);});
+ it('serves history only with an explicit user and org membership filter',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue({orgId:org,leads:[]});const res=await call();expect(res?.status).toBe(200);expect(select.mock.calls[0][1]).toContain(`org_id=eq.${org}&user_id=eq.signed-in-user`);expect(res?.headers.get('Cache-Control')).toBe('private, no-store');});
+ it('rejects cross-origin preference writes before storage',async()=>{expect((await call('preferences','PUT',{value:30},false))?.status).toBe(403);expect(put).not.toHaveBeenCalled();});
+ it('validates values and scopes saved preferences to user, org and metric',async()=>{select.mockResolvedValue([{}]);expect((await call('preferences','PUT',{value:0}))?.status).toBe(400);expect(put).not.toHaveBeenCalled();expect((await call('preferences','PUT',{value:25}))?.status).toBe(200);expect(put).toHaveBeenCalledWith(`pulse-preference:v1:signed-in-user:${org}:leads-per-contract`,'25');});
+});

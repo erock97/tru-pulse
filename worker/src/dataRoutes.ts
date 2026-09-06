@@ -37,6 +37,36 @@ export async function handleDataRoutes(
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
 
+  if (url.pathname === '/data/history' && req.method === 'GET') {
+    const orgId = url.searchParams.get('orgId') ?? '';
+    if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 400, cors);
+    // KV is private; access is granted only after the authenticated user's
+    // own membership has been checked through Supabase RLS.
+    try {
+      const membership = await db.select('memberships', `select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`, { strict: true });
+      if (!membership.length) return json({error:'not permitted'},403,cors);
+      const snapshot = await env.SESSIONS.get(`pulse-history:v1:${orgId}`, 'json') as {orgId:string}|null;
+      if (snapshot && snapshot.orgId !== orgId) return json({error:'history identity mismatch'},502,cors);
+      return json({snapshot},200,{...cors,'Cache-Control':'private, no-store'});
+    } catch { return json({error:'Historical evidence unavailable'},502,cors); }
+  }
+
+  if (url.pathname === '/data/preferences' && ['GET','PUT'].includes(req.method)) {
+    const orgId=url.searchParams.get('orgId')??'', kind=url.searchParams.get('kind')??'';
+    if(!UUID_RE.test(orgId)||!['leads-per-contract','mtd-new-assignment-pause','coaching-cadence-days'].includes(kind)) return json({error:'Invalid preference'},400,cors);
+    if(req.method==='PUT'&&!originOk)return json({error:'origin denied'},403,cors);
+    try {
+      const membership=await db.select('memberships',`select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`,{strict:true});
+      if(!membership.length)return json({error:'not permitted'},403,cors);
+      const key=`pulse-preference:v1:${db.userId}:${orgId}:${kind}`;
+      if(req.method==='GET')return json({value:await env.SESSIONS.get(key,'json')},200,{...cors,'Cache-Control':'private, no-store'});
+      const body=await req.json() as {value?:unknown};
+      if(typeof body.value!=='number'||!Number.isInteger(body.value)||body.value<1||body.value>10000)return json({error:'Invalid threshold'},400,cors);
+      await env.SESSIONS.put(key,JSON.stringify(body.value));
+      return json({value:body.value},200,cors);
+    }catch{return json({error:'Preference could not be saved or loaded'},502,cors);}
+  }
+
   if (url.pathname === '/data/hustle' && req.method === 'GET') {
     const orgId = url.searchParams.get('orgId') ?? '';
     if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 400, cors);

@@ -1102,6 +1102,7 @@ export async function adminConnectFub(teamId: string, fubKey: string): Promise<{
 }
 
 export interface LeadRow {
+  history?: Record<string, {eventId:string|number;date:string;description:string;kind:string;basis:string;direction:string}|null>;
   team_id: string;
   assigned_to: string | null;
   flag: string | null;
@@ -1176,6 +1177,7 @@ export interface Settings {
   pause_no_close_since?: string | null; // rule 2 clean-slate: only count leads created on/after this ISO date; null = all history
 }
 export interface DashboardData {
+  historyInfo?: {through:string;capturedAt:string;sourceStarts:Record<string,string>;rosterPolicy:string};
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
   settings: Settings | null;
   leads: LeadRow[];
@@ -1187,7 +1189,7 @@ export interface DashboardData {
 
 
 
-export async function loadDashboard(): Promise<DashboardData> {
+export async function loadDashboard(orgId?:string): Promise<DashboardData> {
   if (isDemo) return demoDashboard();
   // One call to the Worker, which reads Supabase AS THIS USER so the same row-level
   // policies apply. Also collapses eight cross-origin round trips into one, which a
@@ -1195,7 +1197,18 @@ export async function loadDashboard(): Promise<DashboardData> {
   const res = await workerFetch('/data/dashboard');
   if (!res.ok) throw new Error('Could not load your dashboard.');
   const d = (await res.json()) as DashboardData;
+  if(orgId){
+    const history=await workerFetch(`/data/history?orgId=${encodeURIComponent(orgId)}`);
+    if(!history.ok)throw new Error('Historical evidence could not be loaded. Refresh to retry.');
+    const {snapshot}=await history.json() as {snapshot:(NonNullable<DashboardData['historyInfo']>&{leads:LeadRow[];stageLog:StageLogRow[];teamId:string;account:string})|null};
+    if(snapshot){
+      d.leads=snapshot.leads;d.stageLog=snapshot.stageLog;
+      d.historyInfo={through:snapshot.through,capturedAt:snapshot.capturedAt,sourceStarts:snapshot.sourceStarts,rosterPolicy:snapshot.rosterPolicy};
+      d.teams=d.teams.map(t=>t.id===snapshot.teamId?{...t,fub_subdomain:snapshot.account}:t);
+    }
+  }
   return {
+    historyInfo:d.historyInfo,
     teams: d.teams ?? [],
     settings: d.settings ?? null,
     leads: d.leads ?? [],

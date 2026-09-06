@@ -441,3 +441,11 @@ html.tru-premium .practice-followup label {display:block;margin:12px 0}
 html.tru-premium .practice-followup :is(input,textarea) {display:block;width:min(100%,500px);background:#f7f4ec;border:1px solid #c4bbaa;padding:9px;color:#34434b}
 html.tru-premium .practice-followup textarea {min-height:90px}
 html.tru-premium .practice-followup button {margin-right:18px}
+/* Keep the complete performance table available on phones. Older deck rules
+   removed columns by position, which hid leads and raw conversion. */
+@media(max-width:760px){
+ html.tru-premium .pulse-refined .dk-table .tru-table{min-width:900px}
+ html.tru-premium .pulse-refined .dk-table .tru-table th,
+ html.tru-premium .pulse-refined .dk-table .tru-table tbody td{display:table-cell}
+ html.tru-premium .pulse-refined .dk-table .tru-table tfoot{display:table-footer-group}
+}

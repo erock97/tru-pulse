@@ -413,11 +413,6 @@ function CoachDeck({
             : derived && derived.dueCount > 0 ? 'watch'
               : 'calm'
         }
-        islandSlot={openAgent || briefOnly ? (
-          <button className="dk-back" onClick={() => setOpenId(null)}>
-            <span aria-hidden>←</span> Back to all agents
-          </button>
-        ) : undefined}
       >
         <div className="coach-canvas dk-main" ref={canvasRef}>
           <div className="coach-ambient" aria-hidden />
