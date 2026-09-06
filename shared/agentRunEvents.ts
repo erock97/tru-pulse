@@ -1,6 +1,6 @@
 // Agent prose is deliberately restricted to short, single-line operational summaries.
 export const AGENT_BODY_BYTES = 8192;
-export const AGENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,119}$/;
+export const AGENT_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 export type AgentOperation = 'claim' | 'renew' | 'update' | 'release';
 export interface AgentWrite {
   agentId: 'brian'; expectedVersion: number; leaseSeconds?: number;

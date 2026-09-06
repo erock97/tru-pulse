@@ -37,7 +37,7 @@ Diagnosis and nextStep are optional on release. Omission preserves them.
 ## Limits and safety
 
 - `limit`: default 1, decimal integer 1–5; no duplicates or other query keys. Mutations accept no query parameters.
-- `incidentId`: 1–120 ASCII characters; first alphanumeric, remaining alphanumeric, underscore, dot or hyphen. Existing ingestion IDs need not be UUIDs.
+- `incidentId`: 1–128 ASCII characters; first alphanumeric, remaining alphanumeric, underscore, dot or hyphen. Existing ingestion IDs need not be UUIDs.
 - `agentId`: exactly `brian` (5 characters).
 - `expectedVersion`: integer 1–2,147,483,646.
 - `leaseSeconds`: required integer 300–3600; no default.
@@ -92,7 +92,7 @@ Queue returns exactly `{ "ok": true, "tickets": [] }` when empty. Each of 0–5 
 ```
 `severity`: fatal/nonfatal. `scope`: event/contact/team/batch/delivery. `status`: open/investigating. `continued`: boolean. `position`/`total`: nonnegative integers or null. `occurrenceCount`/`version`: positive integers. `claim` is null or the above object (an expired lease may be returned). `technical` is `{}` if omitted at ingestion, otherwise exactly `{stage,code,fingerprint,message}` with string values.
 
-Existing ingestion limits remain unchanged: up to 200 incidents / 1,000,000 bytes per push; short fields 120 characters (identifier regex permits 128 but field checks limit them to 120); title 200; explanation/impact/nextStep/technical.message 1000; schemaVersion 1; UTC occurredAt. The queue exposes no agent diagnosis, admin notes, history, reports or customer-table joins.
+Existing ingestion limits remain unchanged: up to 200 incidents / 1,000,000 bytes per push; incidentId/fingerprint/batchId/accountId 128 characters; stage/code/action/push status 120 characters; title 200; explanation/impact/nextStep/technical.message 1000; schemaVersion 1; UTC occurredAt. The queue exposes no agent diagnosis, admin notes, history, reports or customer-table joins.
 
 ## Errors
 
