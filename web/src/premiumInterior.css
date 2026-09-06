@@ -400,3 +400,11 @@ html.tru-premium .tru-dark .tm-table th {background:#d9d1c2!important}
 html.tru-premium .tru-dark .today-heading {padding-top:28px}
 html.tru-premium .tru-dark .hq-nav-search .cb {border-radius:6px}
 html.tru-premium .tru-dark .hq-nav-search .cb-row.is-sel {background:#e5decf}
+html.tru-premium .pulse-refined .pulse-proof {margin-top:7px;font-size:11px;white-space:normal;font-weight:400}
+html.tru-premium .pulse-refined .pulse-proof summary {cursor:pointer;color:#826535;width:fit-content;padding:3px 0}
+html.tru-premium .pulse-refined .pulse-proof-body {min-width:230px;max-width:340px;background:#f7f4ec;padding:14px;border:1px solid #c4bbaa;margin:8px 0;color:#4f595b;font-size:12px;line-height:1.6}
+html.tru-premium .pulse-refined .pulse-proof-body p {margin:0 0 12px}
+html.tru-premium .pulse-refined .pulse-proof-body select {display:block;margin:6px 0 12px;background:#e7e1d5;padding:7px;border:1px solid #c4bbaa;color:#34434b;max-width:100%}
+html.tru-premium .pulse-refined .pulse-proof-list {max-height:320px;overflow:auto}
+html.tru-premium .pulse-refined .pulse-proof-lead {display:flex;flex-direction:column;gap:3px;padding:10px 0;border-top:1px solid #d0c7b8}
+html.tru-premium .pulse-refined .pulse-proof-lead a {color:#826535}

@@ -58,3 +58,12 @@ Trend proposal (not enabled): show routine movement in Pulse; escalate only sust
 Pending Eric clarification: whether the 15-lead rolling 30-day cap is per agent or per team, and whether it counts new assignments. Do not apply 15 to current created-date cohorts as an assignment cap. Today should receive actionable cap/minimum alerts once definitions and coverage are established, not every negative fluctuation.
 
 Checks: typecheck/build pass, 394 tests pass with the existing Zillow hash failure. Demo browser confirms Priya 1 in 11 exceeds minimum and absent ratio is not established.
+
+## Agent proof, calendar periods, Worked removal — September 5
+Eric clarified: allowance is 15 newly assigned leads per agent, MONTH TO DATE (supersedes rolling 30 days). Proposed deterioration trigger is five additional leads per contract or more; show assignment-volume changes beside it. These alerts remain unimplemented until dated assignment history and comparable outcome coverage are available. Do not use creation dates as assignment dates.
+
+Implemented: Month to date replaces 30d and is the default. Six months is current month plus five preceding calendar months, using browser-local boundaries disclosed in About these numbers. Each agent has a collapsed Proof disclosure with exact ratio arithmetic, contributing lead rows, current stage, source, creation timestamp and FUB identity. Source links use the matching team subdomain; missing link metadata is explicit. Offer/contract numerator filters use the same stage classifiers as the aggregate. This proves how the loaded snapshot is counted, not historical assignment or source-data accuracy.
+
+At Eric's direction removed Worked from the Pulse column, summary, detail and priority copy; no replacement activity score. Corrected the shared worked counter to accept only explicit worked flags. Low volume alone no longer creates a review alert, preventing month-start false urgency. Existing underlying activity ingestion remains unchanged.
+
+Checks: typecheck/build pass. Tests 397 pass and one existing unrelated Zillow slide hash failure. Browser checked MTD, 6mo, absence of Worked and five contract records matching the selected agent numerator. Production unchanged.

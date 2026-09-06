@@ -32,6 +32,8 @@ import {
   type Row, type Window,
 } from '../lib/rosterData';
 import { PersonPane } from '../components/personPane';
+import { PulseProof } from '../components/PulseProof';
+import { norm } from '../lib/rosterData';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
@@ -73,8 +75,8 @@ function Deck({
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
   const line = target.saved;
   const [reviewOnly, setReviewOnly] = useState(false);
-  const [win, setWin] = useState<Window>(WINDOWS[3]);
-  const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
+  const [win, setWin] = useState<Window>(WINDOWS[1]);
+  const { rows, err, undated, departed, totals, proof, teams } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
@@ -147,7 +149,7 @@ function Deck({
   const windowTabs = (
     <span className="dk-win" ref={winRef}>
       <i className="dk-win-glide" style={winGlide} aria-hidden />
-      {WINDOWS.map((w) => (
+      {[WINDOWS[0], WINDOWS[1], WINDOWS[2], WINDOWS[4], WINDOWS[3]].map((w) => (
         <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
           {w.label}
         </button>
@@ -206,7 +208,7 @@ function Deck({
     <>
       <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead activity and contracts · {win.label} view</p></div><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details></header>
       <section className="pulse-summary" aria-label="Team performance summary">
-        <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>{totals.workedPct}% marked worked</small></div>
+        <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
@@ -216,14 +218,14 @@ function Deck({
         <table className="tru-table">
           <thead>
             <tr>
-              {th('name', 'Agent')}{th('leads', 'Leads')}{th('workedPct', 'Worked')}
+              {th('name', 'Agent')}{th('leads', 'Leads')}
               {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
               {th('perContract', 'Leads per contract')}{th('lastDays', 'Last 1:1')}
               <th className="pulse-open-heading"><span className="sr-only">Open agent</span></th>
             </tr>
           </thead>
           <tbody>
-            {query.trim() && !sorted.length && <tr><td colSpan={9}>No agents match “{query}”. <button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></td></tr>}
+            {query.trim() && !sorted.length && <tr><td colSpan={8}>No agents match “{query}”. <button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></td></tr>}
             {sorted.map((r, i) => (
               <tr key={r.name}
                   data-flip={r.name}
@@ -243,12 +245,12 @@ function Deck({
                     <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
                     <div>
                       <div className="cell-name">{r.name}</div>
+                      <PulseProof row={r} leads={proof.get(norm(r.name)) ?? []} teams={teams} />
                       <div className="pulse-row-reason">{priorities.find(p=>p.row.name===r.name)?.reason}</div>
                     </div>
                   </div>
                 </td>
                 <td>{cell(r.leads, i)}</td>
-                <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{cell(`${r.workedPct}%`, i)}</td>
                 <td className={r.stuck > 10 ? 'cell-warn' : ''}>{cell(r.stuck, i)}</td>
                 <td>{cell(r.offers, i)}</td>
                 <td>{cell(r.contracts, i)}</td>
@@ -269,7 +271,7 @@ function Deck({
           </tbody>
           <tfoot>
             <tr>
-              <td>Full team total</td><td><b>{totals.leads}</b></td><td><b>{totals.workedPct}%</b></td>
+              <td>Full team total</td><td><b>{totals.leads}</b></td>
               <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
               <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
               <td colSpan={2} />
@@ -278,7 +280,7 @@ function Deck({
         </table>
       </div>
 
-      <details className="pulse-data-notes"><summary>About these numbers</summary><p>This view groups leads by their creation date and uses their current stage. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. “Worked” reflects recorded lead activity, not a judgement of conversation quality. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
+      <details className="pulse-data-notes"><summary>About these numbers</summary><p>This view groups leads by their creation date and uses their current stage. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
       <PersonPane
         row={open}
         onClose={() => setOpen(null)}
@@ -289,4 +291,3 @@ function Deck({
     </>,
   );
 }
-

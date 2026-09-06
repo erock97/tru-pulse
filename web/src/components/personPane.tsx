@@ -128,7 +128,6 @@ export function PersonPane({
               </div>
             )}
             {[
-              ['Worked', `${row.workedPct}%`],
               ['Sitting in Lead', row.stuck ? String(row.stuck) : 'none'],
               ['Reached an offer', row.offers ? String(row.offers) : 'none'],
               ['Under contract', row.contracts ? String(row.contracts) : 'none'],
@@ -186,4 +185,3 @@ export function PersonPane({
     </>
   );
 }
-

@@ -10,8 +10,10 @@ describe('Broker interpretation boundaries', () => {
     expect(priority.reason).not.toMatch(/closed|loss is on|nothing is being dropped/i);
     expect(priority.action).toMatch(/review/i);
   });
-  it('preserves multiple contracts when contact coverage is low', () => {
-    expect(prioritise([{ ...row, workedPct: 75 }])[0].reason).toContain('3 contracts from 120 leads; 25%');
+  it('does not infer no contact from the complement of the worked percentage', () => {
+    const reason = prioritise([{ ...row, workedPct: 75 }])[0].reason;
+    expect(reason).toContain('3 contracts from 120 leads');
+    expect(reason).not.toMatch(/25%|worked|no contact/i);
   });
 });
 describe('Calendar account timezone', () => {
