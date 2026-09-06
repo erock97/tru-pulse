@@ -512,3 +512,19 @@ html.tru-premium .tru-dark .brief-theme-proof .brief-evidence-meta {overflow-wra
  html.tru-premium .pulse-refined .dk-table .tru-table tbody td{display:table-cell}
  html.tru-premium .pulse-refined .dk-table .tru-table tfoot{display:table-footer-group}
 }
+/* Select people on the right; read their scorecard on the left. */
+html.tru-premium .tru-dark .coaching-workspace {grid-template-columns:minmax(0,1fr) 270px;grid-template-areas:"review people"}
+html.tru-premium .tru-dark .coaching-review {grid-area:review}
+html.tru-premium .tru-dark .coaching-queue {grid-area:people;border-right:0;border-left:1px solid #c4b9a7}
+html.tru-premium .tru-dark .today-agent-commitments {border-bottom:1px solid #c4b9a7}
+html.tru-premium .tru-dark .today-agent-commitments>summary {display:flex;align-items:center;gap:14px;padding:18px 16px;cursor:pointer;list-style:none}
+html.tru-premium .tru-dark .today-agent-commitments>summary::-webkit-details-marker {display:none}
+html.tru-premium .tru-dark .today-agent-commitments>summary::before {content:'›';font-size:20px;transition:transform .15s}
+html.tru-premium .tru-dark .today-agent-commitments[open]>summary::before {transform:rotate(90deg)}
+html.tru-premium .tru-dark .today-agent-commitments>summary span {margin-left:auto;color:#626b6d;font-size:13px;white-space:nowrap}
+html.tru-premium .tru-dark .today-commitment-list {padding:0 18px 14px 38px}
+html.tru-premium .tru-dark .today-commitment-profile {display:inline-block;margin:0 0 8px;font-size:13px;color:inherit;text-underline-offset:3px}
+html.tru-premium .tru-dark .today-commitment-row {display:flex;align-items:center;gap:20px;padding:14px 12px;border-top:1px solid #d1c8b8}
+html.tru-premium .tru-dark .today-commitment-row p {flex:1;min-width:0;margin:0;line-height:1.6}
+html.tru-premium .tru-dark .today-commitment-row button {flex-shrink:0;padding:9px 12px}
+@media(max-width:760px){html.tru-premium .tru-dark .coaching-workspace {grid-template-columns:1fr;grid-template-areas:"people" "review"}html.tru-premium .tru-dark .coaching-queue {border-left:0;border-bottom:1px solid #c4b9a7}html.tru-premium .tru-dark .today-commitment-row {align-items:flex-start;flex-wrap:wrap;gap:10px}html.tru-premium .tru-dark .today-commitment-row p {flex-basis:100%}}
