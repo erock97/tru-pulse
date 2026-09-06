@@ -27,6 +27,7 @@ import {
 import { Odometer } from '../components/odometer';
 import { AgentBriefPanel, TeamBriefSection } from '../components/CoachBrief';
 import AgentProfile from './AgentProfile';
+import { CoachReviewProvider } from '../components/CoachReviewContext';
 import { useFlip } from '../lib/deckMotion';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { CADENCE_DAYS, cadenceEdge, cadenceMark } from '../lib/deckMarks';
@@ -103,7 +104,7 @@ export default function Coach(props: {
   // of one instrument rather than three separate pictures of one team.
   return (
     <DeckFocusProvider>
-      <CoachDeck {...props} />
+      <CoachReviewProvider key={props.org.id} orgId={props.org.id}><CoachDeck {...props} /></CoachReviewProvider>
     </DeckFocusProvider>
   );
 }
