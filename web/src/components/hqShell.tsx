@@ -283,12 +283,6 @@ export function HqShell({
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.04em', color: 'var(--accent-hi)' }}>
                 ● ACTING AS {orgName.toUpperCase()}
               </span>
-              <button
-                onClick={() => { void adminReturn(); }}
-                style={{ background: 'var(--accent)', color: '#1a1206', border: 0, borderRadius: 8, padding: '8px 10px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
-              >
-                Exit — switch teams
-              </button>
             </div>
           )}
           {onSignOut && (
