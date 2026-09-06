@@ -126,7 +126,7 @@ async function updateFailureLog(
   const details: string[] = [];
   if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ code: 'VALIDATION_ERROR', details: ['body'] }, 422);
   if (Object.keys(body).some(k => !['fingerprint','expectedVersion','status','notes','releaseClaim'].includes(k))) details.push('unknownField');
-  if (typeof body.fingerprint !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,119}$/.test(body.fingerprint)) details.push('fingerprint');
+  if (typeof body.fingerprint !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(body.fingerprint)) details.push('fingerprint');
   if (!Number.isSafeInteger(body.expectedVersion) || Number(body.expectedVersion)<1 || Number(body.expectedVersion)>2147483646) details.push('expectedVersion');
   if (body.status !== undefined && (typeof body.status !== 'string' || !FAILURE_LOG_STATUSES.has(body.status))) details.push('status');
   if (body.notes !== undefined && body.notes !== '' && !safeAgentText(body.notes,500)) details.push('notes');

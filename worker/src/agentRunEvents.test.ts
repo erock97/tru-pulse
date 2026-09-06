@@ -35,3 +35,8 @@ describe('Strict agent input',()=>{
   it.each(['/tmp/file.mjs','C:/file.mjs','../file.mjs','src/../../file.mjs','src\\file.mjs','https://example.test/file','src/file name.mjs'])('rejects path %s',path=>{expect(safeRelativePath(path)).toBe(false);});
   it('bounds prose and arrays',()=>{expect(validateAgentWrite({...update,diagnosis:'x'.repeat(501),nextStep:'x'.repeat(301),filesChanged:Array(11).fill('src/a.ts'),testsRun:['x'.repeat(101)]},'update').details).toEqual(['diagnosis','nextStep','filesChanged','testsRun']);});
 });
+
+it('supports every valid ingestion identifier length',async()=>{
+  expect((await call('s'.repeat(128)+'/claim','POST',claim)).status).toBe(200);
+  expect((await call('s'.repeat(129)+'/claim','POST',claim)).status).toBe(404);
+});
