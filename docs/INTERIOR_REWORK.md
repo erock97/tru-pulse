@@ -69,3 +69,5 @@ At Eric's direction removed Worked from the Pulse column, summary, detail and pr
 Checks: typecheck/build pass. Tests 397 pass and one existing unrelated Zillow slide hash failure. Browser checked MTD, 6mo, absence of Worked and five contract records matching the selected agent numerator. Production unchanged.
 
 Removed the redundant Pulse View column at Eric's request. Agent names are accessible buttons opening the existing detail panel; Proof remains separate. TRU Brain still unavailable; existing override retained.
+
+Pause allowance: added editable Leads before pause beneath Minimum expectation, default 15, browser-local account/team persistence. MTD displays configured limit and supplied Zillow routing link. Actual pause flags are NOT implemented because assignment-event timestamps are absent; displayed status is Cannot assess yet. No Zillow actions or production changes.
