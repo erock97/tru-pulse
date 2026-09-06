@@ -1,3 +1,4 @@
+import { ContactSpeedPanel } from '../components/ContactSpeedPanel';
 import { HustlePanel } from '../components/HustlePanel';
 import { AssignmentReview } from '../components/AssignmentReview';
 import { ProductionPanel } from '../components/ProductionPanel';
@@ -79,7 +80,7 @@ function Deck({
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
   const line = target.saved;
   const pauseTarget = useSavedTarget(orgId, 'mtd-new-assignment-pause', 15);
-  const [mode,setMode] = useState<'cohort'|'production'|'hustle'>('cohort');
+  const [mode,setMode] = useState<'cohort'|'production'|'hustle'|'speed'>('cohort');
   const [hasHustle,setHasHustle]=useState(isDemo);
   useEffect(()=>{if(isDemo)return;let active=true;setHasHustle(false);workerFetch(`/data/hustle?orgId=${encodeURIComponent(orgId)}`).then(async r=>r.ok?await r.json() as {scores:unknown[]}:null).then(d=>{if(active)setHasHustle(!!d?.scores.length);}).catch(()=>{});return()=>{active=false;};},[orgId]);
   const [reviewOnly, setReviewOnly] = useState(false);
@@ -159,7 +160,7 @@ function Deck({
         onSignOut={() => signOutClean()}
         nav={{ onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam: () => { window.location.hash = '/team'; } }}
         hideTopbar
-        islandSlot={mode === 'hustle' ? undefined : windowTabs}
+        islandSlot={mode === 'speed' ? <ContactSpeedPanel orgId={orgId}/> : mode === 'hustle' ? undefined : windowTabs}
         // The room warms with the floor: ember once somebody is past your line,
         // amber while there are conversations owed, sea when nobody needs you.
         mood={!totals ? 'calm' : totals.pastLine > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
@@ -201,8 +202,8 @@ function Deck({
 
   return frame(
     <>
-      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>{mode === 'hustle' ? 'Latest published weekly report' : 'Lead cohorts and recorded production · ' + win.label + ' view'}</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
-      {historyInfo&&<p className="pulse-data-notes">Verified history through {historyInfo.through} · Active roster at collection. Sources: {Object.entries(historyInfo.sourceStarts).map(([source,start])=>source+' since '+start).join('; ')}. New activity after this snapshot is not included.</p>}<div className="operations-tabs"><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button>{hasHustle&&<button aria-pressed={mode==='hustle'} onClick={()=>setMode('hustle')}>Weekly Hustle</button>}<button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'hustle' ? <HustlePanel orgId={orgId}/> : mode === 'production' ? <ProductionPanel period={win.days} orgId={orgId}/> : <><section className="pulse-summary" aria-label="Team performance summary">
+      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>{mode === 'speed' ? <ContactSpeedPanel orgId={orgId}/> : mode === 'hustle' ? 'Latest published weekly report' : 'Lead cohorts and recorded production · ' + win.label + ' view'}</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
+      {historyInfo&&<p className="pulse-data-notes">Verified history through {historyInfo.through} · Active roster at collection. Sources: {Object.entries(historyInfo.sourceStarts).map(([source,start])=>source+' since '+start).join('; ')}. New activity after this snapshot is not included.</p>}<div className="operations-tabs"><button aria-pressed={mode==='speed'} onClick={()=>setMode('speed')}>Contact timing</button><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button>{hasHustle&&<button aria-pressed={mode==='hustle'} onClick={()=>setMode('hustle')}>Weekly Hustle</button>}<button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'speed' ? <ContactSpeedPanel orgId={orgId}/> : mode === 'hustle' ? <HustlePanel orgId={orgId}/> : mode === 'production' ? <ProductionPanel period={win.days} orgId={orgId}/> : <><section className="pulse-summary" aria-label="Team performance summary">
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>Among leads created in this window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>Among leads created in this window</small></div>

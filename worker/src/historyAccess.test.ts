@@ -10,6 +10,9 @@ const call=(path='history',method='GET',body?:unknown,originOk=true)=>{const u=n
 describe('private historical evidence and preferences',()=>{
  beforeEach(()=>{vi.resetAllMocks();vi.mocked(supabaseAsUser).mockResolvedValue({userId:'signed-in-user',select} as unknown as Awaited<ReturnType<typeof supabaseAsUser>>);});
  it('does not touch private storage without a membership',async()=>{select.mockResolvedValue([]);expect((await call())?.status).toBe(403);expect(get).not.toHaveBeenCalled();});
+ it('does not expose contact metrics without membership',async()=>{select.mockResolvedValue([]);expect((await call('contact-speed'))?.status).toBe(403);expect(get).not.toHaveBeenCalled();});
+ it('rejects foreign contact snapshot before calculation',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue({orgId:'other'});expect((await call('contact-speed'))?.status).toBe(502);});
+ it('returns a private empty contact report when no snapshot exists',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue(null);const r=await call('contact-speed');expect(r?.status).toBe(200);expect(await r?.json()).toEqual({report:null});expect(r?.headers.get('Cache-Control')).toBe('private, no-store');});
  it('fails closed when membership cannot be checked',async()=>{select.mockRejectedValue(Error());expect((await call())?.status).toBe(502);expect(get).not.toHaveBeenCalled();});
  it('rejects a mismatched stored tenant',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue({orgId:'other'});expect((await call())?.status).toBe(502);});
  it('serves history only with an explicit user and org membership filter',async()=>{select.mockResolvedValue([{}]);get.mockResolvedValue({orgId:org,leads:[]});const res=await call();expect(res?.status).toBe(200);expect(select.mock.calls[0][1]).toContain(`org_id=eq.${org}&user_id=eq.signed-in-user`);expect(res?.headers.get('Cache-Control')).toBe('private, no-store');});

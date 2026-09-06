@@ -8,6 +8,8 @@ import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
 import { db as serviceDb } from './db.js';
 import { isId } from './automation/store.js';
+import { calculateContactSpeed } from './contactSpeed.js';
+import type { ContactSnapshot } from '../../shared/contactSpeed.js';
 
 // Ids come from the query string, so validate the shape before it reaches a
 // PostgREST filter. Filters AND together so an id can't be widened to another
@@ -36,6 +38,18 @@ export async function handleDataRoutes(
 
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
+
+  if (url.pathname === '/data/contact-speed' && req.method === 'GET') {
+    const orgId=url.searchParams.get('orgId')??'';
+    if(!UUID_RE.test(orgId))return json({error:'Invalid team'},400,cors);
+    try {
+      const membership=await db.select('memberships',`select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`,{strict:true});
+      if(!membership.length)return json({error:'not permitted'},403,cors);
+      const snapshot=await env.SESSIONS.get(`pulse-contact:v1:${orgId}`,'json') as ContactSnapshot|null;
+      if(snapshot && snapshot.orgId!==orgId)throw Error('Tenant mismatch');
+      return json({report:snapshot?calculateContactSpeed(snapshot):null},200,{...cors,'Cache-Control':'private, no-store'});
+    }catch{return json({error:'Contact evidence could not be loaded'},502,cors);}
+  }
 
   if (url.pathname === '/data/history' && req.method === 'GET') {
     const orgId = url.searchParams.get('orgId') ?? '';

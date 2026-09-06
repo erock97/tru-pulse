@@ -1,0 +1,15 @@
+import {describe,it,expect} from 'vitest';
+import {calculateContactSpeed} from './contactSpeed.js';
+import type {ContactSnapshot,ContactLead,ContactEvent} from '../../shared/contactSpeed.js';
+const event=(id:string,at:string,channel:ContactEvent['channel']='sms'):ContactEvent=>({id,at,channel,direction:'outbound',agentId:'a',personal:true,timeVerified:true,explanation:'Verified source'});
+const lead=(id='1'):ContactLead=>({orgId:'org',leadId:id,agentId:'a',agentName:'Agent',leadUrl:'https://team.followupboss.com/2/people/view/1',createdAt:'2026-08-03T00:00:00Z',historyComplete:true,events:[event('text','2026-08-03T00:02:00Z'),event('call','2026-08-04T00:00:00Z','call')]});
+const snapshot=(leads:ContactLead[]):ContactSnapshot=>({version:1,orgId:'org',from:'2026-08-01T00:00:00Z',through:'2026-08-08T00:00:00Z',capturedAt:'2026-08-09T00:00:00Z',leads});
+describe('contact speed evidence',()=>{
+ it('uses earliest personal contact rather than later native call; excludes email and automation',()=>{const l=lead();l.events.push({...event('auto','2026-08-03T00:00:01Z'),personal:false},event('email','2026-08-03T00:00:02Z','email'));const a=calculateContactSpeed(snapshot([l])).agents[0];expect(a.averageSeconds).toBe(120);expect(a.skill.textFirst).toBe(1);});
+ it('never substitutes later calls for reported missing communication',()=>{const l=lead();l.gap={statement:'Texted today',sourceId:'note',recordedAt:l.createdAt,checked:'Timeline'};const a=calculateContactSpeed(snapshot([l])).agents[0];expect(a.measured).toBe(0);expect(a.averageSeconds).toBeNull();expect(a.results[0].status).toBe('missing_record');});
+ it('separates provider connection from outbound and does not count it as zero',()=>{const l=lead();l.connection={sourceId:'zillow',explanation:'Transcript verified'};expect(calculateContactSpeed(snapshot([l])).agents[0].results[0].status).toBe('connection');});
+ it('holds incomplete history and unknown earlier call times',()=>{const a=lead('1'),b=lead('2');a.historyComplete=false;b.events.push({...event('unknown',''),at:null,timeVerified:false});expect(calculateContactSpeed(snapshot([a,b])).agents[0].measured).toBe(0);});
+ it('rejects cross-tenant rows and duplicates',()=>{expect(()=>calculateContactSpeed(snapshot([{...lead(),orgId:'other'}]))).toThrow();expect(()=>calculateContactSpeed(snapshot([lead(),lead()]))).toThrow();});
+ it('uses strict above-30 percent threshold without asserting consistency',()=>{const ls=Array.from({length:10},(_,i)=>{const l=lead(String(i));l.events=[event('first', '2026-08-03T00:01:00Z',i<3?'sms':'call')];return l;});let a=calculateContactSpeed(snapshot(ls)).agents[0];expect(a.skill.textPercent).toBe(30);expect(a.skill.aboveThreshold).toBe(false);ls[3].events[0].channel='sms';a=calculateContactSpeed(snapshot(ls)).agents[0];expect(a.skill.aboveThreshold).toBe(true);expect(a.skill.consistency).toBe('observed_behavior');});
+});
+
