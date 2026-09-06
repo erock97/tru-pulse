@@ -777,6 +777,8 @@ export async function toggleCheckinCommitment(id: string, done: boolean): Promis
     body: JSON.stringify({ id, status: done ? 'done' : null }),
   });
   if (!res.ok) throw new Error('Could not update this commitment.');
+  const result = await res.json() as {item?:{id?:string}|null};
+  if (result.item?.id !== id) throw new Error('The server did not confirm this commitment update.');
 }
 export async function clearCommitments(agentId: string): Promise<void> {
   const res = await workerFetch('/data/coach/commitments-clear', {

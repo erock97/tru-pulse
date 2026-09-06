@@ -1,3 +1,5 @@
+import { PracticeFollowup } from '../components/PracticeFollowup';
+import { useOperations } from '../components/OperationsContext';
 import { useEffect, useRef, useState } from 'react';
 import {
   loadRep, signOffAgent, simScenarios, signOutClean, myOrgRole,
@@ -84,7 +86,8 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
   const [previewGrade, setPreviewGrade] = useState<GradeResult | null>(null);
   const [simTest, setSimTest] = useState(false);
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
-  const [q, setQ] = useState('');
+  const operations=useOperations();
+  const [q, setQ] = useState(operations?.practice?.name ?? '');
   const [role, setRole] = useState<string | null>(null);
   const [manage, setManage] = useState(false);
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -275,7 +278,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
         }}
       >
         <div className="rp-canvas dk-main" ref={canvasRef}>
-          <div className="rp-ambient" aria-hidden />
+          <div className="rp-ambient" aria-hidden /><PracticeFollowup edit/>
 
           {/* ============ MASTHEAD + THE TRACK ============ */}
           <header className="dk-mast">

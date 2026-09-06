@@ -1,3 +1,5 @@
+import { AssignmentReview } from '../components/AssignmentReview';
+import { ProductionPanel } from '../components/ProductionPanel';
 /**
  * Pulse — the Command Deck layout.
  *
@@ -75,6 +77,7 @@ function Deck({
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
   const line = target.saved;
   const pauseTarget = useSavedTarget(orgId, 'mtd-new-assignment-pause', 15);
+  const [mode,setMode] = useState<'cohort'|'production'>('cohort');
   const [reviewOnly, setReviewOnly] = useState(false);
   const [win, setWin] = useState<Window>(WINDOWS[1]);
   const { rows, err, undated, departed, totals, proof, teams } = useRosterData(line, win.days);
@@ -207,14 +210,14 @@ function Deck({
 
   return frame(
     <>
-      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead activity and contracts · {win.label} view</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
-      <section className="pulse-summary" aria-label="Team performance summary">
+      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead cohorts and recorded production · {win.label} view</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
+      <div className="operations-tabs"><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button><button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'production' ? <ProductionPanel period={win.days}/> : <><section className="pulse-summary" aria-label="Team performance summary">
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
       </section>
-      <>{win.key === 'mtd' && <div className="pulse-pause-status"><div><strong>Pause review · {pauseTarget.saved} new assignments per agent</strong><p>Cannot assess yet: dated assignment records are unavailable. Current lead totals are not assignment counts.</p></div><a href="https://premieragent.zillow.com/leads/routing/routing" target="_blank" rel="noreferrer">Open Zillow lead routing ↗</a></div>}</><div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
+      {win.key === 'mtd' && <AssignmentReview limit={pauseTarget.saved} allowImport/>}<div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
       <div className="rs-plate dk-table" ref={tableRef}>
         <table className="tru-table">
           <thead>
@@ -280,7 +283,7 @@ function Deck({
       </div>
 
       <details className="pulse-data-notes"><summary>About these numbers</summary><p>This view groups leads by their creation date and uses their current stage. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
-      <PersonPane
+      </>}<PersonPane
         row={open}
         onClose={() => setOpen(null)}
         approach={open ? approachFor(open) : null}

@@ -1,3 +1,5 @@
+import { OperationsProvider } from './components/OperationsContext';
+import Earnings from './pages/Earnings';
 import Today from './pages/Today';
 import { useEffect, useRef, useState } from 'react';
 import { onAuthChange, onPasswordRecovery, exchangeLink, signOut, type AuthState } from './lib/auth';
@@ -231,6 +233,7 @@ export default function App() {
           onOpenCoach={() => go('/coach')}
           onOpenRep={() => go('/rep')}
         />
+    : route === '/earnings' ? <Earnings key={o.id} org={o} />
     : route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
       : route === '/today'
@@ -296,7 +299,7 @@ export default function App() {
   if (isDemo && (route === '/learn' || route.startsWith('/learn/'))) {
     return <AgentHq agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
   }
-  if (isDemo) return shell({ id: 'demo', name: 'Sample Realty' });
+  if (isDemo) return <OperationsProvider key='demo'>{shell({ id: 'demo', name: 'Sample Realty' })}</OperationsProvider>;
   if (recovery && exchanging) {
     // Hold the door until we know whose session this is. See `exchanging` above.
     return <div className="center-wrap"><div className="spinner" /></div>;
@@ -328,12 +331,12 @@ export default function App() {
   }
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
-    if (admin) return shell({ id: 'hq', name: 'TRU HQ' }, admin);
+    if (admin) return <OperationsProvider key={session.user.id+':hq'}>{shell({ id: 'hq', name: 'TRU HQ' }, admin)}</OperationsProvider>;
     if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (agent) return <AgentHq agent={agent} />;
     return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
   }
   // Impersonated session → the shell's sidebar carries the "Exit — switch teams"
   // control (adminReturn drops the owner back to their HQ act-as picker).
-  return shell(org);
+  return <OperationsProvider key={session.user.id+':'+org.id}>{shell(org)}</OperationsProvider>;
 }
