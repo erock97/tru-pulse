@@ -215,7 +215,7 @@ function Deck({
           <thead>
             <tr>
               {th('name', 'Agent')}{th('leads', 'Leads')}
-              {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
+              {th('offers', 'Offers')}{th('contracts', 'Under contract')}{th('closed', 'Closed')}
               {th('perContract', 'Leads per contract')}{th('rawConversion', 'Raw conversion')}{th('lastDays', 'Last 1:1')}
             </tr>
           </thead>
@@ -246,9 +246,9 @@ function Deck({
                   </div>
                 </td>
                 <td>{cell(r.leads, i)}</td>
-                <td className={r.stuck > 10 ? 'cell-warn' : ''}>{cell(r.stuck, i)}</td>
+                
                 <td>{cell(r.offers, i)}</td>
-                <td>{cell(r.contracts, i)}</td>
+                <td>{cell(r.contracts, i)}</td><td>{cell(r.closed??0, i)}</td>
                 <td>
                   <div className="rs-rate">
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
@@ -257,7 +257,7 @@ function Deck({
                     <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line)}</small>
                   </div>
                 </td>
-                <td title={`${r.closed??0} closed leads ÷ ${r.leads} leads`}>{r.leads ? (r.rawConversion??0).toFixed(1)+'%' : '—'}</td>
+                <td title={`${r.contracts} leads that reached under contract or closed ÷ ${r.leads} leads`}>{r.leads ? (r.rawConversion??0).toFixed(1)+'%' : '—'}</td>
                 <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
                   {r.lastDays === null ? <span className="pulse-missing">Not recorded</span> : r.lastDays + 'd ago'}
                 </td>
@@ -267,15 +267,15 @@ function Deck({
           <tfoot>
             <tr>
               <td>Full team total</td><td><b>{totals.leads}</b></td>
-              <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
+              <td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td><td><b>{totals.closed}</b></td>
               <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
-              <td>{totals.leads ? (totals.closed/totals.leads*100).toFixed(1)+'%' : '—'}</td><td />
+              <td>{totals.leads ? (totals.contracts/totals.leads*100).toFixed(1)+'%' : '—'}</td><td />
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <details className="pulse-data-notes"><summary>About these numbers</summary><p>This view groups leads by their creation date. When verified history is loaded, it counts cumulative milestones, including achievements before a return to Nurture. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
+      <details className="pulse-data-notes"><summary>About these numbers</summary><p>Raw conversion is the percentage of leads that reached under contract or closed. Each lead counts once, even if it reached both. Closed is shown separately and is included in the cumulative Under contract count. This view groups leads by their creation date. When verified history is loaded, it counts cumulative milestones, including achievements before a return to Nurture. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
       </>}<PersonPane
         row={open}
         onClose={() => setOpen(null)}

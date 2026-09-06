@@ -1,4 +1,4 @@
-import { ContactSpeedPanel } from '../components/ContactSpeedPanel';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { signOutClean, loadTeamRoster, type TeamMember } from '../lib/api';
@@ -493,7 +493,7 @@ function CoachDeck({
                       </section>
                     </>
                   )}
-                  <ContactSpeedPanel orgId={org.id} coaching/><TeamBriefSection preferredAgent={briefAgentName}
+                  <TeamBriefSection preferredAgent={briefAgentName}
                     onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                   />
                   {teamLane ?? (
@@ -591,7 +591,7 @@ function CoachDeck({
               {/* The Hermes review of last week's Follow Up Boss activity —
                   who to coach on what, with the evidence one click deep. Rows
                   open the agent's sheet, where their full brief lives. */}
-              <ContactSpeedPanel orgId={org.id} coaching/><TeamBriefSection preferredAgent={briefAgentName}
+              <TeamBriefSection preferredAgent={briefAgentName}
                 onOpenAgent={(id, name) => { setBriefAgentName(name); setOpenId(id); }}
                 cohort={(() => {
                   const m = new Map();
