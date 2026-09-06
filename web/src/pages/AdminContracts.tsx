@@ -161,7 +161,7 @@ export default function AdminContracts({
               <span className="dk-eyebrow"><i />Platform owner</span>
               <h1>TruSign <em>contracts</em>.</h1>
               <p className="dk-sub">
-                Every envelope — drafts, out for signature, signed — with review-gated send and void.
+                Review drafts, track signatures, and open signed agreements. Sending or voiding a contract requires a separate confirmation.
               </p>
             </div>
           </header>
