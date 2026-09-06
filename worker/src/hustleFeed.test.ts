@@ -15,6 +15,13 @@ describe('original Hustle feed',()=>{
     const data=fixture();data.teams[0].hustle.latest!.deliveryStatus='PREVIEW_VERIFIED';
     expect(hustleFeed(data,'costigan',[]).scores).toEqual([]);
   });
+  it('withholds failed or active runs even when delivery was accepted',()=>{
+    for(const status of ['WITHHELD_FINAL','WITHHELD_VALIDATION','ACTIVE','AUTH_REQUIRED']) {
+      const data=fixture();data.teams[0].hustle.latest!.runStatus=status;
+      data.teams[0].hustle.latest!.deliveryStatus='PROVIDER_ACCEPTED';
+      expect(hustleFeed(data,'costigan',[]).scores).toEqual([]);
+    }
+  });
   it('does not guess ambiguous roster identity or accept invalid scores',()=>{
     const data=fixture();
     expect(hustleFeed(data,'costigan',[{id:'a',name:'Test Agent'},{id:'b',name:'Test Agent'}]).scores[0].agent_id).toBeNull();
