@@ -11,6 +11,7 @@ import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest, handleCoachTeamsList } from './coachBriefIngest.js';
+import { handleAgentRunEvents } from './agentRunEvents.js';
 import { handleRunEventsIngest } from './runEventsIngest.js';
 import { handleFailureLogsRoutes } from './failureLogsAdmin.js';
 import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
@@ -252,6 +253,8 @@ export default {
     // The Hermes laptop's sanitized failure-log push. Same door and secret as
     // the brief ingest above; the admin-only Failure Logs tab reads the stored
     // result through GET /admin/failure-logs below.
+    const agentRunEventsResponse = await handleAgentRunEvents(req, env, url, cors, database);
+    if (agentRunEventsResponse) return agentRunEventsResponse;
     const runEventsResponse = await handleRunEventsIngest(req, env, url, cors, database);
     if (runEventsResponse) return runEventsResponse;
 

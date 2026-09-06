@@ -68,6 +68,7 @@ beforeEach(() => {
       const authed = (init?.headers as Record<string, string> | undefined)?.Authorization === 'Bearer good-token';
       return authed ? ok({ id: 'user-1' }) : ok({ error: 'invalid' }, 401);
     }
+    if (u.pathname === '/rest/v1/rpc/coach_admin_mutate') return ok(problemRows.length ? {ok:true,version:2,status:body.p_body.status ?? 'open'} : {code:'INCIDENT_NOT_FOUND'});
     if (u.pathname === '/rest/v1/admins') return ok(isAdminUser ? [{ id: 'user-1' }] : []);
     if (u.pathname === '/rest/v1/coach_run_event_problems' && method === 'GET') return ok(problemRows);
     if (u.pathname === '/rest/v1/coach_run_event_incidents' && method === 'GET') return ok(incidentRows);
@@ -130,30 +131,30 @@ describe('GET /admin/failure-logs', () => {
 
 describe('PATCH /admin/failure-logs', () => {
   it('is unauthorized with no session and forbidden for a non-admin', async () => {
-    expect((await patch({ fingerprint: 'fp-1', status: 'fixed' }, '')).status).toBe(401);
+    expect((await patch({ fingerprint: 'fp-1', expectedVersion: 1, status: 'fixed' }, '')).status).toBe(401);
     isAdminUser = false;
-    expect((await patch({ fingerprint: 'fp-1', status: 'fixed' })).status).toBe(403);
+    expect((await patch({ fingerprint: 'fp-1', expectedVersion: 1, status: 'fixed' })).status).toBe(403);
   });
 
   it('rejects an invalid status', async () => {
-    const res = await patch({ fingerprint: 'fp-1', status: 'closed' });
+    const res = await patch({ fingerprint: 'fp-1', expectedVersion: 1, status: 'closed' });
     expect(res.status).toBe(422);
   });
 
   it('404s a fingerprint that does not exist', async () => {
     problemRows = [];
-    const res = await patch({ fingerprint: 'fp-missing', status: 'fixed' });
+    const res = await patch({ fingerprint: 'fp-missing', expectedVersion: 1, status: 'fixed' });
     expect(res.status).toBe(404);
   });
 
   it('updates status and notes for an existing problem', async () => {
-    const res = await patch({ fingerprint: 'fp-1', status: 'fixed', notes: 'Patched the collector.' });
+    const res = await patch({ fingerprint: 'fp-1', expectedVersion: 1, status: 'fixed', notes: 'Patched the collector.' });
     expect(res.status).toBe(200);
-    const patchCall = calls.find((c) => c.method === 'PATCH' && c.path.startsWith('/rest/v1/coach_run_event_problems'));
+    const patchCall = calls.find((c) => c.method === 'POST' && c.path === '/rest/v1/rpc/coach_admin_mutate');
     expect(patchCall).toBeTruthy();
-    expect(patchCall!.path).toContain('fingerprint=eq.fp-1');
-    expect((patchCall!.body as Record<string, unknown>).status).toBe('fixed');
-    expect((patchCall!.body as Record<string, unknown>).resolution_notes).toBe('Patched the collector.');
+    expect((patchCall!.body as any).p_fingerprint).toBe('fp-1');
+    expect((patchCall!.body as any).p_body.status).toBe('fixed');
+    expect((patchCall!.body as any).p_body.notes).toBe('Patched the collector.');
   });
 });
 
@@ -172,5 +173,19 @@ describe('Failure Logs browser preflight', () => {
       method: 'OPTIONS', headers: { Origin: 'https://synthetic-untrusted.example', 'Access-Control-Request-Method': 'PATCH' },
     }), env, ctx);
     expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
+});
+
+describe('Atomic admin actions',()=>{
+  it('passes release with expected version to the admin RPC',async()=>{
+    expect((await patch({fingerprint:'fp-1',expectedVersion:1,releaseClaim:true})).status).toBe(200);
+    expect(calls.find(c=>c.path==='/rest/v1/rpc/coach_admin_mutate')?.body).toEqual({p_fingerprint:'fp-1',p_body:{fingerprint:'fp-1',expectedVersion:1,releaseClaim:true}});
+  });
+  it('rejects missing versions and unknown fields',async()=>{
+    expect((await patch({fingerprint:'fp-1',status:'fixed'})).status).toBe(422);
+    expect((await patch({fingerprint:'fp-1',expectedVersion:1,releaseClaim:true,unsafe:'value'})).status).toBe(422);
+  });
+  it('does not admit the coaching token to admin routes',async()=>{
+    expect((await patch({fingerprint:'fp-1',expectedVersion:1,releaseClaim:true},'coach-secret')).status).toBe(401);
   });
 });
