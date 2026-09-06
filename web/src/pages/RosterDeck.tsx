@@ -207,7 +207,7 @@ function Deck({
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>Among leads created in this window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>Among leads created in this window</small></div>
-        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
+        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.floor(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
       </section>
       {win.key === 'mtd' && <AssignmentReview limit={pauseTarget.saved} allowImport/>}<div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
       <div className="rs-plate dk-table" ref={tableRef}>
@@ -252,7 +252,7 @@ function Deck({
                 <td>
                   <div className="rs-rate">
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
-                      {cell(r.perContract ? '1 : ' + Math.round(r.perContract) : '—', i)}
+                      {cell(r.perContract ? '1 : ' + Math.floor(r.perContract) : '—', i)}
                     </b>
                     <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line)}</small>
                   </div>
@@ -268,7 +268,7 @@ function Deck({
             <tr>
               <td>Full team total</td><td><b>{totals.leads}</b></td>
               <td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td><td><b>{totals.closed}</b></td>
-              <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
+              <td><b>{totals.perContract ? '1 : ' + Math.floor(totals.perContract) : '—'}</b></td>
               <td>{totals.leads ? (totals.contracts/totals.leads*100).toFixed(1)+'%' : '—'}</td><td />
             </tr>
           </tfoot>
