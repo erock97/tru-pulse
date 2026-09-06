@@ -35,6 +35,7 @@ import { PersonPane } from '../components/personPane';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
+import { minimumExpectation } from '../lib/minimumExpectation';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { useFlip, useGlide } from '../lib/deckMotion';
 
@@ -203,12 +204,12 @@ function Deck({
 
   return frame(
     <>
-      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead activity and contracts · {win.label} view</p></div><details className="pulse-target"><summary>Target <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Leads per contract" defaultValue={DEFAULT_LINE} /></details></header>
+      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead activity and contracts · {win.label} view</p></div><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details></header>
       <section className="pulse-summary" aria-label="Team performance summary">
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>{totals.workedPct}% marked worked</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>In this reporting window</small></div>
-        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Team ratio · target '+line : 'No contracts recorded'}</small></div>
+        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
       </section>
       <div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
       <div className="rs-plate dk-table" ref={tableRef}>
@@ -256,7 +257,7 @@ function Deck({
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
                       {cell(r.perContract ? '1 : ' + Math.round(r.perContract) : '—', i)}
                     </b>
-                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{r.perContract === null ? 'No ratio' : Math.abs(Math.round(r.perContract-line))+' '+(r.perContract>line ? 'above target' : 'below target')}</small>
+                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line)}</small>
                   </div>
                 </td>
                 <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
@@ -277,7 +278,7 @@ function Deck({
         </table>
       </div>
 
-      <details className="pulse-data-notes"><summary>About these numbers</summary><p>Counts reflect this reporting window. “Worked” reflects recorded lead activity, not a judgement of conversation quality. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
+      <details className="pulse-data-notes"><summary>About these numbers</summary><p>This view groups leads by their creation date and uses their current stage. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. “Worked” reflects recorded lead activity, not a judgement of conversation quality. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
       <PersonPane
         row={open}
         onClose={() => setOpen(null)}
@@ -288,3 +289,4 @@ function Deck({
     </>,
   );
 }
+

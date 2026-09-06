@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { SOURCE_COLORS } from './viz';
+import { minimumExpectation } from '../lib/minimumExpectation';
 import type { Row } from '../lib/rosterData';
 
 /* One person's own axis. It has to hold three numbers — them, the floor and
@@ -29,9 +30,7 @@ function verdict(row: Row, line: number, team: number | null): string {
     return `${first} has no contracts recorded in this window, so there is no leads-per-contract rate yet. ${row.leads} leads are in this view.`;
   }
   const rate = Math.round(row.perContract);
-  const vsLine = rate > line
-    ? `past your line of one in ${line}`
-    : `inside your line of one in ${line}`;
+  const vsLine = `${minimumExpectation(row.perContract, line).toLowerCase()} (1 contract per ${line} leads)`;
   const vsTeam = team === null ? ''
     : rate > Math.round(team) ? `, and behind the floor at one in ${Math.round(team)}`
       : rate < Math.round(team) ? `, and ahead of the floor at one in ${Math.round(team)}`
@@ -107,7 +106,7 @@ export function PersonPane({
             </span>
             <div className="rs-stand-key">
               <span><s className="rs-key team" /> the floor{teamRate ? ` at 1 : ${Math.round(teamRate)}` : ''}</span>
-              <span><s className="rs-key line" /> your line at 1 : {line}</span>
+              <span><s className="rs-key line" /> minimum expectation 1 : {line}</span>
             </div>
             <p className="rs-msg">{verdict(row, line, teamRate)}</p>
           </div>
@@ -187,3 +186,4 @@ export function PersonPane({
     </>
   );
 }
+

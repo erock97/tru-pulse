@@ -49,3 +49,12 @@ Verified desktop/table, review filtering, detail open/close, target Save/reload,
 Moved Search into the single pinned top navigation across app tabs and removed the duplicate logo/search strip. Contextual period and return controls remain below the navigation where needed. Added Today to command navigation. Deepened the stone canvas, queue and table headers; reserved lighter surfaces for the selected coaching review and active work. No hero cards or shadows added. Mobile retains a labelled Search button and bottom section navigation.
 
 Typecheck and production build pass. Web tests: 391 pass, same existing Zillow slide hash failure. Desktop Search and sticky navigation checked; phone layout and Search checked. Preview only; production and backend unchanged.
+
+## Minimum expectation and trend requirements — September 5
+Changed Pulse and its detail view to treat fewer leads per contract as stronger performance. 1 in 11 and 1 in 16 both exceed a 1 in 30 minimum. Equality is explicit; comparisons use unrounded values. The UI retains contract terminology because this loader does not measure closed transactions.
+
+Trend proposal (not enabled): show routine movement in Pulse; escalate only sustained deterioration toward/below the minimum with comparable lead cohorts, consistent outcome maturity, sufficient sample size and source coverage. Every alert should expose periods, lead/outcome counts, change, source and reason. Missing history must produce an unavailable result. Current roster filtering uses fub_created and current stages, not dated assignment/outcome history; it cannot establish historical conversion or new assignments in the last 30 days. Inspect the available stage-event history and its coverage before selecting an implementation.
+
+Pending Eric clarification: whether the 15-lead rolling 30-day cap is per agent or per team, and whether it counts new assignments. Do not apply 15 to current created-date cohorts as an assignment cap. Today should receive actionable cap/minimum alerts once definitions and coverage are established, not every negative fluctuation.
+
+Checks: typecheck/build pass, 394 tests pass with the existing Zillow hash failure. Demo browser confirms Priya 1 in 11 exceeds minimum and absent ratio is not established.
