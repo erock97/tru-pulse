@@ -62,16 +62,6 @@ function ProgressDots({ statuses }: { statuses: string[] }) {
 }
 
 /* ---- curved SVG divider (same language as Pulse / Home) ---- */
-function DividerWave() {
-  return (
-    <div className="ps-divider hh-divider" aria-hidden>
-      <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34 L1200 60 L0 60 Z" fill="none" />
-        <path d="M0 40 C 200 10, 420 55, 640 30 S 1050 5, 1200 34" fill="none" stroke="var(--border-soft)" strokeWidth="1" />
-      </svg>
-    </div>
-  );
-}
 
 /* ---- Certification funnel — tapering SVG segments, drawn in.
    Derived from the REAL roster's progress (see below). ---- */
@@ -298,19 +288,8 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                     ? 'Everybody is certified'
                     : `${startedCount} of ${enrolled} underway`}
               </span>
-              <h1>
-                {certifiedCount > 0
-                  ? <><em>{certifiedCount}</em> of {agents.length} have earned the badge.</>
-                  : <>Nobody has cleared <em>all {modules.length}</em> modules yet.</>}
-              </h1>
-              <p className="dk-sub">
-                The Preferred standards, real scripts and practice drills, and a server-graded quiz
-                to pass on every module.{' '}
-                {notInvited > 0
-                  ? <><b>{notInvited}</b> {notInvited === 1 ? 'agent has' : 'agents have'} never been sent a login, so
-                    {notInvited === 1 ? ' they are' : ' they are'} not stalled — they were never able to begin.</>
-                  : <>Every agent has a login, so what you see on the track is real progress.</>}
-              </p>
+              <h1>Build the skill. See the progress.</h1>
+              <p className="dk-sub">Review each agent’s progress, open their results, and see what they need to complete next.</p>
             </div>
             <div className="rp-hero-cta">
               <button
@@ -329,98 +308,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </header>
 
-          <section className="dk-bento rp-bento-deck">
-            {/* The track. Distance is progress, not rate and not time — see
-                components/repViz.tsx for why this page is the one that is not
-                a circle. */}
-            <div className="rs-plate dk-tile dk-tile-lead">
-              <span className="k">The track</span>
-              <span className="v"><Odometer value={teamCert} suffix="%" /></span>
-              <ScaleMarks
-                lo={0} hi={modules.length} line={modules.length} lineLabel="certified"
-                marks={trackMarks}
-              />
-              <span className="u">fully certified · every dot is an agent, every mark a module</span>
-            </div>
-            {/* No strips here on purpose. Pulse's five tiles each summarise a
-                distribution across the team, so a strip is the same fact drawn
-                twice; Rep's are facts about the PROGRAMME — how many modules,
-                how many questions — and a bar chart of a constant would be
-                decoration. The per-agent spread lives on the track above. */}
-            {([
-              ['Modules', modules.length, 'in the programme'],
-              ['Quiz questions', totalQuestions, 'across all modules'],
-              ['Agents enrolled', agents.length, 'in your cohort'],
-              ['Started a module', startedCount, `of ${enrolled}`],
-              ['Never sent a login', notInvited, notInvited ? 'cannot begin' : 'everybody has one'],
-            ] as const).map(([k, n, u]) => (
-              <div className="rs-plate dk-tile" key={k}>
-                <span className="k">{k}</span>
-                <span className="v"><Odometer value={n} /></span>
-                <span className="u">{u}</span>
-              </div>
-            ))}
-          </section>
-
-          <DividerWave />
-
-          {/* ============ MODULE JOURNEY — the REAL curriculum ============ */}
-          <section className="rp-journey reveal">
-            <div className="rp-journey-head">
-              <div className="panel-head" style={{ margin: 0 }}>
-                <h3>The certification journey</h3>
-                <span className="panel-sub">{modules.length} module{modules.length === 1 ? '' : 's'} · pass each quiz at its threshold</span>
-              </div>
-              <button
-                className="rp-preview"
-                onClick={() => setSimTest(true)}
-                title="Take a practice call yourself — real call, real grade, nothing recorded"
-              >
-                🎙 Test the Live Sim
-              </button>
-            </div>
-            <div className="rp-track">
-              <svg className="rp-rail" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden>
-                <line x1="20" y1="0" x2="20" y2="100" className="rp-rail-line" />
-              </svg>
-              <ol className="rp-steps">
-                {journey.map(({ m, openable, state }, i) => (
-                  <li
-                    key={m.id}
-                    className={`rp-step reveal state-${state}${openable ? ' is-open' : ''}`}
-                    data-delay={i * 70}
-                    onClick={() => openable && openPreview(m)}
-                  >
-                    {/* Position in this journey, NOT m.idx. idx is the module's
-                        authoring order and has gaps — a four-step track was
-                        numbering itself 1, 2, 3, 9, which reads as five missing
-                        modules rather than one renamed one. */}
-                    <span className="rp-node"><span className="rp-node-n">{i + 1}</span></span>
-                    <div className="rp-step-body">
-                      <div className="rp-step-top">
-                        <h4>{m.title}</h4>
-                        {state === 'locked' && <span className="rp-lock">No preview</span>}
-                        {state === 'open' && <span className="rp-open">Start here</span>}
-                      </div>
-                      <div className="rp-step-meta">
-                        {m.cards?.length ?? 0} screens · {m.questions} Q · pass {m.pass_pct}%
-                        {m.summary ? ` · ${m.summary}` : ''}
-                      </div>
-                    </div>
-                    <button
-                      className="rp-preview"
-                      disabled={!openable}
-                      onClick={(e) => { e.stopPropagation(); if (openable) openPreview(m); }}
-                      title={openable ? 'Walk the exact module your agents get' : 'No preview screens on this module yet'}
-                    >
-                      <Icon name="play" size={15} /> Preview
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-
+          <div className="rep-summary-line"><span><b>{certifiedCount}</b> certified</span><span><b>{startedCount}</b> started</span><span><b>{notInvited}</b> awaiting invitation</span><button className="brief-open" onClick={()=>{window.location.hash='/team';}}>Manage invitations →</button></div>
           {/* ============ THE ROSTER ============ */}
           {/* The funnel that used to sit beside this is gone. On real data it
               read: 10 enrolled, 10 never invited, 0 started, 0 certified — a
@@ -429,7 +317,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
               of the page already says it, and says it better. This half is the
               one you can act on. */}
           <div className="dk-sec">
-            <h2>The roster</h2>
+            <h2>Agent progress</h2>
             <p>
               {notInvited > 0
                 ? `${notInvited} of ${enrolled} cannot start until a login goes out — send them from Team`
@@ -449,7 +337,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                 </span>
               )}
               <input
-                className="ad-input adm-search"
+                aria-label="Find an agent in Rep" className="ad-input adm-search"
                 placeholder={`Search ${agents.length} agent${agents.length === 1 ? '' : 's'}…`}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -459,7 +347,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
 
           <div className="rs-plate dk-table rp-roster-plate">
             {agents.length === 0 ? (
-              <div className="rp-roster-empty">No agents yet — invite your team in Coach and they’ll appear here.</div>
+              <div className="rp-roster-empty">No agents yet — invite your team in Team and they’ll appear here.</div>
             ) : (
               <div className="rp-roster-list">
                 {shown.map((a) => {
@@ -525,6 +413,94 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </div>
 
+          <details className="rep-curriculum"><summary>Curriculum & team progress · {modules.length} modules · {totalQuestions} questions</summary>
+          <section className="dk-bento rp-bento-deck">
+            {/* The track. Distance is progress, not rate and not time — see
+                components/repViz.tsx for why this page is the one that is not
+                a circle. */}
+            <div className="rs-plate dk-tile dk-tile-lead">
+              <span className="k">The track</span>
+              <span className="v"><Odometer value={teamCert} suffix="%" /></span>
+              <ScaleMarks
+                lo={0} hi={modules.length} line={modules.length} lineLabel="certified"
+                marks={trackMarks}
+              />
+              <span className="u">fully certified · every dot is an agent, every mark a module</span>
+            </div>
+            {/* No strips here on purpose. Pulse's five tiles each summarise a
+                distribution across the team, so a strip is the same fact drawn
+                twice; Rep's are facts about the PROGRAMME — how many modules,
+                how many questions — and a bar chart of a constant would be
+                decoration. The per-agent spread lives on the track above. */}
+            {([
+              ['Modules', modules.length, 'in the programme'],
+              ['Quiz questions', totalQuestions, 'across all modules'],
+              ['Agents enrolled', agents.length, 'in your cohort'],
+              ['Started a module', startedCount, `of ${enrolled}`],
+              ['Never sent a login', notInvited, notInvited ? 'cannot begin' : 'everybody has one'],
+            ] as const).map(([k, n, u]) => (
+              <div className="rs-plate dk-tile" key={k}>
+                <span className="k">{k}</span>
+                <span className="v"><Odometer value={n} /></span>
+                <span className="u">{u}</span>
+              </div>
+            ))}
+          </section>
+
+
+
+          {/* ============ MODULE JOURNEY — the REAL curriculum ============ */}
+          <section className="rp-journey reveal">
+            <div className="rp-journey-head">
+              <div className="panel-head" style={{ margin: 0 }}>
+                <h3>The certification journey</h3>
+                <span className="panel-sub">{modules.length} module{modules.length === 1 ? '' : 's'} · pass each quiz at its threshold</span>
+              </div>
+              
+            </div>
+            <div className="rp-track">
+              <svg className="rp-rail" viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden>
+                <line x1="20" y1="0" x2="20" y2="100" className="rp-rail-line" />
+              </svg>
+              <ol className="rp-steps">
+                {journey.map(({ m, openable, state }, i) => (
+                  <li
+                    key={m.id}
+                    className={`rp-step reveal state-${state}${openable ? ' is-open' : ''}`}
+                    data-delay={i * 70}
+                    onClick={() => openable && openPreview(m)}
+                  >
+                    {/* Position in this journey, NOT m.idx. idx is the module's
+                        authoring order and has gaps — a four-step track was
+                        numbering itself 1, 2, 3, 9, which reads as five missing
+                        modules rather than one renamed one. */}
+                    <span className="rp-node"><span className="rp-node-n">{i + 1}</span></span>
+                    <div className="rp-step-body">
+                      <div className="rp-step-top">
+                        <h4>{m.title}</h4>
+                        {state === 'locked' && <span className="rp-lock">No preview</span>}
+                        {state === 'open' && <span className="rp-open">Start here</span>}
+                      </div>
+                      <div className="rp-step-meta">
+                        {m.cards?.length ?? 0} screens · {m.questions} Q · pass {m.pass_pct}%
+                        {m.summary ? ` · ${m.summary}` : ''}
+                      </div>
+                    </div>
+                    <button
+                      className="rp-preview"
+                      disabled={!openable}
+                      onClick={(e) => { e.stopPropagation(); if (openable) openPreview(m); }}
+                      title={openable ? 'Walk the exact module your agents get' : 'No preview screens on this module yet'}
+                    >
+                      <Icon name="play" size={15} /> Preview
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          </details>
           <div className="rp-note" style={{ margin: '18px 2px 0' }}>
             <b>How it works:</b> hit <b>Invite</b> to send an agent their login. They set a password, take each module,
             and pass its quiz — their progress fills in above. Quizzes are graded server-side, so a pass is real.
@@ -573,12 +549,12 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
   return (
     <div className="rp-drill">
       <div className="rp-drill-grid">
-        {modules.map((m) => {
+        {modules.map((m, moduleIndex) => {
           const p = row(agent.id, m.id);
           const s = p?.status ?? 'not_started';
           return (
             <div key={m.id} className={`rp-drill-mod ${s}`}>
-              <div className="rp-drill-mtitle">M{m.idx} · {m.title}</div>
+              <div className="rp-drill-mtitle">M{moduleIndex + 1} · {m.title}</div>
               <div className="rp-drill-mline">
                 {s === 'passed'
                   ? <>Passed · {p?.score}% · {fmtDate(p?.passed_at)}</>

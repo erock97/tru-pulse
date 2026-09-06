@@ -132,6 +132,7 @@ export interface RosterAgent extends Pace {
   days: number;
   due: boolean;
   lastDays: number;
+  hasRecordedCheckin?: boolean;
   lastLabel: string;
   lastFocus: string;
   takes: number;
@@ -200,7 +201,7 @@ export async function loadRoster(
       const lastDays = checkins.length ? daysSince(checkins[0].created_at) : 99;
       const pace = paceFromDays(lastDays, checkins.length > 0);
       const days = latest ? daysSince(latest.taken_at) : 99;
-      const lastLabel = lastDays >= 99 ? 'never'
+      const lastLabel = !checkins.length ? 'never'
         : lastDays === 0 ? 'today'
           : lastDays === 1 ? 'yesterday'
             : lastDays + 'd ago';
@@ -222,7 +223,8 @@ export async function loadRoster(
           due: false,
           lastDays,
           lastLabel,
-          lastFocus: checkins[0]?.focus || '',
+        hasRecordedCheckin: checkins.length > 0,
+lastFocus: checkins[0]?.focus || '',
           takes: 0,
           token: agent.token,
           ...pace,
@@ -245,6 +247,7 @@ export async function loadRoster(
         due: days >= cadenceDays,
         lastDays,
         lastLabel,
+        hasRecordedCheckin: checkins.length > 0,
         lastFocus: checkins[0]?.focus || '',
         takes: assessments.length,
         token: agent.token,

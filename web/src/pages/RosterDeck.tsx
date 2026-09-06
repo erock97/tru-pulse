@@ -77,6 +77,7 @@ function Deck({
   const [win, setWin] = useState<Window>(WINDOWS[3]);
   const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
+  const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
   const focus = useDeckFocus();
 
@@ -87,7 +88,7 @@ function Deck({
   );
   const sorted = useMemo(() => {
     if (!rows) return [];
-    return [...rows].sort((a, b) => {
+    return rows.filter(r => r.name.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
       const x = a[sort.key], y = b[sort.key];
       if (x === null && y === null) return 0;
       if (x === null) return 1;          // no-volume always sits at the bottom
@@ -97,7 +98,7 @@ function Deck({
       }
       return ((y as number) - (x as number)) * sort.dir;
     });
-  }, [rows, sort]);
+  }, [rows, sort, query]);
 
   /* Rows travel to their new place when you sort, rather than the table
      redrawing. The order itself is the signature, so re-sorting to the same
@@ -333,9 +334,10 @@ function Deck({
         <p>
           {priorities.length === 0
             ? 'No priority signals in this view.'
-            : `${priorities.length} need you · ${totals.stale} past thirty days without a 1:1`}
+            : `${priorities.length} signals to review · ${totals.stale} past thirty days without a 1:1`}
         </p>
         <span className="dk-key">
+          <input className="ad-input adm-search" aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} />
           {focus.quiet ? (
             <span className="dk-quiet-out">
               Just the {priorities.length} who need you
@@ -394,6 +396,7 @@ function Deck({
             </tr>
           </thead>
           <tbody>
+            {query.trim() && !sorted.length && <tr><td colSpan={9}>No agents match “{query}”. <button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></td></tr>}
             {sorted.map((r, i) => (
               <tr key={r.name}
                   data-flip={r.name}
@@ -448,7 +451,7 @@ function Deck({
                 <td><span className={'rs-tag h-' + r.health}>{
                   r.health === 'past-line' ? 'past the line'
                     : r.health === 'behind' ? 'behind team'
-                      : r.health === 'no-volume' ? 'no volume' : 'holding'
+                      : r.health === 'no-volume' ? (r.leads ? 'no contracts' : 'no leads') : 'within target'
                 }</span></td>
               </tr>
             ))}

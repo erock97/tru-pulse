@@ -6,6 +6,7 @@ import { signOutClean } from '../lib/api';
 import { loadRoster, loadOpenCommitments, type RosterAgent, type CheckinItem } from '../lib/coachData';
 import { CADENCE_DAYS } from '../lib/deckMarks';
 import { coachRoute } from '../lib/coachRoute';
+import { coachingDue } from '../lib/todayActions';
 
 export default function Today({org}:{org:{id:string;name:string}}) {
   return <DeckFocusProvider><div className="tru-dark"><TodayContent org={org}/></div></DeckFocusProvider>;
@@ -34,10 +35,10 @@ function TodayContent({org}:{org:{id:string;name:string}}) {
     return ()=>{active=false;};
   },[org.id]);
   const go=(route:string)=>{window.location.hash=route;};
-  const due=(roster??[]).filter(a=>a.lastDays<99 && a.lastDays>=target.saved).sort((a,b)=>b.lastDays-a.lastDays);
-  const unrecorded=(roster??[]).filter(a=>a.lastDays>=99);
-  return <HqShell orgName={org.name} eyebrow="Your working day" title="Today" onSignOut={signOutClean} nav={{onOpenPulse:()=>go('/pulse'),onOpenCoach:()=>go('/coach'),onOpenRep:()=>go('/rep'),onOpenTeam:()=>go('/team')}}>
-    <main className="dk-main today-page"><header className="today-heading"><p>{new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</p><h1>Start with the next conversation.</h1><p>Follow through on the work already in motion.</p></header>
+  const due=coachingDue(roster??[],target.saved);
+  const unrecorded=(roster??[]).filter(a=>a.hasRecordedCheckin === false);
+  return <HqShell orgName={org.name} eyebrow="Your working day" title="Today" hideTopbar onSignOut={signOutClean} nav={{onOpenPulse:()=>go('/pulse'),onOpenCoach:()=>go('/coach'),onOpenRep:()=>go('/rep'),onOpenTeam:()=>go('/team')}}>
+    <main className="dk-main today-page"><header className="today-heading"><p>{new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</p><h1>Today’s follow-through.</h1><p>Follow through on the work already in motion.</p></header>
       {error && <p role="alert">{error}</p>}
       {!roster && !error && <p role="status">Loading your team's activity…</p>}
       {roster && <div className="today-layout"><section className="today-actions"><h2>Check-ins due <small>{due.length}</small></h2><p>Based on your saved {target.saved}-day coaching cadence. Longest gap first.</p>
@@ -47,7 +48,7 @@ function TodayContent({org}:{org:{id:string;name:string}}) {
         {loadingItems && <p role="status">Checking open commitments…</p>}{failed>0 && <p role="status">Commitments unavailable for {failed} agents. This list is incomplete.</p>}
         {items.map(item=><button className="today-action" key={item.id} onClick={()=>go(coachRoute(item.agentId))}><span><strong>{roster.find(a=>a.id===item.agentId)?.name ?? 'Agent'}</strong><span>{item.body}</span></span><b>Review →</b></button>)}
         {!loadingItems && !items.length && !failed && <p className="today-empty">No open commitments recorded.</p>}
-      </section><aside className="today-context"><h2>Before you assume</h2><p>{unrecorded.length} agents have no recorded 1:1. Missing history is not evidence that coaching never happened.</p><details><summary>See those agents</summary>{unrecorded.map(a=><button className="today-unrecorded" key={a.id} onClick={()=>go(coachRoute(a.id))}>{a.name} →</button>)}</details><hr/><h2>Your schedule</h2><p>Broker calendar events are not connected to this view yet. Meetings are not included in today's list.</p><hr/><h2>Review the evidence</h2><p>For the latest reported coaching observations and their sources, open Coach.</p><button className="brief-open" onClick={()=>go('/coach')}>Open coaching review →</button></aside></div>}
+      </section><aside className="today-context"><h2>History to complete</h2><p>{unrecorded.length} {unrecorded.length === 1 ? "agent has" : "agents have"} no recorded 1:1. Confirm their history before deciding what is overdue.</p><details><summary>See those agents</summary>{unrecorded.map(a=><button className="today-unrecorded" key={a.id} onClick={()=>go(coachRoute(a.id))}>{a.name} →</button>)}</details><hr/><h2>Your schedule</h2><p>Broker calendar events are not connected to this view yet. Meetings are not included in today's list.</p><hr/><h2>Review the evidence</h2><p>For the latest reported coaching observations and their sources, open Coach.</p><button className="brief-open" onClick={()=>go('/coach')}>Open coaching review →</button></aside></div>}
     </main>
   </HqShell>;
 }
