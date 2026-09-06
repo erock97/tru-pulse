@@ -153,7 +153,7 @@ function Deck({
   const windowTabs = (
     <span className="dk-win" ref={winRef}>
       <i className="dk-win-glide" style={winGlide} aria-hidden />
-      {[WINDOWS[0], WINDOWS[1], WINDOWS[2], WINDOWS[4], WINDOWS[3]].map((w) => (
+      {[WINDOWS[0], WINDOWS[1], WINDOWS[2], WINDOWS[4], WINDOWS[3], WINDOWS[5]].map((w) => (
         <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
           {w.label}
         </button>
