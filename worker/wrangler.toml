@@ -75,3 +75,8 @@ bindings = [
 [[migrations]]
 tag = "v1-contract-approvals"
 new_sqlite_classes = ["ContractApprovalLedger"]
+
+[[services]]
+binding = "WEEKLY_REPORTS"
+service = "fub-weekly-reports"
+entrypoint = "TeamReportControlService"

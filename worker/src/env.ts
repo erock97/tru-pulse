@@ -1,4 +1,5 @@
 export interface Env {
+  WEEKLY_REPORTS?: { dashboard(): Promise<import('./hustleFeed.js').WeeklyDashboard> };
   SESSIONS: KVNamespace;              // server-side login sessions; see wrangler.toml.
                                       // Also holds contract:draft:* (prepared contract
                                       // drafts, 30-day TTL) and prl:* (public rate limits).

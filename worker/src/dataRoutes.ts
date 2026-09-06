@@ -10,6 +10,7 @@ import { db as serviceDb } from './db.js';
 import { isId } from './automation/store.js';
 import { calculateContactSpeed } from './contactSpeed.js';
 import type { ContactSnapshot } from '../../shared/contactSpeed.js';
+import { hustleFeed, HUSTLE_TEAM_BY_DOMAIN } from './hustleFeed.js';
 
 // Ids come from the query string, so validate the shape before it reaches a
 // PostgREST filter. Filters AND together so an id can't be widened to another
@@ -89,6 +90,18 @@ export async function handleDataRoutes(
       const latest = await db.select<{week_ending: string}>('hustle_weekly_scores',
         `select=week_ending&org_id=eq.${orgId}&order=week_ending.desc&limit=1`, { strict: true });
       const weekEnding = latest[0]?.week_ending ?? null;
+      if (!weekEnding && env.WEEKLY_REPORTS) {
+        // The RPC service can read all reports, so verify this user's membership
+        // before calling it and return only the matching organization's report.
+        const membership = await db.select('memberships', `select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`, {strict:true});
+        if (!membership.length) return json({error:'not permitted'},403,cors);
+        const teams = await db.select<{id:string;fub_subdomain:string}>('teams', `select=id,fub_subdomain&org_id=eq.${orgId}&is_active=eq.true&limit=2`, {strict:true});
+        const team = teams.length===1 ? HUSTLE_TEAM_BY_DOMAIN[teams[0].fub_subdomain] : undefined;
+        if (!team) return json({weekEnding:null,scores:[]},200,cors);
+        const roster = await db.select<{id:string;name:string}>('agents', `select=id,name&team_id=eq.${teams[0].id}&excluded=eq.false`, {strict:true});
+        const report = hustleFeed(await env.WEEKLY_REPORTS.dashboard(),team,roster);
+        return json(report,200,{...cors,'Cache-Control':'private, no-store'});
+      }
       if (!weekEnding) return json({ weekEnding, scores: [] }, 200, cors);
       const columns = 'id,agent_id,agent_name,week_ending,final_score,evidence_label,eligibility,ranking_eligible,offers_recent,broker_action,action_reason,captured_at';
       const scores = await db.select('hustle_weekly_scores',
