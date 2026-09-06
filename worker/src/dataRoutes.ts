@@ -37,6 +37,25 @@ export async function handleDataRoutes(
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
 
+  if (url.pathname === '/data/hustle' && req.method === 'GET') {
+    const orgId = url.searchParams.get('orgId') ?? '';
+    if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 400, cors);
+    try {
+      // Explicit organization filter AND user RLS; never use the service role.
+      const latest = await db.select<{week_ending: string}>('hustle_weekly_scores',
+        `select=week_ending&org_id=eq.${orgId}&order=week_ending.desc&limit=1`, { strict: true });
+      const weekEnding = latest[0]?.week_ending ?? null;
+      if (!weekEnding) return json({ weekEnding, scores: [] }, 200, cors);
+      const columns = 'id,agent_id,agent_name,week_ending,final_score,evidence_label,eligibility,ranking_eligible,offers_recent,broker_action,action_reason,captured_at';
+      const scores = await db.select('hustle_weekly_scores',
+        `select=${columns}&org_id=eq.${orgId}&week_ending=eq.${encodeURIComponent(weekEnding)}&order=agent_name.asc&limit=1000`, { strict: true });
+      if (scores.length >= 1000) throw new Error('Report exceeds supported roster size');
+      return json({ weekEnding, scores }, 200, cors);
+    } catch {
+      return json({ error: 'Weekly Hustle could not be loaded. Please retry.' }, 502, cors);
+    }
+  }
+
   // ── Everything the Pulse dashboard needs, in one round trip. ──
   // The browser previously made eight calls (two of them paged); doing it here also
   // removes eight cross-origin round trips from a phone on a bad connection.

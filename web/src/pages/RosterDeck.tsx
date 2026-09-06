@@ -1,3 +1,4 @@
+import { HustlePanel } from '../components/HustlePanel';
 import { AssignmentReview } from '../components/AssignmentReview';
 import { ProductionPanel } from '../components/ProductionPanel';
 /**
@@ -78,7 +79,7 @@ function Deck({
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
   const line = target.saved;
   const pauseTarget = useSavedTarget(orgId, 'mtd-new-assignment-pause', 15);
-  const [mode,setMode] = useState<'cohort'|'production'>('cohort');
+  const [mode,setMode] = useState<'cohort'|'production'|'hustle'>('cohort');
   const [reviewOnly, setReviewOnly] = useState(false);
   const [win, setWin] = useState<Window>(WINDOWS[1]);
   const { rows, err, undated, departed, totals, proof, teams } = useRosterData(line, win.days);
@@ -156,7 +157,7 @@ function Deck({
         onSignOut={() => signOutClean()}
         nav={{ onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam: () => { window.location.hash = '/team'; } }}
         hideTopbar
-        islandSlot={windowTabs}
+        islandSlot={mode === 'hustle' ? undefined : windowTabs}
         // The room warms with the floor: ember once somebody is past your line,
         // amber while there are conversations owed, sea when nobody needs you.
         mood={!totals ? 'calm' : totals.pastLine > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
@@ -198,8 +199,8 @@ function Deck({
 
   return frame(
     <>
-      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead cohorts and recorded production · {win.label} view</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
-      <div className="operations-tabs"><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button><button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'production' ? <ProductionPanel period={win.days}/> : <><section className="pulse-summary" aria-label="Team performance summary">
+      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>{mode === 'hustle' ? 'Latest published weekly report' : 'Lead cohorts and recorded production · ' + win.label + ' view'}</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow.</p></details></div></header>
+      <div className="operations-tabs"><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button><button aria-pressed={mode==='hustle'} onClick={()=>setMode('hustle')}>Weekly Hustle</button><button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'hustle' ? <HustlePanel orgId={orgId}/> : mode === 'production' ? <ProductionPanel period={win.days}/> : <><section className="pulse-summary" aria-label="Team performance summary">
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>In this reporting window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>In this reporting window</small></div>
