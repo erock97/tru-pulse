@@ -159,9 +159,9 @@ html.tru-premium .tru-dark :is(.sm-dot,.rs-pos-dot,.rs-av) { box-shadow:none; fi
 html.tru-premium .tru-dark .tabbar { background:#253239; backdrop-filter:none; border-top:1px solid #414d52; }
 html.tru-premium .tru-dark .tabbar-btn { color:#cbd2d0; }
 html.tru-premium .tru-dark .tabbar-btn.active { color:#f2d798; background:#354147; }
-html.tru-premium .tru-dark.tru-door { display:grid; place-items:center; background:#f3f1eb; padding:50px 20px; }
+html.tru-premium .tru-dark.tru-door { display:grid; place-items:center; background:#253239; padding:50px 20px; }
 html.tru-premium .tru-dark :is(.tru-door-scene,.tru-door-scrim) { display:none; }
-html.tru-premium .tru-dark .tru-door-stage { margin:0; padding:40px; width:100%; max-width:470px; background:#fcfbf7; border:1px solid #d8dbd0; border-radius:8px; }
+html.tru-premium .tru-dark .tru-door-stage { margin:0; padding:40px; width:100%; max-width:470px; background:#f7f4ec; border:1px solid #c4bbaa; border-radius:4px; }
 html.tru-premium .tru-dark .tru-door-title { color:#253239; font-size:36px; text-shadow:none; }
 html.tru-premium .tru-dark .tru-door-sub { color:#526066; }
 html.tru-premium .tru-dark .tru-door-panel { background:transparent; padding:0; border:0; box-shadow:none; backdrop-filter:none; }
@@ -441,6 +441,39 @@ html.tru-premium .practice-followup label {display:block;margin:12px 0}
 html.tru-premium .practice-followup :is(input,textarea) {display:block;width:min(100%,500px);background:#f7f4ec;border:1px solid #c4bbaa;padding:9px;color:#34434b}
 html.tru-premium .practice-followup textarea {min-height:90px}
 html.tru-premium .practice-followup button {margin-right:18px}
+/* Section edges: one enclosure per workspace, with inset row actions. */
+html.tru-premium .tru-dark :is(.coaching-workspace,.tm-plate,.pulse-refined .dk-table) {border:1px solid #bfb4a2}
+html.tru-premium .tru-dark.pulse-refined .dk-table {border:1px solid #bfb4a2}
+html.tru-premium .tru-dark .today-action {padding:20px 16px;box-sizing:border-box}
+html.tru-premium .tru-dark .today-action > :first-child {min-width:0}
+html.tru-premium .tru-dark .today-action > .brief-open:first-child {flex:1;white-space:normal;color:var(--text);line-height:1.6}
+html.tru-premium .tru-dark .today-action > .brief-open:first-child span {display:block;color:var(--text-60);font-size:13px;margin-top:5px}
+html.tru-premium .tru-dark .today-action > .brief-open:last-child {flex:0 0 auto;padding:10px 12px;min-height:40px;white-space:nowrap}
+html.tru-premium .tru-dark .today-action > .brief-open:last-child:hover {background:#e1d9c9}
+html.tru-premium .tru-dark .today-action:last-child {border-bottom:1px solid #c8beac}
+
+/* Admin uses the same solid slate, stone and gold as the team workspace. */
+html.tru-premium .hq-admin {--track-fill-2:#d6cebf;--line:#bfb4a2}
+html.tru-premium .hq-admin .rs-av {background:#ded7c9;color:#34434b;border:1px solid #bfb4a2;border-radius:3px;box-shadow:none}
+html.tru-premium .hq-admin .adm-row {border:1px solid #bfb4a2;background:#f0ebe1;padding:20px;transition:background .15s}
+html.tru-premium .hq-admin .adm-row::before {content:none}
+html.tru-premium .hq-admin .adm-row:hover {background:#e5ddce}
+html.tru-premium .hq-admin .adm-row .dk-fr-do {color:#765611;padding-left:12px}
+html.tru-premium .hq-admin .adm-search {border-radius:4px;min-height:40px}
+html.tru-premium .hq-admin :is(.hh-progress-track,.hh-progress-fill) {border-radius:0;box-shadow:none}
+html.tru-premium .hq-admin .hh-progress-fill {background:#8b733f}
+html.tru-premium .hq-admin :is(.mny-flag,.mny-chip) {border-radius:3px;box-shadow:none}
+html.tru-premium .hq-admin :is(.mny-flag.sent,.mny-chip.ok,.mny-chip.wait,.mny-chip.ctr-draft) {background:#dfdbd1;color:#43545d;border-color:#bfb4a2}
+html.tru-premium .hq-admin :is(.cal-type,.cal-type.live,.cal-card,.mny-tile,.dk-table) {border-color:#bfb4a2;box-shadow:none}
+html.tru-premium .hq-admin .cal-link code {background:#e5ddce;color:#43545d;border-color:#bfb4a2}
+html.tru-premium .hq-admin :is(.mny-btn,.ad-btn) {border-radius:4px;background:#f7f4ec;color:#34434b;border-color:#bfb4a2;box-shadow:none}
+html.tru-premium .hq-admin .mny-btn.yes {background:#87671e;color:#fff;border-color:#87671e}
+html.tru-premium .hq-admin .mny-btn.no {color:#a74730;border-color:#bd8a76}
+@media(max-width:760px){
+ html.tru-premium .tru-dark .today-action {padding:18px 12px;gap:12px;flex-wrap:wrap}
+ html.tru-premium .tru-dark .today-action > .brief-open:first-child {flex-basis:180px}
+ html.tru-premium .hq-admin .adm-row {padding:16px;gap:12px}
+}
 /* Keep the complete performance table available on phones. Older deck rules
    removed columns by position, which hid leads and raw conversion. */
 @media(max-width:760px){

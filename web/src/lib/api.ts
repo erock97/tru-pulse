@@ -1033,6 +1033,7 @@ export async function adminReturn(): Promise<void> {
  *  stale return handle behind that shows a phantom "Exit — switch teams" next login. */
 export async function signOutClean(): Promise<void> {
   await signOut();
+  window.location.replace('https://truhq.co/');
 }
 
 /** Update the org's thresholds / audit math. Writes go through the Worker (RLS
