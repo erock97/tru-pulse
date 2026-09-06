@@ -35,7 +35,7 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.go
 const STATE_TTL_SECONDS = 600;
 const stateKey = (nonce: string) => `callink:${nonce}`;
 
-export function redirectUri(env: Env): string {
+export function redirectUri(_env: Env): string {
   // The worker's own hostname — must be registered verbatim on the Google
   // OAuth client or Google refuses with redirect_uri_mismatch.
   return 'https://api.truhq.co/calendar-link/callback';
@@ -80,7 +80,7 @@ export async function startLink(env: Env, ownerId: string): Promise<{ url: strin
 /** The browser lands here from Google. Never throws to the visitor: every
  *  failure becomes a readable ?cal_link_error= on the app, because a naked
  *  500 on a redirect is indistinguishable from the button doing nothing. */
-export async function handleLinkCallback(req: Request, env: Env, database: Db, url: URL): Promise<Response> {
+export async function handleLinkCallback(_req: Request, env: Env, database: Db, url: URL): Promise<Response> {
   const back = (params: string) => Response.redirect(`${appOrigin(env)}/?${params}#/admin/calendar`, 302);
 
   const nonce = url.searchParams.get('state') ?? '';

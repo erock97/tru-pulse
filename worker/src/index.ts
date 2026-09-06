@@ -11,6 +11,8 @@ import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
 import { handleCoachBriefIngest, handleCoachTeamsList } from './coachBriefIngest.js';
+import { handleRunEventsIngest } from './runEventsIngest.js';
+import { handleFailureLogsRoutes } from './failureLogsAdmin.js';
 import { handleZillowTargetsIngest } from './zillowTargetsIngest.js';
 import { handleFathomIngest } from './fathomIngest.js';
 import { fetchRevenue } from './revenue.js';
@@ -246,6 +248,12 @@ export default {
     // querying Supabase directly. Same door, same secret as the brief ingest above.
     const coachTeamsResponse = await handleCoachTeamsList(req, env, url, cors, database);
     if (coachTeamsResponse) return coachTeamsResponse;
+
+    // The Hermes laptop's sanitized failure-log push. Same door and secret as
+    // the brief ingest above; the admin-only Failure Logs tab reads the stored
+    // result through GET /admin/failure-logs below.
+    const runEventsResponse = await handleRunEventsIngest(req, env, url, cors, database);
+    if (runEventsResponse) return runEventsResponse;
 
     // The fub-weekly-reports scraper's Zillow target/pacing numbers land here
     // (its own secret; the admin-only targets dashboard reads the stored
@@ -994,6 +1002,18 @@ export default {
           metrics: snapshotsByTeam.get(t.id) ?? [],
         }));
         return json({ teams: out });
+      }
+
+      // Failure Logs — fingerprint-grouped incidents from the Hermes laptop's
+      // sanitized run-events push (see runEventsIngest.ts). GET lists/filters,
+      // PATCH sets a problem's resolution status/notes. Inherits the admins
+      // check above; the handler assumes an already-authorized caller.
+      if (url.pathname.startsWith('/admin/failure-logs')) {
+        try {
+          const failureLogsRes = await handleFailureLogsRoutes(req, url, database, json);
+          if (failureLogsRes) return failureLogsRes;
+        } catch { return json({ error: 'Failure Logs unavailable' }, 500);
+        }
       }
 
       // Retainer + per-deal payout — ported from TRU Operating System into

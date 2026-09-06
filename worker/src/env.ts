@@ -12,10 +12,11 @@ export interface Env {
   SUPABASE_ANON_KEY: string;          // used to validate a caller's user token
   FUB_ENC_KEY: string;                // base64 of a 32-byte AES-GCM key
   ADMIN_TOKEN: string;                // guards ops routes (manual provision / sync-all)
-  COACH_INGEST_TOKEN?: string;        // guards POST /coach/weekly-report (the Hermes
-                                      // laptop's brief sends) — deliberately NOT
-                                      // ADMIN_TOKEN so a leaked report key can submit
-                                      // coaching reports and nothing else
+  COACH_INGEST_TOKEN?: string;        // guards POST /coach/weekly-report AND
+                                      // POST /coach/run-events (the Hermes laptop's
+                                      // brief sends and sanitized failure-log pushes)
+                                      // — deliberately NOT ADMIN_TOKEN so a leaked
+                                      // report key can submit those and nothing else
   ZILLOW_TARGETS_INGEST_TOKEN?: string; // guards POST /zillow/targets (the
                                       // fub-weekly-reports scraper's target/pacing
                                       // pushes) — its own secret, same reasoning as

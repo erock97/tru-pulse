@@ -190,6 +190,17 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
           <path d="M8 14h2.6" />
         </svg>
       );
+    // The Failure Logs tab: a triangle warning glyph, because the page is
+    // about things that went wrong — not the calendar's grid or the
+    // contract's document shape, both already spoken for in this sidebar.
+    case 'alert':
+      return (
+        <svg {...common}>
+          <path d="M12 3.5l9.5 16.5H2.5z" />
+          <path d="M12 10v4.2" />
+          <circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none" />
+        </svg>
+      );
     default:
       return null;
   }

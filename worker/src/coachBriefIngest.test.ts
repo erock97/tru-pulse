@@ -23,7 +23,7 @@ let ctx: ExecutionContext;
 /** Every PostgREST request the Worker made: [method, path+search, body]. */
 let calls: Array<{ method: string; path: string; body: unknown }>;
 /** The fake `teams` table — filtered by the mock like PostgREST would filter it. */
-let teamsTable: Array<{ id: string; org_id: string; name: string; report_slug: string | null }>;
+let teamsTable: Array<{ id: string; org_id: string; name: string; report_slug: string | null; is_active?: boolean }>;
 let rosterRows: Array<{ id: string; name: string }>;
 let heldRows: Array<Record<string, unknown>>;
 let connectionRows: Array<{ team_id: string }>;
@@ -65,9 +65,10 @@ beforeEach(() => {
     if (u.pathname === '/rest/v1/teams') {
       const idFilter = u.searchParams.get('id');
       const slugFilter = u.searchParams.get('report_slug');
-      if (idFilter) return ok(teamsTable.filter((t) => idFilter === `eq.${t.id}`));
-      if (slugFilter) return ok(teamsTable.filter((t) => slugFilter === `eq.${t.report_slug}`));
-      return ok(teamsTable); // GET /coach/teams: select=id,name&is_active=eq.true
+      const activeTeams = teamsTable.filter(t => u.searchParams.get('is_active') !== 'eq.true' || t.is_active !== false);
+      if (idFilter) return ok(activeTeams.filter((t) => idFilter === `eq.${t.id}`));
+      if (slugFilter) return ok(activeTeams.filter((t) => slugFilter === `eq.${t.report_slug}`));
+      return ok(activeTeams); // GET /coach/teams: select=id,name&is_active=eq.true
     }
     if (u.pathname === '/rest/v1/fub_connections') return ok(connectionRows);
     if (u.pathname === '/rest/v1/agents') return ok(rosterRows);
@@ -197,13 +198,22 @@ describe('POST /coach/weekly-report', () => {
   });
 
   describe('team resolution — UUID, alias, and legacy slug', () => {
+    it('refuses inactive direct UUIDs and aliases', async () => {
+      teamsTable.find(t => t.id === SB_REALTY_ID)!.is_active = false;
+      expect((await resolvedTeamId(SB_REALTY_ID)).teamResolved).toBe(false);
+      expect((await resolvedTeamId('sb-realty')).teamResolved).toBe(false);
+    });
+    it('refuses ambiguous legacy routing instead of taking the first team', async () => {
+      teamsTable.push({ ...teamsTable[0], id: '11111111-2222-4333-8444-555555555555' });
+      expect((await resolvedTeamId('costigan')).teamResolved).toBe(false);
+    });
     it('resolves the Synergy team by its direct TrueHQ UUID', async () => {
       const r = await resolvedTeamId(SYNERGY_ID);
       expect(r.teamResolved).toBe(true);
       expect(r.upsertedTeamId).toBe(SYNERGY_ID);
     });
 
-    it('resolves the connected SB Realty team by its direct TrueHQ UUID', async () => {
+    it('resolves the canonical SB Realty team by its direct TrueHQ UUID', async () => {
       const r = await resolvedTeamId(SB_REALTY_ID);
       expect(r.teamResolved).toBe(true);
       expect(r.upsertedTeamId).toBe(SB_REALTY_ID);
@@ -215,7 +225,7 @@ describe('POST /coach/weekly-report', () => {
       expect(r.upsertedTeamId).toBe(SYNERGY_ID);
     });
 
-    it('resolves the alias sb-realty to the connected team, never the disconnected duplicate', async () => {
+    it('resolves sb-realty to the UUID proven by the published satish report', async () => {
       const r = await resolvedTeamId('sb-realty');
       expect(r.teamResolved).toBe(true);
       expect(r.upsertedTeamId).toBe(SB_REALTY_ID);
