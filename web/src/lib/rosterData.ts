@@ -75,6 +75,7 @@ export const WINDOWS: readonly Window[] = [
   { key: '90d', label: '90d', days: 90 },
   { key: 'all', label: '12mo', days: 365 },
   { key: '6mo', label: '6mo', days: '6mo' },
+  { key: '2yr', label: '2 years', days: '2yr' },
 ];
 
 export const norm = (s: string | null | undefined) =>

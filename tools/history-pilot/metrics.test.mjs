@@ -12,6 +12,8 @@ test('pending is contract under Eric confirmed mapping',()=>assert.equal(run([ev
 test('pending and contract are a single credit',()=>assert.equal(run([ev('a','Lead','Pending'),ev('b','Pending','Under Contract')]).counts.uc,1));
 test('actorless historical change retains nurture credit',()=>assert.equal(run([{id:'a',date:'2026-02-01',description:'Stage changed from Trash to Nurture'}]).counts.nurture,1));
 test('automated historical change retains stage names',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Nurture by metadata-system-client-id=0 automatically'}).to,'Nurture'));
+test('action plan suffix is actor metadata, not part of the destination stage',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Under contract by action-plan-id=189 action plan'}).to,'Under contract'));
+test('unsupported actor suffix stays a parsing exception',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Under contract by unknown-id=1 something'}),null));
 test('closed grants cumulative progression but no nurture',()=>assert.deepEqual(run([ev('a','Lead','Closed')]).counts,{met:1,offer:1,uc:1,closed:1,nurture:0}));
 test('current stage alone never invents historical milestone dates',()=>assert.equal(run([],{...p,stage:'Closed'}).counts.closed,0));
 test('source filter isolates cohort',()=>assert.equal(calculate({people:[p],histories:{}},{...options,source:'Other'}).length,0));
