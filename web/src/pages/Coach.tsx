@@ -13,10 +13,9 @@ import {
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
   readCoachCache, writeCoachCache, firstName, confidence,
-  loadTeamLinks,
   ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
   type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
-  type TeamLink, type CheckinBundle, type CheckinItem, type CheckinItemKind,
+  type CheckinBundle, type CheckinItem, type CheckinItemKind,
   type CommitmentReview, type CommitmentStatus, type MetStatus, type MeetingPrep,
 } from '../lib/coachData';
 import { scrollKey, saveScroll, readScroll } from '../lib/scrollMemory';
@@ -159,10 +158,6 @@ function CoachDeck({
   const cadenceTarget = useSavedTarget(org.id, 'coaching-cadence-days', CADENCE_DAYS);
   const { value: cadence, setValue: setCadence } = cadenceTarget;
 
-  // Each team's public assessment join link. Best-effort — if it fails to load,
-  // the header action hides and the rest of the page is unaffected.
-  const [teamLinks, setTeamLinks] = useState<TeamLink[]>([]);
-  const [copiedTeam, setCopiedTeam] = useState<string | null>(null);
   // The team as Follow Up Boss reports it — everyone, invited or not, assessed or
   // not. Coach used to be built only from people who had completed the assessment,
   // which meant a leader with a full FUB roster and live scraped conversations saw
@@ -191,16 +186,11 @@ function CoachDeck({
     let live = true;
     (async () => {
       try {
-        const [tl, team] = await Promise.all([
-          loadTeamLinks(),
-          loadTeamRoster().catch(() => []),
-        ]);
+        const team = await loadTeamRoster();
         if (!live) return;
-        setTeamLinks(tl);
         setTeam(team);
       } catch {
-        // Best-effort: header actions + the "not yet assessed" lane just stay
-        // empty/hidden if this fails; the coaching dashboard above is unaffected.
+        // The coaching report remains available if the team directory fails.
       }
     })();
     return () => { live = false; };
@@ -277,18 +267,6 @@ function CoachDeck({
     </details>
   ) : null;
 
-  async function copyTeamLink(t: TeamLink) {
-    const url = `${window.location.origin}/#/assess?t=${t.joinToken}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopiedTeam(t.teamId);
-      window.setTimeout(() => setCopiedTeam((cur) => (cur === t.teamId ? null : cur)), 1800);
-    } catch {
-      // Clipboard permission denied — no confirmation, but nothing throws.
-    }
-  }
-
-
   const mix = useMemo(() => (roster ? teamMix(roster) : null), [roster]);
 
   // Derived, real coaching aggregates.
@@ -324,33 +302,6 @@ function CoachDeck({
     enabled: !openId && !!derived,
     canQuiet: !!derived && derived.needsYou.length > 0,
   });
-
-  // Header actions only make sense on the roster dashboard, not the agent drill-in.
-  const context = !openId ? (
-    <div className="coach-header-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-      {teamLinks.map((t) => (
-        <button
-          key={t.teamId}
-          type="button"
-          className="hqbtn hqbtn-ghost hqbtn-sm"
-          onClick={() => copyTeamLink(t)}
-        >
-          {copiedTeam === t.teamId ? 'Copied!' : teamLinks.length > 1 ? `Copy link · ${t.name}` : 'Copy team assessment link'}
-        </button>
-      ))}
-      {/* Was "Add agents to Coach", a modal that toggled coaching_enabled on a
-          copy of the whole roster. It is the same switch the Team tab's In
-          Coach column sets, and having both meant two screens could disagree
-          about who is in your cohort. One place decides now. */}
-      <button
-        type="button"
-        className="hqbtn hqbtn-primary hqbtn-sm"
-        onClick={() => { window.location.hash = '/team'; }}
-      >
-        <Icon name="roster" size={15} /> Choose your cohort in Team
-      </button>
-    </div>
-  ) : null;
 
   if (!roster) {
     return (
@@ -475,7 +426,6 @@ function CoachDeck({
                             finish the TRU assessment. Everything below is live now.
                           </p>
                         </div>
-                        <div className="dk-mast-do">{context}</div>
                       </header>
                       <section className="dk-bento">
                         {([
@@ -523,7 +473,6 @@ function CoachDeck({
                     and the assessment link, have been unreachable here since
                     the deck layout landed. The masthead is where a deck page
                     puts its actions. */}
-                <div className="dk-mast-do">{context}</div>
               </header>
 
               {/* ============ THE CADENCE SCALE + THE NUMBERS ============ */}

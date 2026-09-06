@@ -52,7 +52,17 @@ function TodayContent({org}:{org:{id:string;name:string}}) {
         {!due.length && <p className="today-empty">No recorded check-ins are past your cadence.</p>}
         <PracticeFollowup/><AssignmentReview limit={pauseTarget.saved}/><h2>Commitments to revisit {loadingItems ? '' : <small>{items.length}</small>}</h2><p>Open commitments from recorded 1:1s. These have no recorded due date, so they are not labelled overdue.</p>
         {loadingItems && <p role="status">Checking open commitments…</p>}{failed>0 && <p role="status">Commitments unavailable for {failed} agents. This list is incomplete.</p>}
-        {items.map(item=><div className="today-action" key={item.id}><button className="brief-open" onClick={()=>go(coachRoute(item.agentId))}><strong>{roster.find(a=>a.id===item.agentId)?.name ?? 'Agent'}</strong><span>{item.body}</span></button><button className="brief-open" disabled={saving!==null} onClick={()=>void complete(item,true)}>{saving===item.id?'Saving…':'Mark done'}</button></div>)}{!!completed.length&&<details><summary>Completed this visit ({completed.length})</summary>{completed.map(item=><div className="today-action" key={item.id}><span>{item.body}</span><button disabled={saving!==null} onClick={()=>void complete(item,false)}>Undo</button></div>)}</details>}
+        {[...new Set(items.map(item => item.agentId))].sort((a,b) => (roster.find(p=>p.id===a)?.name ?? a).localeCompare(roster.find(p=>p.id===b)?.name ?? b)).map(agentId => {
+          const commitments = items.filter(item => item.agentId === agentId);
+          const name = roster.find(a => a.id === agentId)?.name ?? 'Agent';
+          return <details className="today-agent-commitments" key={agentId}>
+            <summary><strong>{name}</strong><span>{commitments.length} {commitments.length === 1 ? 'commitment' : 'commitments'}</span></summary>
+            <div className="today-commitment-list"><a className="today-commitment-profile" href={'#'+coachRoute(agentId)}>Open {name}’s coaching</a>
+              {commitments.map(item => <div className="today-commitment-row" key={item.id}><p>{item.body}</p><button className="brief-open" disabled={saving !== null} onClick={() => void complete(item,true)}>{saving === item.id ? 'Saving…' : 'Mark done'}</button></div>)}
+            </div>
+          </details>;
+        })}
+        {!!completed.length && <details><summary>Completed this visit ({completed.length})</summary>{completed.map(item => <div className="today-commitment-row" key={item.id}><p><strong>{roster.find(a=>a.id===item.agentId)?.name ?? 'Agent'}</strong><br/>{item.body}</p><button disabled={saving!==null} onClick={()=>void complete(item,false)}>Undo</button></div>)}</details>}
         {!loadingItems && !items.length && !failed && <p className="today-empty">No open commitments recorded.</p>}
       </section><aside className="today-context"><h2>History to complete</h2><p>{unrecorded.length} {unrecorded.length === 1 ? "agent has" : "agents have"} no recorded 1:1. Confirm their history before deciding what is overdue.</p><details><summary>See those agents</summary>{unrecorded.map(a=><button className="today-unrecorded" key={a.id} onClick={()=>go(coachRoute(a.id))}>{a.name} →</button>)}</details><hr/><h2>Your schedule</h2><p>Broker calendar events are not connected to this view yet. Meetings are not included in today's list.</p><hr/><h2>Review the evidence</h2><p>For the latest reported coaching observations and their sources, open Coach.</p><button className="brief-open" onClick={()=>go('/coach')}>Open coaching review →</button></aside></div>}
     </main>
