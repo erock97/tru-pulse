@@ -238,7 +238,7 @@ export default function AdminFailureLogs({
             </div>
           </header>
 
-          <div className="dk-sec" style={{ flexWrap: 'wrap', gap: 10, rowGap: 10 }}>
+          <div className="dk-sec" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
             <select className="ad-input" value={status} onChange={(e) => setStatus(e.target.value as FailureLogStatus | '')} aria-label="Status">
               <option value="">Any status</option>
               {(Object.keys(STATUS_LABELS) as FailureLogStatus[]).map((s) => (

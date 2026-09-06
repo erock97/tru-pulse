@@ -156,3 +156,21 @@ describe('PATCH /admin/failure-logs', () => {
     expect((patchCall!.body as Record<string, unknown>).resolution_notes).toBe('Patched the collector.');
   });
 });
+
+describe('Failure Logs browser preflight', () => {
+  it('allows credentialed PATCH from the production app', async () => {
+    const res = await worker.fetch(new Request('https://api.truhq.co/admin/failure-logs', {
+      method: 'OPTIONS', headers: { Origin: 'https://app.truhq.co', 'Access-Control-Request-Method': 'PATCH' },
+    }), env, ctx);
+    expect(res.status).toBe(204);
+    expect(res.headers.get('Access-Control-Allow-Methods')).toContain('PATCH');
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://app.truhq.co');
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true');
+  });
+  it('does not authorize an unknown origin', async () => {
+    const res = await worker.fetch(new Request('https://api.truhq.co/admin/failure-logs', {
+      method: 'OPTIONS', headers: { Origin: 'https://synthetic-untrusted.example', 'Access-Control-Request-Method': 'PATCH' },
+    }), env, ctx);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
+});
