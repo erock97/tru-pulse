@@ -29,11 +29,11 @@ function verdict(row: Row, line: number, team: number | null): string {
   if (row.perContract === null) {
     return `${first} has no contracts recorded in this window, so there is no leads-per-contract rate yet. ${row.leads} leads are in this view.`;
   }
-  const rate = Math.round(row.perContract);
+  const rate = Math.floor(row.perContract);
   const vsLine = `${minimumExpectation(row.perContract, line).toLowerCase()} (1 contract per ${line} leads)`;
   const vsTeam = team === null ? ''
-    : rate > Math.round(team) ? `, and behind the floor at one in ${Math.round(team)}`
-      : rate < Math.round(team) ? `, and ahead of the floor at one in ${Math.round(team)}`
+    : rate > Math.floor(team) ? `, and behind the floor at one in ${Math.floor(team)}`
+      : rate < Math.floor(team) ? `, and ahead of the floor at one in ${Math.floor(team)}`
         : `, level with the floor`;
   return `${first} has one contract per ${rate} leads — ${vsLine}${vsTeam}.`;
 }
@@ -105,7 +105,7 @@ export function PersonPane({
               )}
             </span>
             <div className="rs-stand-key">
-              <span><s className="rs-key team" /> the floor{teamRate ? ` at 1 : ${Math.round(teamRate)}` : ''}</span>
+              <span><s className="rs-key team" /> the floor{teamRate ? ` at 1 : ${Math.floor(teamRate)}` : ''}</span>
               <span><s className="rs-key line" /> minimum expectation 1 : {line}</span>
             </div>
             <p className="rs-msg">{verdict(row, line, teamRate)}</p>
@@ -131,7 +131,7 @@ export function PersonPane({
               ['Sitting in Lead', row.stuck ? String(row.stuck) : 'none'],
               ['Reached an offer', row.offers ? String(row.offers) : 'none'],
               ['Under contract', row.contracts ? String(row.contracts) : 'none'],
-              ['Leads per contract', row.perContract ? `1 : ${Math.round(row.perContract)}` : '—'],
+              ['Leads per contract', row.perContract ? `1 : ${Math.floor(row.perContract)}` : '—'],
             ].map(([k, v]) => (
               <div className="rs-ln" key={k}><s>{k}</s><b>{v}</b></div>
             ))}
