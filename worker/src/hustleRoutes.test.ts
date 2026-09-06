@@ -10,6 +10,12 @@ describe('weekly Hustle reader',()=>{
   beforeEach(()=>{vi.resetAllMocks();vi.mocked(supabaseAsUser).mockResolvedValue({select} as unknown as Awaited<ReturnType<typeof supabaseAsUser>>);});
   it('requires authentication',async()=>{vi.mocked(supabaseAsUser).mockResolvedValue(null);expect((await call())?.status).toBe(401);expect(select).not.toHaveBeenCalled();});
   it('rejects filter injection',async()=>{expect((await call('bad&org_id=neq.any'))?.status).toBe(400);expect(select).not.toHaveBeenCalled();});
+  it('never calls the privileged report service without membership',async()=>{
+    const dashboard=vi.fn();select.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    const url=new URL(`https://api.example/data/hustle?orgId=${org}`);
+    const response=await handleDataRoutes(new Request(url),{WEEKLY_REPORTS:{dashboard}} as unknown as Env,url,{});
+    expect(response?.status).toBe(403);expect(dashboard).not.toHaveBeenCalled();
+  });
   it('distinguishes no publication from a failed source',async()=>{select.mockResolvedValueOnce([]);expect(await (await call())?.json()).toEqual({weekEnding:null,scores:[]});select.mockRejectedValueOnce(new Error('unavailable'));expect((await call())?.status).toBe(502);});
   it('scopes both queries to the organization and latest week without dropping unmatched agents',async()=>{
     const row={id:'report-row',agent_id:null,agent_name:'Unmatched',final_score:null};
