@@ -67,3 +67,5 @@ Implemented: Month to date replaces 30d and is the default. Six months is curren
 At Eric's direction removed Worked from the Pulse column, summary, detail and priority copy; no replacement activity score. Corrected the shared worked counter to accept only explicit worked flags. Low volume alone no longer creates a review alert, preventing month-start false urgency. Existing underlying activity ingestion remains unchanged.
 
 Checks: typecheck/build pass. Tests 397 pass and one existing unrelated Zillow slide hash failure. Browser checked MTD, 6mo, absence of Worked and five contract records matching the selected agent numerator. Production unchanged.
+
+Removed the redundant Pulse View column at Eric's request. Agent names are accessible buttons opening the existing detail panel; Proof remains separate. TRU Brain still unavailable; existing override retained.

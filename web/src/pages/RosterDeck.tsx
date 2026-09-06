@@ -221,11 +221,10 @@ function Deck({
               {th('name', 'Agent')}{th('leads', 'Leads')}
               {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
               {th('perContract', 'Leads per contract')}{th('lastDays', 'Last 1:1')}
-              <th className="pulse-open-heading"><span className="sr-only">Open agent</span></th>
             </tr>
           </thead>
           <tbody>
-            {query.trim() && !sorted.length && <tr><td colSpan={8}>No agents match “{query}”. <button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></td></tr>}
+            {query.trim() && !sorted.length && <tr><td colSpan={7}>No agents match “{query}”. <button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></td></tr>}
             {sorted.map((r, i) => (
               <tr key={r.name}
                   data-flip={r.name}
@@ -244,7 +243,7 @@ function Deck({
                   <div className="rs-who">
                     <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
                     <div>
-                      <div className="cell-name">{r.name}</div>
+                      <button className="cell-name pulse-agent-name" aria-label={'Open '+r.name} onClick={e=>{e.stopPropagation();setOpen(r);}}>{r.name}</button>
                       <PulseProof row={r} leads={proof.get(norm(r.name)) ?? []} teams={teams} />
                       <div className="pulse-row-reason">{priorities.find(p=>p.row.name===r.name)?.reason}</div>
                     </div>
@@ -265,7 +264,6 @@ function Deck({
                 <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
                   {r.lastDays === null ? <span className="pulse-missing">Not recorded</span> : r.lastDays + 'd ago'}
                 </td>
-                <td><button className="pulse-row-open" aria-label={'Open '+r.name} onClick={e=>{e.stopPropagation();setOpen(r);}}>View →</button></td>
               </tr>
             ))}
           </tbody>
@@ -274,7 +272,7 @@ function Deck({
               <td>Full team total</td><td><b>{totals.leads}</b></td>
               <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
               <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
-              <td colSpan={2} />
+              <td />
             </tr>
           </tfoot>
         </table>

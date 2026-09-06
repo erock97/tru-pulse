@@ -408,3 +408,4 @@ html.tru-premium .pulse-refined .pulse-proof-body select {display:block;margin:6
 html.tru-premium .pulse-refined .pulse-proof-list {max-height:320px;overflow:auto}
 html.tru-premium .pulse-refined .pulse-proof-lead {display:flex;flex-direction:column;gap:3px;padding:10px 0;border-top:1px solid #d0c7b8}
 html.tru-premium .pulse-refined .pulse-proof-lead a {color:#826535}
+html.tru-premium .pulse-refined .pulse-agent-name {border:0;background:transparent;padding:0;text-align:left;cursor:pointer;font-family:inherit} html.tru-premium .pulse-refined .pulse-agent-name:hover {text-decoration:underline;text-underline-offset:3px}
