@@ -26,6 +26,7 @@ import Coach from './pages/Coach';
 import Rep from './pages/Rep';
 import AgentHq from './pages/AgentHq';
 import DeckPreview from './pages/DeckPreview';
+import WorkshopLesson from './pages/WorkshopLesson';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
 import ConfirmClosings from './pages/ConfirmClosings';
@@ -292,6 +293,11 @@ export default function App() {
 
   // Public native-slide look: ?demo=1#/deck/zillow-day2/1 (no auth).
   const deck = parseDeckRoute(route);
+  const workshop = route.match(/^\/workshop\/([1-4])$/);
+  if (workshop) {
+    const back=()=>{window.location.hash='/rep';};
+    return <WorkshopLesson day={Number(workshop[1])} onBack={back} onDone={back} doneLabel="Return to training" preview />;
+  }
   if (deck) {
     return <DeckPreview deck={deck.deck} n={deck.n} />;
   }

@@ -1,0 +1,205 @@
+{
+  "day": 4,
+  "title": "Zillow Home Loans",
+  "slides": [
+    {
+      "chapter": "Start",
+      "title": "Introducing buyers to Zillow Home Loans",
+      "lead": "Day 4 · Zillow Home Loans",
+      "body": "<div class=\"hero-bottom\"><p>Explain the value.<br>Ask permission.<br>Make the introduction.</p><div class=\"hero-ticket\"><span>What you will practice</span><strong>A 60-second introduction that fits your buyer’s situation.</strong><small>58-minute workshop · Practice in pairs or trios</small></div></div>",
+      "notes": "Before arrival: open the Facilitator guide in a separate window or print it. Project only this training window. Have paper available. Explain what agents will practice; do not read a product agenda. Ask for a show of hands: who has lost momentum between a showing and a lender conversation? Invite one sentence, not a long story.",
+      "time": 2,
+      "theme": "hero",
+      "cue": "Ask the room: Where does financing usually stall?"
+    },
+    {
+      "chapter": "Start",
+      "title": "What would you ask Jordan?",
+      "lead": "Fictional practice case · You just finished a showing with Jordan.",
+      "body": "<div class=\"split\"><blockquote>“I love it. Can we make an offer tonight? I think my bank said I could afford this.”</blockquote><div><h3>Your first response?</h3><div class=\"choices\" data-quiz=\"opening\"><button data-correct=\"false\" data-feedback=\"A letter is useful, but start by learning what the lender has actually reviewed and what the buyer understands.\">Ask for any pre-approval letter and start writing.</button><button data-correct=\"true\" data-feedback=\"Yes. Clarify the current financing picture before suggesting a next step. Then ask permission for an introduction if it would help.\">Ask what the bank reviewed and what payment feels comfortable.</button><button data-correct=\"false\" data-feedback=\"That centers a program requirement instead of Jordan’s needs. Explain the benefit and preserve the buyer’s choice.\">Tell Jordan a ZHL pre-approval is required.</button></div><p class=\"feedback\" aria-live=\"polite\"></p></div></div>",
+      "notes": "Give everyone 20 seconds to choose silently. Ask for a hand vote before selecting an answer. Invite someone from each choice to explain. Listen for assumptions about affordability and approval. Revisit Jordan in the final check; this is the thread through the workshop.",
+      "time": 3,
+      "theme": "blue",
+      "cue": "Commit to an answer before the reveal."
+    },
+    {
+      "chapter": "Understand",
+      "title": "Pre-qualification, pre-approval, and final approval",
+      "lead": "These are different stages. Ask what has actually been checked.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Pre-qualification</h3><p>An initial estimate based on stated information and a credit check.</p></div><div class=\"row\"><h3>Verified pre-approval</h3><p>Financial documents are reviewed. Ask the loan officer what is verified and which conditions remain.</p></div><div class=\"row\"><h3>Final approval & funding</h3><p>The lender still needs to clear the borrower, property, and remaining conditions.</p></div></div><div class=\"takeaway\">A pre-approval strengthens preparation. It does not guarantee a closing.</div><a class=\"source\" href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL process and credit-check details ↗</a>",
+      "notes": "Ask agents to explain the stages without reading them. Correct the idea that a branded letter is a guarantee. Do not claim that all other lenders use unverified information. Fully underwritten pre-approval is another level of review to discuss with the loan officer. Ask: what would you want to know before relying on any letter?",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Partner prompt: Explain the difference in one sentence."
+    },
+    {
+      "chapter": "Understand",
+      "title": "What Zillow Home Loans offers your buyer",
+      "lead": "Connect Zillow Home Loans to the buyer’s next decision.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>A clearer search</h3><p>BuyAbility can help buyers estimate a budget using current rates. It is a starting point for discussion.</p></div><div class=\"row\"><h3>A person on the file</h3><p>A named loan officer gives the buyer someone to ask about financing and the agent someone to coordinate with.</p></div><div class=\"row\"><h3>A coordinated next step</h3><p>ZHL offers agent collaboration tools and status updates, including connections through Follow Up Boss.</p></div></div></div><div class=\"statement\"><span>Say the benefit</span><blockquote>“Let’s get clear on a comfortable payment and what still needs to happen before you offer.”</blockquote></div></div><a class=\"source\" href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools and BuyAbility ↗</a>",
+      "notes": "Keep the ecosystem explanation to one minute. Ask: which of these benefits matters to Jordan right now? Accept a buyer-specific answer. Remove the implication that software removes all friction or that a particular letter automatically wins an offer. A named loan officer and a clear next action are the practical value.",
+      "time": 3,
+      "theme": "dark",
+      "cue": "Ask: Which benefit would Jordan actually care about?"
+    },
+    {
+      "chapter": "Understand",
+      "title": "Questions for the loan officer",
+      "lead": "Know which questions need a loan officer’s answer.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>“What could fit my situation?”</h3><p>ZHL lists conventional, FHA, VA, and jumbo options. Eligibility and availability depend on the file.</p></div><div class=\"row\"><h3>“Will this affect my credit?”</h3><p>Pre-qualification uses a soft check. A hard inquiry can be needed later; ask the loan officer to explain before proceeding.</p></div><div class=\"row\"><h3>“Can we close by this date?”</h3><p>Confirm the actual file, property, and outstanding conditions with the loan officer before offering a timeline.</p></div></div></div><div class=\"statement\"><h3>Questions to carry forward</h3><p>Which options fit?<br>What will be reviewed?<br>What conditions remain?<br>What is the next step?</p><small>Avoid quoting a credit cutoff, guaranteed savings, or a guaranteed close date.</small></div></div><a class=\"source\" href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">Current product and credit-check FAQ ↗</a>",
+      "notes": "The source deck’s 585 floor conflicts with the current FAQ, which states 620 for most loan types. Do not replace one blanket cutoff with another in agent scripts. Route eligibility to the lender. The FAQ contains inconsistent wording about hard checks, but explicitly allows circumstances requiring a hard inquiry. Do not use “soft pull always.” Keep product exclusions, exact terms, fee claims and special pricing in the reference review, not memory drills.",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Quick check: Who confirms eligibility and the credit inquiry?"
+    },
+    {
+      "chapter": "Understand",
+      "title": "How would you explain the credit check?",
+      "lead": "Choose the sentence you would use with a real buyer.",
+      "body": "<div class=\"choices\" data-quiz=\"credit\"><button data-correct=\"false\" data-feedback=\"Too absolute. A hard inquiry may be needed in some circumstances.\">“Zillow never needs a hard credit pull.”</button><button data-correct=\"true\" data-feedback=\"Correct. Explain the initial step, then let the loan officer confirm what this buyer’s process requires.\">“Pre-qualification uses a soft check. Let’s ask the loan officer what happens after that.”</button><button data-correct=\"false\" data-feedback=\"Pre-approval is conditional. Property and borrower requirements still need to be cleared.\">“Once you have the letter, financing is guaranteed.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
+      "notes": "Pause before clicking. Ask agents to rewrite one of the wrong answers in their own voice. Take two answers. Move on once they can state a benefit without a promise. If most miss it, return to the preceding slide for a 30-second clarification.",
+      "time": 2,
+      "theme": "sage",
+      "cue": "No notes: rewrite one of the other sentences."
+    },
+    {
+      "chapter": "Connect",
+      "title": "How to introduce your loan officer",
+      "lead": "Use the buyer’s own words. Ask permission before making an introduction.",
+      "body": "<div class=\"moves\"><div><b>1</b><h3>Reflect</h3><p>Use the buyer’s goal or concern.</p></div><div><b>2</b><h3>Explain</h3><p>Offer one relevant benefit.</p></div><div><b>3</b><h3>Ask</h3><p>Get permission for an introduction.</p></div><div><b>4</b><h3>Confirm</h3><p>Agree who does what, and when.</p></div></div><div class=\"takeaway\">The buyer chooses the lender. Your job is to make the next step clear.</div>",
+      "notes": "Model the four steps with your own words before advancing. Have the room say the four verbs once. Explain that buyer choice is part of a good conversation, not an objection-handling trick. Avoid hiding the lender’s identity behind a first name.",
+      "time": 3,
+      "theme": "dark",
+      "cue": "Listen for all four steps in the example that follows."
+    },
+    {
+      "chapter": "Connect",
+      "title": "Example: introducing Jordan to a loan officer",
+      "lead": "Example language · Adapt the details to the buyer.",
+      "body": "<div class=\"script\"><p><span>Reflect</span>“Jordan, you want to be ready to offer, and we still need to confirm the financing.”</p><p><span>Explain</span>“I work with a loan officer at Zillow Home Loans who can help you understand your options and next steps.”</p><p><span>Ask</span>“Would an introduction be useful? You’re free to choose the lender that works best for you.”</p><p><span>Confirm</span>“If you’re open to it, is a call this afternoon a good next step?”</p></div>",
+      "notes": "Read once at a conversational pace, with pauses. Then ask: what made that relevant to Jordan? Where was the choice? The last question is conditional on consent; if they decline, do not jump to scheduling. Ask one volunteer to paraphrase the entire conversation without looking.",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Ask: Where does Jordan get to choose?"
+    },
+    {
+      "chapter": "Connect",
+      "title": "Practice your introduction",
+      "lead": "Use Jordan’s situation. Keep it under a minute.",
+      "body": "<div class=\"split\"><div><label class=\"field\">Your introduction<textarea data-save=\"intro\" placeholder=\"Reflect the goal → explain the benefit → ask permission → confirm the next step.\"></textarea></label></div><div><h3>Two short rounds</h3><div class=\"rows\"><div class=\"row\"><h3>Round 1 · 60 seconds</h3><p>Deliver it to your partner without reading.</p></div><div class=\"row\"><h3>Feedback · 30 seconds</h3><p>Name one useful phrase and one missing step.</p></div><div class=\"row\"><h3>Round 2 · 30 seconds</h3><p>Retry the part you want to improve. Make the next step specific.</p></div></div><p class=\"small\">Rotate roles. Write fictional details only; notes save on this device.</p></div></div>",
+      "notes": "Give 30 seconds to draft. Each partner gets 60 seconds to speak, 30 seconds of feedback, and a 30-second targeted retry. Swap speakers and repeat. Use the final 30 seconds to share one improvement. Avoid polishing every word as a group; practice the behavior.",
+      "time": 5,
+      "theme": "blue",
+      "cue": "Practice out loud. Reading silently does not count."
+    },
+    {
+      "chapter": "Practice",
+      "title": "Responding to common concerns",
+      "lead": "Listen first. Answer the concern. Keep the choice with the buyer.",
+      "body": "<div class=\"objections\"><button class=\"objection-tab\" data-objection=\"0\" aria-pressed=\"true\">“I already have a lender.”</button><button class=\"objection-tab\" data-objection=\"1\" aria-pressed=\"false\">“I don’t want a credit hit.”</button><button class=\"objection-tab\" data-objection=\"2\" aria-pressed=\"false\">“Are you making me use them?”</button></div><div id=\"objection-case\" class=\"objection-case\"></div>",
+      "notes": "Have an agent answer before revealing each coaching example. Ask the buyer role: did that address your actual concern? If not, ask a question instead of pushing harder. Cover all three briefly. On comparison shopping, do not promise to beat a rate or say a comparison is automatically free of credit impact.",
+      "time": 4,
+      "theme": "dark",
+      "cue": "Choose an objection. Let the room answer before revealing."
+    },
+    {
+      "chapter": "Practice",
+      "title": "Make the introduction and confirm the call",
+      "lead": "Permission → introduction → confirmation → follow-through.",
+      "body": "<div class=\"split\"><div class=\"message\"><span>Fictional group-message example</span><p>Jordan, meet Casey, a loan officer with Zillow Home Loans.</p><p>With your permission, I’m connecting you to discuss financing options before your next offer.</p><p>Casey, Jordan is available at 3 p.m. Can you confirm whether that works and explain the next steps?</p><small>Use your approved referral workflow and the buyer’s agreed contact channel.</small></div><div><div class=\"rows\"><div class=\"row\"><h3>Before sending</h3><p>Get permission and agree how to connect.</p></div><div class=\"row\"><h3>After sending</h3><p>Confirm the loan officer received it and the buyer knows what to expect.</p></div><div class=\"row\"><h3>In your CRM</h3><p>Record consent, owner, agreed next step, and follow-up time.</p></div></div></div></div>",
+      "notes": "Ask: if we send this and hear nothing, who owns the next move? The agent owns checking that the introduction landed, not promising a loan outcome. Do not put financial documents or sensitive account information into a group message. Use the approved lender channel for the application.",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Ask: Where do handoffs disappear on our team?"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Practice with a buyer and an observer",
+      "lead": "Trios: agent, buyer, observer. Switch roles each round.",
+      "body": "<div class=\"split\"><div><div class=\"scenario\" id=\"scenario\"></div><button data-action=\"scenario\">Next practice case</button></div><div><h3>Observer: score what you hear.</h3><div class=\"scorecard\"><label><input type=\"checkbox\" data-save=\"rubric-0\"> Reflects the buyer’s actual concern</label><label><input type=\"checkbox\" data-save=\"rubric-1\"> Explains one relevant benefit</label><label><input type=\"checkbox\" data-save=\"rubric-2\"> Asks permission and preserves choice</label><label><input type=\"checkbox\" data-save=\"rubric-3\"> Names the next owner and time</label></div><p id=\"score\" class=\"score\" aria-live=\"polite\">0 / 4 behaviors heard</p><p class=\"small\">60-second conversation · 30-second feedback · 30-second retry.<br>Use “I heard…” and “Try…”</p><button data-action=\"clear-score\">Clear score for next agent</button></div></div>",
+      "notes": "Allow 1 minute to assign roles. Run three 2-minute rounds: 60 seconds conversation, 30 seconds specific feedback, 30 seconds retry. Rotate roles and practice case. Give 1 minute to debrief. The observer scores observed behavior, not confidence or personality. Success is all four behaviors, without unsupported claims. If someone misses one, have them repeat that exact portion. Pairs alternate and self-score if needed.",
+      "time": 8,
+      "theme": "sage",
+      "cue": "Every agent speaks. Every agent gets a second attempt."
+    },
+    {
+      "chapter": "Apply",
+      "title": "Follow up on incomplete introductions",
+      "lead": "Review where buyers are waiting and who needs to follow up.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Review the dashboard</h3><p>Review the team’s current dashboard, definitions, and reporting window.</p></div><div class=\"row\"><h3>Check incomplete introductions</h3><p>Look for introductions that stalled, unanswered questions, or an unclear owner.</p></div><div class=\"row\"><h3>Confirm the follow-up</h3><p>Confirm the next step with the buyer and loan officer; update the record accurately.</p></div></div></div><div class=\"statement\"><h3>Illustrative rate exercise</h3><p>6 issued pre-approvals<br>÷ 60 eligible buyers</p><label class=\"field\">What percentage is that?<input id=\"rate-answer\" type=\"number\" min=\"0\" max=\"100\" placeholder=\"%\"></label><button data-action=\"rate\">Check calculation</button><p id=\"rate-feedback\" aria-live=\"polite\"></p><small>Practice numbers from the source deck, not a verified current program target.</small></div></div>",
+      "notes": "The original deck specifies 4% conversion, 25% pickup, 10% pre-approval, and a rolling 90-day window. Those exact thresholds, attribution rules, and lead consequences were not established by current public sources. Confirm them in the team’s live dashboard with the program owner. Explain numerator and denominator using the example, without presenting it as a policy. Do not imply agents control approval decisions or should change statuses to improve a metric.",
+      "time": 3,
+      "theme": "dark",
+      "cue": "Ask: Which stalled introduction can you move forward?"
+    },
+    {
+      "chapter": "Apply",
+      "title": "Check financing before writing an offer",
+      "lead": "Return to Jordan. The buyer wants to write tonight.",
+      "body": "<div class=\"split\"><div><h3>Your loan-officer check-in</h3><div class=\"rows\"><div class=\"row\"><h3>Readiness</h3><p>What has been reviewed, and what is still conditional?</p></div><div class=\"row\"><h3>This property</h3><p>Does this property change the payment, eligibility, or review?</p></div><div class=\"row\"><h3>Timing</h3><p>What deadline can you support on this file, and what is needed first?</p></div></div></div><div><h3>Say it back to the buyer</h3><label class=\"field\">Your two-sentence update<textarea data-save=\"offer\" placeholder=\"What is known? What needs to happen next?\"></textarea></label><details class=\"reveal\"><summary>Reveal an example</summary><div><p>“The loan officer is checking the details for this property and what is still needed. Let’s confirm those items and a workable timeline before we rely on financing terms in the offer.”</p></div></details></div></div>",
+      "notes": "Give 30 seconds to answer before revealing. Invite one person to act as Jordan and another as the agent. Ask Jordan to repeat what happens next; if they cannot, the agent should clarify the handoff. Reinforce that a lender’s average speed is not a promise for this transaction.",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Ask the buyer role to repeat the next step back."
+    },
+    {
+      "chapter": "Retain",
+      "title": "What do you remember?",
+      "lead": "Write first. Compare second. Fill the gaps.",
+      "body": "<div class=\"recall-grid\"><label class=\"field\">1 · What are the four conversation steps?<textarea data-save=\"recall-1\" placeholder=\"Write in your own words…\"></textarea></label><label class=\"field\">2 · What does a pre-approval not guarantee?<textarea data-save=\"recall-2\" placeholder=\"Write in your own words…\"></textarea></label><label class=\"field\">3 · What makes a handoff complete?<textarea data-save=\"recall-3\" placeholder=\"Write in your own words…\"></textarea></label></div><details class=\"reveal\"><summary>Compare with the essentials</summary><div><p><strong>Reflect → Explain → Ask → Confirm.</strong> A pre-approval is conditional; it does not guarantee funding. A complete handoff includes permission, an identified loan officer, a confirmed next step and owner, and a follow-up time.</p></div></details>",
+      "notes": "Give 60 seconds with no help. Have partners compare from memory for 30 seconds. Reveal and ask them to fill a gap in a different color on paper, or revise their text. This revisits key ideas after a delay for retrieval, not another lecture. If a gap is common, ask for a fresh example instead of rereading.",
+      "time": 3,
+      "theme": "blue",
+      "cue": "Recall first. Reveal after everyone has tried."
+    },
+    {
+      "chapter": "Retain",
+      "title": "How would you answer Jordan?",
+      "lead": "Show that you can apply the lesson.",
+      "body": "<div class=\"choices\" data-quiz=\"final\"><button data-correct=\"false\" data-feedback=\"This makes the buyer responsible for a team metric. Return to choice and relevance.\">“Yes, it’s part of our program.”</button><button data-correct=\"false\" data-feedback=\"This sounds optional, but the promise of savings is unsupported. Offer a useful comparison without a guarantee.\">“No, but they will definitely save you money.”</button><button data-correct=\"true\" data-feedback=\"Yes. You respected the decision and offered a concrete, optional next step. Now confirm the contact method and time only if Jordan agrees.\">“You choose your lender. If a second conversation would help, may I introduce you to a loan officer at Zillow Home Loans?”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><div class=\"takeaway\">Then say your own version out loud—with a next step if the buyer agrees.</div>",
+      "notes": "Vote before selecting. Ask someone who chose correctly to explain why the other answers fall short. Finish with a 30-second individual spoken response. The multiple-choice answer is only a check; the spoken response demonstrates the skill. Use the four-behavior rubric if an agent needs another attempt.",
+      "time": 3,
+      "theme": "paper",
+      "cue": "Ask: Why would Jordan be concerned about this?"
+    },
+    {
+      "chapter": "Retain",
+      "title": "Plan your next practice",
+      "lead": "Choose a time to practice again without the slides.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Within 24 hours</h3><p>Deliver your introduction from memory to a partner. Get one correction.</p></div><div class=\"row\"><h3>In 3 days</h3><p>Practice a different objection. Keep buyer choice and a clear next step.</p></div><div class=\"row\"><h3>In 7 days</h3><p>Review one real handoff with your coach. Identify what moved and what stalled.</p></div></div></div><div><label class=\"field\">My next practice commitment<textarea data-save=\"commitment\" placeholder=\"When will I practice, with whom, and what will I improve?\"></textarea></label><button class=\"primary\" data-action=\"download\">Download my practice notes</button><p class=\"small\">Download includes your draft, recall answers, and commitment. It does not send anything to your team.</p></div></div>",
+      "notes": "Give 30 seconds to write a commitment with a named practice partner and time. Have agents share with their partner. The follow-up schedule is a suggested coaching routine, not an automated reminder. A coach should ask for a real example of changed behavior next week. Invite remaining questions; move product-specific questions to the loan officer.",
+      "time": 3,
+      "theme": "sage",
+      "cue": "Say your commitment to your practice partner."
+    },
+    {
+      "chapter": "Finish",
+      "title": "What to do after this training",
+      "lead": "Day 4 · Zillow Home Loans",
+      "body": "<div class=\"finish-line\"><span>Reflect</span><span>Explain</span><span>Ask</span><span>Confirm</span></div><p class=\"finish-copy\">Ask whether an introduction would help. If the buyer agrees, confirm the call and follow up.</p><div class=\"actions\"><button class=\"primary\" data-action=\"resources\">Open field guide & sources</button><button data-action=\"restart\">Return to the opening</button></div>",
+      "notes": "Close on the behavior, not the team metric. Ask for one final takeaway in the buyer’s language. Keep the resource sheet available for questions. If an agent did not demonstrate all four behaviors, schedule another brief practice before marking the skill ready in your own coaching process. This workshop does not issue a certification.",
+      "time": 1,
+      "theme": "dark",
+      "cue": "Final prompt: What will sound different on your next call?"
+    }
+  ],
+  "cases": [
+    {
+      "name": "Jordan · offer tonight",
+      "quote": "I love the house, but I have not sent my bank any documents yet.",
+      "goal": "Clarify readiness and ask permission for a useful next step."
+    },
+    {
+      "name": "Morgan · already has a lender",
+      "quote": "My bank has handled everything for years. Why would I need another conversation?",
+      "goal": "Acknowledge the relationship. Explore whether a comparison would help."
+    },
+    {
+      "name": "Alex · credit concern",
+      "quote": "I want to understand the credit check before deciding.",
+      "goal": "Respect the concern. Let the loan officer explain the actual process."
+    }
+  ],
+  "hero": "/workshops/house.jpg",
+  "resources": "<h3>What do you remember?</h3><div class=\"recall-grid\"><label class=\"field\">1 · What are the four conversation steps?<textarea data-save=\"recall-1\" placeholder=\"Write in your own words…\"></textarea></label><label class=\"field\">2 · What does a pre-approval not guarantee?<textarea data-save=\"recall-2\" placeholder=\"Write in your own words…\"></textarea></label><label class=\"field\">3 · What makes a handoff complete?<textarea data-save=\"recall-3\" placeholder=\"Write in your own words…\"></textarea></label></div><details class=\"reveal\"><summary>Compare with the essentials</summary><div><p><strong>Reflect → Explain → Ask → Confirm.</strong> A pre-approval is conditional; it does not guarantee funding. A complete handoff includes permission, an identified loan officer, a confirmed next step and owner, and a follow-up time.</p></div></details><h3>How would you answer Jordan?</h3><div class=\"choices\" data-quiz=\"final\"><button data-correct=\"false\" data-feedback=\"This makes the buyer responsible for a team metric. Return to choice and relevance.\">“Yes, it’s part of our program.”</button><button data-correct=\"false\" data-feedback=\"This sounds optional, but the promise of savings is unsupported. Offer a useful comparison without a guarantee.\">“No, but they will definitely save you money.”</button><button data-correct=\"true\" data-feedback=\"Yes. You respected the decision and offered a concrete, optional next step. Now confirm the contact method and time only if Jordan agrees.\">“You choose your lender. If a second conversation would help, may I introduce you to a loan officer at Zillow Home Loans?”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><div class=\"takeaway\">Then say your own version out loud—with a next step if the buyer agrees.</div><h3>Plan your next practice</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Within 24 hours</h3><p>Deliver your introduction from memory to a partner. Get one correction.</p></div><div class=\"row\"><h3>In 3 days</h3><p>Practice a different objection. Keep buyer choice and a clear next step.</p></div><div class=\"row\"><h3>In 7 days</h3><p>Review one real handoff with your coach. Identify what moved and what stalled.</p></div></div></div><div><label class=\"field\">My next practice commitment<textarea data-save=\"commitment\" placeholder=\"When will I practice, with whom, and what will I improve?\"></textarea></label><button class=\"primary\" data-action=\"download\">Download my practice notes</button><p class=\"small\">Download includes your draft, recall answers, and commitment. It does not send anything to your team.</p></div></div>"
+}

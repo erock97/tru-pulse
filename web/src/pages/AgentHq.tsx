@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { RepWorkshopLibrary } from '../components/RepWorkshopLibrary';
 import {
   loadCourse, signOutClean, type AgentIdentity, type CourseModule,
 } from '../lib/api';
@@ -316,6 +317,7 @@ function TrainingTab({
   const bay = trainingBay(mods);
   return (
     <div className="ah-bay">
+      <RepWorkshopLibrary />
       {bay.map((section) => (
         <section key={section.label} className="ah-section">
           <h2>{section.label}</h2>
