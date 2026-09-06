@@ -333,7 +333,9 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
     // months you have already reported. What goes is the person: they are not
     // somebody to coach, rank, or prioritise any more.
     const gone = new Set(
-      (raw.agents ?? []).filter((a) => a.excluded).map((a) => norm(a.name)),
+      // The imported cohort was already restricted to active FUB users. An
+      // older app exclusion must not hide part of its auditable roster.
+      (raw.agents ?? []).filter((a) => a.excluded && !raw.historyInfo).map((a) => norm(a.name)),
     );
     const departedRows = list.filter((r) => gone.has(norm(r.name)));
 
