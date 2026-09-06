@@ -78,7 +78,7 @@ export const WINDOWS: readonly Window[] = [
   { key: '2yr', label: '2 years', days: '2yr' },
   { key: 'ytd', label: 'Year to date', days: 'ytd' },
 ];
-export const PERIOD_OPTIONS = ['mtd','ytd','7d','90d','6mo','all','2yr'].map(key=>{const w=WINDOWS.find(w=>w.key===key)!;return {value:w.key,label:w.label==='7d'?'7 days':w.label==='90d'?'90 days':w.label==='6mo'?'6 months':w.label}});
+export const PERIOD_OPTIONS = ['mtd','2yr','all','ytd','6mo','90d','7d'].map(key=>{const w=WINDOWS.find(w=>w.key===key)!;return {value:w.key,label:w.label==='7d'?'7 days':w.label==='90d'?'90 days':w.label==='6mo'?'6 months':w.label}});
 
 export const norm = (s: string | null | undefined) =>
   (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');

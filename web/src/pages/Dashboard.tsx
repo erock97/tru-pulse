@@ -29,7 +29,7 @@ const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith(
 
 type View = 'overview' | 'accountability' | 'sources' | 'settings' | 'how';
 type Win = '7' | '14' | 'mtd' | 'ytd' | '90' | '180' | '365' | '2yr';
-const WINDOWS: Array<[Win, string]> = [['mtd', 'Month to date'], ['ytd', 'Year to date'], ['7', '7 days'], ['14', '14 days'], ['90', '90 days'], ['180', '6 months'], ['365', 'One year'], ['2yr', '2 years']];
+const WINDOWS: Array<[Win, string]> = [['mtd', 'Month to date'], ['2yr', '2 years'], ['365', 'One year'], ['ytd', 'Year to date'], ['180', '6 months'], ['90', '90 days'], ['14', '14 days'], ['7', '7 days']];
 
 // Pause watch — why an agent is paused from new leads. 'capacity' = hit the
 // monthly volume cap; 'no_close' = took N leads since their last under-contract.
