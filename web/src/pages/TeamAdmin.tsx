@@ -229,23 +229,8 @@ export default function TeamAdmin({
                   : counts.off > 0 ? `${counts.off} cannot sign in yet`
                     : 'Everybody has a login'}
               </span>
-              <h1>
-                {rows === null ? <>Your team.</>
-                  : <>{counts.total} came from <em>Follow Up Boss</em>.</>}
-              </h1>
-              <p className="dk-sub">
-                {rows === null
-                  ? 'Reading the roster.'
-                  : <>
-                    {counts.on} {counts.on === 1 ? 'is' : 'are'} on the team
-                    {counts.hidden > 0 && <> and {counts.hidden} {counts.hidden === 1 ? 'has' : 'have'} been taken off</>}.
-                    {' '}Untick anyone who should not be here — an office manager, a
-                    lender, someone who left — and they disappear from Pulse, Coach
-                    and Rep. Their past business still counts toward the team. Set
-                    each person's role once: only agents are included when you send
-                    all invites.
-                  </>}
-              </p>
+              <h1>Your team, connected.</h1>
+              <p className="dk-sub">Manage membership, roles, invitations, and access to Coach in one place.</p>
             </div>
             {(eligible.length > 0 || bulk || bulkSaid) && (
               <div className="dk-mast-do">
@@ -307,13 +292,14 @@ export default function TeamAdmin({
             <span className="dk-key">
               <input
                 className="ad-input adm-search"
-                placeholder="Search a name, email, or phone…"
+                aria-label="Find a team member" placeholder="Search a name, email, or phone…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </span>
           </div>
 
+          <details className="team-help"><summary>How membership and invitations work</summary><p>Removing someone from the team hides them from Pulse, Coach and Rep. Their past business still counts toward team totals. Only people assigned the agent role are included in bulk invitations.</p></details>
           <div className="tm-tabs">
             {TABS.map(([k, label, n]) => (
               <button

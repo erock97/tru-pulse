@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { TruLogo } from './TruLogo';
 import { Avatar, Icon } from './hqUi';
 import { useForceHqDark } from '../hqHooks';
-import { hasAdminReturn, adminReturn } from '../lib/api';
+import { hasAdminReturn, adminReturn, isDemo } from '../lib/api';
 import { CommandBar } from './commandBar';
 import { FocusWire } from './focusWire';
 import { useDeckFocus } from './deckFocus';
@@ -112,7 +112,7 @@ export function HqShell({
   const route = typeof window !== 'undefined' ? window.location.hash.replace(/^#\/?/, '') : '';
   // '/' lands on the roster now, so an empty hash is Pulse. Home survives only
   // at #/home for the platform-owner "act as team" tile.
-  const activeKey = route.startsWith('coach') ? 'coach'
+  const activeKey = route === 'today' ? 'today' : route.startsWith('coach') ? 'coach'
     : route.startsWith('rep') ? 'rep'
       : route.startsWith('team') ? 'team'
       : route === 'admin/targets' ? 'team-data'
@@ -194,6 +194,7 @@ export function HqShell({
         ...(onOpenFailureLogs ? [{ key: 'failure-logs', label: 'Failure Logs', icon: 'alert', onClick: onOpenFailureLogs }] : []),
       ]
     : [
+        { key: 'today', label: 'Today', icon: 'calendar', onClick: () => { window.location.hash = '/today'; } },
         { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
         { key: 'coach', label: 'Coach', icon: 'coach', onClick: nav.onOpenCoach },
         { key: 'rep', label: 'Rep', icon: 'rep', onClick: nav.onOpenRep },
@@ -244,6 +245,7 @@ export function HqShell({
               className={`side-link ${l.key === activeKey ? 'active' : ''}`}
               onClick={l.soon ? undefined : l.onClick}
               disabled={l.soon}
+              aria-current={l.key === activeKey ? 'page' : undefined}
             >
               <Icon name={l.icon} size={20} />
               <span>{l.label}</span>
@@ -251,6 +253,22 @@ export function HqShell({
             </button>
           ))}
         </nav>
+        <div className="hq-nav-search">
+            <CommandBar
+              isAdmin={isAdmin}
+              onOpenAdmin={onOpenAdmin}
+              onOpenTeamData={onOpenTeamData}
+              onOpenRevenue={onOpenRevenue}
+              onOpenContracts={onOpenContracts}
+              onOpenCalendar={onOpenCalendar}
+              onOpenFailureLogs={onOpenFailureLogs}
+              onOpenPulse={nav.onOpenPulse}
+              onOpenCoach={nav.onOpenCoach}
+              onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
+              onOpenTeam={nav.onOpenTeam}
+              onSignOut={onSignOut}
+            />
+        </div>
         <div className="side-foot">
           <div className="side-user">
             <Avatar name={orgName} size={38} tone={0} />
@@ -281,27 +299,10 @@ export function HqShell({
       </aside>
 
       <main className="main">
-        {hideTopbar && (
-          <div className="dk-island">
-            <span className="dk-mk"><img className="tru-emblem" src="/tru-mark.png" alt="" width="22" height="22" decoding="async" /><b>TRU <em>HQ</em></b></span>
-            {islandSlot && <><span className="dk-div" />{islandSlot}</>}
-            <span className="dk-div" />
-            <CommandBar
-              isAdmin={isAdmin}
-              onOpenAdmin={onOpenAdmin}
-              onOpenTeamData={onOpenTeamData}
-              onOpenRevenue={onOpenRevenue}
-              onOpenContracts={onOpenContracts}
-              onOpenCalendar={onOpenCalendar}
-              onOpenFailureLogs={onOpenFailureLogs}
-              onOpenPulse={nav.onOpenPulse}
-              onOpenCoach={nav.onOpenCoach}
-              onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
-              onOpenTeam={nav.onOpenTeam}
-              onSignOut={onSignOut}
-            />
-          </div>
-        )}
+        {isDemo && <div className="hq-sample-note">Design preview · Sample team data</div>}
+        {impersonating && <div className="hq-team-context" role="status"><span>Viewing <strong>{orgName}</strong> · Team workspace</span><button onClick={() => { void adminReturn(); }}>Return to my workspace</button></div>}
+        {hideTopbar && islandSlot && <div className="hq-page-controls">{islandSlot}</div>}
+
         {!hideTopbar && (
           <header className="topbar reveal">
             <div>

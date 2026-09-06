@@ -19,7 +19,7 @@ import { withFreshToken } from './session.js';
 export interface UserClient {
   userId: string;
   /** One PostgREST GET, as the user. `query` is everything after the `?`. */
-  select<T = unknown>(table: string, query: string): Promise<T[]>;
+  select<T = unknown>(table: string, query: string, options?: { strict?: boolean }): Promise<T[]>;
   /** Page through a table until exhausted — PostgREST caps each response at 1000. */
   selectAll<T = unknown>(table: string, cols: string, order: string): Promise<T[]>;
   /** Writes, also as the user — so RLS WITH CHECK decides what may be written.
@@ -50,9 +50,10 @@ export async function supabaseAsUser(env: Env, sid: string | null): Promise<User
     Authorization: 'Bearer ' + sess.accessToken,
   };
 
-  async function select<T = unknown>(table: string, query: string): Promise<T[]> {
+  async function select<T = unknown>(table: string, query: string, options?: { strict?: boolean }): Promise<T[]> {
     const res = await fetch(`${base}/${table}?${query}`, { headers });
     if (!res.ok) {
+      if (options?.strict) throw new Error('Source data unavailable');
       // A table that doesn't exist yet, or a policy that returns nothing, must not take
       // the whole dashboard down — the browser version degraded to [] too.
       return [];

@@ -1,0 +1,12 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const html=fs.readFileSync(process.argv[2],'utf8');const elements=new Map();
+for(const m of html.matchAll(/id="([^"]+)"/g))elements.set(m[1],{value:'',innerHTML:'',textContent:'',hidden:false,querySelectorAll:()=>[]});
+elements.get('zone').value='America/Los_Angeles';elements.get('source').value='*';
+const context=vm.createContext({document:{getElementById:id=>{if(!elements.has(id))throw Error('Missing element '+id);return elements.get(id)}},Date,Intl,URL,Blob,setTimeout});
+vm.runInContext(html.split('<script>')[1].split('</script>')[0],context,{timeout:30000});
+assert.ok(elements.get('summary').innerHTML.includes('Leads in selected cohort'));
+elements.get('period').value='2yr';elements.get('period').onchange();
+assert.equal(elements.get('start').value,'2024-09-05');
+vm.runInContext('if(current.length)showProof(current[0].id)',context,{timeout:30000});
+if(!elements.get('proof').hidden)assert.ok(elements.get('proof').innerHTML.includes('raw conversion'));
+console.log('Report initialization, two-year interaction and proof rendering passed.');

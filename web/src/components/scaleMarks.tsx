@@ -153,6 +153,7 @@ export function ScaleMarks({
   return (
     <span className={`sm-scale${anyOn ? ' is-focused' : ''}`}>
       <span className="sm-rail" ref={railRef} aria-hidden />
+      <span className="sm-axis" aria-hidden><span>{lo}</span><span>{Math.round((lo + hi) / 2)}</span><span>{hi}</span></span>
       {/* Rep's line is the finish, which sits at the far right — so past
           halfway the line labels itself leftward, exactly as a dot does,
           rather than hanging its caption off the end of the card.

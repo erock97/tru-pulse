@@ -1,0 +1,12 @@
+{
+  "end": "2026-09-05",
+  "timezone": "America/Los_Angeles",
+  "teams": {
+    "SIGNATURE": {"team":"Signature Realty","sources":{"Zillow Preferred":"2024-09-05","Realtor.com":"2026-05-01","Realtor.com MVIP":"2026-05-01","Market VIP via Opcity BLA":"2026-05-01"}},
+    "SATISH": {"team":"SB Realty","sources":{"Zillow Preferred":"2026-01-01","Realtor.com":"2026-01-01","Realtor.com MVIP":"2026-01-01","Market VIP via Opcity BLA":"2026-01-01"}},
+    "WOOSLEY": {"team":"Woosley Group","sources":{"Zillow Preferred":"2026-01-01"}},
+    "COSTIGAN": {"team":"Costigan","sources":{"Zillow Preferred":"2026-01-01"}},
+    "SCOTTMOORE": {"team":"Scott Moore Group","sources":{"Zillow Preferred":"2026-01-01"}},
+    "SYNERGY": {"team":"The Synergy Group NJ","sources":{"Zillow":"2026-01-01","Zillow Premier Agent":"2026-01-01"}}
+  }
+}

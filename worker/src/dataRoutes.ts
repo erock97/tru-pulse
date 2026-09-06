@@ -37,6 +37,55 @@ export async function handleDataRoutes(
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
 
+  if (url.pathname === '/data/history' && req.method === 'GET') {
+    const orgId = url.searchParams.get('orgId') ?? '';
+    if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 400, cors);
+    // KV is private; access is granted only after the authenticated user's
+    // own membership has been checked through Supabase RLS.
+    try {
+      const membership = await db.select('memberships', `select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`, { strict: true });
+      if (!membership.length) return json({error:'not permitted'},403,cors);
+      const snapshot = await env.SESSIONS.get(`pulse-history:v1:${orgId}`, 'json') as {orgId:string}|null;
+      if (snapshot && snapshot.orgId !== orgId) return json({error:'history identity mismatch'},502,cors);
+      return json({snapshot},200,{...cors,'Cache-Control':'private, no-store'});
+    } catch { return json({error:'Historical evidence unavailable'},502,cors); }
+  }
+
+  if (url.pathname === '/data/preferences' && ['GET','PUT'].includes(req.method)) {
+    const orgId=url.searchParams.get('orgId')??'', kind=url.searchParams.get('kind')??'';
+    if(!UUID_RE.test(orgId)||!['leads-per-contract','mtd-new-assignment-pause','coaching-cadence-days'].includes(kind)) return json({error:'Invalid preference'},400,cors);
+    if(req.method==='PUT'&&!originOk)return json({error:'origin denied'},403,cors);
+    try {
+      const membership=await db.select('memberships',`select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`,{strict:true});
+      if(!membership.length)return json({error:'not permitted'},403,cors);
+      const key=`pulse-preference:v1:${db.userId}:${orgId}:${kind}`;
+      if(req.method==='GET')return json({value:await env.SESSIONS.get(key,'json')},200,{...cors,'Cache-Control':'private, no-store'});
+      const body=await req.json() as {value?:unknown};
+      if(typeof body.value!=='number'||!Number.isInteger(body.value)||body.value<1||body.value>10000)return json({error:'Invalid threshold'},400,cors);
+      await env.SESSIONS.put(key,JSON.stringify(body.value));
+      return json({value:body.value},200,cors);
+    }catch{return json({error:'Preference could not be saved or loaded'},502,cors);}
+  }
+
+  if (url.pathname === '/data/hustle' && req.method === 'GET') {
+    const orgId = url.searchParams.get('orgId') ?? '';
+    if (!UUID_RE.test(orgId)) return json({ error: 'invalid orgId' }, 400, cors);
+    try {
+      // Explicit organization filter AND user RLS; never use the service role.
+      const latest = await db.select<{week_ending: string}>('hustle_weekly_scores',
+        `select=week_ending&org_id=eq.${orgId}&order=week_ending.desc&limit=1`, { strict: true });
+      const weekEnding = latest[0]?.week_ending ?? null;
+      if (!weekEnding) return json({ weekEnding, scores: [] }, 200, cors);
+      const columns = 'id,agent_id,agent_name,week_ending,final_score,evidence_label,eligibility,ranking_eligible,offers_recent,broker_action,action_reason,captured_at';
+      const scores = await db.select('hustle_weekly_scores',
+        `select=${columns}&org_id=eq.${orgId}&week_ending=eq.${encodeURIComponent(weekEnding)}&order=agent_name.asc&limit=1000`, { strict: true });
+      if (scores.length >= 1000) throw new Error('Report exceeds supported roster size');
+      return json({ weekEnding, scores }, 200, cors);
+    } catch {
+      return json({ error: 'Weekly Hustle could not be loaded. Please retry.' }, 502, cors);
+    }
+  }
+
   // ── Everything the Pulse dashboard needs, in one round trip. ──
   // The browser previously made eight calls (two of them paged); doing it here also
   // removes eight cross-origin round trips from a phone on a bad connection.

@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { inPulsePeriod, type PulsePeriod } from './pulsePeriod';
 
 import { loadDashboard, loadRep, type RepData } from './api';
 import { loadRoster, type RosterAgent } from './coachData';
@@ -29,6 +30,7 @@ export const DEFAULT_LINE = 30;
 export type Health = 'past-line' | 'behind' | 'holding' | 'no-volume';
 
 export interface Row {
+  met?:number;closed?:number;nurture?:number;rawConversion?:number;
   agentId: string | null;
   name: string;
   leads: number;
@@ -60,6 +62,7 @@ export interface Priority {
 }
 
 export interface Totals {
+  closed:number;
   leads: number; worked: number; contracts: number; offers: number; stuck: number;
   workedPct: number; perContract: number | null; pastLine: number; stale: number;
 }
@@ -67,13 +70,17 @@ export interface Totals {
 /* ── the window ────────────────────────────────────────────────────────────
    Real filtering, on the lead's own created date. `null` days means every
    lead the team has. */
-export interface Window { key: string; label: string; days: number | null }
+export interface Window { key: string; label: string; days: PulsePeriod }
 export const WINDOWS: readonly Window[] = [
   { key: '7d', label: '7d', days: 7 },
-  { key: '30d', label: '30d', days: 30 },
+  { key: 'mtd', label: 'Month to date', days: 'mtd' },
   { key: '90d', label: '90d', days: 90 },
-  { key: 'all', label: '12mo', days: 365 },
+  { key: 'all', label: 'One year', days: 365 },
+  { key: '6mo', label: '6mo', days: '6mo' },
+  { key: '2yr', label: '2 years', days: '2yr' },
+  { key: 'ytd', label: 'Year to date', days: 'ytd' },
 ];
+export const PERIOD_OPTIONS = ['mtd','2yr','all','ytd','6mo','90d','7d'].map(key=>{const w=WINDOWS.find(w=>w.key===key)!;return {value:w.key,label:w.label==='7d'?'7 days':w.label==='90d'?'90 days':w.label==='6mo'?'6 months':w.label}});
 
 export const norm = (s: string | null | undefined) =>
   (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -106,10 +113,8 @@ export function prioritise(rows: readonly Row[]): Priority[] {
       out.push({
         row: r,
         severity: 'high',
-        reason: r.workedPct >= 95
-          ? `Worked ${r.workedPct}% of ${r.leads} leads and closed ${r.contracts}. Nothing is being dropped before the call, so the loss is on it.`
-          : `One contract from ${r.leads} leads, and ${100 - r.workedPct}% of them were never worked.`,
-        action: r.workedPct >= 95 ? 'Listen to a recent call before the next 1:1.' : 'Start with the untouched leads.',
+        reason: `${r.contracts} contracts from ${r.leads} leads; below the minimum conversion expectation.`,
+        action: 'Review the underlying leads and pipeline context before choosing a coaching focus.',
         approach: approachFor(r),
       });
     } else if (r.stuck > 10) {
@@ -136,14 +141,6 @@ export function prioritise(rows: readonly Row[]): Priority[] {
         action: 'Book one this week.',
         approach: approachFor(r),
       });
-    } else if (r.health === 'no-volume' && r.leads < 5) {
-      out.push({
-        row: r,
-        severity: 'medium',
-        reason: `${r.leads} lead${r.leads === 1 ? '' : 's'} in this window. There is nothing here to coach from.`,
-        action: 'Check how leads are being routed before anything else.',
-        approach: null,
-      });
     }
   }
 
@@ -151,7 +148,7 @@ export function prioritise(rows: readonly Row[]): Priority[] {
   return out
     .sort((a, b) => rank[a.severity] - rank[b.severity]
       || (b.row.perContract ?? 0) - (a.row.perContract ?? 0))
-    .slice(0, 4);
+    ;
 }
 
 export function totalsOf(rows: readonly Row[]): Totals {
@@ -159,6 +156,7 @@ export function totalsOf(rows: readonly Row[]): Totals {
   const worked = rows.reduce((a, r) => a + r.worked, 0);
   return {
     leads,
+    closed:rows.reduce((sum,r)=>sum+(r.closed??0),0),
     worked,
     contracts: rows.reduce((a, r) => a + r.contracts, 0),
     offers: rows.reduce((a, r) => a + r.offers, 0),
@@ -173,6 +171,9 @@ export function totalsOf(rows: readonly Row[]): Totals {
 }
 
 export interface RosterState {
+  historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
+  proof: Map<string, Awaited<ReturnType<typeof loadDashboard>>['leads']>;
+  teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
   rows: Row[] | null;
   err: string;
   /** Leads carrying no created date, so a window could not include them. */
@@ -184,10 +185,12 @@ export interface RosterState {
   totals: Totals | null;
 }
 
-export function useRosterData(line: number, windowDays: number | null): RosterState {
+export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:string): RosterState {
   const [raw, setRaw] = useState<{
+    historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
     leads: Awaited<ReturnType<typeof loadDashboard>>['leads'];
     agents: Awaited<ReturnType<typeof loadDashboard>>['agents'];
+    teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
     coach: RosterAgent[];
     rep: RepData | null;
   } | null>(null);
@@ -201,20 +204,20 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
         // and are both allowed to fail: a team with Coach or Rep switched off
         // still gets its pipeline.
         const [data, coach, rep] = await Promise.all([
-          loadDashboard(),
+          loadDashboard(orgId),
           loadRoster().catch((): RosterAgent[] => []),
           loadRep().catch((): RepData | null => null),
         ]);
-        if (alive) setRaw({ leads: data.leads, agents: data.agents, coach, rep });
+        if (alive) setRaw({ historyInfo:data.historyInfo, leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
       } catch (e) {
         if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [orgId]);
 
   return useMemo(() => {
-    if (!raw) return { rows: null, err, undated: 0, departed: { names: [], leads: 0 }, totals: null };
+    if (!raw) return { proof: new Map(), teams: [], rows: null, err, undated: 0, departed: { names: [], leads: 0 }, totals: null };
 
     // One row per agent per module, so passes are counted per agent rather
     // than summed. Only published modules count toward the total.
@@ -232,14 +235,20 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
 
     // A lead with no created date cannot be placed in a window. It is counted
     // and reported rather than silently dropped or silently included.
-    const cutoff = windowDays === null ? null : Date.now() - windowDays * 86400000;
+    const now = new Date();
     let undated = 0;
     const leads = raw.leads.filter((l) => {
-      if (cutoff === null) return true;
-      if (!l.fub_created) { undated += 1; return false; }
-      const t = Date.parse(l.fub_created);
-      return Number.isFinite(t) ? t >= cutoff : (undated += 1, false);
+      if (!Number.isFinite(Date.parse(l.fub_created ?? ''))) undated += 1;
+      return inPulsePeriod(l.fub_created, windowDays, now);
     });
+
+    const proof: RosterState['proof'] = new Map();
+    for (const lead of leads) {
+      const key = norm(lead.assigned_to);
+      const items = proof.get(key) ?? [];
+      items.push(lead);
+      proof.set(key, items);
+    }
 
     const bucket = new Map<string, Row>();
     for (const l of leads) {
@@ -270,10 +279,13 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
       const sf = l.source_family || 'Other';
       r.srcs.set(sf, (r.srcs.get(sf) ?? 0) + 1);
       const cls = stageClass(l.stage);
-      if (isOfferPlus(cls)) r.offers += 1;
-      if (isClosing(cls)) r.contracts += 1;
+      if (l.history ? !!l.history.offer : isOfferPlus(cls)) r.offers += 1;
+      if (l.history ? !!l.history.uc : isClosing(cls)) r.contracts += 1;
+      r.met=(r.met??0)+(l.history?.met?1:0);
+      r.closed=(r.closed??0)+(l.history ? l.history.closed?1:0 : cls==='closed'?1:0);
+      r.nurture=(r.nurture??0)+(l.stage?.toLowerCase()==='nurture'?1:0);
       if (isStuckStage(l.stage)) r.stuck += 1;
-      if (l.flag !== 'zero_contact') r.worked += 1;
+      if (l.flag === 'worked') r.worked += 1;
     }
 
     // Everyone on the team gets a row, leads or not. A brand-new agent has no
@@ -309,6 +321,7 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
       ...r,
       workedPct: r.leads ? Math.round((r.worked / r.leads) * 100) : 0,
       perContract: r.contracts ? r.leads / r.contracts : null,
+      rawConversion:r.leads?100*(r.closed??0)/r.leads:0,
     }));
 
     const totalLeads = list.reduce((a, r) => a + r.leads, 0);
@@ -327,6 +340,7 @@ export function useRosterData(line: number, windowDays: number | null): RosterSt
     const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) }));
 
     return {
+      historyInfo:raw.historyInfo, proof, teams: raw.teams,
       rows: withHealth.filter((r) => !gone.has(norm(r.name))),
       // Totals come off the FULL list on purpose. A page that computed them
       // from `rows` would quietly rewrite months you have already reported the

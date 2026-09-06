@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
+import { inPulsePeriod, pulseCutoff } from '../lib/pulsePeriod';
+import { PeriodSelect } from '../components/PeriodSelect';
 import { loadDashboard, saveSettings, setAgentPause, signOutClean, type DashboardData, type Settings, type LeadRow } from '../lib/api';
 import { payModel, PAY_LABEL, isClosing, isOfferPlus, stageClass } from '../../../shared/flags';
 import { currentStageOfferEvidence, explainCurrentStageOffers, offerConfidenceLabel, recordedOfferPersons } from '../../../shared/offerEvidence';
@@ -26,8 +28,8 @@ const ownerOf = (l: LeadRow) => l.assigned_to || (l.pond ? `Pond · ${l.pond}` :
 const isPerson = (owner: string) => owner !== 'Unassigned' && !owner.startsWith('Pond · ');
 
 type View = 'overview' | 'accountability' | 'sources' | 'settings' | 'how';
-type Win = '7' | '14' | 'mtd' | '90' | '180' | '365';
-const WINDOWS: Array<[Win, string]> = [['7', '7d'], ['14', '14d'], ['mtd', 'MTD'], ['90', '90d'], ['180', '6mo'], ['365', '12mo']];
+type Win = '7' | '14' | 'mtd' | 'ytd' | '90' | '180' | '365' | '2yr';
+const WINDOWS: Array<[Win, string]> = [['mtd', 'Month to date'], ['2yr', '2 years'], ['365', 'One year'], ['ytd', 'Year to date'], ['180', '6 months'], ['90', '90 days'], ['14', '14 days'], ['7', '7 days']];
 
 // Pause watch — why an agent is paused from new leads. 'capacity' = hit the
 // monthly volume cap; 'no_close' = took N leads since their last under-contract.
@@ -146,15 +148,14 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   // computed exactly as before; only the JSX that consumes it is new.
   // ══════════════════════════════════════════════════════════════════════════
 
-  // Date window — leads without a created date stay visible in every window.
+  // Calendar filters require a valid creation date, matching the main Pulse view.
   const today = new Date();
-  const cutoff = win === 'mtd'
-    ? new Date(today.getFullYear(), today.getMonth(), 1).getTime()
-    : Date.now() - Number(win) * 86400_000;
+  const period = win === 'mtd' || win === 'ytd' || win === '2yr' ? win : Number(win);
+  const cutoff = pulseCutoff(period, today)!;
   // Source filter — Settings lets a leader check only the sources they pay for.
   const enabledSources = data.settings?.sources && data.settings.sources.length ? data.settings.sources : null;
   const leads = data.leads.filter((l) =>
-    (!l.fub_created || Date.parse(l.fub_created) >= cutoff) &&
+    inPulsePeriod(l.fub_created, period, today) &&
     (!enabledSources || enabledSources.includes(l.source_family ?? 'Other')));
 
   const total = leads.length;
@@ -167,7 +168,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const closeRate = Number(data.settings?.close_rate ?? 2);
   const capacity = Number(data.settings?.per_agent_capacity ?? 20);
   const strikeLimit = Number(data.settings?.strike_limit ?? 3);
-  const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : Number(win);
+  const winDays = win === 'mtd' ? Math.max(1, today.getDate()) : win === '2yr' || win === 'ytd' ? Math.max(1,Math.ceil((today.getTime() - cutoff) / 86400_000)) : Number(win);
 
   // Production — BASELINE (Eric, 2026-07-07): CURRENT STAGE, CREATED-DATE-WINDOWED,
   // computed directly off `leads` (the same created-date + source windowed set as
@@ -388,7 +389,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     };
   });
 
-  const winLabel = win === 'mtd' ? 'month to date' : win === '180' ? 'last 6 months' : win === '365' ? 'last 12 months' : `last ${win} days`;
+  const winLabel = win === 'mtd' ? 'month to date' : win === 'ytd' ? 'year to date' : win === '180' ? 'last 6 months' : win === '365' ? 'last year' : win === '2yr' ? 'last 2 years' : `last ${win} days`;
   const HEAD: Record<View, { title: string; eyebrow: string }> = {
     overview: { title: 'Pulse — who’s working what.', eyebrow: `Lead accountability · ${org.name}` },
     accountability: { title: 'What to do today', eyebrow: 'Who needs action first · this week' },
@@ -405,11 +406,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
   const context = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       {view !== 'settings' && view !== 'how' && (
-        <div className="ps-winpills">
-          {WINDOWS.map(([k, l]) => (
-            <span key={k} className={`ps-winpill${win === k ? ' on' : ''}`} onClick={() => setWin(k)}>{l}</span>
-          ))}
-        </div>
+        <PeriodSelect value={win} options={WINDOWS.map(([value,label])=>({value,label}))} onChange={key=>setWin(key as Win)} />
       )}
     </div>
   );
