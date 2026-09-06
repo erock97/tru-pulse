@@ -31,14 +31,11 @@ import {
   DEFAULT_LINE, WINDOWS, approachFor, prioritise, useRosterData,
   type Row, type Window,
 } from '../lib/rosterData';
-import { Strip } from '../components/rosterViz';
-import { ScaleMarks } from '../components/scaleMarks';
 import { PersonPane } from '../components/personPane';
 import {
-  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys, useRounded,
+  DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
-import { Odometer } from '../components/odometer';
 import { useFlip, useGlide } from '../lib/deckMotion';
 
 export default function RosterDeck(props: {
@@ -73,7 +70,8 @@ function Deck({
      re-judges the whole page without a request. It is a question you can ask
      of today's numbers, not a setting you are changing. */
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
-  const { value: line, setValue: setLine } = target;
+  const line = target.saved;
+  const [reviewOnly, setReviewOnly] = useState(false);
   const [win, setWin] = useState<Window>(WINDOWS[3]);
   const { rows, err, undated, departed, totals } = useRosterData(line, win.days);
   const [open, setOpen] = useState<Row | null>(null);
@@ -82,13 +80,9 @@ function Deck({
   const focus = useDeckFocus();
 
   const priorities = useMemo(() => (rows ? prioritise(rows) : []), [rows]);
-  const strip = useMemo(
-    () => (rows ? [...rows].sort((a, b) => b.leads - a.leads) : []),
-    [rows],
-  );
   const sorted = useMemo(() => {
     if (!rows) return [];
-    return rows.filter(r => r.name.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => {
+    return rows.filter(r => r.name.toLowerCase().includes(query.trim().toLowerCase()) && (!reviewOnly || priorities.some(p=>p.row.name===r.name))).sort((a, b) => {
       const x = a[sort.key], y = b[sort.key];
       if (x === null && y === null) return 0;
       if (x === null) return 1;          // no-volume always sits at the bottom
@@ -98,7 +92,7 @@ function Deck({
       }
       return ((y as number) - (x as number)) * sort.dir;
     });
-  }, [rows, sort, query]);
+  }, [rows, sort, query, reviewOnly, priorities]);
 
   /* Rows travel to their new place when you sort, rather than the table
      redrawing. The order itself is the signature, so re-sorting to the same
@@ -140,7 +134,7 @@ function Deck({
   // The headline rate travels between windows rather than being swapped, so 30
   // days and 90 days read as one team measured over a different stretch of
   // time — which is what actually happened.
-  const rateShown = useRounded(totals?.perContract ?? null);
+
 
   /* Just the window tabs now — the shell draws the bar.
      The lit pill is one element that travels between them rather than a
@@ -161,7 +155,7 @@ function Deck({
   );
 
   const frame = (body: React.ReactNode) => (
-    <div className="tru-dark">
+    <div className="tru-dark pulse-refined">
       <HqShell
         orgName={orgName}
         onSignOut={() => signOutClean()}
@@ -189,11 +183,6 @@ function Deck({
   // that the line can be dragged: an axis that rescaled as you moved the
   // marker would slide the marker out from under the cursor, and the control
   // would feel like it was resisting you.
-  const rates = rows.map((r) => r.perContract).filter((v): v is number => v !== null);
-  const lo = Math.max(0, Math.min(DEFAULT_LINE, target.saved, ...rates) - 4);
-  const hi = Math.max(DEFAULT_LINE, target.saved, ...rates) + 6;
-  const scale = (v: number) => Math.max(0, Math.min(100, ((v - lo) / Math.max(1, hi - lo)) * 100));
-
   const resort = (key: keyof Row) =>
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
@@ -212,179 +201,16 @@ function Deck({
     </th>
   );
 
-  // Every supporting tile draws the same team in the same order, so a bar in
-  // one lines up with the bar directly under it in the next.
-  const stripKeys = strip.map((r) => r.name);
-  /* Every tile summarises a column of the table underneath it, so every tile
-     is also the control for that column. Click one and the roster re-ranks by
-     it. The bento stops being a read-only headline and becomes the table's
-     control surface — which is what a leader is reaching for anyway when they
-     look at "Still in Lead: 12" and want to know who. */
-  const tiles: Array<{
-    k: string; n: number; suffix?: string; u: string; sortKey: keyof Row;
-    tone: string; values: number[]; say: (r: Row) => string;
-  }> = [
-    { k: 'Leads in play', n: totals.leads, u: 'all sources', tone: 'sea', sortKey: 'leads',
-      values: strip.map((r) => r.leads), say: (r) => `${r.name} · ${r.leads} leads` },
-    { k: 'Worked', n: totals.workedPct, suffix: '%', u: `${totals.worked} of ${totals.leads}`, tone: 'sea', sortKey: 'workedPct',
-      values: strip.map((r) => r.workedPct), say: (r) => `${r.name} · ${r.workedPct}% worked` },
-    { k: 'Under contract', n: totals.contracts, u: 'this window', tone: 'amber', sortKey: 'contracts',
-      values: strip.map((r) => r.contracts), say: (r) => `${r.name} · ${r.contracts} under contract` },
-    { k: 'Reached an offer', n: totals.offers, u: 'this window', tone: 'amber', sortKey: 'offers',
-      values: strip.map((r) => r.offers), say: (r) => `${r.name} · ${r.offers} reached an offer` },
-    { k: 'Still in Lead', n: totals.stuck, u: totals.stuck ? '48h+ untouched' : 'nothing sitting', tone: 'ember', sortKey: 'stuck',
-      values: strip.map((r) => r.stuck), say: (r) => `${r.name} · ${r.stuck} still in Lead` },
-  ];
-
   return frame(
     <>
-      <header className="dk-mast">
-        <div>
-          <span className={totals.pastLine > 0 ? 'dk-eyebrow hot' : 'dk-eyebrow'}>
-            <i />
-            {totals.pastLine > 0
-              ? `${totals.pastLine} past your line`
-              : priorities.length > 0
-                ? `${priorities.length} ${priorities.length === 1 ? 'conversation' : 'conversations'} this week`
-                : 'Nobody is past your line'}
-          </span>
-          <h1>
-            {totals.perContract
-              ? <>One contract per <em>{rateShown ?? Math.round(totals.perContract)}</em> leads.</>
-              : <>No contracts in this window yet.</>}
-          </h1>
-          <p className="dk-sub">
-            Your target is one contract per {line} leads. <b>{totals.workedPct}%</b> of {totals.leads} leads are marked worked.
-            {' '}Use the signals below to decide what to review; conversation quality needs interaction evidence.
-            {undated > 0 && <> <s className="dk-note">{undated} leads carry no date and sit outside this window.</s></>}
-            {departed.names.length > 0 && (
-              <> <s className="dk-note">
-                Totals include {departed.leads} leads from {departed.names.join(' and ')}, no longer on the team.
-              </s></>
-            )}
-          </p>
-        </div>
-      </header>
-
-      <section className="dk-bento">
-        <div className="rs-plate dk-tile dk-tile-lead">
-          {/* The heading sorts; the scale below it does NOT, because the scale
-              is a drag target and a click that both re-ranked the table and
-              moved your line would be two answers to one gesture. */}
-          <span
-            className={`k k-do${sort.key === 'perContract' ? ' is-sorting' : ''}`}
-            role="button"
-            tabIndex={0}
-            title="Rank the roster by leads per contract"
-            onClick={() => resort('perContract')}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resort('perContract'); } }}
-          >Leads per contract</span>
-          <span className="v"><Odometer value={totals.perContract} prefix="1 : " /></span>
-          {/* One dot per agent, on the same scale as your line. The light comes
-              from the room behind this card; the card only has to be true.
-              Every dot knows whose it is now, so pointing at one — with the
-              cursor, or with the arrow keys from the table — names them. */}
-          <ScaleMarks
-            lo={lo} hi={hi} line={line}
-            lineLabel={`Target · 1 : ${line}`}
-            onLineChange={setLine}
-            lineName={`your line, currently one in ${line}`}
-            marks={rows.map((r) => ({
-              key: r.name,
-              value: r.perContract,
-              label: r.name,
-              reading: r.perContract ? `1 : ${Math.round(r.perContract)}` : undefined,
-              tone: r.health === 'past-line' ? 'bad'
-                : r.health === 'behind' ? 'warn'
-                  : r.health === 'holding' ? 'ok' : 'none',
-            }))}
-          />
-          <TargetControl target={target} label="Leads per contract" defaultValue={DEFAULT_LINE} />
-        </div>
-        {tiles.map((t) => (
-          <div
-            className={`rs-plate dk-tile dk-tile-do${sort.key === t.sortKey ? ' is-sorting' : ''}`}
-            key={t.k}
-            role="button"
-            tabIndex={0}
-            aria-pressed={sort.key === t.sortKey}
-            title={`Rank the roster by ${t.k.toLowerCase()}`}
-            onClick={() => resort(t.sortKey)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resort(t.sortKey); } }}
-          >
-            <span className="k">{t.k}</span>
-            <span className="v"><Odometer value={t.n} suffix={t.suffix} /></span>
-            <Strip
-              values={t.values}
-              tone={t.tone}
-              keys={stripKeys}
-              labels={strip.map(t.say)}
-              onPick={(name) => setOpen(rows.find((r) => r.name === name) ?? null)}
-            />
-            <span className="u">{t.u}</span>
-            <span className="dk-tile-rank" aria-hidden>
-              {sort.key === t.sortKey ? (sort.dir === 1 ? 'ranking ▲' : 'ranking ▼') : 'rank by this'}
-            </span>
-          </div>
-        ))}
+      <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>Lead activity and contracts · {win.label} view</p></div><details className="pulse-target"><summary>Target <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Leads per contract" defaultValue={DEFAULT_LINE} /></details></header>
+      <section className="pulse-summary" aria-label="Team performance summary">
+        <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>{totals.workedPct}% marked worked</small></div>
+        <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>In this reporting window</small></div>
+        <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>In this reporting window</small></div>
+        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.round(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Team ratio · target '+line : 'No contracts recorded'}</small></div>
       </section>
-
-      <div className="dk-sec">
-        <h2>The roster</h2>
-        <p>
-          {priorities.length === 0
-            ? 'No priority signals in this view.'
-            : `${priorities.length} signals to review · ${totals.stale} past thirty days without a 1:1`}
-        </p>
-        <span className="dk-key">
-          <input className="ad-input adm-search" aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} />
-          {focus.quiet ? (
-            <span className="dk-quiet-out">
-              Just the {priorities.length} who need you
-              <button onClick={() => focus.setQuiet(false)}>Bring it back</button>
-            </span>
-          ) : focus.pinned ? (
-            <span className="dk-pinned">
-              Holding {focus.pinned}
-              <button onClick={() => focus.pin(null)}>Let go</button>
-            </span>
-          ) : (
-            <span className="dk-keys">
-              <kbd>↑</kbd><kbd>↓</kbd> <b>walk</b>
-              <kbd>↵</kbd> <b>open</b>
-              <kbd>P</kbd> <b>hold</b>
-              {priorities.length > 0 && <><kbd>F</kbd> <b>just these</b></>}
-            </span>
-          )}
-          <s className="rs-key team" /> the team{totals.perContract ? ` at 1 : ${Math.round(totals.perContract)}` : ''}
-          <s className="rs-key line" /> your line at 1 : {line}
-        </span>
-      </div>
-
-      {priorities.length > 0 && (
-        <div className="dk-focus">
-          {priorities.map((p) => (
-            <article
-              key={p.row.name}
-              className={[
-                'dk-fr',
-                p.severity === 'high' ? 'crit' : '',
-                focus.active === p.row.name ? 'is-on' : '',
-              ].filter(Boolean).join(' ')}
-              tabIndex={0}
-              {...focusBinding(p.row.name, focus)}
-              onClick={() => setOpen(p.row)}
-              onKeyDown={(e) => { if (e.key === 'Enter') setOpen(p.row); }}
-            >
-              <span className={'rs-av h-' + p.row.health}>{initials(p.row.name)}</span>
-              <span className="dk-fr-name">{p.row.name}</span>
-              <span className="dk-fr-why">{p.reason}</span>
-              <span className="dk-fr-do">{p.action}</span>
-            </article>
-          ))}
-        </div>
-      )}
-
+      <div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
       <div className="rs-plate dk-table" ref={tableRef}>
         <table className="tru-table">
           <thead>
@@ -392,7 +218,7 @@ function Deck({
               {th('name', 'Agent')}{th('leads', 'Leads')}{th('workedPct', 'Worked')}
               {th('stuck', 'In Lead')}{th('offers', 'Offers')}{th('contracts', 'Contracts')}
               {th('perContract', 'Leads per contract')}{th('lastDays', 'Last 1:1')}
-              <th>State</th>
+              <th className="pulse-open-heading"><span className="sr-only">Open agent</span></th>
             </tr>
           </thead>
           <tbody>
@@ -402,7 +228,7 @@ function Deck({
                   data-flip={r.name}
                   className={[
                     'rowlink',
-                    priorities.some((p) => p.row.name === r.name) ? 'crit' : '',
+
                     focus.active === r.name ? 'is-on' : '',
                     focus.pinned === r.name ? 'is-pinned' : '',
                   ].filter(Boolean).join(' ')}
@@ -416,57 +242,42 @@ function Deck({
                     <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
                     <div>
                       <div className="cell-name">{r.name}</div>
-                      <div className="rs-sub2">{r.archName ?? 'Not assessed'}</div>
+                      <div className="pulse-row-reason">{priorities.find(p=>p.row.name===r.name)?.reason}</div>
                     </div>
                   </div>
                 </td>
                 <td>{cell(r.leads, i)}</td>
                 <td className={r.workedPct < 90 ? 'cell-warn' : ''}>{cell(`${r.workedPct}%`, i)}</td>
-                <td className={r.stuck > 10 ? 'cell-warn' : ''}>{cell(r.stuck || '—', i)}</td>
-                <td>{cell(r.offers || '—', i)}</td>
-                <td>{cell(r.contracts || '—', i)}</td>
+                <td className={r.stuck > 10 ? 'cell-warn' : ''}>{cell(r.stuck, i)}</td>
+                <td>{cell(r.offers, i)}</td>
+                <td>{cell(r.contracts, i)}</td>
                 <td>
                   <div className="rs-rate">
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
                       {cell(r.perContract ? '1 : ' + Math.round(r.perContract) : '—', i)}
                     </b>
-                    {/* Placed by `--at` rather than by `left`, exactly like the
-                        big scale in the lead tile — so changing the window
-                        slides every mark in the table to its new place instead
-                        of redrawing the column. That travel IS the table
-                        registering the change. */}
-                    <span className="rs-scale">
-                      <hr />
-                      {totals.perContract && <s style={{ '--at': scale(totals.perContract) } as React.CSSProperties} />}
-                      <u style={{ '--at': scale(line) } as React.CSSProperties} />
-                      {r.perContract !== null && (
-                        <i style={{ '--at': scale(r.perContract) } as React.CSSProperties} className={'h-' + r.health} />
-                      )}
-                    </span>
+                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{r.perContract === null ? 'No ratio' : Math.abs(Math.round(r.perContract-line))+' '+(r.perContract>line ? 'above target' : 'below target')}</small>
                   </div>
                 </td>
                 <td className={r.lastDays !== null && r.lastDays > 45 ? 'cell-warn' : ''}>
-                  {r.lastDays === null ? 'never' : r.lastDays + 'd'}
+                  {r.lastDays === null ? <span className="pulse-missing">Not recorded</span> : r.lastDays + 'd ago'}
                 </td>
-                <td><span className={'rs-tag h-' + r.health}>{
-                  r.health === 'past-line' ? 'past the line'
-                    : r.health === 'behind' ? 'behind team'
-                      : r.health === 'no-volume' ? (r.leads ? 'no contracts' : 'no leads') : 'within target'
-                }</span></td>
+                <td><button className="pulse-row-open" aria-label={'Open '+r.name} onClick={e=>{e.stopPropagation();setOpen(r);}}>View →</button></td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
-              <td>Team</td><td><b>{totals.leads}</b></td><td><b>{totals.workedPct}%</b></td>
+              <td>Full team total</td><td><b>{totals.leads}</b></td><td><b>{totals.workedPct}%</b></td>
               <td><b>{totals.stuck}</b></td><td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td>
               <td><b>{totals.perContract ? '1 : ' + Math.round(totals.perContract) : '—'}</b></td>
-              <td><b>{totals.stale} stale</b></td><td />
+              <td colSpan={2} />
             </tr>
           </tfoot>
         </table>
       </div>
 
+      <details className="pulse-data-notes"><summary>About these numbers</summary><p>Counts reflect this reporting window. “Worked” reflects recorded lead activity, not a judgement of conversation quality. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
       <PersonPane
         row={open}
         onClose={() => setOpen(null)}
