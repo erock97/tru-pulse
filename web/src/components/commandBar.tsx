@@ -131,7 +131,8 @@ export function CommandBar({
           ...(onOpenFailureLogs ? [{ id: 'n:failure-logs', label: 'Failure Logs', hint: 'sanitized pipeline incidents from Hermes', group: 'Go to' as const, run: onOpenFailureLogs }] : []),
         ]
       : [
-          { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to' as const, run: onOpenPulse },
+          { id: 'n:today', label: 'Today', hint: 'check-ins and commitments', group: 'Go to' as const, run: () => { window.location.hash = '/today'; } },
+          { id: 'n:pulse', label: 'Pulse', hint: 'team performance and lead activity', group: 'Go to' as const, run: onOpenPulse },
           { id: 'n:coach', label: 'Coach', hint: 'who needs a conversation', group: 'Go to' as const, run: onOpenCoach },
           { id: 'n:rep', label: 'Rep', hint: 'certification progress', group: 'Go to' as const, run: onOpenRep },
           ...(onOpenTeam ? [{ id: 'n:team', label: 'Team', hint: 'who is on the platform', group: 'Go to' as const, run: onOpenTeam }] : []),

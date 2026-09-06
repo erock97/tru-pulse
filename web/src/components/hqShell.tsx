@@ -253,6 +253,22 @@ export function HqShell({
             </button>
           ))}
         </nav>
+        <div className="hq-nav-search">
+            <CommandBar
+              isAdmin={isAdmin}
+              onOpenAdmin={onOpenAdmin}
+              onOpenTeamData={onOpenTeamData}
+              onOpenRevenue={onOpenRevenue}
+              onOpenContracts={onOpenContracts}
+              onOpenCalendar={onOpenCalendar}
+              onOpenFailureLogs={onOpenFailureLogs}
+              onOpenPulse={nav.onOpenPulse}
+              onOpenCoach={nav.onOpenCoach}
+              onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
+              onOpenTeam={nav.onOpenTeam}
+              onSignOut={onSignOut}
+            />
+        </div>
         <div className="side-foot">
           <div className="side-user">
             <Avatar name={orgName} size={38} tone={0} />
@@ -285,27 +301,8 @@ export function HqShell({
       <main className="main">
         {isDemo && <div className="hq-sample-note">Design preview · Sample team data</div>}
         {impersonating && <div className="hq-team-context" role="status"><span>Viewing <strong>{orgName}</strong> · Team workspace</span><button onClick={() => { void adminReturn(); }}>Return to my workspace</button></div>}
-        {hideTopbar && (
-          <div className="dk-island">
-            <span className="dk-mk"><img className="tru-emblem" src="/tru-mark.png" alt="" width="22" height="22" decoding="async" /><b>TRU <em>HQ</em></b></span>
-            {islandSlot && <><span className="dk-div" />{islandSlot}</>}
-            <span className="dk-div" />
-            <CommandBar
-              isAdmin={isAdmin}
-              onOpenAdmin={onOpenAdmin}
-              onOpenTeamData={onOpenTeamData}
-              onOpenRevenue={onOpenRevenue}
-              onOpenContracts={onOpenContracts}
-              onOpenCalendar={onOpenCalendar}
-              onOpenFailureLogs={onOpenFailureLogs}
-              onOpenPulse={nav.onOpenPulse}
-              onOpenCoach={nav.onOpenCoach}
-              onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}
-              onOpenTeam={nav.onOpenTeam}
-              onSignOut={onSignOut}
-            />
-          </div>
-        )}
+        {hideTopbar && islandSlot && <div className="hq-page-controls">{islandSlot}</div>}
+
         {!hideTopbar && (
           <header className="topbar reveal">
             <div>

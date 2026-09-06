@@ -44,3 +44,8 @@ Checks: typecheck/build pass. 391 tests pass; same pre-existing Zillow hash fail
 Removed the standalone target slider, duplicated attention cards, personality subtitles, green avatar treatments and full-row warning fills. Four summary figures lead into the agent register. Review-only filtering and search compose; reasons appear in their agent row. Target editing is disclosed and only saved values govern comparisons. Existing detail drawer, period selection, sorting and all data columns remain. Zero counts now display as zero. Source/coverage notes remain available below the table. Drawer surfaces and source marks use the neutral palette.
 
 Verified desktop/table, review filtering, detail open/close, target Save/reload, and phone summary/controls. Typecheck/build pass. Web tests remain 391 pass, one existing unrelated Zillow hash failure. Preview only.
+
+## Fifth pass — unified navigation and stone surfaces
+Moved Search into the single pinned top navigation across app tabs and removed the duplicate logo/search strip. Contextual period and return controls remain below the navigation where needed. Added Today to command navigation. Deepened the stone canvas, queue and table headers; reserved lighter surfaces for the selected coaching review and active work. No hero cards or shadows added. Mobile retains a labelled Search button and bottom section navigation.
+
+Typecheck and production build pass. Web tests: 391 pass, same existing Zillow slide hash failure. Desktop Search and sticky navigation checked; phone layout and Search checked. Preview only; production and backend unchanged.
