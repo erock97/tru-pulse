@@ -17,6 +17,8 @@ export function hustleFeed(dashboard:WeeklyDashboard, team:string, roster:Array<
   // The publisher falls back to bundled preview fixtures. They are not live publications.
   if(!report || report.deliveryStatus==='PREVIEW_VERIFIED' || report.runStatus==='FINALIZED_LOCAL')
     return {weekEnding:null,scores:[]};
+  // A delivery receipt alone does not clear a withheld/active analysis status.
+  if(report.runStatus!=='FINALIZED') return {weekEnding:null,scores:[]};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(report.weekEnding) || !Number.isFinite(Date.parse(report.capturedAt)))
     throw new Error('Invalid report dates');
   const normalize=(name:string)=>name.trim().toLowerCase().replace(/\s+/g,' ');
