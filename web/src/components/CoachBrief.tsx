@@ -145,6 +145,7 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
   if (evidence.length === 0) return null;
   return (
     <ul className="brief-evidence">
+      {evidence.some(f => !f.quote) && <li className="brief-source-note">Some linked records have no excerpt in this report. Open the source conversation to review what was said.</li>}
       {evidence.map((f, i) => (
         <li key={i}>
           {f.quote && (
