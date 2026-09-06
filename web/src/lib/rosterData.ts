@@ -143,7 +143,7 @@ export function prioritise(rows: readonly Row[]): Priority[] {
   return out
     .sort((a, b) => rank[a.severity] - rank[b.severity]
       || (b.row.perContract ?? 0) - (a.row.perContract ?? 0))
-    .slice(0, 4);
+    ;
 }
 
 export function totalsOf(rows: readonly Row[]): Totals {

@@ -71,3 +71,15 @@ Checks: typecheck/build pass. Tests 397 pass and one existing unrelated Zillow s
 Removed the redundant Pulse View column at Eric's request. Agent names are accessible buttons opening the existing detail panel; Proof remains separate. TRU Brain still unavailable; existing override retained.
 
 Pause allowance: added editable Leads before pause beneath Minimum expectation, default 15, browser-local account/team persistence. MTD displays configured limit and supplied Zillow routing link. Actual pause flags are NOT implemented because assignment-event timestamps are absent; displayed status is Cannot assess yet. No Zillow actions or production changes.
+
+## Broker-owner logic review — September 5
+Search enlarged; shortcut hint removed. Removed four-agent truncation from Pulse Review signals: all matching agents must remain reachable.
+
+Recommended sequence:
+1. Resolve current created-cohort performance versus calendar production. MTD contracts currently counts current stages of leads created MTD, not all contracts signed MTD; old leads converting today can be absent. Separate those two questions before more financial reporting.
+2. Assignment history and identity: current owner/name grouping does not prove who received a lead or when. Stable tenant/agent identity plus dated assignment events are prerequisites for caps and workload trends.
+3. Today must close the loop: schedule, actionable exceptions, owner, due date, completion and reason. Current open commitments lack due dates; do not infer overdue.
+4. Coach/Rep: observation -> source -> specific practice -> next check-in -> reviewed outcome. A completed module does not prove changed sales behavior.
+5. Estimated brokerage earnings: FUB sync stores price/commissionValue and first deal user/person. Verify commission units, completed closing status/date, split participants, lead-source attribution and completeness. Default agent split with per-deal override; referral fee amounts and fee order explicit. Missing inputs remain missing; show confirmed/estimated totals separately. Export a calculation statement with assumptions. Do not label this profit without expenses. Existing admin revenue serves TRU billing and is not a broker earnings ledger.
+
+TRU Brain unavailable; retained Eric override. These are proposed priorities, not claims that missing integrations have shipped.

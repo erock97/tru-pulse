@@ -183,7 +183,7 @@ export function CommandBar({
   if (!open) {
     return (
       <button className="cb-hint" onClick={() => setOpen(true)} aria-label="Open the command bar">
-        <span>Search</span><kbd>⌘K</kbd>
+        <span>Search people and pages</span>
       </button>
     );
   }
