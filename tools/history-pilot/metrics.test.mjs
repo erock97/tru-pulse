@@ -14,6 +14,8 @@ test('actorless historical change retains nurture credit',()=>assert.equal(run([
 test('automated historical change retains stage names',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Nurture by metadata-system-client-id=0 automatically'}).to,'Nurture'));
 test('action plan suffix is actor metadata, not part of the destination stage',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Under contract by action-plan-id=189 action plan'}).to,'Under contract'));
 test('unsupported actor suffix stays a parsing exception',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Under contract by unknown-id=1 something'}),null));
+test('older destination-only changes retain timestamp without inventing a prior stage',()=>{const e={id:'old',date:'2025-01-01',description:'Stage changed to Closed by user-id=1'};assert.equal(parseStage(e).from,null);assert.equal(datedCredits(p,{stageEvents:[e]}).find(e=>e.category==='uc').date,'2025-01-01')});
+test('legacy negative actor ID does not suppress the stage change',()=>assert.equal(parseStage({id:'old',date:'2025-01-01',description:'Stage changed to Nurture by user-id=-1'}).to,'Nurture'));
 test('closed grants cumulative progression but no nurture',()=>assert.deepEqual(run([ev('a','Lead','Closed')]).counts,{met:1,offer:1,uc:1,closed:1,nurture:0}));
 test('current stage alone never invents historical milestone dates',()=>assert.equal(run([],{...p,stage:'Closed'}).counts.closed,0));
 test('source filter isolates cohort',()=>assert.equal(calculate({people:[p],histories:{}},{...options,source:'Other'}).length,0));

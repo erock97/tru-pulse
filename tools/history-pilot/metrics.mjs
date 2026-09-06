@@ -4,9 +4,9 @@ export const defaultMap={'Met with Customer':'met','Submitting Offers':'offer','
 export function stageCategory(stage,mapping=defaultMap){const key=String(stage??'').trim().toLowerCase();return Object.entries(mapping).find(([name])=>name.toLowerCase()===key)?.[1];}
 export function day(value,timezone='UTC') {const d=new Date(value);if(!value||!Number.isFinite(+d))return null;return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
 export function parseStage(event) {
- const m=event.description?.match(/^Stage changed from (.+?) to (.+?)(?: by user-id=(\d+)| by metadata-system-client-id=(\d+) automatically| by action-plan-id=(\d+) action plan)?$/);
+ const m=event.description?.match(/^Stage changed (?:from (.+?) )?to (.+?)(?: by user-id=(-?\d+)| by metadata-system-client-id=(-?\d+) automatically| by action-plan-id=(\d+) action plan)?$/);
  if(!m||!event.id||!day(event.date)||/ by [\w-]+-id=/.test(m[2]))return null;
- return {...event,from:m[1],to:m[2],actorId:m[3]?Number(m[3]):null};
+ return {...event,from:m[1]??null,to:m[2],actorId:m[3]?Number(m[3]):null};
 }
 export function leadProof(person,history,{end,timezone='UTC',mapping=defaultMap}) {
  const proof=Object.fromEntries(categories.map(k=>[k,[]]));const unknown=[];const seen=new Set();
