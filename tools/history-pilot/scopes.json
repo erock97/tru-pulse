@@ -6,7 +6,7 @@
     "SATISH": {"team":"SB Realty","sources":{"Zillow Preferred":"2026-01-01","Realtor.com":"2026-01-01","Realtor.com MVIP":"2026-01-01","Market VIP via Opcity BLA":"2026-01-01"}},
     "WOOSLEY": {"team":"Woosley Group","sources":{"Zillow Preferred":"2026-01-01"}},
     "COSTIGAN": {"team":"Costigan","sources":{"Zillow Preferred":"2026-01-01"}},
-    "SCOTTMOORE": {"team":"Scott Moore Group","sources":{"Zillow Preferred":"2026-01-01","Realtor.com":"2026-04-01","Realtor.com MVIP":"2026-04-01","Market VIP via Opcity BLA":"2026-04-01"},"dateConfirmationPending":true},
-    "SYNERGY": {"team":"The Synergy Group NJ","sources":{"Zillow Flex":"2026-01-01"},"sourceConfirmationPending":true}
+    "SCOTTMOORE": {"team":"Scott Moore Group","sources":{"Zillow Preferred":"2026-01-01"}},
+    "SYNERGY": {"team":"The Synergy Group NJ","sources":{"Zillow":"2026-01-01","Zillow Premier Agent":"2026-01-01"}}
   }
 }

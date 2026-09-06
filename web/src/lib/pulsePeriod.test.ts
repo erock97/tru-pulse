@@ -16,6 +16,11 @@ describe('Pulse calendar periods', () => {
     expect(inPulsePeriod('invalid', 'mtd', now)).toBe(false);
     expect(inPulsePeriod(new Date(2026, 8, 6).toISOString(), 'mtd', now)).toBe(false);
   });
+  it('year to date starts January 1 and excludes the previous year',()=>{
+    expect(pulseCutoff('ytd',now)).toBe(new Date(2026,0,1).getTime());
+    expect(inPulsePeriod(new Date(2025,11,31,23,59).toISOString(),'ytd',now)).toBe(false);
+    expect(inPulsePeriod(new Date(2026,0,1).toISOString(),'ytd',now)).toBe(true);
+  });
   it('uses two calendar years, including a leap day, and excludes older leads', () => {
     const leapWindow = new Date(2025, 0, 1, 12);
     expect(pulseCutoff('2yr', leapWindow)).toBe(new Date(2023, 0, 1).getTime());

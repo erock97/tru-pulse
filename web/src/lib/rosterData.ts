@@ -73,10 +73,12 @@ export const WINDOWS: readonly Window[] = [
   { key: '7d', label: '7d', days: 7 },
   { key: 'mtd', label: 'Month to date', days: 'mtd' },
   { key: '90d', label: '90d', days: 90 },
-  { key: 'all', label: '12mo', days: 365 },
+  { key: 'all', label: 'One year', days: 365 },
   { key: '6mo', label: '6mo', days: '6mo' },
   { key: '2yr', label: '2 years', days: '2yr' },
+  { key: 'ytd', label: 'Year to date', days: 'ytd' },
 ];
+export const PERIOD_OPTIONS = ['mtd','ytd','7d','90d','6mo','all','2yr'].map(key=>{const w=WINDOWS.find(w=>w.key===key)!;return {value:w.key,label:w.label==='7d'?'7 days':w.label==='90d'?'90 days':w.label==='6mo'?'6 months':w.label}});
 
 export const norm = (s: string | null | undefined) =>
   (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');

@@ -27,10 +27,11 @@ import { ProductionPanel } from '../components/ProductionPanel';
 import { useMemo, useRef, useState } from 'react';
 
 import { HqShell } from '../components/hqShell';
+import { PeriodSelect } from '../components/PeriodSelect';
 import { signOutClean } from '../lib/api';
 import { initials } from '../lib/coachData';
 import {
-  DEFAULT_LINE, WINDOWS, approachFor, prioritise, useRosterData,
+  DEFAULT_LINE, WINDOWS, PERIOD_OPTIONS, approachFor, prioritise, useRosterData,
   type Row, type Window,
 } from '../lib/rosterData';
 import { PersonPane } from '../components/personPane';
@@ -41,7 +42,7 @@ import {
 } from '../components/deckFocus';
 import { minimumExpectation } from '../lib/minimumExpectation';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
-import { useFlip, useGlide } from '../lib/deckMotion';
+import { useFlip } from '../lib/deckMotion';
 
 export default function RosterDeck(props: {
   orgId: string;
@@ -143,22 +144,9 @@ function Deck({
   // time — which is what actually happened.
 
 
-  /* Just the window tabs now — the shell draws the bar.
-     The lit pill is one element that travels between them rather than a
-     highlight that blinks out here and in over there. This is the control that
-     changes every figure on the page, so the selection moving is the first
-     half of the answer; the numbers rolling underneath is the second. */
-  const winRef = useRef<HTMLSpanElement | null>(null);
-  const winGlide = useGlide(winRef, 'button.on', 'x', win.key);
+  // Keep the selected reporting period visible without a crowded button row.
   const windowTabs = (
-    <span className="dk-win" ref={winRef}>
-      <i className="dk-win-glide" style={winGlide} aria-hidden />
-      {[WINDOWS[0], WINDOWS[1], WINDOWS[2], WINDOWS[4], WINDOWS[3], WINDOWS[5]].map((w) => (
-        <button key={w.key} className={w.key === win.key ? 'on' : ''} onClick={() => setWin(w)}>
-          {w.label}
-        </button>
-      ))}
-    </span>
+    <PeriodSelect value={win.key} options={PERIOD_OPTIONS} onChange={key=>setWin(WINDOWS.find(w=>w.key===key)!)} />
   );
 
   const frame = (body: React.ReactNode) => (

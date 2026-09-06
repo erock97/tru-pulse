@@ -22,10 +22,11 @@
 import { useMemo, useState } from 'react';
 
 import { HqShell } from '../components/hqShell';
+import { PeriodSelect } from '../components/PeriodSelect';
 import { signOutClean } from '../lib/api';
 import { DropFlow, DropSpark, type Stage } from '../components/dropFlow';
 import {
-  DEFAULT_LINE, WINDOWS, useRosterData, type Window,
+  DEFAULT_LINE, WINDOWS, PERIOD_OPTIONS, useRosterData, type Window,
 } from '../lib/rosterData';
 import '../truHqDark.css';
 
@@ -90,17 +91,7 @@ export default function PulseLab({
         onSignOut={() => signOutClean()}
         hideTopbar
         islandSlot={
-          <>
-            {WINDOWS.map((w) => (
-              <button
-                key={w.key}
-                className={win.key === w.key ? 'dk-win is-on' : 'dk-win'}
-                onClick={() => setWin(w)}
-              >
-                {w.label}
-              </button>
-            ))}
-          </>
+          <PeriodSelect value={win.key} options={PERIOD_OPTIONS} onChange={key=>setWin(WINDOWS.find(w=>w.key===key)!)} />
         }
         nav={{
           onHome: () => onHome?.(),
