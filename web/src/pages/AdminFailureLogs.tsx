@@ -58,9 +58,10 @@ function formatWhen(iso: string): string {
 }
 
 export function ProblemCard({
-  problem, onStatusChange,
+  problem, onStatusChange, onRefresh,
 }: {
   problem: FailureLogProblem;
+  onRefresh?: () => void;
   onStatusChange: (fingerprint: string, status: FailureLogStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -116,14 +117,14 @@ export function ProblemCard({
           onChange={async (e) => {
             const next = e.target.value as FailureLogStatus;
             setSaving(true);
-            const ok = await adminUpdateFailureLog(problem.fingerprint, { status: next });
+            const ok = await adminUpdateFailureLog(problem.fingerprint, { status: next, expectedVersion: problem.version ?? 1 });
             setSaving(false);
-            if (ok) onStatusChange(problem.fingerprint, next);
+            if (ok) { onStatusChange(problem.fingerprint, next); onRefresh?.(); }
             setSaveError(ok ? '' : 'Could not save changes. Please retry.');
           }}
         >
           {(Object.keys(STATUS_LABELS) as FailureLogStatus[]).map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            <option key={s} value={s} disabled={s === 'verified' && problem.status !== 'fixed' && problem.status !== 'verified'}>{STATUS_LABELS[s]}</option>
           ))}
         </select>
         <button
@@ -135,12 +136,20 @@ export function ProblemCard({
         </button>
       </div>
 
+      <AgentActivity problem={problem} />
+      {problem.claim && <button className="side-link-btn" disabled={saving} onClick={async () => {
+        setSaving(true);
+        const ok = await adminUpdateFailureLog(problem.fingerprint, { expectedVersion: problem.version ?? 1, releaseClaim: true });
+        setSaving(false); if (ok) onRefresh?.();
+        setSaveError(ok ? 'Claim released.' : 'Could not release claim. Refresh and retry.');
+      }}>Release claim</button>}
       <label style={{ display: 'grid', gap: 6, marginTop: 14 }}>Resolution notes
-        <textarea className="ad-input" maxLength={2000} value={notes} onChange={e => setNotes(e.target.value)} />
+        <textarea className="ad-input" maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} />
       </label>
       <button className="side-link-btn" disabled={saving} onClick={async () => {
         setSaving(true);
-        const ok = await adminUpdateFailureLog(problem.fingerprint, { notes });
+        const ok = await adminUpdateFailureLog(problem.fingerprint, { notes, expectedVersion: problem.version ?? 1 });
+        if (ok) onRefresh?.();
         setSaving(false);
         setSaveError(ok ? 'Notes saved.' : 'Could not save notes. Please retry.');
       }}>Save notes</button>
@@ -286,7 +295,7 @@ export default function AdminFailureLogs({
           ) : (
             <div style={{ display: 'grid', gap: 14, marginTop: 14 }}>
               {problems.map((p) => (
-                <ProblemCard key={p.fingerprint} problem={p} onStatusChange={handleStatusChange} />
+                <ProblemCard key={p.fingerprint} problem={p} onStatusChange={handleStatusChange} onRefresh={load} />
               ))}
             </div>
           )}
@@ -294,4 +303,28 @@ export default function AdminFailureLogs({
       </HqShell>
     </div>
   );
+}
+
+export function AgentActivity({ problem }: { problem: FailureLogProblem }) {
+  return <section aria-label="Agent activity" style={{ marginTop: 18, padding: 16, border: '1px solid var(--text-20)', borderRadius: 10 }}>
+    <h4 style={{ marginTop: 0 }}>Investigation · {STATUS_LABELS[problem.status]}</h4>
+    <p>Assigned agent: {problem.claim?.agentId ?? 'Unassigned'} · Version {problem.version ?? 1}</p>
+    {problem.claim && <p>Claimed {formatWhen(problem.claim.claimedAt)} · Expires {formatWhen(problem.claim.expiresAt)}</p>}
+    {problem.diagnosis && <p><b>Diagnosis:</b> {problem.diagnosis}</p>}
+    {problem.remediation && <p><b>Remediation:</b> {problem.remediation}</p>}
+    {!!problem.filesChanged?.length && <p><b>Files changed:</b> {problem.filesChanged.join(', ')}</p>}
+    {!!problem.testsRun?.length && <p><b>Tests run:</b> {problem.testsRun.join(', ')}</p>}
+    {problem.agentNextStep && <p><b>Investigation next step:</b> {problem.agentNextStep}</p>}
+    <details><summary>Status history ({problem.history?.length ?? 0})</summary>
+      <ol>{problem.history?.map(h => <li key={h.id} style={{ marginTop: 10 }}>
+        {formatWhen(h.occurredAt)} · {h.actor === 'brian' ? 'Brian' : h.actor === 'administrator' ? 'Administrator' : 'Incident ingestion'} · {h.operation} · {h.fromStatus ?? 'New'} → {h.toStatus} · Version {h.version}
+        {h.detail.diagnosis && <p>{h.detail.diagnosis}</p>}
+        {h.detail.remediation && <p>Remediation: {h.detail.remediation}</p>}
+        {h.detail.nextStep && <p>Next step: {h.detail.nextStep}</p>}
+        {h.detail.resolutionNotes && <p>Notes: {h.detail.resolutionNotes}</p>}
+        {!!h.detail.filesChanged?.length && <p>Files: {h.detail.filesChanged.join(', ')}</p>}
+        {!!h.detail.testsRun?.length && <p>Tests: {h.detail.testsRun.join(', ')}</p>}
+      </li>)}</ol>
+    </details>
+  </section>;
 }

@@ -763,6 +763,13 @@ export interface FailureLogIncidentDetail {
 }
 
 export interface FailureLogProblem {
+  version?: number;
+  claim?: { agentId: string; claimedAt: string; expiresAt: string } | null;
+  diagnosis?: string | null; remediation?: string | null; agentNextStep?: string | null;
+  filesChanged?: string[]; testsRun?: string[];
+  history?: Array<{ id: number; version: number; occurredAt: string; actor: string; operation: string;
+    fromStatus: string | null; toStatus: string; detail: { diagnosis?: string; remediation?: string; nextStep?: string; resolutionNotes?: string; filesChanged?: string[]; testsRun?: string[] } }>;
+
   fingerprint: string;
   title: string;
   stage: string;
@@ -812,7 +819,7 @@ export async function adminFailureLogs(filters: FailureLogFilters = {}): Promise
 
 /** Set a failure-log problem's resolution status and/or notes. */
 export async function adminUpdateFailureLog(
-  fingerprint: string, patch: { status?: FailureLogStatus; notes?: string },
+  fingerprint: string, patch: { expectedVersion: number; status?: FailureLogStatus; notes?: string; releaseClaim?: boolean },
 ): Promise<boolean> {
   if (isDemo) return false;
   try {
