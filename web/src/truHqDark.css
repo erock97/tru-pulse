@@ -6346,3 +6346,27 @@ html[data-theme="warm"] .tru-dark .ps-risk { background: linear-gradient(150deg,
 }
 .tru-dark .cal-edit-nums input { width: 100%; box-sizing: border-box; }
 .tru-dark .cal-edit-blocks { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; align-items: flex-start; }
+/* Coach: one scorecard leads into one discussion, with evidence kept expandable. */
+.tru-dark .coach-scorecard { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 24px; }
+.tru-dark .coach-scorecard-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.tru-dark .coach-scorecard-heading h4 { margin: 0; }
+.tru-dark .coach-scorecard-heading a { font-size: 13px; color: var(--text-60); text-underline-offset: 3px; }
+.tru-dark .coach-scorecard-rows { margin: 12px 0; }
+.tru-dark .coach-scorecard-rows > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 0.8fr); gap: 20px; padding: 16px 0; border-top: 1px solid var(--line); }
+.tru-dark .coach-scorecard-rows dt { font-size: 14px; font-weight: 550; }
+.tru-dark .coach-scorecard-rows dd { margin: 0; text-align: right; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tru-dark .coach-scorecard-rows small { display: block; margin-top: 5px; color: var(--text-60); font-size: 12px; font-weight: 400; line-height: 1.5; }
+.tru-dark .coach-scorecard-rows .needs-attention { color: #a7503c; }
+.tru-dark .coach-scorecard-note { color: var(--text-60); font-size: 12px; line-height: 1.6; max-width: 75ch; }
+.tru-dark .coach-intake-proof { font-size: 12px; line-height: 1.6; margin-top: 10px; }
+.tru-dark .coach-intake-proof summary, .tru-dark .coach-secondary summary { cursor: pointer; padding: 8px 0; }
+.tru-dark .coach-focus-summary { margin: 22px 0; }
+.tru-dark .coach-focus-summary h4 { margin-bottom: 10px; }
+.tru-dark .coach-focus-summary .brief-card, .tru-dark .coach-discussion-findings .brief-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; padding: 12px 0 16px; animation: none; }
+.tru-dark .coach-focus-summary .brief-point-text, .tru-dark .coach-discussion-findings .brief-point-text { max-width: 75ch; line-height: 1.65; }
+.tru-dark .coach-secondary { margin-top: 20px; border-top: 1px solid var(--line); }
+.tru-dark .coach-discussion-findings > h4 { margin: 24px 0 10px; }
+@media (max-width: 600px) {
+  .tru-dark .coach-scorecard-rows > div { grid-template-columns: minmax(0, 1fr) minmax(120px, 0.8fr); gap: 12px; }
+  .tru-dark .coach-scorecard-rows dd { font-size: 18px; }
+}

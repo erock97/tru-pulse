@@ -21,8 +21,9 @@ import {
   loadCoachBrief,
   NOT_ENOUGH_REVIEWED,
 } from '../lib/coachBriefData';
-import { workerFetch } from '../lib/api';
-import { buildAgentPlan, type PatternsBundle } from '../lib/coachPlan';
+import { reviewFindings } from '../lib/coachReview';
+import { useCoachReview } from './CoachReviewContext';
+import { CoachScorecard } from './CoachScorecard';
 import type {
   BriefAgentView,
   BriefBundle,
@@ -64,6 +65,7 @@ function useBrief(reportId: string | null): { bundle: BriefBundle | null; loadin
   useEffect(() => {
     let live = true;
     setLoading(true);
+    setBundle(null);
     (reportId ? loadCoachBrief(reportId) : loadLatestOnce())
       .then((b) => { if (live) { setBundle(b); setLoading(false); } })
       .catch(() => { if (live) { setBundle({ latest: null, weeks: [] }); setLoading(false); } });
@@ -191,7 +193,8 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
  * It still has to BE there -- a finding nobody can verify fails his own test
  * for a usable one -- but as a footnote the reader opens, never the body.
  */
-function PointList({ points, tone, maxVisible }: {
+function PointList({ points, tone, maxVisible, summaryOnly = false }: {
+  summaryOnly?: boolean;
   points: BriefPointView[];
   tone: 'good' | 'work' | 'watch';
   /** Show only this many, the rest behind a reader-operated "show more".
@@ -221,7 +224,7 @@ function PointList({ points, tone, maxVisible }: {
             <p className="brief-lead-line">{(p as { kicker?: string }).kicker}</p>
           )}
           <p className="brief-point-text">{linkLeads(p.text, p.evidence)}</p>
-          {p.coach && <p className="brief-coach"><b>Coach:</b> {linkLeads(p.coach, p.evidence)}</p>}
+          {!summaryOnly && p.coach && <p className="brief-coach"><b>Coach:</b> {linkLeads(p.coach, p.evidence)}</p>}
           {p.evidence.length > 0 && (
             <>
               <button
@@ -246,17 +249,6 @@ function PointList({ points, tone, maxVisible }: {
   );
 }
 
-function OutreachRow({ a }: { a: BriefAgentView }) {
-  const m = a.metrics;
-  const parts: string[] = [];
-  if (m.callFirst !== undefined) parts.push(`${m.callFirst} called first`);
-  if (m.textFirst !== undefined) parts.push(`${m.textFirst} texted first`);
-  if (m.noOutreach !== undefined) parts.push(`${m.noOutreach} untouched`);
-  if (m.unclassified !== undefined && m.unclassified > 0) parts.push(`${m.unclassified} unclear`);
-  if (parts.length === 0) return null;
-  return <p className="brief-outreach">First touch on new leads: {parts.join(' · ')}.</p>;
-}
-
 /** Reviewed-coverage words for the team scan. */
 function coverageLabel(a: BriefAgentView): string {
   const r = a.metrics.reviewedContacts;
@@ -267,7 +259,7 @@ function coverageLabel(a: BriefAgentView): string {
 
 /** The team-scan "coaching priority": the report's top opportunity, verbatim. */
 function priorityLabel(a: BriefAgentView): string | null {
-  return a.opportunities[0]?.text ?? null;
+  return reviewFindings(a)[0]?.text ?? null;
 }
 
 /**
@@ -395,20 +387,20 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   cohort?: Map<string, CohortMeta>;
   preferredAgent?: string | null;
 }) {
-  const [reportId, setReportId] = useState<string | null>(null);
-  const { bundle } = useBrief(reportId);
+  const { reportId, setReportId } = useCoachReview();
+  const { bundle, loading } = useBrief(reportId);
   const [printing, setPrinting] = useState(false);
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState(preferredAgent ?? '');
-  const operations = useOperations();
+  const { selected, setSelected } = useCoachReview();
+  useEffect(() => { if (preferredAgent && !selected) setSelected(preferredAgent); }, [preferredAgent, selected, setSelected]);
   const view = bundle?.latest ?? null;
-  if (!view) return null;
+  if (!view) return loading ? <p role="status">Loading coaching review…</p> : <p>No published coaching report is available.</p>;
   const people = [...view.agents].filter(a => (a.agentName+' '+(priorityLabel(a) ?? '')).toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a,b) => Number(!!priorityLabel(b))-Number(!!priorityLabel(a)) || a.agentName.localeCompare(b.agentName));
   const person = people.find(a => a.agentName === selected) ?? people[0];
   const meta = person ? cohort?.get(person.agentId ?? '') ?? cohort?.get(person.agentName.trim().toLowerCase()) : undefined;
   return <section className="dk-sec brief-sec">
-    <div className="brief-workspace-heading"><div><h2>The weekly review</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agents reviewed</p></div>
+    <div className="brief-workspace-heading"><div><h2>Your people</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agents reviewed</p></div>
       <div className="brief-actions"><WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} /><button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button></div></div>
     <div className="coaching-workspace">
       <aside className="coaching-queue" aria-label="People to review"><header><h3>People to review <small>{people.length}</small></h3><label>Find an agent<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name or coaching focus" /></label></header>
@@ -416,12 +408,18 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
         <p className="coaching-order-note">Reported focus first, then alphabetical. This is not a severity ranking.</p>
       </aside>
       <div className="coaching-review" key={(view.reportId ?? '')+person?.agentName}>
-        {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Coaching review</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || meta.lastDays>=99 ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
-          {person.agentId && onOpenAgent && <button className="brief-open" onClick={()=>onOpenAgent(person.agentId!,person.agentName)}>Prepare 1:1 →</button>}</header>
-          <div className="coaching-review-body">{person.agentId && operations && <button className="brief-open" onClick={()=>{operations.setPractice({agentId:person.agentId!,name:person.agentName,focus:person.coachingActions[0]?.text ?? person.opportunities[0]?.text ?? 'Review the source evidence before choosing a practice focus.',due:'',outcome:''});window.location.hash='/rep';}}>Plan practice in Rep →</button>}<h4>What to work on</h4><PointList points={person.opportunities.length ? person.opportunities : person.coachingActions} tone="work" maxVisible={3} />
-          {!!person.objections.length && <><h4>Where the conversation gets difficult</h4><PointList points={person.objections} tone="watch" maxVisible={2} /></>}
-          {!!person.doingRight.length && <><h4>Keep building on</h4><PointList points={person.doingRight} tone="good" maxVisible={2} /></>}
-          <p className="coaching-order-note">Open the evidence beside each observation before using it in a coaching conversation. A linked source does not by itself establish the claim.</p></div>
+        {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Agent scorecard</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || meta.lastDays>=99 ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
+          {person.agentId && onOpenAgent && <button className="brief-open" onClick={()=>onOpenAgent(person.agentId!,person.agentName)}>Prepare 1:1</button>}</header>
+          <div className="coaching-review-body">
+            <CoachScorecard name={person.agentName} />
+            <section className="coach-focus-summary"><h4>Skills to develop</h4>
+              {person.skillOpportunities.some(p => p.evidence.length) ? <PointList points={person.skillOpportunities.filter(p => p.evidence.length)} tone="work" maxVisible={2} summaryOnly /> : <p className="brief-none">No specific skill finding supported by linked evidence in this report.</p>}
+            </section>
+            <section className="coach-focus-summary"><h4>Findings for your next conversation</h4>
+              {reviewFindings(person).length ? <PointList points={reviewFindings(person)} tone="work" maxVisible={2} summaryOnly /> : <p className="brief-none">No linked coaching finding to bring into a conversation this week.</p>}
+            </section>
+            <p className="coach-scorecard-note">Prepare 1:1 opens these same findings with coaching actions and space to record commitments.</p>
+          </div>
         </> : <div className="coaching-empty"><h3>No agents match</h3><p>Try another name or coaching focus.</p><button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></div>}
       </div>
     </div>
@@ -430,48 +428,26 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   </section>;
 }
 
-/* ── The ninety-day habit store, one fetch per page view ─────────────────────
-   Same lifecycle as the brief cache above: shared promise, dropped on any auth
-   change so an act-as swap cannot show another org's habits. A failed fetch
-   resolves to null and the plan lane falls back to the report's moves — worse
-   copy, never a blank lane. */
-let patternsPromise: Promise<PatternsBundle | null> | null = null;
-function loadPatterns(): Promise<PatternsBundle | null> {
-  if (!patternsPromise) {
-    patternsPromise = workerFetch('/data/coach/patterns')
-      .then((r) => (r.ok ? (r.json() as Promise<PatternsBundle>) : null))
-      .catch(() => null);
-  }
-  return patternsPromise;
-}
-onAuthChange(() => { patternsPromise = null; });
-
 /* ════════ One agent's brief, inside the drill-in sheet ════════ */
 
 export function AgentBriefPanel({ agentId, agentName }: {
   agentId: string;
   agentName: string;
 }) {
-  const [reportId, setReportId] = useState<string | null>(null);
-  const { bundle } = useBrief(reportId);
-  const [patterns, setPatterns] = useState<PatternsBundle | null>(null);
-  useEffect(() => { let on = true; void loadPatterns().then((b) => { if (on) setPatterns(b); }); return () => { on = false; }; }, [agentId]);
+  const { reportId, setReportId } = useCoachReview();
+  const { bundle, loading } = useBrief(reportId);
   const view = bundle?.latest ?? null;
   const mine = useMemo(
     () => (view ? agentBrief(view, agentId, agentName) : null),
     [view, agentId, agentName],
   );
-  // The leader's directives, from the habit store. The report's per-lead moves
-  // remain the fallback for a week the store has nothing on.
-  const plan = useMemo(
-    () => (patterns ? buildAgentPlan(patterns.patterns, agentId, agentName, mine?.metrics) : []),
-    [patterns, agentId, agentName, mine],
-  );
+  const operations = useOperations();
+  const findings = mine ? reviewFindings(mine) : [];
 
   // No brief system in play yet → no panel at all (teams without the weekly
   // automation shouldn't see an empty frame). A running system where THIS agent
   // has no section is different: that's the not-enough-data state, shown below.
-  if (!view) return null;
+  if (!view) return loading ? <p role="status">Loading coaching review…</p> : <p>No published coaching report is available.</p>;
 
   return (
     // No `reveal` class here: this panel mounts AFTER its data loads, which is
@@ -479,7 +455,7 @@ export function AgentBriefPanel({ agentId, agentName }: {
     // opacity 0 forever and read as a giant hole in the page.
     <section className="card ad-panel brief-panel">
       <div className="ad-panel-head">
-        <h3>The weekly coaching brief</h3>
+        <h3>Your one-on-one discussion</h3>
         <span className="panel-sub">
           {briefRangeLabel(view.weekStart, view.weekEnd)}
         </span>
@@ -492,34 +468,14 @@ export function AgentBriefPanel({ agentId, agentName }: {
         </p>
       ) : (
         <>
-          <OutreachRow a={mine} />
-          {/* Four lanes read LEFT TO RIGHT, one per category, each under its
-              own heavy header. They were a 2x2 grid with 10px labels, and in
-              live use the labels disappeared into the points -- the categories
-              are the structure of the whole panel, so they get to look like it. */}
-          {/* TWO columns, not three. "Priority opportunities" and "What to do
-              with this agent" were saying the same thing twice: the second is
-              the first, expanded into a directive. So the directive wins, and
-              the opportunities list only appears when there is no plan to
-              replace it. What is left is the two questions a leader actually
-              has -- what do I do, and what did buyers push back on.
-              No "Keep doing" lane either: zero of the 181 agent reviews ever
-              published carried a single point for it. */}
-          <div className="brief-lanes">
-            <div className="brief-lane is-work">
-              <h4 className="brief-lane-h">What to do with this agent</h4>
-              <PointList
-                points={plan.length
-                  ? plan
-                  : (mine.coachingActions.length ? mine.coachingActions : mine.opportunities)}
-                tone="work"
-                maxVisible={3}
-              />
-            </div>
-            <div className="brief-lane is-watch">
-              <h4 className="brief-lane-h">Objections heard</h4>
-              <PointList points={mine.objections} tone="watch" />
-            </div>
+          <p className="coach-scorecard-note">The same findings from the scorecard, expanded here for your conversation. Record the agreed next step below.</p>
+          <div className="coach-discussion-findings">
+            <h4>Findings and coaching actions</h4>
+            <PointList points={findings} tone="work" maxVisible={3} />
+            {!!mine.skillOpportunities.filter(p => p.evidence.length).length && <><h4>Skills to practise</h4><PointList points={mine.skillOpportunities.filter(p => p.evidence.length)} tone="work" maxVisible={2} /></>}
+            {operations && findings.length > 0 && <button className="brief-open" onClick={() => { operations.setPractice({ agentId, name: agentName, focus: findings[0].coach || findings[0].text, due: '', outcome: '' }); window.location.hash = '/rep'; }}>Plan practice in Rep</button>}
+            {!!mine.objections.length && <details className="coach-secondary"><summary>Other objections in this report</summary><PointList points={mine.objections} tone="watch" maxVisible={2} /></details>}
+            {!!mine.doingRight.length && <details className="coach-secondary"><summary>Positive observations in this report</summary><PointList points={mine.doingRight} tone="good" maxVisible={2} /></details>}
           </div>
         </>
       )}
@@ -625,9 +581,9 @@ export function BriefPrintSheet({ view, onClose }: { view: BriefView; onClose: (
               if (m.noOutreach !== undefined) bits.push(`${m.noOutreach} untouched`);
               return bits.length ? <p className="bp-metrics">{bits.join(' · ')}</p> : null;
             })()}
-            <PrintPoints label="Priority opportunities" points={a.opportunities} />
+            <PrintPoints label="Findings and coaching actions" points={reviewFindings(a)} />
             <PrintPoints label="Objections heard" points={a.objections} />
-            <PrintPoints label="What to do with this agent" points={a.coachingActions} />
+            <PrintPoints label="Skills to practise" points={a.skillOpportunities.filter(p => p.evidence.length)} />
           </section>
         ))}
 
