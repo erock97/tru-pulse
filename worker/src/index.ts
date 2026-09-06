@@ -342,6 +342,25 @@ export default {
       }
     }
 
+    // Read-only publisher health: no scores, conversations, collection or delivery.
+    if (url.pathname === '/admin/hustle-status' && req.method === 'GET') {
+      if (!isAdmin(req, env)) return json({error:'unauthorized'},401);
+      if (!env.WEEKLY_REPORTS) return json({connected:false,teams:[]});
+      try {
+        const report=await env.WEEKLY_REPORTS.dashboard();
+        return json({connected:true,teams:report.teams.map(team=>({
+          team:team.id,weekEnding:team.hustle.latest?.weekEnding??null,
+          capturedAt:team.hustle.latest?.capturedAt??null,
+          runStatus:team.hustle.latest?.runStatus??null,
+          deliveryStatus:team.hustle.latest?.deliveryStatus??null,
+          agentCount:team.hustle.latest?.agents.length??0,
+        }))});
+      } catch (error) {
+        console.error('Hustle publisher health failed',String(error));
+        return json({connected:false,error:'Weekly publisher unavailable'},502);
+      }
+    }
+
     // Admin: list active teams + their last sync (to drive per-team syncs).
     if (url.pathname === '/teams' && req.method === 'GET') {
       if (!isAdmin(req, env)) return json({ error: 'unauthorized' }, 401);
