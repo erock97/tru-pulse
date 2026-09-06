@@ -1,0 +1,18 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {calculate,parseStage,defaultMap} from './metrics.mjs';
+const p={id:1,created:'2026-01-02T12:00:00Z',source:'Zillow Preferred',stage:'Nurture',assignedUserId:9,assignedTo:'Agent'};
+const ev=(id,from,to,date='2026-02-01T12:00:00Z')=>({id,date,description:`Stage changed from ${from} to ${to} by user-id=9`});
+const options={start:'2026-01-01',end:'2026-08-31',timezone:'UTC'};
+const run=(events,person=p)=>calculate({people:[person],histories:{1:{status:'complete',stageEvents:events}}},options)[0];
+test('contract to nurture preserves all four credits',()=>{const a=run([ev('x','Under Contract','Nurture')]);assert.deepEqual(a.counts,{met:1,offer:1,uc:1,closed:0,nurture:1});assert.equal(a.nurturePct,100);assert.equal(a.leads[0].proof.met[0].kind,'rule-based');});
+test('repeat stages and duplicate events count one lead',()=>{const e=ev('a','Lead','Under Contract');const a=run([e,e,ev('b','Nurture','Under Contract')]);assert.equal(a.counts.uc,1);});
+test('later changes cannot leak into historical cutoff',()=>assert.equal(run([ev('a','Lead','Closed','2026-09-01T00:00:00Z')]).counts.closed,0));
+test('current nurture uses selected cohort denominator',()=>{const data={people:[p,{...p,id:2,stage:'Lead'},{...p,id:3,created:'2025-01-01'}],histories:{}};const a=calculate(data,options)[0];assert.equal(a.total,2);assert.equal(a.nurturePct,50);assert.equal(a.incomplete,2);});
+test('unrecognized text remains unparsed',()=>assert.equal(parseStage({id:'a',date:'2026-01-01',description:'Stage adjusted somehow'}),null));
+test('pending is contract under Eric confirmed mapping',()=>assert.equal(run([ev('a','Lead','Pending')]).counts.uc,1));
+test('pending and contract are a single credit',()=>assert.equal(run([ev('a','Lead','Pending'),ev('b','Pending','Under Contract')]).counts.uc,1));
+test('actorless historical change retains nurture credit',()=>assert.equal(run([{id:'a',date:'2026-02-01',description:'Stage changed from Trash to Nurture'}]).counts.nurture,1));
+test('automated historical change retains stage names',()=>assert.equal(parseStage({id:'a',date:'2026-02-01',description:'Stage changed from Lead to Nurture by metadata-system-client-id=0 automatically'}).to,'Nurture'));
+test('closed grants cumulative progression but no nurture',()=>assert.deepEqual(run([ev('a','Lead','Closed')]).counts,{met:1,offer:1,uc:1,closed:1,nurture:0}));
+test('current stage alone never invents historical milestone dates',()=>assert.equal(run([],{...p,stage:'Closed'}).counts.closed,0));
+test('source filter isolates cohort',()=>assert.equal(calculate({people:[p],histories:{}},{...options,source:'Other'}).length,0));
+test('reporting timezone controls date boundaries',()=>{const data={people:[{...p,created:'2026-01-01T02:00:00Z'}],histories:{}};assert.equal(calculate(data,{...options,timezone:'America/Los_Angeles'}).length,0);});
