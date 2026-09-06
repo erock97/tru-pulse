@@ -496,7 +496,7 @@ export default function AdminCalendar({
                       <p className="mny-sub" style={{ marginTop: 6, marginBottom: 0 }}>
                         Linked ✓ — {data.link?.provider === 'google'
                           ? <>bookings check and land on <b>{data.link?.googleEmail ?? 'your Google account'}</b>.</>
-                          : 'wired through the vault; bookings check and land on your Google account.'}
+                          : 'new bookings check your availability and are added to your Google calendar.'}
                       </p>
                     ) : (
                       <>

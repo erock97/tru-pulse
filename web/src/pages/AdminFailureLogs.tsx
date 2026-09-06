@@ -157,7 +157,7 @@ export function ProblemCard({
       {open && latest && (
         <div
           style={{
-            marginTop: 12, padding: 14, borderRadius: 10, background: 'rgba(0,0,0,0.18)',
+            marginTop: 12, padding: 14, borderRadius: 4, background: 'var(--panel)', overflowWrap: 'anywhere',
             fontSize: 12.5, fontFamily: 'ui-monospace, SFMono-Regular, monospace', display: 'grid', gap: 6,
           }}
         >

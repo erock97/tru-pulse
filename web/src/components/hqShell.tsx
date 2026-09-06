@@ -121,7 +121,8 @@ export function HqShell({
       : route === 'admin/calendar' ? 'calendar'
       // Agents is a sub-screen reached from Admin, not a tab of its own — the
       // Admin tab stays lit while you're on it.
-      : route === 'admin' || route === 'admin/agents' ? 'admin'
+      : route === 'admin/failure-logs' ? 'failure-logs'
+      : route === 'admin' || route === 'admin/agents' || (isAdmin && route === '') ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them

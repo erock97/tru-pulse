@@ -342,16 +342,15 @@ function SkillsTrainingSection({ view, onOpenAgent }: {
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
   }, [view]);
 
-  if (bySkill.length === 0) return null;
+  if (bySkill.length === 0) return <p className="brief-themes-empty">No training themes with linked evidence in this report.</p>;
 
   return (
-    <div className="dk-sec brief-sec brief-skills-sec">
-      <h2>Skills training this week</h2>
-      <p>Every flagged skill gap, grouped by skill — each one backed by the call or text it came from.</p>
+    <div className="brief-skills-sec">
+      <p className="brief-themes-intro">Themes identified in this report. Open a theme to see the people and source conversations. Review the proof before deciding what to coach.</p>
       <div className="brief-skills-grid">
         {bySkill.map(([skill, rows]) => (
-          <div className="rs-plate brief-skill-card" key={skill}>
-            <h3 className="brief-skill-h">{skill}</h3>
+          <details className="brief-skill-group" key={skill}>
+            <summary><span>{skill}</span><small>{new Set(rows.map(r => r.agentId ?? r.agentName)).size} {new Set(rows.map(r => r.agentId ?? r.agentName)).size === 1 ? 'person' : 'people'}</small></summary>
             <ul className="brief-skill-agents">
               {rows.map(({ agentName, agentId, point: p }, i) => {
                 const clickable = !!(agentId && onOpenAgent);
@@ -369,12 +368,12 @@ function SkillsTrainingSection({ view, onOpenAgent }: {
                       <span className="brief-skill-agent-link is-static">{agentName}</span>
                     )}
                     {p.text && <p className="brief-skill-detail">{linkLeads(p.text, p.evidence)}</p>}
-                    <EvidenceList evidence={p.evidence} />
+                    <details className="brief-theme-proof"><summary>View proof ({p.evidence.length})</summary><EvidenceList evidence={p.evidence} /></details>
                   </li>
                 );
               })}
             </ul>
-          </div>
+          </details>
         ))}
       </div>
     </div>

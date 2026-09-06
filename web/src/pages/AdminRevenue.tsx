@@ -294,7 +294,7 @@ export default function AdminRevenue({
                 Click a team to see every deal uploaded for the month it bills.
                 {overview.teams.some((t) => t.pending > 0) && (
                   <> The big figures are what brokers have confirmed — the smaller line under them is
-                  what the month becomes if every outstanding deal comes back green.</>
+                  the total if brokers confirm every outstanding deal.</>
                 )}
                 {overview.teams.some((t) => t.unpriced > 0) && (
                   <> Some closings have a source with no rate set — they are not counted until that

@@ -474,6 +474,36 @@ html.tru-premium .hq-admin .mny-btn.no {color:#a74730;border-color:#bd8a76}
  html.tru-premium .tru-dark .today-action > .brief-open:first-child {flex-basis:180px}
  html.tru-premium .hq-admin .adm-row {padding:16px;gap:12px}
 }
+/* Team themes are a compact index; source conversations open on demand. */
+html.tru-premium .tru-dark .brief-skills-sec {display:block;margin:18px 0 0;min-width:0}
+html.tru-premium .tru-dark .brief-themes-intro {font-size:13px;line-height:1.65;color:var(--text-60);max-width:80ch;margin:0 0 18px}
+html.tru-premium .tru-dark .brief-skills-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;align-items:start;margin:0}
+html.tru-premium .tru-dark .brief-skill-group {border-bottom:1px solid var(--border);min-width:0}
+html.tru-premium .tru-dark .brief-skill-group > summary {display:flex;align-items:center;gap:12px;min-height:58px;padding:14px 10px;list-style:none;font-size:15px;line-height:1.5}
+html.tru-premium .tru-dark .brief-skill-group > summary::-webkit-details-marker {display:none}
+html.tru-premium .tru-dark .brief-skill-group > summary::before {content:'+';color:var(--accent);font-size:18px;font-weight:400;width:14px;flex:none}
+html.tru-premium .tru-dark .brief-skill-group[open] > summary::before {content:'−'}
+html.tru-premium .tru-dark .brief-skill-group > summary small {margin-left:auto;white-space:nowrap;font-size:12px;font-weight:400;color:var(--text-60)}
+html.tru-premium .tru-dark .brief-skill-group > summary:hover {background:var(--panel)}
+html.tru-premium .tru-dark .brief-skill-agents {padding:6px 12px 20px 36px}
+html.tru-premium .tru-dark .brief-theme-proof {margin-top:10px}
+html.tru-premium .tru-dark .brief-theme-proof > summary {font-size:12px;font-weight:500;color:var(--accent);padding:6px 0}
+html.tru-premium .tru-dark .brief-skill-detail {font-size:13px;overflow-wrap:anywhere}
+html.tru-premium .tru-dark .brief-theme-proof .brief-evidence {padding:12px;overflow-wrap:anywhere}
+html.tru-premium .tru-dark :is(.ad-btn,.earnings-actions button,.practice-followup button) {font:500 13px var(--hq-font);min-height:40px;padding:9px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);cursor:pointer}
+html.tru-premium .tru-dark :is(.ad-btn,.earnings-actions button,.practice-followup button):hover {background:var(--panel)}
+html.tru-premium .tru-dark button:disabled {cursor:not-allowed}
+html.tru-premium .hq-admin .dk-eyebrow {border:0;background:none;padding:0;border-radius:0}
+html.tru-premium .operations-table {border:1px solid var(--border,#c4bbaa)}
+html.tru-premium .operations-table td {min-width:100px}
+@media(max-width:760px){html.tru-premium .tru-dark .brief-skills-grid {grid-template-columns:1fr}html.tru-premium .tru-dark .brief-skill-agents {padding-left:22px}}
+html.tru-premium .hq-admin .tru-table thead th {background:#ded7c9;color:#43545d}
+html.tru-premium .hq-admin .mny-tiles {gap:0;border-block:1px solid var(--border);margin:20px 0}
+html.tru-premium .hq-admin .mny-tile {background:transparent;border:0;border-radius:0;padding:18px 22px}
+html.tru-premium .hq-admin .mny-tile + .mny-tile {border-left:1px solid var(--border)}
+html.tru-premium .hq-admin .main .side-link-btn {color:var(--text-60);min-height:36px;cursor:pointer;white-space:normal}
+html.tru-premium .tru-dark .brief-theme-proof .brief-evidence-meta {overflow-wrap:anywhere}
+@media(max-width:720px){html.tru-premium .hq-admin .mny-tile + .mny-tile {border-left:0;border-top:1px solid var(--border)}}
 /* Keep the complete performance table available on phones. Older deck rules
    removed columns by position, which hid leads and raw conversion. */
 @media(max-width:760px){
