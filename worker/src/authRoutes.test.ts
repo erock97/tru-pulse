@@ -314,7 +314,7 @@ describe('Google sign-in (server-side PKCE)', () => {
     supabase = { ok: true, body: goodSession };
     const res = await nav('/auth/google/callback?code=real-code', 'hq_pkce=abcdef1234');
     expect(res.status).toBe(302);
-    const cookies = res.headers.getSetCookie?.() ?? [res.headers.get('Set-Cookie') ?? ''];
+    const cookies = (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie?.() ?? [res.headers.get('Set-Cookie') ?? ''];
     const joined = cookies.join(' | ');
     expect(joined).toContain(`${COOKIE_NAME}=`);   // session installed
     expect(joined).toContain('HttpOnly');

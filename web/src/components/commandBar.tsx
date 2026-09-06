@@ -43,7 +43,7 @@ function score(haystack: string, needle: string): number | null {
 }
 
 export function CommandBar({
-  isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts, onOpenCalendar,
+  isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts, onOpenCalendar, onOpenFailureLogs,
   onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut,
 }: {
   /** A platform owner's own login has no Pulse/Coach/Rep of its own — swaps
@@ -55,6 +55,7 @@ export function CommandBar({
   onOpenRevenue?: () => void;
   onOpenContracts?: () => void;
   onOpenCalendar?: () => void;
+  onOpenFailureLogs?: () => void;
   onOpenPulse: () => void;
   onOpenCoach: () => void;
   onOpenRep: () => void;
@@ -127,6 +128,7 @@ export function CommandBar({
           ...(onOpenRevenue ? [{ id: 'n:revenue', label: 'Revenue', hint: 'retainer & per-deal payout', group: 'Go to' as const, run: onOpenRevenue }] : []),
           ...(onOpenContracts ? [{ id: 'n:contracts', label: 'Contracts', hint: 'TruSign envelopes — review, send, void', group: 'Go to' as const, run: onOpenContracts }] : []),
           ...(onOpenCalendar ? [{ id: 'n:calendar', label: 'Calendar', hint: 'booking links & availability', group: 'Go to' as const, run: onOpenCalendar }] : []),
+          ...(onOpenFailureLogs ? [{ id: 'n:failure-logs', label: 'Failure Logs', hint: 'sanitized pipeline incidents from Hermes', group: 'Go to' as const, run: onOpenFailureLogs }] : []),
         ]
       : [
           { id: 'n:pulse', label: 'Pulse', hint: 'the floor, lead to contract', group: 'Go to' as const, run: onOpenPulse },
@@ -137,7 +139,7 @@ export function CommandBar({
     const actions: Cmd[] = [];
     if (onSignOut) actions.push({ id: 'a:out', label: 'Sign out', group: 'Actions', run: onSignOut });
     return [...nav, ...(people ?? []), ...actions];
-  }, [isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts, onOpenCalendar, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
+  }, [isAdmin, onOpenAdmin, onOpenTeamData, onOpenRevenue, onOpenContracts, onOpenCalendar, onOpenFailureLogs, people, onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam, onSignOut]);
 
   const hits = useMemo(() => {
     const needle = q.trim().toLowerCase();

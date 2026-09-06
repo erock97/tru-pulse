@@ -66,6 +66,7 @@ export function HqShell({
   onOpenRevenue,
   onOpenContracts,
   onOpenCalendar,
+  onOpenFailureLogs,
   hideTopbar = false,
   islandSlot,
   mood = 'calm',
@@ -91,6 +92,9 @@ export function HqShell({
   /** Platform owner only. Eric's own booking system — meeting types,
    *  availability, the public truhq.co/book links. */
   onOpenCalendar?: () => void;
+  /** Platform owner only. Sanitized pipeline incidents from the Hermes
+   *  laptop's failure-log push, grouped by recurring problem. */
+  onOpenFailureLogs?: () => void;
   /** Skip the shell's own eyebrow/title bar for a page that brings its own
    *  masthead. The sidebar and the phone tab bar are unaffected. */
   hideTopbar?: boolean;
@@ -187,6 +191,7 @@ export function HqShell({
         ...(onOpenRevenue ? [{ key: 'revenue', label: 'Revenue', icon: 'money', onClick: onOpenRevenue }] : []),
         ...(onOpenContracts ? [{ key: 'contracts', label: 'Contracts', icon: 'contract', onClick: onOpenContracts }] : []),
         ...(onOpenCalendar ? [{ key: 'calendar', label: 'Calendar', icon: 'calendar', onClick: onOpenCalendar }] : []),
+        ...(onOpenFailureLogs ? [{ key: 'failure-logs', label: 'Failure Logs', icon: 'alert', onClick: onOpenFailureLogs }] : []),
       ]
     : [
         { key: 'pulse', label: 'Pulse', icon: 'pulse', onClick: nav.onOpenPulse },
@@ -288,6 +293,7 @@ export function HqShell({
               onOpenRevenue={onOpenRevenue}
               onOpenContracts={onOpenContracts}
               onOpenCalendar={onOpenCalendar}
+              onOpenFailureLogs={onOpenFailureLogs}
               onOpenPulse={nav.onOpenPulse}
               onOpenCoach={nav.onOpenCoach}
               onOpenRep={nav.onOpenRep ?? nav.onOpenPulse}

@@ -737,6 +737,95 @@ export async function adminTargets(): Promise<ZillowTargetTeam[] | null> {
   }
 }
 
+// ── Failure Logs (platform owner only) ───────────────────────────────────────
+// Sanitized pipeline incidents from the Hermes laptop's run-events push,
+// grouped by recurring problem (fingerprint). See worker/src/failureLogsAdmin.ts.
+
+export type FailureLogSeverity = 'nonfatal' | 'fatal';
+export type FailureLogScope = 'event' | 'contact' | 'team' | 'batch' | 'delivery';
+export type FailureLogStatus = 'open' | 'investigating' | 'fixed' | 'needs-human' | 'verified';
+
+export interface FailureLogIncidentDetail {
+  batchId: string;
+  accountId: string;
+  incidentId: string;
+  occurredAt: string;
+  scope: FailureLogScope;
+  code: string;
+  explanation: string;
+  impact: string;
+  nextStep: string;
+  action: string;
+  continued: boolean;
+  position: number | null;
+  total: number | null;
+  technical: unknown;
+}
+
+export interface FailureLogProblem {
+  fingerprint: string;
+  title: string;
+  stage: string;
+  severity: FailureLogSeverity;
+  status: FailureLogStatus;
+  resolutionNotes: string | null;
+  firstSeen: string;
+  lastSeen: string;
+  occurrenceCount: number;
+  affectedBatchIds: string[];
+  affectedAccountIds: string[];
+  latest: FailureLogIncidentDetail | null;
+}
+
+export interface FailureLogFilters {
+  status?: FailureLogStatus;
+  severity?: FailureLogSeverity;
+  accountId?: string;
+  stage?: string;
+  since?: string;
+  until?: string;
+  recurring?: boolean; // true = occurred more than once, false = one-time only
+}
+
+/** Every failure-log problem matching the given filters — 403/null unless the
+ *  caller is a platform admin. */
+export async function adminFailureLogs(filters: FailureLogFilters = {}): Promise<FailureLogProblem[] | null> {
+  if (isDemo) return null;
+  try {
+    const q = new URLSearchParams();
+    if (filters.status) q.set('status', filters.status);
+    if (filters.severity) q.set('severity', filters.severity);
+    if (filters.accountId) q.set('accountId', filters.accountId);
+    if (filters.stage) q.set('stage', filters.stage);
+    if (filters.since) q.set('since', filters.since);
+    if (filters.until) q.set('until', filters.until);
+    if (filters.recurring !== undefined) q.set('recurring', filters.recurring ? '1' : '0');
+    const qs = q.toString();
+    const res = await workerFetch(`/admin/failure-logs${qs ? `?${qs}` : ''}`, {});
+    if (!res.ok) return null;
+    const j = (await res.json()) as { problems?: FailureLogProblem[] };
+    return j.problems ?? [];
+  } catch {
+    return null;
+  }
+}
+
+/** Set a failure-log problem's resolution status and/or notes. */
+export async function adminUpdateFailureLog(
+  fingerprint: string, patch: { status?: FailureLogStatus; notes?: string },
+): Promise<boolean> {
+  if (isDemo) return false;
+  try {
+    const res = await workerFetch('/admin/failure-logs', {
+      method: 'PATCH',
+      body: JSON.stringify({ fingerprint, ...patch }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Revenue (platform owner only) ────────────────────────────────────────────
 // Retainer + per-deal payout — ported from TRU Operating System, owned by
 // this database now. See worker/src/revenue.ts.

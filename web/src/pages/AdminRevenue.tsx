@@ -168,6 +168,7 @@ export default function AdminRevenue({
         onOpenRevenue={() => { window.location.hash = '/admin/revenue'; }}
         onOpenContracts={() => { window.location.hash = '/admin/contracts'; }}
         onOpenCalendar={() => { window.location.hash = '/admin/calendar'; }}
+        onOpenFailureLogs={() => { window.location.hash = '/admin/failure-logs'; }}
         hideTopbar
       >
         <div className="dk-main">

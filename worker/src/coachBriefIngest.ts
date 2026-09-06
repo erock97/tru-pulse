@@ -24,6 +24,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // human name. Never point one at a team by name-matching — only by its real UUID,
 // confirmed against TrueHQ, so a same-named duplicate can never be selected.
 const TEAM_ALIASES: Record<string, string> = {
+  'woosley': '96ddb98f-1fb6-4d99-80f6-20ef615dec34',
   'the-synergy-group-nj': '213f7da9-6c3d-425e-86e6-a32d16db32a3',
   'sb-realty': 'df216d4d-b05e-4ddf-a84e-0d685182d692',
 };
@@ -31,7 +32,7 @@ const TEAM_ALIASES: Record<string, string> = {
 interface TeamRow { id: string; org_id: string }
 
 async function fetchTeamById(database: Db, id: string): Promise<TeamRow | null> {
-  const rows = await database.select('teams', `select=id,org_id&id=eq.${id}&limit=1`);
+  const rows = await database.select('teams', `select=id,org_id&id=eq.${id}&is_active=eq.true&limit=1`);
   return (rows[0] as TeamRow | undefined) ?? null;
 }
 
@@ -42,8 +43,8 @@ async function resolveTeam(database: Db, identifier: string): Promise<TeamRow | 
   if (UUID_RE.test(identifier)) return fetchTeamById(database, identifier);
   const aliasedId = TEAM_ALIASES[identifier];
   if (aliasedId) return fetchTeamById(database, aliasedId);
-  const rows = await database.select('teams', `select=id,org_id&report_slug=eq.${identifier}&limit=1`);
-  return (rows[0] as TeamRow | undefined) ?? null;
+  const rows = await database.select('teams', `select=id,org_id&report_slug=eq.${identifier}&is_active=eq.true&limit=2`);
+  return rows.length === 1 ? rows[0] as TeamRow : null;
 }
 
 async function teamRoster(database: Db, teamId: string): Promise<Array<{ id: string; name: string }>> {
