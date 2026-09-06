@@ -44,7 +44,7 @@ const fieldStyle: React.CSSProperties = {
 };
 
 /** The Deals panel and its dialog, at the scale Follow Up Boss actually draws them. */
-function DealMock() {
+export function DealMock() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -52,7 +52,7 @@ function DealMock() {
   const [deal, setDeal] = useState<{ name: string; price: string; close: string } | null>(null);
 
   const save = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !Number.isFinite(Number(price)) || Number(price) <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(close)) return;
     setDeal({ name: name.trim(), price: price.trim(), close: close.trim() });
     setOpen(false);
   };
@@ -111,23 +111,23 @@ function DealMock() {
               <span>Create deal</span>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 0, color: '#8a99a8', fontSize: 22, cursor: 'pointer' }}>✕</button>
             </div>
-            <input style={{ ...fieldStyle, marginBottom: 14 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Add name" />
+            <input aria-label="Deal name or property address" style={{ ...fieldStyle, marginBottom: 14 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Add name" />
             <div style={{ fontSize: 19, color: '#5b6b7a', marginBottom: 16 }}>Buyers › Start (temp stage)</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 18, fontWeight: 600 }}>
                 Price
-                <input style={fieldStyle} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Add price" />
+                <input type="number" min="1" style={fieldStyle} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Add price" />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 18, fontWeight: 600 }}>
                 Close date
-                <input style={fieldStyle} value={close} onChange={(e) => setClose(e.target.value)} placeholder="Add close date" />
+                <input type="date" style={fieldStyle} value={close} onChange={(e) => setClose(e.target.value)} />
               </label>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 0, color: '#5b6b7a', fontSize: 20, cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={save}
-                disabled={!name.trim()}
+                disabled={!name.trim() || !Number.isFinite(Number(price)) || Number(price) <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(close)}
                 style={{
                   border: 0, borderRadius: 6, padding: '11px 22px', fontSize: 20, fontWeight: 600,
                   color: '#fff', background: name.trim() ? '#1a9cf0' : '#a8cfe9',

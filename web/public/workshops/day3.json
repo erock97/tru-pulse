@@ -1,0 +1,215 @@
+{
+  "day": 3,
+  "title": "Show like a pro",
+  "slides": [
+    {
+      "chapter": "Start",
+      "title": "Show like a pro",
+      "lead": "Zillow Preferred · Day 3",
+      "body": "<div class=\"hero-bottom\"><p>Prepare the tour.<br>Listen after the showing.<br>Agree on the next step.</p><div class=\"hero-ticket\"><span>Today’s practice</span><strong>Ask about the showing and agree on what happens next.</strong><small>Work with a partner. Give specific feedback. Try again.</small></div></div>",
+      "notes": "Invite a recent example from one person, then begin. Keep the opening to two minutes.",
+      "cue": "Ask: What would you like to get better at today?",
+      "time": 2,
+      "theme": "hero"
+    },
+    {
+      "chapter": "Start",
+      "title": "What makes a showing uncomfortable?",
+      "lead": "Start with the buyer’s experience.",
+      "body": "<div class=\"split\"><div><blockquote>“I barely had a chance to look. The agent kept telling me what I should like.”</blockquote></div><div><label class=\"field\">What would you do differently?<textarea data-save=\"experience\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Take three short answers. Ask agents to describe behavior rather than personality. Connect those answers to space, useful questions, and an agreed next step.",
+      "cue": "What could you stop doing on your next showing?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Prepare",
+      "title": "Confirm access and the required agreement",
+      "lead": "Know what needs to be signed before touring.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Before the appointment</h3><p>Confirm access, showing instructions, and the brokerage’s current agreement requirements.</p></div><div class=\"row\"><h3>With the buyer</h3><p>Zillow’s touring agreement covers touring for seven days without compensation or exclusivity. Explain the actual approved form and allow questions.</p></div><div class=\"row\"><h3>Before entering</h3><p>Confirm the required agreement is complete. If something is missing, resolve it before touring.</p></div></div>",
+      "notes": "Use the form and instructions approved by your brokerage. Zillow’s current product page confirms its seven-day touring agreement. That term describes this product, not every buyer agreement. Confirm the current product and local requirements before teaching the form. This is a process check, not legal advice.",
+      "cue": "How would you explain the agreement before the appointment?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Prepare",
+      "title": "Give the buyer useful comparisons",
+      "lead": "Choose homes for a reason.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Plan the route</h3><p>When appropriate, prepare two or three homes that help compare the buyer’s stated priorities.</p></div><div class=\"row\"><h3>Bring context</h3><p>Review available property information, comparable homes, and relevant buyer materials.</p></div><div class=\"row\"><h3>Confirm the details</h3><p>Check access and current status for each home. Explain any changes promptly.</p></div></div></div><div><label class=\"field\">What would each home help this buyer compare?<textarea data-save=\"comparison\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Use actual availability when preparing a real tour. Avoid adding homes just to make the tour longer. Ask agents to explain one useful comparison.",
+      "cue": "What would make a second home worth including?",
+      "time": 3,
+      "theme": "sage"
+    },
+    {
+      "chapter": "At the home",
+      "title": "Let the buyer look first",
+      "lead": "Stay available without following them through every room.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Give them space</h3><p>Let them explore at their own pace while following property and safety instructions.</p></div><div class=\"row\"><h3>Stay easy to find</h3><p>A suitable entry or kitchen area may work. Explain where you will be.</p></div><div class=\"row\"><h3>Answer useful questions</h3><p>Share verified information. Say what you need to check. Avoid narrating every feature.</p></div></div>",
+      "notes": "Ask someone to demonstrate an opening at the door. Respect seller instructions and actual safety needs. Availability matters more than standing in one prescribed place.",
+      "cue": "What will you say before the buyer starts looking?",
+      "time": 3,
+      "theme": "dark"
+    },
+    {
+      "chapter": "At the home",
+      "title": "Let the buyer have their own preferences",
+      "lead": "Your taste may be different from theirs.",
+      "body": "<h3>The buyer likes a feature you dislike. What helps?</h3><div class=\"choices\" data-quiz=\"taste\"><button data-correct=\"false\" data-feedback=\"The buyer is deciding what works for them.\">Explain why your taste is better.</button><button data-correct=\"true\" data-feedback=\"Yes. Learn the reason without projecting your preference.\">Ask what they like about it and listen.</button><button data-correct=\"false\" data-feedback=\"A preference is not a defect.\">Assume it makes the home wrong for them.</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
+      "notes": "Use a fictional vaulted-ceiling example from the source material. Distinguish personal taste from material or safety concerns that must be addressed accurately.",
+      "cue": "When does an observation need to be raised even if it is not your preference?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "After the showing",
+      "title": "Ask permission to compare impressions",
+      "lead": "Find out whether any home is worth pursuing.",
+      "body": "<div class=\"split\"><div><blockquote>“Before we head out, can we compare what you thought? Did any of these feel like a home you would want to make an offer on?”</blockquote></div><div><div class=\"rows\"><div class=\"row\"><h3>If the answer is no</h3><p>Thank them for being direct. Learn what was missing.</p></div><div class=\"row\"><h3>If the answer is yes</h3><p>Find out which home and why. Then discuss what is needed to act.</p></div></div></div></div>",
+      "notes": "Have the buyer role say no first. The agent should accept it comfortably and ask a useful follow-up. A negative answer is useful information.",
+      "cue": "What would you ask after “None of them felt right”?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "After the showing",
+      "title": "Use a rating to start a conversation",
+      "lead": "The reason matters more than the number.",
+      "body": "<div class=\"split\"><div><blockquote>“On a scale of one to ten, how close was that home to what you want?”<br><br>“What makes it an eight?”<br><br>“What was missing?”</blockquote></div><div><label class=\"field\">What did you learn that should change the next search?<textarea data-save=\"criteria\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Ask partners to give the same rating for different reasons. Show why the number alone is not enough for a note or a search decision.",
+      "cue": "How would two buyers’ eights mean different things?",
+      "time": 3,
+      "theme": "sage"
+    },
+    {
+      "chapter": "After the showing",
+      "title": "Ask about financing in context",
+      "lead": "Once you have discussed the home, learn what preparation is needed.",
+      "body": "<blockquote>“If we found the right home, would you be buying with cash or working with a lender?”</blockquote><div class=\"rows\"><div class=\"row\"><h3>Already has a lender</h3><p>Ask what has been reviewed and whether the buyer has questions. Respect that relationship.</p></div><div class=\"row\"><h3>Needs help</h3><p>Offer an introduction with permission. The lender handles detailed financial information.</p></div></div>",
+      "notes": "This is a conversation after the showing, distinct from the first-call LEAD sequence. Do not collect private income or credit details in a sidewalk conversation.",
+      "cue": "What would you ask if they say their bank has already helped?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "After the showing",
+      "title": "Ask what is behind the timing",
+      "lead": "A date is more useful when you understand why it matters.",
+      "body": "<div class=\"split\"><div><blockquote>“You mentioned six months. Is there a date you need to work around, or is that more of a preference?”</blockquote></div><div><label class=\"field\">Write a question that invites the buyer to explain their timing.<textarea data-save=\"timeline\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Ask permission before exploring a sensitive reason. Do not assume a round number is a firm deadline. If they mention a lease, ask about the actual date and flexibility.",
+      "cue": "What changes if the lease ends on a fixed date?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Plan the next step",
+      "title": "Match the plan to this buyer",
+      "lead": "Agree on what is useful now.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Wants to offer soon</h3><p>Discuss the home, required preparation, financing questions, and the next call.</p></div><div class=\"row\"><h3>Moving in several months</h3><p>Work backward from the real deadline. Confirm the next decision and when to revisit it.</p></div><div class=\"row\"><h3>Timing is still uncertain</h3><p>Agree on useful information and a follow-up. Do not force a lender call the buyer does not need.</p></div></div>",
+      "notes": "Ask agents to explain why the same next step would not fit all three buyers. Use actual market, lender, and transaction timelines; do not teach a fixed number of days as universal.",
+      "cue": "Which next step would be premature for this buyer?",
+      "time": 3,
+      "theme": "dark"
+    },
+    {
+      "chapter": "Plan the next step",
+      "title": "Work backward from a real deadline",
+      "lead": "Confirm the steps with the people responsible for them.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Start at the deadline</h3><p>When does the buyer need access to the next home? What flexibility exists?</p></div><div class=\"row\"><h3>Check the process</h3><p>Confirm likely transaction timing, financing work, and available inventory.</p></div><div class=\"row\"><h3>Agree on the next appointment</h3><p>Name its purpose, date, and time. Confirm what each person will do before it.</p></div></div></div><div><label class=\"field\">Write the next appointment and what it is for.<textarea data-save=\"plan\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Use a fictional lease-end example. Avoid presenting an estimated closing date as a guarantee. Have the buyer repeat the plan to catch different expectations.",
+      "cue": "What needs confirmation before you promise a date?",
+      "time": 4,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Practice the first question after a showing",
+      "lead": "Let the buyer answer before asking the next question.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>First attempt</h3><p>Ask whether any home is worth pursuing.</p></div><div class=\"row\"><h3>Buyer response</h3><p>Say no, or give a rating with a reason.</p></div><div class=\"row\"><h3>Feedback and retry</h3><p>Did the agent accept the answer and ask a relevant follow-up? Retry one part.</p></div></div>",
+      "notes": "Pairs take 60 seconds each with 30 seconds feedback and a short retry. Do not stack all five questions into one long sentence.",
+      "cue": "Did the buyer have enough time to answer?",
+      "time": 4,
+      "theme": "sage"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Practice a conversation about timing",
+      "lead": "Ask what makes the date important.",
+      "body": "<div class=\"split\"><div><blockquote>“I guess six months.”<br><br>“My lease ends November 30.”<br><br>“I would move sooner for the right place.”</blockquote></div><div><label class=\"field\">Choose a response. Write your next question.<textarea data-save=\"timing-practice\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Give each partner a different response. Ask the agent to learn whether the date is fixed, flexible, or still uncertain. Do not pressure the buyer to move earlier.",
+      "cue": "What did you learn that changes the plan?",
+      "time": 4,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Run the conversation after a showing",
+      "lead": "Agent, buyer, observer. Rotate after each round.",
+      "body": "<div class=\"split\"><div><div class=\"scenario\" id=\"scenario\"></div><button data-action=\"scenario\">Next buyer case</button></div><div><div class=\"scorecard\"><label><input type=\"checkbox\" data-save=\"rubric-0\"> Asks whether any home is worth pursuing</label><label><input type=\"checkbox\" data-save=\"rubric-1\"> Learns specific likes and missing criteria</label><label><input type=\"checkbox\" data-save=\"rubric-2\"> Clarifies financing preparation and the reason for timing</label><label><input type=\"checkbox\" data-save=\"rubric-3\"> Agrees on a useful next action, date, and owner</label></div><p id=\"score\" class=\"score\" aria-live=\"polite\"></p><button data-action=\"clear-score\">Clear score for next agent</button></div></div>",
+      "notes": "Three rounds: 3-minute conversation, 1-minute feedback, 1-minute retry. Rotate all roles. Judge the usefulness of the questions and plan, not whether the agent recites every example word for word.",
+      "cue": "Observer: what did the agent learn that would change the next step?",
+      "time": 16,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Update the record",
+      "title": "Record what the showing changed",
+      "lead": "Use the stage definitions from Day 1.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Stage</h3><p>Met with customer after the first appointment. Showing homes after the second appointment. Move further only when the event happens.</p></div><div class=\"row\"><h3>Note</h3><p>Which homes, what the buyer liked, what was missing, and the reason for their timing.</p></div><div class=\"row\"><h3>Task</h3><p>The agreed next action with a date and time.</p></div></div>",
+      "notes": "Correct the source deck’s blanket instruction to use Showing homes after every showing. Ask an agent to explain the stage based on the actual event.",
+      "cue": "Would another agent know why you chose the next homes?",
+      "time": 3,
+      "theme": "dark"
+    },
+    {
+      "chapter": "Retain",
+      "title": "Write the follow-up record",
+      "lead": "Use the practice buyer you just worked with.",
+      "body": "<label class=\"field\">Write the true stage, a factual note, and a dated task.<textarea data-save=\"record\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Check your work</summary><div>Stage matches the event. Note includes specific preferences and timing without guesses. Task names the agreed action and date. Ask your coach to review the record.</div></details>",
+      "notes": "This is a coach-reviewed written exercise, not an automated grade. Partners compare against the criteria and revise one missing detail.",
+      "cue": "Which detail could someone act on tomorrow?",
+      "time": 4,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Retain",
+      "title": "What would you ask without the slides?",
+      "lead": "Recall the questions before checking the guide.",
+      "body": "<label class=\"field\">List the questions you would use after a showing.<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Compare with the lesson</summary><div>Is any home worth pursuing? How close is it to what you want? What explains that rating? How will you prepare to purchase? What is behind your timing? Then summarize and agree on the next step.</div></details>",
+      "notes": "Give 45 seconds without notes. Accept natural wording and a conversation that follows the buyer. Correct an omitted topic through a short spoken retry.",
+      "cue": "Which answer most often changes your plan?",
+      "time": 3,
+      "theme": "sage"
+    },
+    {
+      "chapter": "Retain",
+      "title": "Before your next client conversation",
+      "lead": "Write down when you will practice again.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>At your next showing</h3><p>Give the buyer space, then ask about the experience.</p></div><div class=\"row\"><h3>After the conversation</h3><p>Save preferences, timing, and the agreed task in Follow Up Boss.</p></div><div class=\"row\"><h3>Before Day 4</h3><p>Bring one question buyers ask when financing comes up.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>",
+      "notes": "Ask each agent to name one behavior they will practice. Within 24 hours, ask them to explain it without notes. In three days, use a new scenario. In seven days, review an actual example. These are suggested coaching intervals; no reminders are sent.",
+      "cue": "Tell your partner what you will practice and when.",
+      "time": 3,
+      "theme": "sage"
+    }
+  ],
+  "cases": [
+    {
+      "name": "Jordan · ready to offer",
+      "quote": "“The second house is a nine. I would like to offer, but I have not sent my lender the documents.”",
+      "goal": "Learn why it is a nine. Clarify preparation and agree on a useful next step."
+    },
+    {
+      "name": "Morgan · fixed deadline",
+      "quote": "“The layout was good, but neither had the outdoor space I need. My lease ends November 30.”",
+      "goal": "Learn the missing criteria and whether the date has flexibility. Agree on the next search and appointment."
+    },
+    {
+      "name": "Alex · flexible timing",
+      "quote": "“Nothing felt quite right. I said six months, but I am not working toward a deadline.”",
+      "goal": "Accept the answer. Learn what was missing and agree on a follow-up the buyer finds useful."
+    }
+  ],
+  "hero": "/workshops/house.jpg",
+  "resources": "<h3>Write the follow-up record</h3><label class=\"field\">Write the true stage, a factual note, and a dated task.<textarea data-save=\"record\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Check your work</summary><div>Stage matches the event. Note includes specific preferences and timing without guesses. Task names the agreed action and date. Ask your coach to review the record.</div></details><h3>What would you ask without the slides?</h3><label class=\"field\">List the questions you would use after a showing.<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Compare with the lesson</summary><div>Is any home worth pursuing? How close is it to what you want? What explains that rating? How will you prepare to purchase? What is behind your timing? Then summarize and agree on the next step.</div></details><h3>Before your next client conversation</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>At your next showing</h3><p>Give the buyer space, then ask about the experience.</p></div><div class=\"row\"><h3>After the conversation</h3><p>Save preferences, timing, and the agreed task in Follow Up Boss.</p></div><div class=\"row\"><h3>Before Day 4</h3><p>Bring one question buyers ask when financing comes up.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>"
+}

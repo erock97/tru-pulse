@@ -221,6 +221,7 @@ export function PracticeRecord({
   const pack = PACKS[scenario];
   const shotRef = useRef<HTMLDivElement | null>(null);
   const [k, setK] = useState(0);
+  const [enlarged, setEnlarged] = useState(false);
 
   const [stage, setStage] = useState(pack.startStage);
   const [savedStage, setSavedStage] = useState(pack.startStage);
@@ -423,7 +424,7 @@ export function PracticeRecord({
           ))}
         </ol>
         <p className="pr-safe">
-          Everything on the screen below works. Nothing here touches a real contact, so click around.{' '}
+          Practice the stage, note, task, and deal controls below. Changes stay in this exercise.{' '}
           <button className="pr-hintbtn" onClick={() => setHint((h) => !h)}>
             {hint ? 'Hide the hints' : 'Stuck? Show me where'}
           </button>
@@ -431,10 +432,14 @@ export function PracticeRecord({
       </div>
       )}
 
+      <button className="btn ghost" onClick={() => setEnlarged(v => !v)} aria-pressed={enlarged}>
+        {enlarged ? 'Fit the whole record' : 'Enlarge record controls'}
+      </button>
+      <div style={{overflowX:'auto',maxWidth:'100%'}} tabIndex={enlarged ? 0 : undefined} aria-label="Training record; scroll horizontally when enlarged">
       <div
         className={`fub${hint ? ' show-hints' : ''}${locked ? ' is-locked' : ''}`}
         ref={shotRef}
-        style={{ ['--k' as string]: String(k) }}
+        style={{ ['--k' as string]: String(k), minWidth: enlarged ? 1400 : undefined }}
       >
         <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
 
@@ -467,8 +472,8 @@ export function PracticeRecord({
                 <button className="fub-stagefield" onClick={() => setStageOpen((o) => !o)}>
                   <b>Stage</b><span className="fub-stagepick">{stage}</span><span className="fub-caret">⌄</span>
                 </button>
-                <button className="fub-ok" onClick={commitStage} title="Save">✓</button>
-                <button className="fub-cancel" onClick={cancelStage} title="Cancel">✕</button>
+                <button className="fub-ok" onClick={commitStage} title="Save" aria-label="Save stage">✓</button>
+                <button className="fub-cancel" onClick={cancelStage} title="Cancel" aria-label="Cancel stage change">✕</button>
                 {stageOpen && (
                   <div className="fub-menu">
                     <input
@@ -612,6 +617,7 @@ export function PracticeRecord({
         )}
       </div>
 
+      </div>
       <div className="pr-after">
         {locked && <p className="pr-locked">The record is read-only until your diagnosis is right.</p>}
         {grade && (

@@ -9,6 +9,10 @@ import { canOpenModule } from '../lib/agentHq';
 import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne } from '../lib/coachData';
 import { TruLogo } from '../components/TruLogo';
 import { SlideView } from './SlideDeck';
+import WorkshopLesson from './WorkshopLesson';
+import { workshopDay } from '../workshops/types';
+import { workshopQuestion } from '../workshops/questionCopy';
+import '../workshops/quiz.css';
 import { DealSlide } from './DealSlide';
 import { PracticeRecord, PACKS as PRACTICE_PACKS, type PracticeScenario } from './PracticeRecord';
 import '../truHqDark.css';
@@ -511,9 +515,9 @@ function Ring({ passed, total }: { passed: number; total: number }) {
 }
 
 // ── The desktop shell: dark course rail + big stage with ambient backdrop ───
-function Shell({ accent, num, rail, children, wide }: { accent: string; num: number; rail: ReactNode; children: ReactNode; wide?: boolean }) {
+function Shell({ accent, num, rail, children, wide, branded }: { accent: string; num: number; rail: ReactNode; children: ReactNode; wide?: boolean; branded?: boolean }) {
   return (
-    <div className={`ac ac-shell tru-dark${wide ? ' ac-shell-wide' : ''}`} data-module={num} style={{ ['--mac' as string]: accent }}>
+    <div className={`ac ac-shell tru-dark${wide ? ' ac-shell-wide' : ''}${branded ? ' rep-workshop-quiz' : ''}`} data-module={num} style={{ ['--mac' as string]: branded ? '#bdd1ed' : accent }}>
       <aside className="ac-rail">{rail}</aside>
       <section className="ac-stage">
         <div className="ac-watermark" aria-hidden>{String(num).padStart(2, '0')}</div>
@@ -544,7 +548,12 @@ function RailFoot() {
 
 // ── Lesson: typed cards on the big stage; rail = the outline ────────────────
 // Exported so the leader Rep tab can open any module as a full preview.
-export function Lesson({ module: m, onDone, onBack, doneLabel }: { module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string }) {
+export function Lesson(props: { module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string; presentation?: boolean }) {
+  const day=workshopDay(props.module);
+  return day ? <WorkshopLesson day={day} onDone={props.onDone} onBack={props.onBack} doneLabel={props.doneLabel} preview={props.presentation}/> : <LegacyLesson {...props}/>;
+}
+
+function LegacyLesson({ module: m, onDone, onBack, doneLabel }: { module: CourseModule; onDone: () => void; onBack: () => void; doneLabel?: string }) {
   const cards = m.cards;
   const [i, setI] = useState(0);
   const [seen, setSeen] = useState(0);
@@ -828,7 +837,7 @@ export function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; on
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const ac = accentOf(m.idx);
-  const q = m.qs[qi];
+  const q = workshopQuestion(m.qs[qi], workshopDay(m));
   const last = qi >= m.qs.length - 1;
   const chosen = answers[qi];
   const go = (n: number) => { setQi(n); setMaxQ((s) => Math.max(s, n)); };
@@ -862,7 +871,7 @@ export function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; on
   );
 
   return (
-    <Shell accent={ac} num={m.idx} rail={rail}>
+    <Shell accent={ac} num={m.idx} rail={rail} branded={!!workshopDay(m)}>
       <button className="ac-back ac-mob" onClick={onExit}>‹ Back to the lesson</button>
       <div className="ac-lessonhead">
         <span className="ac-chip">Quiz · pass {m.pass_pct}%</span>
@@ -895,7 +904,7 @@ export function Quiz({ module: m, onExit, onGraded }: { module: CourseModule; on
 export function Result({ module: m, result, onRetry, onReview, onHome }: {
   module: CourseModule; result: GradeResult; onRetry: () => void; onReview: () => void; onHome: () => void;
 }) {
-  const byIdx = new Map(m.qs.map((q) => [q.idx, q]));
+  const byIdx = new Map(m.qs.map((q) => [q.idx, workshopQuestion(q, workshopDay(m))]));
   const ac = accentOf(m.idx);
 
   const rail = (
@@ -910,7 +919,7 @@ export function Result({ module: m, result, onRetry, onReview, onHome }: {
   );
 
   return (
-    <Shell accent={ac} num={m.idx} rail={rail}>
+    <Shell accent={ac} num={m.idx} rail={rail} branded={!!workshopDay(m)}>
       <div className={`ac-verdict fu ${result.passed ? 'pass' : 'fail'}`}>
         {result.passed && (
           <div className="ac-confetti">
@@ -952,7 +961,7 @@ export function Result({ module: m, result, onRetry, onReview, onHome }: {
                   <div className="ac-rev-correct">Correct: {q.choices[r.correct_index]}</div>
                 </div>
               )}
-              {r.explain && <div className="ac-rev-why">{r.explain}</div>}
+              {r.explain && q.prompt === m.qs.find(original => original.idx === r.idx)?.prompt && <div className="ac-rev-why">{r.explain}</div>}
             </div>
           );
         })}

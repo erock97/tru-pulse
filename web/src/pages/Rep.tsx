@@ -1,4 +1,6 @@
 import { PracticeFollowup } from '../components/PracticeFollowup';
+import { RepWorkshopLibrary } from '../components/RepWorkshopLibrary';
+import { workshopDay, workshopMeta } from '../workshops/types';
 import { useOperations } from '../components/OperationsContext';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -179,6 +181,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
     }
     return (
       <Lesson
+        presentation
         module={asCourse}
         onBack={closePreview}
         onDone={() => { qs.length ? setPreviewView('quiz') : closePreview(); }}
@@ -291,7 +294,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                     ? 'Everybody is certified'
                     : `${startedCount} of ${enrolled} underway`}
               </span>
-              <h1>Build the skill. See the progress.</h1>
+              <h1>Training and team progress</h1>
               <p className="dk-sub">Review each agent’s progress, open their results, and see what they need to complete next.</p>
             </div>
             <div className="rp-hero-cta">
@@ -416,6 +419,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </div>
 
+          <RepWorkshopLibrary presenter />
           <details className="rep-curriculum"><summary>Curriculum & team progress · {modules.length} modules · {totalQuestions} questions</summary>
           <section className="dk-bento rp-bento-deck">
             {/* The track. Distance is progress, not rate and not time — see
@@ -480,13 +484,13 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                     <span className="rp-node"><span className="rp-node-n">{i + 1}</span></span>
                     <div className="rp-step-body">
                       <div className="rp-step-top">
-                        <h4>{m.title}</h4>
+                        <h4>{workshopMeta[workshopDay(m)??0]?.title ?? m.title}</h4>
                         {state === 'locked' && <span className="rp-lock">No preview</span>}
                         {state === 'open' && <span className="rp-open">Start here</span>}
                       </div>
                       <div className="rp-step-meta">
-                        {m.cards?.length ?? 0} screens · {m.questions} Q · pass {m.pass_pct}%
-                        {m.summary ? ` · ${m.summary}` : ''}
+                        {workshopMeta[workshopDay(m)??0]?.screens ?? m.cards?.length ?? 0} screens · {m.questions} Q · pass {m.pass_pct}%
+                        {m.summary ? ` · ${workshopMeta[workshopDay(m)??0]?.summary ?? m.summary}` : ''}
                       </div>
                     </div>
                     <button
@@ -557,7 +561,7 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
           const s = p?.status ?? 'not_started';
           return (
             <div key={m.id} className={`rp-drill-mod ${s}`}>
-              <div className="rp-drill-mtitle">M{moduleIndex + 1} · {m.title}</div>
+              <div className="rp-drill-mtitle">M{moduleIndex + 1} · {workshopMeta[workshopDay(m)??0]?.title ?? m.title}</div>
               <div className="rp-drill-mline">
                 {s === 'passed'
                   ? <>Passed · {p?.score}% · {fmtDate(p?.passed_at)}</>
@@ -696,7 +700,7 @@ function ModuleManager({ org, onClose, onPreview }: {
               <div key={m.id} className="rp-mgmt-row">
                 <div className="rp-mgmt-row-main">
                   <span className={`rp-mgmt-badge st-${m.status ?? 'draft'}`}>{m.status ?? 'draft'}</span>
-                  <span className="rp-mgmt-title">{m.title}</span>
+                  <span className="rp-mgmt-title">{workshopMeta[workshopDay(m)??0]?.title ?? m.title}</span>
                   <span className="rp-mgmt-meta">{m.cards?.length ?? 0} screen{(m.cards?.length ?? 0) === 1 ? '' : 's'}</span>
                 </div>
                 <div className="rp-mgmt-row-actions">

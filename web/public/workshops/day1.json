@@ -1,0 +1,260 @@
+{
+  "day": 1,
+  "title": "Welcome to Zillow Preferred",
+  "slides": [
+    {
+      "chapter": "Start",
+      "title": "Welcome to Zillow Preferred",
+      "lead": "Zillow Preferred · Day 1",
+      "body": "<div class=\"hero-bottom\"><p>Find the contact.<br>Update the record.<br>Set the follow-up.</p><div class=\"hero-ticket\"><span>Today’s practice</span><strong>Update a contact record another agent can understand.</strong><small>Work with a partner. Give specific feedback. Try again.</small></div></div>",
+      "notes": "Invite a recent example from one person, then begin. Keep the opening to two minutes.",
+      "cue": "Ask: What would you like to get better at today?",
+      "time": 2,
+      "theme": "hero"
+    },
+    {
+      "chapter": "Start",
+      "title": "What should the next agent know?",
+      "lead": "A useful record explains what happened and what comes next.",
+      "body": "<div class=\"split\"><div><blockquote>“I spoke with Avery. They want to compare two homes on Thursday.”</blockquote></div><div><h3>What is still missing?</h3><div class=\"choices\" data-quiz=\"record\"><button data-correct=\"false\" data-feedback=\"Record facts that help the next conversation.\">A longer description of Avery’s personality.</button><button data-correct=\"true\" data-feedback=\"Yes. A request to compare homes is not a confirmed appointment.\">Whether Thursday is booked, which homes, and who follows up.</button><button data-correct=\"false\" data-feedback=\"Ask questions when relevant; do not turn assumptions into facts.\">A guess about what Avery can afford.</button></div><p class=\"feedback\" aria-live=\"polite\"></p></div></div>",
+      "notes": "Ask everyone to choose before revealing. Hear two explanations. Keep this distinction for the later repair exercise.",
+      "cue": "What would you need before calling Avery?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Start",
+      "title": "What we will practice over four days",
+      "lead": "Today starts with the record you use every day.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Day 1 · Follow Up Boss</h3><p>Find the lead, choose the true stage, write a note, and set a dated task.</p></div><div class=\"row\"><h3>Day 2 · The first call</h3><p>Introduce yourself, invite the buyer early, listen, and summarize.</p></div><div class=\"row\"><h3>Day 3 · The showing</h3><p>Learn what the buyer liked, what is missing, and their timing.</p></div><div class=\"row\"><h3>Day 4 · Zillow Home Loans</h3><p>Explain the option, ask permission, and follow up on the introduction.</p></div></div>",
+      "notes": "Keep this overview brief. Ask which task an agent already does comfortably. Do not reteach later modules here.",
+      "cue": "Which part of your current process needs the most practice?",
+      "time": 2,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Find the contact",
+      "title": "How a Zillow lead reaches you",
+      "lead": "Start with the Follow Up Boss contact record.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Live connection</h3><p>You are connected with a buyer. Find the matching record before updating it.</p></div><div class=\"row\"><h3>Tour request</h3><p>Read the property and requested time. A request alone is not a confirmed appointment.</p></div><div class=\"row\"><h3>Touring alert</h3><p>Read what happened and what response is needed. Check the existing history.</p></div></div>",
+      "notes": "Use your actual team routing process for the demonstration. Do not assume every notification means the same thing.",
+      "cue": "What would tell you that you have the correct record?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Find the contact",
+      "title": "Start in People",
+      "lead": "Use the actual contact name, source, and activity to find the record.",
+      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list in the training account\"><figcaption>Training account · Open the full image to inspect the controls.</figcaption></figure>",
+      "notes": "Demonstrate People, smart lists, and filtering in your training account. Open the image at full size if labels are hard to see. Ask an agent to point to the source and most recent activity.",
+      "cue": "Where would you look for a new Zillow contact?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Find the contact",
+      "title": "Find Avery in the training account",
+      "lead": "Confirm the source before opening or editing a record.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Find the name</h3><p>Search for Avery in the training pond.</p></div><div class=\"row\"><h3>Check the source</h3><p>Look for Zillow. If needed, use Filters → Add filter → Lead Source.</p></div><div class=\"row\"><h3>Open and confirm</h3><p>Read the contact details and activity. Make sure this is the right Avery.</p></div></div>",
+      "notes": "Have an agent narrate where they would click. Use the training account, never a live contact as a practice record.",
+      "cue": "Explain your first three clicks.",
+      "time": 3,
+      "theme": "dark"
+    },
+    {
+      "chapter": "Read the record",
+      "title": "Read before you change anything",
+      "lead": "Look for facts that affect the next conversation.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Who is this?</h3><p>Confirm name and contact details.</p></div><div class=\"row\"><h3>Where did this start?</h3><p>Check source and property context.</p></div><div class=\"row\"><h3>What already happened?</h3><p>Read the recent calls, notes, and appointment history.</p></div><div class=\"row\"><h3>What is due next?</h3><p>Check the assigned person and dated task.</p></div></div>",
+      "notes": "Show a contact and allow 20 seconds of silent reading. Ask what is known and what still needs a question.",
+      "cue": "What would be risky to assume?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Read the record",
+      "title": "Check the Details panel",
+      "lead": "The stage should match what actually happened.",
+      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/detail-full.png\" alt=\"Complete Follow Up Boss training contact with Details, activity, and tasks\"><figcaption>Stage, assigned agent, source, and timeframe belong to this contact.</figcaption></figure>",
+      "notes": "Point out Stage, Assigned, Source, and Timeframe without narrating every control. Timing should come from the buyer, not a guess.",
+      "cue": "Which detail would you verify before saving?",
+      "time": 3,
+      "theme": "sage"
+    },
+    {
+      "chapter": "Read the record",
+      "title": "Separate facts from assumptions",
+      "lead": "Use background information to ask a question.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>A fact</h3><p>“Avery asked to see two homes on Thursday.”</p></div><div class=\"row\"><h3>An assumption</h3><p>“Avery must be ready to buy this week.”</p></div><div class=\"row\"><h3>A useful question</h3><p>“What is prompting your move, and is there a date you are working toward?”</p></div></div></div><div><label class=\"field\">Write one question that checks an assumption.<textarea data-save=\"facts\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Ask for two examples. Do not infer finances, family circumstances, or housing preferences from a profile. Keep the record factual.",
+      "cue": "Which words in a note tell you someone is guessing?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Update the stage",
+      "title": "Choose the stage that matches the event",
+      "lead": "Save the change and reopen the record to check it.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Before an appointment</h3><p>Lead → Attempted contact → Spoke with customer → Appointment set. Use only what happened.</p></div><div class=\"row\"><h3>After meeting</h3><p>Met with customer after the first appointment. Showing homes after the second appointment.</p></div><div class=\"row\"><h3>Offer and closing</h3><p>Submitting offers when submitting. Under contract after acceptance, with the deal recorded. Closed after closing.</p></div></div>",
+      "notes": "Show the full stage menu in the exercise. Explain this is the team’s stage mapping. A request for Thursday is not an appointment until a time is agreed. Demonstrate the green save check and reopening.",
+      "cue": "Which stage would you use after a voicemail?",
+      "time": 4,
+      "theme": "dark"
+    },
+    {
+      "chapter": "Update the stage",
+      "title": "Choose Avery’s stage",
+      "lead": "Avery answered and asked about Thursday, but no time is booked.",
+      "body": "<h3>Which stage matches?</h3><div class=\"choices\" data-quiz=\"stage\"><button data-correct=\"false\" data-feedback=\"Avery answered and you spoke.\">Attempted contact</button><button data-correct=\"true\" data-feedback=\"Correct. A conversation happened, but no appointment was agreed.\">Spoke with customer</button><button data-correct=\"false\" data-feedback=\"A possible day is not a confirmed appointment.\">Appointment set</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
+      "notes": "Ask agents to explain the evidence for their answer. Do not accept a label without the event behind it.",
+      "cue": "What new fact would justify Appointment set?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Update the stage",
+      "title": "Check the other examples",
+      "lead": "Explain the event before naming the stage.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>New contact, no attempt yet</h3><p>Lead.</p></div><div class=\"row\"><h3>Called and left a voicemail</h3><p>Attempted contact.</p></div><div class=\"row\"><h3>Spoke about two homes</h3><p>Spoke with customer.</p></div><div class=\"row\"><h3>Agreed Thursday at 3 p.m.</h3><p>Appointment set. Save the change and check it.</p></div></div>",
+      "notes": "Hide the answers first by asking verbally. Call on different agents. Next, each learner will make the appointment update in the existing record exercise.",
+      "cue": "Close your notes: what separates the last two?",
+      "time": 2,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice: save the appointment stage",
+      "lead": "Use the training contact. Check your work to continue.",
+      "body": "",
+      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction.",
+      "cue": "Make the update, save it, then check your work.",
+      "time": 5,
+      "theme": "paper",
+      "native": "practice",
+      "scenario": "set-appointment"
+    },
+    {
+      "chapter": "Write the note",
+      "title": "Write what the next agent needs",
+      "lead": "Record what happened, what the buyer said, and the agreed next step.",
+      "body": "<div class=\"split\"><div><blockquote>“Spoke with Avery. Looking for three bedrooms in Tacoma in 60–90 days. I’ll send two homes on Thursday, then call to compare them.”</blockquote></div><div><div class=\"rows\"><div class=\"row\"><h3>Keep the facts</h3><p>Use the buyer’s words where they clarify a need.</p></div><div class=\"row\"><h3>Make the next step specific</h3><p>Name the action and agreed date.</p></div><div class=\"row\"><h3>Leave out guesses</h3><p>A friendly conversation is not proof of readiness or budget.</p></div></div></div></div>",
+      "notes": "Ask what the example tells the next caller. Then complete the note exercise. Coach one missing fact rather than rewriting the entire note for the agent.",
+      "cue": "Could someone follow up using only this note?",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice: write the conversation note",
+      "lead": "Use the training contact. Check your work to continue.",
+      "body": "",
+      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction.",
+      "cue": "Make the update, save it, then check your work.",
+      "time": 5,
+      "theme": "paper",
+      "native": "practice",
+      "scenario": "spoke-note"
+    },
+    {
+      "chapter": "Set the task",
+      "title": "Give the follow-up a date and time",
+      "lead": "Write an action you will recognize when it comes due.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Too vague</h3><p>“Follow up.”</p></div><div class=\"row\"><h3>Useful</h3><p>“Call Avery to compare 406 and 422 Juniper — Thursday, 3 p.m.”</p></div><div class=\"row\"><h3>Before you leave</h3><p>Confirm one clear next task with the correct date and time.</p></div></div></div><div><label class=\"field\">Write a task for a missed call.<textarea data-save=\"task\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Explain the difference between a note and a task. The note records history; the task schedules the next action. Complete the missed-call exercise next.",
+      "cue": "What makes a task usable tomorrow?",
+      "time": 3,
+      "theme": "sage"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice: set the missed-call task",
+      "lead": "Use the training contact. Check your work to continue.",
+      "body": "",
+      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction.",
+      "cue": "Make the update, save it, then check your work.",
+      "time": 5,
+      "theme": "paper",
+      "native": "practice",
+      "scenario": "noanswer-task"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Repair Avery’s record",
+      "lead": "Only a request to compare homes is confirmed. The record says Appointment set.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>What is wrong</h3><p>The stage claims an appointment. The note is vague. There is no dated task.</p></div></div></div><div><label class=\"field\">Name the three changes you would make.<textarea data-save=\"diagnosis\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Have agents diagnose first, then complete the repair exercise. Ask for evidence behind each change. The existing exercise checks the diagnosis before allowing edits.",
+      "cue": "What would you fix first, and why?",
+      "time": 3,
+      "theme": "blue"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice: repair Avery’s record",
+      "lead": "Use the training contact. Check your work to continue.",
+      "body": "",
+      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction.",
+      "cue": "Make the update, save it, then check your work.",
+      "time": 5,
+      "theme": "paper",
+      "native": "practice",
+      "scenario": "avery-repair"
+    },
+    {
+      "chapter": "Practice",
+      "title": "Check the record before moving on",
+      "lead": "Reopen what you saved.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Stage</h3><p>Does it match the event, and did the change save?</p></div><div class=\"row\"><h3>Note</h3><p>Does it explain what happened without guessing?</p></div><div class=\"row\"><h3>Task</h3><p>Is the next action scheduled for a real date and time?</p></div><div class=\"row\"><h3>Handoff</h3><p>Could another agent act on this record without asking you to explain it?</p></div></div>",
+      "notes": "Ask agents to check their own work. Introduce the deal exercise: once an offer is accepted, update the stage and record the deal details.",
+      "cue": "Which check would catch an unsaved stage?",
+      "time": 2,
+      "theme": "dark"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice adding a deal",
+      "lead": "Use the buyer’s name, price, and expected close date.",
+      "body": "",
+      "notes": "Demonstrate the deal form, then let the learner enter it. Use fictional details.",
+      "cue": "What would you check before creating this deal?",
+      "time": 3,
+      "theme": "paper",
+      "native": "deal"
+    },
+    {
+      "chapter": "Record exercise",
+      "title": "Practice: record the accepted offer",
+      "lead": "Update the stage and add the deal from the scenario.",
+      "body": "",
+      "notes": "Check the accepted-offer exercise. A passed check should explain the evidence, not just display a result.",
+      "cue": "What changed after the offer was accepted?",
+      "time": 5,
+      "theme": "paper",
+      "native": "practice",
+      "scenario": "offer-accepted"
+    },
+    {
+      "chapter": "Retain",
+      "title": "Where will you start tomorrow?",
+      "lead": "Use your tasks and new leads to plan the next calls.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Due tasks</h3><p>Review what you agreed to do and when.</p></div><div class=\"row\"><h3>New leads</h3><p>Find the correct contact and read the history.</p></div><div class=\"row\"><h3>After each conversation</h3><p>Update the stage, note, and dated next task.</p></div></div></div><div><label class=\"field\">Without looking back: what belongs in a useful contact record?<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
+      "notes": "Give 30 seconds without notes. Then ask partners to compare. Revisit only the missing item, not the entire lesson.",
+      "cue": "Explain your first five minutes in Follow Up Boss.",
+      "time": 3,
+      "theme": "paper"
+    },
+    {
+      "chapter": "Retain",
+      "title": "Before your next client conversation",
+      "lead": "Write down when you will practice again.",
+      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Today</h3><p>Complete the five record exercises and review any correction.</p></div><div class=\"row\"><h3>Before Day 2</h3><p>Find a training contact, read the history, and explain what is due next.</p></div><div class=\"row\"><h3>With your coach</h3><p>Review one real record together after your next client conversation.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>",
+      "notes": "Ask each agent to name one behavior they will practice. Within 24 hours, ask them to explain it without notes. In three days, use a new scenario. In seven days, review an actual example. These are suggested coaching intervals; no reminders are sent.",
+      "cue": "Tell your partner what you will practice and when.",
+      "time": 3,
+      "theme": "sage"
+    }
+  ],
+  "cases": [],
+  "hero": "/workshops/house.jpg",
+  "resources": "<h3>Where will you start tomorrow?</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Due tasks</h3><p>Review what you agreed to do and when.</p></div><div class=\"row\"><h3>New leads</h3><p>Find the correct contact and read the history.</p></div><div class=\"row\"><h3>After each conversation</h3><p>Update the stage, note, and dated next task.</p></div></div></div><div><label class=\"field\">Without looking back: what belongs in a useful contact record?<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><h3>Before your next client conversation</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Today</h3><p>Complete the five record exercises and review any correction.</p></div><div class=\"row\"><h3>Before Day 2</h3><p>Find a training contact, read the history, and explain what is due next.</p></div><div class=\"row\"><h3>With your coach</h3><p>Review one real record together after your next client conversation.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>"
+}
