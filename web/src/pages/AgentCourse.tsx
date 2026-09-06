@@ -10,7 +10,7 @@ import { loadMyOneOnOnes, MET_LABELS, COMMITMENT_STATUS_LABELS, type MyOneOnOne 
 import { TruLogo } from '../components/TruLogo';
 import { SlideView } from './SlideDeck';
 import WorkshopLesson from './WorkshopLesson';
-import { workshopDay } from '../workshops/types';
+import { workshopDay, workshopMeta } from '../workshops/types';
 import { workshopQuestion } from '../workshops/questionCopy';
 import '../workshops/quiz.css';
 import { DealSlide } from './DealSlide';
@@ -532,8 +532,8 @@ function RailHead({ module: m, onBack }: { module: CourseModule; onBack: () => v
     <>
       <div className="ac-rail-logo"><TruLogo size={26} wordSize={19} sub="Rep" /></div>
       <button className="ac-rail-back" onClick={onBack}>‹ All modules</button>
-      <div className="ac-rail-kicker">Module {m.idx}</div>
-      <div className="ac-rail-title">{m.title}</div>
+      <div className="ac-rail-kicker">{workshopDay(m) ? `Day ${workshopDay(m)}` : `Module ${m.idx}`}</div>
+      <div className="ac-rail-title">{workshopMeta[workshopDay(m)??0]?.title ?? m.title}</div>
     </>
   );
 }
