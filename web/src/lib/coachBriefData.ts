@@ -126,7 +126,7 @@ export function toView(row: BriefReportRow): BriefView | null {
           // happened and that lane is the to-do -- the same sentence in both
           // is the redundancy Eric already threw one lane out over.
           const v = opportunityAsPoint(o, byIndex, byId);
-          return { ...v, coach: null };
+          return v;
         });
 
   // Hermes sends every action twice: a headline fragment in coachingActions

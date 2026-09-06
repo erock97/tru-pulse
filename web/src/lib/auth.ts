@@ -98,11 +98,11 @@ export async function exchangeLink(tokenHash: string, type: string): Promise<str
   return out?.email ?? null;
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut(refresh = true): Promise<void> {
   // Belt and braces: main.tsx already does this on every load. Repeating it here means
   // a session that started before that shipped still ends clean.
   clearLegacyTokens();
   await cookieAuth.logout().catch(() => undefined);
   canReturn = false;
-  await refreshAuth();
+  if (refresh) await refreshAuth();
 }

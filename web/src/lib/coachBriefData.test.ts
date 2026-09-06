@@ -112,7 +112,7 @@ describe('a week stored after schema 1.1', () => {
     // The move is NOT repeated here: it renders once, in the "What to do with
     // this agent" lane, which is built from it. Duplicating the same sentence
     // across two lanes is the redundancy one lane was already removed over.
-    expect(point.coach).toBeNull();
+    expect(point.coach).toBe('Offer two times and ask her to pick one.');
     expect(point.evidence[0].quote).toBe('Want me to send some over?');
     expect(agent.coachingActions[0].text).toBe('Offer two times and ask her to pick one.');
     expect(agent.coachingActions[0].evidence[0].quote).toBe('Want me to send some over?');
@@ -169,5 +169,21 @@ describe('a skill opportunity flag', () => {
     const agent = toView(row)!.agents[0];
     expect(agent.skillOpportunities[0].skill).toBe('Confidence');
     expect(agent.skillOpportunities[0].evidence).toEqual([]);
+  });
+});
+
+describe('opportunity source excerpts', () => {
+  it('preserves an opportunity excerpt without mutating the finding or losing context', () => {
+    const row = storedBeforeV11();
+    const a = row.payload!.agents[0];
+    a.opportunities = [];
+    a.opportunityPoints = [{findingIds:['one'],explanation:'The buyer asked for a tour.',coachingMove:'Confirm a time.',sourceQuality:'verbatim',sourceQuote:'Can we see it tomorrow?'}];
+    row.payload!.findings[0].findingId='one';
+    delete row.payload!.findings[0].quote;
+    const point=toView(row)!.agents[0].opportunities[0];
+    expect(point.text).toBe('The buyer asked for a tour.');
+    expect(point.coach).toBe('Confirm a time.');
+    expect(point.evidence[0].quote).toBe('Can we see it tomorrow?');
+    expect(row.payload!.findings[0].quote).toBeUndefined();
   });
 });

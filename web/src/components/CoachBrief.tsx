@@ -145,7 +145,6 @@ function EvidenceList({ evidence }: { evidence: BriefFinding[] }) {
   if (evidence.length === 0) return null;
   return (
     <ul className="brief-evidence">
-      {evidence.some(f => !f.quote) && <li className="brief-source-note">Some linked records have no excerpt in this report. Open the source conversation to review what was said.</li>}
       {evidence.map((f, i) => (
         <li key={i}>
           {f.quote && (
@@ -419,7 +418,7 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
       <div className="coaching-review" key={(view.reportId ?? '')+person?.agentName}>
         {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Coaching review</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || meta.lastDays>=99 ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
           {person.agentId && onOpenAgent && <button className="brief-open" onClick={()=>onOpenAgent(person.agentId!,person.agentName)}>Prepare 1:1 →</button>}</header>
-          <div className="coaching-review-body">{person.agentId && operations && <button className="brief-open" onClick={()=>{operations.setPractice({agentId:person.agentId!,name:person.agentName,focus:person.coachingActions[0]?.text ?? person.opportunities[0]?.text ?? 'Review the source evidence before choosing a practice focus.',due:'',outcome:''});window.location.hash='/rep';}}>Plan practice in Rep →</button>}<h4>What to work on</h4><PointList points={person.coachingActions.length ? person.coachingActions : person.opportunities} tone="work" maxVisible={3} />
+          <div className="coaching-review-body">{person.agentId && operations && <button className="brief-open" onClick={()=>{operations.setPractice({agentId:person.agentId!,name:person.agentName,focus:person.coachingActions[0]?.text ?? person.opportunities[0]?.text ?? 'Review the source evidence before choosing a practice focus.',due:'',outcome:''});window.location.hash='/rep';}}>Plan practice in Rep →</button>}<h4>What to work on</h4><PointList points={person.opportunities.length ? person.opportunities : person.coachingActions} tone="work" maxVisible={3} />
           {!!person.objections.length && <><h4>Where the conversation gets difficult</h4><PointList points={person.objections} tone="watch" maxVisible={2} /></>}
           {!!person.doingRight.length && <><h4>Keep building on</h4><PointList points={person.doingRight} tone="good" maxVisible={2} /></>}
           <p className="coaching-order-note">Open the evidence beside each observation before using it in a coaching conversation. A linked source does not by itself establish the claim.</p></div>
