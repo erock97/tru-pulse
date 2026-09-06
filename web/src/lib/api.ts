@@ -1032,7 +1032,7 @@ export async function adminReturn(): Promise<void> {
  *  localStorage (durable), a raw signOut while impersonating would otherwise leave a
  *  stale return handle behind that shows a phantom "Exit — switch teams" next login. */
 export async function signOutClean(): Promise<void> {
-  await signOut();
+  await signOut(false);
   window.location.replace('https://truhq.co/');
 }
 

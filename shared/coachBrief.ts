@@ -410,6 +410,10 @@ export function opportunityAsPoint(
   };
   for (const id of o.findingIds) take(byId.get(id));
   if (!evidence.length && o.findingIndex !== undefined) take(byIndex.get(o.findingIndex));
+  // An opportunity excerpt belongs to one cited interaction; never duplicate it across records.
+  if (evidence.length === 1 && !evidence[0].quote && o.sourceQuality === 'verbatim' && o.sourceQuote?.trim()) {
+    evidence[0] = { ...evidence[0], quote: o.sourceQuote.trim() };
+  }
   return { text: o.explanation, coach: o.coachingMove ?? null, evidence };
 }
 
