@@ -907,11 +907,11 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
           <b>{health}</b> coaching health{teamHealth !== null ? <i> · team {teamHealth}</i> : null}
         </span>
         <span className="ad-vital">
-          <b>{agent.lastDays >= 99 ? 'never' : `${agent.lastDays}d`}</b> since last 1:1
+          {agent.hasRecordedCheckin ? <><b>{agent.lastDays}d</b> since last recorded 1:1</> : 'No recorded 1:1'}
         </span>
         <span className="ad-vital"><b style={{ color: agent.paceColor }}>{agent.pace}</b></span>
         <span className="ad-vital">
-          <b>{agent.days >= 99 ? 'never' : `${agent.days}d`}</b> since assessed
+          {agent.assessed ? <><b>{agent.days}d</b> since assessment</> : 'Assessment not completed'}
         </span>
       </div>
 
@@ -1075,7 +1075,7 @@ function RunOneOnOneSheet({
   useEffect(() => () => { if (debounce.current) window.clearTimeout(debounce.current); }, []);
 
   const lastFocus = checkins[0]?.focus || '';
-  const daysSinceLast = agent.lastDays >= 99 ? null : agent.lastDays;
+  const daysSinceLast = agent.hasRecordedCheckin ? agent.lastDays : null;
 
   function queueDraftSave(next: OneOnOneDraftV2) {
     if (debounce.current) window.clearTimeout(debounce.current);
@@ -1719,10 +1719,10 @@ function GoalSheet({
           <div>
             <p><b>{first} has no goal set.</b></p>
             <p className="ad-goal-empty-note">
-              Starting from {GOAL_DEFAULTS.q_goal} contracts this quarter,
+              Suggested planning defaults: {GOAL_DEFAULTS.q_goal} contracts this quarter,
               {' '}{GOAL_DEFAULTS.alloc_company} of them from company leads, at
               {' '}{GOAL_DEFAULTS.cvr_company}% company and {GOAL_DEFAULTS.cvr_sphere}% sphere conversion.
-              Those two rates are assumptions — change them once you know {first}’s real ones.
+              These are editable assumptions, not {first}’s measured results.
             </p>
             <button className="hqbtn hqbtn-primary" disabled={making} onClick={makeGoal}>
               {making ? 'Setting up…' : `Set ${first}’s goal`}
