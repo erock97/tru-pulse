@@ -1,3 +1,4 @@
+import { ConversionComparison } from '../components/ConversionComparison';
 import { ContactSpeedPanel } from '../components/ContactSpeedPanel';
 import { HustlePanel } from '../components/HustlePanel';
 import { AssignmentReview } from '../components/AssignmentReview';
@@ -42,7 +43,7 @@ import { norm } from '../lib/rosterData';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
-import { minimumExpectation, contractRateLabel } from '../lib/minimumExpectation';
+import { contractRateLabel } from '../lib/minimumExpectation';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { useFlip } from '../lib/deckMotion';
 
@@ -86,6 +87,8 @@ function Deck({
   const [reviewOnly, setReviewOnly] = useState(false);
   const [win, setWin] = useState<Window>(WINDOWS[1]);
   const { rows, err, undated, departed, totals, proof, teams, historyInfo } = useRosterData(line, win.days, orgId);
+  const overall = useRosterData(line, null, orgId);
+  const overallByName = new Map((overall.rows ?? []).map(row=>[norm(row.name),row]));
   const [open, setOpen] = useState<Row | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
@@ -95,7 +98,7 @@ function Deck({
   const sorted = useMemo(() => {
     if (!rows) return [];
     return rows.filter(r => r.name.toLowerCase().includes(query.trim().toLowerCase()) && (!reviewOnly || priorities.some(p=>p.row.name===r.name))).sort((a, b) => {
-      const x = a[sort.key], y = b[sort.key];
+      const x = sort.key === 'perContract' ? overallByName.get(norm(a.name))?.perContract ?? null : a[sort.key], y = sort.key === 'perContract' ? overallByName.get(norm(b.name))?.perContract ?? null : b[sort.key];
       if (x === null && y === null) return 0;
       if (x === null) return 1;          // no-volume always sits at the bottom
       if (y === null) return -1;
@@ -104,7 +107,7 @@ function Deck({
       }
       return ((y as number) - (x as number)) * sort.dir;
     });
-  }, [rows, sort, query, reviewOnly, priorities]);
+  }, [rows, sort, query, reviewOnly, priorities, overall.rows]);
 
   /* Rows travel to their new place when you sort, rather than the table
      redrawing. The order itself is the signature, so re-sorting to the same
@@ -207,7 +210,7 @@ function Deck({
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>Among leads created in this window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>Among leads created in this window</small></div>
-        <div><span>Leads per contract</span><strong>{totals.perContract ? Math.floor(totals.perContract) : '—'}</strong><small>{totals.perContract ? 'Minimum: 1 contract per '+line+' leads' : 'No contracts recorded'}</small></div>
+        <div><span>Overall leads per contract</span>{overall.totals?<ConversionComparison current={overall.totals} period={win.days} through={overall.historyInfo?.through}/>:<strong>{overall.err?'Unavailable':'Loading…'}</strong>}<small>Minimum: 1 contract per {line} leads</small></div>
       </section>
       {win.key === 'mtd' && <AssignmentReview limit={pauseTarget.saved} allowImport/>}<div className="pulse-roster-tools"><div><h2>Your agents</h2><span>{sorted.length} of {rows.length} shown</span></div><div className="pulse-filter-controls"><button aria-pressed={!reviewOnly} onClick={()=>setReviewOnly(false)}>All agents</button><button aria-pressed={reviewOnly} onClick={()=>setReviewOnly(true)}>Review signals <span>{priorities.length}</span></button><input aria-label="Find an agent in Pulse" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)} /></div></div>
       <div className="rs-plate dk-table" ref={tableRef}>
@@ -216,7 +219,7 @@ function Deck({
             <tr>
               {th('name', 'Agent')}{th('leads', 'Leads')}
               {th('offers', 'Offers')}{th('contracts', 'Under contract')}{th('closed', 'Closed')}
-              {th('perContract', 'Leads per contract')}{th('rawConversion', 'Raw conversion')}{th('lastDays', 'Last 1:1')}
+              {th('perContract', 'Overall leads per contract')}{th('rawConversion', 'Raw conversion')}{th('lastDays', 'Last 1:1')}
             </tr>
           </thead>
           <tbody>
@@ -251,10 +254,7 @@ function Deck({
                 <td>{cell(r.contracts, i)}</td><td>{cell(r.closed??0, i)}</td>
                 <td>
                   <div className="rs-rate">
-                    <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
-                      {cell(contractRateLabel(r.perContract, r.leads), i)}
-                    </b>
-                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line, r.leads)}</small>
+                    {overallByName.has(norm(r.name))?<ConversionComparison current={overallByName.get(norm(r.name))!} period={win.days} through={overall.historyInfo?.through}/>:<span>{overall.err?'Unavailable':'Loading…'}</span>}
                   </div>
                 </td>
                 <td title={`${r.contracts} leads that reached under contract or closed ÷ ${r.leads} leads`}>{r.leads ? (r.rawConversion??0).toFixed(1)+'%' : '—'}</td>
@@ -268,20 +268,20 @@ function Deck({
             <tr>
               <td>Full team total</td><td><b>{totals.leads}</b></td>
               <td><b>{totals.offers}</b></td><td><b>{totals.contracts}</b></td><td><b>{totals.closed}</b></td>
-              <td><b>{totals.perContract ? '1 : ' + Math.floor(totals.perContract) : '—'}</b></td>
+              <td><b>{overall.totals?contractRateLabel(overall.totals.perContract,overall.totals.leads):'—'}</b><small> · overall</small></td>
               <td>{totals.leads ? (totals.contracts/totals.leads*100).toFixed(1)+'%' : '—'}</td><td />
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <details className="pulse-data-notes"><summary>About these numbers</summary><p>Raw conversion is the percentage of leads that reached under contract or closed. Each lead counts once, even if it reached both. Closed is shown separately and is included in the cumulative Under contract count. This view groups leads by their creation date. When verified history is loaded, it counts cumulative milestones, including achievements before a return to Nurture. It is not a count of contracts signed during the period or a historical conversion trend. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
+      <details className="pulse-data-notes"><summary>About these numbers</summary><p>Raw conversion is the percentage of leads that reached under contract or closed. Each lead counts once, even if it reached both. Closed is shown separately and is included in the cumulative Under contract count. This view groups leads by their creation date. When verified history is loaded, it counts cumulative milestones, including achievements before a return to Nurture. It is not a count of contracts signed during the period. The overall leads-per-contract column uses all available history, independent of this filter. Its supporting counts are available in the comparison details. Historical comparison requires verified ownership at the earlier date. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
       </>}<PersonPane
-        row={open}
+        row={open ? overallByName.get(norm(open.name)) ?? null : null}
         onClose={() => setOpen(null)}
         approach={open ? approachFor(open) : null}
         line={line}
-        teamRate={totals.perContract}
+        teamRate={overall.totals?.perContract ?? null}
       />
     </>,
   );

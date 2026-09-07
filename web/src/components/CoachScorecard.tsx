@@ -1,4 +1,6 @@
-import { contractRateLabel } from '../lib/minimumExpectation';
+import { ConversionComparison } from './ConversionComparison';
+import { PeriodSelect } from './PeriodSelect';
+import { WINDOWS, PERIOD_OPTIONS } from '../lib/rosterData';
 import { useEffect, useState } from 'react';
 import { loadDashboard, type AgentRow } from '../lib/api';
 import { norm, useRosterData, DEFAULT_LINE } from '../lib/rosterData';
@@ -12,7 +14,9 @@ export function CoachScorecard({ name }: { name: string }) {
   const { orgId } = useCoachReview();
   const target = useSavedTarget(orgId, 'leads-per-contract', DEFAULT_LINE);
   const cap = useSavedTarget(orgId, 'mtd-new-assignment-pause', 15);
-  const data = useRosterData(target.saved, '6mo', orgId);
+  const data = useRosterData(target.saved, null, orgId);
+  const [periodKey,setPeriodKey]=useState('mtd');
+  const period=WINDOWS.find(w=>w.key===periodKey)!;
   const ops = useOperations();
   const [agents, setAgents] = useState<AgentRow[]>([]);
   useEffect(() => {
@@ -29,13 +33,14 @@ export function CoachScorecard({ name }: { name: string }) {
   const month = new Date().toLocaleDateString('en-US', { month: 'long' });
   return <section className="coach-scorecard" aria-label={`${name} performance scorecard`}>
     <div className="coach-scorecard-heading"><h4>Performance at a glance</h4><a href="#/pulse">Open Pulse</a></div>
+    <PeriodSelect value={periodKey} options={PERIOD_OPTIONS} onChange={setPeriodKey}/><p className="coach-scorecard-note">Period selects the comparison date. Monthly intake stays month to date; conversion uses all available history.</p>
     <dl className="coach-scorecard-rows">
       <div><dt>Leads taken this month<small>{month} to date · new assignments</small></dt>
         <dd className={hasIntake && cap.ready && count >= cap.saved ? 'needs-attention' : ''}>{hasIntake ? count : 'Not connected'}<small>{cap.ready ? `${cap.saved} leads before pause` : cap.notice || 'Loading saved allowance…'}</small></dd></div>
-      <div><dt>Lead-to-contract rate<small>Leads created in the last six months</small></dt>
-        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? contractRateLabel(row.perContract, row.leads) : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
+      <div><dt>Lead-to-contract rate<small>Across available history</small></dt>
+        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? <ConversionComparison current={row} period={period.days} through={data.historyInfo?.through}/> : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
       <div><dt>Raw conversion<small>Under contract or closed · counted once per lead</small></dt>
-        <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · six months` : 'Six-month lead cohort'}</small></dd></div>
+        <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · available history` : 'Available lead history'}</small></dd></div>
     </dl>
     {data.historyInfo && <p className="coach-scorecard-note">Verified history through {data.historyInfo.through}. Activity after that date is not included.</p>}
     {data.err && <p role="alert" className="coach-scorecard-note">Performance could not be loaded. Open Pulse to retry.</p>}

@@ -116,7 +116,7 @@ export function PersonPane({
             {/* The total, then what it is made of. Without the breakout the
                 total gets read as one source's number and stops matching
                 whatever single-source report the leader checks it against. */}
-            <div className="rs-ln"><s>Leads assigned</s><b>{row.leads}</b></div>
+            <div className="rs-ln"><s>Leads · available history</s><b>{row.leads}</b></div>
             {row.srcs.size > 0 && (
               <div className="rs-srcs">
                 {[...row.srcs.entries()].sort((a, b) => b[1] - a[1]).map(([name, n]) => (
@@ -131,7 +131,7 @@ export function PersonPane({
               ['Sitting in Lead', row.stuck ? String(row.stuck) : 'none'],
               ['Reached an offer', row.offers ? String(row.offers) : 'none'],
               ['Under contract', row.contracts ? String(row.contracts) : 'none'],
-              ['Leads per contract', contractRateLabel(row.perContract, row.leads)],
+              ['Overall leads per contract', contractRateLabel(row.perContract, row.leads)],
             ].map(([k, v]) => (
               <div className="rs-ln" key={k}><s>{k}</s><b>{v}</b></div>
             ))}
