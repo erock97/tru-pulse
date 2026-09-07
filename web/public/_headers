@@ -57,3 +57,10 @@
   Cache-Control: no-cache
 /index.html
   Cache-Control: no-cache
+
+# Compatibility assets referenced by upstream-cached marketing HTML. Their
+# contents track each release, so they must never acquire immutable caching.
+/assets/index-CGmbyyzO.js
+  Cache-Control: no-store
+/assets/index-CPrwxoH2.css
+  Cache-Control: no-store

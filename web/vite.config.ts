@@ -33,8 +33,26 @@ function sameOriginAssets(): Plugin {
   };
 }
 
+/** Marketing HTML from the preceding deployment is cached upstream for a week.
+ * Keep its two asset URLs runnable with the current app and policy code. These
+ * aliases are deliberately no-store in _headers and regenerate on every build.
+ * Remove after the old HTML cache has expired and ordinary policy URLs are fresh.
+ */
+function legacyMarketingAssets(): Plugin {
+  return {
+    name: 'tru-legacy-marketing-assets',
+    generateBundle(_options, bundle) {
+      const entry = Object.values(bundle).find(item => item.type === 'chunk' && item.isEntry);
+      const css = Object.values(bundle).find(item => item.type === 'asset' && /^assets\/index-.*\.css$/.test(item.fileName));
+      if (!entry || entry.type !== 'chunk' || !css || css.type !== 'asset') throw new Error('Missing marketing compatibility assets');
+      this.emitFile({ type: 'asset', fileName: 'assets/index-CGmbyyzO.js', source: entry.code });
+      this.emitFile({ type: 'asset', fileName: 'assets/index-CPrwxoH2.css', source: css.source });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), sameOriginAssets()],
+  plugins: [react(), sameOriginAssets(), legacyMarketingAssets()],
   // allow importing the shared flag logic from ../shared
   server: { fs: { allow: ['..'] } },
 });
