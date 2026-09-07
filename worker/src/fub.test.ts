@@ -94,7 +94,7 @@ describe('pullPeople — cursor pagination', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('returns what it has when FUB errors mid-walk rather than throwing', async () => {
+  it('rejects a partial collection when FUB errors mid-walk', async () => {
     let n = 0;
     stubFetch(() => {
       n++;
@@ -106,8 +106,7 @@ describe('pullPeople — cursor pagination', () => {
       }
       return jsonResponse({ error: 'boom' }, 500);
     });
-    const people = await pullPeople(KEY, Date.parse('2020-01-01T00:00:00Z'));
-    expect(people).toHaveLength(100);
+    await expect(pullPeople(KEY, Date.parse('2020-01-01T00:00:00Z'))).rejects.toThrow('collection incomplete');
   });
 });
 

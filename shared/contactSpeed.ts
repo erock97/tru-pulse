@@ -7,6 +7,7 @@ export interface ContactEvent {
 }
 export interface ContactLead {
   orgId: string; leadId: string; leadName?: string; agentId: string; agentName: string; leadUrl: string;
+  collectedAt?: string;
   createdAt: string; historyComplete: boolean; events: ContactEvent[];
   gap?: {statement: string; sourceId: string; recordedAt: string; checked: string};
   connection?: {sourceId: string; explanation: string};

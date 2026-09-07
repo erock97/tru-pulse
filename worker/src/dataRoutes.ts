@@ -78,7 +78,25 @@ export async function handleDataRoutes(
       if(!membership.length)return json({error:'not permitted'},403,cors);
       const snapshot=await env.SESSIONS.get(`pulse-contact:v1:${orgId}`,'json') as ContactSnapshot|null;
       if(snapshot && snapshot.orgId!==orgId)throw Error('Tenant mismatch');
-      return json({report:snapshot?calculateContactSpeed(snapshot):null},200,{...cors,'Cache-Control':'private, no-store'});
+      const teams=await db.select('teams',`select=id&org_id=eq.${orgId}&is_active=eq.true`,{strict:true});
+      const live=env.TIMELINES?await Promise.all(teams.map(async(t:any)=>{
+        const r=await env.TIMELINES!.get(env.TIMELINES!.idFromName(t.id)).fetch('https://collector/report');
+        if(!r.ok)throw Error('Collector unavailable');return {teamId:t.id,...await r.json() as {snapshot:ContactSnapshot|null;health:Record<string,unknown>}};
+      })):[];
+      // Until collection starts, preserve the audited baseline and explicitly label it.
+      const active=live.filter(r=>r.snapshot);
+      if(active.length){
+        const now=new Date().toISOString();
+        const combined:ContactSnapshot={version:1,orgId,from:active.map(r=>r.snapshot!.from).sort()[0],through:now,capturedAt:now,leads:active.flatMap(r=>r.snapshot!.leads.map(l=>{
+          const prior=snapshot?.leads.find(p=>p.leadId===l.leadId&&p.agentId===l.agentId);
+          const lead=!l.collectedAt&&prior?prior:{...l,historyComplete:prior?.historyComplete||l.historyComplete,gap:prior?.gap,connection:prior?.connection};
+          return teams.length===1?lead:{...lead,leadId:r.teamId+':'+lead.leadId,agentId:r.teamId+':'+lead.agentId,events:lead.events.map(e=>({...e,agentId:r.teamId+':'+e.agentId}))};
+        }))};
+        const successes=live.map(r=>r.health.lastSuccess).filter((x):x is string=>typeof x==='string').sort();
+        const report=calculateContactSpeed(combined);
+        return json({report:{...report,capturedAt:successes[0]||snapshot?.capturedAt||now},collection:live.map(r=>({teamId:r.teamId,...r.health}))},200,{...cors,'Cache-Control':'private, no-store'});
+      }
+      return json({report:snapshot?calculateContactSpeed(snapshot):null,collection:live.length?live.map(r=>({teamId:r.teamId,...r.health})):[{state:'not_started'}]},200,{...cors,'Cache-Control':'private, no-store'});
     }catch{return json({error:'Contact evidence could not be loaded'},502,cors);}
   }
 

@@ -1,3 +1,4 @@
+import {enqueueTimelines} from './timelineCollector.js';
 // Per-tenant FUB sync. Pull people in the window, keep tracked paid sources, classify
 // each with the audit's exact rule (per-person calls/texts), and upsert org-scoped
 // lead rows with their flag. This is the audit's read-only pull, made persistent.
@@ -49,6 +50,8 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
     const result=await ledger.fetch('https://assignments/observe',{method:'POST',body:JSON.stringify({people:inScope.map(p=>({id:p.id,name:p.name||[p.firstName,p.lastName].filter(Boolean).join(' '),assignedUserId:p.assignedUserId,assignedTo:p.assignedTo,assignedPondId:p.assignedPondId,created:p.created,updated:p.updated}))})});
     if(!result.ok)throw Error('Assignment history capture failed');
   }
+  await enqueueTimelines(_env,team,people.map(p=>({...p,tracked:sourceFamily(p.source)!==null})),people.length<=100);
+  const zillowCounts:Record<string,number>=_env.TIMELINES?await _env.TIMELINES.get(_env.TIMELINES.idFromName(team.id)).fetch('https://collector/counts').then(r=>r.ok?r.json() as Promise<Record<string,number>>:{}).catch(()=>({})):{};
   const ponds = await pullPonds(fubKey);
 
   // Stage-progression log — the reliable forward history (FUB exposes no stage
@@ -163,7 +166,7 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
     } else if (isOfferPlus(stageClass(stage))) {
       flag = 'worked';
     } else if (recent && lookupIds.has(Number(p.id))) {
-      outgoingTexts = await countOutgoingTexts(fubKey, p.id);
+      outgoingTexts = await countOutgoingTexts(fubKey, p.id) + (zillowCounts[String(p.id)]||0);
       calls = await countCalls(fubKey, p.id);
       flag = classifyLead({ stage, tags, outgoingTexts, calls });
       contactCheckedAt = nowIso;
@@ -175,6 +178,7 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
       outgoingTexts = before.outgoing_texts ?? 0;
       calls = before.calls ?? 0;
       flag = before.flag ?? 'worked';
+      if(zillowCounts[String(p.id)]>0){outgoingTexts=Math.max(outgoingTexts,zillowCounts[String(p.id)]);flag=classifyLead({stage,tags,outgoingTexts,calls});}
     } else {
       // Either past the horizon, or in horizon but never yet read. Assume worked —
       // this is the case the original guarantee was for, and it still holds: a lead

@@ -91,8 +91,8 @@ export async function pullPeople(key: string, sinceMs = Date.now() - 400 * 86400
   const HARD_CAP = 3000; // runaway guard only (~300k people)
   let result = await fubGet(key, '/people', { limit: 100, sort: '-created' });
   for (let page = 0; page < HARD_CAP; page++) {
-    if (result.status !== 200 || !result.body) break;
-    const people: any[] = result.body.people ?? [];
+    if (result.status !== 200 || !Array.isArray(result.body?.people)) throw new Error('FUB people collection incomplete');
+    const people: any[] = result.body.people;
     if (people.length === 0) break;
     leads.push(...people);
     // Newest-first: once the oldest row on this page predates the window, stop.
@@ -109,8 +109,8 @@ export async function pullPeople(key: string, sinceMs = Date.now() - 400 * 86400
 /** Fetch specific people by comma-separated FUB ids — the webhook stage-log path. */
 export async function getPeopleByIds(key: string, ids: string): Promise<any[]> {
   const { status, body } = await fubGet(key, '/people', { id: ids, limit: 100 });
-  if (status !== 200 || !body) return [];
-  return body.people ?? [];
+  if (status !== 200 || !Array.isArray(body?.people)) throw new Error('FUB targeted collection failed');
+  return body.people;
 }
 
 /** Non-automated outgoing texts for a person (isIncoming === false). */

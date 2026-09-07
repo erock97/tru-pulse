@@ -201,8 +201,9 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
+    let alive = true, busy = false;
+    const load = async () => {
+      if(busy)return;busy=true;
       try {
         // The coaching roster and the certification board are separate reads
         // and are both allowed to fail: a team with Coach or Rep switched off
@@ -212,12 +213,17 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
           loadRoster().catch((): RosterAgent[] => []),
           loadRep().catch((): RepData | null => null),
         ]);
+        if (alive) setErr('');
         if (alive) setRaw({ historyInfo:data.historyInfo, leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
       } catch (e) {
         if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
-      }
-    })();
-    return () => { alive = false; };
+      } finally {busy=false;}
+    };
+    void load();
+    const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void load();},60000);
+    const visible=()=>{if(document.visibilityState==='visible')void load();};
+    document.addEventListener('visibilitychange',visible);
+    return () => { alive = false;clearInterval(timer);document.removeEventListener('visibilitychange',visible); };
   }, [orgId]);
 
   return useMemo(() => {

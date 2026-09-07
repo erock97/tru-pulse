@@ -1,3 +1,6 @@
+export {FubSyncQueue} from './syncQueue.js';
+import {queueActiveTeams} from './syncQueue.js';
+export { TimelineCollector } from './timelineCollector.js';
 export { AssignmentLedger } from './assignmentLedger.js';
 // TRU Pulse — sync Worker. Health / provision / manual sync, plus the cron that
 // keeps every tenant's flags fresh. Provision + sync accept EITHER an ops admin token
@@ -758,6 +761,12 @@ export default {
       // the actual sync run in the background via ctx.waitUntil. Errors are only
       // visible in `wrangler tail` now (the caller already got a 200), so log both
       // the outcome and any failure loudly.
+      if(env.FUB_SYNC){
+        const ids=event.startsWith('people')&&resourceIds?resourceIds.map(String):undefined;
+        const accepted=await env.FUB_SYNC.get(env.FUB_SYNC.idFromName(team.id)).fetch('https://sync/queue',{method:'POST',body:JSON.stringify({team,ids})});
+        if(!accepted.ok)return json({error:'Sync queue unavailable'},503);
+        return json({ok:true,accepted:true});
+      }
       ctx.waitUntil(
         (async () => {
           try {
@@ -1703,6 +1712,7 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const database = db(env);
+    await queueActiveTeams(env);
     // The brief tick is LIGHT — one indexed select, and on almost every minute
     // of the day it finds nothing due and returns. It must never pull a full
     // multi-tenant FUB sync behind it, which is why this handler is now a switch
@@ -1713,6 +1723,7 @@ export default {
       if (out.length) console.log('automations:', JSON.stringify(out));
       return;
     }
+    if(controller.cron==='*/30 * * * *'&&env.FUB_SYNC)return;
     await syncAllActiveTeams(env, database, 180);
     // The daily 07:05 trigger also runs the 3-strike reconcile (after a fresh sync).
     if (controller.cron === '5 7 * * *') {
