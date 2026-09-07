@@ -75,6 +75,7 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
         root.addEventListener('keydown',enlarge,{signal:controller.signal});
         setLoading(false);
         el.scrollIntoView({block:'start',behavior:'instant'});
+        (root.querySelector('#stage') as HTMLElement)?.focus({preventScroll:true});
       }).catch(e=>{if(!controller.signal.aborted){setError(e instanceof Error?e.message:'Training could not be loaded.');setLoading(false);}});
     return ()=>{controller.abort();runtime.current?.destroy();runtime.current=null;root.replaceChildren();};
   },[day,preview,retry]);
