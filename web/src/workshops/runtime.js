@@ -28,7 +28,7 @@ function render(focus=false){stopTimer();remaining=Number($('#timer-duration').v
  $('[data-action="next"]').textContent=index===SLIDES.length-1?(/quiz/i.test(hooks.doneLabel||'')?'Continue to quiz':hooks.doneLabel||'Finish lesson'):'→';
  $('[data-action="next"]').setAttribute('aria-label',index===SLIDES.length-1?(hooks.doneLabel||'Finish lesson'):'Next slide');
  hooks.native(s, $('#native-slot'));
- root.querySelectorAll('.screen-figure img').forEach(img=>{img.tabIndex=0;img.setAttribute('role','button');img.setAttribute('aria-label','Enlarge '+img.alt);});
+ root.querySelectorAll('.screen-figure img:not(.details-focus img)').forEach(img=>{img.tabIndex=0;img.setAttribute('role','button');img.setAttribute('aria-label','Enlarge '+img.alt);});
  $('.chapters').innerHTML=chapters.map(c=>`<button data-go="${SLIDES.findIndex(s=>s.chapter===c)}" ${c===s.chapter?'aria-current="step"':''}>${c}</button>`).join('');
  $('#agenda-list').innerHTML=SLIDES.map((s,i)=>`<button data-go="${i}" aria-current="${i===index}"><span>${String(i+1).padStart(2,'0')}</span><span>${s.title}</span><small>${s.time} min</small></button>`).join('');
  root.querySelectorAll('[data-save]').forEach(el=>{if(el.type==='checkbox')el.checked=saved[el.dataset.save]===true;else el.value=typeof saved[el.dataset.save]==='string'?saved[el.dataset.save]:''});

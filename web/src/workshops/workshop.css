@@ -15,3 +15,12 @@
 @media print{.shell,.chapters,.controls,.progress,dialog{display:none!important}.workshop{background:white}#stage{margin:0}.slide{min-height:0;padding:20px;color:#171d22!important;background:#fff!important}.slide h1{font-size:32px}.slide *{color:#171d22!important}button{display:none}.split{grid-template-columns:1fr 1fr}.source{font-size:10px}details>div{display:block!important}}
 
 :host{display:block;min-height:100svh;background:#171d22}.workshop{min-height:100svh}.screen-figure{margin:0}.screen-figure img{display:block;width:100%;max-height:340px;object-fit:contain;cursor:zoom-in}.screen-figure figcaption{font-size:12px;color:var(--muted);margin-top:8px}.native-slide h1{font-size:clamp(28px,3vw,48px)}.native-slide .content{margin:0}.native-slide{padding:24px}.image-dialog{max-width:96vw}.image-dialog img{width:100%;max-width:none}.navigation button:last-child{font-size:16px}.workshop:fullscreen{overflow:auto}.slide{animation:workshop-enter .22s ease-out}@keyframes workshop-enter{from{opacity:.45;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.slide{animation:none}}
+
+/* Enlarge the Details area of the original 1810 × 869 contact screenshot.
+   Keep the untouched full record available in the image dialog. */
+.details-figure{width:100%;max-width:900px;margin-inline:auto}
+.details-focus{display:block;position:relative;overflow:hidden;width:100%;aspect-ratio:453 / 250;padding:0;border:1px solid #b9c3bd;border-radius:8px;background:#fff;cursor:zoom-in}
+.screen-figure .details-focus img{position:absolute;left:0;top:0;width:399.5585%;max-width:none;height:auto;max-height:none;transform:translateY(-32.6812%);pointer-events:none}
+.details-focus:focus-visible{outline:3px solid #487bac;outline-offset:5px}
+.details-figure figcaption{font-size:15px;line-height:1.5;margin-top:12px}
+.image-dialog{width:96vw;max-width:1810px}

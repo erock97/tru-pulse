@@ -76,7 +76,7 @@
       "chapter": "Read the record",
       "title": "Check the Details panel",
       "lead": "The stage should match what actually happened.",
-      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/detail-full.png\" alt=\"Complete Follow Up Boss training contact with Details, activity, and tasks\"><figcaption>Stage, assigned agent, source, and timeframe belong to this contact.</figcaption></figure>",
+      "body": "<figure class=\"screen-figure details-figure\"><button class=\"details-focus\" aria-label=\"Open full contact record\"><img src=\"/rep-lab/detail-full.png\" alt=\"Follow Up Boss Details panel: Stage, Assigned to, Source, and Timeframe\"></button><figcaption>Check Stage, Assigned to, Source, and Timeframe. Select the image to open the full contact record.</figcaption></figure>",
       "notes": "Point out Stage, Assigned, Source, and Timeframe without narrating every control. Timing should come from the buyer, not a guess.",
       "cue": "Which detail would you verify before saving?",
       "time": 3,

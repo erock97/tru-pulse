@@ -62,7 +62,8 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
         });
         // Real screenshots open at full size without cropping away the surrounding UI.
         const enlarge=(e:Event)=>{
-          const target=e.target as HTMLElement;
+          const clicked=e.target as HTMLElement;
+          const target=clicked.closest('.details-focus')?.querySelector('img') ?? clicked;
           if(!target.matches('.screen-figure img'))return;
           if(e instanceof KeyboardEvent&&e.key!=='Enter'&&e.key!==' ')return;
           e.preventDefault();
