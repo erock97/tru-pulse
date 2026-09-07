@@ -12,7 +12,8 @@ export class FubTimelineSession {
   if(u.protocol!=='https:'||u.port||!['login.followupboss.com',this.account+'.followupboss.com'].includes(u.hostname))throw Error('Unexpected FUB destination');
   const cookie=this.cookies.filter(c=>(c.hostOnly?u.hostname===c.domain:u.hostname===c.domain||u.hostname.endsWith('.'+c.domain))&&u.pathname.startsWith(c.path)).map(c=>c.name+'='+c.value).join('; ');
   const headers=new Headers(init.headers);if(cookie)headers.set('Cookie',cookie);
-  const r=await this.request(u.href,{...init,headers,redirect:'manual',signal:AbortSignal.timeout(20000)});
+  const send=this.request;
+  const r=await send(u.href,{...init,headers,redirect:'manual',signal:AbortSignal.timeout(20000)});
   const responseHeaders=r.headers as unknown as {getSetCookie?:()=>string[];getAll:(name:string)=>string[]};
   for(const raw of responseHeaders.getSetCookie?responseHeaders.getSetCookie():responseHeaders.getAll('Set-Cookie')){
    const [pair,...attrs]=raw.split(';');const eq=pair.indexOf('=');if(eq<1)continue;
