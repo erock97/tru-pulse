@@ -211,7 +211,7 @@ export default function Apply() {
 
           <p className="consent">
             By submitting, you agree to our <a href="/terms">Terms</a> and{' '}
-            <a href="/privacy">Privacy Policy</a>. We&rsquo;ll use this information to respond to
+            <a href="/privacy/?release=a7d5934">Privacy Policy</a>. We&rsquo;ll use this information to respond to
             your application. We never sell your information.
           </p>
         </form>

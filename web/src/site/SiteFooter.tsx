@@ -39,7 +39,7 @@ export default function SiteFooter() {
             reviewing the A2P campaign looks for it reachable from the footer,
             not only from the URL the registration cites. */}
         <nav className="sitefoot-legal" aria-label="Legal">
-          <a href="/privacy">Privacy Policy</a>
+          <a href="/privacy/?release=a7d5934">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/refund-policy">Refund &amp; Cancellation</a>
           <a href="/sms-terms">SMS Terms</a>

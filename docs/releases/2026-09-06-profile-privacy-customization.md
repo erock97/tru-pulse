@@ -28,3 +28,5 @@ Agents can rename each section, choose Story / Photos / Compact layouts, adjust 
 Legacy profiles receive safe defaults without losing existing text/photos/themes. Tests cover owner-scoped deletion, cross-origin denial, team-independent deletion, partial deletion failure/retry, suppression of badge recreation, agreement enforcement, migration defaults, title/crop/layout validation and failed client deletion. Browser QA covers renamed headings, compact layout save/reload, agreement blocking, demo deletion/reload, phone setup, and no horizontal overflow. Real file-picker upload and real-agent production writes require a manual account/device check; photo preparation and server validation are exercised automatically.
 
 Deploy the Worker first, then tru-pulse-app and tru-landing from the merged commit. Both hosts serve the updated legal routes. No feed, directory, public profile link or cross-team sharing was added.
+
+Public privacy links use a version query to reach the verified current notice while an upstream cache continues serving older HTML at the unversioned public URL. The application policy route is current.
