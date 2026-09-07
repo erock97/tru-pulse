@@ -22,11 +22,16 @@ describe('contract rate display', () => {
     expect(minimumExpectation(null, 30, 20)).toBe('No contracts yet');
     expect(minimumExpectation(null, 30, 0)).toBe('No leads in this period');
   });
-  it('retains the established ratio once there is a contract', () => {
+  it('displays whole leads without rounding up before the next boundary', () => {
+    expect(contractRateLabel(16.83, 101)).toBe('1 in 16');
+    expect(contractRateLabel(16.999, 101)).toBe('1 in 16');
+    expect(contractRateLabel(17, 102)).toBe('1 in 17');
+    expect(contractRateLabel(17.99, 108)).toBe('1 in 17');
+    expect(contractRateLabel(18, 108)).toBe('1 in 18');
     expect(contractRateLabel(20, 40)).toBe('1 in 20');
-    expect(contractRateLabel(30.5, 61)).toBe('1 in 30.5');
-    expect(contractRateLabel(7.75,31)).toBe('1 in 7.75');
-    expect(contractRateLabel(52/6,52)).toBe('≈ 1 in 8.67');
+    expect(contractRateLabel(30.5, 61)).toBe('1 in 30');
+    expect(contractRateLabel(7.75,31)).toBe('1 in 7');
+    expect(contractRateLabel(52/6,52)).toBe('1 in 8');
   });
 });
 
