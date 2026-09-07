@@ -8,7 +8,7 @@ export function minimumExpectation(ratio: number | null, maximumLeads: number, l
 
 /** A zero-contract cohort still has a known lead count; missing data does not. */
 export function contractRateLabel(ratio: number | null, leads: number): string {
-  if (ratio !== null && Number.isFinite(ratio) && ratio > 0) return `${Number(ratio.toFixed(2))===ratio?'':'≈ '}1 in ${Number(ratio.toFixed(2))}`;
+  if (ratio !== null && Number.isFinite(ratio) && ratio > 0) return `1 in ${Math.floor(ratio)}`;
   return `0 for ${leads}`;
 }
 
