@@ -129,3 +129,45 @@
 .personal-profile .pp-portrait{height:170px;width:140px;justify-self:end}
 .personal-profile .pp-portrait-initials{height:140px}
 @media(max-width:650px){.personal-profile .pp-cover-photo{height:140px}.personal-profile .pp-portrait{justify-self:start;width:96px;height:116px}.personal-profile .pp-portrait-initials{width:64px;height:64px}}
+/* Portrait rail keeps personal interests alongside the profile. */
+.personal-profile .pp-page{display:grid;grid-template-columns:minmax(0,1fr) 230px;column-gap:40px}
+.personal-profile .pp-cover{grid-column:1/-1;grid-row:1}
+.personal-profile .pp-identity{grid-column:1;grid-row:2;display:block;align-self:center;padding-top:38px;padding-bottom:38px}
+.personal-profile .pp-sections{grid-column:1;grid-row:3}
+.personal-profile .pp-page-footer{grid-column:1/-1;grid-row:4}
+.pp-personal-rail{grid-column:2;grid-row:2/span 2;padding:38px 0;min-width:0;align-self:start}
+.personal-profile .pp-personal-rail .pp-portrait{width:100%;height:260px;max-width:230px;margin:0;justify-self:stretch}
+.personal-profile .pp-personal-rail .pp-portrait-initials{height:190px}
+.pp-portrait-interests{margin-top:24px}
+.personal-profile .pp-portrait-interests h3{font:500 14px/1.5 Manrope,sans-serif;color:var(--pp-ink);margin:0 0 16px;overflow-wrap:anywhere}
+.pp-interest-pins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+.pp-interest-pin{--pin-bg:#dce8d9;--pin-ink:#315642;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.pp-interest-pin-coffee{--pin-bg:#ebdac4;--pin-ink:#694930}.pp-interest-pin-clay{--pin-bg:#efd6c7;--pin-ink:#884d39}.pp-interest-pin-ocean{--pin-bg:#d0e3eb;--pin-ink:#315d78}.pp-interest-pin-plum{--pin-bg:#e6d6e5;--pin-ink:#704e74}.pp-interest-pin-seahawks{--pin-bg:#142a40;--pin-ink:#a5d951}
+.pp-interest-icon{display:grid;place-items:center;width:62px;height:62px;border:2px solid color-mix(in srgb,var(--pin-ink) 40%,var(--pin-bg));border-radius:18px;background:var(--pin-bg);color:var(--pin-ink);box-shadow:inset 0 2px 0 #ffffff80,0 3px 0 color-mix(in srgb,var(--pin-ink) 25%,var(--pin-bg));transform:rotate(-4deg)}
+.pp-interest-pin:nth-child(even) .pp-interest-icon{transform:rotate(4deg)}
+.pp-interest-icon svg{width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.pp-interest-icon img{width:52px;height:52px;object-fit:contain}
+.pp-interest-icon>span{font:600 20px Georgia,serif}
+.pp-interest-label{font:500 11px/1.4 Manrope,sans-serif;text-align:center;overflow-wrap:anywhere;color:var(--pp-ink,inherit);max-width:100%}
+.pp-editor .pp-interest-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pp-editor .pp-interest-choices button{border-radius:7px;padding:10px 4px}
+.pp-editor .pp-interest-label{color:inherit;font-size:10px}
+.pp-editor .pp-interest-icon{width:40px;height:40px;border-radius:11px;box-shadow:none}
+.pp-editor .pp-interest-icon svg{width:25px;height:25px}.pp-editor .pp-interest-icon img{width:34px;height:34px}
+.pp-editing.personal-profile .pp-page{grid-template-columns:minmax(0,1fr) 160px;column-gap:22px}
+.pp-editing.personal-profile .pp-identity{display:block}
+.pp-editing.personal-profile .pp-personal-rail .pp-portrait{height:185px}
+.pp-editing.personal-profile .pp-interest-icon{width:52px;height:52px}
+@media(max-width:1050px){.personal-profile .pp-page,.pp-editing.personal-profile .pp-page{grid-template-columns:minmax(0,1fr) 190px;column-gap:28px}.personal-profile .pp-personal-rail .pp-portrait{height:220px}}
+@media(max-width:650px){
+ .personal-profile .pp-page,.pp-editing.personal-profile .pp-page{grid-template-columns:minmax(0,1fr);column-gap:0}
+ .personal-profile .pp-identity{grid-column:1;grid-row:2;padding:28px 0 22px}
+ .pp-personal-rail{grid-column:1;grid-row:3;padding:0 0 28px}
+ .personal-profile .pp-personal-rail .pp-portrait,.pp-editing.personal-profile .pp-personal-rail .pp-portrait{width:116px;height:140px}
+ .personal-profile .pp-personal-rail .pp-portrait-initials{height:90px;width:90px}
+ .personal-profile .pp-sections{grid-row:4}.personal-profile .pp-page-footer{grid-row:5}
+ .pp-interest-pins{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 8px}
+ .pp-interest-icon{width:56px;height:56px}
+ .pp-portrait-interests{margin-top:20px}
+}
+@media(prefers-reduced-motion:no-preference){.pp-interest-icon{transition:transform .2s ease}.pp-interest-pin:hover .pp-interest-icon{transform:rotate(0deg) translateY(-2px)}}

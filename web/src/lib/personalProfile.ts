@@ -17,6 +17,7 @@ async function photoDemo(): Promise<PersonalProfile> {
     headline: 'Portland is home. There’s usually a hike planned for Saturday.',
     bio: 'I moved to Portland for a job and stayed for the neighborhoods. I’ve worked in real estate since 2021, mostly with people buying their first place. I like explaining the parts of the process that nobody explained to me.\n\nOutside work, I cook for friends, see live music when I can, and spend a lot of weekends on muddy trails. Send me a good pasta recipe and I’ll probably try it.',
     favorite: 'Coffee on the porch before the rest of the house wakes up.',
+    interests: ['Seahawks', 'Hiking', 'Coffee', 'Cooking', 'Live music', 'Architecture'],
     portrait: images[0], cover: images[1], coverPosition: 55,
     gallery: [{image: images[2], caption: 'Saturday mornings, rain or shine.'}, {image: images[3], caption: 'The recipe I keep coming back to.'}],
     sectionTitles: {gallery: 'Away from work'},
