@@ -2,6 +2,7 @@
 export interface ContactEvent {
   id: string; at: string | null; channel: 'call'|'sms'|'zillow_message'|'email';
   direction: 'outbound'|'inbound'; agentId: string;
+  deliveryStatus?: string;
   personal: boolean|null; timeVerified: boolean; explanation: string;
 }
 export interface ContactLead {
