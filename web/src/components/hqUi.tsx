@@ -77,6 +77,8 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
     strokeLinejoin: 'round' as const,
   };
   switch (name) {
+    case 'user':
+      return <svg {...common}><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg>;
     case 'home':
       return (
         <svg {...common}>

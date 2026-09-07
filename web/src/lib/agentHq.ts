@@ -25,10 +25,10 @@ import {
 } from './winningFirstConversation';
 import type { CourseModule, CourseQuestion, LessonCard } from './api';
 
-export const AGENT_SHELL_TABS = ['Home', 'Coach', 'Training'] as const;
+export const AGENT_SHELL_TABS = ['Home', 'Coach', 'Training', 'Profile'] as const;
 export const LEADER_SHELL_TABS = ['Home', 'Pulse', 'Coach', 'Rep'] as const;
 
-export type AgentHqTab = 'home' | 'coach' | 'training';
+export type AgentHqTab = 'home' | 'coach' | 'training' | 'profile';
 
 export const SET_PASSWORD_TITLE = 'Set your password to finish setting up.';
 export const SET_PASSWORD_SUB = 'One login for your HQ — training and Coach, in one place.';
@@ -102,6 +102,7 @@ export function homeAfterPassword(kind: SignedInKind): 'agent-hq' | 'leader-hq' 
 
 export function parseAgentHqTab(route: string): AgentHqTab {
   const path = route.replace(/^#/, '').split('?')[0] || '/';
+  if (path === '/learn/profile' || path === '/profile') return 'profile';
   if (path === '/learn/coach') return 'coach';
   if (path === '/learn/training') return 'training';
   if (path === '/learn') return 'home';
@@ -116,10 +117,12 @@ function demoMode(): boolean {
 
 export function agentHqPath(tab: AgentHqTab, demo = demoMode()): string {
   if (demo) {
+    if (tab === 'profile') return '/learn/profile';
     if (tab === 'coach') return '/learn/coach';
     if (tab === 'training') return '/learn/training';
     return '/learn';
   }
+  if (tab === 'profile') return '/profile';
   if (tab === 'coach') return '/coach';
   if (tab === 'training') return '/training';
   return '/';

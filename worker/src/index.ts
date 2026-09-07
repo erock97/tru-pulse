@@ -78,7 +78,7 @@ function originAllowed(origin: string): boolean {
 function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin') ?? '';
   const base: Record<string, string> = {
-    'Access-Control-Allow-Methods': new URL(req.url).pathname === '/data/preferences' ? 'GET, PUT, OPTIONS' : new URL(req.url).pathname === '/admin/failure-logs' ? 'GET, POST, PATCH, OPTIONS' : 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': ['/data/preferences', '/data/personal-profile'].includes(new URL(req.url).pathname) ? 'GET, PUT, OPTIONS' : new URL(req.url).pathname === '/admin/failure-logs' ? 'GET, POST, PATCH, OPTIONS' : 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-slot-token',
     'Access-Control-Max-Age': '86400',
     // Responses differ by origin, so caches must key on it or they'd serve one
