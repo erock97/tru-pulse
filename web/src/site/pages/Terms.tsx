@@ -69,7 +69,7 @@ export default function Terms() {
         <p>
           When you submit information through forms on the Site, you represent that the information
           is accurate and that you have the authority to submit it. We treat your submissions
-          according to our <a href="/privacy">Privacy Policy</a>.
+          according to our <a href="/privacy/?release=a7d5934">Privacy Policy</a>.
         </p>
 
         <h2>Consulting services</h2>

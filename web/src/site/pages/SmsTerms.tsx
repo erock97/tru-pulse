@@ -120,7 +120,7 @@ export default function SmsTerms() {
           </strong>{' '}
           Numbers are shared only with the messaging provider that delivers the message on our
           behalf, which is contractually barred from using them for any other purpose. Our full{' '}
-          <a href="/privacy">Privacy Policy</a> explains how we handle the rest of your information.
+          <a href="/privacy/?release=a7d5934">Privacy Policy</a> explains how we handle the rest of your information.
         </p>
 
         <h2>Supported carriers</h2>
