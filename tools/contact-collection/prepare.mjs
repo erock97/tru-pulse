@@ -13,6 +13,7 @@ const updated=structuredClone(snapshot);updated.capturedAt=manifest.capturedAt;
 for(const lead of updated.leads){
  const source=read(path.join(folder,lead.leadId+'.json'));
  if(!source.complete||String(source.personId)!==lead.leadId||manifest.leads.find(x=>x.id===lead.leadId)?.records!==source.timeline.length)throw Error('Missing or incomplete contact');
+ if(typeof source.leadName==='string'&&source.leadName.trim())lead.leadName=source.leadName.trim();
  const events=normalizeContactTimeline(source.timeline,lead.leadId),ids=new Set(events.map(e=>e.id));
  lead.events=[...events,...lead.events.filter(e=>!ids.has(e.id))];
  // Coverage review is explicit; a successful fetch alone never clears missing evidence.

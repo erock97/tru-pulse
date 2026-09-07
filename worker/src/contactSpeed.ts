@@ -28,10 +28,11 @@ export function calculateContactSpeed(snapshot:ContactSnapshot):ContactReport {
   }
   return {from:snapshot.from,through:snapshot.through,capturedAt:snapshot.capturedAt,agents:[...groups].map(([agentId,results])=>{
     const measured=results.filter(r=>r.status==='measured');
+    const timed=results.filter(r=>r.first&&r.seconds!==null);
     const weekly=measured.filter(r=>ms(r.lead.createdAt)>=weekStart && ms(r.lead.createdAt)<through && ms(r.first!.at)<through);
     const callFirst=weekly.filter(r=>r.first!.channel==='call').length,textFirst=weekly.length-callFirst;
     const textPercent=weekly.length?100*textFirst/weekly.length:null;
-    return {agentId,agentName:results[0].lead.agentName,total:results.length,measured:measured.length,averageSeconds:measured.length?measured.reduce((s,r)=>s+r.seconds!,0)/measured.length:null,results,skill:{from:new Date(weekStart).toISOString(),through:new Date(through).toISOString(),fullWindow:ms(snapshot.from)<=weekStart,callFirst,textFirst,textPercent,aboveThreshold:ms(snapshot.from)<=weekStart&&textPercent!==null&&textPercent>30,consistency:'observed_behavior' as const}};
+    return {agentId,agentName:results[0].lead.agentName,total:results.length,measured:measured.length,averageSeconds:timed.length?timed.reduce((s,r)=>s+r.seconds!,0)/timed.length:null,responseCount:timed.length,averageIsUpperBound:timed.some(r=>r.status!=='measured'),results,skill:{from:new Date(weekStart).toISOString(),through:new Date(through).toISOString(),fullWindow:ms(snapshot.from)<=weekStart,callFirst,textFirst,textPercent,aboveThreshold:ms(snapshot.from)<=weekStart&&textPercent!==null&&textPercent>30,consistency:'observed_behavior' as const}};
   }).sort((a,b)=>a.agentName.localeCompare(b.agentName))};
 }
 
