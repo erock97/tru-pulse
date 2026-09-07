@@ -1,30 +1,12 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { DEFAULT_PROFILE, PROFILE_THEMES, type PersonalProfile as Profile, type ProfileSection, type ProfileBadge } from '../../../shared/agentProfile';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { DEFAULT_PROFILE, PROFILE_THEMES, type PersonalProfile as Profile, type ProfileSection } from '../../../shared/agentProfile';
 import { isDemo } from '../lib/api';
 import { deletePersonalProfile, prepareProfilePhoto, readPersonalProfile, savePersonalProfile, type ProfileRecord } from '../lib/personalProfile';
 import './personalProfile.css';
+import AchievementEmblem from '../components/AchievementEmblem';
 
 const LABELS: Record<ProfileSection, string> = { about: 'About', interests: 'Interests', gallery: 'Photos', achievements: 'Accomplishments', goals: 'Goals' };
 const INTERESTS = ['Hiking', 'Coffee', 'Cooking', 'Travel', 'Dogs', 'Gardening', 'Live music', 'Architecture', 'Fitness', 'Photography', 'Reading', 'Family', 'Volunteering', 'Sports', 'Art', 'The outdoors'];
-
-function AchievementEmblem({badge}: {badge: ProfileBadge}) {
-  const gradientId = useId();
-  const contract = badge.kind === 'contract';
-  const tier = Number(badge.id.split(':')[1]) || 1;
-  const color = contract ? (tier >= 10 ? 'ruby' : 'gold') : (badge.id.includes('sample') ? 'emerald' : 'sapphire');
-  return <div className={`pp-award-art pp-award-${color}`} aria-hidden="true">
-    <svg viewBox="0 0 160 176" focusable="false">
-      <defs><linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1"><stop stopColor="var(--award-light)"/><stop offset=".4" stopColor="var(--award-mid)"/><stop offset="1" stopColor="var(--award-dark)"/></linearGradient></defs>
-      <path className="pp-award-ribbon" d="M44 112 33 170 60 155 79 174 85 116M78 116 82 174 103 155 130 169 115 110"/>
-      {contract ? <path className="pp-award-shell" fill={`url(#${gradientId})`} d="m80 7 16 9 19-1 10 16 18 7 1 20 10 17-10 17-1 20-18 7-10 16-19-1-16 9-16-9-19 1-10-16-18-7-1-20L6 75l10-17 1-20 18-7 10-16 19 1Z"/> : <path className="pp-award-shell" fill={`url(#${gradientId})`} d="M80 8 139 31v49c0 32-27 53-59 67C48 133 21 112 21 80V31Z"/>}
-      <circle className="pp-award-ring" cx="80" cy="75" r="46"/>
-      <circle className="pp-award-face" cx="80" cy="75" r="38"/>
-      <path className="pp-award-laurel" d="M53 101c-19-13-24-34-15-52m69 52c19-13 24-34 15-52M44 91l-10-3m8-7-11-6m10-5-9-9m84 30 10-3m-8-7 11-6m-10-5 9-9"/>
-      {contract ? <><path className="pp-award-symbol" d="m80 45 8 17 19 3-14 14 3 19-16-9-17 9 4-19-14-14 19-3Z"/>{tier>1&&<text x="80" y="83" textAnchor="middle" className="pp-award-number">{tier}</text>}</> : <><path className="pp-award-symbol" d="m49 68 31-17 31 17-31 17Z"/><path className="pp-award-line" d="M61 79v13q19 12 38 0V79m12-11v27"/></>}
-      <path className="pp-award-glint" d="m42 32 4-8 4 8 8 4-8 4-4 8-4-8-8-4Z"/>
-    </svg>
-  </div>;
-}
 
 export default function PersonalProfile({ name, onDirtyChange }: { name: string; onDirtyChange: (dirty: boolean) => void }) {
   const [record, setRecord] = useState<ProfileRecord | null>(null);
