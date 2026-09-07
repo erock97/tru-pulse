@@ -42,7 +42,7 @@ import { norm } from '../lib/rosterData';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
-import { minimumExpectation } from '../lib/minimumExpectation';
+import { minimumExpectation, contractRateLabel } from '../lib/minimumExpectation';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { useFlip } from '../lib/deckMotion';
 
@@ -252,9 +252,9 @@ function Deck({
                 <td>
                   <div className="rs-rate">
                     <b className={r.health === 'past-line' ? 'cell-warn' : ''}>
-                      {cell(r.perContract ? '1 : ' + Math.floor(r.perContract) : '—', i)}
+                      {cell(contractRateLabel(r.perContract, r.leads), i)}
                     </b>
-                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line)}</small>
+                    <small className={r.perContract !== null && r.perContract > line ? 'pulse-over' : ''}>{minimumExpectation(r.perContract, line, r.leads)}</small>
                   </div>
                 </td>
                 <td title={`${r.contracts} leads that reached under contract or closed ÷ ${r.leads} leads`}>{r.leads ? (r.rawConversion??0).toFixed(1)+'%' : '—'}</td>
