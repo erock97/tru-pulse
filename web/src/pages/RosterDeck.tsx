@@ -34,10 +34,9 @@ import { PeriodSelect } from '../components/PeriodSelect';
 import { signOutClean, isDemo, workerFetch } from '../lib/api';
 import { initials } from '../lib/coachData';
 import {
-  DEFAULT_LINE, WINDOWS, PERIOD_OPTIONS, approachFor, prioritise, useRosterData,
+  DEFAULT_LINE, WINDOWS, PERIOD_OPTIONS, prioritise, useRosterData,
   type Row, type Window,
 } from '../lib/rosterData';
-import { PersonPane } from '../components/personPane';
 import { PulseProof } from '../components/PulseProof';
 import { norm } from '../lib/rosterData';
 import {
@@ -89,7 +88,6 @@ function Deck({
   const { rows, err, undated, departed, totals, proof, teams, historyInfo } = useRosterData(line, win.days, orgId);
   const overall = useRosterData(line, null, orgId);
   const overallByName = new Map((overall.rows ?? []).map(row=>[norm(row.name),row]));
-  const [open, setOpen] = useState<Row | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
   const focus = useDeckFocus();
@@ -133,13 +131,9 @@ function Deck({
       : <span className="cell-roll" key={gen.current} style={{ '--r': Math.min(rowIndex, 14) } as React.CSSProperties}>{value}</span>
   );
 
-  /* Up and down walk the roster, and because walking POINTS at each person in
-     turn, the dot travels along the scale beside you. Enter opens them, `p`
-     holds them lit, Escape lets go — or closes the panel if one is open. */
+  // Keep roster focus navigation; rows no longer open a drawer.
   useDeckKeys({
     keys: sorted.map((r) => r.name),
-    onOpen: (name) => setOpen(sorted.find((r) => r.name === name) ?? null),
-    onEscape: () => setOpen(null),
     enabled: !!rows,
     // `f` sends the rest of the page away. Only offered when there is somebody
     // to be left alone with — dimming a page down to nothing is not a feature.
@@ -228,7 +222,6 @@ function Deck({
               <tr key={r.name}
                   data-flip={r.name}
                   className={[
-                    'rowlink',
 
                     focus.active === r.name ? 'is-on' : '',
                     focus.pinned === r.name ? 'is-pinned' : '',
@@ -236,13 +229,12 @@ function Deck({
                   tabIndex={0}
                   style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}
                   {...focusBinding(r.name, focus)}
-                  onClick={() => setOpen(r)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setOpen(r); }}>
+                  >
                 <td>
                   <div className="rs-who">
                     <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
                     <div>
-                      <button className="cell-name pulse-agent-name" aria-label={'Open '+r.name} onClick={e=>{e.stopPropagation();setOpen(r);}}>{r.name}</button>
+                      <span className="cell-name">{r.name}</span>
                       <PulseProof row={r} leads={proof.get(norm(r.name)) ?? []} teams={teams} />
                       <div className="pulse-row-reason">{priorities.find(p=>p.row.name===r.name)?.reason}</div>
                     </div>
@@ -276,13 +268,7 @@ function Deck({
       </div>
 
       <details className="pulse-data-notes"><summary>About these numbers</summary><p>Raw conversion is the percentage of leads that reached under contract or closed. Each lead counts once, even if it reached both. Closed is shown separately and is included in the cumulative Under contract count. This view groups leads by their creation date. When verified history is loaded, it counts cumulative milestones, including achievements before a return to Nurture. It is not a count of contracts signed during the period. The overall leads-per-contract column uses all available history, independent of this filter. Its supporting counts are available in the comparison details. Historical comparisons use recorded lead creation and milestone dates, attributed to the current owner in both counts. Past reassignments are not reconstructed. Fewer leads per contract means stronger conversion; the minimum expectation is a floor, not an ideal performance goal. Month to date starts on the 1st in your browser timezone. The six-month view includes this month and the previous five calendar months. A missing 1:1 record does not prove that no coaching happened.</p>{undated>0 && <p>{undated} leads have no date and are excluded from this window.</p>}{departed.names.length>0 && <p>Team totals include {departed.leads} leads from former team members: {departed.names.join(', ')}.</p>}</details>
-      </>}<PersonPane
-        row={open ? overallByName.get(norm(open.name)) ?? null : null}
-        onClose={() => setOpen(null)}
-        approach={open ? approachFor(open) : null}
-        line={line}
-        teamRate={overall.totals?.perContract ?? null}
-      />
+      </>}
     </>,
   );
 }
