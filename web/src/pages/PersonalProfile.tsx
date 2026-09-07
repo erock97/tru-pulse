@@ -7,7 +7,7 @@ import InterestPin from '../components/InterestPin';
 import AchievementEmblem from '../components/AchievementEmblem';
 
 const LABELS: Record<ProfileSection, string> = { about: 'About', interests: 'Interests', gallery: 'Photos', achievements: 'Accomplishments', goals: 'Goals' };
-const INTERESTS = ['Hiking', 'Coffee', 'Cooking', 'Travel', 'Dogs', 'Gardening', 'Live music', 'Architecture', 'Fitness', 'Photography', 'Reading', 'Family', 'Volunteering', 'Sports', 'Football', 'Seahawks', 'Art', 'The outdoors'];
+const INTERESTS = ['Hiking', 'Coffee', 'Cooking', 'Travel', 'Dogs', 'Gardening', 'Live music', 'Jazz', 'Blues', 'Rock', 'Country', 'Hip-hop', 'R&B', 'Classical', 'Electronic', 'Pop', 'Indie', 'Folk', 'Metal', 'Architecture', 'Fitness', 'Photography', 'Reading', 'Family', 'Volunteering', 'Sports', 'Football', 'Seahawks', 'Art', 'The outdoors'];
 
 export default function PersonalProfile({ name, onDirtyChange }: { name: string; onDirtyChange: (dirty: boolean) => void }) {
   const [record, setRecord] = useState<ProfileRecord | null>(null);
