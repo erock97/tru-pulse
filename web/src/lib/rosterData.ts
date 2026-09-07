@@ -1,3 +1,4 @@
+import {belowMinimum} from './minimumExpectation';
 /**
  * The roster, as data.
  *
@@ -87,7 +88,8 @@ export const PERIOD_OPTIONS = ['mtd','2yr','all','ytd','6mo','90d','14d','7d'].m
 export const norm = (s: string | null | undefined) =>
   (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 
-export function healthOf(perContract: number | null, teamRate: number | null, line: number): Health {
+export function healthOf(perContract: number | null, teamRate: number | null, line: number, leads=0): Health {
+  if (belowMinimum(perContract,line,leads)) return 'past-line';
   if (perContract === null) return 'no-volume';
   if (perContract > line) return 'past-line';
   if (teamRate !== null && perContract > teamRate * 1.12) return 'behind';
@@ -341,7 +343,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
     );
     const departedRows = list.filter((r) => gone.has(norm(r.name)));
 
-    const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line) }));
+    const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line,r.leads) }));
 
     return {
       historyInfo:raw.historyInfo, proof, teams: raw.teams,

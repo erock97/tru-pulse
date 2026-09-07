@@ -1,3 +1,4 @@
+import ServiceWalkthrough from '../components/ServiceWalkthrough';
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS } from '../../config/business';
 /* THE FILM IS FINGERPRINTED, AND THIS IS A BUG FIX, NOT HOUSEKEEPING.
@@ -569,7 +570,7 @@ export default function Home() {
               <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
                 Book a call{arrow}
               </a>
-              <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
+              <a href="#software" className="cta ghost">See how it works{arrow}</a>
             </div>
           </div>
 
@@ -637,28 +638,7 @@ export default function Home() {
         </a>
       </div></section>
 
-      <section className="panel band fh-soft" id="software"><div className="wrap">
-        <h2 className="h2 reveal">And the software we <em>built to do it</em>.</h2>
-        <p className="sub reveal d1">
-          It comes with the engagement. There is nothing extra to buy.
-        </p>
-
-        <div className="fh-shots">
-          <figure className="fh-shot reveal d1">
-            <img src="/shot-pulse.webp" width="1240" height="649" loading="lazy" decoding="async"
-                 alt="TRU Pulse showing a team roster ranked by leads per contract, with the agents who need a conversation flagged above the table." />
-            <figcaption><b className="pn-pulse">Pulse.</b> Who got no contact, what is stuck, and who is quietly slipping.</figcaption>
-          </figure>
-          <figure className="fh-shot reveal d2">
-            <img src="/shot-coach.webp" width="1240" height="649" loading="lazy" decoding="async"
-                 alt="TRU Coach showing a cohort ranked by coaching health, with the four agents who need a one to one listed above it." />
-            <figcaption><b className="pn-coach">Coach.</b> The exact move for this person, this week.</figcaption>
-          </figure>
-        </div>
-        <p className="fh-third reveal d2">
-          <b className="pn-rep">Rep.</b> Every agent certified on your program through real drills, not skimmed video.
-        </p>
-      </div></section>
+      <ServiceWalkthrough />
 
       <section className="panel band fh-who" id="who"><div className="wrap">
         <h2 className="h2 reveal">Who we <em>work with</em>.</h2>
@@ -684,7 +664,6 @@ export default function Home() {
           <a href={BUSINESS.bookingUrl} className="cta" target="_blank" rel="noopener noreferrer">
             Book a call{arrow}
           </a>
-          <a href="/apply" className="cta ghost">Apply to work with us{arrow}</a>
         </div>
       </div></section>
     </div>

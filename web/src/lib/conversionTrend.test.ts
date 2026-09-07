@@ -33,3 +33,16 @@ describe('dated conversion trend',()=>{
   expect(conversionTrend([lead('2026-02-01','bad-date')],{leads:1,contracts:1,perContract:1},90,history,now).prior).toBeNull();
  });
 });
+
+it('refuses a comparison whose current and historical cohorts differ',()=>{
+ expect(conversionTrend([lead('2026-02-01')],{leads:2,contracts:1,perContract:2},90,history,now).prior).toBeNull();
+});
+it('counts transferred leads under the current owner consistently, rather than treating an event actor as the owner',()=>{
+ const transferred={...lead('2026-02-01','2026-07-01'),assigned_to:'Current owner',history:{uc:{...event('2026-07-01'),description:'Stage changed by another agent'}}};
+ const result=conversionTrend([transferred],{leads:1,contracts:1,perContract:1},90,history,now);
+ expect(result.prior?.contracts).toBe(0);expect(result.direction).toBe('Improving');
+});
+it('retains zero contracts as an unchanged zero rate even as lead volume grows',()=>{
+ const result=conversionTrend([lead('2026-02-01'),lead('2026-08-01')],{leads:2,contracts:0,perContract:null},90,history,now);
+ expect(result.prior).toEqual({leads:1,contracts:0,perContract:null});expect(result.direction).toBe('Unchanged');
+});
