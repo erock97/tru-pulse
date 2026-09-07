@@ -1,3 +1,4 @@
+import CoachingAssignments from '../components/CoachingAssignments';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
@@ -887,6 +888,8 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
       {/* 2. RUN THIS 1:1 — structured leadership form (Block 4b), replacing the
           old yes/no OneOnOneSheet. Writes: checkins + checkin_items + checkin_leader
           via the one-RPC saveStructuredCheckin (COACH_1ON1_STRUCTURED_DESIGN.md §1d). */}
+      <CoachingAssignments key={`work-${agent.id}`} agentId={agent.id} leader />
+
       <RunOneOnOneSheet
         agent={agent}
         checkins={checkins}

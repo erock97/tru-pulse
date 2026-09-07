@@ -1,3 +1,4 @@
+import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
 // Data the browser used to fetch straight from Supabase, now fetched here — as the
 // user, so row-level security still decides what they can see.
@@ -40,6 +41,7 @@ export async function handleDataRoutes(
 
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
+  if (url.pathname === '/data/coaching-assignments') return handleCoachingAssignments(req, env, db, cors, originOk);
   if (url.pathname === '/data/personal-profile') return handlePersonalProfile(req, env, db, cors, originOk);
 
   if (url.pathname === '/data/contact-speed' && req.method === 'GET') {
