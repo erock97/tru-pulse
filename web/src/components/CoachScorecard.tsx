@@ -33,12 +33,12 @@ export function CoachScorecard({ name }: { name: string }) {
   const month = new Date().toLocaleDateString('en-US', { month: 'long' });
   return <section className="coach-scorecard" aria-label={`${name} performance scorecard`}>
     <div className="coach-scorecard-heading"><h4>Performance at a glance</h4><a href="#/pulse">Open Pulse</a></div>
-    <PeriodSelect value={periodKey} options={PERIOD_OPTIONS} onChange={setPeriodKey}/><p className="coach-scorecard-note">Period selects the comparison date. Monthly intake stays month to date; conversion uses all available history.</p>
+    <PeriodSelect label="Conversion comparison period" value={periodKey} options={PERIOD_OPTIONS} onChange={setPeriodKey}/><p className="coach-scorecard-note">Period selects the comparison date. Monthly intake stays month to date; conversion uses all available history.</p>
     <dl className="coach-scorecard-rows">
       <div><dt>Leads taken this month<small>{month} to date · new assignments</small></dt>
         <dd className={hasIntake && cap.ready && count >= cap.saved ? 'needs-attention' : ''}>{hasIntake ? count : 'Not connected'}<small>{cap.ready ? `${cap.saved} leads before pause` : cap.notice || 'Loading saved allowance…'}</small></dd></div>
       <div><dt>Lead-to-contract rate<small>Across available history</small></dt>
-        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? <ConversionComparison current={row} period={period.days} through={data.historyInfo?.through}/> : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
+        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? <ConversionComparison current={row} leads={data.proof.get(norm(name)) ?? []} history={data.historyInfo} period={period.days} through={data.historyInfo?.through}/> : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
       <div><dt>Raw conversion<small>Under contract or closed · counted once per lead</small></dt>
         <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · available history` : 'Available lead history'}</small></dd></div>
     </dl>
