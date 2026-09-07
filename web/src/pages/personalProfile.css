@@ -14,3 +14,85 @@
 @media(max-width:650px){.pp-cover{height:260px}.pp-cover-word{top:38px}.pp-identity,.pp-editing .pp-identity{display:block}.pp-portrait,.pp-editing .pp-portrait{width:125px;height:144px;margin-top:-55px}.pp-name{padding-top:20px}.pp-name h2,.pp-editing .pp-name h2{font-size:34px}.pp-name .pp-overline{font-size:8px}.pp-headline{font-size:13px}.pp-meta{font-size:10px}.pp-start{padding:19px!important}.pp-start>div{flex-direction:column}.pp-start button{text-align:left}.pp-layout-photos .pp-cover{height:310px}.pp-layout-photos .pp-gallery{grid-template-columns:1fr;padding:0}.pp-layout-photos .pp-gallery figure:first-child img{aspect-ratio:4/3}.pp-layout-compact .pp-cover{height:125px}.pp-layout-compact .pp-cover-word{font-size:43px;top:30px}.pp-layout-compact .pp-portrait{width:95px;height:109px;margin-top:-30px}.pp-layout-compact .pp-name h2{font-size:28px}.pp-layout-compact .pp-sections,.pp-editing .pp-layout-compact .pp-sections{grid-template-columns:1fr}.pp-layout-compact .pp-section{grid-column:1/-1}.pp-editor-actions{padding-bottom:22px}}
 
 .pp-section h3{overflow-wrap:anywhere}
+/* Personal page: typography and photography lead; decoration stays secondary. */
+.personal-profile{max-width:1320px}
+.personal-profile .pp-page{border-radius:0;box-shadow:none;padding:0 56px;background:var(--pp-paper)}
+.personal-profile .pp-cover{margin:0 -56px;height:290px}
+.personal-profile .pp-cover-minimal,.personal-profile .pp-layout-photos .pp-cover-minimal,.personal-profile .pp-layout-compact .pp-cover-minimal{height:12px;background:var(--pp-cover)}
+.pp-cover-minimal .pp-cover-art{opacity:.7}
+.personal-profile .pp-identity{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:48px;align-items:center;padding:64px 0 52px;min-height:0}
+.personal-profile .pp-name{padding:0}
+.personal-profile .pp-name h2{font-size:clamp(44px,5.4vw,76px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:400;text-wrap:balance}
+.personal-profile .pp-portrait{width:180px;height:220px;border:0;border-radius:2px;margin:0;box-shadow:none;align-self:center;background:var(--pp-tile)}
+.personal-profile .pp-portrait-initials{height:180px;background:transparent;border:1px solid var(--pp-rule)}
+.personal-profile .pp-portrait>span{font-size:62px;letter-spacing:-.06em;color:var(--pp-muted)}
+.personal-profile .pp-headline{font-size:17px;line-height:1.65;max-width:470px}
+.personal-profile .pp-meta{font-size:11px;margin-top:24px;gap:8px 18px}
+.personal-profile .pp-sections{display:block;padding:0}
+.personal-profile .pp-section{display:grid;grid-template-columns:160px minmax(0,1fr);gap:30px;padding:34px 0 40px;border-top:1px solid var(--pp-rule)}
+.personal-profile .pp-section-heading{display:block;margin:3px 0 0}
+.personal-profile .pp-section h3{font:600 12px/1.6 Manrope,sans-serif;letter-spacing:0}
+.pp-section-content{min-width:0}
+.personal-profile .pp-bio{font-size:17px;line-height:1.85;max-width:620px}
+.personal-profile .pp-markets>span{font-size:11px;letter-spacing:0;text-transform:none;font-weight:500}
+.personal-profile .pp-markets p{font-size:13px;line-height:1.8}
+.personal-profile .pp-section blockquote{background:none;border:0;padding:0;margin:26px 0 0;font:italic 23px/1.6 Georgia,serif}
+.personal-profile .pp-section blockquote>span{font:500 11px/1.5 Manrope,sans-serif;text-transform:none;letter-spacing:0;color:var(--pp-muted);margin-bottom:8px}
+.personal-profile .pp-interests{display:flex;flex-wrap:wrap;gap:0;list-style:none;padding:0;margin:0}
+.pp-interests li{font:400 20px/1.8 Georgia,serif;display:flex;align-items:center;overflow-wrap:anywhere;max-width:100%}
+.pp-interests li:not(:last-child)::after{content:'/';color:var(--pp-muted);opacity:.5;font:300 18px Manrope,sans-serif;margin:0 16px}
+.personal-profile .pp-goal{background:none;color:var(--pp-ink);padding:0;border-radius:0;min-height:0;display:block}
+.personal-profile .pp-goal p{font-size:17px;line-height:1.8;max-width:600px}
+.personal-profile .pp-gallery{gap:20px;padding:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+.personal-profile .pp-gallery figure{padding:0;background:none;transform:none}
+.personal-profile .pp-gallery figure:first-child{grid-column:1/-1}
+.personal-profile .pp-gallery img{border-radius:0;aspect-ratio:4/3}
+.personal-profile .pp-gallery figure:first-child img{aspect-ratio:16/10;max-height:540px}
+.personal-profile .pp-gallery figcaption{font:12px/1.6 Manrope,sans-serif;color:var(--pp-muted);margin-top:10px}
+.personal-profile .pp-badges{grid-template-columns:1fr;gap:0}
+.personal-profile .pp-badge{padding:0 0 24px;gap:18px;align-items:flex-start}
+.personal-profile .pp-medal{width:38px;height:44px;background:var(--pp-tile);margin-top:3px}
+.personal-profile .pp-medal>span{border:0;width:auto;height:auto;font-size:18px}
+.personal-profile .pp-badge h4{font-size:16px;font-weight:500;margin:5px 0}
+.personal-profile .pp-badge .pp-overline{font-size:9px;letter-spacing:.03em}
+.personal-profile .pp-badge p,.personal-profile .pp-badge time{font-size:11px}
+.personal-profile .pp-page-footer{margin:0;padding:22px 0 28px;letter-spacing:0}
+.personal-profile .pp-page-footer>span{font:11px Manrope,sans-serif}
+.personal-profile .pp-page-footer strong{font-size:12px;letter-spacing:.1em}
+.personal-profile .pp-start{background:none;border:0;border-top:1px solid #bfcbb7;border-radius:0;padding:18px 0!important;margin-bottom:22px}
+.personal-profile .pp-start h2{font:600 13px Manrope,sans-serif}
+.personal-profile .pp-start p{margin-bottom:12px}
+.personal-profile .pp-start button{border:0;border-bottom:1px solid #8c9e81;background:none;border-radius:0;padding:8px 0;margin-right:24px;min-height:38px}
+.personal-profile .pp-toolbar{margin-bottom:20px}
+.personal-profile .pp-private{font-size:11px;letter-spacing:0;font-weight:600}
+.personal-profile .pp-primary{border-radius:4px}
+.personal-profile .pp-layout-photos .pp-section-gallery{display:block}
+.personal-profile .pp-layout-photos .pp-section-gallery .pp-section-heading{margin-bottom:20px}
+.personal-profile .pp-layout-compact .pp-identity{padding:36px 0;grid-template-columns:1fr 100px}
+.personal-profile .pp-layout-compact .pp-portrait{width:100px;height:120px}
+.personal-profile .pp-layout-compact .pp-name h2{font-size:40px}
+.personal-profile .pp-layout-compact .pp-section{padding:24px 0;grid-template-columns:140px minmax(0,1fr)}
+.personal-profile .pp-editing{min-width:0}
+.pp-editing.personal-profile .pp-page{padding:0 28px}
+.pp-editing.personal-profile .pp-cover{margin:0 -28px}
+.pp-editing.personal-profile .pp-identity{grid-template-columns:1fr 100px;gap:22px;padding:36px 0}
+.pp-editing.personal-profile .pp-portrait{width:100px;height:125px}
+.pp-editing.personal-profile .pp-name h2{font-size:42px}
+.pp-editing.personal-profile .pp-section{grid-template-columns:1fr;gap:16px}
+@media(max-width:700px){
+ .personal-profile .pp-page,.pp-editing.personal-profile .pp-page{padding:0 24px}
+ .personal-profile .pp-cover,.pp-editing.personal-profile .pp-cover{margin:0 -24px;height:190px}
+ .personal-profile .pp-cover-minimal,.pp-editing.personal-profile .pp-cover-minimal{height:8px}
+ .personal-profile .pp-identity,.pp-editing.personal-profile .pp-identity{grid-template-columns:1fr;gap:24px;padding:32px 0}
+ .personal-profile .pp-portrait,.pp-editing.personal-profile .pp-portrait{grid-row:1;width:96px;height:116px}
+ .personal-profile .pp-portrait-initials,.pp-editing.personal-profile .pp-portrait-initials{width:64px;height:64px}
+ .personal-profile .pp-portrait>span{font-size:28px}
+ .personal-profile .pp-name h2,.pp-editing.personal-profile .pp-name h2{font-size:43px;margin-bottom:16px}
+ .personal-profile .pp-headline{font-size:15px}
+ .personal-profile .pp-section,.personal-profile .pp-layout-compact .pp-section{grid-template-columns:1fr;gap:16px;padding:26px 0 30px}
+ .personal-profile .pp-bio,.personal-profile .pp-goal p{font-size:15px}
+ .personal-profile .pp-interests li{font-size:19px}
+ .personal-profile .pp-start>div{flex-direction:row;gap:0}
+ .personal-profile .pp-start button{margin-right:16px;font-size:11px}
+ .personal-profile .pp-layout-compact .pp-identity{grid-template-columns:1fr}
+}
