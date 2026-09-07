@@ -4,9 +4,17 @@ import { DEFAULT_PROFILE, validateProfile, type ProfileBadge } from '../../share
 
 export async function handlePersonalProfile(req:Request,env:Env,client:UserClient,cors:Record<string,string>,originOk:boolean):Promise<Response>{
  const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'private, no-store'}});
- if(!['GET','PUT'].includes(req.method))return respond({error:'Method not allowed'},405);
- if(req.method==='PUT'&&!originOk)return respond({error:'Origin denied'},403);
+ if(!['GET','PUT','DELETE'].includes(req.method))return respond({error:'Method not allowed'},405);
+ if(req.method!=='GET'&&!originOk)return respond({error:'Origin denied'},403);
  try{
+  const profileKey=`agent-profile:v1:${client.userId}`;
+  const deletedKey=`agent-profile-deleted:v1:${client.userId}`;
+  if(req.method==='DELETE'){
+   // Keep a minimal deletion marker so revisiting cannot recreate earned badges.
+   await env.SESSIONS.put(deletedKey,JSON.stringify({deletedAt:new Date().toISOString()}));
+   await Promise.all([env.SESSIONS.delete(profileKey),env.SESSIONS.delete(`agent-profile-badges:v1:${client.userId}`)]);
+   return respond({deleted:true});
+  }
   const agents=await client.select<{id:string;org_id:string;team_id:string;fub_user_id:number|null;name:string}>('agents',`auth_id=eq.${client.userId}&select=id,org_id,team_id,fub_user_id,name&limit=2`,{strict:true});
   if(agents.length!==1)return respond({error:'An active agent account is required.'},403);
   const agent=agents[0],key=`agent-profile:v1:${client.userId}`;
@@ -16,8 +24,10 @@ export async function handlePersonalProfile(req:Request,env:Env,client:UserClien
    while(true){const {value,done}=await reader.read();if(done)break;bytes+=value.length;if(bytes>2100000){await reader.cancel();return respond({error:'Profile images are too large.'},413);}chunks.push(value);}
    const buffer=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.length;}
    let profile;try{profile=validateProfile(JSON.parse(new TextDecoder().decode(buffer)));}catch(e){return respond({error:e instanceof Error?e.message:'Invalid profile.'},400);}
-   const saved={profile,updatedAt:new Date().toISOString()};await env.SESSIONS.put(key,JSON.stringify(saved));return respond(saved);
+   if(profile.termsVersion!=='2026-09-06')return respond({error:'Please accept the profile content terms before saving.'},400);
+   const saved={profile,updatedAt:new Date().toISOString(),termsAcceptedAt:new Date().toISOString()};await env.SESSIONS.put(key,JSON.stringify(saved));await env.SESSIONS.delete(deletedKey);return respond(saved);
   }
+  if(await env.SESSIONS.get(deletedKey,'json'))return respond({profile:{...DEFAULT_PROFILE},updatedAt:null,badges:[],deleted:true});
   const saved=await env.SESSIONS.get(key,'json') as {profile:unknown;updatedAt:string}|null;
   const profile=saved?validateProfile(saved.profile):{...DEFAULT_PROFILE};
   const badgeKey=`agent-profile-badges:v1:${client.userId}`;
@@ -40,6 +50,8 @@ export async function handlePersonalProfile(req:Request,env:Env,client:UserClien
     for(const threshold of [1,5,10,25,50,100])if(contracts>=threshold)award({id:`contracts:${threshold}`,kind:'contract',title:`${threshold} recorded ${threshold===1?'contract':'contracts'}`,detail:'Based on your assigned leads in TRU’s imported history',verifiedAt:new Date().toISOString()});
    }
   }catch{badgeNotice='Some accomplishments could not be checked. Previously earned badges are still here.';}
+  // Recheck after source lookups so an in-flight badge refresh respects deletion.
+  if(await env.SESSIONS.get(deletedKey,'json'))return respond({profile:{...DEFAULT_PROFILE},updatedAt:null,badges:[],deleted:true});
   if(badges.length!==(old?.length??0))await env.SESSIONS.put(badgeKey,JSON.stringify(badges));
   return respond({profile,updatedAt:saved?.updatedAt??null,badges,badgeNotice});
  }catch{return respond({error:'Your profile could not be loaded or saved. Please try again.'},503);}

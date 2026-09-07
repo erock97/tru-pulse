@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROFILE } from '../../../shared/agentProfile';
+import { DEFAULT_PROFILE as BASE_PROFILE } from '../../../shared/agentProfile';
 import { workerFetch } from './api';
-import { prepareProfilePhoto, readPersonalProfile, savePersonalProfile } from './personalProfile';
+import { deletePersonalProfile, prepareProfilePhoto, readPersonalProfile, savePersonalProfile } from './personalProfile';
+const DEFAULT_PROFILE={...BASE_PROFILE,termsVersion:'2026-09-06'};
 vi.mock('./api', () => ({ isDemo: false, workerFetch: vi.fn() }));
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 describe('account profile client', () => {
@@ -47,4 +48,10 @@ describe('photo preparation', () => {
     await expect(prepareProfilePhoto(new File(['bad'], 'bad.jpg', { type: 'image/jpeg' }), 480)).rejects.toThrow('Invalid photo');
     expect(revoke).toHaveBeenCalledWith('blob:broken');
   });
+});
+
+describe('profile deletion client',()=>{
+ it('uses the authenticated owner-only DELETE endpoint',async()=>{vi.mocked(workerFetch).mockResolvedValue(new Response(JSON.stringify({deleted:true})));await deletePersonalProfile();expect(workerFetch).toHaveBeenCalledWith('/data/personal-profile',{method:'DELETE'});});
+ it('does not report a failed deletion as successful',async()=>{vi.mocked(workerFetch).mockResolvedValue(new Response(JSON.stringify({error:'Try again'}),{status:503}));await expect(deletePersonalProfile()).rejects.toThrow('Try again');});
+ it('does not submit a save before the upload agreement',async()=>{await expect(savePersonalProfile(BASE_PROFILE)).rejects.toThrow('agree');expect(workerFetch).not.toHaveBeenCalled();});
 });

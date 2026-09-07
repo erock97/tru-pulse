@@ -6,14 +6,14 @@ import { BUSINESS } from '../../config/business';
 // Entity, venue, and domain interpolate from BUSINESS; one clause was added to
 // point at the initial-term and auto-continuation terms in the refund policy.
 export default function Terms() {
-  const { legalEntity, brandFull, contactEmail, governingState, governingVenue, policiesUpdated } = BUSINESS;
+  const { legalEntity, brandFull, contactEmail, governingState, governingVenue } = BUSINESS;
 
   return (
     <div className="interior">
       <article className="legal wrap">
         <div className="kick">Terms</div>
         <h1>Terms of Service</h1>
-        <p className="updated">Last updated: {policiesUpdated}</p>
+        <p className="updated">Last updated: September 6, 2026</p>
 
         <p>
           These Terms of Service (&ldquo;Terms&rdquo;) govern your use of truhq.co (the
@@ -34,11 +34,35 @@ export default function Terms() {
 
         <h2>Intellectual property</h2>
         <p>
-          All content on the Site — including text, graphics, logos, images, audio, video,
+          Except for user-submitted profile content described below, content on the Site — including text, graphics, logos, images, audio, video,
           frameworks, and software — is owned by or licensed to {legalEntity} and is protected by
           copyright, trademark, and other intellectual property laws. You may view and download
           content for your personal, non-commercial reference. You may not reproduce, republish,
           distribute, or create derivative works from our content without our written permission.
+        </p>
+
+        <h2 id="profile-content">Optional profile content</h2>
+        <p>
+          These profile-specific terms apply when you choose to accept them in the profile editor.
+          You keep ownership of the photos and text you upload. You give us limited, non-exclusive
+          permission to store, resize, reproduce, and display that content as needed to provide,
+          support, and secure your profile according to your visibility choices and our Privacy Policy.
+          This permission does not authorize advertising use, sale of your content, or AI model training.
+          We will request separate permission for promotional use.
+        </p>
+        <p>
+          Upload only content you own or have permission to use, including any permission needed
+          for identifiable people pictured. Do not upload confidential client information, identity
+          documents, unlawful material, or content that infringes another person’s rights. We may
+          restrict or remove content to address those issues or protect the service. Contact us below
+          about an unauthorized photo or other profile content.
+        </p>
+        <p>
+          You may remove your content by saving its removal or deleting your profile. Permission to
+          display removed content ends when removal takes effect; limited processing may continue
+          where needed to complete deletion, meet legal obligations, or manage protected recovery
+          copies as described in the Privacy Policy. Deleting a profile does not delete the underlying
+          business records used to calculate accomplishments or close your account.
         </p>
 
         <h2>Forms and submissions</h2>

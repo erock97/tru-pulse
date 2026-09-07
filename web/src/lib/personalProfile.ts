@@ -2,10 +2,12 @@ import { DEFAULT_PROFILE, validateProfile, type PersonalProfile, type ProfileBad
 import { isDemo, workerFetch } from './api';
 
 export type ProfileRecord = { profile: PersonalProfile; updatedAt: string | null; badges: ProfileBadge[]; badgeNotice?: string };
+const DELETED_DEMO_KEY = 'tru-profile-demo-deleted';
 const DEMO_KEY = 'tru-personal-profile-demo-v1';
 const demoProfile: PersonalProfile = { ...DEFAULT_PROFILE, headline: 'Portland agent, weekend hiker, enthusiastic home cook.', bio: 'I’m Jordan. I help people find their place in the Pacific Northwest.\n\nAway from work, I’m usually on a trail, trying a new coffee shop, or making dinner for a house full of friends.', location: 'Portland, Oregon', markets: 'Portland · Beaverton · Lake Oswego', careerStart: '2021', goal: 'Help five first-time buyers get the keys to their own home this year.', favorite: 'A slow Sunday morning, with nowhere to be.', interests: ['Hiking', 'Coffee', 'Cooking', 'Live music', 'Architecture'], font: 'editorial' };
 export async function readPersonalProfile(): Promise<ProfileRecord> {
   if (isDemo) {
+    if(localStorage.getItem(DELETED_DEMO_KEY))return {profile:structuredClone(DEFAULT_PROFILE),updatedAt:null,badges:[]};
     const raw = localStorage.getItem(DEMO_KEY);
     const saved = raw ? JSON.parse(raw) : null;
     return { profile: saved ? validateProfile(saved.profile) : structuredClone(demoProfile), updatedAt: saved?.updatedAt ?? null, badges: [{ id: 'sample-training', kind: 'training', title: 'Welcome to Preferred', detail: 'Sample training badge', verifiedAt: '' }, { id: 'sample-contract', kind: 'contract', title: 'First contract', detail: 'Sample contract badge', verifiedAt: '' }] };
@@ -17,9 +19,11 @@ export async function readPersonalProfile(): Promise<ProfileRecord> {
 }
 export async function savePersonalProfile(profile: PersonalProfile): Promise<{ profile: PersonalProfile; updatedAt: string }> {
   const clean = validateProfile(profile);
+  if(clean.termsVersion!=='2026-09-06')throw Error('Please agree to the profile content terms before saving.');
   if (isDemo) {
     const saved = { profile: clean, updatedAt: new Date().toISOString() };
     localStorage.setItem(DEMO_KEY, JSON.stringify(saved));
+    localStorage.removeItem(DELETED_DEMO_KEY);
     return saved;
   }
   const response = await workerFetch('/data/personal-profile', { method: 'PUT', body: JSON.stringify(clean) });
@@ -49,4 +53,10 @@ export async function prepareProfilePhoto(file: File, maxSide: number): Promise<
     }
     throw Error('That photo is still too large. Try a smaller image.');
   } finally { URL.revokeObjectURL(url); }
+}
+
+export async function deletePersonalProfile():Promise<void>{
+ if(isDemo){localStorage.setItem(DELETED_DEMO_KEY,'1');localStorage.removeItem(DEMO_KEY);return;}
+ const response=await workerFetch('/data/personal-profile',{method:'DELETE'});
+ if(!response.ok){const body=await response.json();throw Error(body.error||'Your profile could not be deleted. Please try again.');}
 }
