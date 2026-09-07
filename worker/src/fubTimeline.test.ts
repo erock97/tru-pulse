@@ -13,3 +13,8 @@ it('collects all pages exactly once',async()=>{
  const fetcher=vi.fn().mockResolvedValueOnce(response({timeline:[{id:'a',personId:1}],_metadata:{total:2,nextLink:'https://compass627.followupboss.com/api/v1/timeline?personId=1&offset=1'}})).mockResolvedValueOnce(response({timeline:[{id:'b',personId:1}],_metadata:{total:2}}));
  expect(await new FubTimelineSession('compass627',fetcher).timeline('1')).toHaveLength(2);expect(fetcher).toHaveBeenCalledTimes(2);
 });
+
+it('calls the native fetch function without binding it to the session object',async()=>{
+ const fetcher=function(this:unknown){expect(this).toBeUndefined();return Promise.resolve(response({timeline:[],_metadata:{total:0}}));};
+ expect(await new FubTimelineSession('compass627',fetcher as any).timeline('1')).toEqual([]);
+});
