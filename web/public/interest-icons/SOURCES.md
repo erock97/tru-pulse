@@ -1,0 +1,1 @@
+Seahawks emblem: https://a.espncdn.com/i/teamlogos/nfl/500/sea.png (retrieved September 7, 2026). Seattle Seahawks/NFL team mark, used to identify a user-selected fan interest. No affiliation implied. Other interest icons are original SVG drawings.
