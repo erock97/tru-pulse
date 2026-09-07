@@ -6,14 +6,14 @@ import { BUSINESS } from '../../config/business';
 // names the wrong processors is not merely stale, it is an affirmative
 // misstatement about where a visitor's data goes.
 export default function Privacy() {
-  const { legalEntity, brandFull, contactEmail, legalAddress, policiesUpdated } = BUSINESS;
+  const { legalEntity, brandFull, contactEmail, legalAddress } = BUSINESS;
 
   return (
     <div className="interior">
       <article className="legal wrap">
         <div className="kick">Privacy</div>
         <h1>Privacy Policy</h1>
-        <p className="updated">Last updated: {policiesUpdated}</p>
+        <p className="updated">Last updated: September 6, 2026</p>
 
         <p>
           {legalEntity}, which operates the {brandFull} brand (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
@@ -51,6 +51,53 @@ export default function Privacy() {
           privacy policy governs that data; we receive only the booking confirmation.
         </p>
 
+        <h2 id="profiles">Agent profiles and photos</h2>
+        <p>
+          At app.truhq.co, you may create an optional personal profile with a portrait, cover photo,
+          personal photos and captions, biography, interests, home base, markets, career start year,
+          goals, and appearance preferences. We use these details to save and display your profile.
+          We also use existing training completion records and imported lead history to display
+          accomplishments. Career details you enter are self-reported; recorded-contract milestones
+          reflect assignment in imported history, not a verified lifetime production total.
+        </p>
+        <p>
+          Other agents and team leaders cannot browse your personal profile through the current
+          profile feature. Authorized TRU personnel and service providers may access information as
+          needed to operate, support, secure, or meet legal obligations for the service. Profiles are
+          not public, and profile uploads are not permission to use your content in advertising or
+          to train AI models. Before making existing profiles available to other members or the public,
+          we will explain the audience and ask you to choose whether to share.
+        </p>
+        <p>
+          Profile text, photos, preferences, and saved badge copies are stored using Cloudflare.
+          Account identity and the underlying training records use Supabase. Photos are resized in
+          your browser before upload. Avoid uploading client documents, confidential information,
+          or photos you do not have permission to use.
+        </p>
+        <p>
+          You can remove individual photos and details and save your changes, or use
+          <strong> Delete profile</strong> in the profile editor to remove the profile and its saved
+          badge copies. Deleting a profile does not delete your login, original training results,
+          coaching records, or transaction records. Those have separate purposes and can be included
+          in a broader deletion request to our privacy contact.
+        </p>
+        <p>
+          Profile content is kept while you choose to maintain the profile; it has no automatic
+          expiration and is not subject to the seven-year contact-record period below. If you leave
+          a team, the stored profile does not automatically disappear. Delete it before leaving or
+          contact us to request removal, including if you can no longer sign in. On deletion, we remove
+          profile content from active storage and retain a minimal account-linked deletion marker
+          to prevent automatic recreation of profile badges. Distributed storage may take time to
+          reflect a deletion everywhere. Any copies retained for legal obligations or provider recovery
+          remain subject to access restrictions and are not used to publish a profile. We do not promise
+          immediate removal from every provider backup.
+        </p>
+        <p>
+          Signing in uses an essential session cookie. Profile previews marked as demos save changes
+          only in that browser; the demo also provides a Delete profile control. Demo storage does
+          not save changes to your actual agent account.
+        </p>
+
         <h2>How we use your information</h2>
         <ul>
           <li>To review your application and respond to your inquiry</li>
@@ -70,7 +117,7 @@ export default function Privacy() {
         <ul>
           <li>
             <strong>Service providers</strong> who help us operate the business — Cloudflare
-            (hosting and privacy-friendly analytics), Supabase (database), Resend (transactional
+            (hosting, profile storage, and privacy-friendly analytics), Supabase (database), Resend (transactional
             email), Twilio (text-message delivery for platform users who opted in), Calendly
             (scheduling), and Stripe (payment processing for clients). These providers are
             contractually obligated to protect your data.
