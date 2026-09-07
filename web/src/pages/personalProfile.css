@@ -124,11 +124,11 @@
 .pp-editing.personal-profile .pp-badges{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:650px){.personal-profile .pp-badges{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 14px}.pp-award-art{width:116px;height:128px}.personal-profile .pp-badge h4{font-size:13px}.personal-profile .pp-badge p{font-size:10px}.personal-profile .pp-section-achievements{padding-top:24px}}
 @media(prefers-reduced-motion:no-preference){.pp-award-art{transition:transform .22s ease,filter .22s ease}.pp-badge:hover .pp-award-art{transform:translateY(-4px);filter:drop-shadow(0 10px 6px #16271f30)}}
-.personal-profile .pp-cover-photo{height:190px}
+.personal-profile .pp-page .pp-cover-photo{height:130px}
 .personal-profile .pp-identity{padding-top:32px;padding-bottom:32px}
 .personal-profile .pp-portrait{height:170px;width:140px;justify-self:end}
 .personal-profile .pp-portrait-initials{height:140px}
-@media(max-width:650px){.personal-profile .pp-cover-photo{height:140px}.personal-profile .pp-portrait{justify-self:start;width:96px;height:116px}.personal-profile .pp-portrait-initials{width:64px;height:64px}}
+@media(max-width:650px){.personal-profile .pp-page .pp-cover-photo{height:100px}.personal-profile .pp-portrait{justify-self:start;width:96px;height:116px}.personal-profile .pp-portrait-initials{width:64px;height:64px}}
 /* Portrait rail keeps personal interests alongside the profile. */
 .personal-profile .pp-page{display:grid;grid-template-columns:minmax(0,1fr) 230px;column-gap:40px}
 .personal-profile .pp-cover{grid-column:1/-1;grid-row:1}
@@ -172,13 +172,15 @@
 }
 @media(prefers-reduced-motion:no-preference){.pp-interest-icon{transition:transform .2s ease}.pp-interest-pin:hover .pp-interest-icon{transform:rotate(0deg) translateY(-2px)}}
 /* Plated interest emblems replace the pastel outline tiles. */
-.pp-interest-icon,.pp-editing.personal-profile .pp-interest-icon{width:72px;height:72px;background:none;border:0;border-radius:0;box-shadow:none;transform:none;filter:drop-shadow(0 3px 2px #17211c35)}
+.personal-profile .pp-personal-rail .pp-interest-icon{width:88px;height:88px;background:none;border:0;border-radius:0;box-shadow:none;transform:none;filter:drop-shadow(0 3px 2px #17211c35)}
 .pp-interest-pin:nth-child(even) .pp-interest-icon{transform:none}
 .pp-interest-icon .pp-plated-emblem{width:100%;height:100%;fill:initial;stroke:none}
-.pp-interest-pin-seahawks .pp-interest-icon{border-radius:50%;background:linear-gradient(145deg,#284663,#0c1727);border:3px solid #b9c1ba;box-shadow:inset 0 0 0 2px #111e2b}
-.pp-interest-pin-seahawks .pp-interest-icon img{width:60px;height:60px}
+.personal-profile .pp-personal-rail .pp-interest-pin-seahawks .pp-interest-icon{border-radius:50%;background:linear-gradient(145deg,#284663,#0c1727);border:3px solid #b9c1ba;box-shadow:inset 0 0 0 2px #111e2b}
+.pp-personal-rail .pp-interest-pin-seahawks .pp-interest-icon img{width:72px;height:72px}
 .pp-editor .pp-interest-icon{width:46px;height:46px;filter:none;border-radius:0;background:none}
 .pp-editor .pp-interest-icon .pp-plated-emblem{width:46px;height:46px}
 .pp-editor .pp-interest-pin-seahawks .pp-interest-icon{border-radius:50%;background:#142a40}
 .pp-editor .pp-interest-pin-seahawks .pp-interest-icon img{width:36px;height:36px}
-@media(max-width:650px){.pp-interest-icon,.pp-editing.personal-profile .pp-interest-icon{width:66px;height:66px}.pp-interest-pin-seahawks .pp-interest-icon img{width:52px;height:52px}}
+@media(max-width:650px){.personal-profile .pp-personal-rail .pp-interest-icon{width:76px;height:76px}.pp-personal-rail .pp-interest-pin-seahawks .pp-interest-icon img{width:62px;height:62px}}
+
+@media(min-width:1051px){.pp-editing.personal-profile .pp-personal-rail .pp-interest-icon{width:70px;height:70px}.pp-editing.personal-profile .pp-personal-rail .pp-interest-icon img{width:56px;height:56px}}
