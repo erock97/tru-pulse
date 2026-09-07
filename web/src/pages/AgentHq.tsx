@@ -1,3 +1,4 @@
+import { workshopDay } from '../workshops/types';
 import { useEffect, useMemo, useState } from 'react';
 import { RepWorkshopLibrary } from '../components/RepWorkshopLibrary';
 import {
@@ -314,10 +315,13 @@ function TrainingTab({
   mods: CourseModule[];
   onOpen: (m: CourseModule) => void;
 }) {
-  const bay = trainingBay(mods);
+  const bay = trainingBay(mods.filter(m=>!workshopDay(m))).filter(section=>section.modules.length>0);
   return (
     <div className="ah-bay">
-      <RepWorkshopLibrary />
+      <RepWorkshopLibrary entries={mods.flatMap(m=>{
+        const day=workshopDay(m);
+        return day && day<=3 ? [{day,onOpen:()=>onOpen(m),disabled:!canOpenModule(m),status:m.status==='passed'?`Passed${m.score!=null?` · ${m.score}%`:''}`:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];
+      })} />
       {bay.map((section) => (
         <section key={section.label} className="ah-section">
           <h2>{section.label}</h2>
