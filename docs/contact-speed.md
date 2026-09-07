@@ -17,3 +17,7 @@ Importer: validate any incoming file with calculateContactSpeed before storing t
 ## Pending upstream coaching work
 
 The separate rolling Hermes handoff in the workspace contains Eric's critical pre-qualification, response-context, channel-selection, missing-record and skills requirements. This PR restores existing narrative opportunities ahead of isolated actions; it does not rewrite or semantically validate source coaching recommendations. Report-source contracts must still be updated on the laptop.
+
+## September 7 collection repair
+
+`tools/contact-collection` now retrieves and paginates the authenticated Costigan timeline, including `InboxAppMessage` records identified as Zillow Messages. It refreshes the existing pilot cohort, validates ownership, retains source timestamps and delivery status, and normalizes through `shared/contactCollection.ts`. Public API timeline access returned 403 during verification; ordinary textMessages returned no Zillow messages. This manual collector does not establish continuous refresh or all-team rollout. See the collector README for the reviewed-coverage and atomic replacement procedure.

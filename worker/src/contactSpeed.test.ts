@@ -13,3 +13,6 @@ describe('contact speed evidence',()=>{
  it('uses strict above-30 percent threshold without asserting consistency',()=>{const ls=Array.from({length:10},(_,i)=>{const l=lead(String(i));l.events=[event('first', '2026-08-03T00:01:00Z',i<3?'sms':'call')];return l;});let a=calculateContactSpeed(snapshot(ls)).agents[0];expect(a.skill.textPercent).toBe(30);expect(a.skill.aboveThreshold).toBe(false);ls[3].events[0].channel='sms';a=calculateContactSpeed(snapshot(ls)).agents[0];expect(a.skill.aboveThreshold).toBe(true);expect(a.skill.consistency).toBe('observed_behavior');});
 });
 
+
+// Collection must feed the same calculation used by the live report.
+it('counts a verified Zillow reply before a later call',()=>{const l=lead();l.events=[event('zillow','2026-08-03T00:02:00Z','zillow_message'),event('call','2026-08-03T00:05:00Z','call')];const a=calculateContactSpeed(snapshot([l])).agents[0];expect(a.averageSeconds).toBe(120);expect(a.results[0].first?.channel).toBe('zillow_message');expect(a.skill.textFirst).toBe(1);});
