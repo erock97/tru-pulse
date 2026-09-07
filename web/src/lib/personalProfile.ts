@@ -2,15 +2,33 @@ import { DEFAULT_PROFILE, validateProfile, type PersonalProfile, type ProfileBad
 import { isDemo, workerFetch } from './api';
 
 export type ProfileRecord = { profile: PersonalProfile; updatedAt: string | null; badges: ProfileBadge[]; badgeNotice?: string };
-const DELETED_DEMO_KEY = 'tru-profile-demo-deleted';
-const DEMO_KEY = 'tru-personal-profile-demo-v1';
+const completeDemo = isDemo && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('profileExample') === 'complete';
+const DELETED_DEMO_KEY = completeDemo ? 'tru-profile-example-deleted-v1' : 'tru-profile-demo-deleted';
+const DEMO_KEY = completeDemo ? 'tru-profile-example-v1' : 'tru-personal-profile-demo-v1';
 const demoProfile: PersonalProfile = { ...DEFAULT_PROFILE, headline: 'Portland agent, weekend hiker, enthusiastic home cook.', bio: 'I’m Jordan. I help people find their place in the Pacific Northwest.\n\nAway from work, I’m usually on a trail, trying a new coffee shop, or making dinner for a house full of friends.', location: 'Portland, Oregon', markets: 'Portland · Beaverton · Lake Oswego', careerStart: '2021', goal: 'Help five first-time buyers get the keys to their own home this year.', favorite: 'A slow Sunday morning, with nowhere to be.', interests: ['Hiking', 'Coffee', 'Cooking', 'Live music', 'Architecture'], font: 'editorial' };
+async function photoDemo(): Promise<PersonalProfile> {
+  const images = await Promise.all(['portrait', 'gorge', 'trail', 'dinner'].map(async name => {
+    const response = await fetch(`/profile-demo/${name}.jpg`);
+    if (!response.ok) throw Error('The sample photos could not be loaded. Please try again.');
+    const file = new File([await response.blob()], `${name}.jpg`, {type: 'image/jpeg'});
+    return prepareProfilePhoto(file, name === 'portrait' ? 480 : 1000);
+  }));
+  return validateProfile({...demoProfile,
+    headline: 'Portland is home. There’s usually a hike planned for Saturday.',
+    bio: 'I moved to Portland for a job and stayed for the neighborhoods. I’ve worked in real estate since 2021, mostly with people buying their first place. I like explaining the parts of the process that nobody explained to me.\n\nOutside work, I cook for friends, see live music when I can, and spend a lot of weekends on muddy trails. Send me a good pasta recipe and I’ll probably try it.',
+    favorite: 'Coffee on the porch before the rest of the house wakes up.',
+    portrait: images[0], cover: images[1], coverPosition: 55,
+    gallery: [{image: images[2], caption: 'Saturday mornings, rain or shine.'}, {image: images[3], caption: 'The recipe I keep coming back to.'}],
+    sectionTitles: {gallery: 'Away from work'},
+    sections: ['about', 'gallery', 'interests', 'goals', 'achievements'],
+  });
+}
 export async function readPersonalProfile(): Promise<ProfileRecord> {
   if (isDemo) {
     if(localStorage.getItem(DELETED_DEMO_KEY))return {profile:structuredClone(DEFAULT_PROFILE),updatedAt:null,badges:[]};
     const raw = localStorage.getItem(DEMO_KEY);
     const saved = raw ? JSON.parse(raw) : null;
-    return { profile: saved ? validateProfile(saved.profile) : structuredClone(demoProfile), updatedAt: saved?.updatedAt ?? null, badges: [{ id: 'sample-training', kind: 'training', title: 'Welcome to Preferred', detail: 'Sample training badge', verifiedAt: '' }, { id: 'sample-contract', kind: 'contract', title: 'First contract', detail: 'Sample contract badge', verifiedAt: '' }] };
+    return { profile: saved ? validateProfile(saved.profile) : (completeDemo ? await photoDemo() : structuredClone(demoProfile)), updatedAt: saved?.updatedAt ?? (completeDemo ? '2026-09-07T00:00:00Z' : null), badges: [{ id: 'sample-training', kind: 'training', title: 'Welcome to Preferred', detail: 'Sample training badge', verifiedAt: '' }, { id: 'sample-contract', kind: 'contract', title: 'First contract', detail: 'Sample contract badge', verifiedAt: '' }] };
   }
   const response = await workerFetch('/data/personal-profile');
   const body = await response.json();
