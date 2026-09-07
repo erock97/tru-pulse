@@ -1104,6 +1104,7 @@ export async function adminConnectFub(teamId: string, fubKey: string): Promise<{
 }
 
 export interface LeadRow {
+  source?: string | null;
   history?: Record<string, {eventId:string|number;date:string;description:string;kind:string;basis:string;direction:string}|null>;
   team_id: string;
   assigned_to: string | null;
@@ -1204,7 +1205,7 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
     if(!history.ok)throw new Error('Historical evidence could not be loaded. Refresh to retry.');
     const {snapshot}=await history.json() as {snapshot:(NonNullable<DashboardData['historyInfo']>&{leads:LeadRow[];stageLog:StageLogRow[];teamId:string;account:string})|null};
     if(snapshot){
-      const merged=mergeDashboardHistory(snapshot.leads,d.leads,snapshot.stageLog,d.stageLog||[],new Set(snapshot.leads.map(l=>l.team_id).concat(snapshot.teamId)));
+      const merged=mergeDashboardHistory(snapshot.leads,d.leads,snapshot.stageLog,d.stageLog||[],new Set(snapshot.leads.map(l=>l.team_id).concat(snapshot.teamId)),snapshot.sourceStarts);
       d.leads=merged.leads;d.stageLog=merged.stageLog;
       d.historyInfo={through:snapshot.through,capturedAt:snapshot.capturedAt,sourceStarts:snapshot.sourceStarts,rosterPolicy:snapshot.rosterPolicy};
       d.teams=d.teams.map(t=>t.id===snapshot.teamId?{...t,fub_subdomain:snapshot.account}:t);

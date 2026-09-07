@@ -43,6 +43,12 @@ async function decryptTeamKey(env: Env, database: Db, teamId: string): Promise<s
 // this is the ONE place that turns them into 'leads' rows + stage-log hits, so the
 // two paths can never classify the same lead differently.
 export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey: string, people: any[]) {
+  if(!team.fub_subdomain&&_env.TIMELINES){
+    const sub=await detectSubdomain(fubKey);
+    if(!sub)throw Error('FUB account domain unavailable');
+    await database.update('teams',`id=eq.${team.id}`,{fub_subdomain:sub});
+    team={...team,fub_subdomain:sub};
+  }
   // Keep only tracked paid sources.
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
   if(_env.ASSIGNMENTS){
@@ -293,7 +299,7 @@ export async function syncTeam(env: Env, database: Db, team: TeamRow, _windowDay
   // 2. Backfill the subdomain if we don't have it (for per-record FUB links).
   if (!team.fub_subdomain) {
     const sub = await detectSubdomain(fubKey);
-    if (sub) await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });
+    if (sub) {await database.update('teams', `id=eq.${team.id}`, { fub_subdomain: sub });team={...team,fub_subdomain:sub};}
   }
 
   // 3. Pull ALL people (no created-date window — that hid every closed deal) and run

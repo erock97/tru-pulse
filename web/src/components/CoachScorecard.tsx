@@ -43,7 +43,7 @@ export function CoachScorecard({ name }: { name: string }) {
       <div><dt>Raw conversion<small>Under contract or closed · counted once per lead</small></dt>
         <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · available history` : 'Available lead history'}</small></dd></div>
     </dl>
-    {data.historyInfo && <p className="coach-scorecard-note">Verified history through {data.historyInfo.through}. Activity after that date is not included.</p>}
+    {data.historyInfo && <p className="coach-scorecard-note">Historical baseline through {data.historyInfo.through}. New leads and recorded stage changes update automatically.</p>}
     {data.err && <p role="alert" className="coach-scorecard-note">Performance could not be loaded. Open Pulse to retry.</p>}
     {row && <PulseProof row={row} leads={data.proof.get(norm(name)) ?? []} teams={data.teams} />}
     <details className="coach-intake-proof"><summary>How intake is counted</summary>

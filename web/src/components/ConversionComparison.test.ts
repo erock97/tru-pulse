@@ -10,7 +10,8 @@ describe('overall conversion comparison',()=>{
    const html=renderToStaticMarkup(createElement(ConversionComparison,{current:{leads:120,contracts:5,perContract:24},period,through:'2026-09-05'}));
    expect(html).toContain('1 in 24');
    expect(html).toContain('1 in 24');
-   expect(html).toContain('through 2026-09-05');
+   expect(html).toContain('Latest overall');
+   expect(html).not.toContain('through 2026-09-05');
    expect(html).toContain('Historical comparison unavailable');
   }
  });

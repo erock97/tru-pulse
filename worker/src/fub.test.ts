@@ -3,7 +3,7 @@
 // cursor pagination, the retry/backoff contract, the cursor walk + window stop, and
 // the per-person contact counts the "worked" rule is built on.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fubGetUrl, pullPeople, countOutgoingTexts, countCalls, pullPonds } from './fub.js';
+import { detectSubdomain, fubGetUrl, pullPeople, countOutgoingTexts, countCalls, pullPonds } from './fub.js';
 
 const KEY = 'fka_test_key';
 
@@ -164,3 +164,5 @@ describe('per-person contact counts (the "worked" rule inputs)', () => {
     expect(await countCalls(KEY, 42)).toBe(0);
   });
 });
+
+it('detects the bare account domain returned by FUB identity',async()=>{stubFetch(()=>jsonResponse({account:{domain:'compass627'}}));expect(await detectSubdomain(KEY)).toBe('compass627');});
