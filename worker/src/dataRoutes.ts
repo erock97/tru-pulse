@@ -20,7 +20,7 @@ import { hustleFeed, HUSTLE_TEAM_BY_DOMAIN } from './hustleFeed.js';
 // tenant's row, but a malformed one could still override `select`.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const LEAD_COLS = 'team_id,assigned_to,flag,source_family,name,stage,fub_person_id,fub_created,pond';
+const LEAD_COLS = 'team_id,assigned_to,flag,source,source_family,name,stage,fub_person_id,fub_created,pond';
 const STAGE_LOG_COLS = 'fub_person_id,stage_class,changed_at,date_source,agent_user_id,agent_name,team_id';
 const SETTINGS_COLS =
   'org_id,avg_gci,close_rate,window_hours,strike_limit,per_agent_capacity,sources,' +

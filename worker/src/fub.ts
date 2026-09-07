@@ -245,6 +245,8 @@ export async function registerWebhooks(
 }
 
 function subdomainFrom(body: any): string | null {
+  const domain=body?.account?.domain;
+  if(typeof domain==='string'&&/^[a-z0-9][a-z0-9-]*$/i.test(domain)&&!['api','www','app','docs','help','login'].includes(domain.toLowerCase()))return domain.toLowerCase();
   const found: string[] = [];
   const walk = (o: any) => {
     if (o && typeof o === 'object') {

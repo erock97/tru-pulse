@@ -11,3 +11,10 @@ it('adds a new live contract without inventing a date from a seed or leaking oth
  const r=mergeDashboardHistory([lead],[{...lead,team_id:'other'}],[],[log],new Set(['t']));expect(r.leads).toHaveLength(1);expect(r.leads[0].history?.uc?.date).toBe(log.changed_at);
  const seed=mergeDashboardHistory([lead],[],[],[{...log,date_source:'seed'}],new Set(['t']));expect(seed.leads[0].history?.uc).toBeNull();
 });
+
+it('preserves exact source scope and excludes older or unrelated live leads',()=>{
+ const scoped={...lead,source_family:'Zillow Preferred',fub_created:'2026-03-01T12:00:00Z'};
+ const live=[{...scoped,source:'Zillow Preferred',source_family:'Zillow',name:'Updated'},{...scoped,fub_person_id:2,source:'Facebook'},{...scoped,fub_person_id:3,source:'Zillow Preferred',fub_created:'2025-01-01T00:00:00Z'},{...scoped,fub_person_id:4,source:'Zillow Preferred'}];
+ const r=mergeDashboardHistory([scoped],live,[],[],new Set(['t']),{'Zillow Preferred':'2026-01-01'});
+ expect(r.leads.map(l=>l.fub_person_id)).toEqual([1,4]);expect(r.leads[0].source_family).toBe('Zillow Preferred');
+});
