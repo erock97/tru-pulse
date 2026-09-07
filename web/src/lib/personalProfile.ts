@@ -28,7 +28,7 @@ export async function readPersonalProfile(): Promise<ProfileRecord> {
     if(localStorage.getItem(DELETED_DEMO_KEY))return {profile:structuredClone(DEFAULT_PROFILE),updatedAt:null,badges:[]};
     const raw = localStorage.getItem(DEMO_KEY);
     const saved = raw ? JSON.parse(raw) : null;
-    return { profile: saved ? validateProfile(saved.profile) : (completeDemo ? await photoDemo() : structuredClone(demoProfile)), updatedAt: saved?.updatedAt ?? (completeDemo ? '2026-09-07T00:00:00Z' : null), badges: [{ id: 'sample-training', kind: 'training', title: 'Welcome to Preferred', detail: 'Sample training badge', verifiedAt: '' }, { id: 'sample-contract', kind: 'contract', title: 'First contract', detail: 'Sample contract badge', verifiedAt: '' }] };
+    return { profile: saved ? validateProfile(saved.profile) : (completeDemo ? await photoDemo() : structuredClone(demoProfile)), updatedAt: saved?.updatedAt ?? (completeDemo ? '2026-09-07T00:00:00Z' : null), badges: [...(completeDemo ? [{ id: 'training:day4', kind: 'training' as const, title: 'Zillow Home Loans', detail: 'Sample training badge', verifiedAt: '' }, { id: 'contracts:10', kind: 'contract' as const, title: '10 recorded contracts', detail: 'Sample contract milestone', verifiedAt: '' }] : []), { id: 'sample-training', kind: 'training', title: 'Welcome to Preferred', detail: 'Sample training badge', verifiedAt: '' }, { id: 'sample-contract', kind: 'contract', title: 'First contract', detail: 'Sample contract badge', verifiedAt: '' }] };
   }
   const response = await workerFetch('/data/personal-profile');
   const body = await response.json();
