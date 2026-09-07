@@ -764,9 +764,11 @@ export async function setQuarter(agentId: string, quarter: string): Promise<Goal
   return saveGoalFields(agentId, { quarter });
 }
 export async function toggleCommitment(id: string, done: boolean): Promise<void> {
-  await workerFetch('/data/coach/commitment', {
+  if(isDemo)return;
+  const res=await workerFetch('/data/coach/commitment', {
     method: 'POST', body: JSON.stringify({ action: 'toggle', id, fields: { done } }),
   });
+  if(!res.ok)throw Error('Could not update this commitment.');
 }
 
 /** Agent ticks a 1:1 commitment (checkin_items). Own-row RLS must allow the update. */
@@ -820,8 +822,9 @@ export async function deleteCommitment(id: string): Promise<void> {
 }
 
 export async function loadCommitments(agentId: string): Promise<Commitment[]> {
+  if(isDemo)return [];
   const res = await workerFetch(`/data/coach/commitments?agentId=${encodeURIComponent(agentId)}`);
-  if (!res.ok) return [];
+  if (!res.ok) throw Error('Could not load commitments.');
   return ((await res.json()) as { commitments: Commitment[] | null }).commitments ?? [];
 }
 
@@ -1221,7 +1224,7 @@ export async function loadMyOneOnOnes(agentId: string): Promise<MyOneOnOne[]> {
   // AGENT-SAFE: a route that never names checkin_leader at all, so the agent recap
   // cannot pull the leader's private note even if a policy is loosened later.
   const res = await workerFetch(`/data/coach/my-one-on-ones?agentId=${encodeURIComponent(agentId)}`);
-  if (!res.ok) return [];
+  if (!res.ok) throw Error('Could not load your 1:1 commitments.');
   const payload = (await res.json()) as { checkins: Checkin[] | null; items: CheckinItemRow[] | null };
   const base = payload.checkins ?? [];
   if (base.length === 0) return [];

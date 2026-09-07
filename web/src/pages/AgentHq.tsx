@@ -1,3 +1,4 @@
+import CoachingAssignments from '../components/CoachingAssignments';
 import PersonalProfile from './PersonalProfile';
 import { workshopDay } from '../workshops/types';
 import { useEffect, useMemo, useState } from 'react';
@@ -7,11 +8,8 @@ import {
 } from '../lib/api';
 import {
   AGENT_COACH_HEADINGS,
-  AGENT_HQ_EMPTY,
   agentCoachCopy,
-  attentionItems,
   canOpenModule,
-  isZillowOnboarding,
   parseAgentHqTab,
   trainingBay,
   type AgentHqTab,
@@ -51,6 +49,8 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
     return () => window.removeEventListener('hashchange', on);
   }, [profileDirty, route]);
   const tab = parseAgentHqTab(route);
+  const [loadError,setLoadError]=useState('');
+  const [commitmentError,setCommitmentError]=useState('');
   const [mods, setMods] = useState<CourseModule[] | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [assessed, setAssessed] = useState(false);
@@ -66,17 +66,20 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
   useEffect(refreshSms, []);
 
   const refresh = () => {
-    void loadCourse(agent.id).then(setMods);
-    void loadOwnProfile(agent.id).then((r) => { setProfile(r.profile); setAssessed(r.assessed); });
-    void loadMyOneOnOnes(agent.id).then(setOneOnOnes).catch(() => setOneOnOnes([]));
-    void loadCommitments(agent.id).then(setCommitments).catch(() => setCommitments([]));
+    setLoadError('');
+    void Promise.all([
+      loadCourse(agent.id).then(setMods),
+      loadOwnProfile(agent.id).then(r=>{setProfile(r.profile);setAssessed(r.assessed);}),
+      loadMyOneOnOnes(agent.id).then(setOneOnOnes),
+      loadCommitments(agent.id).then(setCommitments),
+    ]).catch(()=>setLoadError('Some of your training or coaching information could not be loaded.'));
   };
   useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [agent.id]);
 
   const firstName = agent.name.split(' ')[0] || 'there';
   const active = useMemo(() => mods?.find((m) => m.id === activeId) ?? null, [mods, activeId]);
 
-  const closePlayer = () => { setActiveId(null); setPlayer('lesson'); setGrade(null); void loadCourse(agent.id).then(setMods); };
+  const closePlayer = () => { setActiveId(null); setPlayer('lesson'); setGrade(null); void loadCourse(agent.id).then(setMods).catch(()=>setLoadError('Training could not be refreshed.')); };
 
   if (active && tab === 'training') {
     if (player === 'quiz') {
@@ -85,7 +88,7 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
           key={active.id}
           module={active}
           onExit={() => setPlayer('lesson')}
-          onGraded={(r) => { setGrade(r); setPlayer('result'); void loadCourse(agent.id).then(setMods); }}
+          onGraded={(r) => { setGrade(r); setPlayer('result'); void loadCourse(agent.id).then(setMods).catch(()=>setLoadError('Training could not be refreshed.')); }}
         />
       );
     }
@@ -115,13 +118,8 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
     ...oneOnOnes.flatMap((oo) => oo.commitments.filter((c) => !c.status).map((c) => ({ id: c.id, text: c.body, kind: 'item' as const }))),
     ...commitments.filter((c) => !c.done).map((c) => ({ id: c.id, text: c.text, kind: 'sheet' as const })),
   ];
-  const unfinishedZillow = (mods ?? [])
-    .filter((m) => isZillowOnboarding(m) && m.status !== 'passed')
-    .map((m) => ({ id: m.id, title: m.title }));
-  const items = attentionItems({ assessed, unfinishedZillow, openCommitments });
-
   const title = tab === 'profile' ? 'Your profile' : tab === 'coach' ? 'Your Coach' : tab === 'training' ? 'Training' : `Welcome back, ${firstName}.`;
-  const eyebrow = tab === 'profile' ? 'Personal profile' : tab === 'home' ? 'Needs your attention' : tab === 'coach' ? 'Personal to you' : 'The bay';
+  const eyebrow = tab === 'profile' ? 'Personal profile' : tab === 'home' ? 'Your HQ' : tab === 'coach' ? 'Personal to you' : 'The bay';
 
   return (
     <div className="tru-dark">
@@ -134,10 +132,14 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
       >
         <div className="ah-canvas">
           <div className="ah-ambient" aria-hidden />
+          {loadError&&tab!=='profile'&&<p className="ah-home-error" role="alert">{loadError}<button onClick={refresh}>Retry</button></p>}
           {tab === 'profile' && <PersonalProfile key={agent.id} name={agent.name} onDirtyChange={setProfileDirty} />}
           {tab === 'home' && (
             <HomeTab
-              items={items}
+              agentId={agent.id}
+              mods={mods}
+              commitments={openCommitments}
+              assessed={assessed}
               sms={sms}
               onSmsChanged={refreshSms}
               onGo={(t, moduleId) => {
@@ -146,20 +148,23 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
               }}
             />
           )}
-          {tab === 'coach' && (
+          {tab === 'coach' && (<>
+            <CoachingAssignments key={agent.id} agentId={agent.id} onOpen={id=>{goAgentTab('training');setPlayer('lesson');setActiveId(id);}}/>
+            {commitmentError&&<p role="alert" className="ah-home-error">{commitmentError}</p>}
             <CoachTab
               assessed={assessed}
               profile={profile}
               openCommitments={openCommitments}
               onToggle={async (id, kind, done) => {
+                setCommitmentError('');
                 try {
                   if (kind === 'item') await toggleCheckinCommitment(id, done);
                   else await toggleCommitment(id, done);
                   refresh();
-                } catch { /* stay on the list; the tick did not persist */ }
+                } catch { setCommitmentError('This commitment could not be saved. Please retry.'); }
               }}
             />
-          )}
+          </>)}
           {tab === 'training' && mods && (
             <TrainingTab
               mods={mods}
@@ -173,59 +178,22 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
   );
 }
 
-function HomeTab({
-  items,
-  sms,
-  onSmsChanged,
-  onGo,
-}: {
-  items: ReturnType<typeof attentionItems>;
-  sms: AgentSms | null;
-  onSmsChanged: () => void;
-  onGo: (tab: AgentHqTab, moduleId?: string) => void;
-}) {
-  // The text-message card renders on BOTH paths below, deliberately. An agent
-  // whose queue is clear is exactly the one most likely to come here looking for
-  // the switch, and hiding it behind having outstanding work would mean the only
-  // way to stop messages is to reply STOP to one — which someone who has deleted
-  // the thread cannot do.
-  const smsCard = sms ? (
-    <section className="ah-section sms-card">
-      <h2 className="sms-card-h">Text messages</h2>
-      <SmsConsent sms={sms} onSaved={onSmsChanged} />
-    </section>
-  ) : null;
-
-  if (items.length === 0) {
-    return (
-      <>
-        <section className="ah-empty">
-          <div className="ah-empty-ey">All clear</div>
-          <h2>{AGENT_HQ_EMPTY}</h2>
-        </section>
-        {smsCard}
-      </>
-    );
-  }
-  return (
-    <>
-      <section className="ah-attn">
-        {items.map((item, i) => (
-          <button
-            key={item.key}
-            className="ah-card"
-            style={{ animationDelay: `${0.06 * i}s` }}
-            onClick={() => onGo(item.tab, item.key.startsWith('training-') ? item.key.slice('training-'.length) : undefined)}
-          >
-            <span className="ah-card-ey">{item.tab === 'training' ? 'Training' : 'Coach'}</span>
-            <span className="ah-card-title">{item.title}</span>
-            <span className="ah-card-detail">{item.detail}</span>
-          </button>
-        ))}
-      </section>
-      {smsCard}
-    </>
-  );
+function HomeTab({agentId,mods,commitments,assessed,sms,onSmsChanged,onGo}:{
+ agentId:string;mods:CourseModule[]|null;commitments:{id:string;text:string}[];assessed:boolean;
+ sms:AgentSms|null;onSmsChanged:()=>void;onGo:(tab:AgentHqTab,moduleId?:string)=>void;
+}){
+ const next=mods?.filter(m=>m.status!=='passed'&&canOpenModule(m)).sort((a,b)=>a.idx-b.idx)[0];
+ const recent=mods?.filter(m=>m.status==='passed').sort((a,b)=>(b.passed_at??'').localeCompare(a.passed_at??''))[0];
+ return <div className="ah-home-next">
+  <CoachingAssignments key={agentId} agentId={agentId} compact onOpen={id=>onGo('training',id)}/>
+  <div className="ah-next-grid">
+   <section className="ah-next-section"><h2>Continue training</h2>{mods===null?<p>Loading training…</p>:next?<><h3>{next.title}</h3><p>{next.summary}</p><button className="ah-btn" onClick={()=>onGo('training',next.id)}>Open training →</button></>:<><h3>You’re up to date.</h3><p>Return to a lesson whenever you need a refresher.</p><button className="ah-btn" onClick={()=>onGo('training')}>Browse training</button></>}</section>
+   <section className="ah-next-section"><h2>Recent accomplishment</h2>{recent?<><span className="ah-recent-mark" aria-hidden>✦</span><h3>{recent.title}</h3><p>Training passed{recent.passed_at?` · ${new Date(recent.passed_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`:''}</p><button className="ah-btn" onClick={()=>onGo('profile')}>View your profile</button></>:<><h3>No training passed yet.</h3><p>When you pass a training, you’ll see it here and earn a badge on your profile.</p><button className="ah-btn" onClick={()=>onGo('profile')}>View your profile</button></>}</section>
+   <section className="ah-next-section"><h2>Agreed at your 1:1</h2>{commitments.length?<ul className="ah-next-checks">{commitments.slice(0,2).map(c=><li key={c.id}>{c.text}</li>)}</ul>:<p>No open commitments from your 1:1 notes.</p>}<button className="ah-btn" onClick={()=>onGo('coach')}>Open Coach{commitments.length>2?` · ${commitments.length} commitments`:''}</button></section>
+   {!assessed&&<section className="ah-next-section"><h2>Before your next coaching meeting</h2><h3>Complete your assessment.</h3><p>Give your coach a better understanding of how you work.</p><button className="ah-btn" onClick={()=>{window.location.hash='/assess?self=1';}}>Take assessment</button></section>}
+  </div>
+  {sms&&<section className="ah-section sms-card"><h2 className="sms-card-h">Text messages</h2><SmsConsent sms={sms} onSaved={onSmsChanged}/></section>}
+ </div>;
 }
 
 function CoachTab({
@@ -239,16 +207,17 @@ function CoachTab({
   openCommitments: { id: string; text: string; kind: 'item' | 'sheet' }[];
   onToggle: (id: string, kind: 'item' | 'sheet', done: boolean) => Promise<void>;
 }) {
+  const commitmentList=<section className="ah-block ah-commitments-first"><h3>Your commitments</h3>{openCommitments.length===0?<p className="ah-muted">No open commitments from your 1:1 notes.</p>:<ul className="ah-checks">{openCommitments.map(c=><li key={c.id}><label><input type="checkbox" checked={false} onChange={()=>{void onToggle(c.id,c.kind,true);}}/><span>{c.text}</span></label></li>)}</ul>}</section>;
   if (!assessed || !profile) {
     return (
-      <section className="ah-cta">
+      <>{commitmentList}<section className="ah-cta">
         <div className="ah-empty-ey">Your Coach</div>
         <h2>Start with who you are.</h2>
         <p>Two short parts — you as a person, then how you work. When you finish, you land back here.</p>
         <button className="ah-btn" onClick={() => { window.location.hash = '/assess?self=1'; }}>
           Take your assessment
         </button>
-      </section>
+      </section></>
     );
   }
 
@@ -258,6 +227,7 @@ function CoachTab({
 
   return (
     <div className="ah-coach">
+      {commitmentList}
       <section className="ah-hero">
         <div className="ah-empty-ey">How you work</div>
         <h2>{arch?.emoji} {profile.archName}</h2>
@@ -293,26 +263,7 @@ function CoachTab({
         </>
       )}
 
-      <section className="ah-block">
-        <h3>Your commitments</h3>
-        {openCommitments.length === 0 ? (
-          <p className="ah-muted">Nothing open. When your next 1:1 sets one, it lands here.</p>
-        ) : (
-          <ul className="ah-checks">
-            {openCommitments.map((c) => (
-              <li key={c.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    onChange={(e) => { void onToggle(c.id, c.kind, e.target.checked); }}
-                  />
-                  <span>{c.text}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+
     </div>
   );
 }
