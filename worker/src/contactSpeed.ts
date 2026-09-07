@@ -19,6 +19,11 @@ export function calculateContactSpeed(snapshot:ContactSnapshot):ContactReport {
     else if(lead.historyComplete && valid.length && !relevant.some(e=>e.personal===null || e.agentId!==lead.agentId || !e.timeVerified || !Number.isFinite(ms(e.at)) || ms(e.at)<ms(lead.createdAt))){
       result={...result,status:'measured',first:valid[0],seconds:(ms(valid[0].at)-ms(lead.createdAt))/1000,reason:'First verified personal call or message in the reviewed history, measured from CRM creation.'};
     }
+    // Verified outreach is useful even when an earlier unrecorded interaction cannot be ruled out.
+    // This is an upper bound, never an exact-first-response sample for averages or channel coaching.
+    if(result.status!=='measured' && valid.length){
+      result={...result,status:'response_recorded',first:valid[0],seconds:(ms(valid[0].at)-ms(lead.createdAt))/1000,reason:'Personal outreach is verified by this time. Earlier contact cannot be ruled out; excluded from first-contact averages and call-first scoring.'};
+    }
     const rows=groups.get(lead.agentId)||[];rows.push(result);groups.set(lead.agentId,rows);
   }
   return {from:snapshot.from,through:snapshot.through,capturedAt:snapshot.capturedAt,agents:[...groups].map(([agentId,results])=>{

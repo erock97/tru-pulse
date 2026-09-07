@@ -16,7 +16,7 @@ export interface ContactSnapshot {
   leads: ContactLead[];
 }
 export interface ContactResult {
-  lead: ContactLead; status: 'measured'|'missing_record'|'connection'|'unknown';
+  lead: ContactLead; status: 'measured'|'response_recorded'|'missing_record'|'connection'|'unknown';
   seconds: number|null; first: ContactEvent|null; reason: string;
 }
 export interface ContactAgentResult {
