@@ -419,8 +419,11 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </div>
 
-          <RepWorkshopLibrary presenter />
-          <details className="rep-curriculum"><summary>Curriculum & team progress · {modules.length} modules · {totalQuestions} questions</summary>
+          <RepWorkshopLibrary presenter entries={journey.flatMap(({m,openable})=>{
+            const day=workshopDay(m);
+            return day && day<=3 ? [{day,onOpen:()=>openPreview(m),disabled:!openable,status:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];
+          })} />
+          <details className="rep-curriculum"><summary>Certification & team progress · {modules.length} modules · {totalQuestions} questions</summary>
           <section className="dk-bento rp-bento-deck">
             {/* The track. Distance is progress, not rate and not time — see
                 components/repViz.tsx for why this page is the one that is not
@@ -456,12 +459,14 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
 
 
 
-          {/* ============ MODULE JOURNEY — the REAL curriculum ============ */}
+          </details>
+          {journey.some(({m})=>!workshopDay(m)) && <>
+          {/* Additional modules retain their existing preview and quiz flow. */}
           <section className="rp-journey reveal">
             <div className="rp-journey-head">
               <div className="panel-head" style={{ margin: 0 }}>
-                <h3>The certification journey</h3>
-                <span className="panel-sub">{modules.length} module{modules.length === 1 ? '' : 's'} · pass each quiz at its threshold</span>
+                <h3>Additional training</h3>
+                <span className="panel-sub">Pass each quiz at its threshold</span>
               </div>
               
             </div>
@@ -470,7 +475,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                 <line x1="20" y1="0" x2="20" y2="100" className="rp-rail-line" />
               </svg>
               <ol className="rp-steps">
-                {journey.map(({ m, openable, state }, i) => (
+                {journey.filter(({m})=>!workshopDay(m)).map(({ m, openable, state }, i) => (
                   <li
                     key={m.id}
                     className={`rp-step reveal state-${state}${openable ? ' is-open' : ''}`}
@@ -507,7 +512,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </section>
 
-          </details>
+          </>}
           <div className="rp-note" style={{ margin: '18px 2px 0' }}>
             <b>How it works:</b> hit <b>Invite</b> to send an agent their login. They set a password, take each module,
             and pass its quiz — their progress fills in above. Quizzes are graded server-side, so a pass is real.
