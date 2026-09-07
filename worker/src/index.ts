@@ -1,3 +1,4 @@
+export { AssignmentLedger } from './assignmentLedger.js';
 // TRU Pulse — sync Worker. Health / provision / manual sync, plus the cron that
 // keeps every tenant's flags fresh. Provision + sync accept EITHER an ops admin token
 // (Eric) OR a signed-in user's Supabase token (self-serve onboarding).
@@ -229,7 +230,7 @@ export default {
     }
 
     const dataResponse = await handleDataRoutes(
-      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''),
+      req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''), ctx,
     );
     if (dataResponse) return dataResponse;
 

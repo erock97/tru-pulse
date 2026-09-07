@@ -44,6 +44,11 @@ async function decryptTeamKey(env: Env, database: Db, teamId: string): Promise<s
 export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey: string, people: any[]) {
   // Keep only tracked paid sources.
   const inScope = people.filter((p) => sourceFamily(p.source) !== null);
+  if(_env.ASSIGNMENTS){
+    const ledger=_env.ASSIGNMENTS.get(_env.ASSIGNMENTS.idFromName(team.id));
+    const result=await ledger.fetch('https://assignments/observe',{method:'POST',body:JSON.stringify({people:inScope.map(p=>({id:p.id,name:p.name||[p.firstName,p.lastName].filter(Boolean).join(' '),assignedUserId:p.assignedUserId,assignedTo:p.assignedTo,assignedPondId:p.assignedPondId,created:p.created,updated:p.updated}))})});
+    if(!result.ok)throw Error('Assignment history capture failed');
+  }
   const ponds = await pullPonds(fubKey);
 
   // Stage-progression log — the reliable forward history (FUB exposes no stage
@@ -406,4 +411,13 @@ export async function syncAllActiveTeams(env: Env, database: Db, windowDays = 18
     }
   }
   return results;
+}
+
+/** Initialize assignment ownership from connected FUB without running contact analysis. */
+export async function initializeAssignments(env:Env,database:Db,team:TeamRow){
+ if(!env.ASSIGNMENTS)throw Error('Assignment ledger unavailable');
+ const key=await decryptTeamKey(env,database,team.id);
+ const people=(await pullPeople(key)).filter(p=>sourceFamily(p.source)!==null);
+ const response=await env.ASSIGNMENTS.get(env.ASSIGNMENTS.idFromName(team.id)).fetch('https://assignments/observe',{method:'POST',body:JSON.stringify({people})});
+ if(!response.ok)throw Error('Assignment initialization failed');
 }

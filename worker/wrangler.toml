@@ -69,6 +69,7 @@ id = "d491e3cf16db4de8bd10addcab4d1a3f"
 # without this binding the Contracts tab's SEND and VOID stay locked.
 [durable_objects]
 bindings = [
+  { name = "ASSIGNMENTS", class_name = "AssignmentLedger" },
   { name = "CONTRACT_APPROVALS", class_name = "ContractApprovalLedger" },
 ]
 
@@ -80,3 +81,7 @@ new_sqlite_classes = ["ContractApprovalLedger"]
 binding = "WEEKLY_REPORTS"
 service = "fub-weekly-reports"
 entrypoint = "TeamReportControlService"
+
+[[migrations]]
+tag = "v2-assignment-ledger"
+new_sqlite_classes = ["AssignmentLedger"]
