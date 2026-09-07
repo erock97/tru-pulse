@@ -297,7 +297,8 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
               <h1>Training and team progress</h1>
               <p className="dk-sub">Review each agent’s progress, open their results, and see what they need to complete next.</p>
             </div>
-            <div className="rp-hero-cta">
+            {/* Keep the simulator wired while its local-model replacement is prepared. */}
+            <div className="rp-hero-cta" hidden style={{ display: 'none' }}>
               <button
                 className="rs-cta"
                 onClick={() => setSimTest(true)}
