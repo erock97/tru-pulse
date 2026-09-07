@@ -1,3 +1,4 @@
+import {belowMinimum} from '../lib/minimumExpectation';
 import { ConversionComparison } from './ConversionComparison';
 import { PeriodSelect } from './PeriodSelect';
 import { WINDOWS, PERIOD_OPTIONS } from '../lib/rosterData';
@@ -38,7 +39,7 @@ export function CoachScorecard({ name }: { name: string }) {
       <div><dt>Leads taken this month<small>{month} to date · new assignments</small></dt>
         <dd className={hasIntake && cap.ready && count >= cap.saved ? 'needs-attention' : ''}>{hasIntake ? count : 'Not connected'}<small>{cap.ready ? `${cap.saved} leads before pause` : cap.notice || 'Loading saved allowance…'}</small></dd></div>
       <div><dt>Lead-to-contract rate<small>Across available history</small></dt>
-        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? <ConversionComparison current={row} leads={data.proof.get(norm(name)) ?? []} history={data.historyInfo} period={period.days} through={data.historyInfo?.through}/> : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
+        <dd className={row && target.ready && belowMinimum(row.perContract,target.saved,row.leads) ? 'needs-attention' : ''}>{row ? <ConversionComparison current={row} leads={data.proof.get(norm(name)) ?? []} history={data.historyInfo} period={period.days} through={data.historyInfo?.through}/> : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
       <div><dt>Raw conversion<small>Under contract or closed · counted once per lead</small></dt>
         <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · available history` : 'Available lead history'}</small></dd></div>
     </dl>

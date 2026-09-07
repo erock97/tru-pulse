@@ -5,6 +5,7 @@ export function conversionTrend(leads:LeadRow[]|undefined,current:ConversionCoun
  const cutoff=pulseCutoff(period,now);
  const missing=(reason:string)=>({prior:null,direction:null,cutoff,reason});
  if(cutoff===null||!leads||!history)return missing('Dated milestone history is not available for this comparison.');
+ if(current.leads!==leads.length)return missing('Current and historical lead groups do not match.');
  const through=Date.parse(history.through+'T23:59:59');
  if(!Number.isFinite(through)||cutoff>through)return missing('The comparison date is later than the latest verified records.');
  let count=0,contracts=0;

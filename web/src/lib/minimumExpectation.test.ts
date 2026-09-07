@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { minimumExpectation, contractRateLabel } from './minimumExpectation';
+import { minimumExpectation, contractRateLabel, belowMinimum, contractSortValue } from './minimumExpectation';
 
 describe('minimum conversion expectation', () => {
   it('treats both 1 in 11 and 1 in 16 as exceeding a 1 in 30 minimum', () => {
@@ -24,6 +24,12 @@ describe('contract rate display', () => {
   });
   it('retains the established ratio once there is a contract', () => {
     expect(contractRateLabel(20, 40)).toBe('1 in 20');
-    expect(contractRateLabel(30.5, 61)).toBe('1 in 30');
+    expect(contractRateLabel(30.5, 61)).toBe('1 in 30.5');
+    expect(contractRateLabel(7.75,31)).toBe('1 in 7.75');
+    expect(contractRateLabel(52/6,52)).toBe('≈ 1 in 8.67');
   });
 });
+
+it('distinguishes a zero-contract agent from an empty or missing cohort',()=>{expect(belowMinimum(null,30,5)).toBe(true);expect(belowMinimum(null,30,30)).toBe(true);expect(belowMinimum(null,30,0)).toBe(false);expect(belowMinimum(30,30,30)).toBe(false);expect(belowMinimum(30.01,30,3001)).toBe(true);});
+
+it('ranks zero contracts as a known weak rate while keeping empty cohorts unranked',()=>{expect(contractSortValue({leads:15,perContract:null})).toBe(Infinity);expect(contractSortValue({leads:0,perContract:null})).toBeNull();expect(contractSortValue(undefined)).toBeNull();expect(contractSortValue({leads:61,perContract:30.5})).toBe(30.5);});

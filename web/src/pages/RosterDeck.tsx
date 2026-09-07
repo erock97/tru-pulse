@@ -42,7 +42,7 @@ import { norm } from '../lib/rosterData';
 import {
   DeckFocusProvider, focusBinding, useDeckFocus, useDeckKeys,
 } from '../components/deckFocus';
-import { contractRateLabel } from '../lib/minimumExpectation';
+import { contractRateLabel, contractSortValue } from '../lib/minimumExpectation';
 import { TargetControl, useSavedTarget } from '../components/TargetControl';
 import { useFlip } from '../lib/deckMotion';
 
@@ -92,12 +92,12 @@ function Deck({
   const [sort, setSort] = useState<{ key: keyof Row; dir: 1 | -1 }>({ key: 'perContract', dir: -1 });
   const focus = useDeckFocus();
 
-  const priorities = useMemo(() => (rows ? prioritise(rows) : []), [rows]);
+  const priorities = useMemo(() => (overall.rows ? prioritise(overall.rows) : []), [overall.rows]);
   const sorted = useMemo(() => {
     if (!rows) return [];
     return rows.filter(r => r.name.toLowerCase().includes(query.trim().toLowerCase()) && (!reviewOnly || priorities.some(p=>p.row.name===r.name))).sort((a, b) => {
-      const x = sort.key === 'perContract' ? overallByName.get(norm(a.name))?.perContract ?? null : a[sort.key], y = sort.key === 'perContract' ? overallByName.get(norm(b.name))?.perContract ?? null : b[sort.key];
-      if (x === null && y === null) return 0;
+      const x = sort.key === 'perContract' ? contractSortValue(overallByName.get(norm(a.name))) : a[sort.key], y = sort.key === 'perContract' ? contractSortValue(overallByName.get(norm(b.name))) : b[sort.key];
+      if (x === y) return 0;
       if (x === null) return 1;          // no-volume always sits at the bottom
       if (y === null) return -1;
       if (typeof x === 'string' || typeof y === 'string') {
@@ -160,7 +160,7 @@ function Deck({
         islandSlot={mode === 'speed' || mode === 'hustle' ? undefined : windowTabs}
         // The room warms with the floor: ember once somebody is past your line,
         // amber while there are conversations owed, sea when nobody needs you.
-        mood={!totals ? 'calm' : totals.pastLine > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
+        mood={!totals ? 'calm' : (overall.totals?.pastLine ?? 0) > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
       >
         <div className="dk-main">
           {body}
@@ -232,7 +232,7 @@ function Deck({
                   >
                 <td>
                   <div className="rs-who">
-                    <span className={'rs-av h-' + r.health}>{initials(r.name)}</span>
+                    <span className={'rs-av h-' + (overallByName.get(norm(r.name))?.health ?? 'no-volume')}>{initials(r.name)}</span>
                     <div>
                       <span className="cell-name">{r.name}</span>
                       <PulseProof row={r} leads={proof.get(norm(r.name)) ?? []} teams={teams} />
