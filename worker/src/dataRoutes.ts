@@ -1,3 +1,4 @@
+import {initializeAssignments,type TeamRow} from './sync.js';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
 // Data the browser used to fetch straight from Supabase, now fetched here — as the
@@ -36,6 +37,7 @@ export async function handleDataRoutes(
   url: URL,
   cors: Record<string, string>,
   originOk = true,
+  ctx?: ExecutionContext,
 ): Promise<Response | null> {
   if (!url.pathname.startsWith('/data/')) return null;
 
@@ -43,6 +45,30 @@ export async function handleDataRoutes(
   if (!db) return json({ error: 'not signed in' }, 401, cors);
   if (url.pathname === '/data/coaching-assignments') return handleCoachingAssignments(req, env, db, cors, originOk);
   if (url.pathname === '/data/personal-profile') return handlePersonalProfile(req, env, db, cors, originOk);
+
+  if(url.pathname==='/data/assignments/initialize'&&req.method==='POST'){
+    if(!originOk)return json({error:'origin denied'},403,cors);
+    const orgId=url.searchParams.get('orgId')||'';
+    if(!UUID_RE.test(orgId))return json({error:'Invalid team'},400,cors);
+    const members=await db.select('memberships',`select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`,{strict:true});
+    if(!members.length)return json({error:'not permitted'},403,cors);
+    const lock='assignment-init:'+orgId;
+    if(await env.SESSIONS.get(lock))return json({queued:true},202,cors);
+    await env.SESSIONS.put(lock,'1',{expirationTtl:300});
+    const work=(async()=>{try{const database=serviceDb(env);const teams=await database.select('teams',`org_id=eq.${orgId}&is_active=eq.true&select=id,org_id,fub_subdomain`);for(const team of teams)await initializeAssignments(env,database,team as TeamRow);}finally{await env.SESSIONS.delete(lock);}})();
+    if(ctx)ctx.waitUntil(work);else await work;
+    return json({queued:true},202,cors);
+  }
+  if(url.pathname==='/data/assignments'&&req.method==='GET'){
+    const orgId=url.searchParams.get('orgId')||'';
+    if(!UUID_RE.test(orgId))return json({error:'Invalid team'},400,cors);
+    const members=await db.select('memberships',`select=org_id&org_id=eq.${orgId}&user_id=eq.${db.userId}&limit=1`,{strict:true});
+    if(!members.length)return json({error:'not permitted'},403,cors);
+    const teams=await db.select('teams',`select=id&org_id=eq.${orgId}`,{strict:true});
+    if(!env.ASSIGNMENTS)return json({error:'Assignment tracking unavailable'},503,cors);
+    const reports=await Promise.all(teams.map(async (team:any)=>{const result=await env.ASSIGNMENTS!.get(env.ASSIGNMENTS!.idFromName(team.id)).fetch('https://assignments/?timezone='+encodeURIComponent(url.searchParams.get('timezone')||'UTC'));if(!result.ok)throw Error('Assignment read failed');return {teamId:team.id,...await result.json() as object};}));
+    return json({reports},200,{...cors,'Cache-Control':'private, no-store'});
+  }
 
   if (url.pathname === '/data/contact-speed' && req.method === 'GET') {
     const orgId=url.searchParams.get('orgId')??'';
