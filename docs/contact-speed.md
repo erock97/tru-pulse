@@ -23,3 +23,9 @@ The separate rolling Hermes handoff in the workspace contains Eric's critical pr
 `tools/contact-collection` now retrieves and paginates the authenticated Costigan timeline, including `InboxAppMessage` records identified as Zillow Messages. It refreshes the existing pilot cohort, validates ownership, retains source timestamps and delivery status, and normalizes through `shared/contactCollection.ts`. Public API timeline access returned 403 during verification; ordinary textMessages returned no Zillow messages. This manual collector does not establish continuous refresh or all-team rollout. See the collector README for the reviewed-coverage and atomic replacement procedure.
 
 Verified personal outreach is now retained as response_recorded even when gaps or incomplete history prevent establishing the exact first response. Its seconds value is an upper bound from CRM creation. These records are excluded from exact averages and call-first scoring, and the original caveats remain available. This rule applies to every agent, organization, and supported outreach channel.
+
+## Current average display
+
+The Worker averages all leads with verified personal-response timestamps, including response_recorded bounds. responseCount is the denominator; total remains every lead in the sample. Unknown leads are excluded, never zero. If any included time is an upper bound, averageIsUpperBound is true and the UI labels the single average Within. Exact-first-contact counts and call-first coaching remain restricted to measured rows. This replaces the earlier display policy that excluded bounds from the displayed average.
+
+Contact collection preserves CRM leadName. Assignment imports require lead_name, and historical Pulse rows retain names matched on team plus person ID. IDs remain internal identifiers; visible contact labels use names, with Name unavailable only when the source genuinely lacks one.

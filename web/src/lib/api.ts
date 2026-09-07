@@ -1203,7 +1203,8 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
     if(!history.ok)throw new Error('Historical evidence could not be loaded. Refresh to retry.');
     const {snapshot}=await history.json() as {snapshot:(NonNullable<DashboardData['historyInfo']>&{leads:LeadRow[];stageLog:StageLogRow[];teamId:string;account:string})|null};
     if(snapshot){
-      d.leads=snapshot.leads;d.stageLog=snapshot.stageLog;
+      const names=new Map(d.leads.map(l=>[`${l.team_id}:${l.fub_person_id}`,l.name]));
+      d.leads=snapshot.leads.map(l=>({...l,name:l.name||names.get(`${l.team_id}:${l.fub_person_id}`)||null}));d.stageLog=snapshot.stageLog;
       d.historyInfo={through:snapshot.through,capturedAt:snapshot.capturedAt,sourceStarts:snapshot.sourceStarts,rosterPolicy:snapshot.rosterPolicy};
       d.teams=d.teams.map(t=>t.id===snapshot.teamId?{...t,fub_subdomain:snapshot.account}:t);
     }

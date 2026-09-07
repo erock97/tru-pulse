@@ -24,7 +24,7 @@ foreach($lead in $inputSnapshot.leads){
   $url=$r._metadata.nextLink
   if(!$url -and $rows.Count -ne $r._metadata.total){throw 'Incomplete timeline'}
  }
- @{personId=$lead.leadId;complete=$true;timeline=$rows.ToArray()}|ConvertTo-Json -Depth 50|Set-Content (Join-Path $root "$($lead.leadId).json")
+ @{personId=$lead.leadId;leadName=$person.name;complete=$true;timeline=$rows.ToArray()}|ConvertTo-Json -Depth 50|Set-Content (Join-Path $root "$($lead.leadId).json")
  $manifest.leads+=@{id=$lead.leadId;records=$rows.Count}
 }
 $manifest.capturedAt=[datetime]::UtcNow.ToString('o')

@@ -6,7 +6,7 @@ export interface ContactEvent {
   personal: boolean|null; timeVerified: boolean; explanation: string;
 }
 export interface ContactLead {
-  orgId: string; leadId: string; agentId: string; agentName: string; leadUrl: string;
+  orgId: string; leadId: string; leadName?: string; agentId: string; agentName: string; leadUrl: string;
   createdAt: string; historyComplete: boolean; events: ContactEvent[];
   gap?: {statement: string; sourceId: string; recordedAt: string; checked: string};
   connection?: {sourceId: string; explanation: string};
@@ -21,7 +21,7 @@ export interface ContactResult {
 }
 export interface ContactAgentResult {
   agentId: string; agentName: string; total: number; measured: number;
-  averageSeconds: number|null; results: ContactResult[];
+  averageSeconds: number|null; responseCount?: number; averageIsUpperBound?: boolean; results: ContactResult[];
   skill: {from:string; through:string; fullWindow:boolean; callFirst:number; textFirst:number; textPercent:number|null; aboveThreshold:boolean; consistency:'observed_behavior'};
 }
 export interface ContactReport {

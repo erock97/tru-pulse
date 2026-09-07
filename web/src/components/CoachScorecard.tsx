@@ -47,7 +47,7 @@ export function CoachScorecard({ name }: { name: string }) {
     {data.err && <p role="alert" className="coach-scorecard-note">Performance could not be loaded. Open Pulse to retry.</p>}
     {row && <PulseProof row={row} leads={data.proof.get(norm(name)) ?? []} teams={data.teams} />}
     <details className="coach-intake-proof"><summary>How intake is counted</summary>
-      {hasIntake ? <><p>We count distinct lead IDs assigned to this agent this calendar month in {ops!.assignmentFile}. Repeated rows for the same lead count once. This import is held for this workspace visit; completeness is not independently verified.</p>{assignments.map(a => <p key={`${a.leadId}-${a.line}`}>Lead #{a.leadId} · assigned {new Date(a.at).toLocaleString()} · file row {a.line}</p>)}</> : <p>Assignment dates have not been connected for this agent. Lead creation dates do not prove when an agent received a lead, so we do not use them to judge the monthly allowance. Assignment evidence can be imported in Pulse.</p>}
+      {hasIntake ? <><p>We count distinct lead IDs assigned to this agent this calendar month in {ops!.assignmentFile}. Repeated rows for the same lead count once. This import is held for this workspace visit; completeness is not independently verified.</p>{assignments.map(a => <p key={`${a.leadId}-${a.line}`}>{a.leadName || 'Name unavailable'} · assigned {new Date(a.at).toLocaleString()} · file row {a.line}</p>)}</> : <p>Assignment dates have not been connected for this agent. Lead creation dates do not prove when an agent received a lead, so we do not use them to judge the monthly allowance. Assignment evidence can be imported in Pulse.</p>}
     </details>
   </section>;
 }

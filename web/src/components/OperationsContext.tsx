@@ -1,5 +1,5 @@
 import { createContext,useContext,useState,type ReactNode } from 'react';
-export type Assignment={agentId:string;leadId:string;at:string;line:number};
+export type Assignment={agentId:string;leadId:string;leadName?:string;at:string;line:number};
 export type Practice={agentId:string;name:string;focus:string;due:string;outcome:string};
 type State={assignments:Assignment[];assignmentFile:string;setAssignments:(rows:Assignment[],file:string)=>void;practice:Practice|null;setPractice:(p:Practice|null)=>void};
 const Context=createContext<State|null>(null);
