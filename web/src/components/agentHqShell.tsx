@@ -8,12 +8,14 @@ const TAB_ICON: Record<AgentHqTab, string> = {
   home: 'home',
   coach: 'coach',
   training: 'play',
+  profile: 'user',
 };
 
 const TAB_KEY: Record<string, AgentHqTab> = {
   Home: 'home',
   Coach: 'coach',
   Training: 'training',
+  Profile: 'profile',
 };
 
 /** Agent-only shell. Same dark HQ language as the leader shell — never Pulse / Rep. */

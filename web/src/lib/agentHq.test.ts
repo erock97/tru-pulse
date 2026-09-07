@@ -18,6 +18,7 @@ import {
   SET_PASSWORD_SUB,
   SET_PASSWORD_TITLE,
   TRAINING_SECTION_LABELS,
+  agentHqPath,
   agentCoachCopy,
   attentionItems,
   canOpenModule,
@@ -64,7 +65,7 @@ describe('invite / password landing', () => {
 describe('agent vs leader shell', () => {
   it('gives agents Home / Coach / Training — never Pulse or Rep', () => {
     expect(shellTabsFor('agent')).toEqual(AGENT_SHELL_TABS);
-    expect(AGENT_SHELL_TABS).toEqual(['Home', 'Coach', 'Training']);
+    expect(AGENT_SHELL_TABS).toEqual(['Home', 'Coach', 'Training', 'Profile']);
     expect(AGENT_SHELL_TABS).not.toContain('Pulse');
     expect(AGENT_SHELL_TABS).not.toContain('Rep');
   });
@@ -211,5 +212,15 @@ describe('Agent HQ visibility', () => {
   it('does not apply .reveal, so content starts at opacity 1 without the leader observer', () => {
     expect(classNamesWithReveal(agentHqPage)).toEqual([]);
     expect(classNamesWithReveal(agentHqShell)).toEqual([]);
+  });
+});
+
+
+describe('personal profile routes', () => {
+  it('opens the profile in both the signed-in agent shell and the sample preview', () => {
+    expect(parseAgentHqTab('#/profile')).toBe('profile');
+    expect(parseAgentHqTab('#/learn/profile')).toBe('profile');
+    expect(agentHqPath('profile', false)).toBe('/profile');
+    expect(agentHqPath('profile', true)).toBe('/learn/profile');
   });
 });

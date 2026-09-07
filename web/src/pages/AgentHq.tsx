@@ -1,3 +1,4 @@
+import PersonalProfile from './PersonalProfile';
 import { workshopDay } from '../workshops/types';
 import { useEffect, useMemo, useState } from 'react';
 import { RepWorkshopLibrary } from '../components/RepWorkshopLibrary';
@@ -35,14 +36,21 @@ import type { GradeResult } from '../lib/api';
 import '../truHqDark.css';
 
 export default function AgentHq({ agent }: { agent: AgentIdentity }) {
+  const [profileDirty, setProfileDirty] = useState(false);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#/, '') || '/');
   useEffect(() => {
-    const on = () => setRoute(window.location.hash.replace(/^#/, '') || '/');
+    const on = () => {
+      const next = window.location.hash.replace(/^#/, '') || '/';
+      if (next !== route && profileDirty && !window.confirm('Leave without saving your profile changes?')) {
+        window.history.replaceState(null, '', `#${route}`);
+        return;
+      }
+      setRoute(next);
+    };
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
-  }, []);
+  }, [profileDirty, route]);
   const tab = parseAgentHqTab(route);
-
   const [mods, setMods] = useState<CourseModule[] | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [assessed, setAssessed] = useState(false);
@@ -112,8 +120,8 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
     .map((m) => ({ id: m.id, title: m.title }));
   const items = attentionItems({ assessed, unfinishedZillow, openCommitments });
 
-  const title = tab === 'coach' ? 'Your Coach' : tab === 'training' ? 'Training' : `Welcome back, ${firstName}.`;
-  const eyebrow = tab === 'home' ? 'Needs your attention' : tab === 'coach' ? 'Personal to you' : 'The bay';
+  const title = tab === 'profile' ? 'Your profile' : tab === 'coach' ? 'Your Coach' : tab === 'training' ? 'Training' : `Welcome back, ${firstName}.`;
+  const eyebrow = tab === 'profile' ? 'Personal profile' : tab === 'home' ? 'Needs your attention' : tab === 'coach' ? 'Personal to you' : 'The bay';
 
   return (
     <div className="tru-dark">
@@ -121,11 +129,12 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
         name={agent.name}
         eyebrow={eyebrow}
         title={title}
-        onSignOut={() => signOutClean()}
+        onSignOut={() => { if (!profileDirty || window.confirm('Leave without saving your profile changes?')) signOutClean(); }}
         onGo={(next) => { setActiveId(null); goAgentTab(next); }}
       >
         <div className="ah-canvas">
           <div className="ah-ambient" aria-hidden />
+          {tab === 'profile' && <PersonalProfile key={agent.id} name={agent.name} onDirtyChange={setProfileDirty} />}
           {tab === 'home' && (
             <HomeTab
               items={items}
