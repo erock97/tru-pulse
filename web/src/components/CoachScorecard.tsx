@@ -1,3 +1,4 @@
+import { contractRateLabel } from '../lib/minimumExpectation';
 import { useEffect, useState } from 'react';
 import { loadDashboard, type AgentRow } from '../lib/api';
 import { norm, useRosterData, DEFAULT_LINE } from '../lib/rosterData';
@@ -32,7 +33,7 @@ export function CoachScorecard({ name }: { name: string }) {
       <div><dt>Leads taken this month<small>{month} to date · new assignments</small></dt>
         <dd className={hasIntake && cap.ready && count >= cap.saved ? 'needs-attention' : ''}>{hasIntake ? count : 'Not connected'}<small>{cap.ready ? `${cap.saved} leads before pause` : cap.notice || 'Loading saved allowance…'}</small></dd></div>
       <div><dt>Lead-to-contract rate<small>Leads created in the last six months</small></dt>
-        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row?.perContract != null ? `1 in ${Math.floor(row.perContract)}` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
+        <dd className={row?.perContract != null && target.ready && row.perContract > target.saved ? 'needs-attention' : ''}>{row ? contractRateLabel(row.perContract, row.leads) : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Unavailable'}<small>{target.ready ? `Minimum expectation: 1 in ${target.saved}` : target.notice || 'Loading saved expectation…'}</small></dd></div>
       <div><dt>Raw conversion<small>Under contract or closed · counted once per lead</small></dt>
         <dd>{row && row.leads > 0 ? `${(row.rawConversion ?? 0).toFixed(1)}%` : data.err ? 'Unavailable' : !data.rows ? 'Loading…' : 'Not established'}<small>{row ? `${row.contracts} of ${row.leads} leads · six months` : 'Six-month lead cohort'}</small></dd></div>
     </dl>

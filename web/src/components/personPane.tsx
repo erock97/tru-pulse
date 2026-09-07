@@ -8,7 +8,7 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { SOURCE_COLORS } from './viz';
-import { minimumExpectation } from '../lib/minimumExpectation';
+import { minimumExpectation, contractRateLabel } from '../lib/minimumExpectation';
 import type { Row } from '../lib/rosterData';
 
 /* One person's own axis. It has to hold three numbers — them, the floor and
@@ -27,7 +27,7 @@ function standAt(v: number, row: Row, line: number, team: number | null): number
 function verdict(row: Row, line: number, team: number | null): string {
   const first = row.name.split(' ')[0];
   if (row.perContract === null) {
-    return `${first} has no contracts recorded in this window, so there is no leads-per-contract rate yet. ${row.leads} leads are in this view.`;
+    return `${first} is 0 for ${row.leads} leads in this period. Minimum expectation: 1 contract per ${line} leads.`;
   }
   const rate = Math.floor(row.perContract);
   const vsLine = `${minimumExpectation(row.perContract, line).toLowerCase()} (1 contract per ${line} leads)`;
@@ -131,7 +131,7 @@ export function PersonPane({
               ['Sitting in Lead', row.stuck ? String(row.stuck) : 'none'],
               ['Reached an offer', row.offers ? String(row.offers) : 'none'],
               ['Under contract', row.contracts ? String(row.contracts) : 'none'],
-              ['Leads per contract', row.perContract ? `1 : ${Math.floor(row.perContract)}` : '—'],
+              ['Leads per contract', contractRateLabel(row.perContract, row.leads)],
             ].map(([k, v]) => (
               <div className="rs-ln" key={k}><s>{k}</s><b>{v}</b></div>
             ))}
