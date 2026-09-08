@@ -85,6 +85,40 @@ describe('lifecycle edge cases',()=>{
  it('release fails atomically if two sources reuse an evidence ID inconsistently',async()=>{const make=(id:string,quote:string)=>{const f:any=fixture(id);f.agents=[{agentName:'Proof',opportunities:[{explanation:'Observed',patternKey:'evidence',findingIds:['conflicting-evidence']}]}];f.findings=[{findingIndex:0,findingId:'conflicting-evidence',agentName:'Proof',leadName:'Synthetic',occurredAt:'2030-01-03T00:00:00Z',quote}];return f};for(const [id,quote]of [['conflict-a','first'],['conflict-b','different']])expect((await send('/coach/weekly-report',make(id,quote))).status).toBe(201);expect((await op(control(await lookup('conflict-a'),'release','conflict-first'))).status).toBe(200);expect((await op(control(await lookup('conflict-b'),'release','conflict-second'))).body.error).toBe('evidence_conflict');expect((await lookup('conflict-b')).publicationStatus).toBe('held');expect((await pg.query<any>("select quote from coach_pattern_findings where finding_id='conflicting-evidence'")).rows[0].quote).toBe('first');});
 });
 
+describe('int32 control revisions',()=>{
+ it.each([0,-1,1.5,2147483648,9007199254740991,'1',null,true])('rejects invalid source and replacement revision %s before RPC',async value=>{
+  let calls=0;
+  const db={rpc:async()=>{calls++;throw Error('must not reach SQL')}} as unknown as Db;
+  for(const replacement of [false,true]){
+   const command:any={operationId:'boundary',action:replacement?'supersede':'release',teamId:team,runId:'boundary',expectedHash:'a'.repeat(64),expectedRevision:replacement?1:value,reason:'Offline boundary test'};
+   if(replacement)command.replacement={runId:'replacement',expectedHash:'b'.repeat(64),expectedRevision:value};
+   const url=new URL('https://offline.test/coach/weekly-report/control');
+   const res=await handleReportReceipts(new Request(url,{method:'POST',headers:{Authorization:'Bearer operator'},body:JSON.stringify(command)}),env,url,{},db);
+   expect(res!.status).toBe(422);expect(await res!.json()).toEqual({error:'invalid_control'});
+  }
+  expect(calls).toBe(0);
+ });
+ it.each([1,2147483647])('passes valid boundary %s to RPC for both references',async value=>{
+  let calls=0;
+  const db={rpc:async(_name:string,args:any)=>{calls++;expect(args.p_command.expectedRevision).toBe(value);expect(args.p_command.replacement.expectedRevision).toBe(value);throw Error('revision_conflict')}} as unknown as Db;
+  const url=new URL('https://offline.test/coach/weekly-report/control');
+  const command={operationId:'valid-boundary',action:'supersede',teamId:team,runId:'boundary',expectedHash:'a'.repeat(64),expectedRevision:value,reason:'Offline boundary test',replacement:{runId:'replacement',expectedHash:'b'.repeat(64),expectedRevision:value}};
+  const res=await handleReportReceipts(new Request(url,{method:'POST',headers:{Authorization:'Bearer operator'},body:JSON.stringify(command)}),env,url,{},db);
+  expect(res!.status).toBe(409);expect(await res!.json()).toEqual({error:'revision_conflict'});expect(calls).toBe(1);
+ });
+ it('revision exhaustion rolls back without publication, audit or counter reset',async()=>{
+  const r=await accept('exhausted');
+  await pg.query('update coach_report_receipts set revision=2147483647 where report_id=$1',[r.reportId]);
+  const before=await lookup(r.runId);
+  const result=await op(control(before,'release','exhausted-release'));
+  expect(result).toEqual({status:503,body:{error:'receipt_transaction_failed'}});
+  expect(await lookup(r.runId)).toEqual(before);
+  expect((await pg.query<any>('select status from coach_weekly_reports where id=$1',[r.reportId])).rows[0].status).toBe('held');
+  expect((await pg.query<any>("select count(*)::int n from coach_report_operations where operation_id='exhausted-release'")).rows[0].n).toBe(0);
+  expect((await pg.query<any>('select count(*)::int n from coach_report_audit where report_id=$1',[r.reportId])).rows[0].n).toBe(1);
+ });
+});
+
 describe('control recovery and transport',()=>{
  it('failed supersession rolls back both reports and leaves replacement held',async()=>{const a=await lookup('live-new'),b=await accept('replacement-fault');await pg.exec("create function fail_replace() returns trigger language plpgsql as $$ begin raise exception 'injected failure'; end $$;create trigger fail_replace_test before insert on coach_team_state for each row execute function fail_replace();");const result=await op(control(a,'supersede','replace-fault',{replacement:{runId:b.runId,expectedHash:b.payloadHash,expectedRevision:b.revision}}));expect(result.status).toBe(503);expect((await lookup(a.runId)).publicationStatus).toBe('published');expect((await lookup(b.runId)).publicationStatus).toBe('held');expect((await lookup(b.runId)).revision).toBe(1);await pg.exec('drop trigger fail_replace_test on coach_team_state;drop function fail_replace()')});
  it('partial control simulation in local SQL still requires explicit release, not replay',async()=>{const r=await accept('partial-local-simulation',true);const command=control(r,'release','explicit-partial-local');const result=await rpc('coach_receipt_control',{p_team:team,p_actor:'offline-operator',p_command:command,p_canonical:canonicalJson(command),p_allow_partial:true});expect(result.receipt.publicationStatus).toBe('published');const untouched=await accept('still-held',true);expect(untouched.publicationStatus).toBe('held');});

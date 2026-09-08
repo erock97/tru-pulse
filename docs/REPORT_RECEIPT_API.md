@@ -74,7 +74,7 @@ Exact body, no additional fields:
   "reason":"Approved synthetic verification"
 }
 ```
-`operationId`: same ID regex as runId. action: release/withdraw/supersede. expectedRevision: positive safe integer. reason: nonblank <=500 UTF-16 units, no C0/DEL controls. Do not include customer information in reasons.
+`operationId`: same ID regex as runId. action: release/withdraw/supersede. expectedRevision: integer from 1 through 2147483647 inclusive, for both source and replacement; invalid values return HTTP 422 invalid_control before RPC. reason: nonblank <=500 UTF-16 units, no C0/DEL controls. Do not include customer information in reasons.
 `supersede` additionally REQUIRES exactly:
 `"replacement":{"runId":"corrected-run-2","expectedHash":"<hash>","expectedRevision":1}`.
 Replacement must be distinct, same team, and held. Submit it separately first with a new immutable runId.
