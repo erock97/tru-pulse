@@ -1,3 +1,4 @@
+import { coverageState, PARTIAL_REPORT_PUBLISHING_ENABLED } from '../../shared/reportCoverage.js';
 // POST /coach/weekly-report — the ONE door the Hermes laptop automation sends
 // its weekly coaching brief through. Its own dedicated secret (COACH_INGEST_TOKEN,
 // never ADMIN_TOKEN): a leaked report key can submit coaching reports and nothing
@@ -72,7 +73,7 @@ async function republishHeldReports(database: Db): Promise<void> {
     await database.update('coach_weekly_reports', `id=eq.${row.id}`, {
       org_id: team.org_id,
       team_id: team.id,
-      status: briefStatusFor(row.run_trigger, true),
+      status: coverageState(row.payload.coverage) === 'partial' && !PARTIAL_REPORT_PUBLISHING_ENABLED ? 'held' : briefStatusFor(row.run_trigger, true),
       agent_links: m.links,
     });
   }
@@ -97,8 +98,32 @@ export async function handleCoachBriefIngest(
     return json({ error: 'unauthorized' }, 401);
   }
 
-  const raw = await req.text();
-  if (raw.length > MAX_BODY_BYTES) return json({ error: 'payload too large' }, 413);
+  // Count transport bytes, not UTF-16 characters, and stop reading at the cap.
+  // Streaming decoding preserves UTF-8 characters split across network chunks.
+  const reader = req.body?.getReader();
+  const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false });
+  let raw = '';
+  let bytes = 0;
+  try {
+    if (reader) {
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        bytes += chunk.value.byteLength;
+        if (bytes > MAX_BODY_BYTES) {
+          await reader.cancel().catch(() => {});
+          return json({ error: 'payload too large' }, 413);
+        }
+        raw += decoder.decode(chunk.value, { stream: true });
+      }
+    }
+    raw += decoder.decode();
+  } catch {
+    await reader?.cancel().catch(() => {});
+    return json({ error: 'body must be valid UTF-8 JSON' }, 422);
+  } finally {
+    reader?.releaseLock();
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -125,7 +150,8 @@ export async function handleCoachBriefIngest(
     agentsReport = { matched: m.matched, unmatched: m.unmatched, ambiguous: m.ambiguous };
   }
 
-  const status = briefStatusFor(brief.run.trigger, team !== null);
+  const status = coverageState(brief.coverage) === 'partial' && !PARTIAL_REPORT_PUBLISHING_ENABLED
+    ? 'held' : briefStatusFor(brief.run.trigger, team !== null);
   await database.upsert('coach_weekly_reports', [{
     run_id: brief.run.runId,
     org_id: team?.org_id ?? null,

@@ -187,3 +187,8 @@ describe('opportunity source excerpts', () => {
     expect(row.payload!.findings[0].quote).toBeUndefined();
   });
 });
+
+describe('partial report display data',()=>{
+ it('keeps findings and unresolved names, suppresses unverified no-outreach totals',()=>{const row=storedBeforeV11();row.payload!.coverage={schemaVersion:'1.0',scope:'report_window',rosterComplete:false,contacts:[{leadId:'123',leadName:'Missing Contact',agentName:'Cara Benak',status:'unresolved',reason:'collection_failed'}]};row.payload!.agents[0].metrics.noOutreach=0;const view=toView(row)!;expect(view.coverage!.contacts[0].leadName).toBe('Missing Contact');expect(view.agents[0].opportunities[0].evidence).toHaveLength(1);expect(view.agents[0].metrics.noOutreach).toBeUndefined();});
+ it('does not manufacture legacy completeness or zero activity',()=>{const view=toView(storedBeforeV11())!;expect(view.coverage).toBeUndefined();expect(view.agents[0].metrics.noOutreach).toBeUndefined()});
+});

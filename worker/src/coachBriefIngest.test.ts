@@ -115,6 +115,49 @@ async function resolvedTeamId(teamId: string): Promise<{ status: number; teamRes
 }
 
 describe('POST /coach/weekly-report', () => {
+  it.each(['a', 'é', '😀'])('enforces the exact UTF-8 byte boundary for %s', async character => {
+    const encoder = new TextEncoder();
+    const base = JSON.stringify({ ...payload({ run: { trigger: 'personal' } }), padding: '' });
+    const room = 4_000_000 - encoder.encode(base).byteLength;
+    const width = encoder.encode(character).byteLength;
+    const padding = character.repeat(Math.floor(room / width)) + ' '.repeat(room % width);
+    const raw = base.replace('"padding":""', `"padding":"${padding}"`);
+    expect(encoder.encode(raw).byteLength).toBe(4_000_000);
+    expect((await send(raw)).status).toBe(200);
+    calls.length = 0;
+    expect((await send(raw + ' ')).status).toBe(413);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('decodes UTF-8 across chunk boundaries and rejects malformed UTF-8', async () => {
+    const bytes = new TextEncoder().encode(JSON.stringify(payload({ run: { trigger: 'personal', teamName: 'Café' } })));
+    const split = bytes.indexOf(0xc3) + 1;
+    const stream = new ReadableStream<Uint8Array>({ start(controller) {
+      controller.enqueue(bytes.slice(0, split)); controller.enqueue(bytes.slice(split)); controller.close();
+    } });
+    const request = new Request('https://api.truhq.co/coach/weekly-report', {
+      method: 'POST', headers: { Authorization: 'Bearer brief-secret' }, body: stream, duplex: 'half',
+    } as RequestInit);
+    expect((await worker.fetch(request, env, ctx)).status).toBe(200);
+    calls.length = 0;
+    const invalid = new Request(request.url, { method: 'POST', headers: { Authorization: 'Bearer brief-secret' }, body: new Uint8Array([0xc3]) });
+    expect((await worker.fetch(invalid, env, ctx)).status).toBe(422);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('cancels an oversized stream without trusting Content-Length or accessing storage', async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({ start(controller) {
+      controller.enqueue(new Uint8Array(4_000_001));
+    }, cancel });
+    const request = new Request('https://api.truhq.co/coach/weekly-report', {
+      method: 'POST', headers: { Authorization: 'Bearer brief-secret', 'Content-Length': '1' }, body, duplex: 'half',
+    } as RequestInit);
+    expect((await worker.fetch(request, env, ctx)).status).toBe(413);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(calls).toHaveLength(0);
+  });
+
   it('rejects a wrong token, and fails closed when no token is configured', async () => {
     expect((await send(payload(), 'wrong')).status).toBe(401);
     delete (env as unknown as Record<string, unknown>).COACH_INGEST_TOKEN;
@@ -293,4 +336,18 @@ describe('GET /coach/teams', () => {
     const serialized = JSON.stringify(body);
     expect(serialized).not.toMatch(/fub|token|email|api_key/i);
   });
+});
+
+describe('coverage ingest safety', () => {
+ const coverage = {schemaVersion:'1.0',scope:'report_window',rosterComplete:true,contacts:[{leadId:'123',leadName:'Alex Sample',agentName:'adam walters',status:'unresolved',reason:'not_collected'}]};
+ it('stores partial findings under resolved tenant, holds publication, and retains run-id upsert on retry', async()=>{
+  const input={...payload({findings:[{findingIndex:0,agentName:'adam walters',quote:'Verified evidence'}]}),schemaVersion:'1.3',coverage};
+  for(let i=0;i<2;i++){const res=await send(input);expect(res.status).toBe(200);expect((await res.json() as any).status).toBe('held');}
+  const writes=calls.filter(c=>c.method==='POST' && c.path.startsWith('/rest/v1/coach_weekly_reports'));
+  expect(writes).toHaveLength(2);
+  for(const w of writes){expect(w.path).toContain('on_conflict=run_id');const row=(w.body as any[])[0];expect(row.team_id).toBe(teamsTable[0].id);expect(row.org_id).toBe(teamsTable[0].org_id);expect(row.payload.coverage).toEqual(coverage);expect(row.payload.findings[0].quote).toBe('Verified evidence');}
+  expect(calls.some(c=>c.method==='POST' && c.path.includes('coach_patterns'))).toBe(false);
+ });
+ it('rejects nested tenant overrides before database access',async()=>{const res=await send({...payload(),schemaVersion:'1.3',coverage:{...coverage,teamId:'another'}});expect(res.status).toBe(422);expect(calls).toHaveLength(0)});
+ it('does not publish partial reports when resolving a previously unknown team',async()=>{heldRows=[{id:'held',team_slug:'costigan',run_trigger:'daily',payload:{...payload(),coverage}}];await send(payload());const update=calls.find(c=>c.method==='PATCH'&&c.path.includes('coach_weekly_reports'));expect((update?.body as any).status).toBe('held')});
 });

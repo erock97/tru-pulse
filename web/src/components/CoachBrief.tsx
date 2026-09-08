@@ -1,3 +1,4 @@
+import { coverageState } from '../../../shared/reportCoverage';
 import { useOperations } from './OperationsContext';
 // The weekly coaching brief in the Coach tab — the Hermes report, rendered.
 //
@@ -73,6 +74,18 @@ function useBrief(reportId: string | null): { bundle: BriefBundle | null; loadin
     return () => { live = false; };
   }, [reportId]);
   return { bundle, loading };
+}
+
+export function ReportCoverageNotice({ view, print = false }: { view: BriefView; print?: boolean }) {
+  const state = coverageState(view.coverage);
+  if (state === 'complete') return <p>Review coverage complete for this report window.</p>;
+  const unresolved = view.coverage?.contacts.filter(c => c.status === 'unresolved') ?? [];
+  const reviewed = view.coverage?.contacts.filter(c => c.status === 'reviewed').length;
+  return <section role="note" aria-label="Report coverage" style={{ border: '2px solid #c89346', borderRadius: 8, padding: '16px 20px', margin: '16px 0' }}>
+    <strong>{state === 'unknown' ? 'Report coverage unknown' : `Partial report · ${unresolved.length} known unresolved contact${unresolved.length === 1 ? '' : 's'}`}</strong>
+    <p>{state === 'unknown' ? 'This report does not include verified coverage information.' : `${reviewed} contacts reviewed.${view.coverage?.rosterComplete ? '' : ' The contact list is incomplete; additional contacts may be missing.'}`} Available findings remain below. Missing information does not mean zero activity or no response.</p>
+    {!!unresolved.length && <details open={print || undefined}><summary>Show unresolved contacts ({unresolved.length})</summary><ul>{unresolved.map(c => <li key={c.leadId}><strong>{c.leadName}</strong> · {c.agentName ?? 'Agent unknown'} · {c.reason?.replaceAll('_', ' ')}</li>)}</ul></details>}
+  </section>;
 }
 
 const dateLabel = (iso: string): string =>
@@ -275,7 +288,7 @@ function priorityLabel(a: BriefAgentView): string | null {
 function emptyPriorityLabel(a: BriefAgentView): string {
   const reviewed = a.metrics.reviewedContacts;
   if (reviewed === undefined || reviewed === 0) return NOT_ENOUGH_REVIEWED;
-  return 'Nothing to flag this week';
+  return 'No finding in the reviewed information';
 }
 
 /**
@@ -405,8 +418,9 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   const person = people.find(a => a.agentName === selected) ?? people[0];
   const meta = person ? cohort?.get(person.agentId ?? '') ?? cohort?.get(person.agentName.trim().toLowerCase()) : undefined;
   return <section className="dk-sec brief-sec">
-    <div className="brief-workspace-heading"><div><h2>Your people</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agents reviewed</p></div>
+    <div className="brief-workspace-heading"><div><h2>Your people</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agent sections</p></div>
       <div className="brief-actions"><WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} /><button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button></div></div>
+    <ReportCoverageNotice view={view} />
     <div className={`coaching-workspace ${mobileReview?'is-reviewing':'is-choosing'}`}>
       <aside className="coaching-queue" aria-label="People to review"><header><h3>People to review <small>{people.length}</small></h3><label>Find an agent<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name or coaching focus" /></label></header>
         <div className="coaching-people" ref={queueRef} onScroll={e=>setQueueScroll(e.currentTarget.scrollTop)}>{people.map(a=><button key={a.agentId || a.agentName} aria-pressed={person?.agentName===a.agentName} onClick={()=>{setSelected(a.agentName);setMobileReview(true);}}><strong>{a.agentName}</strong><span>{priorityLabel(a) ?? 'No coaching focus in this report'}</span></button>)}</div>
@@ -466,9 +480,10 @@ export function AgentBriefPanel({ agentId, agentName }: {
         <WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} />
       </div>
 
+      <ReportCoverageNotice view={view} />
       {!mine ? (
         <p className="brief-none">
-          {NOT_ENOUGH_REVIEWED} for {agentName.split(' ')[0]} — nothing was reviewed in this window.
+          {NOT_ENOUGH_REVIEWED} for {agentName.split(' ')[0]} — review information is unavailable in this report.
         </p>
       ) : (
         <>
@@ -552,6 +567,7 @@ export function BriefPrintSheet({ view, onClose }: { view: BriefView; onClose: (
           </div>
         </header>
 
+        <ReportCoverageNotice view={view} print />
         <section className="bp-scan">
           <h2>Team coaching scan</h2>
           <table>
