@@ -1,3 +1,4 @@
+import { sha256 } from '../../shared/reportReceipt';
 import { describe, it, expect, vi } from 'vitest';
 import { validateResponseTiming, type ResponseTiming } from '../../shared/responseTiming.js';
 import { validateCoachBrief } from '../../shared/coachBrief.js';
@@ -74,14 +75,14 @@ describe('response timing evidence intake', () => {
     input.episodes[0].sourceAgentId = null;
     expect(validateResponseTiming(input).ok).toBe(false);
   });
-  it('stores metadata through the existing scoped intake and makes no activity requests', async () => {
-    const database = { select: vi.fn(async (table: string) => table === 'teams' ? [{ id: 'team-1', org_id: 'org-1' }] : []), upsert: vi.fn(async () => []), update: vi.fn(async () => []) };
-    const input = evidence();
-    const response = await handleCoachBriefIngest(new Request('https://api.truhq.co/coach/weekly-report', {
-      method: 'POST', headers: { Authorization: 'Bearer test' }, body: JSON.stringify(report(input)),
-    }), { COACH_INGEST_TOKEN: 'test' } as Env, new URL('https://api.truhq.co/coach/weekly-report'), {}, database as any);
-    expect(response!.status).toBe(200);
-    const row = database.upsert.mock.calls[0] as unknown as [string, any[]];
-    expect(row[1][0]).toMatchObject({ org_id: 'org-1', team_id: 'team-1', status: 'held', payload: { responseTiming: input } });
+  it('stores timing through the immutable receipt RPC without activity reads', async () => {
+    const teamId='11111111-1111-4111-8111-111111111111';
+    const database = { select: vi.fn(async () => []), rpc: vi.fn(async () => ({replayed:false,receipt:{publicationStatus:'held'}})) };
+    const input=evidence(); const body=report(input); body.run.teamId=teamId;
+    const response=await handleCoachBriefIngest(new Request('https://offline.test/coach/weekly-report',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify(body)}),{COACH_REPORT_CLIENTS:JSON.stringify([{id:'test',role:'producer',tokenHash:await sha256('test'),teamIds:[teamId]}])} as Env,new URL('https://offline.test/coach/weekly-report'),{},database as any);
+    expect(response!.status).toBe(201);
+    const call=database.rpc.mock.calls[0] as unknown as [string,any];
+    expect(call[0]).toBe('coach_receipt_accept');
+    expect(call[1]).toMatchObject({p_team:teamId,p_payload:{responseTiming:input}});
   });
 });
