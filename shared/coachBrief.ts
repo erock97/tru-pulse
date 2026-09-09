@@ -7,6 +7,9 @@
 
 // ── Payload types ───────────────────────────────────────────────────────────
 
+import { validateReportCoverage, type ReportCoverage } from './reportCoverage.js';
+import { validateResponseTiming, type ResponseTiming } from './responseTiming.js';
+
 export interface BriefMetrics {
   reviewedContacts: number;
   substantiveContacts: number;
@@ -96,6 +99,8 @@ export interface BriefRun {
 }
 
 export interface CoachBrief {
+  coverage?: ReportCoverage;
+  responseTiming?: ResponseTiming;
   schemaVersion: string;
   run: BriefRun;
   agents: BriefAgent[];
@@ -264,6 +269,20 @@ export function validateCoachBrief(raw: unknown): BriefValidation {
     return [finding];
   });
 
+  let coverage: ReportCoverage | undefined;
+  if (Object.hasOwn(o, 'coverage')) {
+    if (o.schemaVersion !== '1.3') errors.push('coverage requires report schemaVersion 1.3');
+    const result = validateReportCoverage(o.coverage);
+    if (!result.ok) errors.push(...result.errors);
+    else coverage = result.value;
+  }
+  let responseTiming: ResponseTiming | undefined;
+  if (Object.hasOwn(o, 'responseTiming')) {
+    if (o.schemaVersion !== '1.3') errors.push('responseTiming requires report schemaVersion 1.3');
+    const timing = validateResponseTiming(o.responseTiming);
+    if (!timing.ok) errors.push(...timing.errors);
+    else responseTiming = timing.value;
+  }
   if (errors.length) return { ok: false, errors };
   return {
     ok: true,
@@ -281,6 +300,8 @@ export function validateCoachBrief(raw: unknown): BriefValidation {
       },
       agents,
       findings,
+      ...(coverage ? { coverage } : {}),
+      ...(responseTiming ? { responseTiming } : {}),
     },
   };
 }
