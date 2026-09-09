@@ -35,3 +35,11 @@ test('resolver fixed operator project and no inherited machine token',async()=>{
  try{const token=await resolveOperatorToken(process.execPath,{run:(exe,args,options,cb)=>{assert.equal(options.env.INFISICAL_TOKEN,undefined);assert.ok(args.includes(VAULT.projectId));assert.ok(args.includes(VAULT.path));assert.equal(options.windowsHide,true);assert.equal(options.timeout,10000);cb(null,'b'.repeat(64),'');}});assert.equal(token,'b'.repeat(64));}finally{if(old===undefined)delete process.env.INFISICAL_TOKEN;else process.env.INFISICAL_TOKEN=old;}
 });
 test('resolver errors sanitized',async()=>assert.rejects(resolveOperatorToken(process.execPath,{run:(_,a,o,cb)=>cb(Error('secret'),'', 'secret')}),/^Error: operator_credential_unavailable$/));
+
+test('only the approved partial sample can be prepared',()=>{
+ const r={...receipt,teamId:TEAMS.satish,runId:'hermes-sample-b6f50a87-256c-42a0-b553-d19ec7f2066d:satish',payloadHash:'47de5f5091ffd0fa2be42c5032e9f3582e75090996f8c38eaf6ce523ead75aef',coverageState:'partial'};
+ const ref='desktop-chat-20260909-satish-partial-sample';
+ assert.equal(prepare(r,'satish','release',ref).operationId,'satish-sample-release-20260909-eric');
+ for(const delta of [{revision:2},{payloadHash:'a'.repeat(64)},{runId:'different'},{coverageState:'unknown'},{publicationStatus:'withdrawn'}])assert.throws(()=>prepare({...r,...delta},'satish','release',ref));
+ assert.throws(()=>prepare(r,'satish','release','different-approval'));
+});

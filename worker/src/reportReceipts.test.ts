@@ -130,3 +130,17 @@ describe('control recovery and transport',()=>{
 });
 
 it('controlled reports cannot enter the untracked legacy issue store',async()=>{let reads=0;const db={select:async()=>{reads++;return []}} as unknown as Db;expect(await ingestReportIssues(db,{team_id:team,payload:{},received_at:'2030-01-08',receipt_managed:true})).toEqual({created:0,updated:0,skipped:0,recurred:0});expect(reads).toBe(0);let query='';await rebuildIssuesFromReports({select:async(_table:string,q:string)=>{query=q;return []}} as unknown as Db);expect(query).toContain('receipt_managed=eq.false')});
+
+ describe('single approved sample exception',()=>{
+ it('permits only the exact approved operator command; never broad partial publishing',async()=>{
+ const approved=JSON.parse(readFileSync(new URL('../../shared/approvedSampleRelease.json',import.meta.url),'utf8'));
+ const scoped={COACH_REPORT_CLIENTS:JSON.stringify([{id:'eric-receipt-operator',role:'operator',tokenHash:await sha256('operator'),teamIds:[approved.teamId]}])} as Env;
+ const flags:boolean[]=[];
+ const db={rpc:async(_name:string,args:any)=>{flags.push(args.p_allow_partial);return {};}} as unknown as Db;
+ const invoke=async(body:any,e= scoped)=>handleReportReceipts(new Request('https://offline.test/coach/weekly-report/control',{method:'POST',headers:{Authorization:'Bearer operator'},body:JSON.stringify(body)}),e,new URL('https://offline.test/coach/weekly-report/control'),{},db);
+ await invoke(approved);expect(flags.pop()).toBe(true);
+ for(const changed of [{operationId:'different'},{runId:'different'},{expectedHash:'a'.repeat(64)},{expectedRevision:2},{reason:'different'},{action:'withdraw'}]){await invoke({...approved,...changed});expect(flags.pop()).toBe(false);}
+ const otherActor={COACH_REPORT_CLIENTS:JSON.stringify([{id:'other-operator',role:'operator',tokenHash:await sha256('operator'),teamIds:[approved.teamId]}])} as Env;
+ await invoke(approved,otherActor);expect(flags.pop()).toBe(false);
+ });
+ });
