@@ -396,10 +396,12 @@ import { analyseAgentIssues, canExplain, type IssueToExplain } from './explainIs
  */
 export async function ingestReportIssues(
   database: Db,
-  report: { team_id: string | null; payload: any; received_at: string },
+  report: { team_id: string | null; payload: any; received_at: string; receipt_managed?: boolean },
 ): Promise<{ created: number; updated: number; skipped: number; recurred: number }> {
   const out = { created: 0, updated: 0, skipped: 0, recurred: 0 };
-  if (!report.team_id) return out;
+  // Controlled reports use the transactional, provenance-aware pattern projection.
+  // This legacy issue store cannot retract a report and must not ingest them.
+  if (!report.team_id || report.receipt_managed) return out;
 
   const teams = await database.select('teams', `id=eq.${report.team_id}&select=id,org_id`);
   if (!teams.length) return out;
@@ -482,7 +484,7 @@ export async function ingestReportIssues(
 export async function rebuildIssuesFromReports(database: Db, limit = 40) {
   const reports = (await database.select(
     'coach_weekly_reports',
-    `status=eq.published&select=team_id,payload,received_at&order=received_at.asc&limit=${limit}`,
+    `status=eq.published&receipt_managed=eq.false&select=team_id,payload,received_at&order=received_at.asc&limit=${limit}`,
   )) as any[];
   const totals = { reports: 0, created: 0, updated: 0, skipped: 0, recurred: 0 };
   for (const r of reports) {

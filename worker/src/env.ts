@@ -1,4 +1,5 @@
 export interface Env {
+  COACH_REPORT_CLIENTS?: string; // scoped receipt clients; no legacy token fallback
   WEEKLY_REPORTS?: { dashboard(): Promise<import('./hustleFeed.js').WeeklyDashboard> };
   ASSIGNMENTS?: DurableObjectNamespace;
   TIMELINES?: DurableObjectNamespace;
