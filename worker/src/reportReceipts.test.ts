@@ -24,6 +24,7 @@ beforeAll(async()=>{
  const patterns=readFileSync(new URL('../../db/hq_coach_patterns.sql',import.meta.url),'utf8');
  for(const name of ['coach_team_state','coach_patterns','coach_pattern_findings']){const start=patterns.indexOf('create table if not exists '+name+' (');const end=patterns.indexOf('\n);',start)+4;await pg.exec(patterns.slice(start,end));}
  await pg.exec(readFileSync(new URL('../../supabase/migrations/20260908181709_report_receipt_controls.sql',import.meta.url),'utf8'));
+ await pg.exec(readFileSync(new URL('../../supabase/migrations/20260909145617_preserve_legacy_quote_variants.sql',import.meta.url),'utf8'));
  env={COACH_REPORT_CLIENTS:JSON.stringify([{id:'hermes',role:'producer',tokenHash:await sha256('producer'),teamIds:[team]},{id:'eric',role:'operator',tokenHash:await sha256('operator'),teamIds:[team]}])} as Env;
 },30000);
 afterAll(async()=>pg?.close());
@@ -144,3 +145,15 @@ it('controlled reports cannot enter the untracked legacy issue store',async()=>{
  await invoke(approved,otherActor);expect(flags.pop()).toBe(false);
  });
  });
+
+describe('legacy quote preservation',()=>{
+ it('preserves legacy variants per report, deduplicates events and rejects controlled conflicts',async()=>{
+ const legacy=(id:string,quote:string)=>({...fixture(id),agents:[{agentName:'Legacy Example',opportunityPoints:[{patternKey:'service',findingIds:['legacy-shared'],explanation:'Existing report'}]}],findings:[{findingId:'legacy-shared',agentName:'Legacy Example',leadName:'Synthetic',occurredAt:'2030-01-03T12:00:00Z',channel:'text',quote}]});
+ for(const [id,q] of [['legacy-v1','First excerpt'],['legacy-v2','Different excerpt']])await pg.query("insert into coach_weekly_reports(run_id,team_id,org_id,team_slug,status,week_start,week_end,payload,agent_links) values($1,$2,$2,'test','published','2030-01-01','2030-01-07',$3,'{}')",[id,team,legacy(id,q)]);
+ await rpc('coach_receipt_rebuild',{p_team:team});
+ const rows=await pg.query<any>("select quote,quote_conflict from coach_pattern_findings where finding_id='legacy-shared'");expect(rows.rows).toEqual([{quote:null,quote_conflict:true}]);
+ const variants=await pg.query<any>("select quote_variants from coach_report_evidence_sources where finding_id='legacy-shared'");expect(variants.rows).toHaveLength(2);expect(variants.rows.flatMap(x=>x.quote_variants).sort()).toEqual(['Different excerpt','First excerpt']);
+ const f:any=legacy('managed-conflict','Third excerpt');f.agents[0].opportunities=f.agents[0].opportunityPoints;delete f.agents[0].opportunityPoints;const res=await send('/coach/weekly-report',f);const r=(await res.json() as any).receipt;
+ expect((await op(control(r,'release','managed-quote-conflict'))).body.error).toBe('evidence_conflict');expect((await lookup('managed-conflict')).publicationStatus).toBe('held');
+ });
+});
