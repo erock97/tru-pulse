@@ -237,13 +237,13 @@ export default function App() {
     : route === '/earnings' ? <Earnings key={o.id} org={o} />
     : route === '/pulse/detail'
       ? <Dashboard org={o} onHome={() => go('/')} />
-      : route === '/today'
+      : route === '/today' || route === '/'
       ? <Today org={o} />
       : route === '/home'
       ? <Home org={o} onOpenPulse={() => go('/pulse')} onOpenRep={() => go('/rep')} adminLeaders={adminLeaders} />
       // `/deck` is NOT listed here on purpose — it belongs to the Zillow slide
       // preview (parseDeckRoute), which is matched earlier.
-      : route === '/pulse' || route === '/'
+      : route === '/pulse'
       ? <RosterDeck orgId={o.id} orgName={o.name} onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
       : isCoachRoute(route)
         ? (

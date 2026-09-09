@@ -1,3 +1,4 @@
+import { isLearningCertified } from '../lib/learningProgress';
 import { PracticeFollowup } from '../components/PracticeFollowup';
 import { RepWorkshopLibrary } from '../components/RepWorkshopLibrary';
 import { workshopDay, workshopMeta } from '../workshops/types';
@@ -33,7 +34,7 @@ import '../truHqDark.css';
    and the Lesson / SimView preview entries. No mock data.
    ============================================================ */
 
-/** How many of the roster the plate shows before the search has to narrow it. */
+/** Page size; every agent remains reachable without knowing their name. */
 const ROSTER_CAP = 10;
 
 const fmtDate = (iso: string | null | undefined) =>
@@ -57,7 +58,7 @@ function previewCards(cards: LessonCard[] | null | undefined): LessonCard[] {
 function ProgressDots({ statuses }: { statuses: string[] }) {
   const done = statuses.filter((s) => s === 'passed').length;
   return (
-    <span className="rp-dots" aria-label={`${done} of ${statuses.length} modules cleared`}>
+    <span className="rp-dots" aria-label={`${done} of ${statuses.length} quizzes passed`}>
       {statuses.map((s, i) => (
         <span key={i} className={`rp-dot ${s === 'passed' ? 'on' : s === 'in_progress' ? 'mid' : ''}`} />
       ))}
@@ -90,6 +91,8 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
   const [sims, setSims] = useState<{ configured: boolean; scenarios: SimScenario[] }>({ configured: false, scenarios: [] });
   const operations=useOperations();
   const [q, setQ] = useState(operations?.practice?.name ?? '');
+  const [page, setPage] = useState(0);
+  const [progressFilter, setProgressFilter] = useState('all');
   const [role, setRole] = useState<string | null>(null);
   const [manage, setManage] = useState(false);
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -116,13 +119,32 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
   // though the Worker is still the real authority if this check is bypassed.
   const canAuthor = role === 'admin' || role === 'leader';
 
-  /* The searchable, capped roster. Computed here rather than beside the markup
+  /* The searchable, paginated roster. Computed here rather than beside the markup
      because the keyboard walk needs the same list, and hooks cannot live below
      the loading and preview returns. */
   const needle = q.trim().toLowerCase();
   const allAgents = data?.agents ?? [];
-  const filtered = needle ? allAgents.filter((a) => a.name.toLowerCase().includes(needle)) : allAgents;
-  const shown = filtered.slice(0, ROSTER_CAP);
+  const filtered = allAgents.filter(a => {
+    if (needle && !a.name.toLowerCase().includes(needle)) return false;
+    const rows = data?.progress.filter(p => p.agent_id === a.id) ?? [];
+    const quizzesPassed = !!data?.modules.length && data.modules.every(m => rows.some(p => p.module_id === m.id && p.status === 'passed'));
+    const started = rows.some(p => p.status !== 'not_started');
+    const simulationPassed = data?.practice.some(p => p.agent_id === a.id && p.passed) ?? false;
+    const certified = isLearningCertified((data?.modules ?? []).map(m => {
+      const progress = rows.find(p => p.module_id === m.id);
+      return {status: progress?.status ?? 'not_started', signed: !!progress?.signed_off_at};
+    }), simulationPassed);
+    return progressFilter === 'all' || (progressFilter === 'not_invited' && !a.invited)
+      || (progressFilter === 'passed' && quizzesPassed)
+      || (progressFilter === 'simulation_pending' && quizzesPassed && !simulationPassed)
+      || (progressFilter === 'signoff_ready' && quizzesPassed && simulationPassed && !certified)
+      || (progressFilter === 'certified' && certified)
+      || (progressFilter === 'in_progress' && started && !quizzesPassed)
+      || (progressFilter === 'not_started' && !started);
+  });
+  const lastPage = Math.max(0, Math.ceil(filtered.length / ROSTER_CAP) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const shown = filtered.slice(currentPage * ROSTER_CAP, (currentPage + 1) * ROSTER_CAP);
 
   const focus = useDeckFocus();
   useDeckKeys({
@@ -206,11 +228,10 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
     return modules.length ? Math.round((passed / modules.length) * 100) : 0;
   };
   const isSigned = (agentId: string) => {
-    const passedRows = progress.filter((p) => p.agent_id === agentId && p.status === 'passed');
-    return pct(agentId) === 100 && passedRows.length > 0 && passedRows.every((p) => p.signed_off_at);
+    return isLearningCertified(modules.map(m => ({status: stat(agentId, m.id), signed: !!row(agentId, m.id)?.signed_off_at})), simPassed(agentId));
   };
-  const certifiedCount = agents.filter((a) => pct(a.id) === 100).length;
-  const teamCert = agents.length ? Math.round((certifiedCount / agents.length) * 100) : 0;
+  const quizzesPassedCount = agents.filter((a) => pct(a.id) === 100).length;
+  const teamCert = agents.length ? Math.round((quizzesPassedCount / agents.length) * 100) : 0;
   const totalQuestions = modules.reduce((s, m) => s + m.questions, 0);
 
   // Real per-agent progress. `invitedCount` and `inProgressCount` went with the
@@ -290,8 +311,8 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                 <i />
                 {notInvited > 0
                   ? `${notInvited} cannot start yet`
-                  : certifiedCount === agents.length && agents.length > 0
-                    ? 'Everybody is certified'
+                  : quizzesPassedCount === agents.length && agents.length > 0
+                    ? 'Everybody has passed their quizzes'
                     : `${startedCount} of ${enrolled} underway`}
               </span>
               <h1>Training and team progress</h1>
@@ -315,7 +336,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </header>
 
-          <div className="rep-summary-line"><span><b>{certifiedCount}</b> certified</span><span><b>{startedCount}</b> started</span><span><b>{notInvited}</b> awaiting invitation</span><button className="brief-open" onClick={()=>{window.location.hash='/team';}}>Manage invitations →</button></div>
+          <div className="rep-summary-line"><span><b>{quizzesPassedCount}</b> agents passed all quizzes</span><span><b>{startedCount}</b> started</span><span><b>{notInvited}</b> awaiting invitation</span><button className="brief-open" onClick={()=>{window.location.hash='/team';}}>Manage invitations →</button></div>
           {/* ============ THE ROSTER ============ */}
           {/* The funnel that used to sit beside this is gone. On real data it
               read: 10 enrolled, 10 never invited, 0 started, 0 certified — a
@@ -347,8 +368,11 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                 aria-label="Find an agent in Rep" className="ad-input adm-search"
                 placeholder={`Search ${agents.length} agent${agents.length === 1 ? '' : 's'}…`}
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => { setQ(e.target.value); setPage(0); }}
               />
+              <select className="ad-input" aria-label="Filter agent progress" value={progressFilter} onChange={e => { setProgressFilter(e.target.value); setPage(0); }}>
+                <option value="all">All progress</option><option value="not_invited">Awaiting invitation</option><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="passed">All quizzes passed</option><option value="simulation_pending">Simulation pending</option><option value="signoff_ready">Ready for sign-off</option><option value="certified">Certified</option>
+              </select>
             </span>
           </div>
 
@@ -389,7 +413,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                           {isSigned(a.id) && <span className="rp-pill-ok" title="Certification signed off">Signed ✓</span>}
                         </span>
                         <ProgressDots statuses={statuses} />
-                        <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`}>{p}%</span>
+                        <span className={`rp-agent-pct ${p === 0 ? 'zero' : ''}`} aria-label={`${p}% of quizzes passed`}>{p}%</span>
                         <span className="rp-caret">{isOpen ? '▾' : '▸'}</span>
                       </div>
                       {isOpen && (
@@ -406,15 +430,15 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
                     </div>
                   );
                 })}
-                {shown.length === 0 && <div className="rp-roster-empty">No agents match “{q}”.</div>}
+                {shown.length === 0 && <div className="rp-roster-empty">No agents match your search and progress filter.</div>}
               </div>
             )}
 
             {filtered.length > ROSTER_CAP && (
-              <div className="rp-roster-more">{filtered.length - ROSTER_CAP} more — search to narrow the roster.</div>
+              <nav className="rp-roster-more" aria-label="Agent progress pages"><button className="rp-invite" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</button> <span role="status">{currentPage * ROSTER_CAP + 1}–{Math.min((currentPage + 1) * ROSTER_CAP, filtered.length)} of {filtered.length} agents</span> <button className="rp-invite" disabled={currentPage === lastPage} onClick={() => setPage(currentPage + 1)}>Next</button></nav>
             )}
             <div className="rp-legend">
-              <span><span className="rp-dot on" /> Module cleared</span>
+              <span><span className="rp-dot on" /> Quiz passed</span>
               <span><span className="rp-dot mid" /> In progress</span>
               <span><span className="rp-dot" /> Not started</span>
             </div>
@@ -424,7 +448,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             const day=workshopDay(m);
             return day && day<=3 ? [{day,onOpen:()=>openPreview(m),disabled:!openable,status:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];
           })} />
-          <details className="rep-curriculum"><summary>Certification & team progress · {modules.length} modules · {totalQuestions} questions</summary>
+          <details className="rep-curriculum"><summary>Quiz & team progress · {modules.length} modules · {totalQuestions} questions</summary>
           <section className="dk-bento rp-bento-deck">
             {/* The track. Distance is progress, not rate and not time — see
                 components/repViz.tsx for why this page is the one that is not
@@ -433,10 +457,10 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
               <span className="k">The track</span>
               <span className="v"><Odometer value={teamCert} suffix="%" /></span>
               <ScaleMarks
-                lo={0} hi={modules.length} line={modules.length} lineLabel="certified"
+                lo={0} hi={modules.length} line={modules.length} lineLabel="quizzes passed"
                 marks={trackMarks}
               />
-              <span className="u">fully certified · every dot is an agent, every mark a module</span>
+              <span className="u">all quizzes passed · every dot is an agent, every mark a module</span>
             </div>
             {/* No strips here on purpose. Pulse's five tiles each summarise a
                 distribution across the team, so a strip is the same fact drawn
@@ -570,7 +594,7 @@ function AgentDrill({ agent, modules, row, pct, signed, sim, onSigned }: {
               <div className="rp-drill-mtitle">M{moduleIndex + 1} · {workshopMeta[workshopDay(m)??0]?.title ?? m.title}</div>
               <div className="rp-drill-mline">
                 {s === 'passed'
-                  ? <>Passed · {p?.score}% · {fmtDate(p?.passed_at)}</>
+                  ? <>Quiz passed · {p?.score}% · {fmtDate(p?.passed_at)}</>
                   : s === 'in_progress'
                     ? <>In progress{p?.score != null ? ` · last attempt ${p.score}%` : ''}</>
                     : 'Not started'}

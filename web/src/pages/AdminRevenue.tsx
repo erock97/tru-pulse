@@ -131,8 +131,8 @@ export default function AdminRevenue({
         )}
         {t.confirmed > 0 && (
           <button type="button" className="mny-btn yes" onClick={() => setInvoiceFor(t.team)}
-            title="Draft and send a Stripe invoice for confirmed, unbilled closings">
-            Invoice confirmed
+            title="Review confirmed, unbilled closings before drafting or sending a Stripe invoice">
+            Review invoice
           </button>
         )}
         <button type="button" className="mny-btn" disabled={!cfg}

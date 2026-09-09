@@ -1,6 +1,14 @@
 import type {Env} from './env.js';
 import type {UserClient} from './asUser.js';
-import {assignmentInput,type CoachingAssignment} from '../../shared/coachingAssignments.js';
+import {assignmentInput,type CoachingAssignment,type CoachingAssignmentEvent} from '../../shared/coachingAssignments.js';
+type History={history?:CoachingAssignmentEvent[];historyIncomplete?:boolean};
+type Practice=History&{practiceAt:string;reflection:string};
+type Review=History&{reviewedAt:string;reviewedBy?:string;reviewNote:string;outcome:CoachingAssignment['outcome'];dueDate?:string};
+const incomplete=(record:History|null)=>!!record&&(record.historyIncomplete===true||!record.history);
+const historyPatch=(practice:Practice|null,review:Review|null)=>({
+ history:[...(practice?.history??[]),...(review?.history??[])].sort((a,b)=>a.at.localeCompare(b.at)),
+ historyIncomplete:incomplete(practice)||incomplete(review),
+});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Agent={id:string;org_id:string;auth_id:string|null};
 export async function handleCoachingAssignments(req:Request,env:Env,db:UserClient,cors:Record<string,string>,originOk:boolean):Promise<Response>{
@@ -29,9 +37,9 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
    }while(cursor);
    const progress=await db.select<{module_id:string;status:string;passed_at:string|null}>('rep_progress',`select=module_id,status,passed_at&agent_id=eq.${agentId}`,{strict:true});
    const assignments=await Promise.all(records.map(async r=>{
-    const practice=await env.SESSIONS.get(`coaching-practice:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as {practiceAt:string;reflection:string}|null;
-    const review=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as {reviewedAt:string;reviewNote:string;outcome:CoachingAssignment['outcome']}|null;
-    return {...r,...practice,...review,trainingPassed:progress.some(p=>p.module_id===r.moduleId&&p.status==='passed'),passedAt:progress.find(p=>p.module_id===r.moduleId&&p.status==='passed')?.passed_at??null};
+    const practice=await env.SESSIONS.get(`coaching-practice:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as Practice|null;
+    const review=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as Review|null;
+    return {...r,...practice,...review,...historyPatch(practice,review),trainingPassed:progress.some(p=>p.module_id===r.moduleId&&p.status==='passed'),passedAt:progress.find(p=>p.module_id===r.moduleId&&p.status==='passed')?.passed_at??null};
    }));
    assignments.sort((a,b)=>a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
    return reply({assignments,canAssign:admin});
@@ -55,20 +63,34 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
   const record=await read(id);if(!record||record.agentId!==agentId||record.orgId!==agent.org_id)return reply({error:'Assignment not found'},404);
   if(action==='practice'){
    if(!own)return reply({error:'Only the assigned agent can record their practice'},403);
-   const review=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${id}`,'json') as {outcome:string}|null;
+   const review=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${id}`,'json') as Review|null;
    if(review?.outcome==='complete'||review?.outcome==='cancelled')return reply({error:'This assignment has already been reviewed'},409);
    const reflection=typeof b.reflection==='string'?b.reflection.trim():'';
    if(!reflection||reflection.length>1200)return reply({error:'Describe your practice in up to 1,200 characters'},400);
-   const patch={practiceAt:new Date().toISOString(),reflection};
-   await env.SESSIONS.put(`coaching-practice:v1:${agent.org_id}:${agentId}:${id}`,JSON.stringify(patch));return reply({ok:true,patch});
+   const existing=await env.SESSIONS.get(`coaching-practice:v1:${agent.org_id}:${agentId}:${id}`,'json') as Practice|null;
+   // A retry must not manufacture a second practice date. After a continue
+   // review, the same words may legitimately describe a new submission.
+   if(existing?.reflection===reflection&&(!review||existing.practiceAt>review.reviewedAt))return reply({ok:true,patch:{...existing,...historyPatch(existing,review)}});
+   const practiceAt=new Date(Math.max(Date.now(),review?Date.parse(review.reviewedAt)+1:0,existing?Date.parse(existing.practiceAt)+1:0)).toISOString();
+   const event:CoachingAssignmentEvent={kind:'practice',at:practiceAt,reflection};
+   const patch:Practice={practiceAt,reflection,history:[...(existing?.history??[]),event],historyIncomplete:incomplete(existing)};
+   await env.SESSIONS.put(`coaching-practice:v1:${agent.org_id}:${agentId}:${id}`,JSON.stringify(patch));return reply({ok:true,patch:{...patch,...historyPatch(patch,review)}});
   }
   if(action==='review'){
    if(!admin)return reply({error:'Only coaches can review work'},403);
    const note=typeof b.reviewNote==='string'?b.reviewNote.trim():'';
    if(!['complete','continue','cancelled'].includes(String(b.outcome))||!note||note.length>1200)return reply({error:'Choose an outcome and add a review note'},400);
-   let followUp={};if(b.outcome==='continue'){try{followUp={dueDate:assignmentInput({commitment:record.commitment,dueDate:b.dueDate}).dueDate};}catch{return reply({error:'Choose the next follow-up date'},400);}}
-   const patch={...followUp,reviewedAt:new Date().toISOString(),reviewedBy:db.userId,reviewNote:note,outcome:b.outcome};
-   await env.SESSIONS.put(`coaching-review:v1:${agent.org_id}:${agentId}:${id}`,JSON.stringify(patch));return reply({ok:true,patch});
+   let followUp:{dueDate?:string}={};if(b.outcome==='continue'){try{followUp={dueDate:assignmentInput({commitment:record.commitment,dueDate:b.dueDate}).dueDate};}catch{return reply({error:'Choose the next follow-up date'},400);}}
+   const existing=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${id}`,'json') as Review|null;
+   const practice=await env.SESSIONS.get(`coaching-practice:v1:${agent.org_id}:${agentId}:${id}`,'json') as Practice|null;
+   const dueDate=followUp.dueDate??existing?.dueDate??record.dueDate;
+   if(existing&&existing.reviewedBy===db.userId&&existing.reviewNote===note&&existing.outcome===b.outcome&&(existing.dueDate??record.dueDate)===dueDate&&(!practice||practice.practiceAt<=existing.reviewedAt))return reply({ok:true,patch:{...existing,...historyPatch(practice,existing)}});
+   if(existing?.outcome==='complete'||existing?.outcome==='cancelled')return reply({error:'This assignment has already been closed'},409);
+   const reviewedAt=new Date(Math.max(Date.now(),practice?Date.parse(practice.practiceAt):0,existing?Date.parse(existing.reviewedAt)+1:0)).toISOString();
+   const outcome=b.outcome as 'complete'|'continue'|'cancelled';
+   const event:CoachingAssignmentEvent={kind:'review',at:reviewedAt,reviewNote:note,outcome,dueDate,previousDueDate:existing?.dueDate??record.dueDate};
+   const patch:Review={dueDate,reviewedAt,reviewedBy:db.userId,reviewNote:note,outcome,history:[...(existing?.history??[]),event],historyIncomplete:incomplete(existing)};
+   await env.SESSIONS.put(`coaching-review:v1:${agent.org_id}:${agentId}:${id}`,JSON.stringify(patch));return reply({ok:true,patch:{...patch,...historyPatch(practice,patch)}});
   }
   return reply({error:'Unknown action'},400);
  }catch{return reply({error:'Coaching assignments could not be loaded or saved. Please retry.'},503);}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CADENCE_DAYS, cadenceEdge, cadenceMark, pastCadence, trackMark } from './deckMarks';
 
-const coachAgent = (name: string, lastDays: number) => ({ id: name, name, lastDays });
+const coachAgent = (name: string, lastDays: number, hasRecordedCheckin = true) => ({ id: name, name, lastDays, hasRecordedCheckin });
 const repAgent = (name: string, invited: boolean) => ({ id: name, name, invited });
 
 describe('Coach — the cadence scale', () => {
@@ -12,17 +12,16 @@ describe('Coach — the cadence scale', () => {
     expect(m.reading).toBe('9d');
   });
 
-  it('pins never-met to the edge rather than to 99 days', () => {
-    // The sentinel is 99. Read as a value it would land INSIDE somebody last
-    // seen 120 days ago, which says the wrong thing about both of them.
+  it('leaves missing history off the measured axis', () => {
+    // Missing history is distinct from a measured interval, even at 99 days.
     const edge = 40;
-    const never = cadenceMark(coachAgent('Maria Lopez', 99), edge);
-    expect(never.value).toBe(edge);
-    expect(never.reading).toBe('never');
+    const never = cadenceMark(coachAgent('Maria Lopez', 99, false), edge);
+    expect(never.value).toBeNull();
+    expect(never.reading).toBe('No recorded 1:1');
   });
 
-  it('reads never as the worst state, not as a middling one', () => {
-    expect(cadenceMark(coachAgent('Maria Lopez', 99), 40).tone).toBe('bad');
+  it('uses a neutral tone for missing history', () => {
+    expect(cadenceMark(coachAgent('Maria Lopez', 99, false), 40).tone).toBe('none');
   });
 
   it('turns amber at the cadence line and ember at a month', () => {
@@ -32,12 +31,12 @@ describe('Coach — the cadence scale', () => {
   });
 
   it('sizes the axis past the cadence line and past everybody real', () => {
-    expect(cadenceEdge([{ lastDays: 3 }, { lastDays: 8 }])).toBe(CADENCE_DAYS + 6);
-    expect(cadenceEdge([{ lastDays: 3 }, { lastDays: 42 }])).toBe(46);
+    expect(cadenceEdge([{ lastDays: 3, hasRecordedCheckin: true }, { lastDays: 8, hasRecordedCheckin: true }])).toBe(CADENCE_DAYS + 6);
+    expect(cadenceEdge([{ lastDays: 3, hasRecordedCheckin: true }, { lastDays: 42, hasRecordedCheckin: true }])).toBe(46);
   });
 
   it('does not let the never sentinel stretch the axis to 99', () => {
-    expect(cadenceEdge([{ lastDays: 12 }, { lastDays: 99 }])).toBe(CADENCE_DAYS + 6);
+    expect(cadenceEdge([{ lastDays: 12, hasRecordedCheckin: true }, { lastDays: 99, hasRecordedCheckin: false }])).toBe(CADENCE_DAYS + 6);
   });
 });
 
@@ -51,9 +50,9 @@ describe('Coach — asking for a tighter cadence', () => {
     expect(cadenceMark(a, 40, 4).tone).toBe('bad');    // more than double it
   });
 
-  it('still treats never as the worst state at any cadence', () => {
-    expect(cadenceMark(coachAgent('Maria Lopez', 99), 40, 4).tone).toBe('bad');
-    expect(cadenceMark(coachAgent('Maria Lopez', 99), 40, 60).tone).toBe('bad');
+  it('keeps missing history neutral at every cadence', () => {
+    expect(cadenceMark(coachAgent('Maria Lopez', 99, false), 40, 4).tone).toBe('none');
+    expect(cadenceMark(coachAgent('Maria Lopez', 99, false), 40, 60).tone).toBe('none');
   });
 
   it('falls back to the standing cadence when none is given', () => {
@@ -62,16 +61,16 @@ describe('Coach — asking for a tighter cadence', () => {
   });
 
   it('counts who is past the cadence being asked about', () => {
-    const cohort = [coachAgent('A', 3), coachAgent('B', 9), coachAgent('C', 21), coachAgent('D', 99)];
-    expect(pastCadence(cohort, 14)).toBe(2);   // C and never-met D
-    expect(pastCadence(cohort, 7)).toBe(3);    // B joins them
-    expect(pastCadence(cohort, 30)).toBe(1);   // only never-met D
+    const cohort = [coachAgent('A', 3), coachAgent('B', 9), coachAgent('C', 21), coachAgent('D', 99, false)];
+    expect(pastCadence(cohort, 14)).toBe(1);   // C; missing history is excluded
+    expect(pastCadence(cohort, 7)).toBe(2);    // B joins C
+    expect(pastCadence(cohort, 30)).toBe(0);   // no recorded check-ins this old
   });
 
   it('does not let a tightened cadence rescale the axis', () => {
     // The axis is anchored on the DEFAULT so the marker cannot slide out from
     // under the cursor as it is dragged.
-    const cohort = [{ lastDays: 3 }, { lastDays: 8 }];
+    const cohort = [{ lastDays: 3, hasRecordedCheckin: true }, { lastDays: 8, hasRecordedCheckin: true }];
     expect(cadenceEdge(cohort)).toBe(CADENCE_DAYS + 6);
   });
 });
@@ -84,9 +83,9 @@ describe('Rep — the certification track', () => {
     expect(m.tone).toBe('warn');
   });
 
-  it('calls a full sweep certified, in the good tone', () => {
+  it('calls a full sweep quizzes passed, in the good tone', () => {
     const m = trackMark(repAgent('Dana Cole', true), 4, 4);
-    expect(m.reading).toBe('certified');
+    expect(m.reading).toBe('all quizzes passed');
     expect(m.tone).toBe('ok');
   });
 

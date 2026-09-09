@@ -2,7 +2,7 @@ import {beforeEach,describe,it,expect,vi} from 'vitest';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import type {Env} from './env.js';
 import type {UserClient} from './asUser.js';
-import {assignmentStatus,assignmentInput,type CoachingAssignment} from '../../shared/coachingAssignments.js';
+import {assignmentStatus,assignmentInput,assignmentAwaitingReview,type CoachingAssignment} from '../../shared/coachingAssignments.js';
 const agentId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',moduleId='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const records=new Map<string,unknown>();
 const select=vi.fn(),rpc=vi.fn();
@@ -54,7 +54,59 @@ describe('coaching assignments',()=>{
 });
 describe('assignment meaning',()=>{
  const base={outcome:null,moduleId,trainingPassed:false,practiceAt:null,reviewedAt:null} as CoachingAssignment;
- it('distinguishes practice from a real pass',()=>{expect(assignmentStatus({...base,practiceAt:'2026-09-01'})).toBe('Practice recorded · training still open');expect(assignmentStatus({...base,practiceAt:'2026-09-01',trainingPassed:true})).toBe('Ready for coaching review');});
- it('requires a new practice note after a keep-practicing review',()=>{const a={...base,moduleId:null,outcome:'continue' as const,reviewedAt:'2026-09-02',practiceAt:'2026-09-01'};expect(assignmentStatus(a)).toBe('Keep practicing');expect(assignmentStatus({...a,practiceAt:'2026-09-03'})).toBe('Ready for coaching review');});
+ it('distinguishes practice from a real pass',()=>{expect(assignmentStatus({...base,practiceAt:'2026-09-01'})).toBe('Submitted for review · training still open');expect(assignmentStatus({...base,practiceAt:'2026-09-01',trainingPassed:true})).toBe('Submitted for coaching review');});
+ it('requires a new practice note after a keep-practicing review',()=>{const a={...base,moduleId:null,outcome:'continue' as const,reviewedAt:'2026-09-02',practiceAt:'2026-09-01'};expect(assignmentStatus(a)).toBe('Keep practicing');expect(assignmentStatus({...a,practiceAt:'2026-09-03'})).toBe('Submitted for coaching review');});
  it('validates real calendar dates and bounded commitments',()=>{expect(()=>assignmentInput({commitment:'Try',dueDate:'2026-02-30'})).toThrow();expect(()=>assignmentInput({commitment:'x'.repeat(1201),dueDate:'2026-10-01'})).toThrow();expect(assignmentInput({commitment:' Try ',dueDate:'2026-10-01',moduleId:''})).toEqual({commitment:'Try',dueDate:'2026-10-01',moduleId:null});});
+});
+
+
+describe('practice and review retries',()=>{
+ it('keeps the original submission date on an identical retry, but accepts new practice after continue',async()=>{
+  await create();db.userId='agent';role='';
+  const submit={action:'practice',id,reflection:'Rehearsed the opening.'};
+  const first=await(await call(submit)).json();
+  expect(await(await call(submit)).json()).toEqual(first);
+  expect(put).toHaveBeenCalledTimes(2);
+  db.userId='coach';role='coach';
+  await call({action:'review',id,reviewNote:'Practice again before we meet.',outcome:'continue',dueDate:'2026-10-08'});
+  await call({action:'review',id,reviewNote:'Practice again before we meet.',outcome:'continue',dueDate:'2026-10-08'});
+  db.userId='agent';role='';await call(submit);
+  const data=await(await call()).json() as {assignments:CoachingAssignment[]};
+  expect(assignmentAwaitingReview(data.assignments[0])).toBe(true);
+  expect(data.assignments[0].dueDate).toBe('2026-10-08');
+  db.userId='coach';role='coach';
+  await call({action:'review',id,reviewNote:'Reviewed the new practice.',outcome:'complete'});
+  const finished=await(await call()).json() as {assignments:CoachingAssignment[]};
+  expect(finished.assignments[0].dueDate).toBe('2026-10-08');
+  expect(assignmentAwaitingReview(finished.assignments[0])).toBe(false);
+  expect(finished.assignments[0].history?.map(e=>e.kind)).toEqual(['practice','review','practice','review']);
+  expect(finished.assignments[0].history?.[1]).toMatchObject({kind:'review',previousDueDate:'2026-10-01',dueDate:'2026-10-08'});
+  expect(finished.assignments[0].history?.[3]).toMatchObject({kind:'review',previousDueDate:'2026-10-08',dueDate:'2026-10-08'});
+  expect(finished.assignments[0].historyIncomplete).toBe(false);
+ });
+ it('keeps the original review date on retry and prevents reopening finished work',async()=>{
+  await create();const review={action:'review',id,reviewNote:'Reviewed together.',outcome:'complete'};
+  const first=await(await call(review)).json();
+  expect(await(await call(review)).json()).toEqual(first);expect(put).toHaveBeenCalledTimes(2);
+  expect((await(await call()).json() as {assignments:CoachingAssignment[]}).assignments[0].history).toHaveLength(1);
+  expect((await call({...review,outcome:'continue',dueDate:'2026-10-09'})).status).toBe(409);
+ });
+ it('does not hide an unpassed training submission from the review queue',()=>{
+  const a={outcome:null,practiceAt:'2026-09-04',reviewedAt:null,moduleId,trainingPassed:false} as CoachingAssignment;
+  expect(assignmentAwaitingReview(a)).toBe(true);
+  expect(assignmentAwaitingReview({...a,outcome:'complete'})).toBe(false);
+  expect(assignmentAwaitingReview({...a,outcome:'continue',reviewedAt:'2026-09-05'})).toBe(false);
+ });
+ it('preserves new attempts without inventing history for legacy latest notes',async()=>{
+  await create();
+  records.set(`coaching-practice:v1:org-a:${agentId}:${id}`,{practiceAt:'2026-09-01T10:00:00.000Z',reflection:'An older practice note.'});
+  const legacy=await(await call()).json() as {assignments:CoachingAssignment[]};
+  expect(legacy.assignments[0].history).toEqual([]);expect(legacy.assignments[0].historyIncomplete).toBe(true);
+  db.userId='agent';role='';
+  await call({action:'practice',id,reflection:'A new attempt.'});
+  await call({action:'practice',id,reflection:'A different attempt.'});
+  const saved=await(await call()).json() as {assignments:CoachingAssignment[]};
+  expect(saved.assignments[0].history?.map(e=>e.kind==='practice'?e.reflection:'')).toEqual(['A new attempt.','A different attempt.']);
+  expect(saved.assignments[0].historyIncomplete).toBe(true);
+ });
 });

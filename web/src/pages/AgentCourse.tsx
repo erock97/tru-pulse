@@ -1,3 +1,4 @@
+import { isLearningCertified, learningTitle } from '../lib/learningProgress';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RetellWebClient } from 'retell-client-js-sdk';
 import {
@@ -51,7 +52,7 @@ function embedUrl(u: string): string {
 
 // Honest time estimate for a module (reading + drills + quiz).
 function estMinutes(m: CourseModule): number {
-  return Math.max(5, Math.round(m.cards.length * 0.8 + m.qs.length * 0.5));
+  return workshopMeta[workshopDay(m) ?? 0]?.minutes ?? Math.max(5, Math.round(m.cards.length * 0.8 + m.qs.length * 0.5));
 }
 
 export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
@@ -87,7 +88,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
   const simUnlocked = allMods || isDemo; // demo: the sim is always walkable
   const simPassed = sessionSimPass || attempts.some((a) => a.passed);
   const bestSim = attempts.reduce<number | null>((b, a) => (a.score != null && (b == null || a.score > b) ? a.score : b), null);
-  const certified = allMods && simPassed;
+  const certified = isLearningCertified(mods, simPassed);
   const nextMod = mods.find((m) => m.status !== 'passed') ?? null;
   const openModule = (m: CourseModule) => {
     if (!canOpenModule(m)) return;
@@ -109,9 +110,11 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
               <div className="ac-hero2-ey">Your certification</div>
               <h1>Hi {firstName}.</h1>
               <p>{certified
-                ? 'Fully certified — modules and the Live Sim. This is the standard; keep living it.'
-                : allMods
-                  ? 'All five modules down. One thing left: pass the Live Sim — a real call, out loud.'
+                ? 'Fully certified — quizzes, Live Sim, and leader sign-off. This is the standard; keep living it.'
+                : allMods && simPassed
+                  ? 'Quizzes and Live Sim passed. Your leader’s sign-off is next.'
+                  : allMods
+                  ? 'All quizzes passed. Complete the Live Sim, then your leader’s sign-off.'
                   : 'Master the TRU way — real numbers, real scripts, real reps. Pass every module, then prove it out loud in the Live Sim.'}</p>
             </div>
             <Ring passed={passed} total={total} />
@@ -144,8 +147,8 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
                   <span className="ac-modbar" />
                   <span className={`ac-modnum${done ? ' done' : ''}`}>{done ? '✓' : m.idx}</span>
                   <span className="ac-modmeta">
-                    <span className="ac-modtitle">{m.title}</span>
-                    <span className="ac-modsub">{done ? `Passed · ${m.score}%` : `≈ ${estMinutes(m)} min · ${m.cards.length} screens · ${m.qs.length}-question quiz`}</span>
+                    <span className="ac-modtitle">{learningTitle(m)}</span>
+                    <span className="ac-modsub">{done ? `Quiz passed · ${m.score}%` : `${workshopDay(m) ? 'Facilitated workshop · ' : '≈ '}${estMinutes(m)} min · ${m.qs.length}-question quiz`}</span>
                   </span>
                   {isNext ? <span className="ac-modstart">Start</span> : <span className="ac-modgo">{done ? 'Review' : '›'}</span>}
                 </button>
@@ -166,7 +169,7 @@ export default function AgentCourse({ agent }: { agent: AgentIdentity }) {
                   {simPassed
                     ? `Passed · ${bestSim}%`
                     : simUnlocked
-                      ? 'A real call with an AI buyer, graded on ALMS — score 80+ to certify'
+                      ? 'A real call with an AI buyer, graded on ALMS — score 80+ to pass'
                       : `🔒 Pass all ${total} modules to unlock`}
                 </span>
               </span>
@@ -457,7 +460,7 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
             <div className="ac-badge">{res.passed ? '🏆' : '🎧'}</div>
             <div className="ac-score">{res.score}<span>%</span></div>
             <div className="ac-verdict-word">{res.passed ? 'CALL PASSED' : 'RUN IT BACK'}</div>
-            <p>{scenario.label} · {res.durationS ? `${Math.round(res.durationS / 60)} min call` : 'graded on ALMS'}{res.passed ? ' — that’s a certifying call.' : ` — you need 80. Read the notes, then call ${scenario.name} again.`}</p>
+            <p>{scenario.label} · {res.durationS ? `${Math.round(res.durationS / 60)} min call` : 'graded on ALMS'}{res.passed ? ' — Live Sim passed. Certification also requires all quizzes and leader sign-off.' : ` — you need 80. Read the notes, then call ${scenario.name} again.`}</p>
           </div>
           <div className="ac-simboard fu">
             {(['a', 'l', 'm', 's'] as const).map((k) => (
@@ -589,7 +592,7 @@ function LegacyLesson({ module: m, onDone, onBack, doneLabel }: { module: Course
         <span className="ac-chip">Module {m.idx}</span>
         <span className="ac-count">{i + 1} / {cards.length}</span>
       </div>
-      <h2 className="ac-lessontitle ac-mob">{m.title}</h2>
+      <h2 className="ac-lessontitle ac-mob">{learningTitle(m)}</h2>
       <div className="ac-progress"><div className="ac-progress-fill" style={{ width: `${((i + 1) / cards.length) * 100}%` }} /></div>
       <div className="ac-cardzone" key={i}>
         <Card
@@ -935,9 +938,9 @@ export function Result({ module: m, result, onRetry, onReview, onHome }: {
         )}
         <div className="ac-badge">{result.passed ? '🏆' : '💪'}</div>
         <div className="ac-score">{result.score}<span>%</span></div>
-        <div className="ac-verdict-word">{result.passed ? 'CERTIFIED' : 'ALMOST THERE'}</div>
+        <div className="ac-verdict-word">{result.passed ? 'QUIZ PASSED' : 'ALMOST THERE'}</div>
         <p>{result.passed
-          ? `${m.title} — ${result.correct} of ${result.total} correct. That’s the standard.`
+          ? `${learningTitle(m)} — ${result.correct} of ${result.total} correct. That’s the standard.`
           : `${result.correct} of ${result.total}. You need ${m.pass_pct}%. Check the misses below and run it back — unlimited retries.`}</p>
         <div className="ac-nav center">
           {result.passed

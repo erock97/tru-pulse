@@ -94,7 +94,7 @@ export default function AdminAutomations({
       await addAutomation(teamId, typeKey);
       await load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not add that agent.');
+      setErr(e instanceof Error ? e.message : 'Could not add that automation.');
     } finally {
       setBusy(null);
     }
@@ -141,9 +141,9 @@ export default function AdminAutomations({
       <header className="dk-mast">
         <div>
           <span className="dk-eyebrow"><i />Platform owner</span>
-          <h1>Agents, <em>per team</em>.</h1>
+          <h1>Automations, <em>per team</em>.</h1>
           <p className="dk-sub">
-            A fixed set of agents you switch on for a team. Every one of them starts off,
+            A fixed set of automations you switch on for a team. Every one of them starts off,
             and the ones that could touch a client's data can only go as far as their own
             ceiling allows — raising that is a deliberate change, not a setting.
           </p>
@@ -152,7 +152,7 @@ export default function AdminAutomations({
 
       {stopped && (
         <div className="ad-inline-err" style={{ marginBottom: 14 }}>
-          Everything is stopped platform-wide. No agent will act until that is turned back on.
+          Everything is stopped platform-wide. No automation will act until that is turned back on.
         </div>
       )}
       {!board.flags.automation_live_sends && !stopped && (

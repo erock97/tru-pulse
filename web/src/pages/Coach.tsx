@@ -13,7 +13,7 @@ import {
   loadMeetingPrep, setMeetingPrepStatus,
   saveGoalFields, setQuarter, toggleCommitment, addCommitment,
   updateCommitment, deleteCommitment, goalFunnel, QUARTERS,
-  readCoachCache, writeCoachCache, firstName, confidence,
+  readCoachCache, writeCoachCache, firstName,
   ONE_ON_ONE_CHECKLIST, ONE_ON_ONE_CHECKLIST_VERSION, ARCHETYPE_CUES, MET_LABELS, COMMITMENT_STATUS_LABELS,
   type RosterAgent, type Profile, type Goal, type Commitment, type TeamSeg,
   type CheckinBundle, type CheckinItem, type CheckinItemKind,
@@ -42,24 +42,6 @@ import '../truHqDark.css';
    "needs you", and the drill-in all read the ported loaders.
    READ-ONLY — nothing here writes coaching data.
    ============================================================ */
-
-/* ---- Coaching HEALTH (0–100) for the ring: blends how fresh the last
-   check-in is (pace), how recently they were assessed (cadence), and how
-   settled their profile is (assessment count → confidence). One coachable
-   number that stands in for the mockup's fake "hustle score". ---- */
-function healthOf(a: RosterAgent): number {
-  // check-in freshness: 0d → 100, 14d+ → ~0
-  const checkin = a.lastDays >= 99 ? 20 : Math.max(0, 100 - (a.lastDays / 14) * 100);
-  // assessment cadence: fresh (0d) → 100, due at 90d → ~40
-  const cadence = Math.max(35, 100 - (a.days / 90) * 60);
-  // profile confidence from number of takes
-  const conf = confidence(a.takes).pct;
-  return Math.round(0.5 * checkin + 0.2 * cadence + 0.3 * conf);
-}
-
-/* ---- Big team-health gauge — focal, ambient glow ---- */
-
-
 
 /* ---- Team-mix wiring bar (real teamMix segments) ---- */
 function WiringBar({ segs }: { segs: TeamSeg[] }) {
@@ -273,24 +255,20 @@ function CoachDeck({
   // Derived, real coaching aggregates.
   const derived = useMemo(() => {
     if (!roster || roster.length === 0) return null;
-    const withHealth = roster.map((a) => ({ a, health: healthOf(a) }));
-    const teamHealth = Math.round(withHealth.reduce((s, x) => s + x.health, 0) / withHealth.length);
+    const withHistory = roster.map((a) => ({ a }));
     const onTrack = roster.filter((a) => a.pace === 'On track').length;
-    const needsYou = withHealth
-      .filter(({ a }) => a.pace === 'Stalled' || a.pace === 'No check-ins' || a.pace === 'Slipping' || a.due)
-      .sort((x, y) => x.health - y.health);
+    const needsYou = withHistory
+      .filter(({ a }) => a.hasRecordedCheckin === true && a.lastDays >= cadence)
+      .sort((x, y) => y.a.lastDays - x.a.lastDays);
     // The table IS the leaderboard now — same ordering, no second list of the
     // same four people sitting above it.
-    const ranked = [...withHealth].sort((x, y) => y.health - x.health);
-    const leaderboard = ranked.slice(0, 4);
+    const ranked = [...withHistory].sort((x, y) => x.a.name.localeCompare(y.a.name));
     const dueCount = roster.filter((a) => a.due).length;
     const assessed = roster.reduce((s, a) => s + a.takes, 0);
-    return { withHealth, ranked, teamHealth, onTrack, needsYou, leaderboard, dueCount, assessed };
-  }, [roster]);
+    return { withHistory, ranked, onTrack, needsYou, dueCount, assessed };
+  }, [roster,cadence]);
 
-  /* The cohort is ranked by coaching health, so its order changes whenever the
-     data does. FLIP moves each person to their new place rather than redrawing
-     the table under you. */
+  // A stable alphabetical cohort order avoids implying an unsupported ranking.
   const rankOrder = derived ? derived.ranked.map(({ a }) => a.id).join('|') : '';
   useFlip(tableRef, rankOrder);
 
@@ -330,12 +308,11 @@ function CoachDeck({
   // brief-only sheet can open instead of nothing.
   const briefOnly = openId && !openAgent ? briefAgentName : null;
 
-  // The furthest-out point on the cadence scale, so the lead tile can name it.
-  // `lastDays` uses 99 for "never", which is worse than any real number.
+  // The longest measured gap; missing history cannot contribute a duration.
   const driftPeak = (() => {
-    const worst = [...roster].sort((a, b) => b.lastDays - a.lastDays)[0];
-    if (!worst) return { name: '—', days: 0, never: false };
-    return { name: worst.name, days: worst.lastDays, never: worst.lastDays >= 99 };
+    const worst = roster.filter(a=>a.hasRecordedCheckin===true).sort((a, b) => b.lastDays - a.lastDays)[0];
+    if (!worst) return { name: '—', days: 0, never: true };
+    return { name: worst.name, days: worst.lastDays, never: false };
   })();
 
   /* ---- the cadence scale ------------------------------------------------
@@ -389,8 +366,6 @@ function CoachDeck({
           ) : openAgent ? (
             <AgentDrill
               agent={openAgent}
-              cohort={derived ? derived.withHealth.map((x) => ({ id: x.a.id, health: x.health })) : []}
-              teamHealth={derived ? derived.teamHealth : null}
               onOpenProfile={() => openProfile(openAgent.id)}
             />
           ) : (
@@ -418,13 +393,10 @@ function CoachDeck({
                               ? `${onboarding.invited} still to accept`
                               : 'Everybody is in'}
                           </span>
-                          <h1>
-                            <em>{onboarding.accepted}</em> of {onboarding.total} in,
-                            and the assessment is what fills this page.
-                          </h1>
+                          <h1>Start your team’s coaching history.</h1>
                           <p className="dk-sub">
-                            Archetypes, pace and coaching health appear per person as they
-                            finish the TRU assessment. Everything below is live now.
+                            Assessment profiles appear after the TRU assessment. Available
+                            reports and recorded check-ins can be reviewed now.
                           </p>
                         </div>
                       </header>
@@ -432,7 +404,7 @@ function CoachDeck({
                         {([
                           ['In your cohort', onboarding.total, 'people you added to Coach'],
                           ['Accepted their invite', onboarding.accepted, 'signed in at least once'],
-                          ['Invited, not accepted', onboarding.invited, 'email delivered, never opened'],
+                          ['Invited, not signed in', onboarding.invited, 'login sent; no sign-in recorded'],
                           ['No login sent yet', onboarding.noLogin, 'invite them from the Team tab'],
                           ['Assessed', onboarding.assessed, 'they appear in the dashboard'],
                         ] as [string, number, string][]).map(([k, v, u]) => (
@@ -479,9 +451,7 @@ function CoachDeck({
               {/* ============ THE CADENCE SCALE + THE NUMBERS ============ */}
               <details className="coach-metrics"><summary>Cadence and team measures · every {cadence} days</summary>
               <section className="dk-bento">
-                {/* The value is the outermost dot on the scale beside it — the
-                    person you have gone longest without sitting down with. Not
-                    the health score; that is its own tile and its own thing. */}
+                {/* Only recorded check-ins contribute measured gaps. */}
                 <div className="rs-plate dk-tile dk-tile-lead">
                   <span className="k">Longest without a 1:1</span>
                   <span className="v">{driftPeak.never ? 'Not recorded' : `${driftPeak.days}d`}</span>
@@ -508,13 +478,9 @@ function CoachDeck({
                   ['Due for a re-assessment', derived.dueCount, 'past 90 days',
                     'amber', derived.ranked.map(({ a }) => Math.min(a.days, 120)),
                     derived.ranked.map(({ a }) => `${a.name} · ${a.days >= 99 ? 'never assessed' : `${a.days}d since assessment`}`)],
-                  ['Slipping or stalled', derived.needsYou.length,
-                    derived.needsYou.length ? 'need a conversation' : 'nobody drifting',
-                    'ember', derived.ranked.map(({ a }) => Math.min(a.lastDays, 60)),
-                    derived.ranked.map(({ a }) => `${a.name} · ${a.lastDays >= 99 ? 'never' : `${a.lastDays}d`} since a 1:1`)],
-                  ['Team coaching health', derived.teamHealth, 'check-ins, cadence, profile',
-                    'sea', derived.ranked.map(({ health }) => health),
-                    derived.ranked.map(({ a, health }) => `${a.name} · health ${health}`)],
+                  ['Recorded check-ins due', derived.needsYou.length,
+                    `past the saved ${cadence}-day cadence; missing history excluded`,
+                    null, null, null],
                 ] as const).map(([k, n, u, tone, values, labels]) => (
                   <div className="rs-plate dk-tile" key={k}>
                     <span className="k">{k}</span>
@@ -548,8 +514,8 @@ function CoachDeck({
                   const m = new Map();
                   if (derived) {
                     const needs = new Set(derived.needsYou.map((x) => x.a.id));
-                    for (const { a, health } of derived.withHealth) {
-                      const meta = { archName: a.archName, health, lastDays: a.lastDays, needsYou: needs.has(a.id) };
+                    for (const { a } of derived.withHistory) {
+                      const meta = { archName: a.archName, hasRecordedCheckin:a.hasRecordedCheckin, lastDays: a.lastDays, needsYou: needs.has(a.id) };
                       m.set(a.id, meta);
                       m.set(a.name.trim().toLowerCase(), meta);
                     }
@@ -717,11 +683,8 @@ function useSavedFlag(): [string | null, (label?: string) => void] {
   return [flag, flash];
 }
 
-function AgentDrill({ agent, teamHealth, onOpenProfile }: {
+function AgentDrill({ agent, onOpenProfile }: {
   agent: RosterAgent;
-  /** Everyone's coaching health, so this one can be shown in context. */
-  cohort: Array<{ id: string; health: number }>;
-  teamHealth: number | null;
   onOpenProfile: () => void;
 }) {
   // Channel fit is pure derivation from the assessment code — no request, no
@@ -817,7 +780,6 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
   }, [agent.id, agent.teamId, agent.code]);
 
   const first = firstName(agent.name);
-  const health = healthOf(agent);
   const fnl = goal ? goalFunnel(goal) : null;
   const doneCount = commitments.filter((c) => c.done).length;
 
@@ -832,7 +794,7 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
           <span className="dk-eyebrow"><i />{agent.assessed ? `${agent.archName} · ${agent.quad}` : 'Not assessed yet'}</span>
           <h1>{agent.name}</h1>
           <p className="dk-sub">
-            {profile
+            {profile && agent.assessed
               ? profile.tagline
               : agent.assessed
                 ? `Stepping into ${first}'s coaching.`
@@ -855,9 +817,6 @@ function AgentDrill({ agent, teamHealth, onOpenProfile }: {
           full screen on numbers that only need a glance — the page belongs to
           this week's brief and the 1:1 (Eric's two priorities for Coach). */}
       <div className="ad-vitals">
-        <span className="ad-vital">
-          <b>{health}</b> coaching health{teamHealth !== null ? <i> · team {teamHealth}</i> : null}
-        </span>
         <span className="ad-vital">
           {agent.hasRecordedCheckin ? <><b>{agent.lastDays}d</b> since last recorded 1:1</> : 'No recorded 1:1'}
         </span>

@@ -160,7 +160,7 @@ export function HqShell({
      first frame. A state round-trip would land a frame late, which is precisely
      long enough to see. */
   useLayoutEffect(() => {
-    const order = ['pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue', 'contracts', 'calendar'];
+    const order = ['today', 'pulse', 'coach', 'rep', 'team', 'admin', 'team-data', 'revenue', 'contracts', 'calendar'];
     const i = order.indexOf(activeKey);
     const el = shellRef.current;
     if (!el || i < 0) return;
@@ -278,13 +278,6 @@ export function HqShell({
               <div className="side-user-role">{role}</div>
             </div>
           </div>
-          {impersonating && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '11px 12px', borderRadius: 12, background: 'rgba(169,121,31,0.12)', border: '1px solid rgba(169,121,31,0.35)' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.04em', color: 'var(--accent-hi)' }}>
-                ● ACTING AS {orgName.toUpperCase()}
-              </span>
-            </div>
-          )}
           {onSignOut && (
             <button className="side-link-btn" onClick={onSignOut}>
               Sign out

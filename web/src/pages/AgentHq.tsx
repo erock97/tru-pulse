@@ -1,3 +1,4 @@
+import { learningTitle } from '../lib/learningProgress';
 import CoachingAssignments from '../components/CoachingAssignments';
 import PersonalProfile from './PersonalProfile';
 import { workshopDay } from '../workshops/types';
@@ -187,8 +188,8 @@ function HomeTab({agentId,mods,commitments,assessed,sms,onSmsChanged,onGo}:{
  return <div className="ah-home-next">
   <CoachingAssignments key={agentId} agentId={agentId} compact onOpen={id=>onGo('training',id)}/>
   <div className="ah-next-grid">
-   <section className="ah-next-section"><h2>Continue training</h2>{mods===null?<p>Loading training…</p>:next?<><h3>{next.title}</h3><p>{next.summary}</p><button className="ah-btn" onClick={()=>onGo('training',next.id)}>Open training →</button></>:<><h3>You’re up to date.</h3><p>Return to a lesson whenever you need a refresher.</p><button className="ah-btn" onClick={()=>onGo('training')}>Browse training</button></>}</section>
-   <section className="ah-next-section"><h2>Recent accomplishment</h2>{recent?<><span className="ah-recent-mark" aria-hidden>✦</span><h3>{recent.title}</h3><p>Training passed{recent.passed_at?` · ${new Date(recent.passed_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`:''}</p><button className="ah-btn" onClick={()=>onGo('profile')}>View your profile</button></>:<><h3>No training passed yet.</h3><p>When you pass a training, you’ll see it here and earn a badge on your profile.</p><button className="ah-btn" onClick={()=>onGo('profile')}>View your profile</button></>}</section>
+   <section className="ah-next-section"><h2>Continue training</h2>{mods===null?<p>Loading training…</p>:next?<><h3>{learningTitle(next)}</h3><p>{next.summary}</p><button className="ah-btn" onClick={()=>onGo('training',next.id)}>Open {learningTitle(next)} →</button></>:<><h3>You’re up to date.</h3><p>Return to a lesson whenever you need a refresher.</p><button className="ah-btn" onClick={()=>onGo('training')}>Browse training</button></>}</section>
+   {recent&&<section className="ah-next-section"><h2>Recent accomplishment</h2><h3>{learningTitle(recent)}</h3><p>Quiz passed{recent.passed_at?` · ${new Date(recent.passed_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`:''}</p></section>}
    <section className="ah-next-section"><h2>Agreed at your 1:1</h2>{commitments.length?<ul className="ah-next-checks">{commitments.slice(0,2).map(c=><li key={c.id}>{c.text}</li>)}</ul>:<p>No open commitments from your 1:1 notes.</p>}<button className="ah-btn" onClick={()=>onGo('coach')}>Open Coach{commitments.length>2?` · ${commitments.length} commitments`:''}</button></section>
    {!assessed&&<section className="ah-next-section"><h2>Before your next coaching meeting</h2><h3>Complete your assessment.</h3><p>Give your coach a better understanding of how you work.</p><button className="ah-btn" onClick={()=>{window.location.hash='/assess?self=1';}}>Take assessment</button></section>}
   </div>
@@ -280,7 +281,7 @@ function TrainingTab({
     <div className="ah-bay">
       <RepWorkshopLibrary entries={mods.flatMap(m=>{
         const day=workshopDay(m);
-        return day && day<=3 ? [{day,onOpen:()=>onOpen(m),disabled:!canOpenModule(m),status:m.status==='passed'?`Passed${m.score!=null?` · ${m.score}%`:''}`:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];
+        return day && day<=3 ? [{day,onOpen:()=>onOpen(m),disabled:!canOpenModule(m),status:m.status==='passed'?`Quiz passed${m.score!=null?` · ${m.score}%`:''}`:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];
       })} />
       {bay.map((section) => (
         <section key={section.label} className="ah-section">
@@ -301,9 +302,9 @@ function TrainingTab({
                   >
                     <span className="ah-mod-mark">{done ? '✓' : m.idx}</span>
                     <span>
-                      <span className="ah-mod-title">{m.title}</span>
+                      <span className="ah-mod-title">{learningTitle(m)}</span>
                       <span className="ah-mod-sub">
-                        {done ? `Passed${m.score != null ? ` · ${m.score}%` : ''}` : openable ? 'Open' : 'Coming'}
+                        {done ? `Quiz passed${m.score != null ? ` · ${m.score}%` : ''}` : openable ? 'Open' : 'Coming'}
                       </span>
                     </span>
                   </button>

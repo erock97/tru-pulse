@@ -97,7 +97,7 @@ export default function AdminTeams({
               className="ad-btn"
               onClick={() => { window.location.hash = '/admin/agents'; }}
             >
-              Agents
+              Automations
             </button>
           </header>
 
