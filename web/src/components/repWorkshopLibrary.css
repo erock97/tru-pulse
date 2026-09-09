@@ -1,4 +1,21 @@
-.rep-workshop-card{display:grid;grid-template-columns:minmax(180px,.65fr) 1.35fr;gap:28px;margin:24px 0;background:#20292c;color:#f2f0e9;border:1px solid #52625d;border-radius:16px;overflow:hidden}.rep-workshop-card>img{width:100%;height:100%;min-height:250px;object-fit:cover}.rep-workshop-card>div{padding:28px 28px 28px 0}.rep-workshop-eyebrow{color:#bdd1ed;font-size:11px;letter-spacing:.12em}.rep-workshop-card h3{font-size:28px;line-height:1.2;margin:10px 0}.rep-workshop-card p{max-width:650px;color:#d4dad5;font-size:15px;line-height:1.6}.rep-workshop-actions{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin:20px 0 12px}.rep-workshop-actions button{background:#bdd1ed;color:#171d22;border:0;border-radius:7px;padding:12px 20px;font-weight:600;cursor:pointer}.rep-workshop-actions a{color:#f2f0e9;font-size:13px}.rep-workshop-card small{font-size:12px;color:#bdc9c4}.rep-workshop-overlay{position:fixed;inset:0;z-index:1000;background:#171d22;overflow:auto}@media(max-width:650px){.rep-workshop-card{grid-template-columns:1fr;gap:0}.rep-workshop-card>img{height:170px;min-height:0}.rep-workshop-card>div{padding:22px}}
-.rep-workshop-overlay{margin:0;padding:0;border:0;max-width:none;max-height:none;width:100vw;height:100svh}.rep-workshop-overlay::backdrop{background:#171d22}
-
-.rep-workshop-library{margin-top:28px}.rep-workshop-library>h2{font-size:22px;color:inherit;margin:0 0 18px}.rep-workshop-actions button:disabled{opacity:.5;cursor:not-allowed}.rep-workshop-actions button:focus-visible,.rep-workshop-actions a:focus-visible{outline:2px solid #f2f0e9;outline-offset:5px}
+.rep-workshop-library {margin-top:28px;color:var(--text,#29343b)}
+.rep-workshop-library>h2 {font-size:22px;color:inherit;margin:0 0 18px}
+.rep-workshop-cover {width:100%;height:160px;object-fit:cover;border-radius:12px;display:block;margin-bottom:16px}
+.rep-workshop-card {display:block;margin:0;background:transparent;color:var(--text,#29343b);border:0;border-bottom:1px solid var(--border-soft,#c4b9a7)}
+.rep-workshop-card>div {padding:20px 0}
+.rep-workshop-eyebrow {color:var(--text-60,#4c595f);font-size:12px;letter-spacing:.08em;line-height:1.7}
+.rep-workshop-card h3 {color:var(--text,#29343b);font-size:23px;line-height:1.25;margin:7px 0}
+.rep-workshop-card p {max-width:650px;color:var(--text-60,#4c595f);font-size:16px;line-height:1.6;margin:8px 0}
+.rep-workshop-card small {font-size:13px;color:var(--text-60,#4c595f)}
+.rep-workshop-actions {display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:12px 0 8px}
+.rep-workshop-actions button {background:#293b43;color:#fff;border:1px solid #293b43;border-radius:5px;padding:11px 16px;min-height:44px;font-weight:600;cursor:pointer}
+.rep-workshop-actions a {color:var(--text,#29343b);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.rep-workshop-actions button:disabled {opacity:.65;cursor:not-allowed}
+.rep-workshop-actions button:focus-visible,.rep-workshop-actions a:focus-visible {outline:2px solid var(--text,#29343b);outline-offset:4px}
+.rep-workshop-overlay {position:fixed;inset:0;z-index:1000;background:#171d22;overflow:auto;margin:0;padding:0;border:0;max-width:none;max-height:none;width:100vw;height:100svh}
+.rep-workshop-overlay::backdrop {background:#171d22}
+@media(max-width:650px) {
+  .rep-workshop-cover {height:120px}
+  .rep-workshop-card>div {padding:18px 0}
+  .rep-workshop-card h3 {font-size:21px}
+}

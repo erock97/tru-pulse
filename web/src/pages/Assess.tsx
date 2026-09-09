@@ -11,6 +11,10 @@ import './assess.css';
 
 type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done'|'save';
 
+function AssessmentRecovery({message}:{message:string}) {
+  return <div className="asx-shell tru-dark"><main className="asx-card"><div className="asx-eyebrow">TRU · Behavioral Assessment</div><h1 className="asx-h1">Let’s get you to the right place.</h1><p className="asx-sub" role="alert">{message}</p><a className="asx-pick" href="#/">Return to TRU HQ →</a></main></div>;
+}
+
 function isSelfHash(): boolean {
   if (typeof window === 'undefined') return false;
   const q = new URLSearchParams(window.location.hash.split('?')[1] || '');
@@ -65,11 +69,11 @@ export default function Assess({ token }: { token: string }) {
   }, [token, preview, self]);
 
   if (!preview && !self) {
-    if (err) return <div className="asx-shell tru-dark"><div className="asx-card asx-msg">{err}</div></div>;
+    if (err) return <AssessmentRecovery message={err}/>;
     if (!roster) return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
   }
   if (self) {
-    if (err) return <div className="asx-shell tru-dark"><div className="asx-card asx-msg">{err}</div></div>;
+    if (err) return <AssessmentRecovery message={err}/>;
     if (!agent) return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
   }
 

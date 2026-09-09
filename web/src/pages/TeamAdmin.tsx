@@ -316,7 +316,7 @@ export default function TeamAdmin({
             <table className="tru-table tm-table">
               <thead>
                 <tr>
-                  <th className="tm-c-tick" title="Untick to take someone off the team">On the team</th>
+                  <th className="tm-c-tick">Membership</th>
                   <th className="tm-c-who">Person</th>
                   <th className="tm-c-role" title="Only agents are included when you send all invites">Role</th>
                   <th className="tm-c-state">Account</th>
@@ -342,15 +342,7 @@ export default function TeamAdmin({
                     <tr key={m.id} className={m.excluded ? 'tm-row is-off' : 'tm-row'}
                         style={{ animationDelay: `${Math.min(i, 8) * 18}ms` }}>
                       <td className="tm-c-tick">
-                        <label className="tm-check" title={m.excluded ? 'Put back on the team' : 'Take off the team'}>
-                          <input
-                            type="checkbox"
-                            checked={!m.excluded}
-                            disabled={working === 'shown'}
-                            onChange={() => toggleShown(m)}
-                          />
-                          <span aria-hidden />
-                        </label>
+                        <button className="tm-invite" disabled={!!working} aria-label={`${m.excluded?'Restore':'Remove'} ${m.name} ${m.excluded?'to':'from'} this team`} onClick={()=>{if(m.excluded||window.confirm(`Remove ${m.name} from this team? This also removes them from Coach. Their Follow Up Boss account is unchanged, and you can restore them here.`))void toggleShown(m);}}>{m.excluded?'Restore':'Remove'}</button>
                       </td>
                       <td className="tm-c-who">
                         <div className="rs-who">

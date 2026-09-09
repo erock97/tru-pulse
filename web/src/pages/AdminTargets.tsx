@@ -29,7 +29,7 @@ function formatValue(v: number, unit: string): string {
 
 function percentToTarget(actual: number, target: number): number | null {
   if (!(target > 0)) return null;
-  return Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+  return Math.round((actual / target) * 100);
 }
 
 function TargetPanel({ metric }: { metric: ZillowTargetMetric }) {
@@ -40,11 +40,11 @@ function TargetPanel({ metric }: { metric: ZillowTargetMetric }) {
       {metric.period_label && (
         <p style={{ margin: '0 0 14px', color: 'var(--text-60)' }}>{metric.period_label}</p>
       )}
-      <div className="hh-progress" aria-hidden>
-        <div className="hh-progress-track">
-          <span className="hh-progress-fill" style={{ width: `${pct ?? 0}%` }} />
+      <div className="hh-progress">
+        <div className="hh-progress-track" aria-hidden>
+          <span className="hh-progress-fill" style={{ width: `${Math.max(0, Math.min(100, pct ?? 0))}%` }} />
         </div>
-        <span className="hh-progress-cap">{pct === null ? 'no target set' : `${pct}% to goal`}</span>
+        <span className="hh-progress-cap">{pct === null ? 'no target set' : `${pct}% of target`}</span>
       </div>
       <p style={{ margin: '10px 0 0' }}>
         {formatValue(metric.actual_value, metric.unit)} of {formatValue(metric.target_value, metric.unit)}
@@ -120,6 +120,7 @@ export default function AdminTargets({
               <input
                 className="ad-input adm-search"
                 placeholder="Search team or org…"
+                aria-label="Search teams or organisations"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />

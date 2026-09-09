@@ -1,16 +1,21 @@
+export type CoachingAssignmentEvent =
+ | {kind:'practice';at:string;reflection:string}
+ | {kind:'review';at:string;reviewNote:string;outcome:'complete'|'continue'|'cancelled';dueDate:string;previousDueDate:string};
 export interface CoachingAssignment {
  id:string; agentId:string; orgId:string; createdBy:string; createdAt:string;
  commitment:string; moduleId:string|null; moduleTitle:string|null; dueDate:string;
  practiceAt:string|null; reflection:string; reviewedAt:string|null; reviewNote:string;
  outcome:'complete'|'continue'|'cancelled'|null; passedAt:string|null; trainingPassed:boolean;
+ history?:CoachingAssignmentEvent[]; historyIncomplete?:boolean;
 }
 export const assignmentClosed=(a:CoachingAssignment)=>a.outcome==='complete'||a.outcome==='cancelled';
+// A submission remains reviewable even while its linked training is still open.
+export const assignmentAwaitingReview=(a:CoachingAssignment)=>!assignmentClosed(a)&&!!a.practiceAt&&(!a.reviewedAt||a.practiceAt>a.reviewedAt);
 export function assignmentStatus(a:CoachingAssignment):string {
  if(a.outcome==='cancelled')return 'Cancelled';
  if(a.outcome==='complete')return 'Reviewed';
- if(a.outcome==='continue'&&(!a.practiceAt||a.practiceAt<=(a.reviewedAt??'')))return 'Keep practicing';
- if(a.practiceAt&&(!a.moduleId||a.trainingPassed))return 'Ready for coaching review';
- if(a.practiceAt)return 'Practice recorded · training still open';
+ if(a.outcome==='continue'&&!assignmentAwaitingReview(a))return 'Keep practicing';
+ if(assignmentAwaitingReview(a))return a.moduleId&&!a.trainingPassed?'Submitted for review · training still open':'Submitted for coaching review';
  if(a.trainingPassed)return 'Training passed · practice next';
  return a.outcome==='continue'?'Keep practicing':'In progress';
 }

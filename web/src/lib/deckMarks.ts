@@ -24,51 +24,42 @@ import type { ScaleMark } from '../components/scaleMarks';
 /** Days after which a leader is drifting, and the line Coach marks. */
 export const CADENCE_DAYS = 14;
 
-/** `lastDays` uses this as its "never" sentinel. */
-const NEVER = 99;
+type CheckinHistory = { lastDays: number; hasRecordedCheckin?: boolean };
 
-/**
- * Coach — a person on the cadence scale.
- *
- * NEVER IS NOT 99 DAYS. It is worse than any number of days, so it pins to the
- * far edge of the axis and is told apart by its reading rather than by a
- * position it was never measured into. Treating the sentinel as a value would
- * quietly put someone you have never sat down with just inside a colleague you
- * saw a hundred days ago.
- */
+/** Missing history has no measured position and must not be treated as overdue. */
 export function cadenceMark(
-  agent: { id: string; name: string; lastDays: number },
-  edge: number,
+  agent: CheckinHistory & { id: string; name: string },
+  _edge: number,
   /** The cadence in force. A leader can move it on the page to ask what a
    *  tighter one would mean, so it cannot be read off the constant. */
   cadence: number = CADENCE_DAYS,
 ): ScaleMark {
-  const never = agent.lastDays >= NEVER;
+  const recorded = agent.hasRecordedCheckin === true;
   return {
     key: agent.id,
-    value: never ? edge : agent.lastDays,
+    value: recorded ? agent.lastDays : null,
     label: agent.name,
-    reading: never ? 'never' : `${agent.lastDays}d`,
-    tone: never || agent.lastDays >= cadence * 2 ? 'bad'
+    reading: recorded ? `${agent.lastDays}d` : 'No recorded 1:1',
+    tone: !recorded ? 'none' : agent.lastDays >= cadence * 2 ? 'bad'
       : agent.lastDays >= cadence ? 'warn'
         : 'ok',
   };
 }
 
-/** How many of them are past the cadence in force, including never-met. */
+/** Only recorded check-ins can be compared with the cadence. */
 export function pastCadence(
-  agents: readonly { lastDays: number }[],
+  agents: readonly CheckinHistory[],
   cadence: number,
 ): number {
-  return agents.filter((a) => a.lastDays >= cadence).length;
+  return agents.filter((a) => a.hasRecordedCheckin === true && a.lastDays >= cadence).length;
 }
 
 /** The far end of Coach's axis: past the cadence line, and past everybody real.
  *  Anchored on the DEFAULT cadence rather than the live one — an axis that
  *  rescaled while you dragged the marker would slide it out from under the
  *  cursor and the control would feel like it was resisting you. */
-export function cadenceEdge(agents: readonly { lastDays: number }[]): number {
-  const real = agents.map((a) => a.lastDays).filter((d) => d < NEVER);
+export function cadenceEdge(agents: readonly CheckinHistory[]): number {
+  const real = agents.filter(a => a.hasRecordedCheckin === true).map(a => a.lastDays);
   return Math.max(CADENCE_DAYS + 6, ...real.map((d) => d + 4));
 }
 
@@ -92,7 +83,7 @@ export function trackMark(
     value: agent.invited ? passed : 0,
     label: agent.name,
     reading: !agent.invited ? 'no login yet'
-      : modules > 0 && passed === modules ? 'certified'
+      : modules > 0 && passed === modules ? 'all quizzes passed'
         : `${passed} of ${modules}`,
     tone: !agent.invited ? 'none'
       : modules > 0 && passed === modules ? 'ok'

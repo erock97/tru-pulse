@@ -1,0 +1,8 @@
+.coach-back-to-people {display:none}
+@media(max-width:760px) {
+  html.tru-premium .tru-dark .coaching-workspace.is-choosing .coaching-review {display:none}
+  html.tru-premium .tru-dark .coaching-workspace.is-reviewing .coaching-queue {display:none}
+  html.tru-premium .tru-dark .coaching-workspace .coach-back-to-people {display:block;min-height:44px;margin:16px}
+  html.tru-premium .tru-dark .coaching-workspace.is-choosing .coaching-people {max-height:60vh}
+  html.tru-premium .tru-dark .coaching-workspace.is-reviewing {grid-template-areas:"review"}
+}

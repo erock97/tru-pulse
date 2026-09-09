@@ -15,12 +15,12 @@ export function RepWorkshopLibrary({ entries, presenter=false }: {entries: Works
   return <>
     <section aria-label="Zillow Preferred training" className="rep-workshop-library">
       <h2>Zillow Preferred training</h2>
+      <img className="rep-workshop-cover" src="/workshops/house.jpg" alt="" loading="lazy"/>
       {workshops.map(entry=>{
         const meta=workshopMeta[entry.day];
         return <section key={entry.day} className="rep-workshop-card" aria-label={`Day ${entry.day} ${meta.title}`}>
-          <img src="/workshops/house.jpg" alt="" loading="lazy"/>
           <div>
-            <span className="rep-workshop-eyebrow">DAY {entry.day} · {meta.minutes} MINUTES</span>
+            <span className="rep-workshop-eyebrow">DAY {entry.day} · {meta.minutes} MINUTES · FACILITATED WORKSHOP</span>
             <h3>{meta.title}</h3><p>{meta.summary}</p>
             <div className="rep-workshop-actions">
               <button disabled={entry.disabled} onClick={entry.onOpen}>{presenter?'Present':'Open'} Day {entry.day}</button>

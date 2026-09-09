@@ -11,7 +11,8 @@ import { useOperations } from './OperationsContext';
 // means there was not enough reviewed activity to say anything — it is data, not
 // a failure — so it always renders the "not enough reviewed" line, never an
 // empty box and never an error.
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import './coachQueue.css';
 import { onAuthChange } from '../lib/auth';
 import { identityChanged, userIdOf } from '../lib/authIdentity';
 import {
@@ -377,7 +378,7 @@ function SkillsTrainingSection({ view, onOpenAgent }: {
 /** The cohort's half of an agent's card: assessment + 1:1 state. */
 export interface CohortMeta {
   archName: string;
-  health: number;
+  hasRecordedCheckin?: boolean;
   lastDays: number;
   needsYou: boolean;
 }
@@ -390,8 +391,12 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   const { reportId, setReportId } = useCoachReview();
   const { bundle, loading } = useBrief(reportId);
   const [printing, setPrinting] = useState(false);
-  const [query, setQuery] = useState('');
-  const { selected, setSelected } = useCoachReview();
+  const { selected, setSelected,query,setQuery,queueScroll,setQueueScroll } = useCoachReview();
+  const [mobileReview,setMobileReview]=useState(false);
+  const queueRef=useRef<HTMLDivElement>(null);
+  const reviewRef=useRef<HTMLDivElement>(null);
+  useEffect(()=>{if(queueRef.current)queueRef.current.scrollTop=queueScroll;},[loading,mobileReview,queueScroll]);
+  useEffect(()=>{if(mobileReview&&window.matchMedia('(max-width:760px)').matches)reviewRef.current?.focus();},[mobileReview,selected]);
   useEffect(() => { if (preferredAgent && !selected) setSelected(preferredAgent); }, [preferredAgent, selected, setSelected]);
   const view = bundle?.latest ?? null;
   if (!view) return loading ? <p role="status">Loading coaching review…</p> : <p>No published coaching report is available.</p>;
@@ -402,22 +407,21 @@ export function TeamBriefSection({ onOpenAgent, cohort, preferredAgent }: {
   return <section className="dk-sec brief-sec">
     <div className="brief-workspace-heading"><div><h2>Your people</h2><p>{briefRangeLabel(view.weekStart, view.weekEnd)} · {view.agents.length} agents reviewed</p></div>
       <div className="brief-actions"><WeekPicker weeks={bundle?.weeks ?? []} current={reportId} onPick={setReportId} /><button className="brief-pdf" onClick={() => setPrinting(true)}>Download PDF</button></div></div>
-    <div className="coaching-workspace">
+    <div className={`coaching-workspace ${mobileReview?'is-reviewing':'is-choosing'}`}>
       <aside className="coaching-queue" aria-label="People to review"><header><h3>People to review <small>{people.length}</small></h3><label>Find an agent<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name or coaching focus" /></label></header>
-        <div className="coaching-people">{people.map(a=><button key={a.agentId || a.agentName} aria-pressed={person?.agentName===a.agentName} onClick={()=>setSelected(a.agentName)}><strong>{a.agentName}</strong><span>{priorityLabel(a) ?? 'No coaching focus in this report'}</span></button>)}</div>
+        <div className="coaching-people" ref={queueRef} onScroll={e=>setQueueScroll(e.currentTarget.scrollTop)}>{people.map(a=><button key={a.agentId || a.agentName} aria-pressed={person?.agentName===a.agentName} onClick={()=>{setSelected(a.agentName);setMobileReview(true);}}><strong>{a.agentName}</strong><span>{priorityLabel(a) ?? 'No coaching focus in this report'}</span></button>)}</div>
         <p className="coaching-order-note">Reported focus first, then alphabetical. This is not a severity ranking.</p>
       </aside>
-      <div className="coaching-review" key={(view.reportId ?? '')+person?.agentName}>
-        {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Agent scorecard</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || meta.lastDays>=99 ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
+      <div className="coaching-review" ref={reviewRef} tabIndex={-1} key={(view.reportId ?? '')+person?.agentName}>
+        <button className="brief-open coach-back-to-people" onClick={()=>setMobileReview(false)}>← Back to people</button>
+        {person ? <><header className="coaching-review-head"><div><span className="coaching-eyebrow">Coaching review</span><h3>{person.agentName}</h3><p>{person.metrics.reviewedContacts ?? 'Unspecified'} contacts reviewed · Last 1:1: {!meta || !meta.hasRecordedCheckin ? 'not recorded' : meta.lastDays===0 ? 'today' : meta.lastDays+' days ago'}</p></div>
           {person.agentId && onOpenAgent && <button className="brief-open" onClick={()=>onOpenAgent(person.agentId!,person.agentName)}>Prepare 1:1</button>}</header>
           <div className="coaching-review-body">
-            <CoachScorecard name={person.agentName} />
-            <section className="coach-focus-summary"><h4>Skills to develop</h4>
-              {person.skillOpportunities.some(p => p.evidence.length) ? <PointList points={person.skillOpportunities.filter(p => p.evidence.length)} tone="work" maxVisible={2} summaryOnly /> : <p className="brief-none">No specific skill finding supported by linked evidence in this report.</p>}
-            </section>
             <section className="coach-focus-summary"><h4>Findings for your next conversation</h4>
-              {reviewFindings(person).length ? <PointList points={reviewFindings(person)} tone="work" maxVisible={2} summaryOnly /> : <p className="brief-none">No linked coaching finding to bring into a conversation this week.</p>}
+              {reviewFindings(person).length ? <PointList points={reviewFindings(person)} tone="work" maxVisible={1} /> : <p className="brief-none">No linked coaching finding to bring into a conversation this week.</p>}
             </section>
+            <details className="coach-secondary"><summary>Skills to develop</summary>{person.skillOpportunities.some(p=>p.evidence.length)?<PointList points={person.skillOpportunities.filter(p=>p.evidence.length)} tone="work" maxVisible={2}/>:<p>No linked skill finding in this report.</p>}</details>
+            <details className="coach-secondary"><summary>Agent performance</summary><CoachScorecard name={person.agentName}/></details>
             <p className="coach-scorecard-note">Prepare 1:1 opens these same findings with coaching actions and space to record commitments.</p>
           </div>
         </> : <div className="coaching-empty"><h3>No agents match</h3><p>Try another name or coaching focus.</p><button className="brief-open" onClick={()=>setQuery('')}>Clear search</button></div>}
