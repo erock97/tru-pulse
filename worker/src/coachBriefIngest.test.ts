@@ -23,7 +23,7 @@ let ctx: ExecutionContext;
 /** Every PostgREST request the Worker made: [method, path+search, body]. */
 let calls: Array<{ method: string; path: string; body: unknown }>;
 /** The fake `teams` table — filtered by the mock like PostgREST would filter it. */
-let teamsTable: Array<{ id: string; org_id: string; name: string; report_slug: string | null; is_active?: boolean }>;
+let teamsTable: Array<{ id: string; org_id: string; name: string; report_slug: string | null; is_active?: boolean; fub_subdomain?: string }>;
 let rosterRows: Array<{ id: string; name: string }>;
 let heldRows: Array<Record<string, unknown>>;
 let connectionRows: Array<{ team_id: string }>;
@@ -71,6 +71,8 @@ beforeEach(() => {
       return ok(activeTeams); // GET /coach/teams: select=id,name&is_active=eq.true
     }
     if (u.pathname === '/rest/v1/fub_connections') return ok(connectionRows);
+    if (u.pathname === '/rest/v1/orgs') return ok([{ id: '1ce65a99-c7d1-45f0-8140-ed387c2f6359', name: 'Example Brokerage' }]);
+    if (u.pathname === '/rest/v1/leaders') return ok([{ id: 'leader-1', team_id: SB_REALTY_ID, name: 'Alex Leader', email: 'must-not-return@example.com' }]);
     if (u.pathname === '/rest/v1/agents') return ok(rosterRows);
     if (u.pathname === '/rest/v1/coach_weekly_reports' && (init?.method ?? 'GET') === 'GET') return ok(heldRows);
     if (u.pathname === '/rest/v1/coach_weekly_reports') return ok([], 201);
@@ -281,8 +283,8 @@ describe('GET /coach/teams', () => {
     expect(res.status).toBe(200);
     const body = await res.json() as { teams: Array<Record<string, unknown>> };
     const synergy = body.teams.find((t) => t.teamId === SYNERGY_ID);
-    expect(synergy).toEqual({ teamId: SYNERGY_ID, name: 'The Synergy Group NJ', connected: false });
-    expect(Object.keys(synergy!).sort()).toEqual(['connected', 'name', 'teamId']);
+    expect(synergy).toEqual({ teamId: SYNERGY_ID, name: 'The Synergy Group NJ', connected: false, organizationName: null, fubSubdomain: null, leaderNames: [] });
+    expect(Object.keys(synergy!).sort()).toEqual(['connected', 'fubSubdomain', 'leaderNames', 'name', 'organizationName', 'teamId']);
 
     const sbRealty = body.teams.find((t) => t.teamId === SB_REALTY_ID);
     expect(sbRealty?.connected).toBe(true);
@@ -291,6 +293,18 @@ describe('GET /coach/teams', () => {
     expect(duplicate?.connected).toBe(false);
 
     const serialized = JSON.stringify(body);
-    expect(serialized).not.toMatch(/fub|token|email|api_key/i);
+    expect(serialized).not.toMatch(/token|email|api_key|must-not-return/i);
+    expect(sbRealty).toMatchObject({ organizationName: 'Example Brokerage', leaderNames: ['Alex Leader'] });
+    expect(duplicate).toMatchObject({ organizationName: null, leaderNames: [] });
+  });
+
+  it('includes account identity without folding same-named teams together and excludes inactive teams', async () => {
+    teamsTable.find(t => t.id === SB_REALTY_ID)!.fub_subdomain = 'sbrealty';
+    teamsTable.find(t => t.id === SB_REALTY_DUPLICATE_ID)!.is_active = false;
+    const body = await (await get()).json() as { teams: Array<Record<string, unknown>> };
+    expect(body.teams.find(t => t.teamId === SB_REALTY_ID)?.fubSubdomain).toBe('sbrealty');
+    expect(body.teams.some(t => t.teamId === SB_REALTY_DUPLICATE_ID)).toBe(false);
+    expect(calls.every(c => c.method === 'GET')).toBe(true);
+    expect(calls.some(c => /select=.*email/.test(c.path))).toBe(false);
   });
 });

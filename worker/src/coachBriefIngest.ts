@@ -199,15 +199,34 @@ export async function handleCoachTeamsList(
     return json({ error: 'unauthorized' }, 401);
   }
 
-  const teams = await database.select('teams', 'select=id,name&is_active=eq.true&order=name.asc') as
-    Array<{ id: string; name: string }>;
+  // Directory reads must not silently lose teams at PostgREST's row limit.
+  async function allRows(table: string, query: string): Promise<any[]> {
+    const rows: any[] = [];
+    for (let offset = 0; ; offset += 500) {
+      const page = await database.select(table, `${query}&limit=500&offset=${offset}`);
+      rows.push(...page);
+      if (page.length < 500) return rows;
+    }
+  }
+  const [teams, orgs, leaders, connections] = await Promise.all([
+    allRows('teams', 'select=id,org_id,name,fub_subdomain&is_active=eq.true&order=id.asc'),
+    allRows('orgs', 'select=id,name&order=id.asc'),
+    allRows('leaders', 'select=id,team_id,name&order=id.asc'),
+    allRows('fub_connections', 'select=team_id&order=team_id.asc'),
+  ]);
   // fub_connections rows are the only signal this database has for "FUB is connected";
   // it is known to lag behind TrueHQ (a team can be connected there before a row lands
   // here), so treat `connected: false` as "not confirmed," not "definitely not connected."
-  const connections = await database.select('fub_connections', 'select=team_id') as Array<{ team_id: string }>;
   const connectedIds = new Set(connections.map((c) => c.team_id));
+  const orgNames = new Map(orgs.map(o => [o.id, o.name]));
 
   return json({
-    teams: teams.map((t) => ({ teamId: t.id, name: t.name, connected: connectedIds.has(t.id) })),
+    schemaVersion: '1.1',
+    teams: teams.map((t) => ({
+      teamId: t.id, name: t.name, connected: connectedIds.has(t.id),
+      organizationName: orgNames.get(t.org_id) ?? null,
+      fubSubdomain: t.fub_subdomain ?? null,
+      leaderNames: [...new Set(leaders.filter(l => l.team_id === t.id).map(l => l.name))].sort(),
+    })).sort((a, b) => a.name.localeCompare(b.name) || a.teamId.localeCompare(b.teamId)),
   });
 }
