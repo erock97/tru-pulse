@@ -61,7 +61,7 @@ const meeting: FathomMeeting = {
 };
 
 /** Fetch stub covering the whole pipeline; records what was written where. */
-function stubPipeline(opts: { agents?: unknown[]; existing?: unknown[] } = {}) {
+function stubPipeline(opts: { agents?: unknown[]; existing?: unknown[]; responses?: unknown[] } = {}) {
   const calls: Array<{ url: string; method: string; body: unknown }> = [];
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
@@ -69,6 +69,7 @@ function stubPipeline(opts: { agents?: unknown[]; existing?: unknown[] } = {}) {
     const body = init?.body ? JSON.parse(init.body as string) : null;
     calls.push({ url, method, body });
     if (url.includes('api.anthropic.com')) {
+      if (opts.responses?.length) return new Response(JSON.stringify(opts.responses.shift()), { status: 200 });
       return new Response(JSON.stringify({
         content: [{ type: 'text', text: '{"wins":["Followed up five times on the Zillow lead"],"commitments":["20 sphere conversations by Friday"],"private_note":"Confidence is shaky after the lost listing."}' }],
       }), { status: 200 });
@@ -131,6 +132,34 @@ describe('matchAgent', () => {
 });
 
 describe('handleFathomIngest', () => {
+  it.each(['max_tokens', 'end_turn'])('recovers %s output without duplicating the draft', async (stopReason) => {
+    const calls = stubPipeline({ agents: [AGENT], responses: [
+      { stop_reason: stopReason, content: [{ type: 'text', text: '{"wins":[' }] },
+    ] });
+    const tasks: Promise<unknown>[] = [];
+    const req = signedRequest(JSON.stringify(meeting));
+    await handleFathomIngest(req, env, new URL(req.url), cors, db(env), ctx(tasks));
+    await Promise.all(tasks);
+    const modelCalls = calls.filter(c => c.url.includes('api.anthropic.com'));
+    expect(modelCalls).toHaveLength(2);
+    expect(modelCalls[0].body).toMatchObject({ output_config: { format: { type: 'json_schema' } } });
+    expect(modelCalls[1].body).toMatchObject({ max_tokens: 8192 });
+    expect(calls.filter(c => c.url.includes('/meeting_preps') && c.method === 'POST')).toHaveLength(1);
+    expect(calls.find(c => c.method === 'PATCH')?.body).toMatchObject({ distill_error: null, distilled: { commitments: ['20 sphere conversations by Friday'] } });
+  });
+
+  it('stops after two invalid results and preserves the raw draft for recovery', async () => {
+    const invalid = { stop_reason: 'end_turn', content: [{ type: 'text', text: '{}' }] };
+    const calls = stubPipeline({ agents: [AGENT], responses: [invalid, invalid] });
+    const tasks: Promise<unknown>[] = [];
+    const req = signedRequest(JSON.stringify(meeting));
+    await handleFathomIngest(req, env, new URL(req.url), cors, db(env), ctx(tasks));
+    await Promise.all(tasks);
+    expect(calls.filter(c => c.url.includes('api.anthropic.com'))).toHaveLength(2);
+    expect(calls.find(c => c.method === 'PATCH')?.body).toMatchObject({ distill_error: 'model returned invalid notes JSON after retry' });
+    expect(calls.find(c => c.method === 'PATCH')?.body).not.toHaveProperty('distilled');
+  });
+
   it('fails closed when the secret is unset', async () => {
     const calls = stubPipeline();
     const res = await handleFathomIngest(
@@ -232,6 +261,8 @@ describe('parseDistilled', () => {
   });
   it('null on garbage', () => {
     expect(parseDistilled('no json here')).toBeNull();
+    expect(parseDistilled('{}')).toBeNull();
+    expect(parseDistilled('{"wins": "wrong", "commitments": [], "private_note": ""}')).toBeNull();
   });
 });
 
