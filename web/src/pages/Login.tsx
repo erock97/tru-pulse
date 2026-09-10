@@ -15,7 +15,7 @@ import '../truHqDark.css';
 //
 // Every call still goes through lib/auth; nothing here knows what a token is.
 export default function Login({ linkFailed = false }: { linkFailed?: boolean }) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -50,6 +50,9 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
     try {
       if (mode === 'signin') {
         await signIn(email, password);
+      } else if (mode === 'reset') {
+        await requestPasswordReset(email.trim());
+        setNotice('Check your email for a link to reset your password.');
       } else {
         const { confirm } = await signUp(email, password);
         // Only say "check your email" when there genuinely is no session yet.
@@ -65,16 +68,11 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
     await signInWithGoogle();
   }
 
-  async function forgot() {
-    if (!email) { setError('Enter your email first, then tap Forgot password.'); return; }
-    setBusy(true); setError(''); setNotice('');
-    try {
-      await requestPasswordReset(email);
-      setNotice('Check your email for a link to reset your password.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send that email.');
-    }
-    setBusy(false);
+  function changeMode(next: typeof mode) {
+    setMode(next);
+    setPassword('');
+    setError('');
+    setNotice('');
   }
 
   return (
@@ -88,16 +86,17 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
         <div className="tru-door-mark"><TruLogo size={34} wordSize={24} sub="HQ" /></div>
 
         <h1 className="tru-door-title">
-          {mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
+          {mode === 'reset' ? 'Reset your password.' : mode === 'signin' ? 'Welcome back.' : 'Create your account.'}
         </h1>
         <p className="tru-door-sub">
-          {mode === 'signin' ? 'Sign in to your TRU HQ.' : 'Set a password and you are in.'}
+          {mode === 'reset' ? 'Enter your email and we’ll send you a reset link.' : mode === 'signin' ? 'Sign in to your TRU HQ.' : 'Set a password and you are in.'}
         </p>
 
         <div className="tru-door-panel">
           <form onSubmit={submit}>
             <label className="tru-door-label" htmlFor="door-email">Email</label>
             <input
+              key={mode}
               id="door-email"
               className="tru-door-input"
               type="email"
@@ -105,7 +104,9 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoFocus={mode === 'reset'}
             />
+            {mode !== 'reset' && <>
             <label className="tru-door-label" htmlFor="door-password">Password</label>
             <input
               id="door-password"
@@ -116,16 +117,18 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
               required
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             />
+            </>}
             {mode === 'signin' && (
-              <button type="button" className="tru-door-forgot" onClick={forgot}>Forgot password?</button>
+              <button type="button" className="tru-door-forgot" disabled={busy} onClick={() => changeMode('reset')}>Forgot password?</button>
             )}
             {error && <div className="tru-door-note is-error" role="alert">{error}</div>}
             {notice && <div className="tru-door-note is-ok" role="status">{notice}</div>}
             <button className="tru-door-primary" disabled={busy} type="submit">
-              {busy ? 'One moment…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              {busy ? 'One moment…' : mode === 'reset' ? 'Send reset link' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
+          {mode !== 'reset' && <>
           <div className="tru-door-or" aria-hidden><span /><em>or</em><span /></div>
 
           <button className="tru-door-google" onClick={google} type="button">
@@ -138,13 +141,16 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
             </svg>
             Continue with Google
           </button>
+          </>}
         </div>
 
         <p className="tru-door-swap">
-          {mode === 'signin' ? (
-            <>New here? <button type="button" onClick={() => setMode('signup')}>Create an account</button></>
+          {mode === 'reset' ? (
+            <button type="button" disabled={busy} onClick={() => changeMode('signin')}>Back to sign in</button>
+          ) : mode === 'signin' ? (
+            <>New here? <button type="button" disabled={busy} onClick={() => changeMode('signup')}>Create an account</button></>
           ) : (
-            <>Have an account? <button type="button" onClick={() => setMode('signin')}>Sign in</button></>
+            <>Have an account? <button type="button" disabled={busy} onClick={() => changeMode('signin')}>Sign in</button></>
           )}
         </p>
       </main>
