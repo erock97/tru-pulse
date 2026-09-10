@@ -33,3 +33,13 @@ it('does not expose archived evidence as current counts',async()=>{
  const r=await c.fetch(new Request('https://collector/counts'));
  expect(await r.json()).toEqual({});expect(m.get('evidence:123')).toEqual(evidence);
 });
+it('retains nonempty historical evidence with its original capture time',async()=>{
+ const {c,m,storage}=setup();const capturedAt=new Date(Date.now()-86400000).toISOString();
+ m.set('team',{id:'team',org_id:'org',fub_subdomain:'example'});
+ m.set('status',{lastSuccess:capturedAt});
+ storage.list.mockResolvedValue(new Map([['person:123',{id:'123',created:capturedAt,assignedUserId:'7',due:0}]]));
+ const r:any=await (await c.fetch(new Request('https://collector/report'))).json();
+ expect(r.snapshot.leads).toHaveLength(1);expect(r.snapshot.capturedAt).toBe(capturedAt);
+ expect(r.snapshot.through).toBe(capturedAt);expect(r.health.state).toBe('disabled');
+ expect(storage.put).not.toHaveBeenCalled();expect(storage.delete).not.toHaveBeenCalled();
+});

@@ -315,7 +315,7 @@ describe('the brief chases agents, and only agents', () => {
     expect(await bodyOf()).toContain('New leads (24h): 6');
   });
 
-  it('treats a person with no role recorded as an agent', async () => {
+  it('holds cached untouched claims even for a person with no role recorded', async () => {
     // Failing open here is right: a roster row that predates roles should still
     // be chased, not silently dropped from every brief.
     const s = stub({
@@ -324,6 +324,8 @@ describe('the brief chases agents, and only agents', () => {
     });
     await runOne(env, s.db, AUTO, TEAM, NOW);
     const body = s.inserts.find((i) => i.table === 'automation_deliveries')!.row.body;
-    expect(body).toContain('Old R.');
+    expect(body).not.toContain('Old R.');
+    expect(body).toContain('Contact coverage incomplete');
+    expect(body).not.toContain('All clear');
   });
 });

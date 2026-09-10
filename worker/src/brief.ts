@@ -1,3 +1,4 @@
+import {CONTACT_DECISION_HOLD} from '../../shared/contactEvidence.js';
 // The weekly Leadership Brief — the retention moat. A proactive "your moves this
 // week" email to each org's leader(s): pause candidates, slipping agents, and the
 // GCI at risk. Push, don't make them pull. Sent by the weekly cron via Resend.
@@ -16,6 +17,7 @@ function esc(s: string): string {
 export interface Brief { subject: string; html: string; hasContent: boolean; }
 
 export async function buildBrief(database: Db, org: { id: string; name: string }): Promise<Brief> {
+  if (CONTACT_DECISION_HOLD.state === 'held') return {subject:'TRU Pulse — contact review on hold',html:'<p>'+CONTACT_DECISION_HOLD.reason+'</p>',hasContent:false};
   const leads = (await database.select('leads', `org_id=eq.${org.id}&select=assigned_to,flag`)) as LeadLite[];
   const settingsRows = await database.select('org_settings', `org_id=eq.${org.id}&select=avg_gci,close_rate,strike_limit`);
   const s = (settingsRows[0] ?? {}) as { avg_gci?: number; close_rate?: number; strike_limit?: number };
@@ -108,6 +110,7 @@ export async function sendWeeklyBriefs(env: Env, database: Db) {
   for (const org of orgs) {
     try {
       const brief = await buildBrief(database, org);
+      if (!brief.hasContent) {out[org.id]={skipped:'contact review on hold'};continue;}
       const to = await leaderEmails(env, database, org.id);
       if (!to.length) {
         out[org.id] = { skipped: 'no recipients' };

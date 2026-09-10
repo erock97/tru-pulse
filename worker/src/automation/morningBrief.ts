@@ -53,6 +53,7 @@ export interface BriefAgent {
 }
 
 export interface BriefInput {
+  contactCoverageIncomplete?: boolean;
   teamName: string;
   /** The local date where the team is, already formatted e.g. 'Mon Aug 25'. */
   dateLabel: string;
@@ -129,6 +130,7 @@ export function renderMorningBrief(input: BriefInput): BriefResult {
   }
 
   const lines: string[] = [head];
+  if (input.contactCoverageIncomplete) lines.push('Contact coverage incomplete; no-contact conclusions are on hold.');
   if (input.syncAgeHours > STALE_WARN_HOURS) {
     lines.push(`(data is about ${Math.round(input.syncAgeHours)}h old)`);
   }
@@ -183,8 +185,8 @@ export function renderMorningBrief(input: BriefInput): BriefResult {
   // thing people dread, and then ignore.
   if (totalNew === 0 && !needing.length) {
     return {
-      body: `${head}\nNo new leads overnight and nothing needs outreach. All clear.`,
-      segments: segments(`${head}\nNo new leads overnight and nothing needs outreach. All clear.`),
+      body: input.contactCoverageIncomplete ? `${head}\nNo new leads overnight. Contact coverage incomplete; outreach status is unknown.` : `${head}\nNo new leads overnight and nothing needs outreach. All clear.`,
+      segments: segments(input.contactCoverageIncomplete ? `${head}\nNo new leads overnight. Contact coverage incomplete; outreach status is unknown.` : `${head}\nNo new leads overnight and nothing needs outreach. All clear.`),
       skipReason: null,
     };
   }

@@ -1,3 +1,4 @@
+import {CONTACT_DECISION_HOLD} from '../../shared/contactEvidence.js';
 // 3-strike accountability reconcile (runs daily). Turns zero-contact flags into a
 // documented strike ledger: open a case (1 strike) for a paid lead that stays
 // un-worked past grace; close it when the agent finally works it; recommend a pause
@@ -30,6 +31,8 @@ export async function reconcileTeam(
   team: { id: string; org_id: string },
   opts: ReconcileOpts = {},
 ) {
+  // Preserve all existing cases. Cached flags cannot prove contact or noncontact.
+  if (CONTACT_DECISION_HOLD.state === 'held') return {complied:0,opened:0,pauseRecs:0,...CONTACT_DECISION_HOLD};
   const graceHours = opts.graceHours ?? 36;
   const windowDays = opts.strikeWindowDays ?? 30;
   const strikeLimit = opts.strikeLimit ?? 3;

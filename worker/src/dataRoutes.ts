@@ -1,3 +1,4 @@
+import {CONTACT_DECISION_HOLD,observedContactFlag} from '../../shared/contactEvidence.js';
 import {initializeAssignments,type TeamRow} from './sync.js';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
@@ -182,8 +183,9 @@ export async function handleDataRoutes(
     return json({
       teams,
       settings: (settings as unknown[])[0] ?? null,
-      leads,
+      leads: leads.map((lead:any)=>({...lead,flag:observedContactFlag(lead.flag)})),
       cases,
+      contactDecisions: CONTACT_DECISION_HOLD,
       agents,
       deals,
       stageLog,

@@ -1,3 +1,4 @@
+import {observedContactFlag} from '../../../shared/contactEvidence';
 import {mergeDashboardHistory} from './mergeDashboardHistory';
 import { actAs, actAsReturn } from './authClient';
 import { currentUser, hasActAsReturn, refreshAuth, signOut } from './auth';
@@ -1180,6 +1181,7 @@ export interface Settings {
   pause_no_close_since?: string | null; // rule 2 clean-slate: only count leads created on/after this ISO date; null = all history
 }
 export interface DashboardData {
+  contactDecisions?: {state:string;reason:string};
   historyInfo?: {through:string;capturedAt:string;sourceStarts:Record<string,string>;rosterPolicy:string};
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
   settings: Settings | null;
@@ -1212,10 +1214,11 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
     }
   }
   return {
+    contactDecisions:d.contactDecisions,
     historyInfo:d.historyInfo,
     teams: d.teams ?? [],
     settings: d.settings ?? null,
-    leads: d.leads ?? [],
+    leads: (d.leads ?? []).map(l=>({...l,flag:observedContactFlag(l.flag)})),
     cases: d.cases ?? [],
     agents: d.agents ?? [],
     deals: d.deals ?? [],

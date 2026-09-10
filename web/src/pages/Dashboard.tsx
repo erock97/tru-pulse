@@ -58,7 +58,7 @@ interface Drill {
 // status: 'paused' is MANUAL ONLY — set when a leader ticks "Pause this agent" in
 // the drill (agents.is_paused). Auto pause-watch rules (capacity / no-close) and the
 // strike limit are a SOFT hint (`pauseRecommended`) — they never claim "Paused".
-type AgentStatus = 'on_track' | 'at_risk' | 'paused';
+type AgentStatus = 'on_track' | 'at_risk' | 'paused' | 'unknown';
 interface AgentNode {
   agent: string;
   person: boolean;
@@ -80,6 +80,7 @@ interface AgentNode {
 }
 
 const STATUS_META: Record<AgentStatus, { label: string; color: string; soft: string }> = {
+  unknown: { label: 'Contact review on hold', color: 'var(--text-muted)', soft: 'var(--sea-soft)' },
   on_track: { label: 'On track', color: 'var(--sea-hi)', soft: 'var(--sea-soft)' },
   at_risk: { label: 'At risk', color: 'var(--accent-hi)', soft: 'var(--accent-soft)' },
   paused: { label: 'Paused', color: 'var(--terracotta)', soft: 'rgba(192,107,79,0.14)' },
@@ -158,6 +159,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     inPulsePeriod(l.fub_created, period, today) &&
     (!enabledSources || enabledSources.includes(l.source_family ?? 'Other')));
 
+  const contactHeld = data.contactDecisions?.state === 'held';
   const total = leads.length;
   const zero = leads.filter((l) => l.flag === 'zero_contact').length;
   const stuck = leads.filter((l) => l.flag === 'stuck').length;
@@ -280,7 +282,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     const a = c.assigned_to || 'Unassigned';
     strikesByAgent.set(a, (strikesByAgent.get(a) ?? 0) + 1);
   }
-  const pauseCount = [...strikesByAgent.values()].filter((n) => n >= strikeLimit).length;
+  const pauseCount = contactHeld ? 0 : [...strikesByAgent.values()].filter((n) => n >= strikeLimit).length;
   const newStrikes7d = data.cases.filter((c) => Date.parse(c.opened_at) >= Date.now() - 7 * 86400_000).length;
   const openCases = data.cases.filter((c) => c.status === 'open').length;
   const activeAgents = [...byAgent.keys()].filter((a) => isPerson(a)).length;
@@ -372,13 +374,14 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
     const strikes = strikesByAgent.get(agent) ?? 0;
     const paused = pausedByAgent.get(agent) ?? [];        // auto pause-watch reasons (recommendation only)
     const manual = pauseByAgent.get(norm(agent));
-    const pauseRecommended = paused.length > 0 || strikes >= strikeLimit;
+    const pauseRecommended = paused.length > 0 || (!contactHeld && strikes >= strikeLimit);
     const workedP = r.total ? Math.round((r.worked / r.total) * 100) : 0;
     // 'paused' status is MANUAL ONLY (manual?.is_paused). Auto rules (pause-watch,
     // strike limit) fall into 'at_risk' + the softer pauseRecommended flag — they
     // never claim the agent is "Paused".
     let status: AgentStatus = 'on_track';
     if (manual?.is_paused) status = 'paused';
+    else if (contactHeld && !pauseRecommended) status = 'unknown';
     else if (pauseRecommended || strikes > 0 || r.zero + r.stuck >= Math.max(2, Math.ceil(r.total * 0.4)) || (r.total >= 3 && workedP < 55)) status = 'at_risk';
     const domSrc = [...r.srcs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Other';
     return {
@@ -429,6 +432,7 @@ export default function Dashboard({ org, onHome }: { org: { id: string; name: st
       >
         <div className="pulse-canvas" ref={canvasRef}>
           <div className="pulse-ambient" aria-hidden />
+          {contactHeld && <p role="status" style={{position:'relative',padding:16}}>{data.contactDecisions?.reason} Historical cases remain unchanged. Contact and risk totals are incomplete, not proof of zero activity.</p>}
 
           {/* view switch (kept as a sub-nav so all four real views survive) */}
           <div className="ps-subnav reveal" style={{ marginBottom: 18 }}>
@@ -946,6 +950,7 @@ const scoreOf = (a: AgentNode) => a.workedPct - a.strikes * 8;
 // Cluster geometry, hoisted so BOTH the layout math and the halo render use the same
 // centers. Every lens draws its own colored "category" halos (not just By status).
 const STATUS_CENTERS: Record<AgentStatus, { x: number; y: number; spread: number }> = {
+  unknown: { x: CW * 0.5, y: CH * 0.5, spread: 200 },
   on_track: { x: CW * 0.66, y: CH * 0.42, spread: 200 },
   at_risk: { x: CW * 0.3, y: CH * 0.32, spread: 120 },
   paused: { x: CW * 0.24, y: CH * 0.76, spread: 90 },
@@ -1143,7 +1148,7 @@ function HoverCard({ node, pos, onPick }: { node: AgentNode; pos: Pos; onPick: (
    before): flag chips, closings stat, pre-written texts/email,
    by-source breakdown, and the per-lead list with FUB deep-links.
    ============================================================ */
-const FLAG_LABEL: Record<string, string> = { zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
+const FLAG_LABEL: Record<string, string> = { unknown: 'Coverage incomplete', zero_contact: 'Zero contact', stuck: 'In Lead', worked: 'Worked' };
 
 /** The manual pause control — the ONLY thing that can make an agent's status
  *  read "Paused". One compact row: a toggle, and (when on) a reason dropdown +

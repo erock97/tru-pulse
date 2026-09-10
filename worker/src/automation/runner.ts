@@ -1,3 +1,4 @@
+import {CONTACT_DECISION_HOLD} from '../../../shared/contactEvidence.js';
 // The scheduled side of TRU Agents.
 //
 // One rule shapes this file: **claim first, work second.** The very first thing
@@ -164,7 +165,7 @@ export async function gatherBrief(
   // Only agents get chased. A lead assigned to a team leader, an office admin or
   // a pond is still a real lead, but it is not something to put in front of a
   // team leader as a person to go and speak to.
-  for (const l of untouched as any[]) {
+  for (const l of (CONTACT_DECISION_HOLD.state === 'held' ? [] : untouched) as any[]) {
     if (chaseable.has(shortName(String(l.assigned_to ?? '')))) bump(l.assigned_to, 'untouched');
   }
   for (const l of stalled as any[]) {
@@ -265,6 +266,7 @@ export async function runOne(
       agents: data.agents,
       pondLeads: data.pondLeads,
       syncAgeHours: data.syncAgeHours,
+      contactCoverageIncomplete: CONTACT_DECISION_HOLD.state === 'held',
       recipientName,
     });
 
@@ -433,6 +435,7 @@ export async function previewBrief(
     agents: data.agents,
     pondLeads: data.pondLeads,
     syncAgeHours: data.syncAgeHours,
+      contactCoverageIncomplete: CONTACT_DECISION_HOLD.state === 'held',
     recipientName: opts.recipientName ? shortName(opts.recipientName) : undefined,
   });
   return {
