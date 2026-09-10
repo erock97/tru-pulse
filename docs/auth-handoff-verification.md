@@ -41,5 +41,5 @@ authorized credential held in the local server memory. Both new invitation and
 recovery established the correct session, saved a password, and allowed a fresh
 login. The previous password and replayed links were rejected. Browser checks
 confirmed both link types show the correct mock email and enabled Continue.
-Password form submission by the operator remains a manual acceptance step.
+Full browser acceptance also passed: initial password form submission, fresh sign-in, Forgot password, recovery form submission, old-password rejection, and replacement-password sign-in. No operator acceptance step remains.
 No production deployment or client email occurred.
