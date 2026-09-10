@@ -67,7 +67,7 @@ beforeEach(() => {
       const id = existing ?? `new-user-${++seq}`;
       world.existingAuthUsers[body.email] = id;
       return ok({
-        properties: { action_link: `https://app.truhq.co/#access_token=tok${seq}&type=${body.type}` },
+        properties: { hashed_token: `hash${seq}`, action_link: `https://app.truhq.co/#access_token=tok${seq}&type=${body.type}` },
         user: { id },
       });
     }
@@ -304,7 +304,7 @@ describe('POST /admin/intake', () => {
     expect(sentEmails.every((e) => e.from === 'TRU HQ <hq@truhq.co>')).toBe(true);
     expect(sentEmails.some((e) => e.from.includes('reports@'))).toBe(false);
     expect(sentEmails[0].html).toContain('Acme Realty');
-    expect(sentEmails[0].html).toContain('https://app.truhq.co/#access_token=');
+    expect(sentEmails[0].html).toContain('https://app.truhq.co/#token_hash=');
 
     expect(body.leaders.map((l: any) => l.status)).toEqual(['invited', 'invited']);
     expect(body.orgId).toBeTruthy();
@@ -336,7 +336,7 @@ describe('POST /admin/intake', () => {
     expect(res.status).toBe(200);           // the team is real; do not roll it back
     const body = (await res.json()) as any;
     expect(body.leaders[0].status).toBe('email_failed');
-    expect(body.leaders[0].link).toContain('https://app.truhq.co/#access_token=');
+    expect(body.leaders[0].link).toContain('https://app.truhq.co/#token_hash=');
     expect(rowsIn('orgs')).toHaveLength(1); // still provisioned
   });
 

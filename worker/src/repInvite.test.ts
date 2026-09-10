@@ -70,7 +70,7 @@ beforeEach(() => {
     if (u.pathname === '/auth/v1/admin/generate_link') {
       generatedLinks.push({ type: body.type, email: body.email });
       return ok({
-        properties: { action_link: 'https://app.truhq.co/#access_token=tok&type=invite' },
+        properties: { hashed_token: 'test-hash', action_link: 'https://app.truhq.co/#access_token=tok&type=invite' },
         user: { id: 'new-auth-1' },
       });
     }
