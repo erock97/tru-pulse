@@ -1,3 +1,4 @@
+import {observedContactFlag} from '../../shared/contactEvidence.js';
 import {enqueueTimelines} from './timelineCollector.js';
 // Per-tenant FUB sync. Pull people in the window, keep tracked paid sources, classify
 // each with the audit's exact rule (per-person calls/texts), and upsert org-scoped
@@ -183,14 +184,13 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
       // act on it.
       outgoingTexts = before.outgoing_texts ?? 0;
       calls = before.calls ?? 0;
-      flag = before.flag ?? 'worked';
+      flag = before.flag ?? 'unknown';
       if(zillowCounts[String(p.id)]>0){outgoingTexts=Math.max(outgoingTexts,zillowCounts[String(p.id)]);flag=classifyLead({stage,tags,outgoingTexts,calls});}
     } else {
-      // Either past the horizon, or in horizon but never yet read. Assume worked —
-      // this is the case the original guarantee was for, and it still holds: a lead
-      // we have never looked at cannot produce a strike.
-      flag = 'worked';
+      // Outside the lookup window or never read: neither contact nor noncontact is established.
+      flag = 'unknown';
     }
+    flag = observedContactFlag(flag);
     rows.push({
       org_id: team.org_id,
       team_id: team.id,

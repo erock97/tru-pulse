@@ -1,3 +1,4 @@
+import {CONTACT_DECISION_HOLD,observedContactFlag} from '../../shared/contactEvidence.js';
 import {initializeAssignments,type TeamRow} from './sync.js';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
@@ -84,7 +85,7 @@ export async function handleDataRoutes(
         if(!r.ok)throw Error('Collector unavailable');return {teamId:t.id,...await r.json() as {snapshot:ContactSnapshot|null;health:Record<string,unknown>}};
       })):[];
       // Until collection starts, preserve the audited baseline and explicitly label it.
-      const active=live.filter(r=>r.snapshot);
+      const active=live.filter(r=>r.snapshot&&r.health.state!=='disabled');
       if(active.length){
         const now=new Date().toISOString();
         const combined:ContactSnapshot={version:1,orgId,from:active.map(r=>r.snapshot!.from).sort()[0],through:now,capturedAt:now,leads:active.flatMap(r=>r.snapshot!.leads.map(l=>{
@@ -182,8 +183,9 @@ export async function handleDataRoutes(
     return json({
       teams,
       settings: (settings as unknown[])[0] ?? null,
-      leads,
+      leads: leads.map((lead:any)=>({...lead,flag:observedContactFlag(lead.flag)})),
       cases,
+      contactDecisions: CONTACT_DECISION_HOLD,
       agents,
       deals,
       stageLog,

@@ -121,11 +121,11 @@ describe('syncPeople — the accountability flag', () => {
     expect(s.leadRows()).toEqual([]);
   });
 
-  it('flags a recent active lead with no contact as zero_contact', async () => {
+  it('keeps an API-only negative observation unknown', async () => {
     const s = stubDb();
     const r = await syncPeople(env, s.db, TEAM, 'k', [person()]);
-    expect(s.leadRows()[0].flag).toBe('zero_contact');
-    expect(r.zeroContact).toBe(1);
+    expect(s.leadRows()[0].flag).toBe('unknown');
+    expect(r.zeroContact).toBe(0);
   });
 
   it('counts 2+ outgoing texts, or 1+ call, as worked', async () => {
@@ -146,7 +146,7 @@ describe('syncPeople — the accountability flag', () => {
   it('does not spend a contact lookup on a lead older than the 45-day horizon', async () => {
     const s = stubDb();
     await syncPeople(env, s.db, TEAM, 'k', [person({ created: daysAgo(60) })]);
-    expect(s.leadRows()[0].flag).toBe('worked');
+    expect(s.leadRows()[0].flag).toBe('unknown');
     expect(fub.countOutgoingTexts).not.toHaveBeenCalled();
   });
 
@@ -159,8 +159,8 @@ describe('syncPeople — the accountability flag', () => {
     expect(rows).toHaveLength(260);
     // The 250 that were checked have no contact → zero_contact; the 10 skipped by
     // the budget default to 'worked' so a budget cap can never manufacture a strike.
-    expect(rows.filter((r) => r.flag === 'zero_contact')).toHaveLength(250);
-    expect(rows.slice(250).every((r) => r.flag === 'worked')).toBe(true);
+    expect(rows.filter((r) => r.flag === 'unknown')).toHaveLength(260);
+    expect(rows.slice(250).every((r) => r.flag === 'unknown')).toBe(true);
   });
 });
 
@@ -173,7 +173,7 @@ describe('syncPeople — the contact-lookup rotation', () => {
   // reconcile sees one frame of that flicker, so a lead was struck only if it
   // happened to read zero_contact at 07:05. These pin the fix.
 
-  it('keeps a known zero_contact flag when the lead is waiting its turn', async () => {
+  it('demotes cached zero_contact to unknown while preserving its counts and rotation', async () => {
     // The bug, stated as a test. This lead was read before and had no contact.
     // It is in horizon but not in this run's slice, so nothing is re-read — and
     // what we already knew must survive rather than be overwritten with 'worked'.
@@ -189,7 +189,7 @@ describe('syncPeople — the contact-lookup rotation', () => {
     await syncPeople(env, s.db, TEAM, 'k', [...others, person({ id: 1 })]);
 
     const one = s.leadRows().find((l) => l.fub_person_id === 1);
-    expect(one.flag).toBe('zero_contact');
+    expect(one.flag).toBe('unknown');
     expect(one.outgoing_texts).toBe(1);
     // Its clock does not move, or it would keep losing its place in the queue.
     expect(one.contact_checked_at).toBe(readAt);
@@ -256,7 +256,7 @@ describe('syncPeople — the contact-lookup rotation', () => {
     await syncPeople(env, s.db, TEAM, 'k', many);
     const skipped = s.leadRows().filter((l) => l.contact_checked_at === null);
     expect(skipped).toHaveLength(10);
-    expect(skipped.every((l) => l.flag === 'worked')).toBe(true);
+    expect(skipped.every((l) => l.flag === 'unknown')).toBe(true);
   });
 
   it('survives the prior-state read failing, without erasing anything it reads', async () => {
@@ -266,7 +266,7 @@ describe('syncPeople — the contact-lookup rotation', () => {
     );
     const r = await syncPeople(env, s.db, TEAM, 'k', [person({ id: 1 })]);
     expect(r.upserted).toBe(1);
-    expect(s.leadRows()[0].flag).toBe('zero_contact');
+    expect(s.leadRows()[0].flag).toBe('unknown');
   });
 });
 
@@ -350,7 +350,7 @@ describe('syncPeople — degrading instead of failing', () => {
     const rows = s.leadRows();
     expect(rows).toHaveLength(1);
     expect(rows[0]).not.toHaveProperty('pond');
-    expect(rows[0].flag).toBe('zero_contact');
+    expect(rows[0].flag).toBe('unknown');
   });
 
   it('still syncs leads when the stage log table is not migrated yet', async () => {
