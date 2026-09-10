@@ -36,6 +36,10 @@ delivery captured locally. Point a build of the real web app at that worker.
 
 The local test panel and real-service runner prepared for this task remain
 outside the repository because they use the operator's local configuration.
-Live acceptance is pending a working local service-role credential; the existing
-checkout contains a placeholder. No production deployment or client email is
-part of this verification.
+Live service verification passed on September 10, 2026 using an explicitly
+authorized credential held in the local server memory. Both new invitation and
+recovery established the correct session, saved a password, and allowed a fresh
+login. The previous password and replayed links were rejected. Browser checks
+confirmed both link types show the correct mock email and enabled Continue.
+Password form submission by the operator remains a manual acceptance step.
+No production deployment or client email occurred.
