@@ -60,6 +60,13 @@ html.tru-premium .tru-dark :is(.rs-plate,.card,.cal-type,.mny-modal,.person-pane
 html.tru-premium .tru-dark :is(.rs-plate,.dk-tile):hover { transform:none; box-shadow:none; }
 html.tru-premium .tru-dark :is(.rs-plate,.dk-tile) { border-radius:6px; }
 html.tru-premium .tru-dark :is(.btn,.btn-gold,.tm-invite,.ad-btn,.coach-btn) { box-shadow:none; background-image:none; }
+/* Removing the dark theme's gradient must leave a visible solid fill.
+   Keep the label readable before hover, including while saving/sending. */
+html.tru-premium .tru-dark :is(.btn:not(.btn-ghost),.btn-gold,.tm-invite-all) { background:#705111; color:#fff; border:1px solid #705111; }
+html.tru-premium .tru-dark :is(.btn:not(.btn-ghost),.btn-gold,.tm-invite-all,.tm-invite):hover:not(:disabled) { background:#59400d; color:#fff; border-color:#59400d; box-shadow:none; transform:none; filter:none; }
+html.tru-premium .tru-dark .btn-ghost { background:var(--panel); color:var(--text-strong); border:1px solid var(--border); }
+html.tru-premium .tru-dark .btn-ghost:hover:not(:disabled) { background:var(--hover-fill); color:var(--text-strong); box-shadow:none; transform:none; }
+html.tru-premium .tru-dark :is(.btn,.btn-gold,.tm-invite-all,.tm-invite):disabled { background:#dedbd2; color:#526066; border:1px solid #b7b9b0; opacity:1; box-shadow:none; transform:none; }
 html.tru-premium .tru-dark :is(.sm-dot,.sm-dot.is-on,.sm-dot.is-pinned) { box-shadow:none; filter:none; animation:none; }
 html.tru-premium .tru-dark .sm-dot { background:#49796b; border:2px solid #fcfbf7; }
 html.tru-premium .tru-dark .sm-dot::before { box-shadow:none; }
