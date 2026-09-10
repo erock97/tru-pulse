@@ -77,13 +77,21 @@ export async function mintAuthLink(
       Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ type: kind, email, redirect_to: 'https://app.truhq.co' }),
+    body: JSON.stringify({ type: kind, email, redirect_to: env.APP_ORIGIN ?? 'https://app.truhq.co' }),
   });
   const gl = (await res.json().catch(() => null)) as any;
   const props = gl?.properties ?? gl;
-  const link = props?.action_link;
-  if (!res.ok || !link) throw new Error(`could not mint ${kind} link for ${email}`);
-  return { link, userId: gl?.user?.id ?? gl?.id ?? null };
+  const tokenHash = props?.hashed_token;
+  if (!res.ok || typeof tokenHash !== 'string' || !tokenHash.trim()) {
+    throw new Error(`could not mint ${kind} link for ${email}`);
+  }
+  // The standard action_link consumes the token at Supabase and returns browser
+  // access tokens, which our cookie-auth app deliberately does not handle.
+  // Land in App first so /auth/exchange can verify it and establish the cookie.
+  // Keep the one-time credential in the fragment, out of HTTP request logs.
+  const link = new URL(env.APP_ORIGIN ?? 'https://app.truhq.co');
+  link.hash = new URLSearchParams({ token_hash: tokenHash, type: kind }).toString();
+  return { link: link.toString(), userId: gl?.user?.id ?? gl?.id ?? null };
 }
 
 /** True when Resend accepted it. Never throws — the caller reports per leader. */
