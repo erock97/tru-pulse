@@ -194,6 +194,8 @@ export function parseDistilled(raw: string): Distilled | null {
   if (start < 0 || end <= start) return null;
   try {
     const obj = JSON.parse(raw.slice(start, end + 1)) as Partial<Distilled>;
+    if (!obj || !Array.isArray(obj.wins) || !Array.isArray(obj.commitments)
+      || typeof obj.private_note !== 'string') return null;
     const strings = (x: unknown): string[] =>
       Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string' && s.trim() !== '').map((s) => s.trim()) : [];
     return {
@@ -206,7 +208,7 @@ export function parseDistilled(raw: string): Distilled | null {
   }
 }
 
-async function callClaude(env: Env, prompt: string): Promise<string> {
+async function callClaude(env: Env, prompt: string, maxTokens = 4096): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -216,13 +218,28 @@ async function callClaude(env: Env, prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: DISTILL_MODEL,
-      max_tokens: 1500,
+      max_tokens: maxTokens,
+      output_config: { format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object', additionalProperties: false,
+          required: ['wins', 'commitments', 'private_note'],
+          properties: {
+            wins: { type: 'array', items: { type: 'string' } },
+            commitments: { type: 'array', items: { type: 'string' } },
+            private_note: { type: 'string' },
+          },
+        },
+      } },
       messages: [{ role: 'user', content: prompt }],
     }),
   });
   if (!res.ok) throw new Error(`anthropic ${res.status}: ${await res.text()}`);
-  const data = await res.json() as { content?: Array<{ type: string; text?: string }> };
-  return (data.content ?? []).filter((c) => c.type === 'text').map((c) => c.text ?? '').join('');
+  const data = await res.json() as { stop_reason?: string; content?: Array<{ type: string; text?: string }> };
+  return {
+    text: (data.content ?? []).filter((c) => c.type === 'text').map((c) => c.text ?? '').join(''),
+    stopReason: data.stop_reason,
+  };
 }
 
 /** Runs after the webhook is ACKed (ctx.waitUntil): distill and stamp the row.
@@ -233,8 +250,17 @@ export async function distillAndStore(
 ): Promise<void> {
   try {
     if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY unset');
-    const distilled = parseDistilled(await callClaude(env, distillPrompt(meeting, agentName)));
-    if (!distilled) throw new Error('model returned no parseable JSON');
+    const prompt = distillPrompt(meeting, agentName);
+    let distilled: Distilled | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await callClaude(env, prompt, attempt === 0 ? 4096 : 8192);
+      if (result.stopReason === 'refusal') throw new Error('model declined notes extraction');
+      // Even a syntactically complete object may be incomplete when cut off.
+      distilled = result.stopReason === 'max_tokens' ? null : parseDistilled(result.text);
+      if (distilled) break;
+      if (attempt === 1) throw new Error(result.stopReason === 'max_tokens'
+        ? 'model output truncated after retry' : 'model returned invalid notes JSON after retry');
+    }
     await database.update('meeting_preps', `id=eq.${prepId}`, {
       distilled, distill_error: null, updated_at: new Date().toISOString(),
     });
