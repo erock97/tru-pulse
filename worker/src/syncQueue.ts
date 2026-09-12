@@ -1,14 +1,23 @@
 import type {Env} from './env.js';
 import {db} from './db.js';
 import {syncTeam,syncPeopleByIds,type TeamRow} from './sync.js';
+import {stageEnvelope,retainStageEnvelope} from './stageEnvelope.js';
+import {drainStageReceipts} from './stageDrain.js';
 type Pending='full'|string[];
 /** A webhook is acknowledged only after its work is durably recorded. */
 export class FubSyncQueue {
  constructor(private state:DurableObjectState,private env:Env){}
  async fetch(req:Request){
-  const {team,ids,periodic=false}=await req.json() as {team:TeamRow;ids?:string[];periodic?:boolean};
+  const {team,ids,periodic=false,stageEvent}=await req.json() as {team:TeamRow;ids?:string[];periodic?:boolean;stageEvent?:unknown};
   const old=await this.state.storage.get<TeamRow>('team');
   if(!team?.id||old&&(old.id!==team.id||old.org_id!==team.org_id))return new Response('Invalid sync scope',{status:400});
+  if(stageEvent){
+   let envelope;
+   try{envelope=stageEnvelope(stageEvent);if(!envelope)throw Error('Invalid event');}catch{return new Response('Invalid stage envelope',{status:400});}
+   // Keep receipts even after reconciliation. A later person fetch is not evidence
+   // of intermediate stage transitions, nor of source eligibility at occurrence.
+   await retainStageEnvelope(this.state.storage,envelope,team.id,team.org_id);
+  }
   await this.state.storage.put('team',team);
   if(!periodic||!await this.state.storage.getAlarm()){
    const pending=await this.state.storage.get<Pending>('pending');
@@ -25,16 +34,22 @@ export class FubSyncQueue {
   try{
    const active=await database.select('teams',`id=eq.${team.id}&org_id=eq.${team.org_id}&is_active=eq.true&select=id`);
    if(!active.length){await this.state.storage.deleteAlarm();return;}
+   let stageFailed=false;
+   try{await drainStageReceipts(this.state.storage,this.env,database,team);}catch{
+    stageFailed=true;
+    await this.state.storage.put('stage-health',{lastFailure:new Date().toISOString(),error:'Stage import pending retry; original receipts retained'});
+   }
    const fullDue=await this.state.storage.get<number>('fullDue')||0;
    const pending=fullDue<=Date.now()?'full':await this.state.storage.get<Pending>('pending')||'full';
    await this.state.storage.delete('pending');
    if(pending==='full')await syncTeam(this.env,database,team);else await syncPeopleByIds(this.env,database,team,pending.join(','));
    if(pending==='full')await this.state.storage.put('fullDue',Date.now()+30*60000);
    await this.state.storage.setAlarm(pending==='full'?Date.now()+30*60000:fullDue);
-   const status={lastSuccess:new Date().toISOString()};
+   const status={lastSuccess:new Date().toISOString(),stage:await this.state.storage.get('stage-health')??null};
    await this.state.storage.put('status',status);
    await this.env.SESSIONS?.put('sync-health:v1:'+team.id,JSON.stringify(status)).catch(()=>{});
    if(await this.state.storage.get('pending'))await this.state.storage.setAlarm(Date.now()+1000);
+   else if(stageFailed)await this.state.storage.setAlarm(Date.now()+5*60000);
   }catch(e){
    await this.state.storage.put('pending','full');
    const status={error:'FUB sync failed; automatic retry scheduled',reason:(e instanceof Error?e.message.split(':')[0]:'Unknown failure').slice(0,160),lastFailure:new Date().toISOString()};

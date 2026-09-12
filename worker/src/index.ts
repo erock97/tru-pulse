@@ -769,10 +769,12 @@ export default {
       // the outcome and any failure loudly.
       if(env.FUB_SYNC){
         const ids=event.startsWith('people')&&resourceIds?resourceIds.map(String):undefined;
-        const accepted=await env.FUB_SYNC.get(env.FUB_SYNC.idFromName(team.id)).fetch('https://sync/queue',{method:'POST',body:JSON.stringify({team,ids})});
+        const accepted=await env.FUB_SYNC.get(env.FUB_SYNC.idFromName(team.id)).fetch('https://sync/queue',{method:'POST',body:JSON.stringify({team,ids,stageEvent:event==='peopleStageUpdated'?body:undefined})});
         if(!accepted.ok)return json({error:'Sync queue unavailable'},503);
         return json({ok:true,accepted:true});
       }
+      // Never acknowledge a stage notification without durable retention.
+      if(event==='peopleStageUpdated')return json({error:'Durable stage queue unavailable'},503);
       ctx.waitUntil(
         (async () => {
           try {
