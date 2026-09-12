@@ -12,6 +12,9 @@ secret values. Never commit real census records, ledgers, or snapshots.
 node tools/history-ytd/census.mjs inventory.json audit.json private/census [team-id ...]
 node tools/history-ytd/adopt.mjs inventory.json audit.json private/backfill 2026-09-12T02:16:35.917Z
 node --test tools/history-ytd/ledger.test.mjs
+node tools/history-ytd/prepare-import.mjs private/backfill/ledgers private/import-manifests
+node tools/history-ytd/prepare-receipts.mjs private/backfill/ledgers private/receipt-manifests
+node tools/history-ytd/prepare-jobs.mjs private/backfill/coverage-report.json private/jobs.json
 ```
 
 `census.mjs` reads the public API using existing Infisical credentials in memory.
@@ -35,6 +38,18 @@ coverage. Reuse their events, but do not promote their coverage by assertion.
 Current-owner profile counts do not prove historical ownership. All profile
 exclusions are retained; missing mappings, inaccessible people and ambiguous
 sources remain explicit review items.
+
+The manifest commands prepare private, resumable inputs; they do not publish.
+Canonical batches use `history_import_events`, whose production replay must return
+zero. Receipt conflicts use the account/person/content-hash key. Jobs remain
+partial until interval, profile and overlap checks pass. Apply both additive
+migrations before using publication. `history_publish` records an immutable version
+and its prior publication, and the existing authenticated `/data/history` route
+returns that version with coverage metadata while retaining the legacy response.
+
+Database tests use PGlite in an isolated database. Install `@electric-sql/pglite`
+in a separate validation directory, set `PGLITE_MODULE` to its ESM entrypoint, and
+run `node --test tools/history-ytd/schema.test.mjs tools/history-ytd/publication.test.mjs`.
 
 ## Production sequence and rollback
 

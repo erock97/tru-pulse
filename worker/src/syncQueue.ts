@@ -50,6 +50,7 @@ export class FubSyncQueue {
    await this.env.SESSIONS?.put('sync-health:v1:'+team.id,JSON.stringify(status)).catch(()=>{});
    if(await this.state.storage.get('pending'))await this.state.storage.setAlarm(Date.now()+1000);
    else if(stageFailed)await this.state.storage.setAlarm(Date.now()+5*60000);
+   else if((await this.state.storage.list({prefix:'stage-pending:',limit:1})).size)await this.state.storage.setAlarm(Date.now()+1000);
   }catch(e){
    await this.state.storage.put('pending','full');
    const status={error:'FUB sync failed; automatic retry scheduled',reason:(e instanceof Error?e.message.split(':')[0]:'Unknown failure').slice(0,160),lastFailure:new Date().toISOString()};

@@ -28,3 +28,10 @@ it('records inaccessible people without blocking later receipts',async()=>{
 it('fails closed on upstream account mismatch',async()=>{
  const {storage,database}=setup();mocks.identity.mockResolvedValue({status:200,body:{account:{id:2,domain:'domain'}}});await expect(drainStageReceipts(storage,{} as any,database,team)).rejects.toThrow('identity');expect(database.rpc).not.toHaveBeenCalled();
 });
+it('retries inaccessible records after the backoff when access returns',async()=>{
+ const {m,storage,database}=setup();mocks.people.mockResolvedValueOnce([]);
+ await drainStageReceipts(storage,{} as any,database,team);
+ m.get('stage-unresolved:one:42').lastAttempt=new Date(Date.now()-31*60000).toISOString();
+ await drainStageReceipts(storage,{} as any,database,team);
+ expect(database.rpc).toHaveBeenCalledTimes(1);expect(m.has('stage-unresolved:one:42')).toBe(false);
+});

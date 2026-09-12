@@ -6,6 +6,18 @@ import type {StageReceipt} from './stageEnvelope.js';
 import {HISTORY_POLICY,classifyHistorySource} from '../../shared/historyPolicy.js';
 
 export async function drainStageReceipts(storage:DurableObjectStorage,env:Env,database:Db,team:TeamRow){
+ // Retry inaccessible records in bounded rotating batches. A missing person is
+ // unresolved evidence, never a successful zero-event result.
+ const cursor=await storage.get<string>('stage-retry-cursor');
+ let unresolved=await storage.list<{receipt:StageReceipt;lastAttempt:string}>({prefix:'stage-unresolved:',limit:20,...(cursor?{startAfter:cursor}:{})});
+ if(!unresolved.size&&cursor)unresolved=await storage.list({prefix:'stage-unresolved:',limit:20});
+ for(const [key,value] of unresolved){
+  if(Date.now()-Date.parse(value.lastAttempt)>=30*60000){
+   await storage.put('stage-pending:'+value.receipt.eventId+':'+value.receipt.personId,value.receipt);
+   await storage.delete(key);
+  }
+  await storage.put('stage-retry-cursor',key);
+ }
  const pending=await storage.list<StageReceipt>({prefix:'stage-pending:',limit:100});
  if(!pending.size)return;
  const account=(await database.select('history_accounts',`team_id=eq.${team.id}&org_id=eq.${team.org_id}&select=account_id,domain`))[0];
@@ -37,5 +49,6 @@ export async function drainStageReceipts(storage:DurableObjectStorage,env:Env,da
   await storage.put('stage-processed:'+r.eventId+':'+r.personId,{processedAt:new Date().toISOString(),disposition:interpretation.disposition});
   await storage.delete(pendingKey);processed++;
  }
- await storage.put('stage-health',{lastAttemptAt:new Date().toISOString(),...(processed?{lastProcessedAt:new Date().toISOString()}:{}),processed,remaining:(await storage.list({prefix:'stage-pending:',limit:1})).size>0,unresolved:(await storage.list({prefix:'stage-unresolved:',limit:1})).size>0});
+ const previous=await storage.get<Record<string,unknown>>('stage-health');
+ await storage.put('stage-health',{...previous,lastAttemptAt:new Date().toISOString(),...(processed?{lastProcessedAt:new Date().toISOString()}:{}),processed,remaining:(await storage.list({prefix:'stage-pending:',limit:1})).size>0,unresolved:(await storage.list({prefix:'stage-unresolved:',limit:1})).size>0});
 }
