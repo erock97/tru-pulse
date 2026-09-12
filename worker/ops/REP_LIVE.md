@@ -17,7 +17,7 @@ Named coaches can review their own assigned follow-ups without being session pre
 - `GET /rep/sessions`: enabled state and the caller's sessions. Disabled returns 200 with an empty list.
 - `GET /rep/sessions/preflight`: administrator roster and eligible coach directory.
 - `POST /rep/sessions`: `{id,day,timezone,participants:[{agentId,coachId}],presenterIds}`. Response `{ok,id}`.
-- `GET /rep/sessions/:id?view=agent|shared|presenter&cursor=...`: typed state or `{unchanged,cursor,serverTime}`. Database cursor shortcut happens only after authorization.
+- `GET /rep/sessions/:id?view=agent|shared|presenter|coach&cursor=...`: typed state or `{unchanged,cursor,serverTime}`. Database cursor shortcut happens only after authorization.
 - `POST /rep/sessions/:id/join`: join/connection heartbeat. Learner clients send this every ten seconds while active. Connection status is independent of activity progress.
 - `POST /rep/sessions/:id/commands`: `slide`, `open`, `timer`, `reveal`, `group`, or `end` per `shared/liveWorkshops.ts`.
 - `POST /rep/sessions/:id/progress`: activity ID and optional status/help/actions/dirty metadata. Omitted fields preserve existing values. Explicit help resolution increments a durable count.
@@ -61,3 +61,5 @@ Rollback is `REP_LIVE_SESSIONS=0` and `REP_LIVE_DIGESTS=0`. This disables live r
 The default Worker test command runs Vitest for application tests and Node’s native runner for the existing `ops/link-hermes-team.test.mjs`; that file previously failed when Vitest tried to load the Node test module. No existing test is skipped.
 
 Spoken practice requires the observer to explicitly confirm `speakingObserved=true`. `retryObserved` is a separate boolean and defaults false; retry prose does not establish that a retry happened. Existing rows receive false for both fields so historical notes are never retroactively promoted into observed performance.
+
+The read-only `coach` view and `canReview` capability let current team leaders/coaches inspect their own team’s submitted evidence and follow-ups even when they are not session presenters. `canPresent` remains independent; this view grants no advance/reveal/group/end permissions. Foreign-team participants, attempts, and private follow-up are filtered by current database roles.

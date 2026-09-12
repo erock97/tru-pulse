@@ -1,7 +1,7 @@
 import type { WorkshopDefinition } from './workshopCatalog.js';
 import type { CoachingAssignment } from './coachingAssignments.js';
 
-export type LiveView = 'presenter' | 'shared' | 'agent';
+export type LiveView = 'presenter' | 'shared' | 'agent' | 'coach';
 export interface LiveParticipant {
   agentId: string; userId: string | null; orgId: string; teamId: string;
   name: string; teamName: string; coachId: string; coachName?: string; joinedAt: string | null;
@@ -30,11 +30,11 @@ export interface LiveObservation {
 export interface LiveSessionSummary {
   id: string; day: number; title: string; version: string; timezone: string;
   status: 'active' | 'ended'; createdAt: string; endedAt: string | null;
-  currentActivityId: string | null; currentSlideId: string; presenterIds: string[]; canPresent: boolean;
+  currentActivityId: string | null; currentSlideId: string; presenterIds: string[]; canPresent: boolean; canReview: boolean;
 }
 export interface LiveSessionState {
   session: LiveSessionSummary; definition: WorkshopDefinition; cursor: string;
-  viewerId: string; myAgentId: string | null; canPresent: boolean;
+  viewerId: string; myAgentId: string | null; canPresent: boolean; canReview: boolean;
   openedActivityIds: string[]; revealedActivityIds: string[];
   timerEndsAt: string | null; participants: LiveParticipant[];
   progress: LiveProgress[]; attempts: LiveAttempt[]; groups: LiveGroup[];

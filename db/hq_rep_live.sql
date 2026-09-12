@@ -261,15 +261,16 @@ end $$;
 drop function if exists public.rep_live_read(uuid,uuid);
 create or replace function public.rep_live_read(p_actor uuid,p_session uuid,p_cursor text default null) returns jsonb
  language plpgsql stable security definer set search_path=public,pg_temp as $$
-declare s rep_live_sessions%rowtype; own_agent uuid; presenting boolean;
+declare s rep_live_sessions%rowtype; own_agent uuid; presenting boolean; reviewing boolean;
 begin
  select * into s from rep_live_sessions where id=p_session;
  if not found then raise exception 'Session unavailable'; end if;
  select learner.id into own_agent from agents learner join jsonb_array_elements(s.roster) r on r->>'agentId'=learner.id::text where learner.auth_id=p_actor limit 1;
  presenting:=rep_live_is_admin(p_actor) or (p_actor=any(s.presenter_ids) and exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid)));
- if not presenting and own_agent is null then raise exception 'Session unavailable'; end if;
- if p_cursor is not null and p_cursor::timestamptz=s.updated_at then return jsonb_build_object('unchanged',true,'cursor',s.updated_at,'serverTime',clock_timestamp()); end if;
- return jsonb_build_object('session',to_jsonb(s),'myAgentId',own_agent,'canPresent',presenting,
+ reviewing:=rep_live_is_admin(p_actor) or exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid));
+ if not presenting and not reviewing and own_agent is null then raise exception 'Session unavailable'; end if;
+ if p_cursor is not null and p_cursor::timestamptz=s.updated_at then return jsonb_build_object('unchanged',true,'cursor',s.updated_at,'serverTime',clock_timestamp(),'canPresent',presenting,'canReview',reviewing); end if;
+ return jsonb_build_object('session',to_jsonb(s),'myAgentId',own_agent,'canPresent',presenting,'canReview',reviewing,
   'participants',coalesce((select jsonb_agg(r||jsonb_build_object('joinedAt',p.joined_at,'lastSeenAt',p.last_seen_at,'coachName',coalesce(r->>'coachName',(select coalesce(raw_user_meta_data->>'name',email,id::text) from auth.users where id=(r->>'coachId')::uuid)))) from jsonb_array_elements(s.roster) r left join rep_live_presence p on p.session_id=s.id and p.agent_id=(r->>'agentId')::uuid where rep_live_can_see(p_actor,(r->>'agentId')::uuid)),'[]'),
   'progress',coalesce((select jsonb_agg(to_jsonb(x)) from rep_live_progress x where x.session_id=s.id and rep_live_can_see(p_actor,x.agent_id)),'[]'),
   'attempts',coalesce((select jsonb_agg(to_jsonb(x) order by x.submitted_at) from rep_live_attempts x where x.session_id=s.id and rep_live_can_see(p_actor,x.agent_id)),'[]'),
@@ -278,8 +279,12 @@ begin
 end $$;
 create or replace function public.rep_live_list(p_actor uuid) returns jsonb
  language sql stable security definer set search_path=public,pg_temp as $$
- select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'day',s.day,'title',s.title,'version',s.version,'timezone',s.timezone,'status',s.status,'createdAt',s.created_at,'endedAt',s.ended_at,'currentActivityId',s.current_activity_id,'currentSlideId',s.current_slide_id,'presenterIds',s.presenter_ids,'canPresent',rep_live_is_admin(p_actor) or (p_actor=any(s.presenter_ids) and exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid)))) order by s.created_at desc),'[]')
- from rep_live_sessions s where rep_live_is_admin(p_actor) or (p_actor=any(s.presenter_ids) and exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid))) or exists(select 1 from agents a join jsonb_array_elements(s.roster) r on r->>'agentId'=a.id::text where a.auth_id=p_actor)
+ select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'day',s.day,'title',s.title,'version',s.version,'timezone',s.timezone,'status',s.status,'createdAt',s.created_at,'endedAt',s.ended_at,'currentActivityId',s.current_activity_id,'currentSlideId',s.current_slide_id,'presenterIds',case when rights.presenting then s.presenter_ids else '{}'::uuid[] end,'canPresent',rights.presenting,'canReview',rights.reviewing) order by s.created_at desc),'[]')
+ from rep_live_sessions s cross join lateral(select
+  rep_live_is_admin(p_actor) or (p_actor=any(s.presenter_ids) and exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid))) as presenting,
+  rep_live_is_admin(p_actor) or exists(select 1 from jsonb_array_elements(s.roster) member where rep_live_team_coach(p_actor,(member->>'orgId')::uuid,(member->>'teamId')::uuid)) as reviewing
+ ) rights
+ where rights.presenting or rights.reviewing or exists(select 1 from agents a join jsonb_array_elements(s.roster) r on r->>'agentId'=a.id::text where a.auth_id=p_actor)
 $$;
 revoke all on function rep_live_is_admin(uuid),rep_live_team_coach(uuid,uuid,uuid),rep_live_can_see(uuid,uuid),rep_live_mutate(uuid,uuid,text,jsonb),rep_live_read(uuid,uuid,text),rep_live_list(uuid) from public,anon,authenticated;
 grant execute on function rep_live_can_see(uuid,uuid) to authenticated;

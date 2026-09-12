@@ -13,7 +13,7 @@ export type RawLiveState = {
  session: {id:string;day:number;title:string;version:string;timezone:string;status:'active'|'ended';created_at:string;ended_at:string|null;
   current_activity_id:string|null;current_slide_id:string;presenter_ids:string[];definition:WorkshopDefinition;opened_activity_ids:string[];revealed_activity_ids:string[];
   timer_ends_at:string|null;updated_at:string;roster:LiveSessionState['participants'];groups:LiveGroup[]};
- myAgentId:string|null;canPresent:boolean;participants:LiveSessionState['participants'];
+ myAgentId:string|null;canPresent:boolean;canReview:boolean;participants:LiveSessionState['participants'];
  progress:Record<string,any>[];attempts:Record<string,any>[];observations:Record<string,any>[];followups:LiveFollowup[];
  choiceTotals?:Record<string,Record<string,number>>;
 };
@@ -22,28 +22,29 @@ export function mapAttempt(a:Record<string,any>):LiveAttempt {
 }
 /** Never spread a raw row into a browser response: the snapshot contains coach notes. */
 export function liveStateForView(raw:RawLiveState,viewerId:string,view:LiveView):LiveSessionState {
- const s=raw.session, presenter=view==='presenter'&&raw.canPresent;
+ const s=raw.session, presenter=view==='presenter'&&raw.canPresent, coach=view==='coach'&&raw.canReview, reviewer=presenter||coach;
  const allGroups=s.groups??[];
- const groups=presenter?allGroups:allGroups.filter(g=>[g.agentId,g.buyerId,g.observerId].includes(raw.myAgentId??'')||g.coachId===viewerId);
+ const visibleIds=new Set(raw.participants.map(p=>p.agentId));
+ const groups=coach?allGroups.filter(g=>visibleIds.has(g.agentId)).map(g=>({...g,buyerId:g.buyerId&&visibleIds.has(g.buyerId)?g.buyerId:null,observerId:g.observerId&&visibleIds.has(g.observerId)?g.observerId:null})):presenter?allGroups:allGroups.filter(g=>[g.agentId,g.buyerId,g.observerId].includes(raw.myAgentId??'')||g.coachId===viewerId);
  const peerIds=new Set(groups.flatMap(g=>[g.agentId,g.buyerId,g.observerId]).filter(Boolean));
- const participants=presenter?raw.participants:raw.participants.filter(p=>p.agentId===raw.myAgentId);
- if(!presenter)for(const p of s.roster)if(peerIds.has(p.agentId)&&!participants.some(x=>x.agentId===p.agentId))participants.push({...p,userId:null,coachId:'',orgId:'',teamId:'',teamName:'',joinedAt:null,lastSeenAt:null});
+ const participants=reviewer?raw.participants:raw.participants.filter(p=>p.agentId===raw.myAgentId);
+ if(!reviewer)for(const p of s.roster)if(peerIds.has(p.agentId)&&!participants.some(x=>x.agentId===p.agentId))participants.push({...p,userId:null,coachId:'',orgId:'',teamId:'',teamName:'',joinedAt:null,lastSeenAt:null});
  const revealed=s.revealed_activity_ids??[];
  const totals:Record<string,Record<string,number>>={};
  const firstAttempts=[...new Map(raw.attempts.filter(a=>!a.assisted).slice().reverse().map(a=>[`${a.agent_id}:${a.activity_id}`,a])).values()];
- for(const a of firstAttempts){const choice=a.response?.choiceId;if(typeof choice==='string'&&(presenter||revealed.includes(a.activity_id))){totals[a.activity_id]??={};totals[a.activity_id][choice]=(totals[a.activity_id][choice]??0)+1;}}
+ for(const a of firstAttempts){const choice=a.response?.choiceId;if(typeof choice==='string'&&(reviewer||revealed.includes(a.activity_id))){totals[a.activity_id]??={};totals[a.activity_id][choice]=(totals[a.activity_id][choice]??0)+1;}}
  const state:LiveSessionState={
-  session:{id:s.id,day:s.day,title:s.title,version:s.version,timezone:s.timezone,status:s.status,createdAt:s.created_at,endedAt:s.ended_at,currentActivityId:s.current_activity_id,currentSlideId:s.current_slide_id,presenterIds:presenter?s.presenter_ids:[],canPresent:raw.canPresent},
-  definition:presenter?s.definition:learnerWorkshopDefinition(s.definition,revealed),cursor:s.updated_at,viewerId,myAgentId:raw.myAgentId,canPresent:raw.canPresent,
+  session:{id:s.id,day:s.day,title:s.title,version:s.version,timezone:s.timezone,status:s.status,createdAt:s.created_at,endedAt:s.ended_at,currentActivityId:s.current_activity_id,currentSlideId:s.current_slide_id,presenterIds:presenter?s.presenter_ids:[],canPresent:raw.canPresent,canReview:raw.canReview},
+  definition:reviewer?s.definition:learnerWorkshopDefinition(s.definition,revealed),cursor:s.updated_at,viewerId,myAgentId:raw.myAgentId,canPresent:raw.canPresent,canReview:raw.canReview,
   openedActivityIds:s.opened_activity_ids,revealedActivityIds:revealed,timerEndsAt:s.timer_ends_at,participants,
-  progress:raw.progress.filter(x=>presenter||x.agent_id===raw.myAgentId).map(x=>({agentId:x.agent_id,activityId:x.activity_id,status:x.status,help:x.help,actions:x.actions,dirty:x.dirty,helpResolvedCount:x.help_resolved_count??0,updatedAt:x.updated_at})),
-  attempts:raw.attempts.filter(x=>presenter||x.agent_id===raw.myAgentId).map(mapAttempt),groups,
-  observations:raw.observations.filter(x=>presenter||x.agent_id===raw.myAgentId||x.observer_id===viewerId).map(x=>({id:x.id,groupId:x.group_id,activityId:x.activity_id,agentId:x.agent_id,observerId:x.observer_id,round:x.round,criteria:x.criteria,correction:x.correction,retry:x.retry,speakingObserved:x.speaking_observed===true,retryObserved:x.retry_observed===true,coachReviewed:x.coach_reviewed,submittedAt:x.submitted_at} as LiveObservation)),
-  followups:raw.followups.filter(x=>presenter||x.agentId===raw.myAgentId),choiceTotals:raw.choiceTotals?Object.fromEntries(Object.entries(raw.choiceTotals).filter(([id])=>presenter||revealed.includes(id))):totals,
+  progress:raw.progress.filter(x=>reviewer||x.agent_id===raw.myAgentId).map(x=>({agentId:x.agent_id,activityId:x.activity_id,status:x.status,help:x.help,actions:x.actions,dirty:x.dirty,helpResolvedCount:x.help_resolved_count??0,updatedAt:x.updated_at})),
+  attempts:raw.attempts.filter(x=>reviewer||x.agent_id===raw.myAgentId).map(mapAttempt),groups,
+  observations:raw.observations.filter(x=>reviewer||x.agent_id===raw.myAgentId||x.observer_id===viewerId).map(x=>({id:x.id,groupId:x.group_id,activityId:x.activity_id,agentId:x.agent_id,observerId:x.observer_id,round:x.round,criteria:x.criteria,correction:x.correction,retry:x.retry,speakingObserved:x.speaking_observed===true,retryObserved:x.retry_observed===true,coachReviewed:x.coach_reviewed,submittedAt:x.submitted_at} as LiveObservation)),
+  followups:raw.followups.filter(x=>reviewer||x.agentId===raw.myAgentId),choiceTotals:raw.choiceTotals?Object.fromEntries(Object.entries(raw.choiceTotals).filter(([id])=>reviewer||revealed.includes(id))):totals,
  };
  if(view==='shared'){
   state.participants=[];state.progress=[];state.attempts=[];state.observations=[];state.followups=[];state.groups=[];
-  state.myAgentId=null;state.viewerId='';state.canPresent=false;state.session.presenterIds=[];state.session.canPresent=false;
+  state.myAgentId=null;state.viewerId='';state.canPresent=false;state.session.presenterIds=[];state.session.canPresent=false;state.canReview=false;state.session.canReview=false;
  }
  return state;
 }
@@ -109,8 +110,10 @@ export async function handleLiveSessions(req:Request,env:Env,cors:Record<string,
   if(!match||!identifier(match[1]))return reply({error:'Route unavailable'},404);
   const [,sessionId,route]=match;
   if(req.method==='GET'&&!route){
-   const view=(url.searchParams.get('view')??'agent') as LiveView;if(!['agent','presenter','shared'].includes(view))return reply({error:'Unknown view'},400);
+   const view=(url.searchParams.get('view')??'agent') as LiveView;if(!['agent','presenter','shared','coach'].includes(view))return reply({error:'Unknown view'},400);
    const loaded=await database.rpc('rep_live_read',{p_actor:user.userId,p_session:sessionId,p_cursor:url.searchParams.get('cursor')||null});
+   if(view==='presenter'&&!loaded.canPresent)return reply({error:'Presenter access required'},403);
+   if(view==='coach'&&!loaded.canReview)return reply({error:'Coach access required'},403);
    if(loaded.unchanged)return reply(loaded);
    const raw=loaded as RawLiveState;
    if(view==='presenter'&&!raw.canPresent)return reply({error:'Presenter access required'},403);

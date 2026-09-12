@@ -42,6 +42,15 @@ describe('durable live session transactions and access',()=>{
   const state=await read(coachA);expect(state.participants.map((p:any)=>p.agentId)).toEqual([agentA]);
   expect((await read(userA)).participants.map((p:any)=>p.agentId)).toEqual([agentA]);
  });
+ it('non-presenter coaches can read only their team evidence while commands remain forbidden',async()=>{
+  const state=await read(coachB);expect(state.canReview).toBe(true);expect(state.canPresent).toBe(false);expect(state.myAgentId).toBeNull();
+  expect(state.participants.map((p:any)=>p.agentId)).toEqual([agentB]);
+  expect(state.attempts.every((a:any)=>a.agent_id===agentB)).toBe(true);
+  const list=(await pg.query<{result:any}>('select rep_live_list($1) result',[coachB])).rows[0].result;
+  expect(list.find((x:any)=>x.id===session)).toMatchObject({canReview:true,canPresent:false});
+  await expect(mutate(coachB,'open',{activityId:act})).rejects.toThrow('Session unavailable');
+  expect((await read(userB)).canReview).toBe(false);
+ });
  it('a rostered learner can join with their authenticated identity',async()=>{
   expect(await mutate(userA,'join')).toMatchObject({ok:true});
   expect((await read(userA)).participants[0].joinedAt).toBeTruthy();
@@ -65,6 +74,8 @@ describe('durable live session transactions and access',()=>{
   expect((await mutate(userA,'submit',{...first,id:id(52)})).attempt.assisted).toBe(true);
   expect((await read(userA)).attempts).toHaveLength(2);
   expect((await read(userB)).attempts).toHaveLength(0);
+  expect((await read(coachB)).attempts).toHaveLength(0);
+  expect((await read(coachA)).attempts).toHaveLength(2);
  });
  it('repair cannot bypass diagnosis, and audit does not mark activity submitted',async()=>{
   const repair=definition.activities.find(a=>a.scenario==='avery-repair')!.id;

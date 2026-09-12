@@ -10,7 +10,7 @@ vi.mock('./asUser.js',()=>({supabaseAsUser:vi.fn()}));
 const definition=getWorkshopDefinition(2)!;
 const opening=definition.activities.find(a=>a.kind==='choice')!;
 function rawState():RawLiveState{return {
- session:{id:'s',day:2,title:definition.title,version:definition.version,timezone:'America/Los_Angeles',status:'active',created_at:'2026-09-12T12:00:00Z',ended_at:null,current_activity_id:opening.id,current_slide_id:opening.slideId,presenter_ids:['presenter'],definition,opened_activity_ids:[opening.id],revealed_activity_ids:[],timer_ends_at:null,updated_at:'2026-09-12T12:01:00Z',roster:[],groups:[]},myAgentId:'learner',canPresent:true,
+ session:{id:'s',day:2,title:definition.title,version:definition.version,timezone:'America/Los_Angeles',status:'active',created_at:'2026-09-12T12:00:00Z',ended_at:null,current_activity_id:opening.id,current_slide_id:opening.slideId,presenter_ids:['presenter'],definition,opened_activity_ids:[opening.id],revealed_activity_ids:[],timer_ends_at:null,updated_at:'2026-09-12T12:01:00Z',roster:[],groups:[]},myAgentId:'learner',canPresent:true,canReview:true,
  participants:[{agentId:'learner',name:'Private name',userId:'user',orgId:'org',teamId:'team',teamName:'Private team',coachId:'coach',joinedAt:null,lastSeenAt:null}],
  progress:[{agent_id:'learner',activity_id:opening.id,status:'working',help:null,actions:[],dirty:true,updated_at:'today'}],
  attempts:[{id:'first',agent_id:'learner',activity_id:opening.id,attempt:1,response:{choiceId:opening.choices![0].id,'text':'Private submitted wording'},assisted:false,submitted_at:'1',grade:null},
@@ -25,6 +25,12 @@ describe('live transport and projection',()=>{
   expect(view.definition.slides.every(s=>!s.notes&&!s.cue)).toBe(true);
   expect(view.definition.activities.find(a=>a.id===opening.id)?.correctChoiceId).toBeUndefined();
   expect(view.choiceTotals).toEqual({});
+ });
+ it('read-only coach view exposes scoped evidence without granting presenter controls',()=>{
+  const raw=rawState();raw.canPresent=false;raw.canReview=true;raw.myAgentId=null;
+  const view=liveStateForView(raw,'coach','coach');
+  expect(view.canPresent).toBe(false);expect(view.canReview).toBe(true);expect(view.attempts).toHaveLength(3);expect(view.participants).toHaveLength(1);
+  expect(view.session.presenterIds).toEqual([]);
  });
  it('choice counts use one first independent attempt per learner, with controlled reveal',()=>{
   const raw=rawState();const presenter=liveStateForView(raw,'presenter','presenter');
