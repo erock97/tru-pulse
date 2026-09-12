@@ -10,13 +10,13 @@ export default function CoachingAssignments({agentId,leader=false,compact=false,
  const [rows,setRows]=useState<CoachingAssignment[]|null>(null);
  const [modules,setModules]=useState<CourseModule[]>([]);
  const [error,setError]=useState('');const [courseError,setCourseError]=useState(false);
- const [allowed,setAllowed]=useState(false);const [creating,setCreating]=useState(false);
+ const [allowed,setAllowed]=useState(false);const [canReview,setCanReview]=useState(false);const [creating,setCreating]=useState(false);
  const [busy,setBusy]=useState(false);const [saved,setSaved]=useState('');
  const [generation,setGeneration]=useState(0);
  const saving=useRef(false);const focusTarget=useRef<HTMLDivElement>(null);
  useEffect(()=>{if(rows&&focusAssignmentId)focusTarget.current?.scrollIntoView({block:'nearest'});},[!!rows,focusAssignmentId]);
- useEffect(()=>{let live=true;setRows(null);setModules([]);setAllowed(false);setError('');setCourseError(false);
-  void loadAssignments(agentId).then(r=>{if(live){setRows(r.assignments);setAllowed(r.canAssign);}}).catch(e=>{if(live)setError(e.message);});
+ useEffect(()=>{let live=true;setRows(null);setModules([]);setAllowed(false);setCanReview(false);setError('');setCourseError(false);
+  void loadAssignments(agentId).then(r=>{if(live){setRows(r.assignments);setAllowed(r.canAssign);setCanReview(r.canReview??r.canAssign);}}).catch(e=>{if(live)setError(e.message);});
   void loadCourse(agentId).then(m=>{if(live)setModules(m);}).catch(()=>{if(live)setCourseError(true);});
   return()=>{live=false;};
  },[agentId,generation]);
@@ -38,7 +38,7 @@ export default function CoachingAssignments({agentId,leader=false,compact=false,
   {rows===null&&!error&&<p role="status">Loading coaching work…</p>}
   {creating&&leader&&allowed&&<AssignForm modules={modules.filter(canOpenModule)} courseError={courseError} busy={busy} onSave={async input=>{if(await save(input))setCreating(false);}}/>}
   {rows!==null&&open.length===0&&<p className="cw-muted">{leader?'No open assignments. Agree on one thing to practice before the next meeting.':'No new assignment from your coach. You can continue your training below.'}</p>}
-  {(focusAssignmentId?merged.filter(a=>a.id===focusAssignmentId):(compact?open.slice(0,1):open)).map(a=><div key={a.id} ref={a.id===focusAssignmentId?focusTarget:undefined}><WorkItem assignment={a} compact={compact} leader={leader} canReview={allowed} busy={busy} moduleAvailable={modules.some(m=>m.id===a.moduleId&&canOpenModule(m))} onOpen={onOpen} onSave={save}/></div>)}
+  {(focusAssignmentId?merged.filter(a=>a.id===focusAssignmentId):(compact?open.slice(0,1):open)).map(a=><div key={a.id} ref={a.id===focusAssignmentId?focusTarget:undefined}><WorkItem assignment={a} compact={compact} leader={leader} canReview={canReview} busy={busy} moduleAvailable={modules.some(m=>m.id===a.moduleId&&canOpenModule(m))} onOpen={onOpen} onSave={save}/></div>)}
   {rows&&focusAssignmentId&&!merged.some(a=>a.id===focusAssignmentId)&&<p role="status" className="cw-muted">This assignment is no longer available. Return to Today and refresh your agenda.</p>}
   {!focusAssignmentId&&compact&&open.length>1&&<p className="cw-muted">{open.length-1} more {open.length===2?'assignment':'assignments'} in Coach.</p>}
   {!focusAssignmentId&&!compact&&closed.length>0&&<details className="cw-history"><summary>Previous assignments ({closed.length})</summary>{closed.map(a=><WorkItem key={a.id} assignment={a} leader={false} busy={busy} moduleAvailable={false} onSave={save}/>)}</details>}
