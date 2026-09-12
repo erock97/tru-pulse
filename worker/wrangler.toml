@@ -20,6 +20,11 @@ routes = [
 ]
 
 
+[vars]
+# Enabled after Eric's release approval and the additive live-session migration.
+REP_LIVE_SESSIONS = "1"
+REP_LIVE_DIGESTS = "1"
+
 # Incremental sync every 30 min; daily 3-strike reconcile at 07:05;
 # weekly Leadership Brief Monday 13:00 UTC (~8-9am ET).
 [triggers]

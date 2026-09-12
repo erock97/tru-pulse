@@ -6,7 +6,7 @@ Eric approved production release after reviewing the updated palette and simplif
 
 The deployed frontend identified source `7f0ad9822a85594c73ca91fdf88226b4859f9bb3`, which was not contained in `origin/main`. Its already-live history-reporting changes were merged into the training branch before release. This preserves historical coverage warnings, source provenance, and stage receipt handling.
 
-The combined tree passes frontend TypeScript and 500 tests, Worker TypeScript and 804 tests plus six native Node operations tests. The production build uses `https://api.truhq.co`; the Worker dry run succeeds with existing durable-object, KV, service, and custom-domain bindings.
+The combined tree passes frontend TypeScript and 500 tests, Worker TypeScript and 810 tests plus six native Node operations tests. The production build uses `https://api.truhq.co`; the Worker dry run succeeds with existing durable-object, KV, service, and custom-domain bindings.
 
 ## Pre-release production observations
 
@@ -18,10 +18,10 @@ The combined tree passes frontend TypeScript and 500 tests, Worker TypeScript an
 
 ## Remaining release work
 
-1. Confirm the temporary Supabase branch cost of $0.01344/hour, create it, and validate the additive migration against hosted schema and access rules. Remove the temporary branch after validation.
-2. Apply the reviewed live-session migration to production. Do not rerun unrelated history migrations.
+1. Completed isolated PGlite migration/access tests and a read-only comparison against the production schema. No paid branch was created. Hosted load testing and a real remote cohort remain unperformed; the local timing is not a production SLA.
+2. Applied `rep_live_training_sessions` to production successfully. Verified all seven tables have RLS, no anonymous read/browser insert grants, and service-only session RPCs. No unrelated history migrations were rerun.
 3. Deploy the Worker with existing variables retained and live-session/digest flags enabled. Deploy the verified Pages build after the Worker succeeds.
 4. Verify the authenticated session list, presenter setup, shared-view restrictions, existing Rep workshops, and delivery status on the deployed app. Do not generate assignments or send test mail to real agents.
 5. Record deployment identifiers and checks here. Retain additive tables if rolling back; disable live flags and restore prior application versions as needed.
 
-Production has not been changed by this release yet. The paid test-branch confirmation is pending; production-release authorization does not need to be requested again.
+Production migration is applied. Worker and Pages publication are next. The temporary paid branch is not needed and will not be created.
