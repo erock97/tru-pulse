@@ -8,6 +8,7 @@ import { handlePersonalProfile } from './personalProfile.js';
 // Response shapes match what the web app already expects, so switching a caller over
 // is a one-line change on the client and the UI is none the wiser.
 import type { Env } from './env.js';
+import {readHistoryVersion} from './historyMetadata.js';
 import { readCookie } from './session.js';
 import { supabaseAsUser } from './asUser.js';
 import { db as serviceDb } from './db.js';
@@ -111,7 +112,12 @@ export async function handleDataRoutes(
       if (!membership.length) return json({error:'not permitted'},403,cors);
       const snapshot = await env.SESSIONS.get(`pulse-history:v1:${orgId}`, 'json') as {orgId:string}|null;
       if (snapshot && snapshot.orgId !== orgId) return json({error:'history identity mismatch'},502,cors);
-      return json({snapshot},200,{...cors,'Cache-Control':'private, no-store'});
+      let history;
+      try{history=await readHistoryVersion(serviceDb(env),orgId,snapshot);}catch(e){
+        if(e instanceof Error&&/scope mismatch|Invalid history version/.test(e.message))throw e;
+        history={snapshot,version:null,coverage:{state:'unavailable',complete:false}};
+      }
+      return json(history,200,{...cors,'Cache-Control':'private, no-store'});
     } catch { return json({error:'Historical evidence unavailable'},502,cors); }
   }
 

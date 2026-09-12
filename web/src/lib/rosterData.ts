@@ -176,6 +176,7 @@ export function totalsOf(rows: readonly Row[]): Totals {
 
 export interface RosterState {
   historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
+  historyCoverage?: Awaited<ReturnType<typeof loadDashboard>>['historyCoverage'];
   proof: Map<string, Awaited<ReturnType<typeof loadDashboard>>['leads']>;
   teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
   rows: Row[] | null;
@@ -192,6 +193,7 @@ export interface RosterState {
 export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:string): RosterState {
   const [raw, setRaw] = useState<{
     historyInfo?: Awaited<ReturnType<typeof loadDashboard>>['historyInfo'];
+    historyCoverage?: Awaited<ReturnType<typeof loadDashboard>>['historyCoverage'];
     leads: Awaited<ReturnType<typeof loadDashboard>>['leads'];
     agents: Awaited<ReturnType<typeof loadDashboard>>['agents'];
     teams: Awaited<ReturnType<typeof loadDashboard>>['teams'];
@@ -214,7 +216,7 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
           loadRep().catch((): RepData | null => null),
         ]);
         if (alive) setErr('');
-        if (alive) setRaw({ historyInfo:data.historyInfo, leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
+        if (alive) setRaw({ historyCoverage:data.historyCoverage, historyInfo:data.historyInfo, leads: data.leads, agents: data.agents, teams: data.teams, coach, rep });
       } catch (e) {
         if (alive) setErr(e instanceof Error ? e.message : 'Could not load the roster.');
       } finally {busy=false;}
@@ -343,16 +345,15 @@ export function useRosterData(line: number, windowDays: PulsePeriod, orgId?:stri
     // months you have already reported. What goes is the person: they are not
     // somebody to coach, rank, or prioritise any more.
     const gone = new Set(
-      // The imported cohort was already restricted to active FUB users. An
-      // older app exclusion must not hide part of its auditable roster.
-      (raw.agents ?? []).filter((a) => a.excluded && !raw.historyInfo).map((a) => norm(a.name)),
+      // Historical evidence does not override an explicit profile exclusion.
+      (raw.agents ?? []).filter((a) => a.excluded).map((a) => norm(a.name)),
     );
     const departedRows = list.filter((r) => gone.has(norm(r.name)));
 
     const withHealth = list.map((r) => ({ ...r, health: healthOf(r.perContract, teamRate, line,r.leads) }));
 
     return {
-      historyInfo:raw.historyInfo, proof, teams: raw.teams,
+      historyCoverage:raw.historyCoverage, historyInfo:raw.historyInfo, proof, teams: raw.teams,
       rows: withHealth.filter((r) => !gone.has(norm(r.name))),
       // Totals come off the FULL list on purpose. A page that computed them
       // from `rows` would quietly rewrite months you have already reported the
