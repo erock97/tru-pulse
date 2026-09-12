@@ -93,6 +93,9 @@ export default function AdminTeams({
                 A banner identifies the team you are viewing and lets you return here.
               </p>
             </div>
+            <button className="ad-btn" onClick={() => { window.location.hash = '/rep/sessions'; }}>
+              Live training
+            </button>
             <button
               className="ad-btn"
               onClick={() => { window.location.hash = '/admin/agents'; }}

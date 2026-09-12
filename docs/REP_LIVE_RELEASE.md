@@ -24,4 +24,6 @@ The combined tree passes frontend TypeScript and 500 tests, Worker TypeScript an
 4. Verify the authenticated session list, presenter setup, shared-view restrictions, existing Rep workshops, and delivery status on the deployed app. Do not generate assignments or send test mail to real agents.
 5. Record deployment identifiers and checks here. Retain additive tables if rolling back; disable live flags and restore prior application versions as needed.
 
-Production migration is applied. Worker and Pages publication are next. The temporary paid branch is not needed and will not be created.
+Production migration and publication are complete. Worker version: `26d980c7-7aae-4ce2-9658-283d049b2919`. Initial Pages release: `f77a0776.tru-pulse-app.pages.dev`. Both live-session and daily digest flags are enabled. The temporary paid branch was not created.
+
+Browser verification used the existing signed-in owner account after returning from a team impersonation view. The live roster and four training choices loaded correctly; the existing Rep workshop library, guides, and quiz identities remained visible. An unauthenticated API request returned 401. No real-agent session, follow-up assignment, or test email was created. A small frontend follow-up adds the owner-home entry, a return-to-owner notice, and roster filters.
