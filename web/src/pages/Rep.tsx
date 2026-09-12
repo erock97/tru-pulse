@@ -444,6 +444,7 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
             </div>
           </div>
 
+          {canAuthor && <div style={{margin:'18px 0'}}><button className="rp-invite" onClick={()=>setManage(true)}>Manage modules</button></div>}
           <RepWorkshopLibrary presenter entries={journey.flatMap(({m,openable})=>{
             const day=workshopDay(m);
             return day && day<=3 ? [{day,onOpen:()=>openPreview(m),disabled:!openable,status:`${m.questions} quiz questions · Pass at ${m.pass_pct}%`}] : [];

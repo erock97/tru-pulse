@@ -944,7 +944,7 @@ export function Result({ module: m, result, onRetry, onReview, onHome }: {
           : `${result.correct} of ${result.total}. You need ${m.pass_pct}%. Check the misses below and run it back — unlimited retries.`}</p>
         <div className="ac-nav center">
           {result.passed
-            ? <button className="btn ac-btn" onClick={onHome}>Next module →</button>
+            ? <button className="btn ac-btn" onClick={onHome}>Back to training →</button>
             : <>
                 <button className="btn ghost" onClick={onReview}>Re-read lesson</button>
                 <button className="btn ac-btn" onClick={onRetry}>Run it back</button>

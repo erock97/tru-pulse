@@ -120,7 +120,7 @@ export function DealMock() {
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 18, fontWeight: 600 }}>
                 Close date
-                <input type="date" style={fieldStyle} value={close} onChange={(e) => setClose(e.target.value)} />
+                <input type="date" style={fieldStyle} value={close} onInput={(e) => setClose(e.currentTarget.value)} onChange={(e) => setClose(e.target.value)} />
               </label>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
