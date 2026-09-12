@@ -7,7 +7,8 @@ if(!requestedCutoff)throw Error('Usage: adopt.mjs inventory.json audit.json outp
 historyTime(requestedCutoff);
 const inventory=await readJson(inventoryPath),audit=await readJson(auditPath);
 const cutoff=new Date(requestedCutoff).toISOString();
-const report={cutoff,from:HISTORY_START,policy:HISTORY_POLICY,inventoryCheckedAt:inventory.checkedAt,teams:[],profiles:[],historicalRequests:0,productionInserts:0,publications:[],classificationReview:[]};
+const inCohort=p=>Number.isFinite(Date.parse(p.created))&&Date.parse(p.created)>=historyTime(HISTORY_START)&&Date.parse(p.created)<historyTime(cutoff);
+const report={cutoff,from:HISTORY_START,cohortPolicy:'created-ytd-2026-v1',policy:HISTORY_POLICY,inventoryCheckedAt:inventory.checkedAt,teams:[],profiles:[],historicalRequests:0,productionInserts:0,publications:[],classificationReview:[]};
 for(const team of inventory.teams){
  const mapping=audit.teams.find(t=>t.team_id===team.id&&t.org_id===team.org_id&&t.fub_subdomain===team.fub_subdomain);
  const row={teamId:team.id,name:team.name,accountId:mapping?.upstream_account_id??null,filesVerified:0,receiptsReused:0,newLocalEvents:0,failed:0,eligible:null,complete:0,unresolved:null,state:'unresolved',blockers:[],rollbackSnapshot:mapping?.historical_snapshot??null};
@@ -26,6 +27,7 @@ for(const team of inventory.teams){
      // Conservative boundary deliberately leaves the final reporting day unresolved.
      const through=prior.through+'T00:00:00-07:00';
      for(const person of inv.people){
+      if(!inCohort(person))continue;
       try{
        const bytes=await fs.readFile(path.join(prior.artifactDirectory,'leads',String(person.id)+'.json'));
        const receipt=JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/,''));
@@ -42,16 +44,16 @@ for(const team of inventory.teams){
    const censusValid=census?.complete&&String(census.accountId)===String(row.accountId)&&census.orgId===team.org_id;
    row.censusComplete=!!censusValid;
    const people=censusValid?census.people:[];
-   const eligible=people.filter(p=>classifyHistorySource(p.source)==='eligible');
+   const eligible=people.filter(p=>inCohort(p)&&classifyHistorySource(p.source)==='eligible');
    row.eligible=censusValid?eligible.length:null;
    const gaps=eligible.map(p=>({personId:String(p.id),assignedUserId:p.assignedUserId??null,sourceRaw:p.source,created:p.created,intervals:gapsFor(ledger,p.id,cutoff)}));
    row.complete=censusValid?gaps.filter(p=>p.intervals.length===0).length:0;
    row.unresolved=censusValid?row.eligible-row.complete:null;
    row.state='partial';
    if(!censusValid)row.blockers.push(census?.blocker||'Complete public API census unavailable');
-   row.blockers.push('Missing changelogs require an authorized provider export or reviewed supervised capture; automated website logins remain disabled');
+   row.blockers.push('Missing changelogs remain pending; website authentication is limited to two total attempts and must stop on verification challenges');
    if(Object.keys(ledger.receipts).length)row.blockers.push('Legacy pagination evidence is incomplete; saved receipts are collected evidence, not validated interval coverage');
-   row.blockers.push('Forward retention code is not deployed; individual production webhook processing receipts and deployed bundle parity remain unverified');
+   row.blockers.push('Forward retention is deployed; individual webhook processing and historical/live overlap verification remain pending');
    row.eventsRetained=Object.keys(ledger.events).length;
    row.webhookRegistrations=census?.webhooks??[];
    row.lastReconciliation=team.last_sync_at;
