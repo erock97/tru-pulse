@@ -1,6 +1,7 @@
 import {it,expect,vi,beforeEach} from 'vitest';
 const mocks=vi.hoisted(()=>({full:vi.fn(),target:vi.fn()}));
 vi.mock('./sync.js',()=>({syncTeam:mocks.full,syncPeopleByIds:mocks.target}));
+vi.mock('./stageDrain.js',()=>({drainStageReceipts:async()=>{}}));
 vi.mock('./db.js',()=>({db:()=>({select:async()=>[{id:'team'}]})}));
 import {FubSyncQueue} from './syncQueue.js';
 function make(){const m=new Map<string,any>();let alarm:number|null=null;const storage={get:async(k:string)=>m.get(k),put:async(k:string,v:any)=>{m.set(k,v);},delete:async(k:string)=>m.delete(k),getAlarm:async()=>alarm,setAlarm:async(n:number)=>{alarm=n;},deleteAlarm:async()=>{alarm=null;}};return {m,queue:new FubSyncQueue({storage} as any,{} as any),alarm:()=>alarm};}
