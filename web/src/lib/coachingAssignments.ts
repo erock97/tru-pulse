@@ -9,7 +9,7 @@ function demoRows():CoachingAssignment[]{
  const due=new Date();due.setDate(due.getDate()+7);
  return [{id:'11111111-1111-4111-8111-111111111111',agentId:'demo',orgId:'demo',createdBy:'demo-coach',createdAt:new Date().toISOString(),commitment:'Practice the opening of a first call with your coach. Invite the buyer to an appointment early, then ask permission to learn more about what they need.',moduleId:WINNING_FIRST_CONVERSATION_ID,moduleTitle:WINNING_FIRST_CONVERSATION_TITLE,dueDate:due.toLocaleDateString('en-CA'),practiceAt:null,reflection:'',reviewedAt:null,reviewNote:'',outcome:null,passedAt:null,trainingPassed:false}];
 }
-export async function loadAssignments(agentId:string):Promise<{assignments:CoachingAssignment[];canAssign:boolean}>{
+export async function loadAssignments(agentId:string):Promise<{assignments:CoachingAssignment[];canAssign:boolean;canReview?:boolean}>{
  if(isDemo)return{assignments:demoRows(),canAssign:true};
  const res=await workerFetch(`/data/coaching-assignments?agentId=${encodeURIComponent(agentId)}`);
  if(!res.ok)throw Error('Your coaching work could not be loaded. Please retry.');

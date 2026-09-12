@@ -9,6 +9,7 @@ dist/
 *.log
 .DS_Store
 .gstack/
+supabase/.temp/
 graphify-out/
 
 # local dev env, never committed

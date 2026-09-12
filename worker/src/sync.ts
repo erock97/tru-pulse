@@ -8,6 +8,7 @@ import type { Db } from './db.js';
 import { importEncKey, decryptKey } from './crypto.js';
 import { pullPeople, getPeopleByIds, countOutgoingTexts, countCalls, detectSubdomain, pullUsers, pullDeals, pullPonds } from './fub.js';
 import { sourceFamily, classifyLead, isStuckStage, stageClass, isOfferPlus } from '../../shared/flags.js';
+import {classifyHistorySource} from '../../shared/historyPolicy.js';
 
 // Contact counts (calls/texts) are only meaningful for RECENT active leads (the
 // accountability horizon) and each costs 2 FUB subrequests — so we never fetch them
@@ -32,7 +33,7 @@ export interface TeamRow {
 // Decrypt this tenant's FUB key (only the Worker can read team_secrets). Shared by
 // syncTeam (full pull) and syncPeopleByIds (targeted webhook pull) so the two paths
 // can never drift on how the key is fetched/decrypted.
-async function decryptTeamKey(env: Env, database: Db, teamId: string): Promise<string> {
+export async function decryptTeamKey(env: Env, database: Db, teamId: string): Promise<string> {
   const secret = await database.select('team_secrets', `team_id=eq.${teamId}&select=fub_key_enc`);
   if (!secret.length) throw new Error(`no FUB key for team ${teamId}`);
   const encKey = await importEncKey(env.FUB_ENC_KEY);
@@ -216,7 +217,7 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
     // climbs offer → UC → closed produces three hits, each credited to its agent.
     const sc = stageClass(stage);
     const hitKey = `${p.id}|${p.stage}`;
-    if (p.stage && (sc === 'offer' || sc === 'uc' || sc === 'closed') && !hitSeen.has(hitKey)) {
+    if (classifyHistorySource(p.source)==='eligible' && p.stage && (sc === 'offer' || sc === 'uc' || sc === 'closed') && !hitSeen.has(hitKey)) {
       hitSeen.add(hitKey);
       let changedAt: string | null;
       let dateSource: string;

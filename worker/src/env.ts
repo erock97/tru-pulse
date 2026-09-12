@@ -1,4 +1,7 @@
 export interface Env {
+  /** Opt-in only after the additive live-session migration is approved. */
+  REP_LIVE_SESSIONS?: string;
+  REP_LIVE_DIGESTS?: string;
   WEEKLY_REPORTS?: { dashboard(): Promise<import('./hustleFeed.js').WeeklyDashboard> };
   ASSIGNMENTS?: DurableObjectNamespace;
   TIMELINES?: DurableObjectNamespace;

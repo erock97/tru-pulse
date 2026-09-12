@@ -27,6 +27,7 @@ import Rep from './pages/Rep';
 import AgentHq from './pages/AgentHq';
 import DeckPreview from './pages/DeckPreview';
 import WorkshopLesson from './pages/WorkshopLesson';
+import LiveSessions from './pages/LiveSessions';
 import SetPassword from './pages/SetPassword';
 import Assess from './pages/Assess';
 import ConfirmClosings from './pages/ConfirmClosings';
@@ -335,6 +336,7 @@ export default function App() {
     // the product, and its signed-out face is the door.
     return <Login linkFailed={linkFailed} />;
   }
+  if (route === '/rep/sessions' || route.startsWith('/rep/sessions/')) return <LiveSessions key={session.user.id} route={route}/>;
   if (!org) {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return <OperationsProvider key={session.user.id+':hq'}>{shell({ id: 'hq', name: 'TRU HQ' }, admin)}</OperationsProvider>;

@@ -15,6 +15,7 @@ export function RepWorkshopLibrary({ entries, presenter=false }: {entries: Works
   return <>
     <section aria-label="Zillow Preferred training" className="rep-workshop-library">
       <h2>Zillow Preferred training</h2>
+      <p><a href="#/rep/sessions">Join or run a live training session →</a></p>
       <img className="rep-workshop-cover" src="/workshops/house.jpg" alt="" loading="lazy"/>
       {workshops.map(entry=>{
         const meta=workshopMeta[entry.day];

@@ -220,25 +220,34 @@ export async function registerWebhooks(
     : {};
   const out: Array<{ event: string; status: number; id?: number; error?: string }> = [];
 
-  // FUB deduplicates webhooks by URL *path* (it ignores the ?query string), and a
-  // webhook that ever got auto-disabled never recovers — so re-registering the same
-  // path just silently skips and leaves the dead one in place. Delete every existing
-  // webhook on OUR exact path first (matched by the path prefix, so fub-sync and any
-  // other integration on a different path are never touched), then create fresh ones
-  // that inherit the current — fixed — handler's behavior.
-  const pathPrefix = callbackUrl.split('?')[0];
-  const existing = await fubGet(key, '/webhooks', { limit: 100 }, sys);
-  if (existing.status === 200 && existing.body) {
-    for (const w of existing.body.webhooks ?? []) {
-      if (String(w.url ?? '').startsWith(pathPrefix)) {
-        const del = await fubDelete(key, `/webhooks/${w.id}`, sys);
-        out.push({ event: `deleted:${w.event}#${w.id}`, status: del.status });
-      }
-    }
+  const wanted=new URL(callbackUrl),hooks:any[]=[];
+  let next:string|undefined=BASE+'/webhooks?limit=100';
+  const seen=new Set<string>();
+  while(next){
+    const page=new URL(next);
+    if(page.origin!==new URL(BASE).origin||page.pathname!=='/v1/webhooks'||seen.has(next)||seen.size>=10)return [{event:'inventory',status:502,error:'Webhook inventory incomplete'}];
+    seen.add(next);
+    const existing=await fubGet(key,'/webhooks',Object.fromEntries(page.searchParams),sys);
+    if(existing.status!==200||!Array.isArray(existing.body?.webhooks))return [{event:'inventory',status:502,error:'Webhook inventory unavailable'}];
+    hooks.push(...existing.body.webhooks);next=existing.body._metadata?.nextLink;
+    if(!next&&Number(existing.body._metadata?.total)>hooks.length)return [{event:'inventory',status:502,error:'Webhook inventory truncated'}];
   }
-
+  const candidates=hooks.filter(w=>{try{
+    const u=new URL(w.url);
+    return u.protocol==='https:'&&[wanted.host,'api.truhq.co','tru-pulse-sync.eric-b3c.workers.dev'].includes(u.host)&&u.pathname===wanted.pathname&&u.searchParams.get('team')===wanted.searchParams.get('team')&&!!u.searchParams.get('key');
+  }catch{return false;}});
   for (const event of FUB_WEBHOOK_EVENTS) {
-    const r = await fubPost(key, '/webhooks', { event, url: callbackUrl }, sys);
+    const matches=candidates.filter(w=>w.event===event);
+    const active=matches.find(w=>w.status==='Active');
+    if(active){out.push({event,status:200,id:active.id});continue;}
+    if(matches.length>1){out.push({event,status:409,error:'Multiple inactive registrations require review'});continue;}
+    let target=callbackUrl;
+    if(matches.length){
+      const old=matches[0];target=old.url;
+      const removed=await fubDelete(key,`/webhooks/${old.id}`,sys);
+      if(removed.status<200||removed.status>=300){out.push({event,status:removed.status,error:'Inactive registration could not be repaired'});continue;}
+    }
+    const r = await fubPost(key, '/webhooks', { event, url: target }, sys);
     out.push({ event, status: r.status, id: r.body?.id, error: r.status >= 300 ? JSON.stringify(r.body) : undefined });
   }
   return out;

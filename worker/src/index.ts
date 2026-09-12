@@ -11,6 +11,9 @@ import { verifySupabaseUser, userOrgIds } from './auth.js';
 import { provision, type ProvisionInput } from './provision.js';
 import { runIntake, validateIntake } from './intake.js';
 import { handleAuthRoutes } from './authRoutes.js';
+import { runLiveDigests } from './liveDigests.js';
+import { handleLiveSessions, submitLiveAttempt } from './liveSessions.js';
+import { supabaseAsUser } from './asUser.js';
 import { handleDataRoutes } from './dataRoutes.js';
 import { handlePublicRoutes } from './publicRoutes.js';
 import { handleSmsRoutes } from './smsRoutes.js';
@@ -231,6 +234,9 @@ export default {
     if (url.pathname === '/calendar-link/callback' && req.method === 'GET') {
       return handleLinkCallback(req, env, database, url);
     }
+
+    const liveResponse = await handleLiveSessions(req, env, cors, originAllowed(req.headers.get('Origin') ?? ''));
+    if (liveResponse) return liveResponse;
 
     const dataResponse = await handleDataRoutes(
       req, env, url, cors, originAllowed(req.headers.get('Origin') ?? ''), ctx,
@@ -763,10 +769,12 @@ export default {
       // the outcome and any failure loudly.
       if(env.FUB_SYNC){
         const ids=event.startsWith('people')&&resourceIds?resourceIds.map(String):undefined;
-        const accepted=await env.FUB_SYNC.get(env.FUB_SYNC.idFromName(team.id)).fetch('https://sync/queue',{method:'POST',body:JSON.stringify({team,ids})});
+        const accepted=await env.FUB_SYNC.get(env.FUB_SYNC.idFromName(team.id)).fetch('https://sync/queue',{method:'POST',body:JSON.stringify({team,ids,stageEvent:event==='peopleStageUpdated'?body:undefined})});
         if(!accepted.ok)return json({error:'Sync queue unavailable'},503);
         return json({ok:true,accepted:true});
       }
+      // Never acknowledge a stage notification without durable retention.
+      if(event==='peopleStageUpdated')return json({error:'Durable stage queue unavailable'},503);
       ctx.waitUntil(
         (async () => {
           try {
@@ -1412,6 +1420,14 @@ export default {
       const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
       if (!userId) return json({ error: 'unauthorized' }, 401);
       const body = (await req.json().catch(() => null)) as any;
+      if (body?.sessionId) {
+        if (env.REP_LIVE_SESSIONS !== '1') return json({error:'Live sessions are not enabled'},404);
+        if (!originAllowed(req.headers.get('Origin') ?? '')) return json({error:'Origin denied'},403);
+        const liveUser = await supabaseAsUser(env,readCookie(req));
+        if (!liveUser) return json({error:'Not signed in'},401);
+        try { const result = await submitLiveAttempt(database,liveUser.userId,String(body.sessionId),{id:body.attemptId,activityId:body.activityId,response:{submission:body.submission}}); return json({...result.attempt.grade,attempt:result.attempt}); }
+        catch { return json({error:'Live record could not be submitted. Please retry.'},400); }
+      }
       const scenarioId = String(body?.scenarioId ?? '').trim();
       if (!RECORD_SCENARIOS[scenarioId]) return json({ error: 'unknown scenario' }, 404);
       const sub = body?.submission ?? {};
@@ -1719,6 +1735,8 @@ export default {
     // rather than a sequence. Adding a cron without adding an arm here silently
     // costs a sync every time it fires.
     if (controller.cron === '12,24,36,48 * * * *') {
+      try { const digest = await runLiveDigests(env); if (digest.sent || digest.failed) console.log('rep training digests:', JSON.stringify(digest)); }
+      catch { console.error('Rep training digest could not run; assignments remain due.'); }
       const out = await runDueAutomations(env, database, new Date());
       if (out.length) console.log('automations:', JSON.stringify(out));
       return;

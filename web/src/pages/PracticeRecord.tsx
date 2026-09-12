@@ -15,6 +15,7 @@
 //    Boss is 13px here at any width.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
+import { readDraft } from '../lib/liveSessions';
 
 const SHOT = '/rep-lab/detail-full.png';
 const SHOT_W = 1810;
@@ -212,11 +213,19 @@ function longDate(d: string): string {
 }
 
 export function PracticeRecord({
-  scenario, onPassed, record = true,
+  scenario, onPassed, record = true, live,
 }: {
   scenario: PracticeScenario;
   onPassed?: () => void;
   record?: boolean;
+  live?: {
+    draftKey: string;
+    diagnosed: boolean;
+    lastSubmission?: Parameters<typeof gradeRecordPractice>[1];
+    lastGrade?: RecordGrade | null;
+    submit: (submission: Parameters<typeof gradeRecordPractice>[1]) => Promise<RecordGrade>;
+    progress: (actions: string[], dirty: boolean) => void;
+  };
 }) {
   const pack = PACKS[scenario];
   const shotRef = useRef<HTMLDivElement | null>(null);
@@ -253,6 +262,45 @@ export function PracticeRecord({
   const [diagnosed, setDiagnosed] = useState(!pack.audit);
   const [auditMiss, setAuditMiss] = useState<string[]>([]);
   const locked = !diagnosed;
+
+  // Restore the original simulator, including unfinished composers. Only a server
+  // attempt may unlock the diagnosis in a live session; browser flags never do.
+  const [restored,setRestored]=useState(!live);
+  const [storageError,setStorageError]=useState('');
+  const [checkedRecord,setCheckedRecord]=useState('');
+  const pendingRecord=useRef<{submission:Parameters<typeof gradeRecordPractice>[1];fingerprint:string}|null>(null);
+  const liveRef=useRef(live);liveRef.current=live;
+  const snapshot=JSON.stringify({stage,savedStage,everSaved,noteDraft,note,taskTitle,taskDate,taskTime,tasks,dealName,dealPrice,dealClose,deals,log,faults});
+  const recordFingerprint=JSON.stringify({stage,savedStage,everSaved,note,tasks,deals});
+  const previous=live?.lastSubmission;
+  const changedSinceCheck=!!previous&&(stage!==previous.stage||savedStage!==previous.stage||(everSaved&&stage===savedStage)!==previous.stageSaved||note!==(previous.note||'')||JSON.stringify(tasks[0]?{title:tasks[0].title,dueDate:tasks[0].date,dueTime:tasks[0].time}:null)!==JSON.stringify(previous.task||null)||JSON.stringify(deals[0]?{name:deals[0].name,price:deals[0].price,closeDate:deals[0].close}:null)!==JSON.stringify(previous.deal||null));
+  useEffect(()=>{
+    if(!live?.draftKey)return;
+    const saved=readDraft<Record<string,unknown>|null>(live.draftKey,null);
+    if(saved){
+      if(typeof saved.stage==='string')setStage(saved.stage);
+      if(typeof saved.savedStage==='string')setSavedStage(saved.savedStage);
+      setEverSaved(saved.everSaved===true);
+      for(const [key,set] of [['noteDraft',setNoteDraft],['note',setNote],['taskTitle',setTaskTitle],['taskDate',setTaskDate],['taskTime',setTaskTime],['dealName',setDealName],['dealPrice',setDealPrice],['dealClose',setDealClose]] as const)if(typeof saved[key]==='string')set(saved[key] as string);
+      if(Array.isArray(saved.tasks))setTasks(saved.tasks);
+      if(Array.isArray(saved.deals))setDeals(saved.deals);
+      if(Array.isArray(saved.log))setLog(saved.log);
+      if(Array.isArray(saved.faults))setFaults(saved.faults);
+    }
+    setRestored(true);
+  },[live?.draftKey]);
+  useEffect(()=>{if(live?.diagnosed)setDiagnosed(true);},[live?.diagnosed]);
+  useEffect(()=>{
+    if(!restored||!liveRef.current)return;
+    try{localStorage.setItem(liveRef.current.draftKey,snapshot);}catch{setStorageError('This browser cannot save your draft. Keep this page open until you submit.');}
+  },[snapshot,restored]);
+  useEffect(()=>{
+    if(!restored||!liveRef.current)return;
+    liveRef.current.progress([
+      ...(everSaved&&stage===savedStage?['stage-saved']:[]),...(note?['note-saved']:[]),
+      ...(tasks.length?['task-saved']:[]),...(deals.length?['deal-saved']:[]),
+    ],changedSinceCheck||!!checkedRecord&&checkedRecord!==recordFingerprint);
+  },[recordFingerprint,checkedRecord,restored,changedSinceCheck]);
 
   // One measured factor. Every size in the overlay is px * var(--k).
   const measure = useCallback(() => {
@@ -322,7 +370,7 @@ export function PracticeRecord({
     if (isDemo) { setErr('This grades on the server. Sign in to submit.'); return; }
     setBusy(true); setErr('');
     try {
-      const g = await gradeRecordPractice(scenario, { phase: 'audit', faults }, { record });
+      const g = await (live ? live.submit({phase:'audit',faults}) : gradeRecordPractice(scenario, { phase: 'audit', faults }, { record }));
       setAuditMiss(g.checks.filter((c) => !c.pass).map((c) => c.message));
       if (g.passed) { setDiagnosed(true); setAuditMiss([]); }
     } catch (e) {
@@ -336,14 +384,21 @@ export function PracticeRecord({
     if (isDemo) { setErr('This grades on the server. Sign in to submit.'); return; }
     setBusy(true); setErr('');
     try {
-      const g = await gradeRecordPractice(scenario, {
+      const submission = {
         stage: savedStage,
         stageSaved: everSaved && !dirty,
         note,
         task: tasks.length ? { title: tasks[0].title, dueDate: tasks[0].date, dueTime: tasks[0].time } : undefined,
         deal: deals.length ? { name: deals[0].name, price: deals[0].price, closeDate: deals[0].close } : undefined,
-      }, { record });
+      };
+      // An uncertain response retries the same saved record, even if a composer
+      // changed while offline. Its returned grade cannot certify the changed work.
+      const operation=pendingRecord.current||{submission,fingerprint:recordFingerprint};
+      pendingRecord.current=operation;
+      const g = await (live ? live.submit(operation.submission) : gradeRecordPractice(scenario, operation.submission, { record }));
       setGrade(g);
+      setCheckedRecord(operation.fingerprint);
+      pendingRecord.current=null;
       if (g.passed) onPassed?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Could not check this. Try again.');
@@ -354,6 +409,7 @@ export function PracticeRecord({
 
   return (
     <div className="pr">
+      {storageError&&<p role="alert">{storageError}</p>}
       <div className="pr-brief">
         <h3 className="pr-brieftitle">{pack.title}</h3>
         <p className="pr-situation">{pack.situation}</p>
@@ -619,6 +675,7 @@ export function PracticeRecord({
 
       </div>
       <div className="pr-after">
+        {live?.lastGrade?.passed&&!grade&&<p className="lab-ok">{changedSinceCheck?'Your current record differs from the last checked submission. Check it again.':'Last submitted record check passed. Coach review of usefulness remains separate.'}</p>}
         {locked && <p className="pr-locked">The record is read-only until your diagnosis is right.</p>}
         {grade && (
           <ul className="pr-checks">
@@ -630,7 +687,7 @@ export function PracticeRecord({
             ))}
           </ul>
         )}
-        {grade?.passed && <p className="lab-ok">Done — that is a record someone else could pick up.</p>}
+        {grade?.passed && <p className="lab-ok">{checkedRecord!==recordFingerprint?'Your record has changed. Check it again.':'Record check passed. Required actions are complete; note usefulness and skill remain for coach review.'}</p>}
         {err && !locked && <div className="err">{err}</div>}
         {!locked && (
           <button className="btn ac-btn" onClick={() => void check()} disabled={busy}>

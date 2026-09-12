@@ -1,0 +1,23 @@
+const {PGlite}=await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const db=new PGlite();
+await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create table orgs(id uuid primary key);create table teams(id uuid primary key,org_id uuid references orgs(id));`);
+const org='00000000-0000-4000-8000-000000000001',team='00000000-0000-4000-8000-000000000002';
+await db.exec(`insert into orgs values('${org}');insert into teams values('${team}','${org}');grant select on teams to service_role;`);
+await db.exec(await fs.readFile(new URL('../../supabase/migrations/20260912024754_truehq_history_provenance.sql',import.meta.url),'utf8'));
+await db.exec(`insert into history_accounts values(1,'${team}','${org}','example',now());set role service_role;`);
+const event=(id,to='Nurture')=>({accountId:'1',teamId:team,orgId:org,personId:'42',kind:'ChangeLog',upstreamId:id,occurredAt:'2026-01-01T00:00:00-08:00',from:'Lead',to});
+const call=events=>db.query('select history_import_events($1,$2,$3,$4) as n',[1,team,org,JSON.stringify(events)]);
+assert.equal((await call([event('1'),event('2','Appointment'),event('3')])).rows[0].n,3);
+assert.equal((await call([event('3'),event('1'),event('2','Appointment')])).rows[0].n,0);
+await assert.rejects(call([event('4'),event('1','Closed')]),/Conflicting/);
+assert.equal((await db.query('select count(*)::int n from history_stage_events')).rows[0].n,3);
+await assert.rejects(call([{...event('5'),orgId:'00000000-0000-4000-8000-000000000009'}]),/identity/);
+await assert.rejects(call([{...event('5'),accountId:null}]),/identity/);
+await assert.rejects(call([{...event('5'),occurredAt:'2026-01-01'}]),/offset/);
+await db.exec('reset role;set role authenticated;');
+await assert.rejects(db.query('select * from history_stage_events'),/permission denied/);
+await assert.rejects(call([event('6')]),/permission denied/);
+await db.close();console.log('PASS: schema, repeat transitions, duplicate replay, conflict rollback, tenant scope, timestamp offsets, authenticated denial');
+

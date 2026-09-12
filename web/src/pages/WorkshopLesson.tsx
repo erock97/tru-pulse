@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { isDemo } from '../lib/api';
+import { currentUser } from '../lib/auth';
 import { PracticeRecord, PACKS, type PracticeScenario } from './PracticeRecord';
 import { DealMock } from './DealSlide';
 import { mountWorkshop } from '../workshops/runtime';
@@ -38,7 +39,8 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
     setLoading(true);setError('');
     fetch(`/workshops/day${day}.json`,{signal:controller.signal})
       .then(async r=>{if(!r.ok)throw new Error('Training could not be loaded.');return await r.json() as WorkshopData;})
-      .then(data=>{
+      .then(async data=>{
+        const user=await currentUser();
         if(controller.signal.aborted)return;
         // All markup comes from reviewed, versioned training assets in this repository.
         root.innerHTML=`<style>${fonts}\n${css}</style><div class="workshop">${shell}</div>`;
@@ -47,6 +49,7 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
         root.querySelector('#resource-body')!.innerHTML=reference[day]+`<p><a href="/workshops/day${day}-resources.html" target="_blank" rel="noopener">Open printable agent worksheet ↗</a></p>`;
         runtime.current=mountWorkshop(root,el,data,{
           preview:preview||isDemo,
+          draftOwner:user?.id||'signed-out-preview',
           doneLabel:callbacks.current.doneLabel,
           back:()=>callbacks.current.onBack(),done:()=>callbacks.current.onDone(),
           native:(slide,target)=>{
