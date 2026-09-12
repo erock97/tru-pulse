@@ -241,11 +241,13 @@ export function PracticeRecord({
   const [noteDraft, setNoteDraft] = useState('');
   const [note, setNote] = useState('');
   const [taskModal, setTaskModal] = useState(false);
+  const [taskEdit, setTaskEdit] = useState<number | null>(null);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDate, setTaskDate] = useState('');
   const [taskTime, setTaskTime] = useState('');
   const [tasks, setTasks] = useState<Array<{ title: string; date: string; time: string }>>([]);
   const [dealModal, setDealModal] = useState(false);
+  const [dealEdit, setDealEdit] = useState<number | null>(null);
   const [dealName, setDealName] = useState('');
   const [dealPrice, setDealPrice] = useState('');
   const [dealClose, setDealClose] = useState('');
@@ -270,7 +272,7 @@ export function PracticeRecord({
   const [checkedRecord,setCheckedRecord]=useState('');
   const pendingRecord=useRef<{submission:Parameters<typeof gradeRecordPractice>[1];fingerprint:string}|null>(null);
   const liveRef=useRef(live);liveRef.current=live;
-  const snapshot=JSON.stringify({stage,savedStage,everSaved,noteDraft,note,taskTitle,taskDate,taskTime,tasks,dealName,dealPrice,dealClose,deals,log,faults});
+  const snapshot=JSON.stringify({stage,savedStage,everSaved,noteDraft,note,taskTitle,taskDate,taskTime,taskEdit,tasks,dealName,dealPrice,dealClose,dealEdit,deals,log,faults});
   const recordFingerprint=JSON.stringify({stage,savedStage,everSaved,note,tasks,deals});
   const previous=live?.lastSubmission;
   const changedSinceCheck=!!previous&&(stage!==previous.stage||savedStage!==previous.stage||(everSaved&&stage===savedStage)!==previous.stageSaved||note!==(previous.note||'')||JSON.stringify(tasks[0]?{title:tasks[0].title,dueDate:tasks[0].date,dueTime:tasks[0].time}:null)!==JSON.stringify(previous.task||null)||JSON.stringify(deals[0]?{name:deals[0].name,price:deals[0].price,closeDate:deals[0].close}:null)!==JSON.stringify(previous.deal||null));
@@ -283,6 +285,8 @@ export function PracticeRecord({
       setEverSaved(saved.everSaved===true);
       for(const [key,set] of [['noteDraft',setNoteDraft],['note',setNote],['taskTitle',setTaskTitle],['taskDate',setTaskDate],['taskTime',setTaskTime],['dealName',setDealName],['dealPrice',setDealPrice],['dealClose',setDealClose]] as const)if(typeof saved[key]==='string')set(saved[key] as string);
       if(Array.isArray(saved.tasks))setTasks(saved.tasks);
+      if(Number.isInteger(saved.taskEdit)&&Number(saved.taskEdit)>=0)setTaskEdit(Number(saved.taskEdit));
+      if(Number.isInteger(saved.dealEdit)&&Number(saved.dealEdit)>=0)setDealEdit(Number(saved.dealEdit));
       if(Array.isArray(saved.deals))setDeals(saved.deals);
       if(Array.isArray(saved.log))setLog(saved.log);
       if(Array.isArray(saved.faults))setFaults(saved.faults);
@@ -329,6 +333,7 @@ export function PracticeRecord({
   });
 
   const commitStage = () => {
+    if (locked) return;
     setEditing(false); setStageOpen(false); setStageQuery('');
     if (stage === savedStage) return;
     setSavedStage(stage);
@@ -340,6 +345,7 @@ export function PracticeRecord({
   };
 
   const addNote = () => {
+    if (locked) return;
     const text = noteDraft.trim();
     if (!text) return;
     setNote(text); setNoteDraft('');
@@ -347,19 +353,23 @@ export function PracticeRecord({
   };
 
   const addTask = () => {
+    if (locked) return;
     const t = taskTitle.trim();
     if (!t) return;
-    setTasks((x) => [...x, { title: t, date: taskDate, time: taskTime }]);
-    setLog((l) => [{ when: stamp(), text: `Task created — ${t}`, kind: 'task' }, ...l]);
-    setTaskTitle(''); setTaskDate(''); setTaskTime(''); setTaskModal(false);
+    const task={title:t,date:taskDate,time:taskTime};
+    setTasks((x) => taskEdit===null ? [...x,task] : x.map((item,i)=>i===taskEdit?task:item));
+    setLog((l) => [{ when: stamp(), text: `Task ${taskEdit===null?'created':'updated'} — ${t}`, kind: 'task' }, ...l]);
+    setTaskTitle(''); setTaskDate(''); setTaskTime(''); setTaskEdit(null); setTaskModal(false);
   };
 
   const addDeal = () => {
+    if (locked) return;
     const n = dealName.trim();
     if (!n) return;
-    setDeals((d) => [...d, { name: n, price: dealPrice, close: dealClose }]);
-    setLog((l) => [{ when: stamp(), text: `Deal created — ${n}`, kind: 'deal' }, ...l]);
-    setDealName(''); setDealPrice(''); setDealClose(''); setDealModal(false);
+    const deal={name:n,price:dealPrice,close:dealClose};
+    setDeals((d) => dealEdit===null ? [...d,deal] : d.map((item,i)=>i===dealEdit?deal:item));
+    setLog((l) => [{ when: stamp(), text: `Deal ${dealEdit===null?'created':'updated'} — ${n}`, kind: 'deal' }, ...l]);
+    setDealName(''); setDealPrice(''); setDealClose(''); setDealEdit(null); setDealModal(false);
   };
 
   // The faults are marked on the server so the expected set never ships to the
@@ -520,7 +530,7 @@ export function PracticeRecord({
 
             {/* Stage — in the Details panel, edited the way FUB edits it */}
             {!editing ? (
-              <button className="fub-hot fub-stageread hintable" onClick={() => { setEditing(true); setStageOpen(true); }}>
+              <button disabled={locked} className="fub-hot fub-stageread hintable" onClick={() => { setEditing(true); setStageOpen(true); }}>
                 {savedStage}
               </button>
             ) : (
@@ -533,7 +543,7 @@ export function PracticeRecord({
                 {stageOpen && (
                   <div className="fub-menu">
                     <input
-                      className="fub-menusearch" autoFocus placeholder="Search"
+                      className="fub-menusearch" aria-label="Search stages" autoFocus placeholder="Search"
                       value={stageQuery} onChange={(e) => setStageQuery(e.target.value)}
                     />
                     <ul>
@@ -554,22 +564,24 @@ export function PracticeRecord({
             {/* the note composer */}
             <textarea
               className="fub-hot fub-note hintable"
+              aria-label="Contact note"
+              readOnly={locked}
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
               placeholder="Add notes or type @name to notify"
             />
-            <button className="fub-hot fub-notebtn" onClick={addNote} disabled={!noteDraft.trim()}>
+            <button className="fub-hot fub-notebtn" onClick={addNote} disabled={locked || !noteDraft.trim()}>
               Create Note
             </button>
 
             {/* Tasks panel */}
-            <button className="fub-hot fub-taskadd hintable" onClick={() => setTaskModal(true)} title="Add a task">+</button>
+            <button disabled={locked} className="fub-hot fub-taskadd hintable" onClick={() => { if(taskEdit!==null){setTaskTitle('');setTaskDate('');setTaskTime('');} setTaskEdit(null);setTaskModal(true); }} title="Add a task">+</button>
             <div className="fub-hot fub-tasklist">
               {tasks.length === 0 ? <span className="fub-empty">No upcoming tasks</span> : tasks.map((t, i) => (
                 <div key={i} className="fub-taskitem">
                   <span className="fub-taskbox" />
                   <div>
-                    <div className="fub-taskname">{t.title}</div>
+                    <button type="button" disabled={locked} className="fub-taskname" style={{background:"none",border:0,padding:0,textAlign:"left",cursor:"pointer"}} onClick={()=>{setTaskEdit(i);setTaskTitle(t.title);setTaskDate(t.date);setTaskTime(t.time);setTaskModal(true);}} aria-label={`Edit task: ${t.title}`}>{t.title}</button>
                     <div className="fub-taskmeta">{longDate(t.date) || 'no date'}{t.time ? ` at ${t.time}` : ''}</div>
                   </div>
                 </div>
@@ -577,11 +589,11 @@ export function PracticeRecord({
             </div>
 
             {/* Deals panel */}
-            <button className="fub-hot fub-dealadd hintable" onClick={() => setDealModal(true)} title="Add a deal">+</button>
+            <button disabled={locked} className="fub-hot fub-dealadd hintable" onClick={() => { if(dealEdit!==null){setDealName('');setDealPrice('');setDealClose('');} setDealEdit(null);setDealModal(true); }} title="Add a deal">+</button>
             <div className="fub-hot fub-deallist">
               {deals.length === 0 ? <span className="fub-empty">No deals yet</span> : deals.map((d, i) => (
                 <div key={i} className="fub-dealitem">
-                  <span className="fub-dealname">{d.name}</span>
+                  <button type="button" disabled={locked} className="fub-dealname" style={{background:"none",border:0,padding:0,textAlign:"left",cursor:"pointer"}} onClick={()=>{setDealEdit(i);setDealName(d.name);setDealPrice(d.price);setDealClose(d.close);setDealModal(true);}} aria-label={`Edit deal: ${d.name}`}>{d.name}</button>
                   <span className="fub-dealmeta">
                     {d.price ? `$${d.price}` : 'no price'}{d.close ? ` · closes ${d.close}` : ''}
                   </span>
@@ -628,21 +640,21 @@ export function PracticeRecord({
               <div className="fub-modalwrap" onClick={() => setTaskModal(false)}>
                 <div className="fub-modal" onClick={(e) => e.stopPropagation()}>
                   <div className="fub-modalhead">
-                    <span>Create task</span>
+                    <span>{taskEdit===null?"Create task":"Edit task"}</span>
                     <button onClick={() => setTaskModal(false)}>✕</button>
                   </div>
-                  <input className="fub-full" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Task Name" />
+                  <input aria-label="Task name" className="fub-full" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Task Name" />
                   <div className="fub-two">
-                    <select defaultValue="Follow Up"><option>Follow Up</option><option>Call</option><option>Email</option></select>
-                    <select defaultValue="Adam Terrason"><option>Adam Terrason</option></select>
+                    <select aria-label="Task type" defaultValue="Follow Up"><option>Follow Up</option><option>Call</option><option>Email</option></select>
+                    <select aria-label="Task assignee" defaultValue="Adam Terrason"><option>Adam Terrason</option></select>
                   </div>
                   <div className="fub-two">
-                    <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
-                    <input type="time" value={taskTime} onChange={(e) => setTaskTime(e.target.value)} />
+                    <input aria-label="Task date" type="date" value={taskDate} onInput={(e) => setTaskDate(e.currentTarget.value)} onChange={(e) => setTaskDate(e.target.value)} />
+                    <input aria-label="Task time" type="time" value={taskTime} onInput={(e) => setTaskTime(e.currentTarget.value)} onChange={(e) => setTaskTime(e.target.value)} />
                   </div>
                   <div className="fub-modalfoot">
                     <button className="fub-link" onClick={() => setTaskModal(false)}>Cancel</button>
-                    <button className="fub-blue" onClick={addTask} disabled={!taskTitle.trim()}>Create task</button>
+                    <button className="fub-blue" onClick={addTask} disabled={!taskTitle.trim()}>{taskEdit===null?"Create task":"Save task"}</button>
                   </div>
                 </div>
               </div>
@@ -653,18 +665,18 @@ export function PracticeRecord({
               <div className="fub-modalwrap" onClick={() => setDealModal(false)}>
                 <div className="fub-modal wide" onClick={(e) => e.stopPropagation()}>
                   <div className="fub-modalhead">
-                    <span>Create deal</span>
+                    <span>{dealEdit===null?"Create deal":"Edit deal"}</span>
                     <button onClick={() => setDealModal(false)}>✕</button>
                   </div>
-                  <input className="fub-full" value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="Add name" />
+                  <input aria-label="Deal name or property address" className="fub-full" value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="Add name" />
                   <div className="fub-crumb">Buyers › Start (temp stage)</div>
                   <div className="fub-two">
                     <label>Price<input value={dealPrice} onChange={(e) => setDealPrice(e.target.value)} placeholder="Add price" /></label>
-                    <label>Close date<input type="date" value={dealClose} onChange={(e) => setDealClose(e.target.value)} /></label>
+                    <label>Close date<input type="date" value={dealClose} onInput={(e) => setDealClose(e.currentTarget.value)} onChange={(e) => setDealClose(e.target.value)} /></label>
                   </div>
                   <div className="fub-modalfoot">
                     <button className="fub-link" onClick={() => setDealModal(false)}>Cancel</button>
-                    <button className="fub-blue" onClick={addDeal} disabled={!dealName.trim()}>Create Deal</button>
+                    <button className="fub-blue" onClick={addDeal} disabled={!dealName.trim()}>{dealEdit===null?"Create Deal":"Save deal"}</button>
                   </div>
                 </div>
               </div>

@@ -877,13 +877,13 @@ function Presenter({
           </label>
           <div className="live-actions">
             <button
-              disabled={busy}
+              disabled={busy || state.session.status === "ended"}
               onClick={() => void command({ action: "timer", seconds })}
             >
               Start / reset timer
             </button>
             <button
-              disabled={busy}
+              disabled={busy || state.session.status === "ended"}
               onClick={() =>
                 void command({
                   action: "timer",
@@ -903,7 +903,7 @@ function Presenter({
               Add one minute
             </button>
             <button
-              disabled={busy}
+              disabled={busy || state.session.status === "ended"}
               onClick={() => void command({ action: "timer", seconds: 0 })}
             >
               Stop timer
