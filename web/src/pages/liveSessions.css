@@ -238,6 +238,11 @@
   padding: 12px 0;
   border-bottom: 1px solid #ddded5;
 }
+.live-roster-list {
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 12px;
+}
 .live-choice-list label {
   border: 1px solid #a8ada9;
   padding: 14px;

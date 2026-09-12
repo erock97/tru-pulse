@@ -2,8 +2,8 @@
 
 ## Passing checks
 
-- Frontend TypeScript check; 498 tests in 59 files.
-- Worker TypeScript check; 788 Vitest tests in 54 files; six existing native Node operations tests.
+- Frontend TypeScript check; 500 tests in 59 files.
+- Worker TypeScript check; 810 Vitest tests in 59 files; six existing native Node operations tests.
 - Frontend production build. The existing application still emits Vite's large-chunk advisory; the build succeeds.
 - Whitespace/diff validation.
 - Isolated additive migration execution in PGlite with service-role grants, browser-role denials, and cross-team result scoping.
@@ -38,12 +38,10 @@ In the final full test run, 50 concurrent submissions through actual validation 
 
 These measurements exclude browser polling delay, network latency, and hosted Supabase/Worker performance. They do not establish a production three-second SLA. A staged 50-learner test remains a release gate.
 
-## Required before production rollout
+## Live release checks and remaining evaluation
 
-1. Review the additive migration; apply and test it in an isolated Supabase staging project with the current full application schema and actual authenticated test users.
-2. Verify deployed cookie/CORS configuration, cross-team permissions, reconnect behavior, full-width FUB controls, keyboard and enlarged-text usability on the devices used in training.
-3. Verify the configured email sender, consolidated daily digest, failure visibility, and retries in staging. The local adapter sends no email.
-4. Run Eric's mixed-team remote pilot through the existing meeting platform, including a speaking turn, correction, targeted retry, and later application review.
-5. Enable live sessions and digests only after review. Preserve the existing certification and custom-course flows during rollout.
+The approved production migration succeeded. All seven live tables have RLS enabled, anonymous reads and browser inserts are denied, and session RPCs are service-only. Worker version `26d980c7-7aae-4ce2-9658-283d049b2919` and the production Pages build were published. Browser verification confirmed the existing owner's session, real roster, four training choices, workshop library, and generated guide links. Unauthenticated API calls return 401.
 
-No production schema or data was changed, no production Worker/Pages deployment was made, and no email was sent during this implementation. See `REP_LIVE_TRAINING.md` for operator instructions, interfaces, and rollback.
+The release preserves the already-deployed history baseline `7f0ad98`. Production-schema review also found and fixed the global presenter's live-follow-up review path without expanding legacy assignment or CRM access.
+
+No paid Supabase branch, real-agent test assignments, or test email was created. Hosted 50-learner latency, actual email delivery, device coverage, and a real remote cohort still need observation; local tests do not establish those outcomes. See `REP_LIVE_RELEASE.md` and the operator handoff for deployment details and rollback.

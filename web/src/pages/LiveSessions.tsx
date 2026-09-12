@@ -34,6 +34,7 @@ import {
 import { PracticeRecord, type PracticeScenario } from "./PracticeRecord";
 import { DealMock } from "./DealSlide";
 import CoachingAssignments from "../components/CoachingAssignments";
+import { adminReturn, hasAdminReturn } from "../lib/api";
 import workshopCss from "../workshops/workshop.css?inline";
 import recordCss from "../workshops/practiceRecord.css?inline";
 import "./liveSessions.css";
@@ -67,6 +68,15 @@ function Frame({
       </header>
       <div className="live-wrap">
         <h1>{title}</h1>
+        {!shared && hasAdminReturn() && (
+          <p className="live-notice">
+            You are viewing a team's workspace. To lead training across teams,
+            return to your own workspace.{" "}
+            <button onClick={() => void adminReturn()}>
+              Return to my workspace
+            </button>
+          </p>
+        )}
         {children}
       </div>
     </main>
@@ -89,6 +99,8 @@ export default function LiveSessions({ route }: { route: string }) {
 }
 
 function Lobby() {
+  const [search, setSearch] = useState("");
+  const [team, setTeam] = useState("");
   const [sessions, setSessions] = useState<LiveSessionSummary[]>([]),
     [preflight, setPreflight] = useState<LivePreflight | null>(null);
   const [error, setError] = useState(""),
@@ -118,6 +130,11 @@ function Lobby() {
   useEffect(() => {
     void load();
   }, [load]);
+  const filteredAgents = (preflight?.agents ?? []).filter(
+    (a) =>
+      (!team || a.teamId === team) &&
+      a.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  );
   async function create() {
     setBusy(true);
     setError("");
@@ -234,32 +251,65 @@ function Lobby() {
           </div>
           <fieldset>
             <legend>Select agents</legend>
-            {preflight.agents.map((a) => (
-              <div className="live-roster-choice" key={a.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={a.id in roster}
-                    onChange={(e) =>
-                      setRoster((r) => {
-                        const next = { ...r };
-                        if (e.target.checked) next[a.id] = "";
-                        else delete next[a.id];
-                        return next;
-                      })
-                    }
-                  />
-                  {a.name} · {a.teamName}
-                </label>
-                <span>
-                  {!a.userId
-                    ? "Account not linked"
-                    : !a.email
-                      ? "Email missing"
-                      : "Account linked"}
-                </span>
-              </div>
-            ))}
+            <div className="live-grid">
+              <label>
+                Find an agent
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name"
+                />
+              </label>
+              <label>
+                Filter roster by team
+                <select value={team} onChange={(e) => setTeam(e.target.value)}>
+                  <option value="">All teams</option>
+                  {[
+                    ...new Map(
+                      preflight.agents.map((a) => [a.teamId, a.teamName]),
+                    ).entries(),
+                  ].map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p role="status">
+              {filteredAgents.length} matching agents �{" "}
+              {Object.keys(roster).length} selected. Selections stay selected
+              when you change filters.
+            </p>
+            <div className="live-roster-list">
+              {filteredAgents.map((a) => (
+                <div className="live-roster-choice" key={a.id}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={a.id in roster}
+                      onChange={(e) =>
+                        setRoster((r) => {
+                          const next = { ...r };
+                          if (e.target.checked) next[a.id] = "";
+                          else delete next[a.id];
+                          return next;
+                        })
+                      }
+                    />
+                    {a.name} · {a.teamName}
+                  </label>
+                  <span>
+                    {!a.userId
+                      ? "Account not linked"
+                      : !a.email
+                        ? "Email missing"
+                        : "Account linked"}
+                  </span>
+                </div>
+              ))}
+            </div>
           </fieldset>
           <details>
             <summary>Add another presenter (optional)</summary>

@@ -2,6 +2,10 @@
 
 This release adds a persistent, presenter-led practice session around the existing Rep workshops. It preserves the original Follow Up Boss record recreation, its five exercises, the deal demonstration, server grading, and existing certification flow.
 
+## Live release
+
+Live sessions are available at `https://app.truhq.co/#/rep/sessions`, following Eric's release approval. From the platform-owner home, choose **Live training**. If viewing a team through Act as, return to your own workspace first. Filter the roster by name or team; selections remain selected across filters. See `REP_LIVE_RELEASE.md` for deployment and validation details.
+
 ## Review preview
 
 The isolated preview runs the actual session Worker handlers, server grader, and additive migration in embedded Postgres (PGlite). Its named fixture accounts are local test identities. It refuses outbound network requests, does not read production credentials, and does not send email. The adapter is in `worker/ops/live-preview.ts`, outside the deployed Worker entrypoint.
@@ -82,7 +86,7 @@ A pending submission retries its original UUID and payload after an uncertain ne
 
 Global administrators create sessions. Team leaders/coaches receive individual evidence only for currently authorized teams. Learners see their own work and limited names/roles needed for their group. Shared presentation responses contain no roster, private submissions, coaching notes, observation records, or follow-ups.
 
-**Do not apply this migration to the normal repository database while reviewing. That database is shared with production.** The migration is tested locally in an isolated PGlite database. Before rollout, test the same migration against a separate Supabase project with the application's current schema, actual cookie-authenticated test users, explicit grants/RLS, and deployed Worker bindings.
+**The normal repository database is shared with production.** The additive migration was tested in isolated PGlite, compared against production schema and privileges, and applied after Eric approved release. Production grants and RLS were checked afterward. A hosted multi-user load test and real remote cohort remain unperformed.
 
 ## Follow-up and email
 
@@ -100,7 +104,7 @@ The local concurrency check runs 50 submissions through actual response validati
 
 Operator pilot: join as presenter and learners from two teams; retain an unfinished record across advance/refresh; submit and reveal an opening; rotate every learner through a speaking round; submit peer and coach feedback; end twice; complete and review the follow-ups; inspect the digest failure/retry path. Check full-width FUB controls, keyboard access, enlarged text, late arrival, and second-tab recovery.
 
-Release only after Eric reviews the preview and can identify a specific gap, coach a retry, and later see evidence of application. No production migration or deployment is included in this change.
+Release only after Eric reviews the preview and can identify a specific gap, coach a retry, and later see evidence of application. The approved migration and deployment are complete; the live release record distinguishes automated/local validation from the remaining real-cohort evaluation.
 
 ## Rollback
 
