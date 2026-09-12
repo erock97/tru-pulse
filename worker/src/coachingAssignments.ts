@@ -1,3 +1,4 @@
+import {liveAssignmentsForAgent,updateLiveAssignment} from './liveSessions.js';
 import type {Env} from './env.js';
 import type {UserClient} from './asUser.js';
 import {assignmentInput,type CoachingAssignment,type CoachingAssignmentEvent} from '../../shared/coachingAssignments.js';
@@ -36,11 +37,12 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
     if(records.length>500)throw Error('Assignment history too large.');
    }while(cursor);
    const progress=await db.select<{module_id:string;status:string;passed_at:string|null}>('rep_progress',`select=module_id,status,passed_at&agent_id=eq.${agentId}`,{strict:true});
-   const assignments=await Promise.all(records.map(async r=>{
+   const assignments:CoachingAssignment[]=await Promise.all(records.map(async r=>{
     const practice=await env.SESSIONS.get(`coaching-practice:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as Practice|null;
     const review=await env.SESSIONS.get(`coaching-review:v1:${agent.org_id}:${agentId}:${r.id}`,'json') as Review|null;
     return {...r,...practice,...review,...historyPatch(practice,review),trainingPassed:progress.some(p=>p.module_id===r.moduleId&&p.status==='passed'),passedAt:progress.find(p=>p.module_id===r.moduleId&&p.status==='passed')?.passed_at??null};
    }));
+   if(env.REP_LIVE_SESSIONS==='1') assignments.push(...await liveAssignmentsForAgent(db,agentId));
    assignments.sort((a,b)=>a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
    return reply({assignments,canAssign:admin});
   }
@@ -60,6 +62,7 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
    const record:CoachingAssignment={id,agentId,orgId:agent.org_id,createdBy:db.userId,createdAt:new Date().toISOString(),...input,moduleTitle,practiceAt:null,reflection:'',reviewedAt:null,reviewNote:'',outcome:null,passedAt:null,trainingPassed:false};
    await env.SESSIONS.put(prefix+id,JSON.stringify(record));return reply({ok:true,assignment:record});
   }
+  if(env.REP_LIVE_SESSIONS==='1'){const liveResult=await updateLiveAssignment(env,db,agentId,b);if(liveResult)return reply(liveResult);}
   const record=await read(id);if(!record||record.agentId!==agentId||record.orgId!==agent.org_id)return reply({error:'Assignment not found'},404);
   if(action==='practice'){
    if(!own)return reply({error:'Only the assigned agent can record their practice'},403);

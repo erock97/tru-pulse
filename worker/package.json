@@ -7,10 +7,12 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --exclude \"ops/**\" && node --test ops/link-hermes-team.test.mjs",
+    "preview:live": "esbuild ops/live-preview.ts --bundle --platform=node --format=esm --packages=external --outfile=.wrangler/live-preview.mjs && node .wrangler/live-preview.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260701.1",
+    "@electric-sql/pglite": "0.3.14",
     "@types/node": "22.20.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.0",
