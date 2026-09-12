@@ -37,6 +37,27 @@ describe('durable live session transactions and access',()=>{
   expect(await mutate(admin,'create',body)).toMatchObject({ok:true});
   expect((await read(admin)).session.definition.version).toBe(definition.version);
  });
+ it('creator is the default follow-up coach across teams and explicit overrides remain authorized',async()=>{
+  const sid=id(80),body={definition,timezone:'America/Los_Angeles',participants:[{agentId:agentA},{agentId:agentB,coachId:''}],presenterIds:[]};
+  await mutate(admin,'create',body,sid);
+  const result=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,sid])).rows[0].result;
+  expect(result.participants.map((p:any)=>p.coachId)).toEqual([admin,admin]);
+  await mutate(admin,'end',{},sid);
+  const followups=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,sid])).rows[0].result.followups;
+  expect(followups).toHaveLength(6);expect(followups.every((f:any)=>f.coachId===admin)).toBe(true);
+  const override=id(81);await mutate(admin,'create',{...body,participants:[{agentId:agentA,coachId:coachA},{agentId:agentB,coachId:null}]},override);
+  const specified=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,override])).rows[0].result;
+  expect(specified.participants.find((p:any)=>p.agentId===agentA).coachId).toBe(coachA);
+  expect(specified.participants.find((p:any)=>p.agentId===agentB).coachId).toBe(admin);
+  await expect(mutate(coachA,'create',body,id(82))).rejects.toThrow('global administrator');
+  await expect(mutate(admin,'create',{...body,participants:[{agentId:agentA,coachId:coachB}]},id(83))).rejects.toThrow('authorized coach');
+ });
+ it('preflight exposes the authenticated viewer ID without granting non-admin creation',async()=>{
+  const adminPreflight=(await pg.query<{result:any}>('select rep_live_preflight($1) result',[admin])).rows[0].result;
+  expect(adminPreflight).toMatchObject({viewerId:admin,canCreate:true});
+  const coachPreflight=(await pg.query<{result:any}>('select rep_live_preflight($1) result',[coachA])).rows[0].result;
+  expect(coachPreflight).toMatchObject({viewerId:coachA,canCreate:false,agents:[],coaches:[]});
+ });
  it('membership link alone grants no access; presenter sees only their team',async()=>{
   await expect(read(stranger)).rejects.toThrow('Session unavailable');
   const state=await read(coachA);expect(state.participants.map((p:any)=>p.agentId)).toEqual([agentA]);

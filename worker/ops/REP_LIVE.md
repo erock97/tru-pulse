@@ -15,8 +15,8 @@ Named coaches can review their own assigned follow-ups without being session pre
 ## Worker interfaces
 
 - `GET /rep/sessions`: enabled state and the caller's sessions. Disabled returns 200 with an empty list.
-- `GET /rep/sessions/preflight`: administrator roster and eligible coach directory.
-- `POST /rep/sessions`: `{id,day,timezone,participants:[{agentId,coachId}],presenterIds}`. Response `{ok,id}`.
+- `GET /rep/sessions/preflight`: authenticated viewer ID, administrator roster, and eligible coach directory.
+- `POST /rep/sessions`: `{id,day,timezone,participants:[{agentId,coachId?}],presenterIds}`. Response `{ok,id}`.
 - `GET /rep/sessions/:id?view=agent|shared|presenter|coach&cursor=...`: typed state or `{unchanged,cursor,serverTime}`. Database cursor shortcut happens only after authorization.
 - `POST /rep/sessions/:id/join`: join/connection heartbeat. Learner clients send this every ten seconds while active. Connection status is independent of activity progress.
 - `POST /rep/sessions/:id/commands`: `slide`, `open`, `timer`, `reveal`, `group`, or `end` per `shared/liveWorkshops.ts`.
@@ -63,3 +63,5 @@ The default Worker test command runs Vitest for application tests and Node's nat
 Spoken practice requires the observer to explicitly confirm `speakingObserved=true`. `retryObserved` is a separate boolean and defaults false; retry prose does not establish that a retry happened. Existing rows receive false for both fields so historical notes are never retroactively promoted into observed performance.
 
 The read-only `coach` view and `canReview` capability let current team leaders/coaches inspect their own team's submitted evidence and follow-ups even when they are not session presenters. `canPresent` remains independent; this view grants no advance/reveal/group/end permissions. Foreign-team participants, attempts, and private follow-up are filtered by current database roles.
+
+Creating a session requires only the selected participants, training, and timezone. The authenticated global-admin creator becomes the follow-up coach for every participant unless `coachId` explicitly selects another currently authorized coach. Omitted, null, or blank values use the creator; client-supplied creator IDs never determine this default.

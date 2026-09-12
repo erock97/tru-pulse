@@ -110,7 +110,8 @@ begin
   for item in select * from jsonb_array_elements(p_body->'participants') loop
    select * into a from agents where id=(item->>'agentId')::uuid;
    if not found then raise exception 'Participant unavailable'; end if;
-   coach:=(item->>'coachId')::uuid;
+   -- The authenticated creator owns follow-up unless an authorized override is supplied.
+   coach:=coalesce(nullif(item->>'coachId','')::uuid,p_actor);
    if not rep_live_team_coach(coach,a.org_id,a.team_id) then raise exception 'Choose an authorized coach for each participant'; end if;
    if exists(select 1 from jsonb_array_elements(roster) r where r->>'agentId'=a.id::text) then raise exception 'Duplicate participant'; end if;
    roster:=roster||jsonb_build_array(jsonb_build_object('agentId',a.id,'userId',a.auth_id,'orgId',a.org_id,'teamId',a.team_id,
@@ -293,8 +294,8 @@ grant execute on function rep_live_is_admin(uuid),rep_live_team_coach(uuid,uuid,
 create or replace function public.rep_live_preflight(p_actor uuid) returns jsonb
  language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
- if not rep_live_is_admin(p_actor) then return jsonb_build_object('canCreate',false,'agents','[]'::jsonb,'coaches','[]'::jsonb); end if;
- return jsonb_build_object('canCreate',true,
+ if not rep_live_is_admin(p_actor) then return jsonb_build_object('viewerId',p_actor,'canCreate',false,'agents','[]'::jsonb,'coaches','[]'::jsonb); end if;
+ return jsonb_build_object('viewerId',p_actor,'canCreate',true,
  'agents',coalesce((select jsonb_agg(jsonb_build_object('id',a.id,'name',a.name,'orgId',a.org_id,'teamId',a.team_id,'teamName',t.name,'userId',a.auth_id,'email',a.email) order by t.name,a.name) from agents a join teams t on t.id=a.team_id where t.is_active),'[]'),
  'coaches',coalesce((select jsonb_agg(jsonb_build_object('id',x.id,'name',x.name,'orgId',x.org_id)) from (
  select u.id,coalesce(u.raw_user_meta_data->>'name',u.email,u.id::text) as name,m.org_id from memberships m join auth.users u on u.id=m.user_id where m.role in ('leader','admin','coach')

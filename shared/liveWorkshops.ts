@@ -46,6 +46,7 @@ export interface LiveFollowup extends CoachingAssignment {
   checkpoint: 1 | 3 | 7; applicationObserved: boolean | null;
 }
 export interface LivePreflight {
+  viewerId: string;
   canCreate: boolean;
   agents: {id:string;name:string;orgId:string;teamId:string;teamName:string;userId:string|null;email:string|null}[];
   coaches: {id:string;name:string;orgId:string|null}[];
