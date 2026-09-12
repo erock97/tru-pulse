@@ -135,7 +135,7 @@ describe('durable live session transactions and access',()=>{
   for(const c of cohort){await pg.query('insert into auth.users(id) values($1)',[c.user]);await pg.query('insert into agents(id,org_id,team_id,name,auth_id) values($1,$2,$3,$4,$5)',[c.agent,orgA,teamA,'Benchmark learner',c.user]);}
   await mutate(admin,'create',{definition:def,timezone:'UTC',participants:cohort.map(c=>({agentId:c.agent,coachId:coachA})),presenterIds:[]},sid);
   await mutate(admin,'open',{activityId:opening.id},sid);
-  const database={rpc:async(fn:string,b:Record<string,unknown>)=>{const params=Object.keys(b).map((key,i)=>`${key}=>$${i+1}`).join(',');return(await pg.query<{result:any}>(`select ${fn}(${params}) result`,Object.values(b).map(x=>typeof x==='object'?JSON.stringify(x):x))).rows[0].result;}} as unknown as Db;
+  const database={rpc:async(fn:string,b:Record<string,unknown>)=>{const params=Object.keys(b).map((key,i)=>`${key}=>$${i+1}`).join(',');return(await pg.query<{result:any}>(`select ${fn}(${params}) result`,Object.values(b).map(x=>x!==null&&typeof x==='object'?JSON.stringify(x):x))).rows[0].result;}} as unknown as Db;
   const response={choiceId:opening.choices![0].id,...Object.fromEntries(opening.fields!.map(f=>[f.id,'Fresh benchmark response']))};
   const start=performance.now();
   await Promise.all(cohort.map((c,i)=>submitLiveAttempt(database,c.user,sid,{id:id(300+i),activityId:opening.id,response})));

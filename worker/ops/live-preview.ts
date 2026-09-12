@@ -44,7 +44,7 @@ globalThis.fetch=async(input:RequestInfo|URL,init?:RequestInit)=>{
    if(fn==='is_admin')return json(req.headers.get('authorization')===`Bearer preview-${id(1)}`);
    if(req.headers.get('authorization')!=='Bearer local-service')return json({message:'Permission denied'},403);
    const params=Object.keys(b).map((key,i)=>{if(!/^p_[a-z_]+$/.test(key))throw Error('Invalid RPC argument');return `${key}=>$${i+1}`;});
-   const values=Object.values(b).map(x=>typeof x==='object'?JSON.stringify(x):x);
+   const values=Object.values(b).map(x=>x!==null&&typeof x==='object'?JSON.stringify(x):x);
    const r=await pg.query<{result:unknown}>(`select ${fn}(${params.join(',')}) result`,values);return json(r.rows[0].result);
   }
   const table=u.pathname.split('/').at(-1)!;
