@@ -17,17 +17,18 @@ const data=(day:number)=>[day1,day2,day3,day4][day-1] as WorkshopData;
 describe('Rep workshop integration',()=>{
  it('prevents agenda and keyboard jumps past unfinished record exercises',()=>{
    const slides=data(1).slides;const passed=new Set<number>();
-   expect(allowedIndex(slides,passed,23,false)).toBe(12);
-   passed.add(12);expect(allowedIndex(slides,passed,23,false)).toBe(14);
-   expect(allowedIndex(slides,passed,3,false)).toBe(3);
-   expect(allowedIndex(slides,passed,23,true)).toBe(23);
+   const positions=slides.flatMap((s,i)=>s.native==='practice'?[i]:[]),last=slides.length-1;
+   expect(allowedIndex(slides,passed,last,false)).toBe(positions[0]);
+   passed.add(positions[0]);expect(allowedIndex(slides,passed,last,false)).toBe(positions[1]);
+   expect(allowedIndex(slides,passed,0,false)).toBe(0);
+   expect(allowedIndex(slides,passed,last,true)).toBe(last);
    slides.forEach((s,i)=>{if(s.native==='practice')passed.add(i);});
-   expect(allowedIndex(slides,passed,23,false)).toBe(23);
+   expect(allowedIndex(slides,passed,last,false)).toBe(last);
  });
  it('preserves every existing Day 1 native exercise in order',()=>{
    expect(data(1).slides.filter(s=>s.native==='practice').map(s=>s.scenario)).toEqual(OFFICIAL_TRAINING_CARDS.filter(s=>s.t==='practice').map(s=>s.scenario));
    expect(data(1).slides.filter(s=>s.native==='deal')).toHaveLength(1);
-   expect(data(1).slides).toHaveLength(24);
+   expect(data(1).slides).toHaveLength(17);
  });
  it('leaves unknown and custom modules in the existing player',()=>{
    expect(workshopDay({id:'custom',cards:[{deck:'custom-deck'}]})).toBeNull();

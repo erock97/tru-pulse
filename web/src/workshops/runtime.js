@@ -8,7 +8,7 @@ const SLIDES=data.slides, HERO=data.hero, controller=new AbortController(), sign
 const passed=new Set();
 const listen=(target,type,fn)=>target.addEventListener(type,fn,{signal});
 const $=s=>root.querySelector(s);
-const KEY=`tru-rep-workshop-day${data.day}-v1`; 
+const KEY=`tru-rep-workshop:${hooks.draftOwner||'preview'}:day${data.day}:${data.version||'v1'}`;
 let saved={},storageWorks=true;
 try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');if(!saved||typeof saved!=='object'||Array.isArray(saved))saved={};localStorage.setItem(KEY,JSON.stringify(saved))}catch{storageWorks=false}
 let index=0,caseIndex=0,objection=0,remaining=60,timerEnd=0,timerId=null;
@@ -28,16 +28,20 @@ function render(focus=false){stopTimer();remaining=Number($('#timer-duration').v
  $('[data-action="next"]').textContent=index===SLIDES.length-1?(/quiz/i.test(hooks.doneLabel||'')?'Continue to quiz':hooks.doneLabel||'Finish lesson'):'→';
  $('[data-action="next"]').setAttribute('aria-label',index===SLIDES.length-1?(hooks.doneLabel||'Finish lesson'):'Next slide');
  hooks.native(s, $('#native-slot'));
+ // New practice choices use stable option IDs, never certification indices.
+ const choices=$('[data-quiz]');if(choices){const buttons=[...choices.querySelectorAll('button[data-option-id]')];let hash=0;for(const c of KEY+choices.dataset.quiz)hash=(hash*31+c.charCodeAt(0))>>>0;const offset=hash%Math.max(buttons.length,1);for(const b of [...buttons.slice(offset),...buttons.slice(0,offset)])choices.append(b);}
+ // Keep every proposed written task available in self-paced study as well.
+ if(s.activity&&!s.native){for(const field of s.activity.fields||[]){if(![...root.querySelectorAll('[data-save]')].some(el=>el.dataset.save===field.id))$('.content').insertAdjacentHTML('beforeend',`<label class="field">${esc(field.label)}<textarea data-save="${esc(field.id)}"></textarea></label>`);}}
  root.querySelectorAll('.screen-figure img:not(.details-focus img)').forEach(img=>{img.tabIndex=0;img.setAttribute('role','button');img.setAttribute('aria-label','Enlarge '+img.alt);});
  $('.chapters').innerHTML=chapters.map(c=>`<button data-go="${SLIDES.findIndex(s=>s.chapter===c)}" ${c===s.chapter?'aria-current="step"':''}>${c}</button>`).join('');
  $('#agenda-list').innerHTML=SLIDES.map((s,i)=>`<button data-go="${i}" aria-current="${i===index}"><span>${String(i+1).padStart(2,'0')}</span><span>${s.title}</span><small>${s.time} min</small></button>`).join('');
  root.querySelectorAll('[data-save]').forEach(el=>{if(el.type==='checkbox')el.checked=saved[el.dataset.save]===true;else el.value=typeof saved[el.dataset.save]==='string'?saved[el.dataset.save]:''});
- const quiz=$('[data-quiz]');if(quiz&&Number.isInteger(saved['quiz-'+quiz.dataset.quiz])){const b=quiz.querySelectorAll('button')[saved['quiz-'+quiz.dataset.quiz]];if(b)applyAnswer(b,false)}
+ const quiz=$('[data-quiz]');if(quiz){const savedChoice=saved['quiz-'+quiz.dataset.quiz];const b=typeof savedChoice==='string'?[...quiz.querySelectorAll('button')].find(b=>b.dataset.optionId===savedChoice):Number.isInteger(savedChoice)?quiz.querySelectorAll('button')[savedChoice]:null;if(b)applyAnswer(b,false)}
  if($('#scenario'))renderCase();if($('#objection-case'))renderObjection();score();storageStatus();
  if(focus){$('#stage').focus({preventScroll:true});host.scrollIntoView({block:'start',behavior:'instant'})}say(`Slide ${index+1} of ${SLIDES.length}. ${s.title}`);
 }
 function go(n){const target=allowedIndex(SLIDES,passed,n,hooks.preview);index=target;render(true);if(target<n)say('Complete the record exercise before continuing.');}
-function applyAnswer(button,save=true){const parent=button.closest('[data-quiz]');parent.querySelectorAll('button').forEach(b=>{b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button))});const feedback=$('.feedback');feedback.textContent=(button.dataset.correct==='true'?'Good choice. ':'Try another approach. ')+button.dataset.feedback;if(save){saved['quiz-'+parent.dataset.quiz]=[...parent.querySelectorAll('button')].indexOf(button);persist()}}
+function applyAnswer(button,save=true){const parent=button.closest('[data-quiz]');parent.querySelectorAll('button').forEach(b=>{b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',String(b===button))});const feedback=$('.feedback');feedback.textContent=(button.dataset.correct==='true'?'Good choice. ':'Try another approach. ')+button.dataset.feedback;if(save){saved['quiz-'+parent.dataset.quiz]=button.dataset.optionId||[...parent.querySelectorAll('button')].indexOf(button);persist()}}
 function renderCase(){const c=cases[caseIndex];$('#scenario').innerHTML=`<span>Practice case ${caseIndex+1} / ${cases.length} · ${c.name}</span><blockquote>${c.quote}</blockquote><p>${c.goal}</p>`}
 function renderObjection(){const o=objections[objection];$('#objection-case').innerHTML=`<h3>First, understand the concern.</h3><p>${o.ask}</p><details class="reveal"><summary>Reveal a coaching example</summary><div><blockquote>${o.reply}</blockquote><p>${o.debrief}</p>${o.source?`<a class="source" href="${o.source}" target="_blank" rel="noopener">CFPB: comparing loan offers ↗</a>`:''}</div></details>`;root.querySelectorAll('[data-objection]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.objection)===objection)))}
 function score(){const el=$('#score');if(el){const items=[...root.querySelectorAll('.scorecard input')];let n=items.filter(e=>e.checked).length;el.textContent=`${n} / ${items.length} behaviors heard${n===items.length?' · Repeat with a new scenario.':''}`}}
