@@ -45,6 +45,11 @@ describe('durable live session transactions and access',()=>{
   await mutate(admin,'end',{},sid);
   const followups=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,sid])).rows[0].result.followups;
   expect(followups).toHaveLength(6);expect(followups.every((f:any)=>f.coachId===admin)).toBe(true);
+  // Global administrators need no org membership to read their live assignments.
+  await pg.exec(`set role authenticated;select set_config('request.jwt.claim.sub','${admin}',false);`);
+  try{
+   expect((await pg.query('select id from rep_live_followups where session_id=$1',[sid])).rows).toHaveLength(6);
+  }finally{await pg.exec('reset role');}
   const override=id(81);await mutate(admin,'create',{...body,participants:[{agentId:agentA,coachId:coachA},{agentId:agentB,coachId:null}]},override);
   const specified=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,override])).rows[0].result;
   expect(specified.participants.find((p:any)=>p.agentId===agentA).coachId).toBe(coachA);

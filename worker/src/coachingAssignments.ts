@@ -21,7 +21,27 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
  try{
   // RLS verifies visibility before accessing private assignment storage.
   const [agent]=await db.select<Agent>('agents',`select=id,org_id,auth_id&id=eq.${agentId}&limit=1`,{strict:true});
-  if(!agent)return reply({error:'Agent not available'},403);
+  const readBody=async():Promise<Record<string,unknown>|Response>=>{
+   const reader=req.body?.getReader();let text='';let bytes=0;const decoder=new TextDecoder();
+   if(reader){while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>8000){await reader.cancel();return reply({error:'Assignment is too large'},413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();}
+   let b:Record<string,unknown>;try{b=JSON.parse(text);}catch{return reply({error:'Invalid request'},400);}
+   if(!b||typeof b!=='object'||!uuid.test(String(b.id??'')))return reply({error:'Invalid assignment'},400);
+   return b;
+  };
+  if(!agent){
+   // Production agent RLS requires org membership even for global admins.
+   // Live follow-ups have their own explicit admin policy; do not widen CRM/KV access.
+   if(env.REP_LIVE_SESSIONS!=='1'||(await db.rpc<boolean>('is_admin',{})).data!==true)return reply({error:'Agent not available'},403);
+   if(req.method==='GET'){
+    const assignments=await liveAssignmentsForAgent(db,agentId);
+    assignments.sort((a,b)=>a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
+    return reply({assignments,canAssign:false,canReview:true});
+   }
+   const b=await readBody();if(b instanceof Response)return b;
+   if(b.action!=='review')return reply({error:'Only existing live follow-ups can be reviewed here'},403);
+   const result=await updateLiveAssignment(env,db,agentId,b);
+   return result?reply(result):reply({error:'Assignment not found'},404);
+  }
   const member=await db.select<{role:string}>('memberships',`select=role&org_id=eq.${agent.org_id}&user_id=eq.${db.userId}`,{strict:true});
   const admin=member.some(m=>['leader','coach','admin'].includes(m.role)) || (await db.rpc<boolean>('is_admin',{})).data===true;
   const own=agent.auth_id===db.userId;
@@ -46,10 +66,7 @@ export async function handleCoachingAssignments(req:Request,env:Env,db:UserClien
    assignments.sort((a,b)=>a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
    return reply({assignments,canAssign:admin});
   }
-  const reader=req.body?.getReader();let text='';let bytes=0;const decoder=new TextDecoder();
-  if(reader){while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>8000){await reader.cancel();return reply({error:'Assignment is too large'},413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();}
-  let b:Record<string,unknown>;try{b=JSON.parse(text);}catch{return reply({error:'Invalid request'},400);}
-  if(!b||typeof b!=='object'||!uuid.test(String(b.id??'')))return reply({error:'Invalid assignment'},400);
+  const b=await readBody();if(b instanceof Response)return b;
   const id=String(b.id),action=b.action;
   if(action==='create'){
    if(!admin)return reply({error:'Only coaches can assign work'},403);
