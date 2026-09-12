@@ -1001,6 +1001,9 @@ function Attempt({
   attempt: LiveAttempt;
   activity?: WorkshopActivity;
 }) {
+  const audit =
+    (a.response.submission as { phase?: string } | undefined)?.phase ===
+    "audit";
   function value(v: unknown): ReactNode {
     if (v === null || v === undefined) return "—";
     if (typeof v === "object")
@@ -1042,8 +1045,13 @@ function Attempt({
       </h3>
       {a.grade && (
         <p>
-          {a.grade.passed ? "Record check passed" : "Correction needed"} ·{" "}
-          {a.grade.score}/{a.grade.max} required actions
+          {a.grade.passed
+            ? audit
+              ? "Diagnosis check passed; repair still required"
+              : "Record check passed"
+            : "Correction needed"}{" "}
+          · {a.grade.score}/{a.grade.max}{" "}
+          {audit ? "diagnosis checks" : "required actions"}
         </p>
       )}
       {a.grade?.checks
