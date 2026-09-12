@@ -48,7 +48,7 @@ globalThis.fetch=async(input:RequestInfo|URL,init?:RequestInit)=>{
    const r=await pg.query<{result:unknown}>(`select ${fn}(${params.join(',')}) result`,values);return json(r.rows[0].result);
   }
   const table=u.pathname.split('/').at(-1)!;
-  if(!['rep_live_followups','agents','memberships','rep_progress'].includes(table))return json({message:'Table unavailable'},404);
+  if(!['rep_live_followups','rep_live_digests','agents','memberships','rep_progress'].includes(table))return json({message:'Table unavailable'},404);
   if(table==='rep_progress')return json([]);
   const userId=req.headers.get('authorization')?.replace('Bearer preview-','');
   const cols=(u.searchParams.get('select')??'*');if(!/^[a-z_,*]+$/.test(cols))throw Error('Invalid columns');
