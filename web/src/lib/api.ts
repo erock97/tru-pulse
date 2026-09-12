@@ -1154,10 +1154,13 @@ export interface CaseRow {
 // time it's reached. No source_family of its own — join to LeadRow.fub_person_id ->
 // source_family in shared/metrics.ts if a numerator needs to be scoped by source.
 export interface StageLogRow {
+  event_id?: string;
+  event_kind?: string;
+  basis?: string;
   fub_person_id: number;
   stage_class: string | null; // offer | uc | closed | other
   changed_at: string | null;  // null = dateless (seed, pre-history)
-  date_source: string | null; // live | deal_close_date | seed | tableau
+  date_source: string | null; // live | deal_close_date | seed | tableau | fub_change_log | fub_webhook | cumulative_rule
   agent_user_id: number | string | null;
   agent_name: string | null;
   team_id?: string;
