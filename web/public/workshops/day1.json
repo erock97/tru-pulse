@@ -179,7 +179,7 @@
       "chapter": "Practice",
       "title": "Repair Avery’s record",
       "lead": "Only a request to compare homes is confirmed. The record says Appointment set.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>Read the actual record</h3><p>Find the unsupported stage, unclear note, and missing next action in the original repair exercise.</p></div></div>",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>Read the actual record</h3><p>Inspect the original record. Compare the saved details with what the buyer actually said. Name the changes before editing.</p></div></div>",
       "notes": "Give one minute to inspect without solving it for the agent. The next original exercise requires the learner to name the changes before editing. Do not bypass its diagnosis step; discuss the evidence after the learner attempts it.",
       "cue": "What would you fix first, and why?",
       "time": 2,
