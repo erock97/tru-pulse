@@ -27,6 +27,7 @@ The browser connected to the real React app on port 5173 and the isolated Worker
 | Pair rotation | Both learners received a speaking turn, with the other learner assigned as buyer/observer. |
 | Observation | The designated observer could submit attributed feedback. Speaking was explicitly confirmed; retry remained unobserved. |
 | Session end | Ending twice produced six assignments total: three checkpoints for each of two learners. |
+| Shared presentation and keyboard | Shared view showed the training material without a private roster or responses. Enter opened the full People screenshot; Escape closed it. |
 
 Browser checks complement the SQL/transport tests for access failures, invalid observer roles, duplicate attempts, repair diagnosis, named non-presenter coach review, masked projection, and digest leases. The test observations are fixture data, not evidence that real agents demonstrated these skills.
 

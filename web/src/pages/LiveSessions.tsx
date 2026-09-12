@@ -458,6 +458,7 @@ function Session({ id, view }: { id: string; view: LiveView }) {
   return (
     <Frame title={state.session.title} shared={view === "shared"}>
       <div className="live-session-bar">
+        {view !== "shared" && <a href="#/rep/sessions">All sessions</a>}
         <span role="status">
           {connected ? "Connected" : "Connection interrupted · retrying"}
         </span>
@@ -502,6 +503,59 @@ function SlideBody({
         host.current.shadowRoot || host.current.attachShadow({ mode: "open" }),
       );
   }, []);
+  useEffect(() => {
+    if (!root) return;
+    const controller = new AbortController();
+    root
+      .querySelectorAll<HTMLImageElement>(".screen-figure img")
+      .forEach((img) => {
+        img.tabIndex = 0;
+        img.setAttribute("role", "button");
+        img.setAttribute("aria-label", `Enlarge ${img.alt}`);
+      });
+    const interact = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (
+        event instanceof KeyboardEvent &&
+        event.key !== "Enter" &&
+        event.key !== " "
+      )
+        return;
+      if (target.closest('[data-action="resources"]')) {
+        event.preventDefault();
+        const day = slide.id.match(/^day([1-4])-/)?.[1];
+        if (day)
+          window.open(
+            `/workshops/day${day}-resources.html`,
+            "_blank",
+            "noopener",
+          );
+        return;
+      }
+      const img =
+        target.closest(".details-focus")?.querySelector("img") ||
+        (target.matches(".screen-figure img")
+          ? (target as HTMLImageElement)
+          : null);
+      if (!img) return;
+      event.preventDefault();
+      const dialog = document.createElement("dialog");
+      dialog.className = "image-dialog";
+      const close = document.createElement("button");
+      close.textContent = "Close image";
+      close.onclick = () => dialog.close();
+      const enlarged = document.createElement("img");
+      enlarged.src = img.src;
+      enlarged.alt = img.alt;
+      dialog.append(close, enlarged);
+      root.append(dialog);
+      dialog.addEventListener("close", () => dialog.remove(), { once: true });
+      dialog.showModal();
+    };
+    root.addEventListener("click", interact, { signal: controller.signal });
+    root.addEventListener("keydown", interact, { signal: controller.signal });
+    return () => controller.abort();
+  }, [root, slide.id]);
   return (
     <div ref={host}>
       {root &&
@@ -522,7 +576,12 @@ function SlideBody({
                 {!slide.native && (
                   <div
                     className="content"
-                    dangerouslySetInnerHTML={{ __html: slide.body }}
+                    dangerouslySetInnerHTML={{
+                      __html: slide.body.replace(
+                        /<button\b[^>]*data-action="restart"[^>]*>[\s\S]*?<\/button>/g,
+                        "",
+                      ),
+                    }}
                   />
                 )}
                 {children}
