@@ -33,6 +33,7 @@ import {
 } from "../lib/liveSessions";
 import { PracticeRecord, type PracticeScenario } from "./PracticeRecord";
 import { DealMock } from "./DealSlide";
+import CoachingAssignments from "../components/CoachingAssignments";
 import workshopCss from "../workshops/workshop.css?inline";
 import recordCss from "../workshops/practiceRecord.css?inline";
 import "./liveSessions.css";
@@ -74,7 +75,7 @@ function Frame({
 
 export default function LiveSessions({ route }: { route: string }) {
   const match = route.match(
-    /^\/rep\/sessions\/([a-f0-9-]+)\/(presenter|shared|agent)$/i,
+    /^\/rep\/sessions\/([a-f0-9-]+)\/(presenter|shared|agent|coach)$/i,
   );
   return match ? (
     <Session
@@ -175,6 +176,9 @@ function Lobby() {
               </a>
               {s.canPresent && (
                 <a href={link(s.id, "presenter")}>Presenter console →</a>
+              )}
+              {s.canReview && (
+                <a href={link(s.id, "coach")}>Coach evidence & follow-up →</a>
               )}
             </div>
           </article>
@@ -480,6 +484,8 @@ function Session({ id, view }: { id: string; view: LiveView }) {
         <Presenter state={state} refresh={() => refresh.current()} />
       ) : view === "shared" ? (
         <Projection state={state} />
+      ) : view === "coach" ? (
+        <CoachEvidence state={state} />
       ) : (
         <AgentWorkspace state={state} refresh={() => refresh.current()} />
       )}
@@ -1049,6 +1055,201 @@ function Presenter({
           <button onClick={() => setEnding(true)}>Review session finish</button>
         )}
       </section>
+    </>
+  );
+}
+
+function CoachEvidence({ state }: { state: LiveSessionState }) {
+  const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const participant =
+    state.participants.find((p) => p.agentId === selectedAgent) ||
+    state.participants[0];
+  if (!state.canReview)
+    return <p>Coach access is required to review this session.</p>;
+  return (
+    <>
+      <p className="live-private">
+        Private coaching evidence · Only agents you are authorized to review
+        appear here. Keep this view out of screen sharing.
+      </p>
+      {state.canPresent && (
+        <p>
+          <a href={link(state.session.id, "presenter")}>
+            Open presenter controls →
+          </a>
+        </p>
+      )}
+      <section className="live-card">
+        <h2>Compare the attempt with the correction</h2>
+        <p>
+          Review the original submission and later practice together. Record
+          your follow-up below; session controls stay in the presenter console.
+        </p>
+        <div className="live-grid">
+          <label>
+            Agent to review
+            <select
+              value={participant?.agentId || ""}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+            >
+              {!state.participants.length && (
+                <option value="">No authorized agents</option>
+              )}
+              {state.participants.map((p) => (
+                <option key={p.agentId} value={p.agentId}>
+                  {p.name} · {p.teamName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Evidence activity
+            <select
+              value={selectedActivity}
+              onChange={(e) => setSelectedActivity(e.target.value)}
+            >
+              <option value="">All opened activities</option>
+              {state.definition.slides
+                .filter(
+                  (s) =>
+                    s.activity &&
+                    state.openedActivityIds.includes(s.activity.id),
+                )
+                .map((s) => (
+                  <option key={s.activity!.id} value={s.activity!.id}>
+                    {s.title}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+        {participant && (
+          <p>
+            Follow-up coach: {participant.coachName || "Named coach"} ·{" "}
+            {state.session.timezone}
+          </p>
+        )}
+        {participant &&
+          state.definition.slides
+            .filter(
+              (s) =>
+                s.activity &&
+                state.openedActivityIds.includes(s.activity.id) &&
+                (!selectedActivity || s.activity.id === selectedActivity),
+            )
+            .map((slide) => {
+              const activity = slide.activity!;
+              const attempts = state.attempts.filter(
+                (a) =>
+                  a.agentId === participant.agentId &&
+                  a.activityId === activity.id,
+              );
+              const observations = state.observations.filter(
+                (o) =>
+                  o.agentId === participant.agentId &&
+                  o.activityId === activity.id,
+              );
+              const rounds = state.groups.filter(
+                (g) =>
+                  g.agentId === participant.agentId &&
+                  g.activityId === activity.id,
+              );
+              const progress = state.progress.find(
+                (p) =>
+                  p.agentId === participant.agentId &&
+                  p.activityId === activity.id,
+              );
+              return (
+                <details
+                  className="live-person"
+                  key={`${participant.agentId}:${activity.id}`}
+                >
+                  <summary>
+                    {slide.title} · {attempts.length} submitted{" "}
+                    {attempts.length === 1 ? "attempt" : "attempts"} ·{" "}
+                    {observations.length} observations
+                  </summary>
+                  <p>{activity.prompt}</p>
+                  {progress?.help && (
+                    <p className="live-notice">
+                      Requested help:{" "}
+                      {progress.help === "finding-control"
+                        ? "finding a control"
+                        : "practice"}
+                      .
+                    </p>
+                  )}
+                  {progress?.dirty && (
+                    <p>
+                      The current work has changed since its last submission.
+                    </p>
+                  )}
+                  {attempts.map((a) => (
+                    <Attempt key={a.id} attempt={a} activity={activity} />
+                  ))}
+                  {!attempts.length && (
+                    <p>No submitted response. Drafts are private.</p>
+                  )}
+                  {observations.map((o) => (
+                    <article key={o.id} className="live-attempt">
+                      <h3>
+                        Round {o.round} ·{" "}
+                        {o.coachReviewed
+                          ? "Coach reviewed"
+                          : "Partner observed"}
+                      </h3>
+                      <p>
+                        Submitted {new Date(o.submittedAt).toLocaleString()} ·{" "}
+                        {o.speakingObserved
+                          ? "Speaking turn observed"
+                          : "Speaking observation outstanding"}{" "}
+                        ·{" "}
+                        {o.retryObserved
+                          ? "Retry observed"
+                          : "Retry observation outstanding"}
+                      </p>
+                      <ul>
+                        {activity.rubric?.map((c) => (
+                          <li key={c.id}>
+                            {c.label}:{" "}
+                            {o.criteria[c.id] === true
+                              ? "observed"
+                              : "not yet observed"}
+                          </li>
+                        ))}
+                      </ul>
+                      <p>
+                        <strong>Correction:</strong>{" "}
+                        {o.correction || "None recorded"}
+                      </p>
+                      <p>
+                        <strong>Retry:</strong> {o.retry || "None recorded"}
+                      </p>
+                    </article>
+                  ))}
+                  {rounds
+                    .filter(
+                      (g) => !observations.some((o) => o.groupId === g.id),
+                    )
+                    .map((g) => (
+                      <p key={g.id}>
+                        Round {g.round}: observation outstanding.
+                      </p>
+                    ))}
+                </details>
+              );
+            })}
+      </section>
+      {participant && (
+        <CoachingAssignments
+          key={participant.agentId}
+          agentId={participant.agentId}
+          leader
+        />
+      )}
+      <p>Session totals below cover only the agents visible to you.</p>
+      <SessionSummary state={state} />
     </>
   );
 }

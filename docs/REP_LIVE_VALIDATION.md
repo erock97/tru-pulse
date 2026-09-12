@@ -3,7 +3,7 @@
 ## Passing checks
 
 - Frontend TypeScript check; 498 tests in 59 files.
-- Worker TypeScript check; 784 Vitest tests in 54 files; six existing native Node operations tests.
+- Worker TypeScript check; 786 Vitest tests in 54 files; six existing native Node operations tests.
 - Frontend production build. The existing application still emits Vite's large-chunk advisory; the build succeeds.
 - Whitespace/diff validation.
 - Isolated additive migration execution in PGlite with service-role grants, browser-role denials, and cross-team result scoping.
@@ -28,12 +28,13 @@ The browser connected to the real React app on port 5173 and the isolated Worker
 | Observation | The designated observer could submit attributed feedback. Speaking was explicitly confirmed; retry remained unobserved. |
 | Session end | Ending twice produced six assignments total: three checkpoints for each of two learners. |
 | Shared presentation and keyboard | Shared view showed the training material without a private roster or responses. Enter opened the full People screenshot; Escape closed it. |
+| Non-presenter coach | Team A coach could open Alice's original attempt, assisted revision, and peer correction beside her three follow-up review forms. Team B's agent and private results were absent; presenter controls were unavailable. Server tests also denied coach presenter commands. |
 
 Browser checks complement the SQL/transport tests for access failures, invalid observer roles, duplicate attempts, repair diagnosis, named non-presenter coach review, masked projection, and digest leases. The test observations are fixture data, not evidence that real agents demonstrated these skills.
 
 ## Concurrency result
 
-In the final full test run, 50 concurrent submissions through actual validation and durable SQL completed in **501 ms**. Those submissions plus 50 authorized state reads completed in **969 ms** on this local machine. An earlier isolated run measured 654 ms for the same combined sequence.
+In the final full test run, 50 concurrent submissions through actual validation and durable SQL completed in **497 ms**. Those submissions plus 50 authorized state reads completed in **945 ms** on this local machine. An earlier isolated run measured 654 ms for the same combined sequence.
 
 These measurements exclude browser polling delay, network latency, and hosted Supabase/Worker performance. They do not establish a production three-second SLA. A staged 50-learner test remains a release gate.
 

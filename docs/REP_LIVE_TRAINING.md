@@ -32,6 +32,8 @@ Open `http://127.0.0.1:8790/preview/login?user=presenter` to create a session. T
 7. For spoken practice, create rotating pairs or trios from joined participants, or assign rounds individually. Place those groups in the meeting platform's breakout rooms. A round names the speaking learner, buyer, and observer. In a pair, the buyer observes. Assign a coach for solo practice or leave its observation outstanding. Add late arrivals explicitly.
 8. End the session to create its 24-hour, three-day, and seven-day follow-ups once. Learners can still finish previously opened activities. Coaching review happens through existing assignments; ending does not certify or activate anyone.
 
+Team leaders and coaches can choose **Coach evidence & follow-up** from the session list or an assignment. This private, read-only session view shows their authorized agents' original attempts, revisions, and observations alongside the existing assignment review form. It does not require presenter permission or grant session controls. Its summary denominators cover only the visible agents.
+
 The Welcome pilot is 57 minutes. First Conversation is 67, Show Like a Pro is 75, and Home Loans is 54. Extend practice rather than skipping attempts. Each original FUB exercise is a distinct case. Navigation in People/search needs a coach's observation in the actual training account; the simulator starts inside the contact.
 
 ## What results mean
@@ -59,7 +61,7 @@ All routes use the existing opaque session cookie. Mutations validate Origin and
 | `GET /rep/sessions` | Enabled state and accessible sessions. |
 | `GET /rep/sessions/preflight` | Authorized creation capability, agents, linked accounts, eligible coaches. |
 | `POST /rep/sessions` | `{id,day,timezone,participants:[{agentId,coachId}],presenterIds}`; returns `{ok,id}`. |
-| `GET /rep/sessions/:id?view=agent\|presenter\|shared&cursor=...` | Authorized snapshot or `{unchanged,cursor,serverTime}`. |
+| `GET /rep/sessions/:id?view=agent\|presenter\|shared\|coach&cursor=...` | Authorized snapshot or `{unchanged,cursor,serverTime}`. `canReview` permits team-scoped evidence review; `canPresent` separately permits presenter controls. |
 | `POST /rep/sessions/:id/join` | Authenticated join / presence heartbeat. |
 | `POST /rep/sessions/:id/commands` | `slide`, `open`, `timer`, `reveal`, `group`, `end`; exact types in `shared/liveWorkshops.ts`. |
 | `POST /rep/sessions/:id/progress` | Activity, status, fixed action metadata, dirty flag, and explicit help. Omitted fields preserve prior metadata. No response text. |

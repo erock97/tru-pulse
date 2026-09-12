@@ -58,8 +58,8 @@ The isolated run processed 50 validated submissions in 224 ms and submissions pl
 
 Rollback is `REP_LIVE_SESSIONS=0` and `REP_LIVE_DIGESTS=0`. This disables live routes/mail while preserving sessions, assignments, legacy courses, and historical certification. Do not drop tables or alter learner history to roll back.
 
-The default Worker test command runs Vitest for application tests and Node’s native runner for the existing `ops/link-hermes-team.test.mjs`; that file previously failed when Vitest tried to load the Node test module. No existing test is skipped.
+The default Worker test command runs Vitest for application tests and Node's native runner for the existing `ops/link-hermes-team.test.mjs`; that file previously failed when Vitest tried to load the Node test module. No existing test is skipped.
 
 Spoken practice requires the observer to explicitly confirm `speakingObserved=true`. `retryObserved` is a separate boolean and defaults false; retry prose does not establish that a retry happened. Existing rows receive false for both fields so historical notes are never retroactively promoted into observed performance.
 
-The read-only `coach` view and `canReview` capability let current team leaders/coaches inspect their own team’s submitted evidence and follow-ups even when they are not session presenters. `canPresent` remains independent; this view grants no advance/reveal/group/end permissions. Foreign-team participants, attempts, and private follow-up are filtered by current database roles.
+The read-only `coach` view and `canReview` capability let current team leaders/coaches inspect their own team's submitted evidence and follow-ups even when they are not session presenters. `canPresent` remains independent; this view grants no advance/reveal/group/end permissions. Foreign-team participants, attempts, and private follow-up are filtered by current database roles.
