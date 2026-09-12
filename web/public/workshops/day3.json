@@ -8,8 +8,8 @@
       "title": "“None of them felt right.”",
       "lead": "None of them felt right. What do you say next?",
       "time": 3,
-      "body": "<div class=\"choices\" data-quiz=\"day3-opening\"><button data-option-id=\"defend\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Defend the second home.</button><button data-option-id=\"missing\" data-correct=\"true\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Ask what was missing.</button><button data-option-id=\"another-tour\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Book another tour without changing the search.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Write your next question.<textarea data-save=\"next-question\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">After hearing the buyer’s answer, record what changes in your plan.<textarea data-save=\"plan-change\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Reveal a short coaching model</summary><div>That’s useful to know. What was missing for you? [Listen.] When you say the workspace felt separate, what would work better? [Listen.] Let’s use that to adjust what we look at next.</div></details>",
-      "notes": "Have every agent submit an individual response before revealing the model. Compare the main pattern in the room, then demonstrate once. The choice is a warm-up, not proof of skill; the next activity is an observed attempt.",
+      "body": "<div class=\"choices\" data-quiz=\"day3-opening\"><button data-option-id=\"defend\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Defend the second home.</button><button data-option-id=\"missing\" data-correct=\"true\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Ask what was missing.</button><button data-option-id=\"another-tour\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Book another tour without changing the search.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Write your next question.<textarea data-save=\"next-question\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Reveal a short coaching model</summary><div>That’s useful to know. What was missing for you? [Listen.] When you say the workspace felt separate, what would work better? [Listen.] Let’s use that to adjust what we look at next.</div></details>",
+      "notes": "Have every agent submit an individual response before revealing the model. Compare the main pattern in the room, then demonstrate once. The choice is a warm-up, not proof of skill; the next activity is an observed attempt. Collect only the opening choice and next question here. The learner cannot revise the plan until the buyer supplies an answer in the next activity. Reveal this opening activity’s model before advancing to the speaking practice.",
       "cue": "Submit your choice and wording before the example.",
       "theme": "blue",
       "activity": {
@@ -37,10 +37,6 @@
           {
             "id": "next-question",
             "label": "Write your next question."
-          },
-          {
-            "id": "plan-change",
-            "label": "After hearing the buyer’s answer, record what changes in your plan."
           }
         ]
       }
@@ -49,8 +45,8 @@
       "chapter": "Practice",
       "title": "Practice the first question after a showing",
       "lead": "Let the buyer answer before asking the next question.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Try one question</h3><p>Buyer: none of the homes felt right. Agent: accept that reaction and ask what was missing.</p></div><div class=\"row\"><h3>Hear a real answer</h3><p>The buyer chooses a specific preference from the practice case. Let them finish before asking another question.</p></div><div class=\"row\"><h3>Use it, then retry</h3><p>Name what changes in the plan. Observer gives one correction; agent retries, then roles swap.</p></div></div>",
-      "notes": "Model one brief exchange after the first submission. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding. Give the buyer room to explain a preference. A completed list of questions is not the objective.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Try one question</h3><p>Buyer: none of the homes felt right. Agent: accept that reaction and ask what was missing.</p></div><div class=\"row\"><h3>Hear a real answer</h3><p>The buyer chooses a specific preference from the practice case. Let them finish before asking another question.</p></div><div class=\"row\"><h3>Use it, then retry</h3><p>Name what changes in the plan. Observer gives one correction; agent retries, then roles swap.</p></div></div><label class=\"field\">What did the buyer actually say?<textarea data-save=\"buyer-answer\" placeholder=\"Use the answer from your partner, not an assumption.\"></textarea></label><label class=\"field\">After hearing that answer, what changes in your plan?<textarea data-save=\"plan-change\" placeholder=\"Name the specific next step.\"></textarea></label><label class=\"field\">What did you improve after feedback?<textarea data-save=\"retry\" placeholder=\"Record the change in your targeted retry.\"></textarea></label>",
+      "notes": "Model one brief exchange after the first submission. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding. Give the buyer room to explain a preference. A completed list of questions is not the objective. Reveal the previous opening activity’s model before advancing here. After the buyer answers, the learner records that answer and revises the next step. Collect the plan change after the conversation, not before the buyer has spoken.",
       "cue": "Did the buyer have enough time to answer?",
       "time": 5,
       "theme": "sage",
@@ -80,12 +76,16 @@
         ],
         "fields": [
           {
-            "id": "change",
-            "label": "What did the buyer say that changed your plan?"
+            "id": "buyer-answer",
+            "label": "What did the buyer actually say in your practice conversation?"
+          },
+          {
+            "id": "plan-change",
+            "label": "After hearing that answer, what changes in your plan? Name the specific next step."
           },
           {
             "id": "retry",
-            "label": "What did you improve after feedback?"
+            "label": "What did you improve in your targeted retry after feedback?"
           }
         ]
       }

@@ -77,6 +77,15 @@ describe('versioned live curriculum', () => {
     }
   });
 
+  it('asks for a changed showing plan only after the buyer has supplied an answer', () => {
+    const [opening, practice] = workshopCatalog[3].slides;
+    expect(opening.activity!.fields!.map(field => field.id)).toEqual(['next-question']);
+    expect(opening.body).not.toContain('data-save="plan-change"');
+    expect(practice.activity!.fields!.map(field => field.id)).toEqual(['buyer-answer', 'plan-change', 'retry']);
+    expect(practice.notes).toContain('after the conversation, not before the buyer has spoken');
+    expect(practice.notes).toContain('previous opening activity’s model');
+  });
+
   it('redacts unrevealed answers, models, and instructor notes from the live learner snapshot', () => {
     for (const definition of Object.values(workshopCatalog)) {
       const learner = learnerWorkshopDefinition(definition);
