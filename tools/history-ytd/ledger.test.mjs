@@ -32,6 +32,15 @@ test('old checkpoint and unverified pagination never satisfy new cutoff',()=>{
  assert.deepEqual(gapsFor(l,1,cutoff),[{from:HISTORY_START,through:cutoff}]);
  assert.deepEqual(missingIntervals({from:HISTORY_START,through:cutoff},[{from:HISTORY_START,through:'2026-09-05T07:00:00Z'}]),[{from:'2026-09-05T07:00:00.000Z',through:cutoff}]);
 });
+test('same saved bytes can extend interpretation to a later cutoff without duplicate events',()=>{
+ const l=emptyLedger('a','t','o');const r=receipt([event(1,'Nurture'),event(2,'Closed',cutoff)]);
+ assert.equal(add(l,r).inserted,1);
+ const later='2026-09-12T03:00:00Z';
+ assert.equal(add(l,r,person,{...opts,cutoff:later}).inserted,1);
+ assert.equal(add(l,r,person,{...opts,cutoff:later}).inserted,0);
+ assert.equal(Object.keys(l.events).length,2);
+ assert.deepEqual(gapsFor(l,1,later),[{from:cutoff,through:new Date(later).toISOString()}]);
+});
 test('unknown parser descriptions and conflicting IDs are atomic failures',()=>{
  const l=emptyLedger('a','t','o');assert.throws(()=>add(l,receipt([{id:1,date:cutoff,description:'Stage mystery'}])));assert.equal(Object.keys(l.events).length,0);
  add(l);assert.throws(()=>add(l,receipt([event(2,'Closed'),event(1,'Closed')])));assert.equal(Object.keys(l.events).length,1);

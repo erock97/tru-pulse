@@ -1181,6 +1181,7 @@ export interface Settings {
   pause_no_close_since?: string | null; // rule 2 clean-slate: only count leads created on/after this ISO date; null = all history
 }
 export interface DashboardData {
+  historyCoverage?: {state:string;complete:boolean;cutoff?:string;expected_people?:number;unresolved_people?:number};
   contactDecisions?: {state:string;reason:string};
   historyInfo?: {through:string;capturedAt:string;sourceStarts:Record<string,string>;rosterPolicy:string};
   teams: Array<{ id: string; name: string; fub_subdomain: string | null }>;
@@ -1205,7 +1206,8 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
   if(orgId){
     const history=await workerFetch(`/data/history?orgId=${encodeURIComponent(orgId)}`);
     if(!history.ok)throw new Error('Historical evidence could not be loaded. Refresh to retry.');
-    const {snapshot}=await history.json() as {snapshot:(NonNullable<DashboardData['historyInfo']>&{leads:LeadRow[];stageLog:StageLogRow[];teamId:string;account:string})|null};
+    const {snapshot,coverage}=await history.json() as {coverage?:DashboardData['historyCoverage'];snapshot:(NonNullable<DashboardData['historyInfo']>&{leads:LeadRow[];stageLog:StageLogRow[];teamId:string;account:string})|null};
+    d.historyCoverage=coverage??{state:'unknown',complete:false};
     if(snapshot){
       const merged=mergeDashboardHistory(snapshot.leads,d.leads,snapshot.stageLog,d.stageLog||[],new Set(snapshot.leads.map(l=>l.team_id).concat(snapshot.teamId)),snapshot.sourceStarts);
       d.leads=merged.leads;d.stageLog=merged.stageLog;
@@ -1215,6 +1217,7 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
   }
   return {
     contactDecisions:d.contactDecisions,
+    historyCoverage:d.historyCoverage,
     historyInfo:d.historyInfo,
     teams: d.teams ?? [],
     settings: d.settings ?? null,

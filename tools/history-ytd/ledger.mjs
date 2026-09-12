@@ -10,6 +10,8 @@ export function emptyLedger(accountId,teamId,orgId){return {version:1,accountId:
 export function importReceipt(ledger,person,receipt,bytes,{account,from,through,paginationComplete=false,cutoff}){
  if(receipt.account!==account||String(receipt.personId)!==String(person.id)||receipt.status!=='complete'||!Array.isArray(receipt.stageEvents))throw Error('Receipt identity/completion mismatch');
  historyTime(receipt.fetchedAt);historyTime(through);historyTime(from);
+ historyTime(cutoff);
+ if(historyTime(from)>=historyTime(through))throw Error('Invalid coverage interval');
  if(classifyHistorySource(person.source)!=='eligible')return {inserted:0,reused:0,excluded:true};
  const contentHash=hash(bytes),receiptKey=hash(JSON.stringify([ledger.accountId,String(person.id),contentHash]));
  if(ledger.receipts[receiptKey]?.interpretedThrough && historyTime(ledger.receipts[receiptKey].interpretedThrough)>=historyTime(cutoff))return {inserted:0,reused:1};
