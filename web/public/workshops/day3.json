@@ -3,14 +3,92 @@
   "title": "Show like a pro",
   "slides": [
     {
-      "chapter": "Start",
-      "title": "Show like a pro",
-      "lead": "Zillow Preferred · Day 3",
-      "body": "<div class=\"hero-bottom\"><p>Prepare the tour.<br>Listen after the showing.<br>Agree on the next step.</p><div class=\"hero-ticket\"><span>Today’s practice</span><strong>Ask about the showing and agree on what happens next.</strong><small>Work with a partner. Give specific feedback. Try again.</small></div></div>",
-      "notes": "Invite a recent example from one person, then begin. Keep the opening to two minutes.",
-      "cue": "Ask: What would you like to get better at today?",
-      "time": 2,
-      "theme": "hero"
+      "id": "day3-opening-decision",
+      "chapter": "Start with practice",
+      "title": "“None of them felt right.”",
+      "lead": "None of them felt right. What do you say next?",
+      "time": 3,
+      "body": "<div class=\"choices\" data-quiz=\"day3-opening\"><button data-option-id=\"defend\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Defend the second home.</button><button data-option-id=\"missing\" data-correct=\"true\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Ask what was missing.</button><button data-option-id=\"another-tour\" data-correct=\"false\" data-feedback=\"Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.\">Book another tour without changing the search.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Write your next question.<textarea data-save=\"next-question\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">After hearing the buyer’s answer, record what changes in your plan.<textarea data-save=\"plan-change\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Reveal a short coaching model</summary><div>That’s useful to know. What was missing for you? [Listen.] When you say the workspace felt separate, what would work better? [Listen.] Let’s use that to adjust what we look at next.</div></details>",
+      "notes": "Have every agent submit an individual response before revealing the model. Compare the main pattern in the room, then demonstrate once. The choice is a warm-up, not proof of skill; the next activity is an observed attempt.",
+      "cue": "Submit your choice and wording before the example.",
+      "theme": "blue",
+      "activity": {
+        "id": "day3-opening-decision",
+        "kind": "choice",
+        "prompt": "None of them felt right. What do you say next?",
+        "choices": [
+          {
+            "id": "defend",
+            "text": "Defend the second home."
+          },
+          {
+            "id": "missing",
+            "text": "Ask what was missing."
+          },
+          {
+            "id": "another-tour",
+            "text": "Book another tour without changing the search."
+          }
+        ],
+        "correctChoiceId": "missing",
+        "explanation": "Accept the buyer’s reaction and learn a specific preference. That answer should change the next search or conversation; a rating by itself does not explain what matters.",
+        "model": "That’s useful to know. What was missing for you? [Listen.] When you say the workspace felt separate, what would work better? [Listen.] Let’s use that to adjust what we look at next.",
+        "fields": [
+          {
+            "id": "next-question",
+            "label": "Write your next question."
+          },
+          {
+            "id": "plan-change",
+            "label": "After hearing the buyer’s answer, record what changes in your plan."
+          }
+        ]
+      }
+    },
+    {
+      "chapter": "Practice",
+      "title": "Practice the first question after a showing",
+      "lead": "Let the buyer answer before asking the next question.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Try one question</h3><p>Buyer: none of the homes felt right. Agent: accept that reaction and ask what was missing.</p></div><div class=\"row\"><h3>Hear a real answer</h3><p>The buyer chooses a specific preference from the practice case. Let them finish before asking another question.</p></div><div class=\"row\"><h3>Use it, then retry</h3><p>Name what changes in the plan. Observer gives one correction; agent retries, then roles swap.</p></div></div>",
+      "notes": "Model one brief exchange after the first submission. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding. Give the buyer room to explain a preference. A completed list of questions is not the objective.",
+      "cue": "Did the buyer have enough time to answer?",
+      "time": 5,
+      "theme": "sage",
+      "id": "day3-first-showing-practice",
+      "sourceScreen": 13,
+      "activity": {
+        "id": "day3-first-showing-practice",
+        "kind": "roleplay",
+        "prompt": "Let the buyer answer before asking the next question.",
+        "rubric": [
+          {
+            "id": "accepts",
+            "label": "Accepts the buyer’s reaction"
+          },
+          {
+            "id": "follow-up",
+            "label": "Asks a relevant follow-up"
+          },
+          {
+            "id": "preference",
+            "label": "Learns a specific preference"
+          },
+          {
+            "id": "plan",
+            "label": "Uses the answer to change the plan"
+          }
+        ],
+        "fields": [
+          {
+            "id": "change",
+            "label": "What did the buyer say that changed your plan?"
+          },
+          {
+            "id": "retry",
+            "label": "What did you improve after feedback?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Start",
@@ -20,7 +98,20 @@
       "notes": "Take three short answers. Ask agents to describe behavior rather than personality. Connect those answers to space, useful questions, and an agreed next step.",
       "cue": "What could you stop doing on your next showing?",
       "time": 3,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day3-what-makes-a-showing-uncomfortable",
+      "sourceScreen": 2,
+      "activity": {
+        "id": "day3-what-makes-a-showing-uncomfortable",
+        "kind": "written",
+        "prompt": "Start with the buyer’s experience.",
+        "fields": [
+          {
+            "id": "experience",
+            "label": "What would you do differently?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Prepare",
@@ -30,7 +121,9 @@
       "notes": "Use the form and instructions approved by your brokerage. Zillow’s current product page confirms its seven-day touring agreement. That term describes this product, not every buyer agreement. Confirm the current product and local requirements before teaching the form. This is a process check, not legal advice.",
       "cue": "How would you explain the agreement before the appointment?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day3-confirm-access-and-the-required-agreement",
+      "sourceScreen": 3
     },
     {
       "chapter": "Prepare",
@@ -40,7 +133,20 @@
       "notes": "Use actual availability when preparing a real tour. Avoid adding homes just to make the tour longer. Ask agents to explain one useful comparison.",
       "cue": "What would make a second home worth including?",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day3-give-the-buyer-useful-comparisons",
+      "sourceScreen": 4,
+      "activity": {
+        "id": "day3-give-the-buyer-useful-comparisons",
+        "kind": "written",
+        "prompt": "Choose homes for a reason.",
+        "fields": [
+          {
+            "id": "comparison",
+            "label": "What would each home help this buyer compare?"
+          }
+        ]
+      }
     },
     {
       "chapter": "At the home",
@@ -50,7 +156,9 @@
       "notes": "Ask someone to demonstrate an opening at the door. Respect seller instructions and actual safety needs. Availability matters more than standing in one prescribed place.",
       "cue": "What will you say before the buyer starts looking?",
       "time": 3,
-      "theme": "dark"
+      "theme": "dark",
+      "id": "day3-let-the-buyer-look-first",
+      "sourceScreen": 5
     },
     {
       "chapter": "At the home",
@@ -60,7 +168,30 @@
       "notes": "Use a fictional vaulted-ceiling example from the source material. Distinguish personal taste from material or safety concerns that must be addressed accurately.",
       "cue": "When does an observation need to be raised even if it is not your preference?",
       "time": 3,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day3-let-the-buyer-have-their-own-preferences",
+      "sourceScreen": 6,
+      "activity": {
+        "id": "day3-let-the-buyer-have-their-own-preferences",
+        "kind": "choice",
+        "prompt": "Your taste may be different from theirs.",
+        "choices": [
+          {
+            "id": "choice-1",
+            "text": "Explain why your taste is better."
+          },
+          {
+            "id": "choice-2",
+            "text": "Ask what they like about it and listen."
+          },
+          {
+            "id": "choice-3",
+            "text": "Assume it makes the home wrong for them."
+          }
+        ],
+        "correctChoiceId": "choice-2",
+        "explanation": "Yes. Learn the reason without projecting your preference."
+      }
     },
     {
       "chapter": "After the showing",
@@ -70,7 +201,9 @@
       "notes": "Have the buyer role say no first. The agent should accept it comfortably and ask a useful follow-up. A negative answer is useful information.",
       "cue": "What would you ask after “None of them felt right”?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day3-ask-permission-to-compare-impressions",
+      "sourceScreen": 7
     },
     {
       "chapter": "After the showing",
@@ -80,7 +213,20 @@
       "notes": "Ask partners to give the same rating for different reasons. Show why the number alone is not enough for a note or a search decision.",
       "cue": "How would two buyers’ eights mean different things?",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day3-use-a-rating-to-start-a-conversation",
+      "sourceScreen": 8,
+      "activity": {
+        "id": "day3-use-a-rating-to-start-a-conversation",
+        "kind": "written",
+        "prompt": "The reason matters more than the number.",
+        "fields": [
+          {
+            "id": "criteria",
+            "label": "What did you learn that should change the next search?"
+          }
+        ]
+      }
     },
     {
       "chapter": "After the showing",
@@ -90,7 +236,9 @@
       "notes": "This is a conversation after the showing, distinct from the first-call LEAD sequence. Do not collect private income or credit details in a sidewalk conversation.",
       "cue": "What would you ask if they say their bank has already helped?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day3-ask-about-financing-in-context",
+      "sourceScreen": 9
     },
     {
       "chapter": "After the showing",
@@ -100,7 +248,20 @@
       "notes": "Ask permission before exploring a sensitive reason. Do not assume a round number is a firm deadline. If they mention a lease, ask about the actual date and flexibility.",
       "cue": "What changes if the lease ends on a fixed date?",
       "time": 3,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day3-ask-what-is-behind-the-timing",
+      "sourceScreen": 10,
+      "activity": {
+        "id": "day3-ask-what-is-behind-the-timing",
+        "kind": "written",
+        "prompt": "A date is more useful when you understand why it matters.",
+        "fields": [
+          {
+            "id": "timeline",
+            "label": "Write a question that invites the buyer to explain their timing."
+          }
+        ]
+      }
     },
     {
       "chapter": "Plan the next step",
@@ -110,7 +271,9 @@
       "notes": "Ask agents to explain why the same next step would not fit all three buyers. Use actual market, lender, and transaction timelines; do not teach a fixed number of days as universal.",
       "cue": "Which next step would be premature for this buyer?",
       "time": 3,
-      "theme": "dark"
+      "theme": "dark",
+      "id": "day3-match-the-plan-to-this-buyer",
+      "sourceScreen": 11
     },
     {
       "chapter": "Plan the next step",
@@ -120,17 +283,20 @@
       "notes": "Use a fictional lease-end example. Avoid presenting an estimated closing date as a guarantee. Have the buyer repeat the plan to catch different expectations.",
       "cue": "What needs confirmation before you promise a date?",
       "time": 4,
-      "theme": "paper"
-    },
-    {
-      "chapter": "Practice",
-      "title": "Practice the first question after a showing",
-      "lead": "Let the buyer answer before asking the next question.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>First attempt</h3><p>Ask whether any home is worth pursuing.</p></div><div class=\"row\"><h3>Buyer response</h3><p>Say no, or give a rating with a reason.</p></div><div class=\"row\"><h3>Feedback and retry</h3><p>Did the agent accept the answer and ask a relevant follow-up? Retry one part.</p></div></div>",
-      "notes": "Pairs take 60 seconds each with 30 seconds feedback and a short retry. Do not stack all five questions into one long sentence.",
-      "cue": "Did the buyer have enough time to answer?",
-      "time": 4,
-      "theme": "sage"
+      "theme": "paper",
+      "id": "day3-work-backward-from-a-real-deadline",
+      "sourceScreen": 12,
+      "activity": {
+        "id": "day3-work-backward-from-a-real-deadline",
+        "kind": "written",
+        "prompt": "Confirm the steps with the people responsible for them.",
+        "fields": [
+          {
+            "id": "plan",
+            "label": "Write the next appointment and what it is for."
+          }
+        ]
+      }
     },
     {
       "chapter": "Practice",
@@ -140,17 +306,73 @@
       "notes": "Give each partner a different response. Ask the agent to learn whether the date is fixed, flexible, or still uncertain. Do not pressure the buyer to move earlier.",
       "cue": "What did you learn that changes the plan?",
       "time": 4,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day3-practice-a-conversation-about-timing",
+      "sourceScreen": 14,
+      "activity": {
+        "id": "day3-practice-a-conversation-about-timing",
+        "kind": "written",
+        "prompt": "Ask what makes the date important.",
+        "fields": [
+          {
+            "id": "timing-practice",
+            "label": "Choose a response. Write your next question."
+          }
+        ]
+      }
     },
     {
       "chapter": "Practice",
       "title": "Run the conversation after a showing",
       "lead": "Agent, buyer, observer. Rotate after each round.",
       "body": "<div class=\"split\"><div><div class=\"scenario\" id=\"scenario\"></div><button data-action=\"scenario\">Next buyer case</button></div><div><div class=\"scorecard\"><label><input type=\"checkbox\" data-save=\"rubric-0\"> Asks whether any home is worth pursuing</label><label><input type=\"checkbox\" data-save=\"rubric-1\"> Learns specific likes and missing criteria</label><label><input type=\"checkbox\" data-save=\"rubric-2\"> Clarifies financing preparation and the reason for timing</label><label><input type=\"checkbox\" data-save=\"rubric-3\"> Agrees on a useful next action, date, and owner</label></div><p id=\"score\" class=\"score\" aria-live=\"polite\"></p><button data-action=\"clear-score\">Clear score for next agent</button></div></div>",
-      "notes": "Three rounds: 3-minute conversation, 1-minute feedback, 1-minute retry. Rotate all roles. Judge the usefulness of the questions and plan, not whether the agent recites every example word for word.",
+      "notes": "Three rounds: 3-minute conversation, 1-minute feedback, 1-minute retry. Rotate all roles. Judge the usefulness of the questions and plan, not whether the agent recites every example word for word. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding.",
       "cue": "Observer: what did the agent learn that would change the next step?",
       "time": 16,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day3-run-the-conversation-after-a-showing",
+      "sourceScreen": 15,
+      "activity": {
+        "id": "day3-run-the-conversation-after-a-showing",
+        "kind": "roleplay",
+        "prompt": "Agent, buyer, observer. Rotate after each round.",
+        "rubric": [
+          {
+            "id": "accepts",
+            "label": "Accepts the buyer’s reaction"
+          },
+          {
+            "id": "follow-up",
+            "label": "Asks a relevant follow-up"
+          },
+          {
+            "id": "preference",
+            "label": "Learns a specific preference"
+          },
+          {
+            "id": "plan",
+            "label": "Uses the answer to change the plan"
+          },
+          {
+            "id": "timing",
+            "label": "Clarifies financing preparation and the reason for timing in context"
+          },
+          {
+            "id": "owner",
+            "label": "Agrees on a useful next action, date, and owner"
+          }
+        ],
+        "fields": [
+          {
+            "id": "correction",
+            "label": "What specific correction will you retry?"
+          },
+          {
+            "id": "retry",
+            "label": "What changed in your retry?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Update the record",
@@ -160,17 +382,33 @@
       "notes": "Correct the source deck’s blanket instruction to use Showing homes after every showing. Ask an agent to explain the stage based on the actual event.",
       "cue": "Would another agent know why you chose the next homes?",
       "time": 3,
-      "theme": "dark"
+      "theme": "dark",
+      "id": "day3-record-what-the-showing-changed",
+      "sourceScreen": 16
     },
     {
       "chapter": "Retain",
       "title": "Write the follow-up record",
       "lead": "Use the practice buyer you just worked with.",
       "body": "<label class=\"field\">Write the true stage, a factual note, and a dated task.<textarea data-save=\"record\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Check your work</summary><div>Stage matches the event. Note includes specific preferences and timing without guesses. Task names the agreed action and date. Ask your coach to review the record.</div></details>",
-      "notes": "This is a coach-reviewed written exercise, not an automated grade. Partners compare against the criteria and revise one missing detail.",
+      "notes": "This is a coach-reviewed written exercise, not an automated grade. Partners compare against the criteria and revise one missing detail. Submit the first written record before feedback. Then revise one specific part and submit a new attempt so the original remains visible.",
       "cue": "Which detail could someone act on tomorrow?",
       "time": 4,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day3-write-the-follow-up-record",
+      "sourceScreen": 17,
+      "activity": {
+        "id": "day3-write-the-follow-up-record",
+        "kind": "written",
+        "prompt": "Use the practice buyer you just worked with.",
+        "fields": [
+          {
+            "id": "record",
+            "label": "Write the true stage, a factual note, and a dated task."
+          }
+        ],
+        "model": "Stage matches the event. Note includes specific preferences and timing without guesses. Task names the agreed action and date. Ask your coach to review the record."
+      }
     },
     {
       "chapter": "Retain",
@@ -180,17 +418,44 @@
       "notes": "Give 45 seconds without notes. Accept natural wording and a conversation that follows the buyer. Correct an omitted topic through a short spoken retry.",
       "cue": "Which answer most often changes your plan?",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day3-what-would-you-ask-without-the-slides",
+      "sourceScreen": 18,
+      "activity": {
+        "id": "day3-what-would-you-ask-without-the-slides",
+        "kind": "written",
+        "prompt": "Recall the questions before checking the guide.",
+        "fields": [
+          {
+            "id": "recall",
+            "label": "List the questions you would use after a showing."
+          }
+        ],
+        "model": "Is any home worth pursuing? How close is it to what you want? What explains that rating? How will you prepare to purchase? What is behind your timing? Then summarize and agree on the next step."
+      }
     },
     {
       "chapter": "Retain",
       "title": "Before your next client conversation",
       "lead": "Write down when you will practice again.",
       "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>At your next showing</h3><p>Give the buyer space, then ask about the experience.</p></div><div class=\"row\"><h3>After the conversation</h3><p>Save preferences, timing, and the agreed task in Follow Up Boss.</p></div><div class=\"row\"><h3>Before Day 4</h3><p>Bring one question buyers ask when financing comes up.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>",
-      "notes": "Ask each agent to name one behavior they will practice. Within 24 hours, ask them to explain it without notes. In three days, use a new scenario. In seven days, review an actual example. These are suggested coaching intervals; no reminders are sent.",
+      "notes": "In live sessions, closing the session creates 24-hour recall, three-day fresh-case, and seven-day coach-review assignments. Confirm each agent’s named coach and session timezone. Agents see due work in Rep; the daily digest links to due or reviewable work. In self-paced study, arrange these checks with a coach. Without a relevant client opportunity, use a fresh fictional case and label real-work application not yet observed. Practice readiness is separate from quiz certification and activation.",
       "cue": "Tell your partner what you will practice and when.",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day3-before-your-next-client-conversation",
+      "sourceScreen": 19,
+      "activity": {
+        "id": "day3-before-your-next-client-conversation",
+        "kind": "commitment",
+        "prompt": "Write down when you will practice again.",
+        "fields": [
+          {
+            "id": "commitment",
+            "label": "My practice partner, time, and focus"
+          }
+        ]
+      }
     }
   ],
   "cases": [
@@ -211,5 +476,7 @@
     }
   ],
   "hero": "/workshops/house.jpg",
-  "resources": "<h3>Write the follow-up record</h3><label class=\"field\">Write the true stage, a factual note, and a dated task.<textarea data-save=\"record\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Check your work</summary><div>Stage matches the event. Note includes specific preferences and timing without guesses. Task names the agreed action and date. Ask your coach to review the record.</div></details><h3>What would you ask without the slides?</h3><label class=\"field\">List the questions you would use after a showing.<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Compare with the lesson</summary><div>Is any home worth pursuing? How close is it to what you want? What explains that rating? How will you prepare to purchase? What is behind your timing? Then summarize and agree on the next step.</div></details><h3>Before your next client conversation</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>At your next showing</h3><p>Give the buyer space, then ask about the experience.</p></div><div class=\"row\"><h3>After the conversation</h3><p>Save preferences, timing, and the agreed task in Follow Up Boss.</p></div><div class=\"row\"><h3>Before Day 4</h3><p>Bring one question buyers ask when financing comes up.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>"
+  "resources": "<div class=\"rows\"><div class=\"row\"><h3>Live sessions</h3><p>Sign in to your assigned session. Submit answers to your presenter; unsubmitted text remains private. If the presenter moves on, finish the current activity and use Return to presenter to catch up.</p></div><div class=\"row\"><h3>Practice again</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check is evidence of saved actions. Observed practice, coach readiness, quiz certification, and activation are separate.</p></div></div>",
+  "version": "2026-09-12-live-v1",
+  "duration": 75
 }

@@ -3,24 +3,91 @@
   "title": "Winning the first conversation",
   "slides": [
     {
-      "chapter": "Start",
-      "title": "Winning the first conversation",
-      "lead": "Zillow Preferred · Day 2",
-      "body": "<div class=\"hero-bottom\"><p>Introduce yourself.<br>Offer a showing.<br>Listen to the buyer.</p><div class=\"hero-ticket\"><span>Today’s practice</span><strong>Make a first call and agree on a showing.</strong><small>Work with a partner. Give specific feedback. Try again.</small></div></div>",
-      "notes": "Invite a recent example from one person, then begin. Keep the opening to two minutes.",
-      "cue": "Ask: What would you like to get better at today?",
-      "time": 2,
-      "theme": "hero"
+      "id": "day2-opening-decision",
+      "chapter": "Start with practice",
+      "title": "Jordan asked for a showing",
+      "lead": "Jordan asked for a showing. What do you do first?",
+      "time": 3,
+      "body": "<div class=\"choices\" data-quiz=\"day2-opening\"><button data-option-id=\"budget\" data-correct=\"false\" data-feedback=\"Help with the request early. A recognizable introduction and showing invitation create the opportunity to meet; financial screening can put a barrier before that meeting. Read the buyer’s response and adapt.\">Start with budget questions.</button><button data-option-id=\"introduction-invitation\" data-correct=\"true\" data-feedback=\"Help with the request early. A recognizable introduction and showing invitation create the opportunity to meet; financial screening can put a barrier before that meeting. Read the buyer’s response and adapt.\">Introduce yourself and offer two showing times.</button><button data-option-id=\"process\" data-correct=\"false\" data-feedback=\"Help with the request early. A recognizable introduction and showing invitation create the opportunity to meet; financial screening can put a barrier before that meeting. Read the buyer’s response and adapt.\">Explain the full buying process.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Write the opening and invitation you would actually use, with your brokerage.<textarea data-save=\"opening-invitation\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Reveal a short coaching model</summary><div>Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane. Would Saturday morning or afternoon work better?</div></details>",
+      "notes": "Have every agent submit an individual response before revealing the model. Compare the main pattern in the room, then demonstrate once. The choice is a warm-up, not proof of skill; the next activity is an observed attempt.",
+      "cue": "Submit your choice and wording before the example.",
+      "theme": "blue",
+      "activity": {
+        "id": "day2-opening-decision",
+        "kind": "choice",
+        "prompt": "Jordan asked for a showing. What do you do first?",
+        "choices": [
+          {
+            "id": "budget",
+            "text": "Start with budget questions."
+          },
+          {
+            "id": "introduction-invitation",
+            "text": "Introduce yourself and offer two showing times."
+          },
+          {
+            "id": "process",
+            "text": "Explain the full buying process."
+          }
+        ],
+        "correctChoiceId": "introduction-invitation",
+        "explanation": "Help with the request early. A recognizable introduction and showing invitation create the opportunity to meet; financial screening can put a barrier before that meeting. Read the buyer’s response and adapt.",
+        "model": "Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane. Would Saturday morning or afternoon work better?",
+        "fields": [
+          {
+            "id": "opening-invitation",
+            "label": "Write the opening and invitation you would actually use, with your brokerage."
+          }
+        ]
+      }
     },
     {
-      "chapter": "Start",
-      "title": "What is the buyer trying to do?",
-      "lead": "They asked about a home. Begin there.",
-      "body": "<div class=\"split\"><div><blockquote>“Hi, I asked about 1234 Lane. Can I see it this weekend?”</blockquote></div><div><h3>Which response helps them first?</h3><div class=\"choices\" data-quiz=\"opening\"><button data-correct=\"false\" data-feedback=\"Do not turn the first call into financial screening.\">“Are you pre-approved, and what is your down payment?”</button><button data-correct=\"true\" data-feedback=\"Yes. Introduce yourself and offer a relevant appointment early.\">“I’m Sam with Northside Realty, a featured Zillow agent calling about 1234 Lane. Would Saturday morning or afternoon work?”</button><button data-correct=\"false\" data-feedback=\"Explain your role briefly, then help with the buyer’s request.\">“Let me tell you how our program works.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p></div></div>",
-      "notes": "Ask everyone to vote. Invite someone to describe a time a sales call felt like an interview. Keep examples to one sentence.",
-      "cue": "What would make this buyer want to keep talking?",
-      "time": 3,
-      "theme": "blue"
+      "id": "day2-first-opening-practice",
+      "chapter": "Start with practice",
+      "title": "Try the opening, hear feedback, retry",
+      "lead": "Speak to your partner. Use the buyer’s request and your own brokerage.",
+      "time": 6,
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>One short model</h3><p>After everyone submits, the presenter reveals and demonstrates the opening once.</p></div><div class=\"row\"><h3>Your first attempt</h3><p>Buyer: you asked to see 1234 Lane and can do Saturday morning. Agent: introduce yourself and extend the invitation.</p></div><div class=\"row\"><h3>One correction and retry</h3><p>Observer names the phrase they heard and one specific change. Retry that part, then swap.</p></div></div>",
+      "notes": "Reveal the opening example from the previous screen and model it in under a minute. Use five minutes for speaking turns, feedback, and retries. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding. All four introduction details matter: name, brokerage, featured-partner relationship with Zillow, and reason for calling. Offer the meeting early so the buyer can act on their request. An appropriately delayed invitation is a coaching discussion, not automatic failure.",
+      "cue": "Which specific phrase made the call recognizable and the invitation easy to answer?",
+      "theme": "sage",
+      "activity": {
+        "id": "day2-first-opening-practice",
+        "kind": "roleplay",
+        "prompt": "Speak to your partner. Use the buyer’s request and your own brokerage.",
+        "rubric": [
+          {
+            "id": "introduction",
+            "label": "Introduces name, brokerage, Zillow featured-partner relationship, and reason for calling"
+          },
+          {
+            "id": "invitation",
+            "label": "Offers a relevant appointment early; discusses a delay rather than automatically failing it"
+          },
+          {
+            "id": "responsive",
+            "label": "Response fits what the buyer said"
+          },
+          {
+            "id": "listening",
+            "label": "Asks permission and follows the buyer’s answer"
+          },
+          {
+            "id": "summary",
+            "label": "Summarizes the buyer’s need and the agreed plan"
+          }
+        ],
+        "fields": [
+          {
+            "id": "correction",
+            "label": "What one correction will you retry?"
+          },
+          {
+            "id": "retry",
+            "label": "What changed in your retry?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Prepare",
@@ -30,7 +97,9 @@
       "notes": "This timing comes from the supplied training. Use the team’s actual notification workflow. Do not place a duplicate call while someone is already speaking with the buyer.",
       "cue": "What would you check before dialing?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day2-call-promptly-after-accepting-the-lead",
+      "sourceScreen": 3
     },
     {
       "chapter": "LEAD",
@@ -40,27 +109,9 @@
       "notes": "Use Eric’s LEAD order. An early invitation is the default; respond to an urgent question or the actual situation when needed. Do not insert qualification questions before the invitation.",
       "cue": "Say the four letters and what each asks you to do.",
       "time": 4,
-      "theme": "dark"
-    },
-    {
-      "chapter": "LEAD",
-      "title": "Introduce yourself in about ten seconds",
-      "lead": "Include your name, brokerage, Zillow connection, and the property.",
-      "body": "<div class=\"split\"><div><blockquote>“Hi Jordan, I’m Sam with Northside Realty, a featured agent on Zillow. I’m calling about your request to see 1234 Lane.”</blockquote></div><div><label class=\"field\">Write your opening using your actual brokerage.<textarea data-save=\"intro\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
-      "notes": "Model it once, then have partners say it three times without reading. Listen for all four details. Keep it conversational; do not reward speed alone.",
-      "cue": "Which detail helps the buyer recognize this call?",
-      "time": 3,
-      "theme": "paper"
-    },
-    {
-      "chapter": "LEAD",
-      "title": "Offer two showing times",
-      "lead": "Make it easy for the buyer to answer.",
-      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Start with two options</h3><p>“Would Saturday morning or afternoon work better?”</p></div><div class=\"row\"><h3>If neither works</h3><p>“What time would work for you?”</p></div><div class=\"row\"><h3>If they ask a question</h3><p>Answer what you know, clarify what you need to check, then return to the invitation.</p></div></div></div><div><label class=\"field\">Write two realistic showing options.<textarea data-save=\"invitation\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
-      "notes": "Have one partner accept, one decline both times, then one ask a property question. Let the agent respond to the situation without restarting the whole script.",
-      "cue": "Practice each response with your partner.",
-      "time": 4,
-      "theme": "blue"
+      "theme": "dark",
+      "id": "day2-use-lead-on-the-first-call",
+      "sourceScreen": 4
     },
     {
       "chapter": "LEAD",
@@ -70,7 +121,9 @@
       "notes": "Use the buyer’s stated preferences. Do not infer family circumstances or steer based on personal characteristics. Practice one follow-up question that uses the buyer’s exact words.",
       "cue": "What would you ask after “I need a quieter space to work”?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day2-ask-permission-and-listen",
+      "sourceScreen": 7
     },
     {
       "chapter": "LEAD",
@@ -80,7 +133,30 @@
       "notes": "State the distinction once. Do not teach agents to ignore questions the buyer voluntarily raises. Acknowledge and arrange the appropriate help.",
       "cue": "What can you learn without screening the buyer?",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day2-save-financial-screening-for-the-right-conversation",
+      "sourceScreen": 8,
+      "activity": {
+        "id": "day2-save-financial-screening-for-the-right-conversation",
+        "kind": "choice",
+        "prompt": "The first showing invitation does not depend on pre-approval.",
+        "choices": [
+          {
+            "id": "choice-1",
+            "text": "Confirm the showing and ask what interested them."
+          },
+          {
+            "id": "choice-2",
+            "text": "Require a down-payment amount before offering a time."
+          },
+          {
+            "id": "choice-3",
+            "text": "Collect income and credit details."
+          }
+        ],
+        "correctChoiceId": "choice-1",
+        "explanation": "Correct. Help with access, learn what matters, and confirm the plan."
+      }
     },
     {
       "chapter": "LEAD",
@@ -90,7 +166,20 @@
       "notes": "Ask the buyer role to correct one detail. The agent should acknowledge the correction and update the plan. A summary is not an invitation to add a sales pitch.",
       "cue": "What would you put into the contact note?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day2-summarize-the-buyers-words-and-the-plan",
+      "sourceScreen": 9,
+      "activity": {
+        "id": "day2-summarize-the-buyers-words-and-the-plan",
+        "kind": "written",
+        "prompt": "Confirm details they can correct.",
+        "fields": [
+          {
+            "id": "summary",
+            "label": "Write a summary from your partner’s example."
+          }
+        ]
+      }
     },
     {
       "chapter": "Questions",
@@ -100,7 +189,9 @@
       "notes": "Do not imply a relationship with the listing agent that does not exist. Never hide known property status to obtain an appointment. Ask the room to improve an evasive answer.",
       "cue": "What would you say if you do not know the answer?",
       "time": 3,
-      "theme": "dark"
+      "theme": "dark",
+      "id": "day2-answer-the-question-honestly",
+      "sourceScreen": 10
     },
     {
       "chapter": "Questions",
@@ -110,17 +201,69 @@
       "notes": "Use truthful status plus a useful next step. Do not promise access, availability, or that a contract will fall through. Let the buyer decide whether alternatives are useful.",
       "cue": "Which part answers the question directly?",
       "time": 3,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day2-if-the-home-is-under-contract",
+      "sourceScreen": 11,
+      "activity": {
+        "id": "day2-if-the-home-is-under-contract",
+        "kind": "written",
+        "prompt": "Tell the buyer what you know, then discuss what is still possible.",
+        "fields": [
+          {
+            "id": "status",
+            "label": "Say the update in your own words."
+          }
+        ]
+      }
     },
     {
       "chapter": "Practice",
-      "title": "Practice the opening and invitation",
+      "title": "Practice the other invitation responses",
       "lead": "Partners alternate after each attempt.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Round 1 · Buyer is ready</h3><p>Introduce yourself and offer two showing times.</p></div><div class=\"row\"><h3>Round 2 · Buyer asks about the home</h3><p>Answer what you know or explain what you will check. Return to scheduling when appropriate.</p></div><div class=\"row\"><h3>Round 3 · Times do not work</h3><p>Find an option that does. Confirm the next step.</p></div></div>",
-      "notes": "Give each agent 30 seconds per round and 30 seconds of feedback. Repeat only the part that needs work. Do not let the observer coach during the attempt.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Buyer asks about the home</h3><p>Answer what you know or explain what you will check. Return to scheduling when appropriate.</p></div><div class=\"row\"><h3>Neither time works</h3><p>Ask what time would work, then confirm the next step.</p></div><div class=\"row\"><h3>Feedback and retry</h3><p>Each agent takes both situations. Correct one phrase, not the entire script.</p></div></div>",
+      "notes": "Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding. Keep the invitation flexible and connected to the buyer’s actual response.",
       "cue": "Name one specific phrase that helped the buyer.",
-      "time": 5,
-      "theme": "sage"
+      "time": 4,
+      "theme": "sage",
+      "id": "day2-practice-the-opening-and-invitation",
+      "sourceScreen": 12,
+      "activity": {
+        "id": "day2-practice-the-opening-and-invitation",
+        "kind": "roleplay",
+        "prompt": "Partners alternate after each attempt.",
+        "rubric": [
+          {
+            "id": "introduction",
+            "label": "Introduces name, brokerage, Zillow featured-partner relationship, and reason for calling"
+          },
+          {
+            "id": "invitation",
+            "label": "Offers a relevant appointment early; discusses a delay rather than automatically failing it"
+          },
+          {
+            "id": "responsive",
+            "label": "Response fits what the buyer said"
+          },
+          {
+            "id": "listening",
+            "label": "Asks permission and follows the buyer’s answer"
+          },
+          {
+            "id": "summary",
+            "label": "Summarizes the buyer’s need and the agreed plan"
+          }
+        ],
+        "fields": [
+          {
+            "id": "correction",
+            "label": "What specific correction will you retry?"
+          },
+          {
+            "id": "retry",
+            "label": "What changed in your retry?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Practice",
@@ -130,17 +273,69 @@
       "notes": "Partners choose a response without telling the agent. The agent asks permission and one follow-up. Ask the buyer whether the question helped them explain their need.",
       "cue": "Did you follow the answer, or change the subject?",
       "time": 4,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day2-ask-a-follow-up-that-fits-the-answer",
+      "sourceScreen": 13,
+      "activity": {
+        "id": "day2-ask-a-follow-up-that-fits-the-answer",
+        "kind": "written",
+        "prompt": "Use a different buyer response each time.",
+        "fields": [
+          {
+            "id": "question",
+            "label": "Write one follow-up for each response."
+          }
+        ]
+      }
     },
     {
       "chapter": "Practice",
       "title": "Run the whole first call",
       "lead": "Agent, buyer, observer. Rotate so everyone makes a call.",
       "body": "<div class=\"split\"><div><div class=\"scenario\" id=\"scenario\"></div><button data-action=\"scenario\">Next buyer case</button></div><div><div class=\"scorecard\"><label><input type=\"checkbox\" data-save=\"rubric-0\"> Introduces name, brokerage, Zillow, and purpose</label><label><input type=\"checkbox\" data-save=\"rubric-1\"> Offers the appointment early</label><label><input type=\"checkbox\" data-save=\"rubric-2\"> Asks permission and follows the buyer’s answer</label><label><input type=\"checkbox\" data-save=\"rubric-3\"> Summarizes the need and confirms the plan</label></div><p id=\"score\" class=\"score\" aria-live=\"polite\"></p><button data-action=\"clear-score\">Clear score for next agent</button></div></div>",
-      "notes": "Allow 1 minute for roles. Each round: 3-minute call, 1-minute feedback, 1-minute retry. Rotate three times. If pairs, the buyer gives feedback and both complete a call. Fictional case details are practice material.",
+      "notes": "Allow 1 minute for roles. Each round: 3-minute call, 1-minute feedback, 1-minute retry. Rotate three times. If pairs, the buyer gives feedback and both complete a call. Fictional case details are practice material. Give every agent a speaking turn, one specific correction, and a targeted retry. Use the meeting platform for breakout rooms. In pairs, the buyer supplies the observation; in trios, rotate agent, buyer, observer. Do not label a peer or self-check as coach sign-off. If no partner is present, assign a coach or leave the observation outstanding.",
       "cue": "Observer: describe what you heard, then request one retry.",
       "time": 16,
-      "theme": "blue"
+      "theme": "blue",
+      "id": "day2-run-the-whole-first-call",
+      "sourceScreen": 14,
+      "activity": {
+        "id": "day2-run-the-whole-first-call",
+        "kind": "roleplay",
+        "prompt": "Agent, buyer, observer. Rotate so everyone makes a call.",
+        "rubric": [
+          {
+            "id": "introduction",
+            "label": "Introduces name, brokerage, Zillow featured-partner relationship, and reason for calling"
+          },
+          {
+            "id": "invitation",
+            "label": "Offers a relevant appointment early; discusses a delay rather than automatically failing it"
+          },
+          {
+            "id": "responsive",
+            "label": "Response fits what the buyer said"
+          },
+          {
+            "id": "listening",
+            "label": "Asks permission and follows the buyer’s answer"
+          },
+          {
+            "id": "summary",
+            "label": "Summarizes the buyer’s need and the agreed plan"
+          }
+        ],
+        "fields": [
+          {
+            "id": "correction",
+            "label": "What specific correction will you retry?"
+          },
+          {
+            "id": "retry",
+            "label": "What changed in your retry?"
+          }
+        ]
+      }
     },
     {
       "chapter": "Follow up",
@@ -150,7 +345,9 @@
       "notes": "Have each agent leave a 20-second voicemail. Use their actual callback number in real calls. Text is useful for logistics; move detailed property or financing discussion to a call.",
       "cue": "Does the message explain who you are and why you called?",
       "time": 3,
-      "theme": "paper"
+      "theme": "paper",
+      "id": "day2-if-they-do-not-answer",
+      "sourceScreen": 15
     },
     {
       "chapter": "Follow up",
@@ -160,7 +357,9 @@
       "notes": "This uses Eric’s current doctrine. Remove the original implication that later effort is wasted. Ask an agent to distinguish an automated touch from a personal attempt. Do not invent a new cadence beyond the first week.",
       "cue": "Which attempts would you count in a contact history?",
       "time": 3,
-      "theme": "dark"
+      "theme": "dark",
+      "id": "day2-make-at-least-five-personal-attempts-in-the-first-seven-days",
+      "sourceScreen": 16
     },
     {
       "chapter": "Retain",
@@ -170,17 +369,44 @@
       "notes": "Allow 45 seconds without notes. Ask a partner to identify one missing detail. Have the agent redo that part aloud.",
       "cue": "Where does the showing invitation belong?",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day2-explain-lead-without-looking-back",
+      "sourceScreen": 17,
+      "activity": {
+        "id": "day2-explain-lead-without-looking-back",
+        "kind": "written",
+        "prompt": "Write first. Compare with a partner. Then check.",
+        "fields": [
+          {
+            "id": "recall",
+            "label": "What happens at L, E, A, and D?"
+          }
+        ],
+        "model": "Lead with who you are. Extend the invitation early. Ask permission and listen. Deliver a summary and confirm the plan."
+      }
     },
     {
       "chapter": "Retain",
       "title": "Before your next client conversation",
       "lead": "Write down when you will practice again.",
       "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>After the call</h3><p>Save the true stage, a useful note, and the next dated task.</p></div><div class=\"row\"><h3>Within 24 hours</h3><p>Make a practice call without reading a script.</p></div><div class=\"row\"><h3>With your coach</h3><p>Review one first call for LEAD order and a clear agreed next step.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>",
-      "notes": "Ask each agent to name one behavior they will practice. Within 24 hours, ask them to explain it without notes. In three days, use a new scenario. In seven days, review an actual example. These are suggested coaching intervals; no reminders are sent.",
+      "notes": "In live sessions, closing the session creates 24-hour recall, three-day fresh-case, and seven-day coach-review assignments. Confirm each agent’s named coach and session timezone. Agents see due work in Rep; the daily digest links to due or reviewable work. In self-paced study, arrange these checks with a coach. Without a relevant client opportunity, use a fresh fictional case and label real-work application not yet observed. Practice readiness is separate from quiz certification and activation.",
       "cue": "Tell your partner what you will practice and when.",
       "time": 3,
-      "theme": "sage"
+      "theme": "sage",
+      "id": "day2-before-your-next-client-conversation",
+      "sourceScreen": 18,
+      "activity": {
+        "id": "day2-before-your-next-client-conversation",
+        "kind": "commitment",
+        "prompt": "Write down when you will practice again.",
+        "fields": [
+          {
+            "id": "commitment",
+            "label": "My practice partner, time, and focus"
+          }
+        ]
+      }
     }
   ],
   "cases": [
@@ -201,5 +427,7 @@
     }
   ],
   "hero": "/workshops/house.jpg",
-  "resources": "<h3>Explain LEAD without looking back</h3><label class=\"field\">What happens at L, E, A, and D?<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label><details class=\"reveal\"><summary>Check the order</summary><div>Lead with who you are. Extend the invitation early. Ask permission and listen. Deliver a summary and confirm the plan.</div></details><h3>Before your next client conversation</h3><div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>After the call</h3><p>Save the true stage, a useful note, and the next dated task.</p></div><div class=\"row\"><h3>Within 24 hours</h3><p>Make a practice call without reading a script.</p></div><div class=\"row\"><h3>With your coach</h3><p>Review one first call for LEAD order and a clear agreed next step.</p></div></div></div><div><label class=\"field\">My practice partner, time, and focus<textarea data-save=\"commitment\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div><div class=\"actions\"><button data-action=\"download\">Download my notes</button><button data-action=\"resources\">Open field guide</button></div>"
+  "resources": "<div class=\"rows\"><div class=\"row\"><h3>Live sessions</h3><p>Sign in to your assigned session. Submit answers to your presenter; unsubmitted text remains private. If the presenter moves on, finish the current activity and use Return to presenter to catch up.</p></div><div class=\"row\"><h3>Practice again</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check is evidence of saved actions. Observed practice, coach readiness, quiz certification, and activation are separate.</p></div></div>",
+  "version": "2026-09-12-live-v1",
+  "duration": 67
 }
