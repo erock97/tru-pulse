@@ -278,7 +278,7 @@ function Lobby() {
               </label>
             </div>
             <p role="status">
-              {filteredAgents.length} matching agents �{" "}
+              {filteredAgents.length} matching agents |{" "}
               {Object.keys(roster).length} selected. Selections stay selected
               when you change filters.
             </p>
