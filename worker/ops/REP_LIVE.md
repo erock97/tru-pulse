@@ -22,7 +22,7 @@ Named coaches can review their own assigned follow-ups without being session pre
 - `POST /rep/sessions/:id/commands`: `slide`, `open`, `timer`, `reveal`, `group`, or `end` per `shared/liveWorkshops.ts`.
 - `POST /rep/sessions/:id/progress`: activity ID and optional status/help/actions/dirty metadata. Omitted fields preserve existing values. Explicit help resolution increments a durable count.
 - `POST /rep/sessions/:id/submissions`: `{id,activityId,response}`. Written responses use field IDs; records use `response.submission`. Response `{ok,attempt}`. Duplicate ID with changed content is refused.
-- `POST /rep/sessions/:id/observations`: `{id,groupId,criteria,correction,retry}`. Identity/round/coach status come from the authenticated assignment, not client assertions.
+- `POST /rep/sessions/:id/observations`: `{id,groupId,criteria,correction,retry,speakingObserved:true,retryObserved:false}`. Identity/round/coach status come from the authenticated assignment, not client assertions.
 - `GET /rep/sessions/deliveries`: administrator-only status, attempts, and error history for the latest 100 daily deliveries. No submitted response text.
 - Existing `/rep/record/grade` accepts optional `sessionId,activityId,attemptId`; no-context callers retain existing behavior.
 - Existing `/data/coaching-assignments?agentId=...` merges durable live follow-ups with unchanged legacy assignments. `practice` records learner reflection; `review` records the named coach's outcome and optional boolean/null `applicationObserved`.
@@ -59,3 +59,5 @@ The isolated run processed 50 validated submissions in 224 ms and submissions pl
 Rollback is `REP_LIVE_SESSIONS=0` and `REP_LIVE_DIGESTS=0`. This disables live routes/mail while preserving sessions, assignments, legacy courses, and historical certification. Do not drop tables or alter learner history to roll back.
 
 The default Worker test command runs Vitest for application tests and Node’s native runner for the existing `ops/link-hermes-team.test.mjs`; that file previously failed when Vitest tried to load the Node test module. No existing test is skipped.
+
+Spoken practice requires the observer to explicitly confirm `speakingObserved=true`. `retryObserved` is a separate boolean and defaults false; retry prose does not establish that a retry happened. Existing rows receive false for both fields so historical notes are never retroactively promoted into observed performance.

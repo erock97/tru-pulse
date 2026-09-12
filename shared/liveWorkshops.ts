@@ -25,7 +25,7 @@ export interface LiveGroup {
 export interface LiveObservation {
   id: string; groupId: string; activityId: string; agentId: string;
   observerId: string; round: number; criteria: Record<string, boolean>;
-  correction: string; retry: string; coachReviewed: boolean; submittedAt: string;
+  correction: string; retry: string; speakingObserved: boolean; retryObserved: boolean; coachReviewed: boolean; submittedAt: string;
 }
 export interface LiveSessionSummary {
   id: string; day: number; title: string; version: string; timezone: string;

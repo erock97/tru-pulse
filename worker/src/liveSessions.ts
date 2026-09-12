@@ -38,7 +38,7 @@ export function liveStateForView(raw:RawLiveState,viewerId:string,view:LiveView)
   openedActivityIds:s.opened_activity_ids,revealedActivityIds:revealed,timerEndsAt:s.timer_ends_at,participants,
   progress:raw.progress.filter(x=>presenter||x.agent_id===raw.myAgentId).map(x=>({agentId:x.agent_id,activityId:x.activity_id,status:x.status,help:x.help,actions:x.actions,dirty:x.dirty,helpResolvedCount:x.help_resolved_count??0,updatedAt:x.updated_at})),
   attempts:raw.attempts.filter(x=>presenter||x.agent_id===raw.myAgentId).map(mapAttempt),groups,
-  observations:raw.observations.filter(x=>presenter||x.agent_id===raw.myAgentId||x.observer_id===viewerId).map(x=>({id:x.id,groupId:x.group_id,activityId:x.activity_id,agentId:x.agent_id,observerId:x.observer_id,round:x.round,criteria:x.criteria,correction:x.correction,retry:x.retry,coachReviewed:x.coach_reviewed,submittedAt:x.submitted_at} as LiveObservation)),
+  observations:raw.observations.filter(x=>presenter||x.agent_id===raw.myAgentId||x.observer_id===viewerId).map(x=>({id:x.id,groupId:x.group_id,activityId:x.activity_id,agentId:x.agent_id,observerId:x.observer_id,round:x.round,criteria:x.criteria,correction:x.correction,retry:x.retry,speakingObserved:x.speaking_observed===true,retryObserved:x.retry_observed===true,coachReviewed:x.coach_reviewed,submittedAt:x.submitted_at} as LiveObservation)),
   followups:raw.followups.filter(x=>presenter||x.agentId===raw.myAgentId),choiceTotals:raw.choiceTotals?Object.fromEntries(Object.entries(raw.choiceTotals).filter(([id])=>presenter||revealed.includes(id))):totals,
  };
  if(view==='shared'){

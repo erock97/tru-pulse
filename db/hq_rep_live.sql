@@ -37,9 +37,11 @@ create table if not exists public.rep_live_observations (
  id uuid primary key, session_id uuid not null references rep_live_sessions(id), group_id text not null,
  activity_id text not null, agent_id uuid not null references agents(id), observer_id uuid not null references auth.users(id),
  round integer not null check(round>0), criteria jsonb not null, correction text not null, retry text not null,
- coach_reviewed boolean not null default false, submitted_at timestamptz not null default clock_timestamp(),
+ coach_reviewed boolean not null default false, speaking_observed boolean not null default false, retry_observed boolean not null default false, submitted_at timestamptz not null default clock_timestamp(),
  unique(session_id,group_id,observer_id)
 );
+alter table rep_live_observations add column if not exists speaking_observed boolean not null default false;
+alter table rep_live_observations add column if not exists retry_observed boolean not null default false;
 -- Same assignment shape and UI as existing coaching assignments, durable for live work.
 create table if not exists public.rep_live_followups (
  id uuid primary key default gen_random_uuid(), session_id uuid not null references rep_live_sessions(id),
@@ -191,18 +193,20 @@ begin
   if group_row is null then raise exception 'Practice group unavailable'; end if;
   if (is_presenter or group_row->>'coachId'=p_actor::text or coalesce(group_row->>'observerId',group_row->>'buyerId')=own_agent::text) is not true then raise exception 'Only the assigned observer may submit feedback'; end if;
   if (is_presenter or group_row->>'coachId'=p_actor::text) and not rep_live_can_see(p_actor,(group_row->>'agentId')::uuid) then raise exception 'Coach cannot review this team'; end if;
+  if p_body->'speakingObserved' is distinct from 'true'::jsonb then raise exception 'Confirm you observed this learner speak'; end if;
+  if p_body?'retryObserved' and jsonb_typeof(p_body->'retryObserved')<>'boolean' then raise exception 'Confirm whether you observed the retry'; end if;
   if length(trim(coalesce(p_body->>'correction',''))) not between 1 and 1200 or length(trim(coalesce(p_body->>'retry',''))) not between 1 and 1200 then raise exception 'Feedback too long'; end if;
   if jsonb_typeof(p_body->'criteria')<>'object' or exists(select 1 from jsonb_each(p_body->'criteria') e where jsonb_typeof(e.value)<>'boolean' or not exists(select 1 from jsonb_array_elements(s.definition->'activities') ac,jsonb_array_elements(ac->'rubric') rub where ac->>'id'=group_row->>'activityId' and rub->>'id'=e.key)) then raise exception 'Invalid observation criteria'; end if;
   select * into obs from rep_live_observations where session_id=s.id and group_id=group_row->>'id' and observer_id=p_actor;
   if found then
-   if obs.criteria=p_body->'criteria' and obs.correction=coalesce(p_body->>'correction','') and obs.retry=coalesce(p_body->>'retry','') then return jsonb_build_object('ok',true); else raise exception 'Create a new round for another observation'; end if;
+   if obs.criteria=p_body->'criteria' and obs.correction=coalesce(p_body->>'correction','') and obs.retry=coalesce(p_body->>'retry','') and obs.speaking_observed=true and obs.retry_observed=coalesce((p_body->>'retryObserved')::boolean,false) then return jsonb_build_object('ok',true); else raise exception 'Create a new round for another observation'; end if;
   end if;
-  insert into rep_live_observations(id,session_id,group_id,activity_id,agent_id,observer_id,round,criteria,correction,retry,coach_reviewed,submitted_at)
+  insert into rep_live_observations(id,session_id,group_id,activity_id,agent_id,observer_id,round,criteria,correction,retry,coach_reviewed,speaking_observed,retry_observed,submitted_at)
    values((p_body->>'id')::uuid,s.id,group_row->>'id',group_row->>'activityId',(group_row->>'agentId')::uuid,p_actor,(group_row->>'round')::integer,
-    p_body->'criteria',coalesce(p_body->>'correction',''),coalesce(p_body->>'retry',''),is_presenter,t)
+    p_body->'criteria',coalesce(p_body->>'correction',''),coalesce(p_body->>'retry',''),is_presenter,true,coalesce((p_body->>'retryObserved')::boolean,false),t)
    on conflict(id) do nothing returning * into obs;
   if not found then select * into obs from rep_live_observations where id=(p_body->>'id')::uuid;
-   if obs.session_id<>s.id or obs.observer_id<>p_actor or obs.group_id<>group_row->>'id' or obs.criteria<>p_body->'criteria' or obs.correction<>coalesce(p_body->>'correction','') or obs.retry<>coalesce(p_body->>'retry','') then raise exception 'Observation id already used'; end if;
+   if obs.session_id<>s.id or obs.observer_id<>p_actor or obs.group_id<>group_row->>'id' or obs.criteria<>p_body->'criteria' or obs.correction<>coalesce(p_body->>'correction','') or obs.retry<>coalesce(p_body->>'retry','') or obs.speaking_observed<>true or obs.retry_observed<>coalesce((p_body->>'retryObserved')::boolean,false) then raise exception 'Observation id already used'; end if;
   end if;
  elsif p_action='end' then
   if s.status='ended' then return jsonb_build_object('ok',true); end if;

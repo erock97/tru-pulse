@@ -108,12 +108,15 @@ describe('durable live session transactions and access',()=>{
   await mutate(admin,'open',{activityId:roleplay.id},sid);
   const group={id:'round-one',activityId:roleplay.id,round:1,agentId:agentA,buyerId:agentB,observerId:null};
   await mutate(admin,'group',{group},sid);
-  const observation={id:id(61),groupId:group.id,criteria:Object.fromEntries(roleplay.rubric!.map(r=>[r.id,true])),correction:'Listen to the buyer',retry:'Tried the invitation again'};
+  const observation={id:id(61),groupId:group.id,speakingObserved:true,retryObserved:false,criteria:Object.fromEntries(roleplay.rubric!.map(r=>[r.id,true])),correction:'Listen to the buyer',retry:'Tried the invitation again'};
   await expect(mutate(userA,'observe',observation,sid)).rejects.toThrow('assigned observer');
+  await expect(mutate(userB,'observe',{...observation,speakingObserved:false},sid)).rejects.toThrow('observed this learner speak');
+  await expect(mutate(userB,'observe',{...observation,speakingObserved:undefined},sid)).rejects.toThrow('observed this learner speak');
   await mutate(userB,'observe',observation,sid);await mutate(userB,'observe',{...observation,id:id(62)},sid);
-  await mutate(admin,'observe',{...observation,id:id(63)},sid);
-  const results=await pg.query('select coach_reviewed from rep_live_observations where session_id=$1',[sid]);expect(results.rows).toHaveLength(2);
+  await mutate(admin,'observe',{...observation,id:id(63),retryObserved:true},sid);
+  const results=await pg.query('select coach_reviewed,speaking_observed,retry_observed from rep_live_observations where session_id=$1',[sid]);expect(results.rows).toHaveLength(2);
   expect(results.rows.map((x:any)=>x.coach_reviewed).sort()).toEqual([false,true]);
+  expect(results.rows.every((x:any)=>x.speaking_observed===true)).toBe(true);expect(results.rows.map((x:any)=>x.retry_observed).sort()).toEqual([false,true]);
   await expect(mutate(admin,'group',{group:{...group,round:2}},sid)).rejects.toThrow('new round');
  });
  it('poll cursor avoids loading unchanged content after authorization',async()=>{
