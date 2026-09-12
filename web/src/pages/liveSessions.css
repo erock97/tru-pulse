@@ -1,20 +1,22 @@
 .live-rep {
   min-height: 100vh;
-  background: #172521;
-  color: #f1f1e9;
+  background: #f3f1eb;
+  color: #253239;
   font-family: "DM Sans", system-ui, sans-serif;
   line-height: 1.55;
 }
 .live-top {
+  background: #253239;
+  color: #f5f2e9;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 5vw;
-  border-bottom: 1px solid #4a5a4d;
+  border-bottom: 1px solid #414d52;
   letter-spacing: 0.12em;
   font-size: 12px;
 }
-.live-top > a {
+.live-rep .live-top > a {
   font-size: 24px;
   letter-spacing: -0.05em;
   color: #faf7ea;
@@ -50,13 +52,13 @@
 .live-intro {
   max-width: 800px;
   font-size: 20px;
-  color: #d5ddcf;
+  color: #4c595f;
 }
 .live-rep a {
-  color: #cee0a7;
+  color: #705111;
 }
 .live-rep .cw-work a {
-  color: #24573e;
+  color: #705111;
 }
 .live-grid {
   display: grid;
@@ -69,44 +71,50 @@
   gap: 22px;
 }
 .live-card {
-  border: 1px solid #627162;
+  border: 1px solid #ddded5;
   border-radius: 12px;
   padding: 24px;
   margin: 20px 0;
-  background: #21332c;
+  background: #fcfbf7;
 }
 .live-rep button,
 .live-button {
-  font: 600 15px/1.3 inherit;
-  border: 1px solid #aab896;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  border: 1px solid #705111;
   border-radius: 7px;
   min-height: 44px;
   padding: 11px 16px;
-  background: #d2dfb4;
-  color: #1c2a20;
+  background: #705111;
+  color: #ffffff;
   cursor: pointer;
 }
 .live-rep button:disabled {
-  opacity: 0.5;
+  background: #dedbd2;
+  color: #526066;
+  border-color: #b7b9b0;
+  opacity: 1;
   cursor: default;
 }
 .live-rep .live-button {
   display: inline-block;
-  color: #1c2a20;
+  color: #ffffff;
   text-decoration: none;
 }
 .live-rep :is(button, input, textarea, select, a, summary):focus-visible {
-  outline: 3px solid #efc17b;
+  outline: 3px solid #705111;
   outline-offset: 4px;
 }
 .live-rep
   :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
   box-sizing: border-box;
   font: inherit;
-  border: 1px solid #97a58e;
+  border: 1px solid #a8ada9;
   border-radius: 5px;
-  background: #15251e;
-  color: #faf9ed;
+  background: #ffffff;
+  color: #253239;
   padding: 10px;
   display: block;
   width: 100%;
@@ -116,7 +124,7 @@
 .live-rep input:is([type="checkbox"], [type="radio"]) {
   width: 20px;
   height: 20px;
-  accent-color: #cfe1b0;
+  accent-color: #705111;
   margin-right: 10px;
   vertical-align: middle;
 }
@@ -125,7 +133,7 @@
   font-weight: 500;
 }
 .live-rep fieldset {
-  border: 1px solid #61715e;
+  border: 1px solid #ddded5;
   border-radius: 6px;
   margin: 20px 0;
   padding: 16px;
@@ -147,14 +155,14 @@
 }
 .live-private,
 .live-notice {
-  background: #48462b;
-  color: #fff1c5;
+  background: #eee5ce;
+  color: #58451b;
   padding: 14px 18px;
   border-radius: 6px;
 }
 .live-error {
-  background: #542e28;
-  color: #ffe7da;
+  background: #fbecea;
+  color: #892e23;
   padding: 14px;
   border-radius: 6px;
 }
@@ -163,11 +171,11 @@
   gap: 24px;
   align-items: center;
   flex-wrap: wrap;
-  border-top: 1px solid #68735f;
-  border-bottom: 1px solid #68735f;
+  border-top: 1px solid #ddded5;
+  border-bottom: 1px solid #ddded5;
   padding: 16px 0;
   margin-bottom: 24px;
-  color: #d9e3cb;
+  color: #4c595f;
 }
 .live-session-bar time {
   font-size: 32px;
@@ -181,7 +189,7 @@
   padding: 18px 0;
 }
 .live-person {
-  border-top: 1px solid #647460;
+  border-top: 1px solid #ddded5;
   padding: 15px 0;
 }
 .live-person summary {
@@ -192,7 +200,7 @@
 }
 .live-person summary small {
   grid-column: 1/-1;
-  color: #c9d2c2;
+  color: #4c595f;
 }
 .live-rep summary {
   cursor: pointer;
@@ -201,7 +209,7 @@
 .live-answer {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  background: #17271f;
+  background: #eeece5;
   padding: 14px;
   border-radius: 6px;
 }
@@ -213,25 +221,25 @@
 }
 .live-answer dt {
   font-size: 12px;
-  color: #bdcdac;
+  color: #4c595f;
 }
 .live-answer dd {
   margin: 0 0 0 12px;
 }
 .live-attempt {
   margin: 18px 0;
-  border-top: 1px solid #4c5f4c;
+  border-top: 1px solid #ddded5;
 }
 .live-roster-choice {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   align-items: center;
   gap: 16px;
   padding: 12px 0;
-  border-bottom: 1px solid #496045;
+  border-bottom: 1px solid #ddded5;
 }
 .live-choice-list label {
-  border: 1px solid #758769;
+  border: 1px solid #a8ada9;
   padding: 14px;
   margin: 10px 0;
   border-radius: 6px;
@@ -242,7 +250,7 @@
 }
 .live-rep blockquote {
   font-size: 21px;
-  border-left: 3px solid #d5ba85;
+  border-left: 3px solid #c4af76;
   padding-left: 20px;
   margin-left: 0;
 }
@@ -263,6 +271,8 @@
   font-size: 22px;
 }
 .live-shared .live-top {
+  background: #253239;
+  color: #f5f2e9;
   pointer-events: none;
 }
 @media (max-width: 1000px) {
@@ -294,10 +304,19 @@
 .live-report th,
 .live-report td {
   text-align: left;
-  border-bottom: 1px solid #61735d;
+  border-bottom: 1px solid #ddded5;
   padding: 12px;
   vertical-align: top;
 }
 .live-table-wrap {
   overflow-x: auto;
+}
+
+.live-rep button:hover:not(:disabled),
+.live-button:hover {
+  background: #59400d;
+  color: #fff;
+}
+.live-rep .live-top a:focus-visible {
+  outline-color: #f2d798;
 }

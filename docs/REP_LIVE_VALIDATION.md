@@ -3,7 +3,7 @@
 ## Passing checks
 
 - Frontend TypeScript check; 498 tests in 59 files.
-- Worker TypeScript check; 786 Vitest tests in 54 files; six existing native Node operations tests.
+- Worker TypeScript check; 788 Vitest tests in 54 files; six existing native Node operations tests.
 - Frontend production build. The existing application still emits Vite's large-chunk advisory; the build succeeds.
 - Whitespace/diff validation.
 - Isolated additive migration execution in PGlite with service-role grants, browser-role denials, and cross-team result scoping.
@@ -16,7 +16,7 @@ The browser connected to the real React app on port 5173 and the isolated Worker
 
 | Flow | Observed result |
 |---|---|
-| Mixed-team creation | Presenter selected two teams and their own named coaches; agents received their assigned session. |
+| Mixed-team creation | Presenter selected agents from two teams and created a session without assigning coaches or sending a second invitation. The authenticated creator became both agents' follow-up coach. |
 | Original FUB control | Stage menu, native Save control, and original server grader produced a persisted record-check attempt. |
 | Edit after success and refresh | The new stage remained saved; the learner saw that the current record differed from the last checked submission. |
 | Presenter advancement | Unfinished work stayed on screen with the presenter-moved notice. |
@@ -34,7 +34,7 @@ Browser checks complement the SQL/transport tests for access failures, invalid o
 
 ## Concurrency result
 
-In the final full test run, 50 concurrent submissions through actual validation and durable SQL completed in **497 ms**. Those submissions plus 50 authorized state reads completed in **945 ms** on this local machine. An earlier isolated run measured 654 ms for the same combined sequence.
+In the final full test run, 50 concurrent submissions through actual validation and durable SQL completed in **376 ms**. Those submissions plus 50 authorized state reads completed in **891 ms** on this local machine. An earlier isolated run measured 654 ms for the same combined sequence.
 
 These measurements exclude browser polling delay, network latency, and hosted Supabase/Worker performance. They do not establish a production three-second SLA. A staged 50-learner test remains a release gate.
 

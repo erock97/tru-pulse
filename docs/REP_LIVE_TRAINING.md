@@ -23,18 +23,20 @@ Open `http://127.0.0.1:8790/preview/login?user=presenter` to create a session. T
 
 ## Run a session
 
-1. In Rep, choose **Join or run a live training session**. A global administrator selects the training, timezone, agents, coaches, and any additional authorized presenters. Unlinked accounts and missing email addresses are identified before joining.
-2. Share the agent join link through the existing meeting invitation. Agents must use their own TRU login; possession of the link does not authorize access.
+1. In Rep, choose **Join or run a live training session**. A global administrator selects the training and agents. The signed-in presenter automatically owns all follow-up, including across teams. The timezone defaults to the browser timezone; another presenter is optional. Unlinked accounts and missing email addresses are identified before joining.
+2. Selected agents open the session from Rep in their existing TRU accounts. No second invitation is required. The join link is an optional shortcut and does not authorize access by itself.
 3. Keep the **presenter console** private. Open **shared presentation** in a separate window and share only that window through the meeting platform. Never share the console.
 4. Choose the slide. Selecting an activity slide opens that activity; the explicit Open button also supports returning to an already selected activity. Start or extend the timer. Learners retain an unfinished activity when you move ahead and can select **Return to presenter** when ready.
 5. Look at the first independent answer totals, explicit help requests, and missing record actions. Expand an agent only when you need their submitted evidence. Draft writing stays in that agent's browser.
 6. Reveal one example after the first responses, coach one gap, and ask for a retry. Attempts after a reveal are labeled assisted; earlier attempts remain unchanged.
-7. For spoken practice, create rotating pairs or trios from joined participants, or assign rounds individually. Place those groups in the meeting platform's breakout rooms. A round names the speaking learner, buyer, and observer. In a pair, the buyer observes. Assign a coach for solo practice or leave its observation outstanding. Add late arrivals explicitly.
+7. For optional partner practice, create rotating pairs or trios from joined participants, or assign rounds individually. Place those groups in the meeting platform's breakout rooms. A round names the speaking learner, buyer, and observer. In a pair, the buyer observes. Assign a coach for solo practice or leave its observation outstanding. Add late arrivals explicitly.
 8. End the session to create its 24-hour, three-day, and seven-day follow-ups once. Learners can still finish previously opened activities. Coaching review happens through existing assignments; ending does not certify or activate anyone.
 
 Team leaders and coaches can choose **Coach evidence & follow-up** from the session list or an assignment. This private, read-only session view shows their authorized agents' original attempts, revisions, and observations alongside the existing assignment review form. It does not require presenter permission or grant session controls. Its summary denominators cover only the visible agents.
 
 The Welcome pilot is 57 minutes. First Conversation is 67, Show Like a Pro is 75, and Home Loans is 54. Extend practice rather than skipping attempts. Each original FUB exercise is a distinct case. Navigation in People/search needs a coach's observation in the actual training account; the simulator starts inside the contact.
+
+The session screens use the existing premium app palette: warm off-white surfaces, charcoal navigation and text, and restrained gold actions. Original training visuals and the FUB simulator keep their own styles.
 
 ## What results mean
 
@@ -60,7 +62,7 @@ All routes use the existing opaque session cookie. Mutations validate Origin and
 |---|---|
 | `GET /rep/sessions` | Enabled state and accessible sessions. |
 | `GET /rep/sessions/preflight` | Authorized creation capability, agents, linked accounts, eligible coaches. |
-| `POST /rep/sessions` | `{id,day,timezone,participants:[{agentId,coachId}],presenterIds}`; returns `{ok,id}`. |
+| `POST /rep/sessions` | `{id,day,timezone,participants:[{agentId,coachId?}],presenterIds}`; returns `{ok,id}`. |
 | `GET /rep/sessions/:id?view=agent\|presenter\|shared\|coach&cursor=...` | Authorized snapshot or `{unchanged,cursor,serverTime}`. `canReview` permits team-scoped evidence review; `canPresent` separately permits presenter controls. |
 | `POST /rep/sessions/:id/join` | Authenticated join / presence heartbeat. |
 | `POST /rep/sessions/:id/commands` | `slide`, `open`, `timer`, `reveal`, `group`, `end`; exact types in `shared/liveWorkshops.ts`. |
@@ -84,7 +86,7 @@ Global administrators create sessions. Team leaders/coaches receive individual e
 
 ## Follow-up and email
 
-Live follow-ups extend `GET/POST /data/coaching-assignments`; existing KV-backed assignments remain intact. A session/agent/checkpoint uniqueness constraint prevents duplicate assignments. The named coach owns the review. Fresh-case prompts are frozen into the assignment at session end. Practice and review history are retained.
+Live follow-ups extend `GET/POST /data/coaching-assignments`; existing KV-backed assignments remain intact. A session/agent/checkpoint uniqueness constraint prevents duplicate assignments. The creating presenter owns the review by default. Explicit API coach overrides remain supported. Fresh-case prompts are frozen into the assignment at session end. Practice and review history are retained.
 
 Both `REP_LIVE_SESSIONS=1` and `REP_LIVE_DIGESTS=1` are required to send live-training digests. The existing scheduled Worker invokes the digest runner. It combines due/overdue/awaiting-review training work per recipient, starts after 08:00 in the selected session timezone, and includes links without response text. With assignments across timezones, the earliest due assignment in the digest determines the displayed scheduling timezone.
 

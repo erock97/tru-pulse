@@ -126,10 +126,7 @@ function Lobby() {
         id: crypto.randomUUID(),
         day,
         timezone,
-        participants: Object.entries(roster).map(([agentId, coachId]) => ({
-          agentId,
-          coachId,
-        })),
+        participants: Object.keys(roster).map((agentId) => ({ agentId })),
         presenterIds: presenters,
       });
       window.location.hash = link(result.id, "presenter");
@@ -140,10 +137,11 @@ function Lobby() {
     }
   }
   return (
-    <Frame title="Practice together. Coach the next attempt.">
+    <Frame title="Live training">
       <p className="live-intro">
-        Join your assigned session. Your submitted work reaches your presenter;
-        your draft stays on this device.
+        {preflight?.canCreate
+          ? "Select your agents, create a session, and start teaching. Their responses and follow-up come back to you."
+          : "Open your assigned session and follow along. Your responses reach your presenter when you submit."}
       </p>
       {error && (
         <div role="alert" className="live-error">
@@ -171,8 +169,14 @@ function Lobby() {
               {s.timezone} · Version {s.version}
             </p>
             <div className="live-actions">
-              <a className="live-button" href={link(s.id)}>
-                Agent workspace
+              <a
+                className="live-button"
+                href={link(
+                  s.id,
+                  s.canPresent ? "presenter" : s.canReview ? "coach" : "agent",
+                )}
+              >
+                Open session
               </a>
               {s.canPresent && (
                 <a href={link(s.id, "presenter")}>Presenter console →</a>
@@ -191,8 +195,8 @@ function Lobby() {
         <section className="live-card">
           <h2>Start a session</h2>
           <p>
-            Select the roster and a named follow-up coach for every agent. The
-            same session can include several teams.
+            Choose your training and agents. You lead the session and receive
+            their follow-up automatically.
           </p>
           <div className="live-grid">
             <label>
@@ -229,7 +233,7 @@ function Lobby() {
             </label>
           </div>
           <fieldset>
-            <legend>Roster and follow-up coaches</legend>
+            <legend>Select agents</legend>
             {preflight.agents.map((a) => (
               <div className="live-roster-choice" key={a.id}>
                 <label>
@@ -254,60 +258,40 @@ function Lobby() {
                       ? "Email missing"
                       : "Account linked"}
                 </span>
-                {a.id in roster && (
-                  <label>
-                    Coach for {a.name}
-                    <select
-                      value={roster[a.id]}
-                      onChange={(e) =>
-                        setRoster((r) => ({ ...r, [a.id]: e.target.value }))
-                      }
-                    >
-                      <option value="">Choose coach</option>
-                      {preflight.coaches
-                        .filter((c) => !c.orgId || c.orgId === a.orgId)
-                        .map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                )}
               </div>
             ))}
           </fieldset>
-          <fieldset>
-            <legend>Additional authorized presenters</legend>
-            {preflight.coaches.map((c) => (
-              <label className="live-inline" key={c.id}>
-                <input
-                  type="checkbox"
-                  checked={presenters.includes(c.id)}
-                  onChange={(e) =>
-                    setPresenters((p) =>
-                      e.target.checked
-                        ? [...p, c.id]
-                        : p.filter((id) => id !== c.id),
-                    )
-                  }
-                />
-                {c.name}
-              </label>
-            ))}
-          </fieldset>
+          <details>
+            <summary>Add another presenter (optional)</summary>
+            <fieldset>
+              <legend>Additional presenter</legend>
+              {preflight.coaches
+                .filter((c) => c.id !== preflight.viewerId)
+                .map((c) => (
+                  <label className="live-inline" key={c.id}>
+                    <input
+                      type="checkbox"
+                      checked={presenters.includes(c.id)}
+                      onChange={(e) =>
+                        setPresenters((p) =>
+                          e.target.checked
+                            ? [...p, c.id]
+                            : p.filter((id) => id !== c.id),
+                        )
+                      }
+                    />
+                    {c.name}
+                  </label>
+                ))}
+            </fieldset>
+          </details>
           <p>
-            Unlinked accounts must finish their existing TRU invitation before
-            joining. Share the session link through your meeting invitation. A
-            link alone does not give access.
+            Selected agents will see this session in their existing TRU
+            accounts. No new invitation is needed. An agent whose account is not
+            yet linked must complete their existing account setup.
           </p>
           <button
-            disabled={
-              busy ||
-              Object.keys(roster).length === 0 ||
-              Object.values(roster).some((c) => !c) ||
-              !timezone
-            }
+            disabled={busy || Object.keys(roster).length === 0 || !timezone}
             onClick={() => void create()}
           >
             {busy ? "Creating…" : "Create session"}
