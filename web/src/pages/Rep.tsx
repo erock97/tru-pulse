@@ -297,6 +297,11 @@ function RepDeck({ org, onHome }: { org: { id: string; name: string }; onHome?: 
         <div className="rp-canvas dk-main" ref={canvasRef}>
           <div className="rp-ambient" aria-hidden /><PracticeFollowup edit/>
 
+          <section className="rep-live-entry" aria-label="Live training sessions">
+            <div><h2>Live training sessions</h2><p>Select agents across teams, connect their screens, and lead the workshop together.</p></div>
+            <a href="#/rep/sessions">Run or join a session →</a>
+          </section>
+
           {/* ============ MASTHEAD + THE TRACK ============ */}
           <header className="dk-mast">
             <div>

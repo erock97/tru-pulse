@@ -19,3 +19,9 @@
   .rep-workshop-card>div {padding:18px 0}
   .rep-workshop-card h3 {font-size:21px}
 }
+.rep-live-entry{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:0 0 28px;padding:24px;background:#e5e7df;color:#20292c;border:1px solid #b9c3bd;border-radius:12px}
+.rep-live-entry h2{margin:0 0 8px;font-size:24px;color:inherit}
+.rep-live-entry p{margin:0;line-height:1.5;color:inherit}
+.rep-live-entry a{display:inline-flex;align-items:center;min-height:48px;padding:12px 20px;border-radius:7px;background:#293b43;color:#fff;text-decoration:none;font-weight:600;white-space:nowrap}
+.rep-live-entry a:focus-visible{outline:3px solid #487bac;outline-offset:4px}
+@media(max-width:650px){.rep-live-entry{align-items:stretch;flex-direction:column;padding:20px}.rep-live-entry a{justify-content:center;white-space:normal}}
