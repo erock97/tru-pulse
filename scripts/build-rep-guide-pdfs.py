@@ -1,0 +1,84 @@
+"""Build print-ready companions after build-rep-guides.mjs.
+
+Requires reportlab and beautifulsoup4. HTML remains the source of every paragraph.
+Run: python scripts/build-rep-guide-pdfs.py
+"""
+from pathlib import Path
+from html import escape
+from bs4 import BeautifulSoup, NavigableString
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether
+
+ROOT = Path(__file__).resolve().parents[1]
+DIRECTORY = ROOT / 'web/public/workshops'
+INK = colors.HexColor('#20292c')
+styles = {
+    'p': ParagraphStyle('Body', fontName='Helvetica', fontSize=10, leading=14, spaceAfter=8, textColor=INK),
+    'h1': ParagraphStyle('Title', fontName='Helvetica-Bold', fontSize=25, leading=29, spaceAfter=16, keepWithNext=True, textColor=INK),
+    'h2': ParagraphStyle('Section', fontName='Helvetica-Bold', fontSize=16, leading=19, spaceBefore=16, spaceAfter=9, keepWithNext=True, textColor=INK),
+    'h3': ParagraphStyle('Activity', fontName='Helvetica-Bold', fontSize=12, leading=16, spaceBefore=7, spaceAfter=7, keepWithNext=True, textColor=INK),
+    'li': ParagraphStyle('List', fontName='Helvetica', fontSize=10, leading=14, leftIndent=12, firstLineIndent=-9, spaceAfter=5, textColor=INK),
+    'blockquote': ParagraphStyle('Model', fontName='Helvetica-Oblique', fontSize=10, leading=14, leftIndent=15, rightIndent=10, spaceBefore=5, spaceAfter=10, textColor=INK),
+    'meta': ParagraphStyle('Cue', fontName='Helvetica', fontSize=8, leading=11, spaceBefore=12, spaceAfter=3, keepWithNext=True, textColor=colors.HexColor('#51635c')),
+}
+
+def clean(text):
+    return text.translate(str.maketrans({'\u2011':'-', '\u2013':'-', '\u2014':' - ', '\u2192':' -> ', '\u202f':' ', '\u00a0':' '}))
+
+def inline(node):
+    if isinstance(node, NavigableString):
+        return escape(clean(str(node)))
+    inner = ''.join(inline(child) for child in node.children)
+    if node.name == 'strong': return f'<b>{inner}</b>'
+    if node.name in ('em','i'): return f'<i>{inner}</i>'
+    if node.name == 'br': return '<br/>'
+    if node.name == 'a' and node.get('href','').startswith('https://'):
+        return f'<a href="{escape(node["href"],quote=True)}" color="#234c69">{inner}</a>'
+    return inner
+
+def flow(node):
+    if isinstance(node,NavigableString) or node.name == 'nav': return []
+    if 'writing' in node.get('class',[]):
+        return [Spacer(1,45), HRFlowable(width='100%',thickness=.4,color=colors.HexColor('#adbab3')),Spacer(1,10)]
+    if node.name in styles:
+        key = 'meta' if 'meta' in node.get('class',[]) else node.name
+        text = inline(node)
+        if node.name == 'li': text = '- ' + text
+        paragraph = Paragraph(text,styles[key])
+        if node.name == 'p' and node.get_text(strip=True).endswith(':'):
+            paragraph.keepWithNext = True
+        return [paragraph]
+    result = []
+    children = [child for child in node.children if not isinstance(child,NavigableString)]
+    index = 0
+    while index < len(children):
+        child = children[index]
+        if index + 1 < len(children) and 'writing' in children[index+1].get('class',[]):
+            result.append(KeepTogether(flow(child) + flow(children[index+1])))
+            index += 2
+        else:
+            result.extend(flow(child))
+            index += 1
+    if node.name == 'ul': return [KeepTogether(result)]
+    return result
+
+for day in range(1,5):
+    for kind in ('guide','resources'):
+        source = DIRECTORY / f'day{day}-{kind}.html'
+        soup = BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')
+        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent worksheet')
+        output = source.with_suffix('.pdf')
+        def footer(canvas,doc):
+            canvas.saveState()
+            canvas.setFont('Helvetica',8)
+            canvas.setFillColor(colors.HexColor('#51635c'))
+            canvas.drawString(42,25,f'TRU Rep | {title}')
+            canvas.drawRightString(letter[0]-42,25,str(doc.page))
+            canvas.restoreState()
+        doc = SimpleDocTemplate(str(output),pagesize=letter,rightMargin=42,leftMargin=42,
+            topMargin=35,bottomMargin=43,title=title,author='TRU',allowSplitting=True)
+        doc.build(flow(soup.main),onFirstPage=footer,onLaterPages=footer)
+        print(output.name)

@@ -65,3 +65,23 @@ Spoken practice requires the observer to explicitly confirm `speakingObserved=tr
 The read-only `coach` view and `canReview` capability let current team leaders/coaches inspect their own team's submitted evidence and follow-ups even when they are not session presenters. `canPresent` remains independent; this view grants no advance/reveal/group/end permissions. Foreign-team participants, attempts, and private follow-up are filtered by current database roles.
 
 Creating a session requires only the selected participants, training, and timezone. The authenticated global-admin creator becomes the follow-up coach for every participant unless `coachId` explicitly selects another currently authorized coach. Omitted, null, or blank values use the creator; client-supplied creator IDs never determine this default.
+
+## Local HTTP/polling load check
+
+From `worker/`, start an isolated adapter (PowerShell):
+
+```powershell
+$env:REP_PREVIEW_PORT='8792'
+$env:REP_PREVIEW_WEB_PORT='5174'
+$env:REP_PREVIEW_LOAD='1'
+npm run preview:live
+```
+
+In a second terminal, also from `worker/`, run `node ops/live-load.mjs`.
+It uses 50 fixture identities across two teams, three submission rounds, and
+the application's two-second poll interval for presenter/learners. It writes
+`docs/rep-qa-coverage-evidence/local-http-load.json`. `REP_LOAD_URL` may select a
+different loopback port; the runner refuses remote hosts. `REP_LOAD_OUTPUT`
+can select a different results file. No email is sent; only local assignments
+are created. The port selects a separate `.wrangler/live-preview-<port>` database.
+This validates loopback request/poll behavior, not hosted latency or rendering.

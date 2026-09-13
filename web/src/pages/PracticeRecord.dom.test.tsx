@@ -11,6 +11,8 @@ describe('native record controls in the workshop shadow root',()=>{
  beforeEach(()=>{
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
   vi.stubGlobal('ResizeObserver',class{observe(){} disconnect(){}});
+  HTMLDialogElement.prototype.showModal=vi.fn(function(this:HTMLDialogElement){this.open=true;});
+  HTMLDialogElement.prototype.close=vi.fn(function(this:HTMLDialogElement){this.open=false;});
   vi.spyOn(HTMLElement.prototype,'clientWidth','get').mockReturnValue(1810);
   const host=document.createElement('div');document.body.append(host);
   container=document.createElement('div');host.attachShadow({mode:'open'}).append(container);root=createRoot(container);

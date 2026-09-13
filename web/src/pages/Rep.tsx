@@ -40,16 +40,9 @@ const ROSTER_CAP = 10;
 const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
-/* ---- Preview-only card coercion: an uploaded `t:'media'` asset renders for
-   real in the learner course (Block 4 — signed playback/PDF/slide viewer).
-   Until that ships, the leader's preview here degrades it to a plain chip so
-   the walkthrough never shows a blank screen or crashes on an unknown type. ---- */
+/* Preview uses the same signed media player as the learner course. */
 function previewCards(cards: LessonCard[] | null | undefined): LessonCard[] {
-  return (cards ?? []).map((c) => {
-    if (c.t !== 'media') return c;
-    const kindLabel = c.kind ? c.kind.toUpperCase() : 'FILE';
-    return { t: 'callout', body: `📎 ${kindLabel} attached — “${c.title || c.path || 'untitled'}”. Renders for agents once the media player ships.` };
-  });
+  return (cards ?? []).map((c) => ({ ...c }));
 }
 
 /* ---- satellite count-up tile (varied sizes) ---- */
@@ -790,7 +783,7 @@ function mediaKindOf(fileName: string): 'video' | 'pdf' | 'slide' {
    quiz questions — matches saveRepQuestions's delete-all+insert
    semantics, which requires an existing module id.
    ============================================================ */
-function ModuleEditor({ orgId, module, onClose, onSaved }: {
+export function ModuleEditor({ orgId, module, onClose, onSaved }: {
   orgId: string;
   module: RepModule | null;
   onClose: () => void;
@@ -808,6 +801,7 @@ function ModuleEditor({ orgId, module, onClose, onSaved }: {
   const [err, setErr] = useState('');
   const [previewing, setPreviewing] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const savedModuleId = useRef(module?.id);
 
   // Existing quiz: the real answer/explain, via the leader-only /answers route
   // (Block 4) — no more re-confirm-every-answer friction. Falls back to the old
@@ -894,11 +888,13 @@ function ModuleEditor({ orgId, module, onClose, onSaved }: {
   }
 
   const hasUnresolved = questions.some((qq) => qq.unresolved);
-  const questionsValid = questions.length > 0 && questions.every((qq) => qq.prompt.trim() && qq.choices.filter((c) => c.trim()).length >= 2);
+  const questionsValid = questions.length > 0 && questions.every((qq) =>
+    qq.prompt.trim() && qq.choices.length >= 2 && qq.choices.every(c => c.trim()) &&
+    Number.isInteger(qq.answer) && qq.answer >= 0 && qq.answer < qq.choices.length);
   const canPublish = title.trim().length > 0 && questionsValid && !hasUnresolved;
 
   async function handleSave(status: 'draft' | 'published') {
-    if (busy || qLoading) return;
+    if (busy || qLoading || uploading) return;
     setErr('');
     if (!title.trim()) { setErr('Give the module a title first.'); return; }
     if (status === 'published' && !canPublish) {
@@ -909,15 +905,20 @@ function ModuleEditor({ orgId, module, onClose, onSaved }: {
     }
     setBusy(status);
     try {
-      const saved = await saveRepModule({
-        id: module?.id, org_id: orgId, title: title.trim(), summary: summary.trim() || null,
-        cards, pass_pct: passPct, status,
-      });
-      if (questions.length) {
-        await saveRepQuestions(saved.id, questions.map((qq, i) => ({
+      // Keep incomplete work out of the learner catalog. A failed quiz write
+      // leaves a recoverable draft, and retries continue the same module.
+      const content = {
+        org_id: orgId, title: title.trim(), summary: summary.trim() || null,
+        cards, pass_pct: passPct,
+      };
+      const saved = await saveRepModule({ ...content, id: savedModuleId.current, status: 'draft' });
+      savedModuleId.current = saved.id;
+      await saveRepQuestions(saved.id, questions.map((qq, i) => ({
           prompt: qq.prompt.trim(), choices: qq.choices.map((c) => c.trim()), answer: qq.answer,
           explain: qq.explain.trim() || null, idx: i + 1,
-        })));
+      })));
+      if (status === 'published') {
+        await saveRepModule({ ...content, id: saved.id, status: 'published' });
       }
       onSaved();
     } catch (e) {
@@ -1047,8 +1048,8 @@ function ModuleEditor({ orgId, module, onClose, onSaved }: {
         </div>
 
         <div className="rp-editor-foot">
-          <button className="rp-invite" disabled={busy !== null} onClick={() => void handleSave('draft')}>{busy === 'draft' ? 'Saving…' : 'Save as draft'}</button>
-          <button className="rp-signoff" disabled={busy !== null || qLoading} onClick={() => void handleSave('published')}>{busy === 'published' ? 'Publishing…' : 'Publish'}</button>
+          <button className="rp-invite" disabled={busy !== null || qLoading || uploading} onClick={() => void handleSave('draft')}>{busy === 'draft' ? 'Saving…' : 'Save as draft'}</button>
+          <button className="rp-signoff" disabled={busy !== null || qLoading || uploading} onClick={() => void handleSave('published')}>{busy === 'published' ? 'Publishing…' : 'Publish'}</button>
         </div>
       </div>
     </div>

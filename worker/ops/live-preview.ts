@@ -11,9 +11,12 @@ import {readCookie} from '../src/session.js';
 import {gradeRecord,gradeFaults} from '../src/repLab/records.js';
 import type {Env} from '../src/env.js';
 const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-const fixtures={presenter:{id:id(1),name:'TRU Preview Presenter',email:'presenter@example.test',agent:null},alice:{id:id(4),name:'Alice · Preview team A',email:'alice@example.test',agent:id(30)},blair:{id:id(5),name:'Blair · Preview team B',email:'blair@example.test',agent:id(31)},coach:{id:id(2),name:'Preview Team A Coach',email:'coach@example.test',agent:null}};
-mkdirSync(new URL('../.wrangler/live-preview/',import.meta.url),{recursive:true});
-const pg=new PGlite(new URL('../.wrangler/live-preview/',import.meta.url).pathname.replace(/^\/([A-Z]:)/,'$1'));
+const port=Number(process.env.REP_PREVIEW_PORT??8790),webPort=Number(process.env.REP_PREVIEW_WEB_PORT??5173);
+if (![port,webPort].every(p=>Number.isInteger(p)&&p>1024&&p<65536)) throw Error('Invalid local preview port');
+const fixtures:Record<string,{id:string,name:string,email:string,agent:string|null}>={presenter:{id:id(1),name:'TRU Preview Presenter',email:'presenter@example.test',agent:null},alice:{id:id(4),name:'Alice · Preview team A',email:'alice@example.test',agent:id(30)},blair:{id:id(5),name:'Blair · Preview team B',email:'blair@example.test',agent:id(31)},coach:{id:id(2),name:'Preview Team A Coach',email:'coach@example.test',agent:null}};
+const dataDir=new URL(`../.wrangler/${port===8790?'live-preview':`live-preview-${port}`}/`,import.meta.url);
+mkdirSync(dataDir,{recursive:true});
+const pg=new PGlite(dataDir.pathname.replace(/^\/([A-Z]:)/,'$1'));
 const initialized=await pg.query("select schema_name from information_schema.schemata where schema_name='auth'");
 if(!initialized.rows.length){
  await pg.exec(`create role anon;create role authenticated;create role service_role;create schema auth;
@@ -28,10 +31,18 @@ if(!initialized.rows.length){
  insert into agents values('${id(30)}','${id(10)}','${id(20)}','Alice · Preview','alice@example.test','${id(4)}'),('${id(31)}','${id(11)}','${id(21)}','Blair · Preview','blair@example.test','${id(5)}');
  insert into memberships values('${id(10)}','${id(2)}','leader'),('${id(11)}','${id(3)}','leader');`);
 }
+if(process.env.REP_PREVIEW_LOAD==='1'){
+ for(let n=0;n<50;n++){
+  const name=`load${n}`,userId=id(100+n),agentId=id(200+n),email=`${name}@example.test`;
+  fixtures[name]={id:userId,name:`Load learner ${n}`,email,agent:agentId};
+  await pg.query('insert into auth.users(id,email) values($1,$2) on conflict(id) do nothing',[userId,email]);
+  await pg.query('insert into agents values($1,$2,$3,$4,$5,$6) on conflict(id) do nothing',[agentId,id(10+n%2),id(20+n%2),`Load learner ${n}`,email,userId]);
+ }
+}
 await pg.exec(readFileSync(new URL('../../db/hq_rep_live.sql',import.meta.url),'utf8'));
 const sessions=new Map<string,string>();
 for(const [name,f] of Object.entries(fixtures))sessions.set(`sess:preview-${name}`,JSON.stringify({userId:f.id,accessToken:`preview-${f.id}`,refreshToken:'local-only',createdAt:0,expiresAt:4102444800}));
-const env={REP_LIVE_SESSIONS:'1',REP_LIVE_DIGESTS:'0',SUPABASE_URL:'http://rep-preview.invalid',SUPABASE_SERVICE_ROLE_KEY:'local-service',SUPABASE_ANON_KEY:'local-anon',APP_ORIGIN:'http://127.0.0.1:5173',
+const env={REP_LIVE_SESSIONS:'1',REP_LIVE_DIGESTS:'0',SUPABASE_URL:'http://rep-preview.invalid',SUPABASE_SERVICE_ROLE_KEY:'local-service',SUPABASE_ANON_KEY:'local-anon',APP_ORIGIN:`http://127.0.0.1:${webPort}`,
  SESSIONS:{get:async(k:string,type?:string)=>{const r=sessions.get(k)??null;return type==='json'&&r?JSON.parse(r):r;},put:async(k:string,v:string)=>{sessions.set(k,v);},delete:async(k:string)=>{sessions.delete(k);},list:async()=>({keys:[],list_complete:true})}} as unknown as Env;
 const json=(v:unknown,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 globalThis.fetch=async(input:RequestInfo|URL,init?:RequestInit)=>{
@@ -65,7 +76,7 @@ const server=createServer(async(incoming,outgoing)=>{
   const url=new URL(incoming.url??'/',`http://${incoming.headers.host??'127.0.0.1:8790'}`);url.pathname=url.pathname.replace(/^\/api\//,'/');
   if(url.pathname==='/preview/login'){
    const name=url.searchParams.get('user')??'presenter';if(!(name in fixtures)){outgoing.writeHead(400);outgoing.end('Unknown preview identity');return;}
-   outgoing.writeHead(302,{'Set-Cookie':`hq_sid=preview-${name}; HttpOnly; SameSite=Lax; Path=/`,Location:`http://${url.hostname}:5173/#/rep/sessions`});outgoing.end();return;
+   outgoing.writeHead(302,{'Set-Cookie':`hq_sid=preview-${name}; HttpOnly; SameSite=Lax; Path=/`,Location:`http://${url.hostname}:${webPort}/#/rep/sessions`});outgoing.end();return;
   }
   const chunks:Buffer[]=[];for await(const chunk of incoming)chunks.push(Buffer.from(chunk));
   const req=new Request(url,{method:incoming.method,headers:incoming.headers as HeadersInit,body:['GET','HEAD'].includes(incoming.method??'GET')?undefined:Buffer.concat(chunks)});
@@ -85,4 +96,4 @@ const server=createServer(async(incoming,outgoing)=>{
   outgoing.writeHead(response.status,{...Object.fromEntries(response.headers),...cors});outgoing.end(await response.text());
  }catch(error){outgoing.writeHead(500,{'Content-Type':'application/json'});outgoing.end(JSON.stringify({error:String(error)}));}
 });
-server.listen(8790,'127.0.0.1',()=>console.log('Local training preview uses fixture accounts and embedded Postgres. Login: http://127.0.0.1:8790/preview/login?user=presenter'));
+server.listen(port,'127.0.0.1',()=>console.log(`Local training preview uses fixture accounts and embedded Postgres. Login: http://127.0.0.1:${port}/preview/login?user=presenter`));

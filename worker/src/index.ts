@@ -139,24 +139,6 @@ async function isOrgLeaderOrAdmin(database: ReturnType<typeof db>, userId: strin
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (s: string): boolean => UUID_RE.test(s);
 
-// db.ts has no delete() (every other write path is insert/upsert/update) —
-// authoring's replace-all question semantics need one, so this does a plain
-// service-role DELETE against PostgREST directly, matching db.ts's own header
-// shape rather than growing its surface for a single call site.
-async function deleteRepQuestions(env: Env, moduleId: string): Promise<void> {
-  const base = env.SUPABASE_URL.replace(/\/$/, '') + '/rest/v1';
-  const res = await fetch(`${base}/rep_questions?module_id=eq.${moduleId}`, {
-    method: 'DELETE',
-    headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
-  });
-  if (!res.ok) throw new Error(`delete rep_questions ${res.status}: ${await res.text()}`);
-}
-
 // Basic allow-list for authored media uploads (rep-media bucket). Extension is
 // the source of truth for the object key's suffix; contentType (when the
 // browser sends one) is cross-checked so a mislabeled file can't sneak past.
@@ -1553,6 +1535,12 @@ export default {
       if (!orgId || !title) return json({ error: 'org_id and title required' }, 422);
       if (!isUuid(orgId) || (id && !isUuid(id))) return json({ error: 'invalid id' }, 422);
       if (!(await isOrgLeaderOrAdmin(database, userId, orgId))) return json({ error: 'forbidden' }, 403);
+      if (body?.status != null && !['draft', 'published', 'archived'].includes(body.status)) {
+        return json({ error: 'invalid module status' }, 422);
+      }
+      if (body?.pass_pct != null && (!Number.isInteger(Number(body.pass_pct)) || Number(body.pass_pct) < 1 || Number(body.pass_pct) > 100)) {
+        return json({ error: 'pass_pct must be an integer between 1 and 100' }, 422);
+      }
       const patch: Record<string, unknown> = {
         title,
         summary: body?.summary ?? null,
@@ -1594,9 +1582,8 @@ export default {
       }
     }
 
-    // Author/replace a custom module's quiz questions (delete-all + insert is
-    // the simplest correct semantics here — the module's org/source is
-    // re-verified so a stale/forged module id can't write into another org).
+    // Replace the quiz atomically. The RPC locks the draft module and rolls
+    // back deletion if any replacement insert fails.
     const questionsMatch = url.pathname.match(/^\/rep\/modules\/([^/]+)\/questions$/);
     if (questionsMatch && req.method === 'POST') {
       const userId = await verifySupabaseUser(env, req.headers.get('Authorization'));
@@ -1611,28 +1598,14 @@ export default {
       const mod = rows[0] as any;
       if (mod.source !== 'custom') return json({ error: 'forbidden' }, 403);
       if (!(await isOrgLeaderOrAdmin(database, userId, mod.org_id))) return json({ error: 'forbidden' }, 403);
-      const payload = questions.map((q, i) => ({
-        module_id: moduleId,
-        idx: Number.isFinite(Number(q?.idx)) ? Number(q.idx) : i + 1,
-        prompt: String(q?.prompt ?? ''),
-        choices: Array.isArray(q?.choices) ? q.choices : [],
-        answer: Number.isFinite(Number(q?.answer)) ? Number(q.answer) : 0,
-        explain: q?.explain ?? null,
-      }));
-      if (payload.some((q) => !q.prompt || q.choices.length < 2)) {
-        return json({ error: 'each question needs a prompt and at least 2 choices' }, 422);
-      }
       try {
-        await deleteRepQuestions(env, moduleId);
-        if (payload.length) await database.upsert('rep_questions', payload);
         // Caller here is the authoring leader (not the learner grading path),
         // so returning answer/explain is deliberate — rep_questions_public
         // (hq_rep_agent.sql) is what actually reaches the browser for agents.
-        const saved = await database.select(
-          'rep_questions',
-          `module_id=eq.${moduleId}&select=id,idx,prompt,choices,answer,explain&order=idx`,
-        );
-        return json({ count: saved.length, questions: saved });
+        const saved = await database.rpc('rep_replace_custom_questions', {
+          p_module_id: moduleId, p_org_id: mod.org_id, p_questions: questions,
+        });
+        return json(saved);
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
