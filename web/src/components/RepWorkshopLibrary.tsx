@@ -24,7 +24,7 @@ export function RepWorkshopLibrary({ entries, presenter=false }: {entries: Works
             <span className="rep-workshop-eyebrow">DAY {entry.day} · {meta.minutes} MINUTES · FACILITATED WORKSHOP</span>
             <h3>{meta.title}</h3><p>{meta.summary}</p>
             <div className="rep-workshop-actions">
-              <button disabled={entry.disabled} onClick={entry.onOpen}>{presenter?'Present':'Open'} Day {entry.day}</button>
+              <button disabled={entry.disabled} onClick={entry.onOpen}>{presenter?'Preview':'Open'} Day {entry.day}</button>
               <a href={`/workshops/day${entry.day}-guide.html`} target="_blank" rel="noreferrer">Facilitator guide ↗</a>
             </div><small>{entry.status}</small>
           </div>

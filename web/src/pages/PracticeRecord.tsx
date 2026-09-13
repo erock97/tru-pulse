@@ -231,7 +231,7 @@ export function PracticeRecord({
   const pack = PACKS[scenario];
   const shotRef = useRef<HTMLDivElement | null>(null);
   const [k, setK] = useState(0);
-  const [enlarged, setEnlarged] = useState(false);
+  const [enlarged, setEnlarged] = useState(true);
 
   const [stage, setStage] = useState(pack.startStage);
   const [savedStage, setSavedStage] = useState(pack.startStage);
@@ -506,7 +506,7 @@ export function PracticeRecord({
       <div
         className={`fub${hint ? ' show-hints' : ''}${locked ? ' is-locked' : ''}`}
         ref={shotRef}
-        style={{ ['--k' as string]: String(k), minWidth: enlarged ? 1400 : undefined }}
+        style={{ ['--k' as string]: String(k), minWidth: enlarged ? 1810 : undefined }}
       >
         <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
 
