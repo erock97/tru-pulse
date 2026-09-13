@@ -4,8 +4,8 @@ import { secretsMatch } from './crypto.js';
 export { handleReportReceipts as handleCoachBriefIngest } from './reportReceipts.js';
 
 /** GET /coach/teams — lets desktop-side onboarding look up a team's TrueHQ UUID
- *  without touching the database directly. Same door, same secret as the report
- *  ingest: COACH_INGEST_TOKEN is the reporting/integration credential, deliberately
+ *  without touching the database directly. COACH_INGEST_TOKEN remains the separate
+ *  directory and run-event credential, deliberately
  *  not ADMIN_TOKEN, so this stays scoped to reporting setup and nothing else. Only
  *  the fields an onboarding flow needs — never FUB keys, tokens, or user emails. */
 export async function handleCoachTeamsList(
