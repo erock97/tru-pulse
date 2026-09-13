@@ -59,6 +59,8 @@ sql("""GRANT USAGE ON SCHEMA public TO anon,authenticated,service_role;
 """)
 migration = source/'supabase/migrations/20260908181709_report_receipt_controls.sql'
 sql(migration.read_text(encoding='utf-8'))
+policy_migration = source/'supabase/migrations/20260913153453_partial_report_release_policy.sql'
+sql(policy_migration.read_text(encoding='utf-8'))
 team, other, org, otherorg = [str(uuid.uuid4()) for _ in range(4)]
 sql(f'INSERT INTO orgs VALUES({q(org)}),({q(otherorg)}); INSERT INTO teams VALUES({q(team)},{q(org)},true),({q(other)},{q(otherorg)},true);')
 
@@ -75,7 +77,7 @@ def receipt(run): return json.loads(sql(f'SELECT coach_receipt_lookup({q(team)},
 def command(run, action='release', revision=None, op=None):
     r=receipt(run)
     return {'operationId':op or uuid.uuid4().hex,'action':action,'teamId':team,'runId':run,'expectedHash':r['payloadHash'],'expectedRevision':revision or r['revision'],'reason':'Synthetic rehearsal approval'}
-def control(c): return f'SELECT coach_receipt_control({q(team)},\'synthetic-operator\',{j(c)},{q(json.dumps(c,sort_keys=True,separators=(",",":")))},false);'
+def control(c, allow_partial=False): return f'SELECT coach_receipt_control({q(team)},\'synthetic-operator\',{j(c)},{q(json.dumps(c,sort_keys=True,separators=(",",":")))},{str(allow_partial).lower()});'
 
 check('migration applied on PostgreSQL', 'PostgreSQL 17.' in sql('SELECT version();'))
 check('anon cannot execute receipt lookup', sql("SELECT has_function_privilege('anon','coach_receipt_lookup(uuid,text)','EXECUTE');")=='f')
@@ -132,9 +134,12 @@ check('failed release leaves held revision and audit unchanged',receipt('conflic
 check('failed release restores existing derived evidence',sql("SELECT quote FROM coach_pattern_findings;")=='Synthetic evidence')
 
 sql(accept(payload('partial',coverage=False)),'service_role')
-rejected('partial release remains disabled',control(command('partial')),'partial_release_disabled')
+rejected('partial release requires receiver policy grant',control(command('partial')),'partial_release_disabled')
+sql(control(command('partial'),allow_partial=True),'service_role')
+check('explicit partial release publishes and preserves coverage disclosure',receipt('partial')['publicationStatus']=='published' and receipt('partial')['coverageState']=='partial')
 sql(accept(payload('unknown',coverage=None)),'service_role')
 check('absent coverage remains unknown',receipt('unknown')['coverageState']=='unknown')
+rejected('unknown coverage cannot release with partial policy grant',control(command('unknown'),allow_partial=True),'coverage_unknown')
 rejected('immutable payload guard',"UPDATE coach_weekly_reports SET payload='{}' WHERE run_id='unknown';",'immutable_receipt')
 rejected('direct publication blocked',"UPDATE coach_weekly_reports SET status='published' WHERE run_id='unknown';",'explicit_control_required')
 check('post-migration anon receipt tables inaccessible',sql("SELECT has_table_privilege('anon','coach_report_receipts','SELECT');")=='f')
@@ -145,10 +150,11 @@ sql(control(command('withdraw-rollback')),'service_role')
 badlegacy=payload('legacy-conflict','conflicting legacy quote')
 sql(f"INSERT INTO coach_weekly_reports(run_id,team_id,org_id,team_slug,status,week_start,week_end,payload,generated_at) VALUES('legacy-conflict',{q(team)},{q(org)},'synthetic','published','2026-09-01','2026-09-07',{j(badlegacy)},'2026-09-08T11:01:00Z');")
 before=sql('SELECT count(*) FROM coach_report_audit;')
+before_projection=sql('SELECT count(*) FROM coach_report_evidence_sources;')
 rejected('failed withdrawal aborts on conflicting remaining legacy evidence',control(command('withdraw-rollback','withdraw')),'evidence_conflict')
 check('failed withdrawal retains published state and revision',receipt('withdraw-rollback')['publicationStatus']=='published' and receipt('withdraw-rollback')['revision']==2)
-check('failed withdrawal leaves audit and projection unchanged',sql('SELECT count(*) FROM coach_report_audit;')==before and sql('SELECT count(*) FROM coach_report_evidence_sources;')=='2')
+check('failed withdrawal leaves audit and projection unchanged',sql('SELECT count(*) FROM coach_report_audit;')==before and sql('SELECT count(*) FROM coach_report_evidence_sources;')==before_projection)
 
-result={'database':database,'host':'127.0.0.1:55439','postgres':sql('SELECT version();'),'migrationSha256':hashlib.sha256(migration.read_bytes()).hexdigest(),'passed':len(passed),'failed':0,'checks':passed,'limitations':['Synthetic org/team/agent scaffolding and representative report history; not a full production clone.','PostgreSQL 17.11 Windows; production inspected version 17.6 Linux.','HTTP authentication and broker browser refresh belong to H05-H07.']}
+result={'database':database,'host':'127.0.0.1:55439','postgres':sql('SELECT version();'),'migrationSha256':hashlib.sha256(migration.read_bytes()).hexdigest(),'policyMigrationSha256':hashlib.sha256(policy_migration.read_bytes()).hexdigest(),'passed':len(passed),'failed':0,'checks':passed,'limitations':['Synthetic org/team/agent scaffolding and representative report history; not a full production clone.','PostgreSQL 17.11 Windows; production inspected version 17.6 Linux.','HTTP authentication and broker browser refresh belong to H05-H07.']}
 pathlib.Path(__file__).with_name('rehearsal-results.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
 print(json.dumps({'passed':len(passed),'failed':0,'database':database}))

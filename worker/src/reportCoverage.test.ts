@@ -18,5 +18,5 @@ describe('report coverage', () => {
  it('requires coverage version and report version',()=>{expect(validateCoachBrief({...report(),schemaVersion:'1.2'}).ok).toBe(false);expect(validateReportCoverage({...coverage(),schemaVersion:'2.0'}).ok).toBe(false)});
  it('rejects oversized lists without truncation',()=>expect(validateReportCoverage({...coverage(),contacts:Array(10001).fill(coverage().contacts[0])}).ok).toBe(false));
  it('clones validated input',()=>{const c=coverage();const v=validateReportCoverage(c);c.contacts[0].leadName='Changed';if(!v.ok)throw Error();expect(v.value.contacts[0].leadName).toBe('Alex Sample')});
- it('keeps partial publishing disabled',()=>expect(PARTIAL_REPORT_PUBLISHING_ENABLED).toBe(false));
+ it('enables partial publishing only through explicit receiver control',()=>expect(PARTIAL_REPORT_PUBLISHING_ENABLED).toBe(true));
 });

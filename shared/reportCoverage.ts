@@ -39,5 +39,6 @@ export function coverageState(coverage?: ReportCoverage): 'complete' | 'partial'
   return coverage.rosterComplete && coverage.contacts.every(c => c.status === 'reviewed') ? 'complete' : 'partial';
 }
 
-// Deployment and producer activation are separate decisions. Keep partial runs held.
-export const PARTIAL_REPORT_PUBLISHING_ENABLED = false;
+// Partial reports still require authenticated, team-scoped, explicit operator control.
+// This policy never auto-releases on acceptance and does not apply to unknown coverage.
+export const PARTIAL_REPORT_PUBLISHING_ENABLED = true;

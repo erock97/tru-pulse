@@ -24,8 +24,10 @@ the operator token. These checks do not claim to revoke an organization's admin
 authority or Eric's human access from another machine. Runtime isolation requires
 the laptop sender to receive only its scoped bootstrap, as specified in H01.
 
-Registry entry `eric-receipt-operator`, role `operator`, has exactly the six
-verified team UUIDs from `operator.mjs`. SHA-256 binding verified against the
+The deployed registry entry `eric-receipt-operator`, role `operator`, has the six
+previously verified team UUIDs. The local operator map now also recognizes Maggie,
+but that seventh UUID is not yet provisioned in the registry. SHA-256 binding was
+verified against the
 actual token through the command's resolver. Six producer entries preserved
 unchanged. Registry remains in the existing producer project at
 `/TruHQ/Receipts/Receiver/COACH_REPORT_CLIENTS`; **not installed in Cloudflare**.
@@ -56,10 +58,13 @@ The approval reference must identify the real approval before execution; prepari
 a reference does not establish that Eric approved anything. Present the report
 preview, account, window, coverage, run/hash/revision and action to Eric.
 
-Routine launch release accepts complete coverage only. Partial and unknown remain
-held. The command supports release and withdraw; supersession is intentionally
-not exposed by this minimal launch tool. Coverage/responseTiming contracts and
-receiver gates are unchanged. There is no automatic release policy.
+Routine launch release accepts complete or partial coverage after Eric approves
+the exact report/action and command-file hash. Unknown coverage remains held.
+Partial release does not publish unsupported coaching: the immutable report must
+retain its actual coverage gaps, while only evidence-backed findings enter the
+derived projection. The command supports release and withdraw; supersession is
+intentionally not exposed by this minimal launch tool. Acceptance never releases
+a report automatically.
 
 Execution verifies the approved file hash, obtains current receipt metadata,
 checks the exact report hash/revision and coverage, sends the exact prepared body
@@ -122,9 +127,11 @@ clone. HTTP auth and actual broker refresh remain H05–H07 checks.
 
 Tests include permissions, immutable identity/payload, concurrent acceptance,
 publication visibility, control replay, shared legacy evidence, failed release
-and failed withdrawal atomic rollback, partial gate and unknown coverage.
+and failed withdrawal atomic rollback, explicit partial release and unknown
+coverage hold.
 The local server was stopped after rehearsal; synthetic databases retained for
-inspection. No changes to reviewed migration, coverage or timing contract.
+inspection. The added policy migration changes control gating only; coverage and
+timing JSON contracts remain unchanged.
 
 ## Next dependency
 
@@ -132,3 +139,9 @@ H03 and H04 are ready for the coordinated H05 checkpoint after laptop H01/H02.
 Reconfirm the delivery pause, check current production revision once, preserve
 newer unrelated work, and deploy only through the fixed plan. All 55 historical
 IDs remain blocked; 11 quarantines unchanged. Eric still approves each real release.
+
+## Maggie caller inventory correction — September 12, 2026
+
+The existing Desktop directory link was read-only resolved at 2026-09-13T04:13:22Z: Maggie is The Loving Team, futurehomerealty, UUID `99c0f65d-7443-45ea-a256-e83239eddac9`. The operator caller now recognizes that existing team. Tests exercise complete- and partial-report prepare plus GET/POST/GET identity continuity while rejecting wrong-team inputs and holding unknown coverage.
+
+This code change does not provision credentials or grant receiver scope. A fresh live check found no `hermes-maggie_loving` entry in the current vault receipt registry, and its operator entry omits this UUID. The existing producer resolver also returned `credential_failed` for Maggie. No receipt-specific safe provisioning helper exists; `worker/src/provision.ts` is tenant/CRM provisioning and must not be used for this task. After merge, an authorized administrator must use the established vault/receiver mechanism: create a distinct high-entropy Maggie producer token in the existing producer vault path, add only its SHA-256 hash as `hermes-maggie_loving` scoped to the verified UUID, append that UUID to the existing `eric-receipt-operator` team list without changing its token hash or the six existing producers, then install the reviewed hash-only `COACH_REPORT_CLIENTS` JSON as the Worker secret during the coordinated deployment. Verify producer isolation, operator scope, authenticated lookup and a held acceptance before any separately approved release. Preserve existing CRM/team provisioning and never put raw tokens in registry JSON, packages or logs. Do not claim seven-team operator access before those checks pass.
