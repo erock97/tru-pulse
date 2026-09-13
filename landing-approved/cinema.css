@@ -26,6 +26,3 @@
 @media(max-width:650px){.in-room .hero-copy h1{font-size:36px}.room-points li{font-size:14px}.in-room .hero-copy{max-width:none}.in-room .shade{opacity:0}}
 /* Keep client access visible at every screen size. */
 .nav{gap:28px}.nav-login{margin-left:auto;white-space:nowrap;font-size:14px;font-weight:500;padding:10px 0;color:var(--paper)}.nav-login:hover{text-decoration:underline;text-underline-offset:5px}.nav-cta{margin-left:0}@media(max-width:650px){.nav .nav-cta{display:none}.nav-login{font-size:14px;padding:12px 0}}
-
-/* Display only the photograph within the original phone screenshot. */
-.portrait-slot:has(.original-phone-portrait){position:relative}.portrait-slot .original-phone-portrait{position:absolute;width:106.7%;height:auto;max-width:none;left:50%;top:50%;transform:translate(-50%,-50%)}
