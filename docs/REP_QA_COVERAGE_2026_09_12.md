@@ -50,6 +50,9 @@ All three forms now use a named native dialog in the browser top layer. Forms st
 
 ## Preview, release and rollback
 
+Hosted frontend preview: https://05efa587.tru-pulse-app.pages.dev/#/rep (alias: https://fix-rep-qa-coverage.tru-pulse-app.pages.dev). Deployment built from code commit `427579f`; the subsequent documentation update adds this URL. It uses the existing API, so use the local fixture preview for test writes.
+
 Local review: use the existing `worker/ops/live-preview.ts` fixture instructions in `worker/ops/REP_LIVE.md`, then `npm --prefix web run dev`; open `#/rep/sessions` or a self-paced workshop from `#/rep`. In this task's running isolated preview, use `http://127.0.0.1:8791/preview/login?user=alice` and open the UI session listed above.
 
 This is a frontend-only PR. Production was not deployed and no shared database, real assignments, certification, email or integration state was changed. After review, the designated release operator can deploy the configured frontend build. Record the then-current Pages deployment before publishing; rollback restores that frontend deployment. No Worker rollback or database migration is required. Do not assume the older deployment IDs in the previous handoff are still the current release.
+
