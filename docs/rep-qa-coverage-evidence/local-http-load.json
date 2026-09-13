@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-09-13T01:52:50.871Z",
+  "scope": "Loopback HTTP, fixture identities, embedded Postgres; excludes hosted network and browser rendering",
+  "learners": 50,
+  "teams": 2,
+  "rounds": 3,
+  "pollMs": 2000,
+  "sessionId": "3960b383-5689-45d6-8c77-4124ee5313cc",
+  "errors": [],
+  "metrics": {
+    "submission": {
+      "count": 150,
+      "p50Ms": 106,
+      "p95Ms": 421,
+      "p99Ms": 463,
+      "maxMs": 474
+    },
+    "learnerRead": {
+      "count": 151,
+      "p50Ms": 214,
+      "p95Ms": 428,
+      "p99Ms": 462,
+      "maxMs": 478
+    },
+    "presenterRead": {
+      "count": 4,
+      "p50Ms": 29,
+      "p95Ms": 35,
+      "p99Ms": 35,
+      "maxMs": 35
+    },
+    "submissionToPresenter": {
+      "count": 150,
+      "p50Ms": 1034,
+      "p95Ms": 1902,
+      "p99Ms": 2014,
+      "maxMs": 2047
+    }
+  },
+  "sharedProjectionPrivate": true
+}

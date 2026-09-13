@@ -297,6 +297,10 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
   const practiceRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const unblockRef = useRef<(() => void) | null>(null);
+  const callRun = useRef(0);
+  const callActive = useRef(false);
+  const callFailed = useRef(false);
+  const gradingStarted = useRef(false);
 
   // Browser autoplay policy blocks the buyer's audio track unless playback is kicked
   // off under a user gesture. The `await simStart()` before the call consumes the
@@ -314,6 +318,8 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
   };
 
   useEffect(() => () => { // leave = hang up
+    ++callRun.current;
+    callActive.current = false;
     clientRef.current?.stopCall();
     disarmAudioFallback();
     if (timerRef.current) window.clearInterval(timerRef.current);
@@ -323,6 +329,13 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
     .reduce<number | null>((b, a) => (b == null || (a.score as number) > b ? a.score : b), null);
 
   async function start(s: SimScenario) {
+    if (callActive.current) return;
+    const run = ++callRun.current;
+    const current = () => run === callRun.current;
+    callActive.current = true;
+    callFailed.current = false;
+    gradingStarted.current = false;
+    practiceRef.current = null;
     setScenario(s); setErr('');
     if (isDemo) { // demo: simulate a short call, then show the canned scorecard
       setPhase('live'); setSeconds(0);
@@ -332,20 +345,41 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
     setPhase('connecting');
     try {
       const { practiceId, accessToken } = await simStart(s.key);
+      if (!current()) return;
       practiceRef.current = practiceId;
       const client = new RetellWebClient();
       clientRef.current = client;
       client.on('call_started', () => {
+        if (!current() || callFailed.current || gradingStarted.current) return;
+        if (timerRef.current) window.clearInterval(timerRef.current);
         setPhase('live'); setSeconds(0);
         timerRef.current = window.setInterval(() => setSeconds((x) => x + 1), 1000);
         enableAudio(); // make the buyer audible the moment the call is up
       });
-      client.on('call_ended', () => { disarmAudioFallback(); void grade(); });
-      client.on('error', () => { setErr('The call dropped — try again.'); setPhase('error'); disarmAudioFallback(); client.stopCall(); });
+      client.on('call_ended', () => {
+        if (!current() || callFailed.current) return;
+        callActive.current = false;
+        disarmAudioFallback(); void grade();
+      });
+      client.on('error', () => {
+        if (!current() || callFailed.current || gradingStarted.current) return;
+        callFailed.current = true;
+        callActive.current = false;
+        if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+        setErr('The call dropped — try again.'); setPhase('error');
+        disarmAudioFallback(); client.stopCall();
+      });
       await client.startCall({ accessToken });
+      if (!current() || callFailed.current || gradingStarted.current) { client.stopCall(); return; }
       enableAudio();       // unblock playback now…
       armAudioFallback();  // …and guarantee it on the next tap if autoplay blocked us
     } catch (e) {
+      if (!current() || gradingStarted.current) return;
+      callFailed.current = true;
+      callActive.current = false;
+      if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+      disarmAudioFallback();
+      clientRef.current?.stopCall();
       setErr(e instanceof Error ? e.message : 'Could not start the call.');
       setPhase('error');
     }
@@ -359,12 +393,18 @@ export function SimView({ scenarios, configured, attempts, onBack, onGraded }: {
   }
 
   async function grade() {
+    if (gradingStarted.current || callFailed.current) return;
+    gradingStarted.current = true;
+    callActive.current = false;
+    const run = callRun.current;
     if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
     setPhase('grading');
     try {
       const r = isDemo ? await new Promise<SimResult>((ok) => setTimeout(() => ok(demoSimResult()), 1800)) : await simFinish(practiceRef.current as string);
+      if (run !== callRun.current) return;
       setRes(r); setPhase('result'); onGraded(r);
     } catch (e) {
+      if (run !== callRun.current) return;
       setErr(e instanceof Error ? e.message : 'Grading failed — the attempt is saved; try again.');
       setPhase('error');
     }
