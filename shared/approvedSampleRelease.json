@@ -1,0 +1,9 @@
+{
+  "operationId": "satish-sample-release-20260909-eric",
+  "action": "release",
+  "teamId": "df216d4d-b05e-4ddf-a84e-0d685182d692",
+  "runId": "hermes-sample-b6f50a87-256c-42a0-b553-d19ec7f2066d:satish",
+  "expectedHash": "47de5f5091ffd0fa2be42c5032e9f3582e75090996f8c38eaf6ce523ead75aef",
+  "expectedRevision": 1,
+  "reason": "Eric approval reference: desktop-chat-20260909-satish-partial-sample"
+}

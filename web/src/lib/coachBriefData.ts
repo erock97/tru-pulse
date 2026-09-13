@@ -1,3 +1,4 @@
+import { validateReportCoverage, type ReportCoverage, coverageState } from '../../../shared/reportCoverage';
 // The weekly coaching brief — loading and view-shaping for the Coach tab.
 //
 // The report itself is produced OFF this system (the Hermes automation reviews a
@@ -67,6 +68,7 @@ export interface BriefAgentView {
 }
 
 export interface BriefView {
+  coverage?: ReportCoverage;
   reportId: string;
   weekStart: string;
   weekEnd: string;
@@ -90,6 +92,8 @@ export interface BriefBundle {
 export function toView(row: BriefReportRow): BriefView | null {
   const payload = row.payload;
   if (!payload) return null;
+  const checkedCoverage = validateReportCoverage(payload.coverage);
+  const coverage = checkedCoverage.ok ? checkedCoverage.value : undefined;
   const safePayload = { ...payload, findings: payload.findings ?? [] };
   const byIndex = findingsByIndex(safePayload);
   const byId = findingsById(safePayload);
@@ -168,6 +172,7 @@ export function toView(row: BriefReportRow): BriefView | null {
     });
 
   return {
+    coverage,
     reportId: row.id,
     weekStart: row.week_start,
     weekEnd: row.week_end,
@@ -180,7 +185,7 @@ export function toView(row: BriefReportRow): BriefView | null {
     agents: (payload.agents ?? []).map((a) => ({
       agentName: a.agentName,
       agentId: links[a.agentName] ?? null,
-      metrics: a.metrics ?? {},
+      metrics: coverageState(coverage) === 'complete' ? (a.metrics ?? {}) : Object.fromEntries(Object.entries(a.metrics ?? {}).filter(([key]) => key !== 'noOutreach')),
       doingRight: (a.doingRight ?? []).map(point),
       opportunities: opportunitiesOf(a),
       objections: (a.objections ?? []).map(point),

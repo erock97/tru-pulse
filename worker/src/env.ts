@@ -2,6 +2,7 @@ export interface Env {
   /** Opt-in only after the additive live-session migration is approved. */
   REP_LIVE_SESSIONS?: string;
   REP_LIVE_DIGESTS?: string;
+  COACH_REPORT_CLIENTS?: string; // scoped receipt clients; no legacy token fallback
   WEEKLY_REPORTS?: { dashboard(): Promise<import('./hustleFeed.js').WeeklyDashboard> };
   ASSIGNMENTS?: DurableObjectNamespace;
   TIMELINES?: DurableObjectNamespace;
@@ -19,11 +20,11 @@ export interface Env {
   SUPABASE_ANON_KEY: string;          // used to validate a caller's user token
   FUB_ENC_KEY: string;                // base64 of a 32-byte AES-GCM key
   ADMIN_TOKEN: string;                // guards ops routes (manual provision / sync-all)
-  COACH_INGEST_TOKEN?: string;        // guards POST /coach/weekly-report AND
+  COACH_INGEST_TOKEN?: string;        // guards GET /coach/teams AND
                                       // POST /coach/run-events (the Hermes laptop's
-                                      // brief sends and sanitized failure-log pushes)
+                                      // directory reads and sanitized failure-log pushes)
                                       // — deliberately NOT ADMIN_TOKEN so a leaked
-                                      // report key can submit those and nothing else
+                                      // integration key can access those and nothing else
   ZILLOW_TARGETS_INGEST_TOKEN?: string; // guards POST /zillow/targets (the
                                       // fub-weekly-reports scraper's target/pacing
                                       // pushes) — its own secret, same reasoning as
