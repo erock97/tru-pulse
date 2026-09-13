@@ -6,7 +6,8 @@ const receipt={teamId:TEAMS.signature,runId:'synthetic-operator-test',hashScheme
 const plan=()=>prepare(receipt,'signature','release','synthetic-approval');
 const response=x=>new Response(JSON.stringify({ok:true,...x}));
 test('prepare builds exact wire fields without sending',()=>assert.equal(plan().reason,'Eric approval reference: synthetic-approval'));
-for(const coverageState of ['partial','unknown'])test(`launch policy holds ${coverageState}`,()=>assert.throws(()=>prepare({...receipt,coverageState},'signature','release','ref'),/complete_coverage/));
+test('launch policy prepares a newly authorized current partial run',()=>{const command=prepare({...receipt,runId:'current-partial-run',coverageState:'partial'},'signature','release','current-run-approval');assert.equal(command.runId,'current-partial-run');assert.equal(command.reason,'Eric approval reference: current-run-approval');assert.match(command.operationId,/^[0-9a-f-]{36}$/);});
+test('launch policy holds unknown coverage',()=>assert.throws(()=>prepare({...receipt,coverageState:'unknown'},'signature','release','ref'),/known_coverage_required/));
 test('unknown account fails',()=>assert.throws(()=>prepare(receipt,'invented','release','ref'),/unknown_account/));
 test('receipt must match account',()=>assert.throws(()=>prepare(receipt,'satish','release','ref'),/invalid_receipt/));
 test('published report cannot be prepared for release',()=>assert.throws(()=>prepare({...receipt,publicationStatus:'published'},'signature','release','ref'),/invalid_transition/));
@@ -36,10 +37,28 @@ test('resolver fixed operator project and no inherited machine token',async()=>{
 });
 test('resolver errors sanitized',async()=>assert.rejects(resolveOperatorToken(process.execPath,{run:(_,a,o,cb)=>cb(Error('secret'),'', 'secret')}),/^Error: operator_credential_unavailable$/));
 
-test('only the approved partial sample can be prepared',()=>{
- const r={...receipt,teamId:TEAMS.satish,runId:'hermes-sample-b6f50a87-256c-42a0-b553-d19ec7f2066d:satish',payloadHash:'47de5f5091ffd0fa2be42c5032e9f3582e75090996f8c38eaf6ce523ead75aef',coverageState:'partial'};
- const ref='desktop-chat-20260909-satish-partial-sample';
- assert.equal(prepare(r,'satish','release',ref).operationId,'satish-sample-release-20260909-eric');
- for(const delta of [{revision:2},{payloadHash:'a'.repeat(64)},{runId:'different'},{coverageState:'unknown'},{publicationStatus:'withdrawn'}])assert.throws(()=>prepare({...r,...delta},'satish','release',ref));
- assert.throws(()=>prepare(r,'satish','release','different-approval'));
+test('execute accepts partial only after exact command approval and receipt continuity checks',async()=>{
+ const partial={...receipt,runId:'current-partial-execute',coverageState:'partial'};const c=prepare(partial,'signature','release','current-partial-approval'),b=Buffer.from(JSON.stringify(c));const final={...partial,revision:2,publicationStatus:'published',derivedProcessing:{status:'complete'}};let calls=0;
+ const result=await execute(b,digest(b),'current-partial-approval','token',{fetcher:async()=>response(++calls===1?{receipt:partial}:calls===2?{receipt:final,operationId:c.operationId}:{receipt:final})});
+ assert.equal(calls,3);assert.equal(result.receipt.coverageState,'partial');assert.equal(result.receipt.publicationStatus,'published');
+});
+
+test('Maggie uses the verified team identity through prepare and receipt control continuity',async()=>{
+ const teamId='99c0f65d-7443-45ea-a256-e83239eddac9';
+ const held={...receipt,teamId,runId:'synthetic-maggie-operator-test'};
+ const command=prepare(held,'maggie_loving','release','synthetic-approval');
+ assert.equal(command.teamId,teamId);
+ assert.throws(()=>prepare(receipt,'maggie_loving','release','synthetic-approval'),/invalid_receipt/);
+ assert.equal(prepare({...held,coverageState:'partial'},'maggie_loving','release','synthetic-approval').teamId,teamId);
+ const bytes=Buffer.from(JSON.stringify(command)),calls=[];
+ const published={...held,revision:2,publicationStatus:'published',derivedProcessing:{status:'complete'}};
+ const result=await execute(bytes,digest(bytes),'synthetic-approval','token',{fetcher:async(url,options)=>{
+  calls.push(options.method);
+  if(options.method==='GET')assert.equal(new URL(url).searchParams.get('teamId'),teamId);
+  else assert.deepEqual(JSON.parse(options.body),command);
+  return response(calls.length===1?{receipt:held}:calls.length===2?{receipt:published,operationId:command.operationId}:{receipt:published});
+ }});
+ assert.deepEqual(calls,['GET','POST','GET']);
+ assert.equal(result.receipt.teamId,teamId);
+ assert.equal(result.brokerVisibilityVerified,false);
 });
