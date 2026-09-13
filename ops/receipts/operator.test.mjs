@@ -43,3 +43,23 @@ test('only the approved partial sample can be prepared',()=>{
  for(const delta of [{revision:2},{payloadHash:'a'.repeat(64)},{runId:'different'},{coverageState:'unknown'},{publicationStatus:'withdrawn'}])assert.throws(()=>prepare({...r,...delta},'satish','release',ref));
  assert.throws(()=>prepare(r,'satish','release','different-approval'));
 });
+
+test('Maggie uses the verified team identity through prepare and receipt control continuity',async()=>{
+ const teamId='99c0f65d-7443-45ea-a256-e83239eddac9';
+ const held={...receipt,teamId,runId:'synthetic-maggie-operator-test'};
+ const command=prepare(held,'maggie_loving','release','synthetic-approval');
+ assert.equal(command.teamId,teamId);
+ assert.throws(()=>prepare(receipt,'maggie_loving','release','synthetic-approval'),/invalid_receipt/);
+ assert.throws(()=>prepare({...held,coverageState:'partial'},'maggie_loving','release','synthetic-approval'),/complete_coverage/);
+ const bytes=Buffer.from(JSON.stringify(command)),calls=[];
+ const published={...held,revision:2,publicationStatus:'published',derivedProcessing:{status:'complete'}};
+ const result=await execute(bytes,digest(bytes),'synthetic-approval','token',{fetcher:async(url,options)=>{
+  calls.push(options.method);
+  if(options.method==='GET')assert.equal(new URL(url).searchParams.get('teamId'),teamId);
+  else assert.deepEqual(JSON.parse(options.body),command);
+  return response(calls.length===1?{receipt:held}:calls.length===2?{receipt:published,operationId:command.operationId}:{receipt:published});
+ }});
+ assert.deepEqual(calls,['GET','POST','GET']);
+ assert.equal(result.receipt.teamId,teamId);
+ assert.equal(result.brokerVisibilityVerified,false);
+});

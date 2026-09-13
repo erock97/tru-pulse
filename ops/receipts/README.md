@@ -132,3 +132,9 @@ H03 and H04 are ready for the coordinated H05 checkpoint after laptop H01/H02.
 Reconfirm the delivery pause, check current production revision once, preserve
 newer unrelated work, and deploy only through the fixed plan. All 55 historical
 IDs remain blocked; 11 quarantines unchanged. Eric still approves each real release.
+
+## Maggie caller inventory correction — September 12, 2026
+
+The existing Desktop directory link was read-only resolved at 2026-09-13T04:13:22Z: Maggie is The Loving Team, futurehomerealty, UUID99c0f65d-7443-45ea-a256-e83239eddac9. The operator caller now recognizes that existing team. Tests exercise complete-report prepare and GET/POST/GET identity continuity while rejecting wrong-team and partial-report inputs.
+
+This code change does not provision credentials or grant receiver scope. A fresh live check found no hermes-maggie_loving entry in the current vault receipt registry, and its operator entry omits this UUID. The existing producer resolver also returned credential_failed for Maggie. Preserve existing CRM/team provisioning; reconcile the missing reporting credential and scoped registry separately through the existing vault/receiver mechanism before attempting release. Do not claim seven-team operator access from the local mapping alone. No live report mutation or secret change is performed by this patch.

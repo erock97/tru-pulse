@@ -6,7 +6,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const VAULT = Object.freeze({projectId:'744e501e-1a55-41c1-a7d9-a4bede367a63',environment:'prod',path:'/TruHQ/Receipts/Operators/eric',key:'TOKEN'});
-export const TEAMS = Object.freeze({signature:'3a84fd98-13f2-46e7-83a2-a1ed3aeadab7',costigan:'cb0fcbbb-c332-4f61-90f8-2b51b673bca8',scottmoore:'8b61c008-c8b1-4fb6-9de7-093b21a09a22',woosley:'96ddb98f-1fb6-4d99-80f6-20ef615dec34',synergy:'213f7da9-6c3d-425e-86e6-a32d16db32a3',satish:'df216d4d-b05e-4ddf-a84e-0d685182d692'});
+export const TEAMS = Object.freeze({signature:'3a84fd98-13f2-46e7-83a2-a1ed3aeadab7',costigan:'cb0fcbbb-c332-4f61-90f8-2b51b673bca8',scottmoore:'8b61c008-c8b1-4fb6-9de7-093b21a09a22',woosley:'96ddb98f-1fb6-4d99-80f6-20ef615dec34',synergy:'213f7da9-6c3d-425e-86e6-a32d16db32a3',satish:'df216d4d-b05e-4ddf-a84e-0d685182d692',maggie_loving:'99c0f65d-7443-45ea-a256-e83239eddac9'});
 const approvedSampleRelease=JSON.parse(await readFile(new URL('../../shared/approvedSampleRelease.json',import.meta.url),'utf8'));
 const approvedSample=(c)=>JSON.stringify(Object.keys(approvedSampleRelease).map(k=>c[k]))===JSON.stringify(Object.values(approvedSampleRelease));
 const BASE='https://api.truhq.co/coach/weekly-report';
