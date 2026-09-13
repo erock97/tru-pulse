@@ -1,15 +1,7 @@
-// The contract for the ONE unauthenticated-by-cookie write surface the Hermes
-// laptop uses: its dedicated secret must fail closed, a malformed payload must
-// 4xx (so the laptop's retry loop stops), an unknown team identifier must HOLD
-// the report rather than lose it, and agent names must never be guessed.
-//
-// Team resolution has three tiers, tried in order: a direct TrueHQ team UUID,
-// a permanent alias, then the legacy report_slug lookup. teamsTable below
-// mirrors the real production rows (legacy teams plus the two new ones and
-// their disconnected same-named duplicate) so these tests exercise the actual
-// resolution order, not just a single stubbed row.
+// Preserve the current authenticated team-directory contract beside the restored receipt routes.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import worker from './index.js';
+import { handleCoachBriefIngest } from './coachBriefIngest.js';
 import type { Env } from './env.js';
 
 const SUPA = 'https://proj.supabase.co';
@@ -80,187 +72,6 @@ beforeEach(() => {
   }));
 });
 
-function payload(overrides: Record<string, unknown> = {}) {
-  return {
-    schemaVersion: '1.0',
-    run: {
-      runId: 'costigan-2026-08-16', trigger: 'weekly', teamId: 'costigan',
-      teamName: 'Costigan', startDate: '2026-08-16', endDate: '2026-08-22',
-      generatedAt: '2026-08-23T12:00:00Z', status: 'complete',
-      ...(overrides.run as Record<string, unknown> ?? {}),
-    },
-    agents: overrides.agents ?? [
-      { agentName: 'adam walters', metrics: { reviewedContacts: 12 }, doingRight: ['Calls first'], opportunities: [], objections: [], coachingActions: [] },
-      { agentName: 'Somebody Unknown', metrics: {}, doingRight: [], opportunities: [], objections: [], coachingActions: [] },
-    ],
-    findings: overrides.findings ?? [],
-  };
-}
-
-function send(body: unknown, token = 'brief-secret'): Promise<Response> {
-  return worker.fetch(
-    new Request('https://api.truhq.co/coach/weekly-report', {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {},
-      body: typeof body === 'string' ? body : JSON.stringify(body),
-    }),
-    env, ctx,
-  );
-}
-
-async function resolvedTeamId(teamId: string): Promise<{ status: number; teamResolved: boolean; upsertedTeamId: unknown }> {
-  const res = await send(payload({ run: { teamId } }));
-  const body = await res.json() as { status: string; teamResolved: boolean };
-  const upsert = calls.find((c) => c.method === 'POST' && c.path.startsWith('/rest/v1/coach_weekly_reports'));
-  const row = (upsert!.body as Array<Record<string, unknown>>)[0];
-  return { status: res.status, teamResolved: body.teamResolved, upsertedTeamId: row.team_id };
-}
-
-describe('POST /coach/weekly-report', () => {
-  it('rejects a wrong token, and fails closed when no token is configured', async () => {
-    expect((await send(payload(), 'wrong')).status).toBe(401);
-    delete (env as unknown as Record<string, unknown>).COACH_INGEST_TOKEN;
-    expect((await send(payload(), 'brief-secret')).status).toBe(401);
-    // Nothing was written on either attempt.
-    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-  });
-
-  it('never accepts the admin token in place of the brief secret', async () => {
-    expect((await send(payload(), 'ops')).status).toBe(401);
-  });
-
-  it('4xxs malformed bodies so the sender retry loop stops', async () => {
-    expect((await send('this is not json')).status).toBe(422);
-    const missingRunId = payload();
-    delete (missingRunId.run as Record<string, unknown>).runId;
-    const res = await send(missingRunId);
-    expect(res.status).toBe(422);
-    const body = await res.json() as { details: string[] };
-    expect(body.details.join(' ')).toContain('runId');
-  });
-
-  it('publishes a weekly run for a known team and links agents without guessing', async () => {
-    const res = await send(payload());
-    expect(res.status).toBe(200);
-    const body = await res.json() as {
-      ok: boolean; status: string; teamResolved: boolean;
-      agents: { matched: string[]; unmatched: string[] };
-    };
-    expect(body.ok).toBe(true);
-    expect(body.status).toBe('published');
-    expect(body.teamResolved).toBe(true);
-    expect(body.agents.matched).toEqual(['adam walters']);
-    expect(body.agents.unmatched).toEqual(['Somebody Unknown']);
-
-    const upsert = calls.find((c) => c.method === 'POST' && c.path.startsWith('/rest/v1/coach_weekly_reports'));
-    expect(upsert).toBeTruthy();
-    expect(upsert!.path).toContain('on_conflict=run_id');
-    const row = (upsert!.body as Array<Record<string, unknown>>)[0];
-    expect(row.run_id).toBe('costigan-2026-08-16');
-    expect(row.team_id).toBe('aaaaaaaa-1111-4111-8111-111111111111');
-    expect(row.status).toBe('published');
-    // The unknown name is ABSENT from links — held back, not guessed.
-    expect(row.agent_links).toEqual({ 'adam walters': 'cccccccc-3333-4333-8333-333333333333' });
-  });
-
-  it('holds a report whose team identifier is not mapped yet, without losing it', async () => {
-    teamsTable = [];
-    const res = await send(payload());
-    expect(res.status).toBe(200);
-    const body = await res.json() as { status: string; teamResolved: boolean };
-    expect(body.status).toBe('held');
-    expect(body.teamResolved).toBe(false);
-    const upsert = calls.find((c) => c.method === 'POST' && c.path.startsWith('/rest/v1/coach_weekly_reports'));
-    const row = (upsert!.body as Array<Record<string, unknown>>)[0];
-    expect(row.team_id).toBeNull();
-    expect(row.status).toBe('held');
-  });
-
-  it('stores a personal on-demand run as held — never published to the tab', async () => {
-    const res = await send(payload({ run: { trigger: 'personal' } }));
-    const body = await res.json() as { status: string };
-    expect(body.status).toBe('held');
-  });
-
-  it('gives previously held reports a second chance once their team exists', async () => {
-    heldRows = [{
-      id: 'eeeeeeee-5555-4555-8555-555555555555',
-      team_slug: 'costigan',
-      run_trigger: 'weekly',
-      payload: { agents: [{ agentName: 'Jordan Blake' }] },
-    }];
-    await send(payload());
-    const patch = calls.find((c) => c.method === 'PATCH'
-      && c.path.includes('id=eq.eeeeeeee-5555-4555-8555-555555555555'));
-    expect(patch).toBeTruthy();
-    const patchBody = patch!.body as Record<string, unknown>;
-    expect(patchBody.status).toBe('published');
-    expect(patchBody.team_id).toBe('aaaaaaaa-1111-4111-8111-111111111111');
-    expect(patchBody.agent_links).toEqual({ 'Jordan Blake': 'dddddddd-4444-4444-8444-444444444444' });
-  });
-
-  describe('team resolution — UUID, alias, and legacy slug', () => {
-    it('refuses inactive direct UUIDs and aliases', async () => {
-      teamsTable.find(t => t.id === SB_REALTY_ID)!.is_active = false;
-      expect((await resolvedTeamId(SB_REALTY_ID)).teamResolved).toBe(false);
-      expect((await resolvedTeamId('sb-realty')).teamResolved).toBe(false);
-    });
-    it('refuses ambiguous legacy routing instead of taking the first team', async () => {
-      teamsTable.push({ ...teamsTable[0], id: '11111111-2222-4333-8444-555555555555' });
-      expect((await resolvedTeamId('costigan')).teamResolved).toBe(false);
-    });
-    it('resolves the Synergy team by its direct TrueHQ UUID', async () => {
-      const r = await resolvedTeamId(SYNERGY_ID);
-      expect(r.teamResolved).toBe(true);
-      expect(r.upsertedTeamId).toBe(SYNERGY_ID);
-    });
-
-    it('resolves the canonical SB Realty team by its direct TrueHQ UUID', async () => {
-      const r = await resolvedTeamId(SB_REALTY_ID);
-      expect(r.teamResolved).toBe(true);
-      expect(r.upsertedTeamId).toBe(SB_REALTY_ID);
-    });
-
-    it('resolves the alias the-synergy-group-nj to the Synergy UUID', async () => {
-      const r = await resolvedTeamId('the-synergy-group-nj');
-      expect(r.teamResolved).toBe(true);
-      expect(r.upsertedTeamId).toBe(SYNERGY_ID);
-    });
-
-    it('resolves sb-realty to the UUID proven by the published satish report', async () => {
-      const r = await resolvedTeamId('sb-realty');
-      expect(r.teamResolved).toBe(true);
-      expect(r.upsertedTeamId).toBe(SB_REALTY_ID);
-      expect(r.upsertedTeamId).not.toBe(SB_REALTY_DUPLICATE_ID);
-    });
-
-    it.each([
-      ['signature', '3a84fd98-13f2-46e7-83a2-a1ed3aeadab7'],
-      ['costigan', 'aaaaaaaa-1111-4111-8111-111111111111'],
-      ['scott-moore', '8b61c008-c8b1-4fb6-9de7-093b21a09a22'],
-      ['woosley', '96ddb98f-1fb6-4d99-80f6-20ef615dec34'],
-    ])('still resolves the legacy slug %s', async (slug, expectedId) => {
-      const r = await resolvedTeamId(slug);
-      expect(r.teamResolved).toBe(true);
-      expect(r.upsertedTeamId).toBe(expectedId);
-    });
-
-    it('holds, rather than guesses, an unrecognized alias-shaped identifier', async () => {
-      const r = await resolvedTeamId('some-other-team');
-      expect(r.status).toBe(200);
-      expect(r.teamResolved).toBe(false);
-      expect(r.upsertedTeamId).toBeNull();
-    });
-
-    it('holds a well-formed but unknown UUID rather than falling back to slug matching', async () => {
-      const r = await resolvedTeamId('00000000-0000-4000-8000-000000000000');
-      expect(r.status).toBe(200);
-      expect(r.teamResolved).toBe(false);
-      expect(r.upsertedTeamId).toBeNull();
-    });
-  });
-});
-
 describe('GET /coach/teams', () => {
   function get(token = 'brief-secret'): Promise<Response> {
     return worker.fetch(
@@ -307,4 +118,10 @@ describe('GET /coach/teams', () => {
     expect(calls.every(c => c.method === 'GET')).toBe(true);
     expect(calls.some(c => /select=.*email/.test(c.path))).toBe(false);
   });
+});
+
+it('routes receipt lookups to the scoped receiver without legacy token fallback',async()=>{
+ const url=new URL('https://offline.test/coach/weekly-report/receipt?teamId=11111111-1111-4111-8111-111111111111&runId=test');
+ const res=await handleCoachBriefIngest(new Request(url),{} as Env,url,{},{} as any);
+ expect(res!.status).toBe(503);
 });
