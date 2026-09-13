@@ -16,6 +16,7 @@
 // whole thing, so a value here means the same thing it means on any other slide.
 import { useState } from 'react';
 import { SlideCanvas } from './SlideDeck';
+import { FubDialog } from './FubDialog';
 
 const BRASS = 'var(--brass)';
 const BRASS_LT = 'var(--brass-lt)';
@@ -91,15 +92,9 @@ export function DealMock() {
       </div>
 
       {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: 'absolute', left: -40, right: -40, top: -30, zIndex: 5,
-            background: 'rgba(19,41,63,.45)', borderRadius: 12, padding: 30,
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-          }}
-        >
+        <FubDialog title="Create deal" onClose={() => setOpen(false)}>
           <div
+            className="fub-modal"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%', background: '#fff', borderRadius: 8, padding: 26,
@@ -107,13 +102,13 @@ export function DealMock() {
               boxShadow: '0 30px 70px -24px rgba(0,0,0,.6)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, fontSize: 24, fontWeight: 600 }}>
+            <div className="fub-modalhead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, fontSize: 24, fontWeight: 600 }}>
               <span>Create deal</span>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 0, color: '#8a99a8', fontSize: 22, cursor: 'pointer' }}>✕</button>
+              <button aria-label="Close deal" onClick={() => setOpen(false)} style={{ background: 'none', border: 0, color: '#52616c', fontSize: 22, cursor: 'pointer' }}>✕</button>
             </div>
             <input aria-label="Deal name or property address" style={{ ...fieldStyle, marginBottom: 14 }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Add name" />
             <div style={{ fontSize: 19, color: '#5b6b7a', marginBottom: 16 }}>Buyers › Start (temp stage)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+            <div className="fub-two" style={{ display: 'grid', gap: 14, marginBottom: 20 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 18, fontWeight: 600 }}>
                 Price
                 <input type="number" min="1" style={fieldStyle} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Add price" />
@@ -123,7 +118,7 @@ export function DealMock() {
                 <input type="date" style={fieldStyle} value={close} onInput={(e) => setClose(e.currentTarget.value)} onChange={(e) => setClose(e.target.value)} />
               </label>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
+            <div className="fub-modalfoot" style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, alignItems: 'center' }}>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 0, color: '#5b6b7a', fontSize: 20, cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={save}
@@ -136,7 +131,7 @@ export function DealMock() {
               >Create Deal</button>
             </div>
           </div>
-        </div>
+        </FubDialog>
       )}
 
       <div style={{ marginTop: 16, minHeight: 34 }}>

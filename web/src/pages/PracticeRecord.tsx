@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gradeRecordPractice, isDemo, type RecordGrade } from '../lib/api';
 import { readDraft } from '../lib/liveSessions';
+import { FubDialog } from './FubDialog';
 
 const SHOT = '/rep-lab/detail-full.png';
 const SHOT_W = 1810;
@@ -637,11 +638,11 @@ export function PracticeRecord({
 
             {/* Create task — a modal, the way FUB does it */}
             {taskModal && (
-              <div className="fub-modalwrap" onClick={() => setTaskModal(false)}>
+              <FubDialog title={taskEdit===null?'Create task':'Edit task'} onClose={() => setTaskModal(false)}>
                 <div className="fub-modal" onClick={(e) => e.stopPropagation()}>
                   <div className="fub-modalhead">
                     <span>{taskEdit===null?"Create task":"Edit task"}</span>
-                    <button onClick={() => setTaskModal(false)}>✕</button>
+                    <button aria-label="Close task" onClick={() => setTaskModal(false)}>✕</button>
                   </div>
                   <input aria-label="Task name" className="fub-full" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Task Name" />
                   <div className="fub-two">
@@ -657,16 +658,16 @@ export function PracticeRecord({
                     <button className="fub-blue" onClick={addTask} disabled={!taskTitle.trim()}>{taskEdit===null?"Create task":"Save task"}</button>
                   </div>
                 </div>
-              </div>
+              </FubDialog>
             )}
 
             {/* Create deal */}
             {dealModal && (
-              <div className="fub-modalwrap" onClick={() => setDealModal(false)}>
+              <FubDialog title={dealEdit===null?'Create deal':'Edit deal'} onClose={() => setDealModal(false)}>
                 <div className="fub-modal wide" onClick={(e) => e.stopPropagation()}>
                   <div className="fub-modalhead">
                     <span>{dealEdit===null?"Create deal":"Edit deal"}</span>
-                    <button onClick={() => setDealModal(false)}>✕</button>
+                    <button aria-label="Close deal" onClick={() => setDealModal(false)}>✕</button>
                   </div>
                   <input aria-label="Deal name or property address" className="fub-full" value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="Add name" />
                   <div className="fub-crumb">Buyers › Start (temp stage)</div>
@@ -679,7 +680,7 @@ export function PracticeRecord({
                     <button className="fub-blue" onClick={addDeal} disabled={!dealName.trim()}>{dealEdit===null?"Create Deal":"Save deal"}</button>
                   </div>
                 </div>
-              </div>
+              </FubDialog>
             )}
           </>
         )}

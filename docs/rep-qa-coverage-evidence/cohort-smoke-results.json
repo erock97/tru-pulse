@@ -1,0 +1,20 @@
+{
+  "session": "3c32cc20-6d9f-4fa2-89e0-a1352bb46a45",
+  "environment": "loopback HTTP + real handlers + isolated PGlite",
+  "passed": [
+    "two-team fixture session",
+    "separate learner/presenter identities",
+    "idempotent duplicate submission",
+    "changed-content duplicate refusal",
+    "independent/assisted attempt preservation",
+    "shared view excludes roster and raw answers",
+    "foreign learner cannot read attempts or presenter view",
+    "end twice produces exactly six day-1/3/7 followups",
+    "team-A coach sees only team-A evidence"
+  ],
+  "limits": [
+    "not a hosted test",
+    "no email/audio calls",
+    "no real learner performance measured"
+  ]
+}
