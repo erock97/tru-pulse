@@ -685,7 +685,7 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
         {state.canPresent ? "Present from this window. Use Previous / Next or the left and right arrow keys. " : "Slides change when the presenter advances. "}
         The whole slide fits this window.
       </p>
-      <PresentationFit key={slide.id}>
+      <PresentationFit key={slide.id} theme={slide.theme}>
       <SlideBody slide={slide} presentation>
         {slide.native === "deal" && (
           <div style={{ maxWidth: 720, position: "relative", minHeight: 400 }}>
