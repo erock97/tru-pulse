@@ -29,6 +29,30 @@ beforeAll(async()=>{
 },30000);
 afterAll(async()=>{await pg?.close();});
 describe('durable live session transactions and access',()=>{
+ it('applies the narrow migration to the previous function without replacing unrelated logic',async()=>{
+  const current=(await pg.query<{definition:string}>("select pg_get_functiondef('rep_live_mutate(uuid,uuid,text,jsonb)'::regprocedure) definition")).rows[0].definition;
+  const previous=current.replace("if jsonb_typeof(p_body->'participants') is distinct from 'array' then raise exception 'Choose a participant list'; end if;\n  if jsonb_array_length(p_body->'participants') > 100 then raise exception 'Choose up to 100 participants'; end if;", "if jsonb_array_length(p_body->'participants') not between 1 and 100 then raise exception 'Choose 1 to 100 participants'; end if;")
+   .replace("(case when roster='[]'::jsonb then 'Test · ' else '' end)||(p_body->'definition'->>'title')", "p_body->'definition'->>'title'");
+  expect(previous).not.toBe(current);
+  await pg.exec(previous);
+  await pg.exec(readFileSync(new URL('../../supabase/migrations/20260914224111_rep_live_solo_test.sql',import.meta.url),'utf8'));
+  expect((await pg.query<{definition:string}>("select pg_get_functiondef('rep_live_mutate(uuid,uuid,text,jsonb)'::regprocedure) definition")).rows[0].definition).toBe(current);
+ });
+ it('admin can run an empty-roster Day 2 test through the real session lifecycle without learner follow-up',async()=>{
+  const sid=id(901),day2=getWorkshopDefinition(2)!;
+  const body={definition:day2,timezone:'America/Los_Angeles',participants:[],presenterIds:[]};
+  await expect(mutate(coachA,'create',body,sid)).rejects.toThrow('global administrator');
+  await mutate(admin,'create',body,sid);
+  const state=(await pg.query<{result:any}>('select rep_live_read($1,$2) result',[admin,sid])).rows[0].result;
+  expect(state.session).toMatchObject({day:2,title:`Test · ${day2.title}`,roster:[]});
+  expect(state.canPresent).toBe(true);
+  await expect(pg.query('select rep_live_read($1,$2)',[userA,sid])).rejects.toThrow('Session unavailable');
+  await mutate(admin,'slide',{slideId:day2.slides[1].id},sid);
+  await mutate(admin,'open',{activityId:day2.activities[0].id},sid);
+  await mutate(admin,'reveal',{activityId:day2.activities[0].id},sid);
+  await mutate(admin,'end',{},sid);
+  expect((await pg.query<{n:number}>('select count(*)::int n from rep_live_followups where session_id=$1',[sid])).rows[0].n).toBe(0);
+ });
  it('only global admin creates a mixed team session and coaches must match their team',async()=>{
   const body={definition,timezone:'America/Los_Angeles',participants:[{agentId:agentA,coachId:coachA},{agentId:agentB,coachId:coachB}],presenterIds:[coachA]};
   await expect(mutate(coachA,'create',body)).rejects.toThrow('global administrator');

@@ -32,4 +32,13 @@ it('updates the selected day when entering from another workshop', async () => {
   expect((host.querySelector('select') as HTMLSelectElement).value).toBe('2');
   expect(host.textContent).toContain('Start a new Day 2 session');
 });
+it.each([1, 2, 3, 4])('starts a real Day %s test without agents, even when roster selections exist', async day => {
+  await act(async () => root.render(<LiveSessions route={`/rep/sessions?day=${day}`} />));
+  const test = [...host.querySelectorAll('button')].find(b => b.textContent === `Test Day ${day} without agents`)!;
+  expect(test.disabled).toBe(false);
+  await act(async () => (host.querySelector('input[type="checkbox"]') as HTMLInputElement).click());
+  await act(async () => test.click());
+  expect(request).toHaveBeenCalledWith('', expect.objectContaining({ day, participants: [], presenterIds: [] }));
+  expect(window.location.hash).toContain('/created-session/presenter');
+});
 

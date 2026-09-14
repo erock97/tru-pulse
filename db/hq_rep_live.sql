@@ -105,7 +105,8 @@ begin
  if not exists(select 1 from auth.users where id=p_actor) then raise exception 'Not signed in'; end if;
  if p_action='create' then
   if not rep_live_is_admin(p_actor) then raise exception 'Only a global administrator can create sessions'; end if;
-  if jsonb_array_length(p_body->'participants') not between 1 and 100 then raise exception 'Choose 1 to 100 participants'; end if;
+  if jsonb_typeof(p_body->'participants') is distinct from 'array' then raise exception 'Choose a participant list'; end if;
+  if jsonb_array_length(p_body->'participants') > 100 then raise exception 'Choose up to 100 participants'; end if;
   if not exists(select 1 from pg_timezone_names where name=p_body->>'timezone') then raise exception 'Invalid timezone'; end if;
   for item in select * from jsonb_array_elements(p_body->'participants') loop
    select * into a from agents where id=(item->>'agentId')::uuid;
@@ -122,7 +123,7 @@ begin
    if not rep_live_is_admin(coach) and not exists(select 1 from jsonb_array_elements(roster) r where rep_live_team_coach(coach,(r->>'orgId')::uuid,(r->>'teamId')::uuid)) then raise exception 'Presenter unavailable'; end if;
   end loop;
   insert into rep_live_sessions(id,day,title,version,timezone,definition,created_by,presenter_ids,roster,current_slide_id)
-   values(p_session,(p_body->'definition'->>'day')::integer,p_body->'definition'->>'title',p_body->'definition'->>'version',p_body->>'timezone',p_body->'definition',p_actor,
+   values(p_session,(p_body->'definition'->>'day')::integer,(case when roster='[]'::jsonb then 'Test · ' else '' end)||(p_body->'definition'->>'title'),p_body->'definition'->>'version',p_body->>'timezone',p_body->'definition',p_actor,
     array(select distinct x from unnest(array[p_actor]||array(select (value#>>'{}')::uuid from jsonb_array_elements(coalesce(p_body->'presenterIds','[]')))) x),roster,p_body->'definition'->'slides'->0->>'id')
    on conflict(id) do nothing;
   select * into s from rep_live_sessions where id=p_session;
