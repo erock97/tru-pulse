@@ -33,6 +33,15 @@ describe('short answers capture thinking without grading it',()=>{
  });
 });
 describe('live transport and projection',()=>{
+ it('shared navigation preserves only existing presenter capability',()=>{
+  for(const canPresent of [true,false]){
+   const raw=rawState();raw.canPresent=canPresent;
+   const view=liveStateForView(raw,'viewer','shared');
+   expect(view.canPresent).toBe(canPresent);expect(view.session.canPresent).toBe(canPresent);
+   expect(view.canReview).toBe(false);expect(view.viewerId).toBe('');expect(view.session.presenterIds).toEqual([]);
+   expect(view.participants).toEqual([]);expect(view.attempts).toEqual([]);
+  }
+ });
  it('shared view never contains private people, responses, checks or coach notes',()=>{
   const view=liveStateForView(rawState(),'presenter','shared'),serialized=JSON.stringify(view);
   for(const secret of ['Private name','Private submitted wording','Private team'])expect(serialized).not.toContain(secret);

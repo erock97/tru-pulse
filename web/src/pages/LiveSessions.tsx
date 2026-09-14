@@ -39,6 +39,8 @@ import { adminReturn, hasAdminReturn } from "../lib/api";
 import workshopCss from "../workshops/workshop.css?inline";
 import recordCss from "../workshops/practiceRecord.css?inline";
 import "./liveSessions.css";
+import { LiveSlideNavigation } from "./LiveSlideNavigation";
+import { PresentationFit } from "./PresentationFit";
 
 const message = (e: unknown) =>
   e instanceof Error ? e.message : "The request could not be completed.";
@@ -85,6 +87,8 @@ function Frame({
 }
 
 export default function LiveSessions({ route }: { route: string }) {
+  const requestedDay = Number(new URLSearchParams(route.split('?')[1] || '').get('day'));
+  const initialDay = [1, 2, 3, 4].includes(requestedDay) ? requestedDay : 1;
   const match = route.match(
     /^\/rep\/sessions\/([a-f0-9-]+)\/(presenter|shared|agent|coach)$/i,
   );
@@ -95,11 +99,11 @@ export default function LiveSessions({ route }: { route: string }) {
       view={match[2] as LiveView}
     />
   ) : (
-    <Lobby />
+    <Lobby key={initialDay} initialDay={initialDay} />
   );
 }
 
-function Lobby() {
+export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
   const [search, setSearch] = useState("");
   const [team, setTeam] = useState("");
   const [sessions, setSessions] = useState<LiveSessionSummary[]>([]),
@@ -107,7 +111,7 @@ function Lobby() {
   const [error, setError] = useState(""),
     [enabled, setEnabled] = useState<boolean | null>(null),
     [busy, setBusy] = useState(false);
-  const [day, setDay] = useState(1),
+  const [day, setDay] = useState(initialDay),
     [timezone, setTimezone] = useState(
       Intl.DateTimeFormat().resolvedOptions().timeZone,
     ),
@@ -176,6 +180,7 @@ function Lobby() {
         </section>
       )}
       {enabled === null && !error && <p role="status">Loading sessions…</p>}
+      {sessions.length > 0 && <h2>Resume a saved session</h2>}
       <section className="live-grid">
         {sessions.map((s) => (
           <article className="live-card" key={s.id}>
@@ -194,7 +199,7 @@ function Lobby() {
                   s.canPresent ? "presenter" : s.canReview ? "coach" : "agent",
                 )}
               >
-                Open session
+                Resume Day {s.day} session
               </a>
               {s.canPresent && (
                 <a href={link(s.id, "presenter")}>Presenter console →</a>
@@ -211,7 +216,7 @@ function Lobby() {
       )}
       {preflight?.canCreate && (
         <section className="live-card">
-          <h2>Start a session</h2>
+          <h2>Start a new Day {day} session</h2>
           <p>
             Choose your training and agents. You lead the session and receive
             their follow-up automatically.
@@ -345,7 +350,7 @@ function Lobby() {
             disabled={busy || Object.keys(roster).length === 0 || !timezone}
             onClick={() => void create()}
           >
-            {busy ? "Creating…" : "Create session"}
+            {busy ? `Creating Day ${day}…` : `Create Day ${day} session`}
           </button>
         </section>
       )}
@@ -495,7 +500,7 @@ function Session({ id, view }: { id: string; view: LiveView }) {
     ? Math.max(0, Math.ceil((Date.parse(state.timerEndsAt) - now) / 1000))
     : null;
   return (
-    <Frame title={state.session.title} shared={view === "shared"}>
+    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={view === "shared"}>
       <div className="live-session-bar">
         {view !== "shared" && <a href="#/rep/sessions">All sessions</a>}
         <span role="status">
@@ -518,7 +523,7 @@ function Session({ id, view }: { id: string; view: LiveView }) {
       {view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
       ) : view === "shared" ? (
-        <Projection state={state} />
+        <Projection state={state} refresh={() => refresh.current()} />
       ) : view === "coach" ? (
         <CoachEvidence state={state} />
       ) : (
@@ -532,9 +537,11 @@ type Slide = LiveSessionState["definition"]["slides"][number];
 function SlideBody({
   slide,
   children,
+  presentation = false,
 }: {
   slide: Slide;
   children?: ReactNode;
+  presentation?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null),
     [root, setRoot] = useState<ShadowRoot | null>(null);
@@ -605,8 +612,27 @@ function SlideBody({
             <style>
               {workshopCss}
               {recordCss}
-              {`:host{display:block;color:#182321}*{box-sizing:border-box} .workshop{min-height:0;background:#f2f0e9;color:#182321;padding:0}.slide{min-height:0;padding:28px;display:block}.content{max-width:none}.native-lab .pr{max-width:none;color:#182321}.native-lab .pr-jobs{background:#253734;color:#f3f0e6;padding:20px;position:relative;top:0;--ac-text:#f3f0e6;--ac-text-60:#c9d5cd}.native-lab .pr-after{color:#182321}.native-lab{--gold:#c4d5ab;--ac:#c4d5ab;--ac-text:#182321;--ac-text-60:#52625a}.native-lab button{cursor:pointer}button,input,textarea,select{font:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #527c61;outline-offset:3px}.btn{padding:10px 18px;border-radius:6px}.screen-figure img{max-width:100%;height:auto}.err{color:#9c3227} .live-native-disabled{pointer-events:none;opacity:.7} @media(max-width:600px){.slide{padding:14px}}`}
+              {`:host{display:block;min-height:0;background:transparent;color:#182321}*{box-sizing:border-box} .workshop{min-height:0;background:#f2f0e9;color:#182321;padding:0}.slide{min-height:0;padding:28px;display:block}.content{max-width:none}.native-lab .pr{max-width:none;color:#182321}.native-lab .pr-jobs{background:#253734;color:#f3f0e6;padding:20px;position:relative;top:0;--ac-text:#f3f0e6;--ac-text-60:#c9d5cd}.native-lab .pr-after{color:#182321}.native-lab{--gold:#c4d5ab;--ac:#c4d5ab;--ac-text:#182321;--ac-text-60:#52625a}.native-lab button{cursor:pointer}button,input,textarea,select{font:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #527c61;outline-offset:3px}.btn{padding:10px 18px;border-radius:6px}.screen-figure img{max-width:100%;height:auto}.err{color:#9c3227} .live-native-disabled{pointer-events:none;opacity:.7} @media(max-width:600px){.slide{padding:14px}}`}
             </style>
+            {presentation && <style>{`
+              :host{min-height:0;background:transparent}
+              .workshop,.preferred-live-workshop{min-height:0;margin:0;max-width:none}
+              .slide,.slide.tru{display:flex;flex-direction:column;gap:20px;overflow:visible;min-height:0;padding:clamp(22px,3vw,44px);border:0;border-radius:0;box-shadow:none}
+              .slide h2,.preferred-live-workshop .slide.tru h2{font:600 clamp(30px,3.2vw,52px)/1.15 Manrope,system-ui,sans-serif;letter-spacing:-.04em;margin:0}
+              .slide .content{min-width:0;flex:0;gap:20px}
+              .slide,.slide.tru{padding:24px 32px;gap:12px;animation:none}
+              .slide h2,.preferred-live-workshop .slide.tru h2{font-size:36px}
+              .slide .lead{font-size:20px;max-width:none}
+              .slide .content{font-size:18px;gap:14px}
+              .slide .row,.slide.tru .row{padding:14px 0;gap:24px;grid-template-columns:210px minmax(0,1fr)}
+              .slide .row p,.slide.tru .row p{font-size:18px;line-height:1.45}
+              .slide .row h3,.slide.tru .row h3{font-size:22px}
+              .reference-screen-scroll{overflow:visible;border:0}
+              .slide .reference-screen img,.slide.tru .reference-screen img,.product-reference img,.product-pair img,.screen-figure>img{width:auto;min-width:0;max-width:100%;max-height:440px;height:auto;object-fit:contain;margin-inline:auto}
+              .reference-screen figcaption,.product-reference figcaption{font-size:12px}
+              .native-lab .pr-jobs{padding:14px}
+              @media(max-width:600px){.slide,.slide.tru{padding:20px 16px}.slide h2,.preferred-live-workshop .slide.tru h2{font-size:30px}}
+            `}</style>}
             <div className={slide.theme?.split(" ").includes("tru") ? "workshop preferred-live-workshop" : "workshop"}>
               <section className={`slide ${slide.theme || ""}`}>
                 <div className="meta">
@@ -618,7 +644,7 @@ function SlideBody({
                   <div
                     className="content"
                     dangerouslySetInnerHTML={{
-                      __html: slide.body.replace(
+                      __html: (presentation ? slide.body.replace('Scroll to inspect the full screen. ', 'Full-screen reference. ').replace('Full People reference image; scroll to inspect all controls', 'Full People reference image') : slide.body).replace(
                         /<button\b[^>]*data-action="restart"[^>]*>[\s\S]*?<\/button>/g,
                         "",
                       ),
@@ -635,7 +661,7 @@ function SlideBody({
     </div>
   );
 }
-function Projection({ state }: { state: LiveSessionState }) {
+function Projection({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
   const slide =
     state.definition.slides.find(
       (s) => s.id === state.session.currentSlideId,
@@ -648,7 +674,13 @@ function Projection({ state }: { state: LiveSessionState }) {
     totals = activity ? state.choiceTotals[activity.id] : null;
   return (
     <>
-      <SlideBody slide={slide}>
+      <LiveSlideNavigation state={state} refresh={refresh} keyboard />
+      <p className="live-presentation-help">
+        {state.canPresent ? "Present from this window. Use Previous / Next or the left and right arrow keys. " : "Slides change when the presenter advances. "}
+        The whole slide fits this window.
+      </p>
+      <PresentationFit key={slide.id}>
+      <SlideBody slide={slide} presentation>
         {slide.native === "deal" && (
           <div style={{ maxWidth: 720, position: "relative", minHeight: 400 }}>
             <DealMock />
@@ -688,6 +720,7 @@ function Projection({ state }: { state: LiveSessionState }) {
           {activity.explanation && <p>{activity.explanation}</p>}
         </section>
       )}
+      </PresentationFit>
     </>
   );
 }
@@ -800,7 +833,7 @@ function Presenter({
       </div>
       <p className="live-private">
         Private console. Share the separate presentation window in your meeting
-        platform.
+        platform. You can advance slides from either window; both stay in sync.
       </p>
       {error && (
         <p role="alert" className="live-error">
@@ -810,6 +843,7 @@ function Presenter({
       <div className="live-presenter-grid">
         <section className="live-card">
           <h2>Run the room</h2>
+          <LiveSlideNavigation state={state} refresh={refresh} />
           <label>
             Presentation slide
             <select

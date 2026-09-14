@@ -44,7 +44,9 @@ export function liveStateForView(raw:RawLiveState,viewerId:string,view:LiveView)
  };
  if(view==='shared'){
   state.participants=[];state.progress=[];state.attempts=[];state.observations=[];state.followups=[];state.groups=[];
-  state.myAgentId=null;state.viewerId='';state.canPresent=false;state.session.presenterIds=[];state.session.canPresent=false;state.canReview=false;state.session.canReview=false;
+  // Preserve only the current viewer's existing presenter capability so the
+  // shared window can navigate. Commands still authorize against the session.
+  state.myAgentId=null;state.viewerId='';state.session.presenterIds=[];state.canReview=false;state.session.canReview=false;
  }
  return state;
 }
