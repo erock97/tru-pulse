@@ -4,11 +4,11 @@
   "slides": [
     {
       "chapter": "Find the contact",
-      "title": "How a Zillow lead reaches you",
-      "lead": "Start with the Follow Up Boss contact record.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Live connection</h3><p>You are connected with a buyer. Find the matching record before updating it.</p></div><div class=\"row\"><h3>Tour request</h3><p>Read the property and requested time. A request alone is not a confirmed appointment.</p></div><div class=\"row\"><h3>Touring alert</h3><p>Read what happened and what response is needed. Check the existing history.</p></div></div>",
-      "notes": "Use your actual team routing process for the demonstration. Do not assume every notification means the same thing. Confirm access before class. If a login is missing, resolve it or use a named coach observation; do not treat watching the demo as the learner completing the action.",
-      "cue": "What would tell you that you have the correct record?",
+      "title": "Your Day 1 workspace",
+      "lead": "Stay in TrueHQ. Today’s Follow Up Boss practice happens in this session.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Your workspace today</h3><p>Keep your assigned live session open in your own TrueHQ login. Use the simulated contacts here for every exercise.</p></div><div class=\"row\"><h3>First, a walkthrough</h3><p>We will review how to find a contact using a People-list image. The practice exercises then open directly inside a fictional contact record.</p></div><div class=\"row\"><h3>Then, your turn</h3><p>When your presenter opens an activity, complete it on your own screen. Save the changes and check your work here. You do not need to open Follow Up Boss or find a real client.</p></div></div>",
+      "notes": "Before class, create the Day 1 session using the updated lesson. Confirm each selected learner can join through their own TrueHQ login. Keep the presenter console private and share the presentation window. Explain the team’s actual lead routing verbally: a live buyer connection, tour request, and touring alert are different events; a request alone is not an appointment. Then use the on-screen references and simulator throughout. Do not send learners to a separate Follow Up Boss account. Watching the presenter is not completing an individual exercise.",
+      "cue": "Can everyone see this session in their own TrueHQ account?",
       "time": 1,
       "theme": "paper",
       "id": "day1-how-a-zillow-lead-reaches-you",
@@ -17,10 +17,10 @@
     {
       "chapter": "Find the contact",
       "title": "Start in People",
-      "lead": "Use the actual contact name, source, and activity to find the record.",
-      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list in the training account\"><figcaption>Training account · Open the full image to inspect the controls.</figcaption></figure>",
-      "notes": "Demonstrate People, smart lists, and filtering in your training account. Open the image at full size if labels are hard to see. Ask an agent to point to the source and most recent activity.",
-      "cue": "Where would you look for a new Zillow contact?",
+      "lead": "Review this People-list image together. The hands-on exercises open inside a simulated contact.",
+      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list reference image\"><figcaption>Reference image · Enlarge to inspect the controls. Search and filters are not interactive here.</figcaption></figure>",
+      "notes": "Stay in TrueHQ and enlarge the reference image. Point out People, search, smart lists, and filtering. Ask learners which controls they would use and how they would confirm the source and recent activity. This is a walkthrough, not a completed search task. The simulator begins inside a contact; no external account is needed for today’s class.",
+      "cue": "Which control would you use to find a contact by name?",
       "time": 1,
       "theme": "paper",
       "id": "day1-start-in-people",
@@ -28,11 +28,11 @@
     },
     {
       "chapter": "Find the contact",
-      "title": "Find Avery in the training account",
-      "lead": "Confirm the source before opening or editing a record.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Find the name</h3><p>Search for Avery in the training pond.</p></div><div class=\"row\"><h3>Check the source</h3><p>Look for Zillow. If needed, use Filters → Add filter → Lead Source.</p></div><div class=\"row\"><h3>Open and confirm</h3><p>Read the contact details and activity. Make sure this is the right Avery.</p></div></div><label class=\"field\">Where did you find the record? Name the path you used, or the control you need help finding.<textarea data-save=\"navigation\" placeholder=\"Use fictional practice details.\"></textarea></label>",
-      "notes": "Have an agent narrate where they would click. Use the training account, never a live contact as a practice record. The embedded record exercises begin inside a contact. An agent’s written report does not automatically verify People/search navigation. Observe it in the actual training account and record who observed it.",
-      "cue": "Explain your first three clicks.",
+      "title": "Explain how you would find Avery",
+      "lead": "Use the People-list reference. Describe your path without leaving this session.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Locate the name</h3><p>Identify where you would search for Avery in People.</p></div><div class=\"row\"><h3>Confirm the source</h3><p>Explain where you would check for Zillow and when you would use a Lead Source filter.</p></div><div class=\"row\"><h3>Check before editing</h3><p>Describe how you would confirm the name, assignment, and recent activity. The next practice exercise opens the fictional record for you.</p></div></div><label class=\"field\">Using the reference image, how would you find Avery and confirm the correct record? Name any control you need help finding.<textarea data-save=\"navigation\" placeholder=\"Describe the controls you would use in the reference image.\"></textarea></label>",
+      "notes": "Open the written activity and have every learner submit their own navigation explanation in TrueHQ. Ask one learner to talk through the image, then clarify missed controls. Do not require a search in a separate training pond. This response shows navigation understanding, not verified hands-on search. If needed, arrange a separate coach-observed navigation check in the team’s Follow Up Boss training account after class; it is not a prerequisite for today’s simulated record exercises.",
+      "cue": "Explain the path you would take, then submit your own answer here.",
       "time": 2,
       "theme": "dark",
       "id": "day1-find-avery-in-the-training-account",
@@ -40,11 +40,11 @@
       "activity": {
         "id": "day1-find-avery-in-the-training-account",
         "kind": "written",
-        "prompt": "Find Avery in your training account. Confirm the source, assignment, and recent activity before editing.",
+        "prompt": "Using the People-list reference, explain how you would find Avery and confirm the source, assignment, and recent activity. Stay in TrueHQ.",
         "fields": [
           {
             "id": "navigation",
-            "label": "Where did you find the record? Name the path you used, or the control you need help finding."
+            "label": "Using the reference image, how would you find Avery and confirm the correct record? Name any control you need help finding."
           }
         ]
       }
@@ -53,8 +53,8 @@
       "chapter": "Read the record",
       "title": "Check the Details panel",
       "lead": "The stage should match what actually happened.",
-      "body": "<figure class=\"screen-figure details-figure\"><button class=\"details-focus\" aria-label=\"Open full contact record\"><img src=\"/rep-lab/detail-full.png\" alt=\"Follow Up Boss Details panel: Stage, Assigned to, Source, and Timeframe\"></button><figcaption>Check Stage, Assigned to, Source, and Timeframe. Select the image to open the full contact record.</figcaption></figure>",
-      "notes": "Point out Stage, Assigned, Source, and Timeframe without narrating every control. Timing should come from the buyer, not a guess. Demonstrate the menu and green save check, then let every agent attempt the task. Do not turn intuitive stage names into a quiz.",
+      "body": "<figure class=\"screen-figure details-figure\"><button class=\"details-focus\" aria-label=\"Open full contact record\"><img src=\"/rep-lab/detail-full.png\" alt=\"Follow Up Boss Details panel: Stage, Assigned to, Source, and Timeframe\"></button><figcaption>Check Stage, Assigned to, Source, and Timeframe. Select the image to enlarge this reference. The next activity opens an interactive simulated record.</figcaption></figure>",
+      "notes": "Use this reference image to point out Stage, Assigned, Source, and Timeframe. The image itself is not editable. Timing should come from the buyer, not a guess. On the next exercise, demonstrate the stage menu and green save check in the simulator, then let every learner attempt the task on their own screen.",
       "cue": "Which detail would you verify before saving?",
       "time": 1,
       "theme": "sage",
@@ -64,10 +64,10 @@
     {
       "chapter": "Record exercise",
       "title": "Practice: save the appointment stage",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Work in the simulated record below. Save your changes, then check your work here.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
+      "notes": "Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Complete this case on your own screen, save, and check your work.",
       "time": 4,
       "theme": "paper",
       "native": "practice",
@@ -77,7 +77,7 @@
       "activity": {
         "id": "day1-set-appointment",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Work in the simulated record below. Save your changes, then check your work here.",
         "scenario": "set-appointment"
       }
     },
@@ -96,10 +96,10 @@
     {
       "chapter": "Record exercise",
       "title": "Practice: write the conversation note",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Work in the simulated record below. Save your changes, then check your work here.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
+      "notes": "Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Complete this case on your own screen, save, and check your work.",
       "time": 5,
       "theme": "paper",
       "native": "practice",
@@ -109,7 +109,7 @@
       "activity": {
         "id": "day1-spoke-note",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Work in the simulated record below. Save your changes, then check your work here.",
         "scenario": "spoke-note"
       }
     },
@@ -128,10 +128,10 @@
     {
       "chapter": "Record exercise",
       "title": "Practice: set the missed-call task",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Work in the simulated record below. Save your changes, then check your work here.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
+      "notes": "Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Complete this case on your own screen, save, and check your work.",
       "time": 7,
       "theme": "paper",
       "native": "practice",
@@ -141,7 +141,7 @@
       "activity": {
         "id": "day1-noanswer-task",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Work in the simulated record below. Save your changes, then check your work here.",
         "scenario": "noanswer-task"
       }
     },
@@ -179,7 +179,7 @@
       "chapter": "Practice",
       "title": "Repair Avery’s record",
       "lead": "Only a request to compare homes is confirmed. The record says Appointment set.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>Read the actual record</h3><p>Inspect the original record. Compare the saved details with what the buyer actually said. Name the changes before editing.</p></div></div>",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>Read the simulated record</h3><p>Inspect the fictional record in the next exercise. Compare the saved details with what the buyer actually said. Name the changes before editing.</p></div></div>",
       "notes": "Give one minute to inspect without solving it for the agent. The next original exercise requires the learner to name the changes before editing. Do not bypass its diagnosis step; discuss the evidence after the learner attempts it.",
       "cue": "What would you fix first, and why?",
       "time": 2,
@@ -190,10 +190,10 @@
     {
       "chapter": "Record exercise",
       "title": "Practice: repair Avery’s record",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Work in the simulated record below. Save your changes, then check your work here.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
+      "notes": "Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Complete this case on your own screen, save, and check your work.",
       "time": 7,
       "theme": "paper",
       "native": "practice",
@@ -203,7 +203,7 @@
       "activity": {
         "id": "day1-avery-repair",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Work in the simulated record below. Save your changes, then check your work here.",
         "scenario": "avery-repair"
       }
     },
@@ -222,9 +222,9 @@
     {
       "chapter": "Record exercise",
       "title": "Practice adding a deal",
-      "lead": "Use the buyer’s name, price, and expected close date.",
+      "lead": "Try the simulated deal form here with fictional details.",
       "body": "",
-      "notes": "Demonstrate the deal form, then let the learner enter it. Use fictional details.",
+      "notes": "Demonstrate this in-session deal form with fictional details. It is a warm-up, not a submitted record check. Every learner then completes the accepted-offer record exercise in their own session; that exercise saves and checks the required deal actions.",
       "cue": "What would you check before creating this deal?",
       "time": 3,
       "theme": "paper",
@@ -235,10 +235,10 @@
     {
       "chapter": "Record exercise",
       "title": "Practice: record the accepted offer",
-      "lead": "Update the stage and add the deal from the scenario.",
+      "lead": "Work in the simulated record below. Save your changes, then check your work here.",
       "body": "",
-      "notes": "Check the accepted-offer exercise. A passed check should explain the evidence, not just display a result. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "What changed after the offer was accepted?",
+      "notes": "Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Complete this case on your own screen, save, and check your work.",
       "time": 6,
       "theme": "paper",
       "native": "practice",
@@ -248,17 +248,17 @@
       "activity": {
         "id": "day1-offer-accepted",
         "kind": "record",
-        "prompt": "Update the stage and add the deal from the scenario.",
+        "prompt": "Work in the simulated record below. Save your changes, then check your work here.",
         "scenario": "offer-accepted"
       }
     },
     {
       "chapter": "Retain",
       "title": "Where will you start tomorrow?",
-      "lead": "Use your tasks and new leads to plan the next calls.",
+      "lead": "After training, apply this routine in your team’s Follow Up Boss account. For now, explain it here.",
       "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Due tasks</h3><p>Review what you agreed to do and when.</p></div><div class=\"row\"><h3>New leads</h3><p>Find the correct contact and read the history.</p></div><div class=\"row\"><h3>After each conversation</h3><p>Update the stage, note, and dated next task.</p></div></div></div><div><label class=\"field\">Without looking back: what belongs in a useful contact record?<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
-      "notes": "Give 30 seconds without notes. Then ask partners to compare. Revisit only the missing item, not the entire lesson.",
-      "cue": "Explain your first five minutes in Follow Up Boss.",
+      "notes": "Give 30 seconds without notes. Then ask partners to compare. Revisit only the missing item, not the entire lesson. This is a discussion of later real-work application, not an instruction to leave the session or update a client during class.",
+      "cue": "After class, how will you use this routine in Follow Up Boss?",
       "time": 2,
       "theme": "paper",
       "id": "day1-where-will-you-start-tomorrow",
@@ -266,7 +266,7 @@
       "activity": {
         "id": "day1-where-will-you-start-tomorrow",
         "kind": "written",
-        "prompt": "Use your tasks and new leads to plan the next calls.",
+        "prompt": "Explain here how you will use tasks and new leads to plan your next calls after training.",
         "fields": [
           {
             "id": "recall",
@@ -309,7 +309,7 @@
   ],
   "cases": [],
   "hero": "/workshops/house.jpg",
-  "resources": "<div class=\"rows\"><div class=\"row\"><h3>Live sessions</h3><p>Sign in to your assigned session. Submit answers to your presenter; unsubmitted text remains private. If the presenter moves on, finish the current activity and use Return to presenter to catch up.</p></div><div class=\"row\"><h3>Practice again</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check is evidence of saved actions. Observed practice, coach readiness, quiz certification, and activation are separate.</p></div></div>",
-  "version": "2026-09-12-live-v1",
+  "resources": "<div class=\"rows\"><div class=\"row\"><h3>Today’s workspace</h3><p>Stay in your assigned TrueHQ live session. The People list is a reference walkthrough; the interactive exercises open inside fictional contacts. No separate Follow Up Boss account is needed for class.</p></div><div class=\"row\"><h3>Your own practice</h3><p>Complete each opened activity on your own screen. Submit written answers here. For record exercises, save your changes and check your work here to send the result to your presenter. Each record exercise is a separate case.</p></div><div class=\"row\"><h3>Catch up</h3><p>If the presenter moves on, finish your current activity and use Return to presenter. Unsubmitted writing stays private.</p></div><div class=\"row\"><h3>After class</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. Apply the routine in your team’s Follow Up Boss account after training. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check verifies saved actions. The People-list walkthrough does not verify hands-on search. Observed practice, coach readiness, quiz certification, and activation remain separate.</p></div></div>",
+  "version": "2026-09-13-day1-simulation-v2",
   "duration": 57
 }

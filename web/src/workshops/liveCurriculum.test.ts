@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-13-day1-simulation-v2' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -123,7 +123,7 @@ describe('versioned live curriculum', () => {
     for (const [index, guide] of [guide1, guide2, guide3, guide4].entries()) {
       const day = workshopCatalog[index + 1];
       expect(guide).toContain(`${day.duration} minutes including practice`);
-      expect(guide).toContain(WORKSHOP_VERSION);
+      expect(guide).toContain(day.version);
       expect(guide).toContain('unsubmitted writing stays private');
       expect(guide).toContain('Practice readiness, quiz certification, and activation remain separate');
       expect(guide).toContain('fresh case in three days');
