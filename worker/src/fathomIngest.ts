@@ -13,16 +13,18 @@
 // read back, so the URL itself must carry no secret. Fail closed when
 // FATHOM_WEBHOOK_SECRET is unset.
 import type { Env } from './env.js';
+import { getBitwardenSecret } from './bitwarden.js';
 import type { Db } from './db.js';
 import { secretsMatch } from './crypto.js';
 import * as infisical from './infisical.js';
 
 export const FATHOM_SECRETS_PATH = '/Fathom';
 
-/** Vault first (mirrors stripeClient.getKey: rotate in Infisical, no deploy,
- *  no wrangler paste), env var as the fallback. Null = the ingest stays
- *  closed. */
+/** An installed Bitwarden bundle is authoritative. Otherwise preserve the
+ *  Infisical-first lookup and environment fallback. Null keeps ingest closed. */
 export async function getWebhookSecret(env: Env): Promise<string | null> {
+  const managed = getBitwardenSecret(env, 'FATHOM_WEBHOOK_SECRET');
+  if (managed !== undefined) return managed;
   if (infisical.isConfigured(env)) {
     const fromVault = await infisical.getSecret(env, 'FATHOM_WEBHOOK_SECRET', FATHOM_SECRETS_PATH).catch(() => null);
     if (fromVault) return fromVault;

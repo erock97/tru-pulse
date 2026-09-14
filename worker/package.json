@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --exclude \"ops/**\" && node --test ops/link-hermes-team.test.mjs",
+    "test": "vitest run --exclude \"ops/**\" && node --test ops/link-hermes-team.test.mjs ops/sync-bitwarden-secrets.test.mjs",
     "preview:live": "esbuild ops/live-preview.ts --bundle --platform=node --format=esm --packages=external --outfile=.wrangler/live-preview.mjs && node .wrangler/live-preview.mjs"
   },
   "devDependencies": {

@@ -1,4 +1,6 @@
 export interface Env {
+  /** Encrypted worker secret delivered by ops/sync-bitwarden-secrets.mjs. */
+  BITWARDEN_TRUHQ_SECRETS?: string;
   /** Opt-in only after the additive live-session migration is approved. */
   REP_LIVE_SESSIONS?: string;
   REP_LIVE_DIGESTS?: string;
