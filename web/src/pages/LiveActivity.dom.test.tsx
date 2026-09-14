@@ -2,7 +2,7 @@
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {Activity} from './LiveSessions';
+import {Activity,PracticeGroups} from './LiveSessions';
 import {getWorkshopDefinition} from '../../../shared/workshopCatalog';
 import {liveDraftKey, type LiveSessionState} from '../../../shared/liveWorkshops';
 const mocks=vi.hoisted(()=>({request:vi.fn(async()=>({})),submit:vi.fn(async()=>({id:'saved',grade:null}))}));
@@ -40,5 +40,12 @@ describe('live short-answer continuation',()=>{
   expect(container.textContent).toContain('Asked about garden plans.');
   expect(container.textContent).not.toContain('Private feedback');
   expect(container.textContent).not.toContain('Other activity feedback');
+ });
+ it.each(['learner','buyer'])('shows the full-call case and reserves buyer instructions for the buyer: %s',async viewer=>{
+  const definition=getWorkshopDefinition(2)!;const activityId='day2-full-call-practice';
+  const value={...state,myAgentId:viewer,definition,participants:[],groups:[{id:'group',activityId,round:1,agentId:'learner',buyerId:'buyer',observerId:null}]} as LiveSessionState;
+  await act(async()=>root.render(<PracticeGroups state={value} activityId={activityId}/>));
+  expect(container.textContent).toContain(definition.cases![0].quote);
+  expect(container.textContent?.includes(definition.cases![0].goal)).toBe(viewer==='buyer');
  });
 });

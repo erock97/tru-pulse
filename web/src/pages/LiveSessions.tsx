@@ -259,7 +259,7 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
             <button disabled={busy || !timezone} onClick={() => void create(true)}>
               Test Day {day} without agents
             </button>
-            <p>Open the real presenter and shared presentation screens on your own. No agents are added and no agent follow-up is created.</p>
+            <p>{day === 2 ? 'Test the presentation, submit as a test learner, and review saved responses and feedback.' : 'Open the real presenter and shared presentation screens on your own.'} No agents are added and no agent follow-up is created.</p>
           </section>
           <fieldset>
             <legend>Select agents</legend>
@@ -1117,10 +1117,10 @@ function Presenter({
                       : "Joined"}
                 </small>
               </summary>
-              <p>
+              {activity?.kind === 'record' && <p>
                 {progress?.actions.join(" · ") ||
                   "No reported simulator actions yet."}
-              </p>
+              </p>}
               {attempts.map((a) => (
                 <Attempt key={a.id} attempt={a} activity={activity} />
               ))}
@@ -1136,9 +1136,9 @@ function Presenter({
       <section className="live-card">
         <h2>Finish and follow through</h2>
         <p>
-          Ending saves the session and creates the 24-hour, three-day, and
+          {state.rehearsal ? 'Ending saves this rehearsal and its test evidence. No agent coaching assignments are created.' : <>Ending saves the session and creates the 24-hour, three-day, and
           seven-day coaching checks once. Practice evidence does not change
-          certifications or activation.
+          certifications or activation.</>}
         </p>
         {state.session.status === "ended" ? (
           <p>
@@ -1150,7 +1150,7 @@ function Presenter({
               disabled={busy}
               onClick={() => void command({ action: "end" })}
             >
-              End session and create follow-ups
+              {state.rehearsal ? 'End rehearsal' : 'End session and create follow-ups'}
             </button>
             <button onClick={() => setEnding(false)}>Keep session open</button>
           </div>
@@ -2153,7 +2153,7 @@ export function Activity({
       )}
       {activity.kind !== "record" && editable && (
         <div className="live-card">
-          <h2>{activity.prompt}</h2>
+          <h3>{activity.prompt === slide.lead ? 'Your response' : activity.prompt}</h3>
           <p>
             {activity.kind === "choice" && !fields.length ? "Choose an answer and submit it. You can continue with the presenter without getting the answer right." : <>Write what you think, including “I’m not sure.” Short answers are not
             graded and there are no required keywords. Submit to share your response
@@ -2244,7 +2244,7 @@ export function Activity({
   );
 }
 
-function PracticeGroups({
+export function PracticeGroups({
   state,
   activityId,
 }: {
@@ -2280,7 +2280,7 @@ function PracticeGroups({
                 <>
                   <h3>{card.name}</h3>
                   <blockquote>{card.quote}</blockquote>
-                  <p>{card.goal}</p>
+                  {(state.rehearsal || g.agentId !== state.myAgentId) && <p>{card.goal}</p>}
                 </>
               )}
               <p>

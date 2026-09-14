@@ -20,7 +20,7 @@ Migration: `20260914232619_rep_live_rehearsal.sql` adds one JSONB column and one
 ## Validation
 
 - Web and worker TypeScript checks.
-- Web suite: 562 passing tests before final presentation checks.
+- Web suite: 564 passing tests after final UI checks.
 - Worker suite: 928 passing tests plus 9 operational tests.
 - Embedded Postgres integration covers real assigned learner identities: vote, written submission, presenter review, private response boundaries, and learner feedback retrieval.
 - Separate rehearsal integration covers validation, submit retry deduplication, reveal, persisted writing, observation retrieval, unauthorized access, and zero agent/follow-up records.
@@ -28,3 +28,22 @@ Migration: `20260914232619_rep_live_rehearsal.sql` adds one JSONB column and one
 - HTML/PDF companions regenerated from the curriculum. Representative PDF pages rendered and inspected.
 
 Production rollout and browser results are recorded below after verification.
+
+## Production verification — September 14, 2026
+
+Published the additive migration, worker version `34e14480-5f4b-43ae-9e1d-0d99c442b50e`, then Pages deployment `831feb55`.
+
+Production test session: `b9c6fbd8-58ff-4cd6-a45e-333951e73beb` (27-slide snapshot).
+
+In separate signed-in browser tabs:
+
+1. Created Day 2 without selecting agents.
+2. Advanced by presenter dropdown; the actual learner received an open vote. Submitted an incorrect answer; presenter displayed 1/1 attempted and its exact choice. No grading gate blocked the submission.
+3. Revealed the teaching example; the learner received it and saw later attempts labeled assisted.
+4. Submitted a personal callback acknowledgment; the presenter saw the exact saved wording.
+5. Created solo speaking practice, submitted the reflection, and saved explicitly labeled rehearsal feedback. The learner received the correction and retry notes. Reloading preserved the feedback.
+6. Created the full-call speaking round and confirmed the Jordan buyer card appeared.
+7. Inspected all 27 shared slides and measured their canvas: 16:9, no page scrolling, no content overflow. All content scales were 1 except the introduction (0.948). Also checked the full-call activity at a smaller laptop override (1093×614 CSS viewport under the browser’s existing zoom): no scrolling.
+8. Verified the new RPC is inaccessible to anon/authenticated database roles, executable by the worker role, and the session table retains RLS. The shared browser console reported no errors.
+
+Final UI cleanup removes repeated question headings, simulator-only status from written activities, and the incorrect coaching-assignment promise on a rehearsal finish. Buyer instructions are shown to the buyer/observer; the speaking learner sees the opening request. Solo rehearsal can inspect both sides.
