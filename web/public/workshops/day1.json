@@ -3,73 +3,149 @@
   "title": "Welcome to Zillow Preferred",
   "slides": [
     {
-      "chapter": "Find the contact",
-      "title": "How a Zillow lead reaches you",
-      "lead": "Start with the Follow Up Boss contact record.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Live connection</h3><p>You are connected with a buyer. Find the matching record before updating it.</p></div><div class=\"row\"><h3>Tour request</h3><p>Read the property and requested time. A request alone is not a confirmed appointment.</p></div><div class=\"row\"><h3>Touring alert</h3><p>Read what happened and what response is needed. Check the existing history.</p></div></div>",
-      "notes": "Use your actual team routing process for the demonstration. Do not assume every notification means the same thing. Confirm access before class. If a login is missing, resolve it or use a named coach observation; do not treat watching the demo as the learner completing the action.",
-      "cue": "What would tell you that you have the correct record?",
+      "chapter": "Welcome to Preferred",
+      "title": "Welcome to Zillow Preferred",
+      "lead": "First, understand Zillow Preferred. Then, learn how to work your leads in Follow Up Boss.",
+      "body": "<div class=\"welcome-track\"><span>01 · Zillow Preferred</span><span>02 · Follow Up Boss</span><span>03 · Practice and next steps</span></div><div class=\"rows\"><div class=\"row\"><h3>Zillow Preferred</h3><p>How the program works, your agent agreement, ZIP preferences, monthly lead capacity, and the performance standards you must meet.</p></div><div class=\"row\"><h3>Follow Up Boss</h3><p>How to find a contact, read the history, make calls and send texts, and use stages, notes, tasks, and appointments. We will also cover My Agent, Zillow Insights, and Smart Actions.</p></div><div class=\"row\"><h3>Practice and next steps</h3><p>Watch your presenter demonstrate the record, then practice the same steps. Discuss when to use nurture and learn how to record an accepted offer. Finish by checking what you still need before leads begin.</p></div></div><p class=\"takeaway\">Stay in your own TrueHQ live session for today’s exercises. The practice records are built into this session. Your written answers help us understand your thinking; they do not block you from continuing.</p>",
+      "notes": "Start with the Zillow program and its requirements before opening the Follow Up Boss examples. Confirm that everyone has joined their assigned TrueHQ session. Share the separate presentation window and keep your presenter console private. Explain any unfamiliar terms. Let each person answer and practice on their own screen. Written responses are for discussion, with no required keywords or corrections. Before class, create a new session with this updated lesson; existing sessions keep the lesson they were created with. Teach first, demonstrate second, and open the exercise only after the demonstration. Most slides are for presentation and discussion; only the marked activities need individual responses.",
+      "cue": "Can everyone see this session in their own TrueHQ account?",
       "time": 1,
-      "theme": "paper",
+      "theme": "tru tru-welcome",
       "id": "day1-how-a-zillow-lead-reaches-you",
       "sourceScreen": 4
     },
     {
-      "chapter": "Find the contact",
-      "title": "Start in People",
-      "lead": "Use the actual contact name, source, and activity to find the record.",
-      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list in the training account\"><figcaption>Training account · Open the full image to inspect the controls.</figcaption></figure>",
-      "notes": "Demonstrate People, smart lists, and filtering in your training account. Open the image at full size if labels are hard to see. Ask an agent to point to the source and most recent activity.",
-      "cue": "Where would you look for a new Zillow contact?",
+      "id": "day1-preferred-opportunity",
+      "chapter": "Welcome to Preferred",
+      "title": "How Zillow Preferred works",
+      "lead": "Zillow introduces the customer. You build the relationship.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>The program</h3><p>Zillow Preferred is an invitation-only program, previously called Flex. Zillow connects you with potential buyers. A success fee applies when a transaction covered by your agreement closes. Review that agreement with your team.</p></div><div class=\"row\"><h3>Your role</h3><p>Be available, understand the customer’s request, agree on a useful next step, and keep the record current. The customer may be new to buying and may not know who is calling.</p></div><div class=\"row\"><h3>Growth</h3><p>Your performance and the areas you serve help determine how many leads you receive. Tell the team how many new leads you can handle each month. The limit is 15 per month, or 10 in your first month. You can ask for fewer. The maximum is not a guaranteed number of leads.</p></div></div><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/faq/\" target=\"_blank\" rel=\"noopener\">Zillow Preferred</a></p>",
+      "notes": "Explain the value of a Zillow connection without promising a closing or a fixed number of leads. Preferred and the Premier Agent app are not contradictory names: the app still supports the program. Introduce Day 1 as program readiness plus the working contact record; Days 2–4 deepen conversations, showings, and financing.",
+      "cue": "What does the customer need from you that an automatic message cannot provide?",
       "time": 1,
-      "theme": "paper",
+      "theme": "tru"
+    },
+    {
+      "id": "day1-preferred-onboarding",
+      "chapter": "Welcome to Preferred",
+      "title": "Before your lead funnel turns on",
+      "lead": "Complete the Zillow setup as well as the TrueHQ training.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Agreement & account</h3><p>Use your Zillow onboarding invitation and your own account. Complete the Zillow Preferred agent agreement and required onboarding. Ask the team to verify activation; completing this class alone does not activate routing.</p></div><div class=\"row\"><h3>ZIP preferences</h3><p>When you log in for onboarding, set the ZIP preferences available to you. Choose areas you can serve well. Confirm your final routed ZIPs with the team lead; preferences and team routing must agree.</p></div><div class=\"row\"><h3>Capacity & availability</h3><p>Tell the team how many new leads you can handle alongside your existing clients. The maximum is 15 per month, or 10 in your first month as a new hire. Confirm your number and availability before leads begin.</p></div></div><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/compliance/\" target=\"_blank\" rel=\"noopener\">Program policies</a> · <a href=\"https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing\" target=\"_blank\" rel=\"noopener\">Agent capacity & routing</a> · <a href=\"https://www.zillow.com/preferred/program-benefits/\" target=\"_blank\" rel=\"noopener\">Program benefits</a></p>",
+      "notes": "Eric’s activation workflow requires the agent agreement. Show the actual invitation/account path only during a designated setup check, outside the simulated exercises. Zillow’s public routing documentation describes team-managed controls; do not promise every agent an identical edit menu. Academy onboarding requires login and was not independently inspected. Confirm each learner’s agreement, ZIP preferences, monthly capacity, and activation status with the team.",
+      "cue": "If your agreement is complete but the wrong ZIPs are routed, are you ready for leads?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "id": "day1-capacity-decision",
+      "chapter": "Welcome to Preferred",
+      "title": "How many leads should Sam take?",
+      "lead": "Choose the answer that fits Sam’s workload.",
+      "body": "<section class=\"case-brief\"><h3>Sam already has a busy month</h3><p>Sam has six active buyers, two evenings available for showings, and a day job on Tuesdays. Sam wants to take 20 new leads this month.</p><p>Our monthly limit is 15 leads. New hires can receive no more than 10 in their first month.</p></section><div class=\"choices\" data-quiz=\"day1-capacity\"><button data-option-id=\"more\" data-correct=\"false\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">Ask for more than 20 leads.</button><button data-option-id=\"twenty\" data-correct=\"false\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">20 leads is a good number.</button><button data-option-id=\"fewer\" data-correct=\"true\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">Ask for fewer than 20 leads.</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
+      "notes": "Keep this quick. Ask each agent to choose an answer. Explain that 15 is the monthly maximum and new hires are capped at 10 in month one. An agent can ask for fewer when their workload calls for it. Do not ask for a written explanation. A choice does not block them from continuing.",
+      "cue": "Should Sam ask for more than 20, 20, or fewer than 20 leads?",
+      "time": 2,
+      "theme": "tru",
+      "activity": {
+        "id": "day1-capacity-decision",
+        "kind": "choice",
+        "prompt": "Based on Sam’s workload, should Sam ask for 20 new leads?",
+        "choices": [
+          {
+            "id": "more",
+            "text": "Ask for more than 20 leads."
+          },
+          {
+            "id": "twenty",
+            "text": "20 leads is a good number."
+          },
+          {
+            "id": "fewer",
+            "text": "Ask for fewer than 20 leads."
+          }
+        ],
+        "correctChoiceId": "fewer",
+        "explanation": "Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum."
+      }
+    },
+    {
+      "id": "day1-preferred-standards",
+      "chapter": "Welcome to Preferred",
+      "title": "The standards you must meet",
+      "lead": "Know the results we expect, the lead limits, and the tools you must use.",
+      "body": "<div class=\"metric-grid\"><div><strong>1 in 30</strong><h3>Closing standard</h3><p>Our team standard is one closing for every 30 leads you take.</p></div><div><strong>25%+</strong><h3>Pickup rate</h3><p>Answer at least 25% of incoming Zillow connection calls over the last 90 days. Answering 10 of 40 incoming calls is 25%. This measures the calls you answer, not how often buyers answer you.</p></div></div><div class=\"rows\"><div class=\"row\"><h3>Monthly lead limits</h3><p>You can receive up to 15 leads per month. New hires can receive up to 10 in their first month. These are maximums, not guaranteed lead counts.</p></div><div class=\"row\"><h3>Follow Up Boss is mandatory</h3><p>Work your leads in Follow Up Boss. All lead calls and texts must go through Follow Up Boss so the communication is saved on the contact record.</p></div></div><p class=\"takeaway\">Meet 100% of your assigned Zillow Home Loans pre-approval target over three months. Ask your team lead what your target is. We cover lender introductions and buyer choice on Day 4.</p><p class=\"source\">The closing standard and monthly caps above are TRU team rules. <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Zillow program standards</a></p>",
+      "notes": "Teach the team rule directly: one closing for every 30 leads taken. Keep the 25% minimum pickup rate. The monthly lead cap is 15; new hires have a maximum of 10 in their first month. These caps are limits, not a promise that everyone receives the maximum. Calling and texting through Follow Up Boss are mandatory. Ask agents to report access or calling problems before their leads begin.",
+      "cue": "What is your first-month lead limit, and where must you make your calls and send your texts?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "id": "day1-fub-login-and-navigation",
+      "chapter": "Getting started in Follow Up Boss",
+      "title": "Now, let’s open Follow Up Boss",
+      "lead": "We have covered Zillow’s requirements. Next, learn where to go and what to do when a lead arrives.",
+      "body": "<p class=\"takeaway\">For this class, keep working in the TrueHQ simulator. These are the steps you will use in your real Follow Up Boss account after training.</p><div class=\"rows\"><div class=\"row\"><h3>Account setup</h3><p>Confirm the correct team, name, phone and notifications. In your profile menu → My Settings, connect the approved email/calendar account. Confirm FUB calling and mobile access with the team.</p></div><div class=\"row\"><h3>People · Inbox</h3><p>People finds contacts and groups needing outreach. Inbox holds conversations that need your attention. Clicking a contact’s name opens their record.</p></div><div class=\"row\"><h3>Tasks · Calendar · Reporting</h3><p>Tasks tracks work owed; Calendar shows scheduled time; Reporting shows results. Admin settings belong to the team’s setup process. You do not need to configure lead flow during a customer call.</p></div></div><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274393-Connecting-Your-Email-Calendar-Overview\" target=\"_blank\" rel=\"noopener\">Email & calendar setup</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/4402128321943-Inbox-Overview\" target=\"_blank\" rel=\"noopener\">Inbox</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274453-Tasks-Overview\" target=\"_blank\" rel=\"noopener\">Tasks</a></p>",
+      "notes": "All class exercises remain in TrueHQ. This page teaches the real login path for the later readiness check. Never ask for passwords on screen. Have each learner verify real account access before activation and observe one search separately; completion here is not proof of live-system navigation. Confirm the team-approved email account and notification setup.",
+      "cue": "Which screen would you open for an unread reply? Which for a promised callback?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "chapter": "Getting started in Follow Up Boss",
+      "title": "Start in People",
+      "lead": "People is your contact list. Use this image to find the search box, lists, and filters.",
+      "body": "<figure class=\"reference-screen\"><div class=\"reference-screen-scroll\" role=\"region\" aria-label=\"Full People reference image; scroll to inspect all controls\" tabindex=\"0\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list reference image\"></div><figcaption>Reference image · Scroll to inspect the full screen. Search and filters are not interactive here.</figcaption></figure>",
+      "notes": "Stay in TrueHQ. The full reference image is already displayed on this page; scroll to inspect its controls. Point out People, search, smart lists, and filtering. Ask learners which controls they would use and how they would confirm the source and recent activity. This is a walkthrough, not a completed search task. The simulator begins inside a contact; no external account is needed for class.",
+      "cue": "Which control would you use to find a contact by name?",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-start-in-people",
       "sourceScreen": 5
     },
     {
-      "chapter": "Find the contact",
-      "title": "Find Avery in the training account",
-      "lead": "Confirm the source before opening or editing a record.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Find the name</h3><p>Search for Avery in the training pond.</p></div><div class=\"row\"><h3>Check the source</h3><p>Look for Zillow. If needed, use Filters → Add filter → Lead Source.</p></div><div class=\"row\"><h3>Open and confirm</h3><p>Read the contact details and activity. Make sure this is the right Avery.</p></div></div><label class=\"field\">Where did you find the record? Name the path you used, or the control you need help finding.<textarea data-save=\"navigation\" placeholder=\"Use fictional practice details.\"></textarea></label>",
-      "notes": "Have an agent narrate where they would click. Use the training account, never a live contact as a practice record. The embedded record exercises begin inside a contact. An agent’s written report does not automatically verify People/search navigation. Observe it in the actual training account and record who observed it.",
-      "cue": "Explain your first three clicks.",
-      "time": 2,
-      "theme": "dark",
-      "id": "day1-find-avery-in-the-training-account",
-      "sourceScreen": 6,
-      "activity": {
-        "id": "day1-find-avery-in-the-training-account",
-        "kind": "written",
-        "prompt": "Find Avery in your training account. Confirm the source, assignment, and recent activity before editing.",
-        "fields": [
-          {
-            "id": "navigation",
-            "label": "Where did you find the record? Name the path you used, or the control you need help finding."
-          }
-        ]
-      }
+      "id": "day1-contact-tool-map",
+      "chapter": "Getting started in Follow Up Boss",
+      "title": "Find the tools on a contact record",
+      "lead": "Choose a tool to see where it is, when to use it, and an example.",
+      "body": "",
+      "notes": "Let each person explore at least Tasks, Appointments, and Collaborators before explaining the difference. The screenshot is a fictional record; the transparent hotspots identify tools without replacing FUB controls. Locations can differ in current accounts because sections can be reordered. Ask beginners to point, then experienced learners to explain the handoff. My Agent status is on the left; current Zillow Insights is on the right.",
+      "cue": "Where would you record a promise to call, versus a confirmed showing?",
+      "time": 3,
+      "theme": "tru tru-lab",
+      "native": "map"
     },
     {
-      "chapter": "Read the record",
-      "title": "Check the Details panel",
-      "lead": "The stage should match what actually happened.",
-      "body": "<figure class=\"screen-figure details-figure\"><button class=\"details-focus\" aria-label=\"Open full contact record\"><img src=\"/rep-lab/detail-full.png\" alt=\"Follow Up Boss Details panel: Stage, Assigned to, Source, and Timeframe\"></button><figcaption>Check Stage, Assigned to, Source, and Timeframe. Select the image to open the full contact record.</figcaption></figure>",
-      "notes": "Point out Stage, Assigned, Source, and Timeframe without narrating every control. Timing should come from the buyer, not a guess. Demonstrate the menu and green save check, then let every agent attempt the task. Do not turn intuitive stage names into a quiz.",
-      "cue": "Which detail would you verify before saving?",
+      "id": "day1-first-message-and-call",
+      "chapter": "Work the connection",
+      "title": "The welcome text has already gone out",
+      "lead": "Read what the customer received before you make your personal contact.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>On arrival</h3><p>TRU sends an automated initial text. Read the contact history to understand the inquiry and prior messages. An automated greeting does not mean you spoke with the buyer.</p></div><div class=\"row\"><h3>Your outreach</h3><p>Use FUB’s calling or texting controls on the record so communication is captured. Introduce yourself, your brokerage and the Zillow request. Invite an appropriate next step; listen before assuming readiness.</p></div><div class=\"row\"><h3>After the call</h3><p>Save the outcome and context, confirm the true stage/timeframe, and create the next task or agreed appointment. Make your calls and send your texts through FUB. If a customer reaches you elsewhere, record what happened and continue the follow-up through FUB.</p></div></div><p class=\"takeaway\">TRU standard: at least five unique personal calls or texts in the first seven days from arrival. Automated messages and emails do not count; day seven is not a stop rule.</p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/1500008539982-Action-Plans-Overview\" target=\"_blank\" rel=\"noopener\">Action Plans</a></p>",
+      "notes": "The initial automated text is Eric’s team workflow, not a universal Zillow default. Confirm its actual sender, content and trigger before class. Do not invent the exact text or send duplicate greetings. Demonstrate where calls/texts appear in the timeline. Explain the difference between an answered connection, a tour request, and an activity notification. Record the actual result, not the label you hoped to reach.",
+      "cue": "An automatic text and a property view appear. What evidence of a personal conversation do you have?",
       "time": 1,
-      "theme": "sage",
+      "theme": "tru"
+    },
+    {
+      "chapter": "Getting started in Follow Up Boss",
+      "title": "Demo: update the stage after a call",
+      "lead": "A stage tells the team what has happened with this customer.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Choose the right stage</h3><p>An unanswered call is Attempted contact. A real conversation with no meeting booked is Spoke with customer. A meeting with an agreed time and place is Appointment set.</p></div><div class=\"row\"><h3>Where to change it</h3><p>On the left side of the contact record, find Stage in the Details panel. Click the current stage, choose the new one, and save it. In our simulator, the green check saves the change.</p></div><div class=\"row\"><h3>When to update it</h3><p>Update the stage after the call, while the outcome is fresh. If an automatic update appears, check that it matches the conversation.</p></div><div class=\"row\"><h3>Watch the next screen</h3><p>Your presenter will show Avery’s record, select Appointment set, and save it. Avery has agreed to Saturday at 11 at the property. A tentative “Saturday might work” would not be enough.</p></div></div>",
+      "notes": "Explain these three stages. On the next slide, use the shared presentation record to demonstrate the stage menu and save check before opening the activity for agents. Show the saved stage, then invite them to repeat the steps. Shared-screen demonstration does not count as an agent submission.",
+      "cue": "First watch the stage change and save. Then you will try it.",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-check-the-details-panel",
       "sourceScreen": 8
     },
     {
-      "chapter": "Record exercise",
+      "chapter": "Work the connection",
       "title": "Practice: save the appointment stage",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
-      "time": 4,
-      "theme": "paper",
+      "notes": "Before opening this activity, demonstrate the required controls in the shared presentation window. Explain each click and show the saved result. Then click Open activity for agents. Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Demonstrate first, then open the activity for everyone to practice.",
+      "time": 3,
+      "theme": "tru tru-lab",
       "native": "practice",
       "scenario": "set-appointment",
       "id": "day1-set-appointment",
@@ -77,31 +153,75 @@
       "activity": {
         "id": "day1-set-appointment",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
         "scenario": "set-appointment"
       }
     },
     {
-      "chapter": "Write the note",
-      "title": "Write what the next agent needs",
-      "lead": "Record what happened, what the buyer said, and the agreed next step.",
-      "body": "<div class=\"split\"><div><blockquote>“Spoke with Avery. Looking for three bedrooms in Tacoma in 60–90 days. I’ll send two homes on Thursday, then call to compare them.”</blockquote></div><div><div class=\"rows\"><div class=\"row\"><h3>Keep the facts</h3><p>Use the buyer’s words where they clarify a need.</p></div><div class=\"row\"><h3>Make the next step specific</h3><p>Name the action and agreed date.</p></div><div class=\"row\"><h3>Leave out guesses</h3><p>A friendly conversation is not proof of readiness or budget.</p></div></div></div></div>",
-      "notes": "Ask what the example tells the next caller. Then complete the note exercise. Coach one missing fact rather than rewriting the entire note for the agent. Keep source, assignment, and history in view. Background information suggests a question; it does not establish finances, family circumstances, timing, or readiness. The note check measures saving an action, not writing quality.",
-      "cue": "Could someone follow up using only this note?",
+      "id": "day1-smart-actions",
+      "chapter": "Work the connection",
+      "title": "Recognize Smart Actions after a call",
+      "lead": "Read the suggested action. Confirm it against the conversation.",
+      "body": "<div class=\"product-pair\"><figure class=\"product-reference\"><img src=\"/workshops/references/smart-actions-sms.png\" alt=\"Official Smart Actions SMS showing a proposed stage update and Yes or No options\" loading=\"lazy\"><figcaption>Stage suggestion · illustrative FUB example</figcaption></figure><figure class=\"product-reference\"><img src=\"/workshops/references/smart-actions-updated.png\" alt=\"Official Smart Actions SMS proposing a calendar appointment\" loading=\"lazy\"><figcaption>Appointment suggestion · illustrative FUB example</figcaption></figure></div><p>After an eligible FUB call, Smart Actions may suggest a stage or appointment by text. Review the customer, action, and date before approving. Timeframe changes are automatic. No text does not mean there is no follow-up to do.</p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a></p>",
+      "notes": "These are original official FUB help images, including their original colors and sample content. They are reference examples, not an exercise answer or a live SMS. Beta requires FUB Calling, call recording, active Zillow two-way integration and supported Zillow stages. Admin → AI Settings controls suggest-only versus automatic behavior: early stages and appointments can be automatic; timeframe is always automatic. Verify team mode before demonstrating. Do not imply every learner receives the same prompt after every call.",
+      "cue": "What would you verify before answering Yes?",
       "time": 2,
-      "theme": "paper",
+      "theme": "tru"
+    },
+    {
+      "id": "day1-smart-actions-review",
+      "chapter": "Work the connection",
+      "title": "Check what Smart Actions changed",
+      "lead": "Compare the suggested update with what the customer actually said.",
+      "body": "<section class=\"case-brief\"><h3>“Friday could work” is not a confirmed meeting</h3><p>Jamie says Friday afternoon might work, but needs to check with a partner. No time or property is agreed. A Smart Actions message suggests an appointment for Friday at 3. You also notice the move timeframe changed.</p><p>You still owe Jamie a call tomorrow. Inspect the proposed action and the actual conversation. Decide what to accept, decline, or correct, and what work remains yours.</p></section><figure class=\"product-reference\"><img src=\"/workshops/references/smart-actions-log.png\" alt=\"FUB change log with purple wand icons and Undo links\" loading=\"lazy\"><figcaption>Official example: field updates can be reviewed and undone in the change log.</figcaption></figure><p>Look for the purple update marker and change log. Check Appointments for duplicates; appointments created by FUB identify that in the description. Keep using the manual record controls when needed.</p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a></p><div class=\"rows\"><div class=\"row\"><h3>What to do here</h3><p>Decline the proposed Friday appointment because Jamie has not confirmed it. Check the automatic timeframe change against the call. Keep tomorrow’s callback task and confirm the meeting with Jamie before booking it.</p></div></div>",
+      "notes": "Teach this as a worked example. Read the conversation, point out what was not confirmed, and show where the update can be reviewed. Do not request a written answer. Remind agents to use settings rather than replying STOP to FUB notifications.",
+      "cue": "A suggestion still needs to match what the customer agreed.",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "id": "day1-my-agent",
+      "chapter": "My Agent",
+      "title": "What My Agent means",
+      "lead": "A Zillow Preferred connection starts a 180-day My Agent relationship.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Where to check</h3><p>Open the contact → Details → My Agent status. This tells you whether the Zillow relationship is active, waiting for a response, or ending. The contact’s stage tells you where you are in the buying process.</p></div><div class=\"row\"><h3>Why it matters</h3><p>While the relationship is active, Zillow shows you as the customer’s agent and can share their Zillow home-search activity with you. Check the expiration date. The customer can end this connection before the 180 days are up.</p></div><div class=\"row\"><h3>How to use it</h3><p>Use what the customer is exploring to ask a better question and offer useful help. Maintain a real conversation. My Agent does not replace the required buyer or touring agreement.</p></div></div><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status\" target=\"_blank\" rel=\"noopener\">My Agent</a> · <a href=\"https://www.zillow.com/premier-agent/touring-agreement/\" target=\"_blank\" rel=\"noopener\">Touring agreements</a></p>",
+      "notes": "Differentiate Preferred’s initial180 days from other Premier Agent configurations. FUB needs the Zillow two-way integration. Do not promise all search history, all internet activity, or permanent exclusive lead ownership. Explain the invitation/renewal state and ask the team to troubleshoot a missing relationship. A CRM connected status is not a signed representation contract.",
+      "cue": "Can My Agent be Connected while the stage is still Attempted Contact?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "id": "day1-zillow-insights",
+      "chapter": "My Agent",
+      "title": "See what the buyer is viewing on Zillow",
+      "lead": "On the right side of the contact record, open Zillow Insights.",
+      "body": "<div class=\"insights-layout\"><figure class=\"product-reference\"><img src=\"/workshops/references/zillow-insights.png\" alt=\"Official Zillow Insights panel showing viewed and saved homes, price range and new ZIP activity\" loading=\"lazy\"><figcaption>Current official FUB panel · availability depends on the contact and account</figcaption></figure><section class=\"case-brief\"><h3>A change worth asking about</h3><p>Last Tuesday, Taylor said a three-bedroom home near work mattered most, but had not settled on a budget. Today, eligible Zillow activity shows saved homes in another ZIP and a higher price range.</p><p>You have no new reply from Taylor. A partner might be browsing, or the criteria might have changed. You do not know yet.</p><p>Look at the date range and the actual saved/viewed homes. Offer a useful comparison and ask whether the search has changed. Treat the price range as browsing context, not approved purchasing power.</p></section></div><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/39586065250839-Use-Zillow-Insights-for-Preferred-and-Pro-in-Follow-Up-Boss\" target=\"_blank\" rel=\"noopener\">Zillow Insights</a></p><div class=\"rows\"><div class=\"row\"><h3>A useful message</h3><p>“Taylor, last time we spoke you wanted a three-bedroom near work. Are those still your priorities, or would comparing another area be helpful?” Ask about the search without assuming that saved homes establish a budget.</p></div></div>",
+      "notes": "Explain the right-side Zillow Insights panel and show the original screenshot. Walk through Taylor’s example aloud. There is no written task on this slide.",
+      "cue": "Use the activity to prepare a helpful conversation, then confirm the details with the buyer.",
+      "time": 2,
+      "theme": "tru"
+    },
+    {
+      "chapter": "Record practice",
+      "title": "Demo: save a useful contact note",
+      "lead": "The note should let you or a teammate continue the conversation without starting over.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Read the history first</h3><p>The center of the record shows previous notes, calls, and texts. Before contacting someone, read the latest entries so you know what has already happened.</p></div><div class=\"row\"><h3>What to write</h3><p>Record the buyer’s request, useful preferences, what you agreed, and what still needs an answer. For Avery: buying with their sister, Olympia or Lacey, three or more bedrooms, and hoping to move before November. You promised two options by Thursday.</p></div><div class=\"row\"><h3>Where to save it</h3><p>Type in the note box at the top of the contact history, then click Create Note. The note should appear in the history below. Text left in the box has not been saved.</p></div><div class=\"row\"><h3>Watch, then practice</h3><p>On the next screen, your presenter will save a note and reopen the history to show it. You will then do the same. A note records the promise; a task reminds you to carry it out.</p></div></div>",
+      "notes": "Demonstrate Create Note on the next shared slide before opening the agent activity. Show the difference between a draft in the box and a saved entry. Read the example aloud and point out its specific facts. Do not invent budget or financing details.",
+      "cue": "Watch where the saved note appears in the history.",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-write-what-the-next-agent-needs",
       "sourceScreen": 14
     },
     {
-      "chapter": "Record exercise",
+      "chapter": "Record practice",
       "title": "Practice: write the conversation note",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
-      "time": 5,
-      "theme": "paper",
+      "notes": "Before opening this activity, demonstrate the required controls in the shared presentation window. Explain each click and show the saved result. Then click Open activity for agents. Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Demonstrate first, then open the activity for everyone to practice.",
+      "time": 3,
+      "theme": "tru tru-lab",
       "native": "practice",
       "scenario": "spoke-note",
       "id": "day1-spoke-note",
@@ -109,31 +229,31 @@
       "activity": {
         "id": "day1-spoke-note",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
         "scenario": "spoke-note"
       }
     },
     {
-      "chapter": "Set the task",
-      "title": "Give the follow-up a date and time",
-      "lead": "Write an action you will recognize when it comes due.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>History versus next action</h3><p>The note says what happened. The task schedules what happens next.</p></div><div class=\"row\"><h3>Make it usable</h3><p>Call Avery to compare 406 and 422 Juniper — Thursday, 3 p.m.</p></div><div class=\"row\"><h3>Before you leave</h3><p>Save a real date and time, then reopen and verify it.</p></div></div>",
-      "notes": "Explain the difference between a note and a task. The note records history; the task schedules the next action. Complete the missed-call exercise next.",
-      "cue": "What makes a task usable tomorrow?",
-      "time": 2,
-      "theme": "sage",
+      "chapter": "Record practice",
+      "title": "Demo: schedule the next call",
+      "lead": "A task tells you what to do and when to do it.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Task or appointment?</h3><p>Use a task for work you owe, such as calling a buyer or checking parking. Use an appointment for a meeting the customer has agreed to attend at a specific time.</p></div><div class=\"row\"><h3>Open Tasks</h3><p>On the right side of the record, find Tasks and click +. Name the action clearly, choose the responsible agent, and set a due date and time. Save the task.</p></div><div class=\"row\"><h3>Make it useful</h3><p>“Call Avery tomorrow at 9:30 about the Juniper inquiry” is useful. “Follow up” leaves you guessing. If someone else takes over, make sure they have access to the contact and know what to do.</p></div><div class=\"row\"><h3>Watch, then practice</h3><p>Your presenter will create the task on the next screen and show its date in the Tasks panel. Then you will record an unanswered call and schedule another attempt. An unanswered call does not tell you why the buyer missed it.</p></div></div>",
+      "notes": "On the next shared slide, demonstrate the stage, saved note, and task form in that order. Show the name, assignee, date and time, then save. Open the learner activity only after the demonstration.",
+      "cue": "Watch the task appear with a due date before you start your own.",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-give-the-follow-up-a-date-and-time",
       "sourceScreen": 16
     },
     {
-      "chapter": "Record exercise",
+      "chapter": "Record practice",
       "title": "Practice: set the missed-call task",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
-      "time": 7,
-      "theme": "paper",
+      "notes": "Before opening this activity, demonstrate the required controls in the shared presentation window. Explain each click and show the saved result. Then click Open activity for agents. Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Demonstrate first, then open the activity for everyone to practice.",
+      "time": 4,
+      "theme": "tru tru-lab",
       "native": "practice",
       "scenario": "noanswer-task",
       "id": "day1-noanswer-task",
@@ -141,61 +261,72 @@
       "activity": {
         "id": "day1-noanswer-task",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
         "scenario": "noanswer-task"
       }
     },
     {
+      "id": "day1-choose-the-tool",
+      "chapter": "Record practice",
+      "title": "Which tool holds which part of the work?",
+      "lead": "Here is how the tools work together when a teammate covers a showing.",
+      "body": "<section class=\"case-brief\"><h3>A covering agent needs a usable handoff</h3><p>Avery agrees to tour 406 Juniper on Saturday at 11. You promised to check parking with the listing agent tomorrow. A teammate will cover the showing and needs access to Avery’s background. Avery’s sister is a co-buyer, not a member of your team. You also received a relevant approved document.</p><p>You need to preserve the buyer’s preferences, record the meeting, assign your parking follow-up, and prepare the covering agent. No offer has been accepted.</p></section><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274453-Tasks-Overview\" target=\"_blank\" rel=\"noopener\">Tasks</a></p><div class=\"rows\"><div class=\"row\"><h3>Note and appointment</h3><p>Save the buyer’s preferences in a contact note. Put the confirmed Saturday 11 showing in Appointments.</p></div><div class=\"row\"><h3>Task and collaborator</h3><p>Make a dated task for checking parking. Add the covering teammate as a collaborator if they need contact access, and tell them what they are responsible for.</p></div><div class=\"row\"><h3>Files and relationships</h3><p>Store the approved document in Files. Record the sister as a related contact or co-buyer. She is not a team collaborator. Add a Deal when the transaction reaches the team’s agreed point.</p></div></div>",
+      "notes": "Walk through this example yourself. Point to the matching areas on the contact map if someone needs help. No written response is needed.",
+      "cue": "Use this example to connect the tools you have just practiced.",
+      "time": 2,
+      "theme": "tru"
+    },
+    {
       "id": "day1-nurture-discussion",
-      "chapter": "Start with practice",
-      "title": "Nurture needs a conversation",
-      "lead": "Compare two situations. Explain the evidence, next action, and review point.",
-      "time": 8,
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Case A · Later timeline, still engaged</h3><p>The buyer expects to move later and continues replying and discussing homes.</p></div><div class=\"row\"><h3>Case B · The record went quiet</h3><p>The buyer has not responded recently. The record needs a review of what happened and what is due next.</p></div></div><label class=\"field\">For each case, what evidence would you need before moving this lead to nurture?<textarea data-save=\"nurture-evidence\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">What next action would remain, and who owns it?<textarea data-save=\"nurture-next-action\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">When would you review the record again?<textarea data-save=\"nurture-review\" placeholder=\"Use fictional practice details.\"></textarea></label>",
-      "notes": "Give everyone two minutes to write before discussing. Compare two contrasting responses, then explain the team’s actual nurture rule and why it applies. Do not invent a timeline, assume silence means nurture, or impose a follow-up standard beyond the doctrine’s first-week rule. There is no automatic grade. Review the evidence and preserve an owned next action.",
-      "cue": "What evidence changes your decision, and what still needs to happen?",
-      "theme": "blue",
+      "chapter": "Record practice",
+      "title": "Define nurture: two different decisions",
+      "lead": "Read the history before deciding what should happen next. A later move date and a quiet phone do not tell the whole story.",
+      "time": 6,
+      "body": "<p><strong>First, the terms:</strong> Nurture usually means staying in touch with someone who may buy later, using a follow-up plan that fits their needs. Your coach will explain when your team uses this stage. Moving a name into a different stage does not, by itself, create a follow-up plan. A task is the dated reminder assigned to the person who will take the next action.</p><section class=\"case-brief\"><h3>Maya Chen · The move is later, but there is a promise due</h3><p><strong>How it started:</strong> Maya requested a tour through Zillow three weeks ago. You spoke and toured one home together. She is renting until March and said, “I probably won’t move before my lease ends, but I want to understand the neighborhoods before I choose.”</p><p><strong>What happened this week:</strong> On Tuesday she sent two listings and asked which area would make the commute easier. You agreed to call Friday at 4 p.m. She replied, “Yes, talk then.” She has not asked to stop hearing from you, and no second showing is booked.</p><p><strong>What you inherit:</strong> The stage is Met with customer. A Friday 4 p.m. call task is assigned to you. A covering agent added, “Six months out — move to Nurture?” You have not discussed how often Maya wants contact or whether she would consider a suitable home sooner.</p><p><strong>The decision:</strong> It is Friday at 3:45 p.m. Would you change the stage now, keep it while you clarify something, or take another step? What would you ask on the agreed call? Explain how your plan respects her timing and the promise already made.</p></section><section class=\"case-brief\"><h3>Jordan Ellis · The record is quiet, but look at the attempts</h3><p><strong>How it started:</strong> Jordan requested information about 18 Cedar Street through Zillow on Monday morning. You called that morning, reached voicemail, and left a message offering to arrange a showing. You have never spoken with Jordan.</p><p><strong>What happened this week:</strong> An automatic welcome text went out Monday. On Wednesday you personally texted, “I can help arrange a visit to Cedar Street — would Thursday afternoon or Saturday morning work?” There has been no reply. The record shows two property views on Thursday; it does not explain why Jordan viewed them.</p><p><strong>What you inherit:</strong> It is Friday. The stage is Attempted contact. There is no next task. Another agent wrote, “No response — maybe not serious. Nurture?” The history contains one personal call and one personal text; the automatic message is separate.</p><p><strong>The decision:</strong> What can you fairly conclude about Jordan’s interest? What would you do before treating this as a longer-term relationship? Choose a next attempt that offers a reason to respond, and explain when you would review the result. You do not know whether Jordan is busy, already helped, or no longer looking.</p></section><p><strong>Ready for a harder question?</strong> How would your plan change if Maya asked for one call next month instead of Friday, or Jordan replied, “We bought yesterday”? Identify which new fact changes the action. Do not invent a universal number of days for moving someone to Nurture.</p><label class=\"field\">For each buyer, what do you know from the record, what is still unknown, and would you change the stage yet? Explain your reasoning.<textarea data-save=\"evidence\" placeholder=\"Use the case facts. It is okay to say what you do not know yet.\"></textarea></label><label class=\"field\">What would you do next for each buyer? Include what you would say or ask, who owns the action, and when you would do it.<textarea data-save=\"next-action\" placeholder=\"Use the case facts. It is okay to say what you do not know yet.\"></textarea></label><label class=\"field\">What new information would make you change your plan? Name a specific answer or event, and when you would review the record.<textarea data-save=\"review\" placeholder=\"Use the case facts. It is okay to say what you do not know yet.\"></textarea></label>",
+      "notes": "Give everyone quiet reading time and an independent response before discussion. For beginners, explain lead, stage, task, and automatic versus personal outreach using the facts on screen. Compare two different responses; ask “Which fact led you there?” rather than requiring a corrected answer. Explain the team’s actual nurture rule and why it applies. Do not invent a timeline or imply that a later move date or silence automatically means Nurture. Maya has an agreed call due; ask what the learner would clarify before changing the relationship. Jordan has two personal attempts in the first week, not three: the automatic message does not count. TRU’s first-week floor is at least five unique personal attempts from arrival; calls, including voicemail, and personal texts count. Do not turn that floor into a stop rule or impose a standard beyond week one. For experienced learners, use the changed-fact questions and ask what happens to an existing task if the stage changes. All written responses are ungraded; no rewrite is required to continue.",
+      "cue": "Which fact matters most to your next action, and which tempting conclusion is not supported yet?",
+      "theme": "tru",
       "activity": {
         "id": "day1-nurture-discussion",
         "kind": "discussion",
-        "prompt": "Compare the engaged, later-timeline buyer with the record that went quiet.",
+        "prompt": "For Maya and Jordan, separate what you know from what you are assuming. Explain the next action you would take and why.",
         "fields": [
           {
             "id": "evidence",
-            "label": "For each case, what evidence would you need before moving this lead to nurture?"
+            "label": "For each buyer, what do you know from the record, what is still unknown, and would you change the stage yet? Explain your reasoning."
           },
           {
             "id": "next-action",
-            "label": "What next action would remain, and who owns it?"
+            "label": "What would you do next for each buyer? Include what you would say or ask, who owns the action, and when you would do it."
           },
           {
             "id": "review",
-            "label": "When would you review the record again?"
+            "label": "What new information would make you change your plan? Name a specific answer or event, and when you would review the record."
           }
         ]
       }
     },
     {
-      "chapter": "Practice",
+      "chapter": "Record practice",
       "title": "Repair Avery’s record",
-      "lead": "Only a request to compare homes is confirmed. The record says Appointment set.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>What happened</h3><p>Avery asked to compare 406 and 422 Juniper on Thursday. No appointment was booked.</p></div><div class=\"row\"><h3>Read the actual record</h3><p>Inspect the original record. Compare the saved details with what the buyer actually said. Name the changes before editing.</p></div></div>",
-      "notes": "Give one minute to inspect without solving it for the agent. The next original exercise requires the learner to name the changes before editing. Do not bypass its diagnosis step; discuss the evidence after the learner attempts it.",
-      "cue": "What would you fix first, and why?",
-      "time": 2,
-      "theme": "blue",
+      "lead": "You are covering the next call. Decide which parts of this record you can rely on.",
+      "body": "<section class=\"case-brief\"><h3>A hopeful plan became an appointment label</h3><p>Yesterday Avery called about 406 and 422 Juniper Lane. Avery said, “Let’s plan on Thursday morning — I’ll confirm once I’ve checked with my sister.” No appointment was booked. You are now covering for the agent who took the call.</p><p>The record says Appointment set. The saved note says, “Talked. Interested. Follow up later.” There is no next task. Avery’s interest in the two properties is visible, but the note does not tell the next caller which homes were discussed or what confirmation is still needed.</p><p>Before you edit, decide what the record claims, what the buyer actually confirmed, and what another agent needs next. In the following exercise, identify the record’s problems first, then make your changes. Do not create a meeting just to make the label look right.</p></section><p class=\"takeaway\">Before anyone edits, your presenter will point out the stage, the vague note, and the missing task. On the next screen, identify those problems, then use the same stage, note, and task controls you have already practiced.</p>",
+      "notes": "Give learners time to read, not just react to a stage label. Beginners can start with “What happened?” and “What still has to happen?” Experienced learners should explain the downstream cost: a teammate could prepare for an unconfirmed appointment or miss the needed call. Preserve the next exercise’s diagnosis step. Discussion has no keyword score; record controls still check saved actions. Demonstrate how to read this record before opening the repair activity. This combines familiar controls; it should not introduce a new workflow.",
+      "cue": "What could the next agent mistakenly believe, and what would you need to clarify with Avery?",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-repair-averys-record",
       "sourceScreen": 18
     },
     {
-      "chapter": "Record exercise",
+      "chapter": "Record practice",
       "title": "Practice: repair Avery’s record",
-      "lead": "Use the training contact. Check your work to continue.",
+      "lead": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
       "body": "",
-      "notes": "Let the agent find the control before offering a hint. Ask them to explain any correction. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "Make the update, save it, then check your work.",
-      "time": 7,
-      "theme": "paper",
+      "notes": "Before opening this activity, demonstrate the required controls in the shared presentation window. Explain each click and show the saved result. Then click Open activity for agents. Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Demonstrate first, then open the activity for everyone to practice.",
+      "time": 4,
+      "theme": "tru tru-lab",
       "native": "practice",
       "scenario": "avery-repair",
       "id": "day1-avery-repair",
@@ -203,44 +334,66 @@
       "activity": {
         "id": "day1-avery-repair",
         "kind": "record",
-        "prompt": "Use the training contact. Check your work to continue.",
+        "prompt": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
         "scenario": "avery-repair"
       }
     },
     {
-      "chapter": "Practice",
+      "chapter": "Record practice",
       "title": "Check the record before moving on",
       "lead": "Reopen what you saved.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Stage</h3><p>Does it match the event, and did the change save?</p></div><div class=\"row\"><h3>Note</h3><p>Does it explain what happened without guessing?</p></div><div class=\"row\"><h3>Task</h3><p>Is the next action scheduled for a real date and time?</p></div><div class=\"row\"><h3>Handoff</h3><p>Could another agent act on this record without asking you to explain it?</p></div></div>",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Stage</h3><p>Does it match the event, and did the change save?</p></div><div class=\"row\"><h3>Note</h3><p>Does it explain what happened without guessing?</p></div><div class=\"row\"><h3>Task</h3><p>Is the next action scheduled for a real date and time?</p></div><div class=\"row\"><h3>Handoff</h3><p>Could another agent act on this record without asking you to explain it?</p></div></div><section class=\"case-brief\"><h3>The handoff test</h3><p>You will be unavailable when the next task is due. Your teammate has only this record. Could they identify the buyer’s request, what was actually agreed, and the action they own? If not, name the missing fact rather than adding a more optimistic stage.</p></section>",
       "notes": "Ask agents to check their own work. Introduce the deal exercise: once an offer is accepted, update the stage and record the deal details.",
       "cue": "Which check would catch an unsaved stage?",
       "time": 1,
-      "theme": "dark",
+      "theme": "tru",
       "id": "day1-check-the-record-before-moving-on",
       "sourceScreen": 20
     },
     {
-      "chapter": "Record exercise",
-      "title": "Practice adding a deal",
-      "lead": "Use the buyer’s name, price, and expected close date.",
+      "id": "day1-inbox-workflow",
+      "chapter": "Daily workflow",
+      "title": "Handle a reply from start to finish",
+      "lead": "Read the conversation in Inbox, open the contact record, and complete or schedule the follow-up.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Read the whole thread</h3><p>Check My Inbox and the team inboxes assigned to you. Match the person before replying. Unread is a viewing state; opening a message does not complete the customer’s request.</p></div><div class=\"row\"><h3>Preserve the outcome</h3><p>Save important customer context on the contact record. An internal Inbox note stays in the conversation and is not added to the lead profile. A draft has not been sent.</p></div><div class=\"row\"><h3>Finish or hand off</h3><p>Reply, handle the request or assign follow-up with an owner and due date. Close the conversation after handling it. Read status or closing an Inbox item does not update the contact stage.</p></div></div><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/4402128321943-Inbox-Overview\" target=\"_blank\" rel=\"noopener\">Inbox</a></p>",
+      "notes": "Demonstrate missed calls, texts and emails as conversations. If a customer asks you to stop contacting them, respect the request and follow the team’s communication process; do not solve it by changing a stage alone. Inbox permission is different from contact assignment. Do not let a cleared Inbox stand in for promised tasks.",
+      "cue": "A teammate sees an empty contact timeline but you wrote an Inbox note. Where should the customer context go?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "id": "day1-daily-priorities",
+      "chapter": "Daily workflow",
+      "title": "Use Smart Lists and tasks together",
+      "lead": "Check replies, due tasks, and today’s appointments. Then work through your contact lists.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Inbox + due work</h3><p>Handle incoming replies, missed calls and due/overdue commitments. Confirm today’s appointments. A specific promise needs a dated task and an owner.</p></div><div class=\"row\"><h3>People → Smart Lists</h3><p>Saved filters identify contacts by criteria such as stage or last communication. They update as records change. Use the team’s assigned lists; inspect filters if someone is missing.</p></div><div class=\"row\"><h3>Read before contacting</h3><p>Confirm identity, source, owner, last conversation, recent activity and next task. Being absent from a list does not prove follow-up is done; access and filters affect what you see.</p></div></div><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/1500008374882-Smart-Lists-Overview\" target=\"_blank\" rel=\"noopener\">Smart Lists</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274453-Tasks-Overview\" target=\"_blank\" rel=\"noopener\">Tasks</a></p>",
+      "notes": "New users: explain dynamic list with a concrete example, such as contacts with no recent communication. Experienced users: ask how a stale stage or automation could affect a filter. Avoid building or editing shared lists during class. Missing contact: clear filters, check All People/search, then ask the team about assigned/collaborator/pond access before creating a duplicate.",
+      "cue": "Why might Avery disappear from a Smart List without being deleted?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "chapter": "Transaction handoff",
+      "title": "Demo: add the accepted offer as a deal",
+      "lead": "Watch your presenter open Deals, enter the property, price, and closing date, then save.",
       "body": "",
-      "notes": "Demonstrate the deal form, then let the learner enter it. Use fictional details.",
-      "cue": "What would you check before creating this deal?",
-      "time": 3,
-      "theme": "paper",
+      "notes": "Use the shared presentation form to show the blue +, property/address, price and closing date. Save it and show the new deal. Explain that the contact stage also changes to Under contract. The next slide lets agents repeat these steps and add the note and next task.",
+      "cue": "After the demonstration, you will save the accepted-offer record yourself.",
+      "time": 2,
+      "theme": "tru tru-lab",
       "native": "deal",
       "id": "day1-practice-adding-a-deal",
       "sourceScreen": 21
     },
     {
-      "chapter": "Record exercise",
+      "chapter": "Transaction handoff",
       "title": "Practice: record the accepted offer",
-      "lead": "Update the stage and add the deal from the scenario.",
+      "lead": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
       "body": "",
-      "notes": "Check the accepted-offer exercise. A passed check should explain the evidence, not just display a result. This is a separate fictional case. Keep the original FUB controls, save behavior, hints, and server check. Record check passed means the required actions passed, not that note wording or overall readiness was graded. Have the agent reopen and verify the saved changes.",
-      "cue": "What changed after the offer was accepted?",
-      "time": 6,
-      "theme": "paper",
+      "notes": "Before opening this activity, demonstrate the required controls in the shared presentation window. Explain each click and show the saved result. Then click Open activity for agents. Open this activity for the learners. Each person works in their own simulated record inside this TrueHQ session; do not open Follow Up Boss or repeat the update in another account. Read this exercise’s scenario: each is a separate fictional case, so changes do not carry into the next case. Let the learner find the control before offering a hint. Preserve the repair diagnosis step where present. Save and check the work here; in a live session the check submits the result to the presenter. A passed check validates the required saved actions, not note quality or overall readiness. Reopen and verify changes, and check again after editing a passed record.",
+      "cue": "Demonstrate first, then open the activity for everyone to practice.",
+      "time": 3,
+      "theme": "tru tru-lab",
       "native": "practice",
       "scenario": "offer-accepted",
       "id": "day1-offer-accepted",
@@ -248,68 +401,197 @@
       "activity": {
         "id": "day1-offer-accepted",
         "kind": "record",
-        "prompt": "Update the stage and add the deal from the scenario.",
+        "prompt": "Watch the demonstration first. When your presenter opens the activity, try the same steps in your own record.",
         "scenario": "offer-accepted"
       }
     },
     {
-      "chapter": "Retain",
-      "title": "Where will you start tomorrow?",
-      "lead": "Use your tasks and new leads to plan the next calls.",
-      "body": "<div class=\"split\"><div><div class=\"rows\"><div class=\"row\"><h3>Due tasks</h3><p>Review what you agreed to do and when.</p></div><div class=\"row\"><h3>New leads</h3><p>Find the correct contact and read the history.</p></div><div class=\"row\"><h3>After each conversation</h3><p>Update the stage, note, and dated next task.</p></div></div></div><div><label class=\"field\">Without looking back: what belongs in a useful contact record?<textarea data-save=\"recall\" placeholder=\"Write in your own words. Use fictional details only.\"></textarea></label></div></div>",
-      "notes": "Give 30 seconds without notes. Then ask partners to compare. Revisit only the missing item, not the entire lesson.",
-      "cue": "Explain your first five minutes in Follow Up Boss.",
-      "time": 2,
-      "theme": "paper",
+      "id": "day1-transaction-handoff",
+      "chapter": "Transaction handoff",
+      "title": "What to do after an offer is accepted",
+      "lead": "Update Follow Up Boss and confirm who handles the Zillow closing paperwork.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>In Follow Up Boss</h3><p>Record the actual stage, accepted-offer details, deal and next task under the team’s process. Keep the transaction coordinator informed about changes.</p></div><div class=\"row\"><h3>In Zillow Premier Agent</h3><p>Final transaction details and closing documents still need the Zillow workflow. A FUB Deal or file alone does not finish Zillow reporting.</p></div><div class=\"row\"><h3>Know who owns it</h3><p>Confirm who logs the transaction, uploads closing documents and handles the success fee. Escalate a pre-existing-relationship or referral question promptly; do not assume it removes an obligation.</p></div></div><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Program standards</a> · <a href=\"https://www.zillow.com/preferred/compliance/\" target=\"_blank\" rel=\"noopener\">Program policies</a></p>",
+      "notes": "Explain the success fee as a signed-agreement obligation, not a universal flat rate. Zillow’s current compliance page requires closing documents within four calendar days for eligible transactions; the team must name the responsible coordinator and handoff. FUB is the daily CRM, while Zillow remains necessary for this reporting and onboarding. Seller-connection agents need their additional program training; Day 1 does not certify seller-course completion.",
+      "cue": "If the FUB deal says Closed, what still needs verification?",
+      "time": 1,
+      "theme": "tru"
+    },
+    {
+      "chapter": "Ready for leads",
+      "title": "A practical start to your workday",
+      "lead": "Start with the work that already has a deadline.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Check what needs an answer</h3><p>Open Inbox for new replies and missed calls. Check today’s appointments so you know when you need to be available.</p></div><div class=\"row\"><h3>Keep existing promises</h3><p>Open Tasks and look for overdue work and calls due soon. If you cannot make a promised call, arrange coverage and leave a clear note.</p></div><div class=\"row\"><h3>Work new leads</h3><p>Read the new inquiry and any automatic messages. Call through FUB, save the outcome, and schedule the next step. Use your team’s Smart Lists to keep working your contacts.</p></div></div>",
+      "notes": "Present this as a simple daily routine. Discuss how to get help when a new lead and a promised call arrive together. No written response is needed.",
+      "cue": "Inbox, appointments, due tasks, then your contact lists.",
+      "time": 1,
+      "theme": "tru",
       "id": "day1-where-will-you-start-tomorrow",
-      "sourceScreen": 23,
+      "sourceScreen": 23
+    },
+    {
+      "chapter": "Ready for leads",
+      "title": "Before you leave a contact record",
+      "lead": "Take a moment to check that the next step is clear.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Stage</h3><p>Does the stage match what actually happened?</p></div><div class=\"row\"><h3>Note</h3><p>Did you save the important facts and what you agreed?</p></div><div class=\"row\"><h3>Next step</h3><p>Is there a task with a date and owner, or a confirmed appointment?</p></div><div class=\"row\"><h3>Final check</h3><p>Reopen what you saved. A teammate should be able to tell what happened and what to do next.</p></div></div>",
+      "notes": "Recap the record workflow as a presenter. Ask for questions before the final readiness check.",
+      "cue": "This is the same check after every meaningful conversation.",
+      "time": 1,
+      "theme": "tru",
+      "id": "day1-before-your-next-client-conversation",
+      "sourceScreen": 24
+    },
+    {
+      "id": "day1-activation-readiness",
+      "chapter": "Ready for leads",
+      "title": "Before you start receiving leads",
+      "lead": "Check your accounts and setup with your team. Completing this class does not turn on your leads.",
+      "body": "<div class=\"check-grid\"><div><h3>Zillow ready</h3><p>Agreement and onboarding complete. ZIP preferences reviewed. Monthly lead count and availability confirmed with the team: up to 15 leads, or up to 10 in your first month. Routing activation verified.</p></div><div><h3>FUB ready</h3><p>Own login works. Calling and texting through FUB work. Notifications and your approved email/calendar are checked. Find a contact, locate its tools, and understand the connected Zillow report.</p></div><div><h3>Work ready</h3><p>Read the history. Call or text through FUB. Save a clear note, the correct stage, and the next task or appointment. Check automatic updates against what the buyer actually said.</p></div></div><label class=\"field\">What is ready, what remains uncertain, and who will help you resolve it before leads begin?<textarea data-save=\"readiness\" placeholder=\"Explain your thinking. Unsure is a useful answer, too.\"></textarea></label>",
+      "notes": "End the simulated class here. Arrange a separate, coach-observed real-account check before turning on leads; use an approved test contact, not edits to a real buyer. Record unresolved access/setup questions for the team. Do not mark agreement signed, ZIPs saved or activation complete based on this written answer. New saved sessions must use this edition.",
+      "cue": "What is the one unresolved item that could prevent you from handling your first connection?",
+      "time": 1,
+      "theme": "tru",
       "activity": {
-        "id": "day1-where-will-you-start-tomorrow",
+        "id": "day1-activation-readiness",
         "kind": "written",
-        "prompt": "Use your tasks and new leads to plan the next calls.",
+        "prompt": "What is ready, what remains uncertain, and who will help you resolve it before leads begin?",
         "fields": [
           {
-            "id": "recall",
-            "label": "Without looking back: what belongs in a useful contact record?"
+            "id": "readiness",
+            "label": "What is ready, what remains uncertain, and who will help you resolve it before leads begin?"
           }
         ]
       }
     },
     {
-      "chapter": "Retain",
-      "title": "Before your next client conversation",
-      "lead": "Write down when you will practice again.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>After each conversation</h3><p>Save the true stage, factual note, and dated next action before moving on.</p></div><div class=\"row\"><h3>With your coach</h3><p>Review a real record together after the next relevant client conversation.</p></div></div><label class=\"field\">After my next call, I will complete ___ before moving on.<textarea data-save=\"commitment-completion\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">My next follow-up block starts in ___.<textarea data-save=\"commitment-block\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">My named coach and the example we will review.<textarea data-save=\"commitment-coach\" placeholder=\"Use fictional practice details.\"></textarea></label>",
-      "notes": "In live sessions, closing the session creates 24-hour recall, three-day fresh-case, and seven-day coach-review assignments. Confirm each agent’s named coach and session timezone. Agents see due work in Rep; the daily digest links to due or reviewable work. In self-paced study, arrange these checks with a coach. Without a relevant client opportunity, use a fresh fictional case and label real-work application not yet observed. Practice readiness is separate from quiz certification and activation.",
-      "cue": "Tell your partner what you will practice and when.",
-      "time": 3,
-      "theme": "sage",
-      "id": "day1-before-your-next-client-conversation",
-      "sourceScreen": 24,
-      "activity": {
-        "id": "day1-before-your-next-client-conversation",
-        "kind": "commitment",
-        "prompt": "Make the record update part of finishing the conversation.",
-        "fields": [
-          {
-            "id": "completion",
-            "label": "After my next call, I will complete ___ before moving on."
-          },
-          {
-            "id": "block",
-            "label": "My next follow-up block starts in ___."
-          },
-          {
-            "id": "coach",
-            "label": "My named coach and the example we will review."
-          }
-        ]
-      }
+      "id": "day1-official-references",
+      "chapter": "Ready for leads",
+      "title": "Your reference desk",
+      "lead": "Use these official guides when a screen or workflow changes.",
+      "body": "<div class=\"reference-links\"><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/faq/\" target=\"_blank\" rel=\"noopener\">Zillow Preferred</a></p><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Program standards</a></p><p class=\"source\">Official reference: <a href=\"https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing\" target=\"_blank\" rel=\"noopener\">Agent capacity & routing</a></p><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-benefits/\" target=\"_blank\" rel=\"noopener\">Program benefits</a></p><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/compliance/\" target=\"_blank\" rel=\"noopener\">Program policies</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status\" target=\"_blank\" rel=\"noopener\">My Agent</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/39586065250839-Use-Zillow-Insights-for-Preferred-and-Pro-in-Follow-Up-Boss\" target=\"_blank\" rel=\"noopener\">Zillow Insights</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/4402128321943-Inbox-Overview\" target=\"_blank\" rel=\"noopener\">Inbox</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/1500008374882-Smart-Lists-Overview\" target=\"_blank\" rel=\"noopener\">Smart Lists</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274453-Tasks-Overview\" target=\"_blank\" rel=\"noopener\">Tasks</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/360014274393-Connecting-Your-Email-Calendar-Overview\" target=\"_blank\" rel=\"noopener\">Email & calendar setup</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/38151364189079-Zillow-Preferred-agent-performance-report\" target=\"_blank\" rel=\"noopener\">Performance report</a></p><p class=\"source\">Official reference: <a href=\"https://help.followupboss.com/hc/en-us/articles/1500008539982-Action-Plans-Overview\" target=\"_blank\" rel=\"noopener\">Action Plans</a></p><p class=\"source\">Official reference: <a href=\"https://www.zillow.com/premier-agent/touring-agreement/\" target=\"_blank\" rel=\"noopener\">Touring agreements</a></p></div>",
+      "notes": "Sources reviewed September 13, 2026. Use the live official pages for updates. Team-specific onboarding invitations, ZIP edit rights, routing allocations, automation text and Smart Actions mode must be checked in the actual account. Public Zillow Academy onboarding is login-protected; no completion claims are made. Coach new agents on the needed task instead of asking them to read every linked article.",
+      "cue": "Which reference would you use when an expected Smart Actions text does not arrive?",
+      "time": 1,
+      "theme": "tru"
     }
   ],
   "cases": [],
   "hero": "/workshops/house.jpg",
-  "resources": "<div class=\"rows\"><div class=\"row\"><h3>Live sessions</h3><p>Sign in to your assigned session. Submit answers to your presenter; unsubmitted text remains private. If the presenter moves on, finish the current activity and use Return to presenter to catch up.</p></div><div class=\"row\"><h3>Practice again</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check is evidence of saved actions. Observed practice, coach readiness, quiz certification, and activation are separate.</p></div></div>",
-  "version": "2026-09-12-live-v1",
-  "duration": 57
+  "resources": "<p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Program standards</a> · <a href=\"https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing\" target=\"_blank\" rel=\"noopener\">Agent capacity & routing</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status\" target=\"_blank\" rel=\"noopener\">My Agent</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a></p>",
+  "version": "2026-09-14-preferred-foundations-v6",
+  "duration": 57,
+  "sources": [
+    {
+      "key": "program",
+      "url": "https://www.zillow.com/preferred/faq/",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Preferred FAQ",
+      "publisher": "Zillow"
+    },
+    {
+      "key": "standards",
+      "url": "https://www.zillow.com/preferred/program-standards/",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Preferred Program Standards",
+      "publisher": "Zillow"
+    },
+    {
+      "key": "routing",
+      "url": "https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing",
+      "reviewed": "2026-09-13",
+      "title": "Agent Capacity and Lead Routing",
+      "publisher": "Zillow"
+    },
+    {
+      "key": "benefits",
+      "url": "https://www.zillow.com/preferred/program-benefits/",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Preferred Program Benefits",
+      "publisher": "Zillow"
+    },
+    {
+      "key": "compliance",
+      "url": "https://www.zillow.com/preferred/compliance/",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Preferred Compliance Policies",
+      "publisher": "Zillow"
+    },
+    {
+      "key": "smart",
+      "url": "https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions",
+      "reviewed": "2026-09-13",
+      "title": "Smart Actions",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "myagent",
+      "url": "https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status",
+      "reviewed": "2026-09-13",
+      "title": "My Agent Status",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "insights",
+      "url": "https://help.followupboss.com/hc/en-us/articles/39586065250839-Use-Zillow-Insights-for-Preferred-and-Pro-in-Follow-Up-Boss",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Insights in Follow Up Boss",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "record",
+      "url": "https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Lead Profile Overview",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "inbox",
+      "url": "https://help.followupboss.com/hc/en-us/articles/4402128321943-Inbox-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Inbox Overview",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "lists",
+      "url": "https://help.followupboss.com/hc/en-us/articles/1500008374882-Smart-Lists-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Smart Lists Overview",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "tasks",
+      "url": "https://help.followupboss.com/hc/en-us/articles/360014274453-Tasks-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Tasks Overview",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "setup",
+      "url": "https://help.followupboss.com/hc/en-us/articles/360014274393-Connecting-Your-Email-Calendar-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Connecting Your Email & Calendar",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "performance",
+      "url": "https://help.followupboss.com/hc/en-us/articles/38151364189079-Zillow-Preferred-agent-performance-report",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Preferred Agent Performance Report",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "plans",
+      "url": "https://help.followupboss.com/hc/en-us/articles/1500008539982-Action-Plans-Overview",
+      "reviewed": "2026-09-13",
+      "title": "Action Plans Overview",
+      "publisher": "Follow Up Boss"
+    },
+    {
+      "key": "tour",
+      "url": "https://www.zillow.com/premier-agent/touring-agreement/",
+      "reviewed": "2026-09-13",
+      "title": "Zillow Touring Agreement",
+      "publisher": "Zillow"
+    }
+  ],
+  "quickReference": "<h2>Choose the tool</h2><table><thead><tr><th>Where</th><th>Use it for</th><th>When</th></tr></thead><tbody><tr><td>Details → Stage / Timeframe</td><td>Actual progress / buyer’s stated timing</td><td>After a meaningful conversation or event; review automatic changes.</td></tr><tr><td>Create Note → contact history</td><td>Facts, preferences, outcome and unknowns</td><td>Read before outreach; save context after it.</td></tr><tr><td>Right → Tasks</td><td>Work owed, with an owner and due date</td><td>When you promise a callback or another next action.</td></tr><tr><td>Right → Appointments</td><td>A confirmed meeting</td><td>When date, time and participants are agreed; check duplicates.</td></tr><tr><td>Right → Files</td><td>Relevant approved documents</td><td>When needed under the team’s document process.</td></tr><tr><td>Right → Deals</td><td>Transaction details</td><td>At the team’s transaction milestone; today’s case is an accepted offer.</td></tr><tr><td>Right → Collaborators</td><td>Team member access</td><td>When someone helps; also give them a task and handoff.</td></tr><tr><td>Relationships</td><td>A co-buyer or related contact</td><td>When relevant to the customer; not team access.</td></tr><tr><td>Right → Action Plans / Automations</td><td>Existing system workflows</td><td>Check prior messages before personal outreach; team manages setup.</td></tr><tr><td>Left → My Agent; right → Zillow Insights</td><td>Relationship status and eligible browsing context</td><td>Before personalized outreach; confirm rather than assume.</td></tr><tr><td>Top → Inbox / Tasks / Calendar</td><td>Conversations / commitments / scheduled events</td><td>Start-of-day review, then update as work happens.</td></tr></tbody></table>"
 }

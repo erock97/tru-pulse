@@ -33,6 +33,7 @@ import {
 } from "../lib/liveSessions";
 import { PracticeRecord, type PracticeScenario } from "./PracticeRecord";
 import { DealMock } from "./DealSlide";
+import { RecordMap } from "./RecordMap";
 import CoachingAssignments from "../components/CoachingAssignments";
 import { adminReturn, hasAdminReturn } from "../lib/api";
 import workshopCss from "../workshops/workshop.css?inline";
@@ -606,7 +607,7 @@ function SlideBody({
               {recordCss}
               {`:host{display:block;color:#182321}*{box-sizing:border-box} .workshop{min-height:0;background:#f2f0e9;color:#182321;padding:0}.slide{min-height:0;padding:28px;display:block}.content{max-width:none}.native-lab .pr{max-width:none;color:#182321}.native-lab .pr-jobs{background:#253734;color:#f3f0e6;padding:20px;position:relative;top:0;--ac-text:#f3f0e6;--ac-text-60:#c9d5cd}.native-lab .pr-after{color:#182321}.native-lab{--gold:#c4d5ab;--ac:#c4d5ab;--ac-text:#182321;--ac-text-60:#52625a}.native-lab button{cursor:pointer}button,input,textarea,select{font:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #527c61;outline-offset:3px}.btn{padding:10px 18px;border-radius:6px}.screen-figure img{max-width:100%;height:auto}.err{color:#9c3227} .live-native-disabled{pointer-events:none;opacity:.7} @media(max-width:600px){.slide{padding:14px}}`}
             </style>
-            <div className="workshop">
+            <div className={slide.theme?.split(" ").includes("tru") ? "workshop preferred-live-workshop" : "workshop"}>
               <section className={`slide ${slide.theme || ""}`}>
                 <div className="meta">
                   {slide.chapter} · {slide.time} minutes
@@ -624,6 +625,7 @@ function SlideBody({
                     }}
                   />
                 )}
+                {slide.native === "map" && <RecordMap />}
                 {children}
               </section>
             </div>
@@ -1859,6 +1861,7 @@ function AgentWorkspace({
             slide={slide}
             activity={activity}
             refresh={refresh}
+            onContinue={() => setChosen(state.session.currentSlideId)}
           />
         </>
       )}
@@ -1920,16 +1923,18 @@ function useEditorLock(key: string) {
   return { editable, supported };
 }
 
-function Activity({
+export function Activity({
   state,
   slide,
   activity,
   refresh,
+  onContinue,
 }: {
   state: LiveSessionState;
   slide: Slide;
   activity: WorkshopActivity;
   refresh: () => void;
+  onContinue: () => void;
 }) {
   const key = liveDraftKey(
       state.viewerId,
@@ -2082,6 +2087,11 @@ function Activity({
       {activity.kind !== "record" && editable && (
         <div className="live-card">
           <h2>{activity.prompt}</h2>
+          <p>
+            {activity.kind === "choice" && !fields.length ? "Choose an answer and submit it. You can continue with the presenter without getting the answer right." : <>Write what you think, including “I’m not sure.” Short answers are not
+            graded and there are no required keywords. Submit to share your response
+            with your presenter, or continue with the presentation and return later.</>}
+          </p>
           <fieldset disabled={sending || pending}>
             <legend className="live-sr">Your response</legend>
             {activity.choices?.length && (
@@ -2122,6 +2132,8 @@ function Activity({
                   ? "Submit a new attempt"
                   : "Submit response"}
           </button>
+          <button onClick={onContinue}>Continue with presenter</button>
+          <p>{activity.kind === "choice" && !fields.length ? "Continuing does not submit your choice. You can return to it later." : "Continuing does not submit your writing. Your draft stays here for you to finish later."}</p>
           {activity.kind === "roleplay" && (
             <p>
               This reflection does not replace your partner’s observation.

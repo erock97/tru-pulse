@@ -10,7 +10,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether, Table, TableStyle
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / 'web/public/workshops'
@@ -41,6 +41,12 @@ def inline(node):
 
 def flow(node):
     if isinstance(node,NavigableString) or node.name == 'nav': return []
+    if node.name == 'strong': return [Paragraph(inline(node),styles['h2'])]
+    if node.name == 'table':
+        rows = [[Paragraph(inline(cell), styles['p']) for cell in row.find_all(['th','td'],recursive=False)] for row in node.find_all('tr')]
+        table = Table(rows, colWidths=[130,150,248], repeatRows=1, hAlign='LEFT')
+        table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('BACKGROUND',(0,0),(-1,0),colors.HexColor('#e8eee8')),('LINEBELOW',(0,0),(-1,-1),.4,colors.HexColor('#adbab3')),('TOPPADDING',(0,0),(-1,-1),8),('BOTTOMPADDING',(0,0),(-1,-1),8)]))
+        return [table,Spacer(1,12)]
     if 'writing' in node.get('class',[]):
         return [Spacer(1,45), HRFlowable(width='100%',thickness=.4,color=colors.HexColor('#adbab3')),Spacer(1,10)]
     if node.name in styles:

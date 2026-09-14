@@ -17,6 +17,21 @@ function rawState():RawLiveState{return {
  {id:'second',agent_id:'learner',activity_id:opening.id,attempt:2,response:{choiceId:opening.choices![1].id},assisted:false,submitted_at:'2',grade:null},
  {id:'assisted',agent_id:'learner',activity_id:opening.id,attempt:3,response:{choiceId:opening.choices![1].id},assisted:true,submitted_at:'3',grade:null}],observations:[],followups:[]};}
 beforeEach(()=>vi.clearAllMocks());
+describe('short answers capture thinking without grading it',()=>{
+ it.each(['I would text instead of calling.', 'I do not know.', 'No.'])('accepts and preserves an ungraded opinion: %s', answer=>{
+  for(const day of [1,2,3,4]){
+   for(const activity of getWorkshopDefinition(day)!.activities.filter(a=>['written','discussion','commitment','roleplay'].includes(a.kind))){
+    const response=Object.fromEntries((activity.fields||[{id:'response'}]).map(f=>[f.id,answer]));
+    expect(validateLiveResponse(activity,response)).toBeNull();
+    expect(gradeLiveResponse(activity,response)).toBeNull();
+    const raw=rawState();
+    raw.attempts=[{id:'opinion',agent_id:'learner',activity_id:activity.id,attempt:1,response,assisted:false,submitted_at:'1',grade:null}];
+    const presenter=liveStateForView(raw,'presenter','presenter');
+    expect(presenter.attempts[0].response).toEqual(response);
+   }
+  }
+ });
+});
 describe('live transport and projection',()=>{
  it('shared view never contains private people, responses, checks or coach notes',()=>{
   const view=liveStateForView(rawState(),'presenter','shared'),serialized=JSON.stringify(view);

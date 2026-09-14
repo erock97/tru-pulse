@@ -45,6 +45,7 @@ function render(focus=false){stopTimer();remaining=Number($('#timer-duration').v
  const choices=$('[data-quiz]');if(choices){const buttons=[...choices.querySelectorAll('button[data-option-id]')];let hash=0;for(const c of KEY+choices.dataset.quiz)hash=(hash*31+c.charCodeAt(0))>>>0;const offset=hash%Math.max(buttons.length,1);for(const b of [...buttons.slice(offset),...buttons.slice(0,offset)])choices.append(b);}
  // Reuse authored prompts and isolate repeated field IDs by stable slide ID.
  if(!s.native)prepareFields($('.content'),s);
+ if(!s.native&&s.activity?.fields?.length){const hint=document.createElement('p');hint.className='response-guidance';hint.textContent='Write your own thinking. Short answers are not graded and have no required keywords. You can continue without answering. In this preview or self-paced lesson, notes stay in your browser; use your assigned live session to submit responses to your presenter.';$('.content').prepend(hint);}
  root.querySelectorAll('.screen-figure img:not(.details-focus img)').forEach(img=>{img.tabIndex=0;img.setAttribute('role','button');img.setAttribute('aria-label','Enlarge '+img.alt);});
  $('.chapters').innerHTML=chapters.map(c=>`<button data-go="${SLIDES.findIndex(s=>s.chapter===c)}" ${c===s.chapter?'aria-current="step"':''}>${c}</button>`).join('');
  $('#agenda-list').innerHTML=SLIDES.map((s,i)=>`<button data-go="${i}" aria-current="${i===index}"><span>${String(i+1).padStart(2,'0')}</span><span>${s.title}</span><small>${s.time} min</small></button>`).join('');

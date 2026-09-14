@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v6' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -29,7 +29,7 @@ describe('versioned live curriculum', () => {
     expect(new Set(activityIds).size).toBe(activityIds.length);
   });
 
-  it('keeps the five original FUB scenarios and deal demonstration in the 57-minute task-first flow', () => {
+  it('keeps the five original FUB scenarios and deal demonstration in the 57-minute Preferred overview', () => {
     const day = workshopCatalog[1];
     expect(day.duration).toBe(57);
     expect(day.slides.filter(slide => slide.native === 'practice').map(slide => slide.scenario)).toEqual([
@@ -37,10 +37,12 @@ describe('versioned live curriculum', () => {
     ]);
     expect(day.slides.filter(slide => slide.native === 'deal')).toHaveLength(1);
     const firstRecord = day.slides.findIndex(slide => slide.native === 'practice');
-    expect(day.slides.slice(0, firstRecord).reduce((sum, slide) => sum + slide.time, 0)).toBe(5);
-    expect(day.activities.some(activity => activity.kind === 'choice')).toBe(false);
+    expect(day.slides.slice(0, firstRecord).some(slide => slide.native === 'map')).toBe(true);
+    expect(day.slides.slice(0, firstRecord).some(slide => slide.id === 'day1-preferred-standards')).toBe(true);
+    expect(day.activities.filter(activity => activity.kind === 'choice').map(activity=>activity.id)).toEqual(['day1-capacity-decision']);
+    expect(day.activities.find(activity=>activity.id==='day1-capacity-decision')!.fields).toBeUndefined();
     expect(day.slides.map(slide => slide.body).join('')).toContain('/rep-lab/list-full.png');
-    expect(day.slides.map(slide => slide.body).join('')).toContain('/rep-lab/detail-full.png');
+    expect(day.slides.filter(slide => slide.native === 'map')).toHaveLength(1);
     const nurture = day.activities.find(activity => activity.kind === 'discussion')!;
     expect(nurture.fields).toHaveLength(3);
     expect(nurture.correctChoiceId).toBeUndefined();
@@ -123,7 +125,7 @@ describe('versioned live curriculum', () => {
     for (const [index, guide] of [guide1, guide2, guide3, guide4].entries()) {
       const day = workshopCatalog[index + 1];
       expect(guide).toContain(`${day.duration} minutes including practice`);
-      expect(guide).toContain(WORKSHOP_VERSION);
+      expect(guide).toContain(day.version);
       expect(guide).toContain('unsubmitted writing stays private');
       expect(guide).toContain('Practice readiness, quiz certification, and activation remain separate');
       expect(guide).toContain('fresh case in three days');

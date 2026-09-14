@@ -24,4 +24,40 @@
 .details-focus:focus-visible{outline:3px solid #487bac;outline-offset:5px}
 .details-figure figcaption{font-size:15px;line-height:1.5;margin-top:12px}
 .image-dialog{width:96vw;max-width:1810px}
+.reference-screen{margin:0}.reference-screen-scroll{width:100%;overflow:auto;border:1px solid #b9c3bd;border-radius:8px;background:#fff}.reference-screen img{display:block;width:1810px;min-width:100%;max-width:none;height:auto;cursor:default}.reference-screen figcaption{font-size:14px;color:var(--muted);margin-top:10px}.reference-screen-scroll:focus-visible{outline:3px solid #487bac;outline-offset:3px}
+.case-brief{padding:24px;background:rgba(255,255,255,.3);border:1px solid var(--line);border-radius:10px;max-width:1180px}.case-brief h3{margin-bottom:16px}.case-brief p{font-size:clamp(17px,1.35vw,21px);line-height:1.65;margin:12px 0}.case-brief p:last-child{margin-bottom:0}.response-guidance{font-size:15px;line-height:1.5;color:var(--muted)}
 .tools .live-session-link{display:inline-flex;align-items:center;min-height:36px;padding:7px 12px;border:1px solid #59635f;border-radius:7px;font-size:12px;text-decoration:none}
+
+/* Day 1 follows the current premiumInterior.css overrides used by Rep.
+   Original FUB references retain their native product colors. */
+.slide.tru{background:#f7f4ec;color:#253239;--ink:#253239;--paper:#f7f4ec;--muted:#4c595f;--line:#c4bbaa;--blue:#8b733f;border-top:3px solid #8b733f;padding:clamp(28px,3.4vw,58px);gap:22px}
+.tru h1{font-weight:600;letter-spacing:-.045em;max-width:1100px;font-size:clamp(34px,3.6vw,60px)}
+.tru .meta{color:#705111;letter-spacing:.08em;font-size:12px;text-transform:uppercase}.tru .lead{font-size:clamp(19px,1.65vw,25px);max-width:1050px;line-height:1.5}
+.tru .row{grid-template-columns:minmax(190px,.55fr) 1.5fr;padding:22px 0;gap:32px}.tru .row h3{font-size:clamp(20px,1.65vw,26px);color:#253239}.tru .row p{color:#4c595f;font-size:clamp(17px,1.35vw,21px);line-height:1.6}
+.tru .case-brief{background:#eeece5;border:1px solid var(--line);border-radius:0;padding:26px 30px;max-width:1150px}.tru .case-brief h3{color:#705111}.tru .case-brief p{color:#4c595f;line-height:1.65;font-size:19px}
+.tru .field{color:#253239;margin-top:18px;max-width:1150px}.tru .field textarea{background:#f7f4ec;color:#253239;border:1px solid #c4bbaa;border-radius:4px;box-shadow:none}.tru .field textarea::placeholder{color:#53635d}
+.tru .takeaway{border-color:#8b733f;font-size:21px;line-height:1.6;background:#eeece5;padding:18px 24px;margin-top:12px}.tru .source{color:#4c595f;font-size:13px;line-height:1.8}.tru .source a:hover{color:#705111}.tru .primary{background:#253239;color:#f7f4ec;border-color:#253239}.tru .response-guidance{color:#4c595f}
+.tru .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin:4px 0 16px}.metric-grid>div{border-top:1px solid #6e7a72;padding-top:18px}.metric-grid strong{display:block;font:600 clamp(56px,7vw,108px)/1.15 Manrope,sans-serif;letter-spacing:-.06em;color:#8b733f;margin-bottom:14px}.metric-grid h3{margin-bottom:12px}.metric-grid p{font-size:19px;line-height:1.6;color:#4c595f}
+.product-reference{margin:0;min-width:0}.product-reference img{display:block;width:auto;max-width:100%;height:auto;max-height:680px;object-fit:contain;object-position:top left}.product-reference figcaption{font-size:13px;line-height:1.5;color:#4c595f;margin-top:12px}.product-pair{display:grid;grid-template-columns:1fr 1fr;gap:28px;max-width:1200px}.product-pair img{width:100%;max-height:none}.insights-layout{display:grid;grid-template-columns:minmax(260px,.65fr) 1.35fr;gap:36px;align-items:start}.insights-layout .product-reference img{max-height:none;width:100%}
+.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}.check-grid>div{border-top:2px solid #8b733f;padding:22px 0}.check-grid p{font-size:19px;line-height:1.65;color:#4c595f;margin-top:14px}.welcome-track{display:flex;flex-wrap:wrap;gap:12px 28px;padding:16px 0 22px;color:#705111;font-size:15px;letter-spacing:.02em;border-bottom:1px solid var(--line)}.tru-welcome{background:#e7e1d5!important}.tru-welcome h1{max-width:850px;font-size:clamp(42px,5vw,78px)}.reference-links{columns:2;column-gap:40px}.reference-links .source{display:block;break-inside:avoid;margin-bottom:12px}
+.tru .reference-screen-scroll{border-radius:0;border-color:#6e7a72}.tru .reference-screen figcaption{color:#4c595f}.tru-lab{background:#f7f4ec!important;color:#253239!important;--muted:#53635d!important;--line:#b8c5ba!important}.tru-lab .meta{color:#53635d}.tru-lab .lead{color:#53635d}
+@media(max-width:800px){.tru .row,.tru .metric-grid,.check-grid,.insights-layout,.product-pair{grid-template-columns:1fr;gap:20px}.tru .row{gap:10px}.tru .case-brief{padding:22px}.reference-links{columns:1}.product-reference img{max-height:none}.tru h1{font-size:36px}.tru .case-brief p{font-size:18px}}
+@media print{.slide.tru{border:0;background:#fff!important;color:#253239!important}.tru .case-brief{background:#fff}.product-reference img{max-height:500px}.reference-links{columns:1}}
+.preferred-workshop{background:#253239;--blue:#c4af76}.preferred-workshop .shell,.preferred-workshop .chapters,.preferred-workshop .controls{background:#253239}.preferred-workshop .chapters button[aria-current=step]{color:#edcd83;box-shadow:inset 0 -2px #c4af76}.preferred-workshop .progress>div{background:#8b733f}.preferred-workshop .cue span{color:#edcd83}.preferred-workshop #agenda-list button[aria-current=true]{background:#eee5ce}
+.tru .reference-screen img{min-width:0;width:1810px;max-width:none}
+.tru .product-pair{max-width:1800px;width:100%;margin-inline:auto}
+
+/* A bounded presentation canvas keeps text and product screens composed on
+   wide displays. Long exercises grow naturally instead of clipping content. */
+.preferred-workshop #stage{width:calc(100% - 48px);max-width:1480px;margin:24px auto 0}
+.slide.tru{width:100%;min-height:min(740px,calc(100svh - 240px));padding:36px 44px;display:flex;gap:22px;border:1px solid #c4bbaa;border-top:3px solid #8b733f;border-radius:8px;box-shadow:0 14px 40px #101b2226}
+.slide.tru h1{font-size:clamp(34px,3.2vw,52px);max-width:1100px}.slide.tru .content{flex:0;gap:22px;margin-top:8px}.slide.tru .row{grid-template-columns:240px minmax(0,1fr);gap:36px;padding:24px 0}.slide.tru .row p{max-width:72ch;font-size:20px}.slide.tru .source{margin-top:auto}.slide.tru .content>.source:last-child{margin-top:8px}
+.slide.tru-welcome h1{font-size:clamp(38px,4vw,64px);max-width:1050px}.slide.tru .lead{max-width:900px}.slide.tru .case-brief,.slide.tru .field{max-width:none}
+.slide.tru-lab{min-height:0;padding:28px}.slide.tru-lab h1{font-size:clamp(30px,2.8vw,42px)}
+.preferred-workshop .controls{max-width:1480px;margin:0 auto;min-height:92px;padding:18px 8px}.preferred-workshop .shell,.preferred-workshop .chapters{padding-inline:max(24px,calc((100% - 1480px)/2))}
+.preferred-workshop .progress{max-width:1480px;margin:0 auto 24px}
+.preferred-live-workshop{max-width:1480px;margin:20px auto;background:transparent!important}.preferred-live-workshop .slide.tru{min-height:0}.preferred-live-workshop .slide.tru h2{font-size:clamp(28px,2.8vw,42px);line-height:1.2;margin:0}.preferred-live-workshop .native-lab .fub{max-width:1810px;margin-inline:auto}
+.tru .reference-screen img{width:100%;max-width:1810px;height:auto}.tru .reference-screen-scroll{border-radius:6px}
+@media(max-width:900px){.preferred-workshop #stage{width:calc(100% - 24px);margin-top:12px}.slide.tru{padding:28px;min-height:0}.slide.tru .row{grid-template-columns:1fr;gap:10px;padding:20px 0}.slide.tru .row p{font-size:18px}.preferred-workshop .controls{padding:16px}.preferred-live-workshop{margin:8px auto}}
+@media(max-width:600px){.slide.tru,.slide.tru-lab{padding:22px 18px}.slide.tru h1,.slide.tru-welcome h1{font-size:34px}.preferred-workshop .shell,.preferred-workshop .chapters{padding-inline:18px}}
+@media print{.preferred-workshop #stage{width:100%;margin:0;max-width:none}.slide.tru{box-shadow:none;border:0;min-height:0;border-radius:0}}

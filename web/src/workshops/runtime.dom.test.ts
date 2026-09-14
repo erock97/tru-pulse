@@ -38,6 +38,12 @@ describe('rendered workshop responses',()=>{
   go(rounds[1]);expect(root.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('');
   go(rounds[0]);expect(root.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('First round correction');
  });
+ it('displays the People reference inline without an enlarge button',()=>{
+  const {root,go}=open(day1 as WorkshopData);go(day1.slides.findIndex(s=>s.id==='day1-start-in-people'));
+  expect(root.querySelector('.reference-screen img')).not.toBeNull();
+  expect(root.querySelector('.reference-screen img')!.getAttribute('role')).toBeNull();
+  expect(root.querySelector('[aria-label^="Enlarge"]')).toBeNull();
+ });
  it.each([day2,day3,day4])('runs all Day $day practice choices, case rotations, score resets, and draft fields',raw=>{
   const data=raw as WorkshopData,{root,go}=open(data);
   data.slides.forEach((slide,i)=>{
@@ -55,12 +61,12 @@ describe('rendered workshop responses',()=>{
   });
  });
  it('downloads newly added activity fields as well as authored worksheet fields',()=>{
-  const {root,go}=open(day1 as WorkshopData);go(2);
-  const field=root.querySelector<HTMLTextAreaElement>('textarea')!;field.value='People, search, confirm source';field.dispatchEvent(new Event('input',{bubbles:true}));
+  const {root,go}=open(day1 as WorkshopData);go(day1.slides.findIndex(s=>s.id==='day1-activation-readiness'));
+  const field=root.querySelector<HTMLTextAreaElement>('textarea')!;field.value='Check the suggested appointment against the conversation';field.dispatchEvent(new Event('input',{bubbles:true}));
   const blobs:Blob[]=[];
   vi.stubGlobal('URL',Object.assign(URL,{createObjectURL:(blob:Blob)=>{blobs.push(blob);return 'blob:qa';},revokeObjectURL:vi.fn()}));
   vi.spyOn(HTMLAnchorElement.prototype,'click').mockImplementation(()=>{});
   (root.querySelector('[data-action="download"]') as HTMLButtonElement).click();
-  return new Promise<void>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{expect(String(reader.result)).toContain('People, search, confirm source');expect(String(reader.result)).toContain('What next action would remain');resolve();}catch(e){reject(e);}};reader.readAsText(blobs[0]);});
+  return new Promise<void>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{expect(String(reader.result)).toContain('Check the suggested appointment against the conversation');expect(String(reader.result)).toContain('What would');resolve();}catch(e){reject(e);}};reader.readAsText(blobs[0]);});
  });
 });
