@@ -47,3 +47,7 @@ In separate signed-in browser tabs:
 8. Verified the new RPC is inaccessible to anon/authenticated database roles, executable by the worker role, and the session table retains RLS. The shared browser console reported no errors.
 
 Final UI cleanup removes repeated question headings, simulator-only status from written activities, and the incorrect coaching-assignment promise on a rehearsal finish. Buyer instructions are shown to the buyer/observer; the speaking learner sees the opening request. Solo rehearsal can inspect both sides.
+
+Final web publication: Pages `6c756e2f` verified the rehearsal finish label and saved feedback. The completed QA rehearsal has zero real participants, zero agent attempts, and zero follow-ups. The original rejected session retains its 38-slide snapshot.
+
+Clean rehearsal ready for Eric: [Presenter](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/presenter), [presentation](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/shared), [test learner](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/agent). It starts at slide 1, with no submitted answers or revealed examples. Browser tabs are left open at these routes.

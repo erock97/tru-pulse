@@ -647,7 +647,7 @@ function SlideBody({
             <div className={slide.theme?.split(" ").includes("tru") ? "workshop preferred-live-workshop" : "workshop"}>
               <section className={`slide ${slide.theme || ""}`}>
                 <div className="meta">
-                  {slide.chapter} · {slide.time} minutes
+                  {slide.chapter} · {slide.time} {slide.time === 1 ? 'minute' : 'minutes'}
                 </div>
                 <h2>{slide.title}</h2>
                 <p className="lead">{slide.lead}</p>
