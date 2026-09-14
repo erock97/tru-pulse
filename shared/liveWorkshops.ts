@@ -33,6 +33,7 @@ export interface LiveSessionSummary {
   currentActivityId: string | null; currentSlideId: string; presenterIds: string[]; canPresent: boolean; canReview: boolean;
 }
 export interface LiveSessionState {
+  rehearsal?: boolean;
   session: LiveSessionSummary; definition: WorkshopDefinition; cursor: string;
   viewerId: string; myAgentId: string | null; canPresent: boolean; canReview: boolean;
   openedActivityIds: string[]; revealedActivityIds: string[];
