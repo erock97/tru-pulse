@@ -1,5 +1,6 @@
 // Stripe, called directly. Ported from TRU Operating System's stripe.ts —
-// same account, same discipline, same key resolution: Infisical first (the
+// same account, same discipline. An installed Bitwarden delivery bundle is
+// authoritative. Until opt-in, key resolution remains Infisical first (the
 // key lives at /Stripe there — one place Eric rotates without a deploy, one
 // place to look when something 401s), the env var second as a fallback for
 // local runs and the hour after a rotation.
@@ -8,12 +9,15 @@
 // "cannot act" rather than "act with nothing".
 
 import type { Env } from './env.js';
+import { getBitwardenSecret } from './bitwarden.js';
 import * as infisical from './infisical.js';
 
 export const STRIPE_SECRETS_PATH = '/Stripe';
 const API = 'https://api.stripe.com/v1';
 
 export async function getKey(env: Env): Promise<string | null> {
+  const managed = getBitwardenSecret(env, 'STRIPE_SECRET_KEY');
+  if (managed !== undefined) return managed;
   if (infisical.isConfigured(env)) {
     const fromVault = await infisical.getSecret(env, 'STRIPE_SECRET_KEY', STRIPE_SECRETS_PATH).catch(() => null);
     if (fromVault) return fromVault;
