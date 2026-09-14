@@ -33,6 +33,7 @@ import {
 } from "../lib/liveSessions";
 import { PracticeRecord, type PracticeScenario } from "./PracticeRecord";
 import { DealMock } from "./DealSlide";
+import { RecordMap } from "./RecordMap";
 import CoachingAssignments from "../components/CoachingAssignments";
 import { adminReturn, hasAdminReturn } from "../lib/api";
 import workshopCss from "../workshops/workshop.css?inline";
@@ -624,6 +625,7 @@ function SlideBody({
                     }}
                   />
                 )}
+                {slide.native === "map" && <RecordMap />}
                 {children}
               </section>
             </div>

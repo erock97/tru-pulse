@@ -4,6 +4,7 @@ import { isDemo } from '../lib/api';
 import { currentUser } from '../lib/auth';
 import { PracticeRecord, PACKS, type PracticeScenario } from './PracticeRecord';
 import { DealMock } from './DealSlide';
+import { RecordMap } from './RecordMap';
 import { mountWorkshop } from '../workshops/runtime';
 import type { WorkshopData, WorkshopSlide } from '../workshops/types';
 import shell from '../workshops/shell.html?raw';
@@ -43,10 +44,10 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
         const user=await currentUser();
         if(controller.signal.aborted)return;
         // All markup comes from reviewed, versioned training assets in this repository.
-        root.innerHTML=`<style>${fonts}\n${css}</style><div class="workshop">${shell}</div>`;
+        root.innerHTML=`<style>${fonts}\n${css}</style><div class="workshop ${day===1?'preferred-workshop':''}">${shell}</div>`;
         root.querySelector('#course-label')!.textContent=`Zillow Preferred / Day ${day}`;
         root.querySelector('#duration')!.textContent=String(data.slides.reduce((a,s)=>a+s.time,0));
-        root.querySelector('#resource-body')!.innerHTML=reference[day]+`<p><a href="/workshops/day${day}-resources.html" target="_blank" rel="noopener">Open printable agent worksheet ↗</a></p>`;
+        root.querySelector('#resource-body')!.innerHTML=(day===1?reference[day]+data.resources:reference[day])+`<p><a href="/workshops/day${day}-resources.html" target="_blank" rel="noopener">Open printable agent worksheet ↗</a></p>`;
         runtime.current=mountWorkshop(root,el,data,{
           preview:preview||isDemo,
           draftOwner:user?.id||'signed-out-preview',
@@ -89,7 +90,7 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
     <div ref={host} />
     {natives.map(native=>{const scenario=native.slide.scenario as PracticeScenario;return createPortal(<>
       <style>{baseCss}{`:host{display:block;color:#171d22;font-family:'DM Sans',sans-serif}*{box-sizing:border-box}button,input,textarea,select{font:inherit}button{border-radius:6px}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #487bac;outline-offset:2px}.btn{min-height:40px;padding:11px 18px;border:1px solid #899a91;background:#e5e7df;color:#171d22;font-weight:600}.err{color:#963e31}.native-lab{--gold:#bdd1ed;--ac:#bdd1ed;--ink:#171d22;--ac-text:#171d22;--ac-text-60:#51635c;background:#f2f0e9;padding:12px}.native-lab .pr{max-width:none}.native-lab .pr-after{color:#171d22}.native-lab button{cursor:pointer}.native-lab .pr-brieftitle{font-family:Manrope,sans-serif;font-weight:600}.native-lab .pr-jobs{--ac-text:#f2f0e9;--ac-text-60:#d4ded8;background:#20292c;position:relative;top:0}.native-lab .pr-checks li.ok{color:#23543b}.native-lab .pr-checks li.no{color:#963e31}.native-lab .lab-ok{color:#23543b}.native-lab .pr-scenario,.native-lab .pr-head{color:#171d22}.native-lab .ac-btn{background:#bdd1ed;color:#171d22}.native-lab h3{font-family:Manrope,sans-serif}`}</style>
-      <div className="native-lab">{native.slide.native==='deal'?<div style={{maxWidth:720,margin:'30px auto',position:'relative',minHeight:340}}><p style={{marginBottom:24,fontSize:20,lineHeight:1.5}}>After an offer is accepted, record the property address, agreed price, and expected close date. Open the deal form and try it with fictional details.</p><DealMock/></div>:PACKS[scenario]?<PracticeRecord key={scenario} scenario={scenario} record={!preview} onPassed={()=>runtime.current?.pass(native.slide)}/>:<p>This exercise could not be loaded. Return to the training list and try again.</p>}</div>
+      <div className="native-lab">{native.slide.native==='map'?<RecordMap/>:native.slide.native==='deal'?<div style={{maxWidth:720,margin:'30px auto',position:'relative',minHeight:340}}><p style={{marginBottom:24,fontSize:20,lineHeight:1.5}}>After an offer is accepted, record the property address, agreed price, and expected close date. Open the deal form and try it with fictional details.</p><DealMock/></div>:PACKS[scenario]?<PracticeRecord key={scenario} scenario={scenario} record={!preview} onPassed={()=>runtime.current?.pass(native.slide)}/>:<p>This exercise could not be loaded. Return to the training list and try again.</p>}</div>
     </>,native.root,native.slide.title);})}
   </>;
 }

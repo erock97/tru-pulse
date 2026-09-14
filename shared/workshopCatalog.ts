@@ -29,7 +29,7 @@ export type CatalogSlide = {
   cue: string;
   time: number;
   theme: string;
-  native?: 'practice' | 'deal';
+  native?: 'practice' | 'deal' | 'map';
   scenario?: string;
   sourceScreen?: number;
   activity?: WorkshopActivity;

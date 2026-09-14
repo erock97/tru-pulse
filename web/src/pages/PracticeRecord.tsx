@@ -86,7 +86,7 @@ export const PACKS: Record<string, Pack> = {
   'set-appointment': {
     subline: 'Last Communication 5 minutes ago',
     title: 'You set an appointment',
-    situation: 'You just got off the phone with Avery and booked Saturday at 11:00 AM to see 406 Juniper Ln.',
+    situation: 'Avery asked to see 406 Juniper Ln. On the phone, you offered Saturday at 11:00 AM and Avery said, “Yes, Saturday at 11 works. I’ll meet you at the house.” You both confirmed the property and time. The saved stage still says Spoke with customer. Update the record to reflect what was agreed; interest alone would not have been enough.',
     steps: [
       { id: 'stage', text: 'Click the stage, pick the one that matches a booked appointment, then click the green check to save it.' },
     ],
@@ -98,7 +98,7 @@ export const PACKS: Record<string, Pack> = {
   'spoke-note': {
     subline: 'Last Communication 3 minutes ago',
     title: 'You spoke with the client',
-    situation: 'Avery answered. They are buying with their sister, want Olympia or Lacey, 3 bedrooms or more, before November, and asked you to send a couple of options. No meeting was discussed.',
+    situation: 'In this separate case, Avery answered your call. They said, “My sister and I are looking in Olympia or Lacey. We need at least three bedrooms and hope to move before November. Could you send a couple of options?” You agreed to send two homes by Thursday. No meeting was discussed, and you have not established budget or financing. The record still says Attempted contact. Save what the conversation established so the next caller does not have to ask Avery to start over.',
     steps: [
       { id: 'stage', text: 'Update the stage to match a real conversation with nothing booked, and save it with the green check.' },
       { id: 'note', text: 'Copy the note below, paste it into the note box at the top of the record, and click Create Note.' },
@@ -111,7 +111,7 @@ export const PACKS: Record<string, Pack> = {
   'noanswer-task': {
     subline: 'No communication yet',
     title: 'You called and they did not pick up',
-    situation: 'Avery came in from Zillow this morning. You called at 9:10 AM, it rang out, and you left a voicemail.',
+    situation: 'In this separate case, Avery’s Zillow inquiry arrived this morning. You called at 9:10 AM, it rang out, and you left a voicemail offering help with the home inquiry. You have not spoken with Avery and do not know why they missed the call. The record still says Lead and has no next task. Your plan for this exercise is to try again tomorrow morning. Record the attempt and schedule that action; a missed call is evidence of your attempt, not evidence that the buyer is uninterested.',
     steps: [
       { id: 'stage', text: 'Update the stage to match a call that was not answered, and save it with the green check.' },
       { id: 'note', text: 'Copy the note below, paste it into the note box, and click Create Note.' },
@@ -150,7 +150,7 @@ export const PACKS: Record<string, Pack> = {
   'offer-accepted': {
     subline: 'Last Communication 20 minutes ago',
     title: 'The offer went through',
-    situation: 'The listing agent just emailed you: “Sellers signed this morning — $265,000 as offered, closing 30 September. I’ve booked the inspection for Tuesday at 9am.”',
+    situation: 'This is a separate case for Elena Brooks. You submitted an offer on the property in her record; the stage still says Submitting offers and there is no deal saved. The listing agent just emailed: “Sellers signed this morning — $265,000 as offered, closing 30 September. I’ve booked the inspection for Tuesday at 9am.” A deal is the transaction record that holds the property, price, and expected close date. Decide which event establishes the current stage, what the note must preserve, and which next action needs a dated task. The inspection booking and the accepted offer are different events.',
     steps: [
       { id: 'stage', text: 'Set the stage to where this deal actually is now, and save it.' },
       { id: 'note', text: 'Write a note carrying what was agreed, then click Create Note.' },

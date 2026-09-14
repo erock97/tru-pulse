@@ -9,7 +9,7 @@ const mocks=vi.hoisted(()=>({request:vi.fn(async()=>({})),submit:vi.fn(async()=>
 vi.mock('../lib/liveSessions',async(original)=>({...await original<any>(),liveRequest:mocks.request,submitAttempt:mocks.submit}));
 describe('live short-answer continuation',()=>{
  let root:Root,container:HTMLDivElement;
- const slide=getWorkshopDefinition(1)!.slides.find(s=>s.activity?.kind==='written')!;
+ const slide=getWorkshopDefinition(1)!.slides.find(s=>s.activity?.fields?.some(f=>f.id==='navigation'))!;
  const state={viewerId:'user',myAgentId:'learner',session:{id:'session',version:'test'},attempts:[],revealedActivityIds:[]} as unknown as LiveSessionState;
  const key=liveDraftKey('user','session','test',slide.activity!.id);
  beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);localStorage.clear();mocks.submit.mockClear();container=document.createElement('div');document.body.append(container);root=createRoot(container);});

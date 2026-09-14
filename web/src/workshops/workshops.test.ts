@@ -28,7 +28,7 @@ describe('Rep workshop integration',()=>{
  it('preserves every existing Day 1 native exercise in order',()=>{
    expect(data(1).slides.filter(s=>s.native==='practice').map(s=>s.scenario)).toEqual(OFFICIAL_TRAINING_CARDS.filter(s=>s.t==='practice').map(s=>s.scenario));
    expect(data(1).slides.filter(s=>s.native==='deal')).toHaveLength(1);
-   expect(data(1).slides).toHaveLength(17);
+   expect(data(1).slides).toHaveLength(34);
  });
  it('leaves unknown and custom modules in the existing player',()=>{
    expect(workshopDay({id:'custom',cards:[{deck:'custom-deck'}]})).toBeNull();
