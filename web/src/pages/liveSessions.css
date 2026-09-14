@@ -283,7 +283,12 @@
 .live-slide-navigation > span { font-variant-numeric: tabular-nums; font-weight: 600; }
 .live-slide-navigation > p { width: 100%; color: #892e23; margin: 4px 0; }
 .live-presentation-help { font-size: 13px; color: #4c595f; margin: 8px 0; flex: 0 0 auto; }
-.live-presentation-canvas { flex: 0 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: #e7e1d5; border: 1px solid #c4bbaa; border-radius: 8px; }
+.live-presentation-canvas { flex: 1; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; }
+.live-fit-bounds { position: relative; flex: 0 0 auto; }
+.live-fit-content { position: absolute; top: 0; left: 0; transform-origin: top left; background: #f7f4ec; border-radius: 8px; }
+.live-shared .live-top { display: none; }
+.live-shared .live-wrap > h1 { font-size: 16px; margin-bottom: 4px; }
+.live-shared .live-card { margin: 0; padding: 16px 32px; font-size: 18px; }
 .live-presentation-canvas:focus-visible { outline: 3px solid #705111; outline-offset: 2px; }
 @media(max-width:600px) {
   .live-shared .live-wrap { padding: 10px; }

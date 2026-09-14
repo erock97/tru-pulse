@@ -46,6 +46,7 @@ export default function WorkshopLesson({ day, onBack, onDone, doneLabel, preview
         // All markup comes from reviewed, versioned training assets in this repository.
         root.innerHTML=`<style>${fonts}\n${css}</style><div class="workshop ${day===1?'preferred-workshop':''}">${shell}</div>`;
         root.querySelector('#course-label')!.textContent=`Zillow Preferred / Day ${day}`;
+        root.querySelector('.live-session-link')?.setAttribute('href', `#/rep/sessions?day=${day}`);
         root.querySelector('#duration')!.textContent=String(data.slides.reduce((a,s)=>a+s.time,0));
         root.querySelector('#resource-body')!.innerHTML=(day===1?reference[day]+data.resources:reference[day])+`<p><a href="/workshops/day${day}-resources.html" target="_blank" rel="noopener">Open printable agent worksheet ↗</a></p>`;
         runtime.current=mountWorkshop(root,el,data,{
