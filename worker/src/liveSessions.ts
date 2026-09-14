@@ -5,14 +5,17 @@ import { db, type Db } from './db.js';
 import { getWorkshopDefinition, learnerWorkshopDefinition, type WorkshopDefinition, type CatalogActivity } from '../../shared/workshopCatalog.js';
 import type { LiveAttempt, LiveSessionState, LiveView, LiveGroup, LiveObservation, LiveFollowup } from '../../shared/liveWorkshops.js';
 import { gradeRecord, gradeFaults, type RecordSubmission } from './repLab/records.js';
+import { rehearsalState } from './liveRehearsal.js';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const identifier = (v:unknown) => typeof v==='string' && uuid.test(v);
 const object = (v:unknown):v is Record<string,unknown> => !!v && typeof v==='object' && !Array.isArray(v);
 export type RawLiveState = {
+ rehearsal?: boolean;
  session: {id:string;day:number;title:string;version:string;timezone:string;status:'active'|'ended';created_at:string;ended_at:string|null;
   current_activity_id:string|null;current_slide_id:string;presenter_ids:string[];definition:WorkshopDefinition;opened_activity_ids:string[];revealed_activity_ids:string[];
-  timer_ends_at:string|null;updated_at:string;roster:LiveSessionState['participants'];groups:LiveGroup[]};
+  timer_ends_at:string|null;updated_at:string;roster:LiveSessionState['participants'];groups:LiveGroup[];
+  rehearsal_evidence?: {joinedAt?:string;lastSeenAt?:string;groups?:LiveGroup[];attempts?:Record<string,any>[];progress?:Record<string,any>[];observations?:Record<string,any>[]}};
  myAgentId:string|null;canPresent:boolean;canReview:boolean;participants:LiveSessionState['participants'];
  progress:Record<string,any>[];attempts:Record<string,any>[];observations:Record<string,any>[];followups:LiveFollowup[];
  choiceTotals?:Record<string,Record<string,number>>;
@@ -34,6 +37,7 @@ export function liveStateForView(raw:RawLiveState,viewerId:string,view:LiveView)
  const firstAttempts=[...new Map(raw.attempts.filter(a=>!a.assisted).slice().reverse().map(a=>[`${a.agent_id}:${a.activity_id}`,a])).values()];
  for(const a of firstAttempts){const choice=a.response?.choiceId;if(typeof choice==='string'&&(reviewer||revealed.includes(a.activity_id))){totals[a.activity_id]??={};totals[a.activity_id][choice]=(totals[a.activity_id][choice]??0)+1;}}
  const state:LiveSessionState={
+  rehearsal:raw.rehearsal,
   session:{id:s.id,day:s.day,title:s.title,version:s.version,timezone:s.timezone,status:s.status,createdAt:s.created_at,endedAt:s.ended_at,currentActivityId:s.current_activity_id,currentSlideId:s.current_slide_id,presenterIds:presenter?s.presenter_ids:[],canPresent:raw.canPresent,canReview:raw.canReview},
   definition:reviewer?s.definition:learnerWorkshopDefinition(s.definition,revealed),cursor:s.updated_at,viewerId,myAgentId:raw.myAgentId,canPresent:raw.canPresent,canReview:raw.canReview,
   openedActivityIds:s.opened_activity_ids,revealedActivityIds:revealed,timerEndsAt:s.timer_ends_at,participants,
@@ -79,12 +83,12 @@ async function jsonBody(req:Request):Promise<Record<string,unknown>>{
 }
 export async function submitLiveAttempt(database:Db,userId:string,sessionId:string,body:Record<string,unknown>){
  if(!identifier(body.id)||typeof body.activityId!=='string')throw Error('Invalid submission');
- const raw=await database.rpc('rep_live_read',{p_actor:userId,p_session:sessionId}) as RawLiveState;
+ const raw=rehearsalState(await database.rpc('rep_live_read',{p_actor:userId,p_session:sessionId}) as RawLiveState,userId);
  const activity=raw.session.definition.activities.find(x=>x.id===body.activityId);
  if(!activity)throw Error('Unknown activity');
  const error=validateLiveResponse(activity,body.response);if(error)throw Error(error);
  const response=body.response as Record<string,unknown>;
- const result=await database.rpc('rep_live_mutate',{p_actor:userId,p_session:sessionId,p_action:'submit',p_body:{id:body.id,activityId:body.activityId,response,grade:gradeLiveResponse(activity,response)}});
+ const result=await database.rpc(raw.rehearsal?'rep_live_rehearse':'rep_live_mutate',{p_actor:userId,p_session:sessionId,p_action:'submit',p_body:{id:body.id,activityId:body.activityId,response,grade:gradeLiveResponse(activity,response)}});
  return {ok:true,attempt:mapAttempt(result.attempt)};
 }
 
@@ -117,7 +121,7 @@ export async function handleLiveSessions(req:Request,env:Env,cors:Record<string,
    if(view==='presenter'&&!loaded.canPresent)return reply({error:'Presenter access required'},403);
    if(view==='coach'&&!loaded.canReview)return reply({error:'Coach access required'},403);
    if(loaded.unchanged)return reply(loaded);
-   const raw=loaded as RawLiveState;
+   const raw=rehearsalState(loaded as RawLiveState,user.userId);
    if(view==='presenter'&&!raw.canPresent)return reply({error:'Presenter access required'},403);
    if(url.searchParams.get('cursor')===raw.session.updated_at)return reply({unchanged:true,cursor:raw.session.updated_at,serverTime:new Date().toISOString()});
    return reply(liveStateForView(raw,user.userId,view));
@@ -126,6 +130,10 @@ export async function handleLiveSessions(req:Request,env:Env,cors:Record<string,
   if(route==='submissions')return reply(await submitLiveAttempt(database,user.userId,sessionId,body));
   const action=route==='commands'?String(body.action):route==='observations'?'observe':route;
   if(!['join','open','slide','timer','reveal','group','end','progress','observe'].includes(action))return reply({error:'Unknown action'},400);
+  if(['join','progress','group','observe'].includes(action)){
+   const raw=rehearsalState(await database.rpc('rep_live_read',{p_actor:user.userId,p_session:sessionId}),user.userId);
+   if(raw.rehearsal)return reply(await database.rpc('rep_live_rehearse',{p_actor:user.userId,p_session:sessionId,p_action:action,p_body:body}));
+  }
   return reply(await database.rpc('rep_live_mutate',{p_actor:user.userId,p_session:sessionId,p_action:action,p_body:body}));
  }catch(error){
   const message=error instanceof Error?error.message:'Session unavailable';

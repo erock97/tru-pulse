@@ -40,6 +40,7 @@ if(process.env.REP_PREVIEW_LOAD==='1'){
  }
 }
 await pg.exec(readFileSync(new URL('../../db/hq_rep_live.sql',import.meta.url),'utf8'));
+await pg.exec(readFileSync(new URL('../../supabase/migrations/20260914232619_rep_live_rehearsal.sql',import.meta.url),'utf8'));
 const sessions=new Map<string,string>();
 for(const [name,f] of Object.entries(fixtures))sessions.set(`sess:preview-${name}`,JSON.stringify({userId:f.id,accessToken:`preview-${f.id}`,refreshToken:'local-only',createdAt:0,expiresAt:4102444800}));
 const env={REP_LIVE_SESSIONS:'1',REP_LIVE_DIGESTS:'0',SUPABASE_URL:'http://rep-preview.invalid',SUPABASE_SERVICE_ROLE_KEY:'local-service',SUPABASE_ANON_KEY:'local-anon',APP_ORIGIN:`http://127.0.0.1:${webPort}`,

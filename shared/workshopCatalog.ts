@@ -18,6 +18,7 @@ export type WorkshopActivity = {
   /** Plain text: never render learner responses, model, or explanation as HTML. */
   model?: string;
   scenario?: string;
+  useCases?: boolean;
 };
 export type CatalogSlide = {
   id: string;

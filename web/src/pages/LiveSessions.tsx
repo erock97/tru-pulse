@@ -526,6 +526,11 @@ function Session({ id, view }: { id: string; view: LiveView }) {
           {error}
         </p>
       )}
+      {state.rehearsal && view !== 'shared' && <section className="live-notice">
+        <strong>Solo rehearsal · test evidence only</strong>
+        <p>Submit as the test learner, then review and reveal from the presenter console. Responses and feedback are saved for this test; no agents receive assignments.</p>
+        <div className="live-actions"><a href={link(id,'agent')} target="_blank" rel="noreferrer">Open test learner</a><a href={link(id,'presenter')} target="_blank" rel="noreferrer">Open presenter console</a><a href={link(id,'shared')} target="_blank" rel="noreferrer">Open presentation</a></div>
+      </section>}
       {view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
       ) : view === "shared" ? (
@@ -678,6 +683,17 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
     state.definition.slides[0];
   const activity = slide.activity,
     totals = activity ? state.choiceTotals[activity.id] : null;
+  const [activityError,setActivityError]=useState('');
+  const [opening,setOpening]=useState(false);
+  useEffect(()=>setActivityError(''),[slide.id]);
+  async function startActivity() {
+    if(!activity || opening || state.session.status==='ended')return;
+    setOpening(true);setActivityError('');
+    try { await sessionCommand(state.session.id,{action:'open',activityId:activity.id}); refresh(); }
+    catch(e){setActivityError(message(e));}
+    finally{setOpening(false);}
+  }
+
   return (
     <>
       <LiveSlideNavigation state={state} refresh={refresh} keyboard />
@@ -685,6 +701,16 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
         {state.canPresent ? "Present from this window. Use Previous / Next or the left and right arrow keys. " : "Slides change when the presenter advances. "}
         The whole slide fits this window.
       </p>
+      {activity && <div className="live-engagement-bar">
+        <strong>{activity.kind==='choice'?'VOTE NOW':activity.kind==='roleplay'?'BREAKOUT PRACTICE':'WRITE & DISCUSS'} · {slide.time} minutes</strong>
+        <span>Agents: answer in your signed-in session.</span>
+        {state.canPresent && <>
+          {state.openedActivityIds.includes(activity.id)?<span>Responses open</span>:<button disabled={opening || state.session.status==='ended'} onClick={()=>void startActivity()}>{opening?'Opening…':'Open responses for agents'}</button>}
+          <a href={link(state.session.id,'presenter')} target="_blank" rel="noreferrer">{activity.kind==='roleplay'?'Assign pairs / trios':'Review responses & reveal'}</a>
+          {state.rehearsal && <a href={link(state.session.id,'agent')} target="_blank" rel="noreferrer">Open test learner</a>}
+        </>}
+        {activityError && <span role="alert">{activityError}</span>}
+      </div>}
       <PresentationFit key={slide.id} theme={slide.theme}>
       <SlideBody slide={slide} presentation>
         {slide.native === "deal" && (
@@ -1484,9 +1510,9 @@ function PartnerSetup({
           }
           onClick={() => void rotate(2)}
         >
-          Create rotating pairs from joined agents
+          {state.rehearsal ? 'Set up solo speaking practice' : 'Create rotating pairs from joined agents'}
         </button>
-        <button
+        {!state.rehearsal && <button
           disabled={
             grouping ||
             state.groups.some((g) => g.activityId === activity.id) ||
@@ -1495,7 +1521,7 @@ function PartnerSetup({
           onClick={() => void rotate(3)}
         >
           Create rotating trios from joined agents
-        </button>
+        </button>}
       </div>
       <p>
         Every joined learner receives a speaking round. Add late arrivals or
@@ -1912,7 +1938,7 @@ function AgentWorkspace({
         activityId={activity?.id}
         onSaved={refresh}
       />
-      <section className="live-card">
+      {!state.rehearsal && <section className="live-card">
         <h2>Your follow-up</h2>
         <p>
           {mine?.coachId
@@ -1932,7 +1958,7 @@ function AgentWorkspace({
           </p>
         ))}
         <a href="#/learn">Open my coaching assignments →</a>
-      </section>
+      </section>}
     </>
   );
 }
@@ -2199,6 +2225,13 @@ export function Activity({
           <p>{activity.explanation}</p>
         </section>
       )}
+      {state.observations.filter(o => o.agentId === state.myAgentId && o.activityId === activity.id).map(o => (
+        <section className="live-card" key={o.id}>
+          <h3>{o.coachReviewed ? 'Presenter feedback' : 'Partner feedback'} · round {o.round}</h3>
+          <p>{o.correction}</p><p>Retry: {o.retry}</p>
+          <small>{o.retryObserved ? 'Retry observed' : 'Retry not yet observed'}{state.rehearsal ? ' · test evidence only' : ''}</small>
+        </section>
+      ))}
       {attempts.length > 0 && (
         <details className="live-card">
           <summary>Your submitted attempts ({attempts.length})</summary>
@@ -2227,7 +2260,7 @@ function PracticeGroups({
             [g.agentId, g.buyerId, g.observerId].includes(state.myAgentId),
         )
         .map((g) => {
-          const useCases = state.definition.slides
+          const useCases = state.definition.activities.find(a => a.id === g.activityId)?.useCases || state.definition.slides
             .find((s) => s.activity?.id === g.activityId)
             ?.body.includes('id="scenario"');
           const card = useCases

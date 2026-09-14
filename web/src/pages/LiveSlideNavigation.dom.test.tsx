@@ -42,3 +42,10 @@ it('shows a failed command without pretending the room advanced', async () => {
   await act(async () => button('Next').click());
   expect(host.querySelector('[role="alert"]')?.textContent).toBe('Connection lost'); expect(host.textContent).toContain('Slide 1 of 3'); expect(refresh).not.toHaveBeenCalled();
 });
+it('sends only the atomic slide command when advancing to an activity', async () => {
+  const value=state(); value.definition.slides[1].activity={id:'vote',kind:'choice',prompt:'Choose'};
+  await render(value);
+  await act(async()=>button('Next').click());
+  expect(command).toHaveBeenCalledOnce();
+  expect(command).toHaveBeenCalledWith('session',{action:'slide',slideId:'two'});
+});
