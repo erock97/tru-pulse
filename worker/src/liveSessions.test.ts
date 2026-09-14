@@ -8,7 +8,7 @@ import type {Db} from './db.js';
 import type {LiveFollowup} from '../../shared/liveWorkshops.js';
 vi.mock('./asUser.js',()=>({supabaseAsUser:vi.fn()}));
 const definition=getWorkshopDefinition(2)!;
-const opening=definition.activities.find(a=>a.kind==='choice')!;
+const opening=definition.activities.find(a=>a.kind==='choice' && a.fields?.length)!;
 function rawState():RawLiveState{return {
  session:{id:'s',day:2,title:definition.title,version:definition.version,timezone:'America/Los_Angeles',status:'active',created_at:'2026-09-12T12:00:00Z',ended_at:null,current_activity_id:opening.id,current_slide_id:opening.slideId,presenter_ids:['presenter'],definition,opened_activity_ids:[opening.id],revealed_activity_ids:[],timer_ends_at:null,updated_at:'2026-09-12T12:01:00Z',roster:[],groups:[]},myAgentId:'learner',canPresent:true,canReview:true,
  participants:[{agentId:'learner',name:'Private name',userId:'user',orgId:'org',teamId:'team',teamName:'Private team',coachId:'coach',joinedAt:null,lastSeenAt:null}],

@@ -44,7 +44,8 @@ describe('Rep workshop integration',()=>{
      }
    }
    expect(workshopQuestion(WINNING_FIRST_CONVERSATION_QS[3],2).choices[1]).toMatch(/needs checking/);
-   expect(workshopQuestion(WINNING_FIRST_CONVERSATION_QS[7],2).choices[1]).toMatch(/At least five/);
+   expect(workshopQuestion(WINNING_FIRST_CONVERSATION_QS[7],2).choices[1]).toMatch(/ten personal touches/);
+   expect(workshopQuestion(WINNING_FIRST_CONVERSATION_QS[0],2).choices[1]).toBe('Appointment, Location, Motivation, Summarize');
    expect(workshopQuestion(SHOW_LIKE_A_PRO_QS[0],3).choices[1]).toMatch(/Comparisons/);
  });
  it('does not rewrite an unrelated custom question with similar wording',()=>{

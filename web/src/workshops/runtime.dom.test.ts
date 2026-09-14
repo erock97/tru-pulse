@@ -30,8 +30,8 @@ describe('rendered workshop responses',()=>{
    for(const field of fields){expect(keys.has(field.dataset.save!),slide.title).toBe(false);keys.add(field.dataset.save!);}
   });
  });
- it('keeps corrections independent across rounds and restores a previous answer',()=>{
-  const data=day2 as WorkshopData,{root,go}=open(data);
+  it('keeps corrections independent across rounds and restores a previous answer',()=>{
+   const data=day4 as WorkshopData,{root,go}=open(data);
   const rounds=data.slides.flatMap((s,i)=>s.activity?.fields?.some(f=>f.id==='correction')?[i]:[]);
   go(rounds[0]);const first=root.querySelector<HTMLTextAreaElement>('textarea')!;
   first.value='First round correction';first.dispatchEvent(new Event('input',{bubbles:true}));
