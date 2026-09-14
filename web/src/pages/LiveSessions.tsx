@@ -140,7 +140,7 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
       (!team || a.teamId === team) &&
       a.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
-  async function create() {
+  async function create(testOnly = false) {
     setBusy(true);
     setError("");
     try {
@@ -148,8 +148,8 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
         id: crypto.randomUUID(),
         day,
         timezone,
-        participants: Object.keys(roster).map((agentId) => ({ agentId })),
-        presenterIds: presenters,
+        participants: testOnly ? [] : Object.keys(roster).map((agentId) => ({ agentId })),
+        presenterIds: testOnly ? [] : presenters,
       });
       window.location.hash = link(result.id, "presenter");
     } catch (e) {
@@ -255,6 +255,12 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
               </datalist>
             </label>
           </div>
+          <section aria-label="Test on your own">
+            <button disabled={busy || !timezone} onClick={() => void create(true)}>
+              Test Day {day} without agents
+            </button>
+            <p>Open the real presenter and shared presentation screens on your own. No agents are added and no agent follow-up is created.</p>
+          </section>
           <fieldset>
             <legend>Select agents</legend>
             <div className="live-grid">
