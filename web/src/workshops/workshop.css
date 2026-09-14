@@ -46,3 +46,18 @@
 .preferred-workshop{background:#253239;--blue:#c4af76}.preferred-workshop .shell,.preferred-workshop .chapters,.preferred-workshop .controls{background:#253239}.preferred-workshop .chapters button[aria-current=step]{color:#edcd83;box-shadow:inset 0 -2px #c4af76}.preferred-workshop .progress>div{background:#8b733f}.preferred-workshop .cue span{color:#edcd83}.preferred-workshop #agenda-list button[aria-current=true]{background:#eee5ce}
 .tru .reference-screen img{min-width:0;width:1810px;max-width:none}
 .tru .product-pair{max-width:1800px;width:100%;margin-inline:auto}
+
+/* A bounded presentation canvas keeps text and product screens composed on
+   wide displays. Long exercises grow naturally instead of clipping content. */
+.preferred-workshop #stage{width:calc(100% - 48px);max-width:1480px;margin:24px auto 0}
+.slide.tru{width:100%;min-height:min(740px,calc(100svh - 240px));padding:36px 44px;display:flex;gap:22px;border:1px solid #c4bbaa;border-top:3px solid #8b733f;border-radius:8px;box-shadow:0 14px 40px #101b2226}
+.slide.tru h1{font-size:clamp(34px,3.2vw,52px);max-width:1100px}.slide.tru .content{flex:0;gap:22px;margin-top:8px}.slide.tru .row{grid-template-columns:240px minmax(0,1fr);gap:36px;padding:24px 0}.slide.tru .row p{max-width:72ch;font-size:20px}.slide.tru .source{margin-top:auto}.slide.tru .content>.source:last-child{margin-top:8px}
+.slide.tru-welcome h1{font-size:clamp(38px,4vw,64px);max-width:1050px}.slide.tru .lead{max-width:900px}.slide.tru .case-brief,.slide.tru .field{max-width:none}
+.slide.tru-lab{min-height:0;padding:28px}.slide.tru-lab h1{font-size:clamp(30px,2.8vw,42px)}
+.preferred-workshop .controls{max-width:1480px;margin:0 auto;min-height:92px;padding:18px 8px}.preferred-workshop .shell,.preferred-workshop .chapters{padding-inline:max(24px,calc((100% - 1480px)/2))}
+.preferred-workshop .progress{max-width:1480px;margin:0 auto 24px}
+.preferred-live-workshop{max-width:1480px;margin:20px auto;background:transparent!important}.preferred-live-workshop .slide.tru{min-height:0}.preferred-live-workshop .slide.tru h2{font-size:clamp(28px,2.8vw,42px);line-height:1.2;margin:0}.preferred-live-workshop .native-lab .fub{max-width:1810px;margin-inline:auto}
+.tru .reference-screen img{width:100%;max-width:1810px;height:auto}.tru .reference-screen-scroll{border-radius:6px}
+@media(max-width:900px){.preferred-workshop #stage{width:calc(100% - 24px);margin-top:12px}.slide.tru{padding:28px;min-height:0}.slide.tru .row{grid-template-columns:1fr;gap:10px;padding:20px 0}.slide.tru .row p{font-size:18px}.preferred-workshop .controls{padding:16px}.preferred-live-workshop{margin:8px auto}}
+@media(max-width:600px){.slide.tru,.slide.tru-lab{padding:22px 18px}.slide.tru h1,.slide.tru-welcome h1{font-size:34px}.preferred-workshop .shell,.preferred-workshop .chapters{padding-inline:18px}}
+@media print{.preferred-workshop #stage{width:100%;margin:0;max-width:none}.slide.tru{box-shadow:none;border:0;min-height:0;border-radius:0}}

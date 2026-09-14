@@ -14,7 +14,7 @@ export const RECORD_TOOLS = [
 ];
 
 export function RecordMap(){
- const [selected,setSelected]=useState<string|null>(null),[fit,setFit]=useState(false);
+ const [selected,setSelected]=useState<string|null>(null),[fit,setFit]=useState(true);
  const scroll=useRef<HTMLDivElement>(null);
  const tool=RECORD_TOOLS.find(t=>t.id===selected);
  function choose(id:string){
