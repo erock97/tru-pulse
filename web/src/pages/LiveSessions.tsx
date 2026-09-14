@@ -39,6 +39,7 @@ import { adminReturn, hasAdminReturn } from "../lib/api";
 import workshopCss from "../workshops/workshop.css?inline";
 import recordCss from "../workshops/practiceRecord.css?inline";
 import "./liveSessions.css";
+import { LiveSlideNavigation } from "./LiveSlideNavigation";
 
 const message = (e: unknown) =>
   e instanceof Error ? e.message : "The request could not be completed.";
@@ -518,7 +519,7 @@ function Session({ id, view }: { id: string; view: LiveView }) {
       {view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
       ) : view === "shared" ? (
-        <Projection state={state} />
+        <Projection state={state} refresh={() => refresh.current()} />
       ) : view === "coach" ? (
         <CoachEvidence state={state} />
       ) : (
@@ -532,9 +533,11 @@ type Slide = LiveSessionState["definition"]["slides"][number];
 function SlideBody({
   slide,
   children,
+  presentation = false,
 }: {
   slide: Slide;
   children?: ReactNode;
+  presentation?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null),
     [root, setRoot] = useState<ShadowRoot | null>(null);
@@ -607,6 +610,14 @@ function SlideBody({
               {recordCss}
               {`:host{display:block;color:#182321}*{box-sizing:border-box} .workshop{min-height:0;background:#f2f0e9;color:#182321;padding:0}.slide{min-height:0;padding:28px;display:block}.content{max-width:none}.native-lab .pr{max-width:none;color:#182321}.native-lab .pr-jobs{background:#253734;color:#f3f0e6;padding:20px;position:relative;top:0;--ac-text:#f3f0e6;--ac-text-60:#c9d5cd}.native-lab .pr-after{color:#182321}.native-lab{--gold:#c4d5ab;--ac:#c4d5ab;--ac-text:#182321;--ac-text-60:#52625a}.native-lab button{cursor:pointer}button,input,textarea,select{font:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #527c61;outline-offset:3px}.btn{padding:10px 18px;border-radius:6px}.screen-figure img{max-width:100%;height:auto}.err{color:#9c3227} .live-native-disabled{pointer-events:none;opacity:.7} @media(max-width:600px){.slide{padding:14px}}`}
             </style>
+            {presentation && <style>{`
+              :host{min-height:0;background:transparent}
+              .workshop,.preferred-live-workshop{min-height:0;margin:0;max-width:none}
+              .slide,.slide.tru{display:flex;flex-direction:column;gap:20px;overflow:visible;min-height:0;padding:clamp(22px,3vw,44px);border:0;border-radius:0;box-shadow:none}
+              .slide h2,.preferred-live-workshop .slide.tru h2{font:600 clamp(30px,3.2vw,52px)/1.15 Manrope,system-ui,sans-serif;letter-spacing:-.04em;margin:0}
+              .slide .content{min-width:0;flex:0;gap:20px}
+              @media(max-width:600px){.slide,.slide.tru{padding:20px 16px}.slide h2,.preferred-live-workshop .slide.tru h2{font-size:30px}}
+            `}</style>}
             <div className={slide.theme?.split(" ").includes("tru") ? "workshop preferred-live-workshop" : "workshop"}>
               <section className={`slide ${slide.theme || ""}`}>
                 <div className="meta">
@@ -635,7 +646,11 @@ function SlideBody({
     </div>
   );
 }
-function Projection({ state }: { state: LiveSessionState }) {
+function Projection({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
+  const canvas = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (canvas.current) canvas.current.scrollTop = 0;
+  }, [state.session.currentSlideId]);
   const slide =
     state.definition.slides.find(
       (s) => s.id === state.session.currentSlideId,
@@ -648,7 +663,13 @@ function Projection({ state }: { state: LiveSessionState }) {
     totals = activity ? state.choiceTotals[activity.id] : null;
   return (
     <>
-      <SlideBody slide={slide}>
+      <LiveSlideNavigation state={state} refresh={refresh} keyboard />
+      <p className="live-presentation-help">
+        {state.canPresent ? "Present from this window. Use Previous / Next or the left and right arrow keys. " : "Slides change when the presenter advances. "}
+        Scroll within the slide for more content.
+      </p>
+      <div className="live-presentation-canvas" ref={canvas} tabIndex={0} role="region" aria-label="Presentation slide content">
+      <SlideBody slide={slide} presentation>
         {slide.native === "deal" && (
           <div style={{ maxWidth: 720, position: "relative", minHeight: 400 }}>
             <DealMock />
@@ -688,6 +709,7 @@ function Projection({ state }: { state: LiveSessionState }) {
           {activity.explanation && <p>{activity.explanation}</p>}
         </section>
       )}
+      </div>
     </>
   );
 }
@@ -800,7 +822,7 @@ function Presenter({
       </div>
       <p className="live-private">
         Private console. Share the separate presentation window in your meeting
-        platform.
+        platform. You can advance slides from either window; both stay in sync.
       </p>
       {error && (
         <p role="alert" className="live-error">
@@ -810,6 +832,7 @@ function Presenter({
       <div className="live-presenter-grid">
         <section className="live-card">
           <h2>Run the room</h2>
+          <LiveSlideNavigation state={state} refresh={refresh} />
           <label>
             Presentation slide
             <select
