@@ -256,6 +256,7 @@ export function PracticeRecord({
   const [log, setLog] = useState<Entry[]>([]);
   const [hint, setHint] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [grade, setGrade] = useState<RecordGrade | null>(null);
@@ -478,12 +479,16 @@ export function PracticeRecord({
                     <p>{pack.noteToCopy}</p>
                     <button
                       onClick={() => {
-                        void navigator.clipboard?.writeText(pack.noteToCopy!).then(
-                          () => setCopied(true),
-                          () => setCopied(false),
+                        setCopyFailed(false);
+                        if (!navigator.clipboard?.writeText) { setCopyFailed(true); return; }
+                        void navigator.clipboard.writeText(pack.noteToCopy!).then(
+                          () => { setCopied(true); setCopyFailed(false); },
+                          () => { setCopied(false); setCopyFailed(true); },
                         );
                       }}
                     >{copied ? 'Copied ✓' : 'Copy'}</button>
+                    <button onClick={() => setNoteDraft(pack.noteToCopy!)}>Use this note</button>
+                    {copyFailed && <p role="status">Copy is unavailable in this browser. Choose Use this note, then click Create Note to save it.</p>}
                   </div>
                 )}
               </div>
@@ -508,7 +513,7 @@ export function PracticeRecord({
         ref={shotRef}
         style={{ ['--k' as string]: String(k), minWidth: enlarged ? 1810 : undefined }}
       >
-        <img className="fub-shot" src={SHOT} alt="A Follow Up Boss contact record for Avery Morgan" />
+        <img className="fub-shot" src={SHOT} alt={`A Follow Up Boss contact record for ${pack.contact?.name || 'Avery Morgan'}`} />
 
         {k > 0 && (
           <>

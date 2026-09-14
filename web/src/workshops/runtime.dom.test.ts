@@ -39,7 +39,7 @@ describe('rendered workshop responses',()=>{
   go(rounds[0]);expect(root.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('First round correction');
  });
  it('displays the People reference inline without an enlarge button',()=>{
-  const {root,go}=open(day1 as WorkshopData);go(1);
+  const {root,go}=open(day1 as WorkshopData);go(day1.slides.findIndex(s=>s.id==='day1-start-in-people'));
   expect(root.querySelector('.reference-screen img')).not.toBeNull();
   expect(root.querySelector('.reference-screen img')!.getAttribute('role')).toBeNull();
   expect(root.querySelector('[aria-label^="Enlarge"]')).toBeNull();

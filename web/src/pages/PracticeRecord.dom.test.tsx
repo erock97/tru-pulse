@@ -48,4 +48,14 @@ describe('native record controls in the workshop shadow root',()=>{
   expect(container.querySelector('.fub-modal')).toBeNull();expect(container.querySelector('.fub-stageedit')).toBeNull();
   expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Contact note"]')!.readOnly).toBe(true);
  });
+ it('offers a note draft when the browser refuses clipboard access, without saving it automatically',async()=>{
+  vi.stubGlobal('navigator',{clipboard:{writeText:vi.fn().mockRejectedValue(new Error('Denied'))}});
+  await act(async()=>root.render(<PracticeRecord scenario="spoke-note"/>));
+  await act(async()=>[...container.querySelectorAll('button')].find(b=>b.textContent==='Copy')!.click());
+  expect(container.textContent).toContain('Copy is unavailable');
+  await act(async()=>[...container.querySelectorAll('button')].find(b=>b.textContent==='Use this note')!.click());
+  expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Contact note"]')!.value).toContain('Spoke with Avery');
+  expect(container.querySelector('.fub-log')).toBeNull();
+  expect([...container.querySelectorAll('button')].find(b=>b.textContent==='Create Note')!.disabled).toBe(false);
+ });
 });
