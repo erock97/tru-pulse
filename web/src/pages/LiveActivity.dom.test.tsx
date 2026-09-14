@@ -9,13 +9,13 @@ const mocks=vi.hoisted(()=>({request:vi.fn(async()=>({})),submit:vi.fn(async()=>
 vi.mock('../lib/liveSessions',async(original)=>({...await original<any>(),liveRequest:mocks.request,submitAttempt:mocks.submit}));
 describe('live short-answer continuation',()=>{
  let root:Root,container:HTMLDivElement;
- const slide=getWorkshopDefinition(1)!.slides.find(s=>s.activity?.fields?.some(f=>f.id==='navigation'))!;
+ const slide=getWorkshopDefinition(1)!.slides.find(s=>s.activity?.fields?.some(f=>f.id==='readiness'))!;
  const state={viewerId:'user',myAgentId:'learner',session:{id:'session',version:'test'},attempts:[],revealedActivityIds:[]} as unknown as LiveSessionState;
  const key=liveDraftKey('user','session','test',slide.activity!.id);
  beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);localStorage.clear();mocks.submit.mockClear();container=document.createElement('div');document.body.append(container);root=createRoot(container);});
  afterEach(async()=>{await act(async()=>root.unmount());document.body.replaceChildren();vi.unstubAllGlobals();});
  it.each(['','I do not know.','I would ignore the source.'])('can continue with any draft without submitting or losing it: %s',async answer=>{
-  const draft={navigation:answer};localStorage.setItem(key,JSON.stringify(draft));const onContinue=vi.fn();
+  const draft={'readiness':answer};localStorage.setItem(key,JSON.stringify(draft));const onContinue=vi.fn();
   await act(async()=>root.render(<Activity state={state} slide={slide} activity={slide.activity!} refresh={()=>{}} onContinue={onContinue}/>));
   const button=[...container.querySelectorAll('button')].find(b=>b.textContent==='Continue with presenter')!;
   expect(button.disabled).toBe(false);
@@ -24,7 +24,7 @@ describe('live short-answer continuation',()=>{
   expect(JSON.parse(localStorage.getItem(key)!)).toEqual(draft);
  });
  it('submits an opinion unchanged without requiring a correct answer',async()=>{
-  const draft={navigation:'I would ignore the source.'};localStorage.setItem(key,JSON.stringify(draft));
+  const draft={'readiness':'I would ignore the source.'};localStorage.setItem(key,JSON.stringify(draft));
   await act(async()=>root.render(<Activity state={state} slide={slide} activity={slide.activity!} refresh={()=>{}} onContinue={()=>{}}/>));
   const button=[...container.querySelectorAll('button')].find(b=>b.textContent==='Submit response')!;
   expect(button.disabled).toBe(false);await act(async()=>button.click());

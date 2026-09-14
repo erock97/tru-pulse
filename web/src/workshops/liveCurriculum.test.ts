@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v4' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v6' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -39,7 +39,8 @@ describe('versioned live curriculum', () => {
     const firstRecord = day.slides.findIndex(slide => slide.native === 'practice');
     expect(day.slides.slice(0, firstRecord).some(slide => slide.native === 'map')).toBe(true);
     expect(day.slides.slice(0, firstRecord).some(slide => slide.id === 'day1-preferred-standards')).toBe(true);
-    expect(day.activities.some(activity => activity.kind === 'choice')).toBe(false);
+    expect(day.activities.filter(activity => activity.kind === 'choice').map(activity=>activity.id)).toEqual(['day1-capacity-decision']);
+    expect(day.activities.find(activity=>activity.id==='day1-capacity-decision')!.fields).toBeUndefined();
     expect(day.slides.map(slide => slide.body).join('')).toContain('/rep-lab/list-full.png');
     expect(day.slides.filter(slide => slide.native === 'map')).toHaveLength(1);
     const nurture = day.activities.find(activity => activity.kind === 'discussion')!;

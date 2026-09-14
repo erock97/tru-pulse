@@ -28,7 +28,7 @@ describe('Rep workshop integration',()=>{
  it('preserves every existing Day 1 native exercise in order',()=>{
    expect(data(1).slides.filter(s=>s.native==='practice').map(s=>s.scenario)).toEqual(OFFICIAL_TRAINING_CARDS.filter(s=>s.t==='practice').map(s=>s.scenario));
    expect(data(1).slides.filter(s=>s.native==='deal')).toHaveLength(1);
-   expect(data(1).slides).toHaveLength(34);
+   expect(data(1).slides).toHaveLength(33);
  });
  it('leaves unknown and custom modules in the existing player',()=>{
    expect(workshopDay({id:'custom',cards:[{deck:'custom-deck'}]})).toBeNull();
@@ -54,7 +54,7 @@ describe('Rep workshop integration',()=>{
    for(let day=1;day<=4;day++){
      const d=data(day);expect(d.slides.length).toBeGreaterThan(10);
      for(const slide of d.slides){expect(slide.title).toBeTruthy();expect(slide.notes).toBeTruthy();expect(slide.cue).toBeTruthy();expect(slide.time).toBeGreaterThan(0);}
-     expect(d.slides.some(s=>s.body.includes('data-save="recall'))).toBe(true);
+     expect(d.slides.some(s=>s.body.includes(day===1?'data-save="readiness':'data-save="recall'))).toBe(true);
      if(day===2||day===3)expect(d.cases).toHaveLength(3);
      expect([guide1,guide2,guide3,guide4][day-1]).toContain(d.title);
    }

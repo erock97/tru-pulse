@@ -9,7 +9,7 @@ export type WorkshopData = {
   cases: {name: string; quote: string; goal: string}[] | null;
 };
 export const workshopMeta: Record<number,{title:string;summary:string;minutes:number;screens:number}> = {
-  1:{title:'Welcome to Zillow Preferred',summary:'Understand Preferred onboarding and standards, explore Follow Up Boss, and practice five contact-record scenarios, Smart Actions, and nurture decisions.',minutes:57,screens:34},
+  1:{title:'Welcome to Zillow Preferred',summary:'Understand Preferred onboarding and standards, explore Follow Up Boss, and practice five contact-record scenarios, Smart Actions, and nurture decisions.',minutes:57,screens:33},
   2:{title:'Winning the First Conversation',summary:'Practice an opening in the first ten minutes, then use LEAD, buyer cases, feedback, and a targeted retry.',minutes:67,screens:16},
   3:{title:'Show Like a Pro',summary:'Learn what was missing, revise the plan, and practice the complete showing conversation with attributable partner feedback.',minutes:75,screens:19},
   4:{title:'Zillow Home Loans',summary:'Practice a relevant lender introduction, genuine permission, and a useful next action.',minutes:54,screens:16},

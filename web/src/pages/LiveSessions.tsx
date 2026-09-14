@@ -2088,9 +2088,9 @@ export function Activity({
         <div className="live-card">
           <h2>{activity.prompt}</h2>
           <p>
-            Write what you think, including “I’m not sure.” Short answers are not
+            {activity.kind === "choice" && !fields.length ? "Choose an answer and submit it. You can continue with the presenter without getting the answer right." : <>Write what you think, including “I’m not sure.” Short answers are not
             graded and there are no required keywords. Submit to share your response
-            with your presenter, or continue with the presentation and return later.
+            with your presenter, or continue with the presentation and return later.</>}
           </p>
           <fieldset disabled={sending || pending}>
             <legend className="live-sr">Your response</legend>
@@ -2133,7 +2133,7 @@ export function Activity({
                   : "Submit response"}
           </button>
           <button onClick={onContinue}>Continue with presenter</button>
-          <p>Continuing does not submit your writing. Your draft stays here for you to finish later.</p>
+          <p>{activity.kind === "choice" && !fields.length ? "Continuing does not submit your choice. You can return to it later." : "Continuing does not submit your writing. Your draft stays here for you to finish later."}</p>
           {activity.kind === "roleplay" && (
             <p>
               This reflection does not replace your partner’s observation.

@@ -61,12 +61,12 @@ describe('rendered workshop responses',()=>{
   });
  });
  it('downloads newly added activity fields as well as authored worksheet fields',()=>{
-  const {root,go}=open(day1 as WorkshopData);go(day1.slides.findIndex(s=>s.id==='day1-find-avery-in-the-training-account'));
-  const field=root.querySelector<HTMLTextAreaElement>('textarea')!;field.value='People, search, confirm source';field.dispatchEvent(new Event('input',{bubbles:true}));
+  const {root,go}=open(day1 as WorkshopData);go(day1.slides.findIndex(s=>s.id==='day1-activation-readiness'));
+  const field=root.querySelector<HTMLTextAreaElement>('textarea')!;field.value='Check the suggested appointment against the conversation';field.dispatchEvent(new Event('input',{bubbles:true}));
   const blobs:Blob[]=[];
   vi.stubGlobal('URL',Object.assign(URL,{createObjectURL:(blob:Blob)=>{blobs.push(blob);return 'blob:qa';},revokeObjectURL:vi.fn()}));
   vi.spyOn(HTMLAnchorElement.prototype,'click').mockImplementation(()=>{});
   (root.querySelector('[data-action="download"]') as HTMLButtonElement).click();
-  return new Promise<void>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{expect(String(reader.result)).toContain('People, search, confirm source');expect(String(reader.result)).toContain('What would');resolve();}catch(e){reject(e);}};reader.readAsText(blobs[0]);});
+  return new Promise<void>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{expect(String(reader.result)).toContain('Check the suggested appointment against the conversation');expect(String(reader.result)).toContain('What would');resolve();}catch(e){reject(e);}};reader.readAsText(blobs[0]);});
  });
 });
