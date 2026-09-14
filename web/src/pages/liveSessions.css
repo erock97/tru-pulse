@@ -352,3 +352,17 @@
 .live-choice-options{display:grid;gap:12px;margin:4px 0 20px;padding-left:30px;font-size:21px;line-height:1.45}
 .live-choice-options li{padding:10px 12px;border-bottom:1px solid #b7c5b6}
 .live-alms-activity>p{font-size:19px;line-height:1.5}.live-alms-activity>p:last-of-type{font-size:14px;color:#51635c}
+
+/* Presentation mode uses a real widescreen canvas, not a content-height card. */
+.live-shared{background:#151e22;color:#e9e8df}
+.live-shared .live-wrap{max-width:none;padding:10px 18px 14px;margin:0}
+.live-shared .live-wrap>h1{font-size:14px;max-width:none;margin:0}
+.live-shared .live-session-bar{color:#c6cec9;border:0;margin:0;padding:0;font-size:11px}
+.live-shared .live-slide-navigation{margin:6px 0;min-height:36px}
+.live-shared .live-slide-navigation button{padding:7px 16px;font-size:13px}
+.live-shared .live-presentation-help{display:none}
+.live-presentation-canvas{align-items:center}
+.live-slide-sheet{position:absolute;width:1200px;height:675px;transform-origin:top left;background:#f5f1e8;color:#26383b;overflow:hidden;box-shadow:0 10px 50px #0005}
+.live-slide-sheet.alms-cover{background:#22383c}
+.live-slide-sheet.alms-exercise{background:#e7ede5}
+.live-fit-content{background:transparent;border-radius:0}

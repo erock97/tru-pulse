@@ -16,10 +16,17 @@ it('fits a tall slide and refits when images or window size change', async () =>
     Object.defineProperty(frame, 'clientHeight', { value: 600, configurable: true });
     Object.defineProperty(slide, 'scrollHeight', { value: 1000, configurable: true });
     await act(async () => notify());
-    expect(slide.style.transform).toBe('scale(0.6)');
+    expect(slide.style.transform).toBe('scale(0.675)');
+    const bounds = host.querySelector('.live-fit-bounds') as HTMLElement;
+    expect(parseFloat(bounds.style.width) / parseFloat(bounds.style.height)).toBeCloseTo(16 / 9);
     expect((host.querySelector('.live-fit-bounds') as HTMLElement).style.height).toBe('600px');
     Object.defineProperty(frame, 'clientHeight', { value: 400 });
-    await act(async () => notify()); expect(slide.style.transform).toBe('scale(0.4)');
+    await act(async () => notify()); expect(slide.style.transform).toBe('scale(0.675)');
+    expect((host.querySelector('.live-fit-bounds') as HTMLElement).style.height).toBe('400px');
+    Object.defineProperty(slide, 'scrollHeight', { value: 300 });
+    await act(async () => notify());
+    expect(slide.style.transform).toBe('scale(1)');
+    expect((host.querySelector('.live-fit-bounds') as HTMLElement).style.height).toBe('400px');
   } finally { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); }
   expect(disconnect).toHaveBeenCalledOnce();
 });
