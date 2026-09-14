@@ -66,8 +66,8 @@ export async function main(args = process.argv.slice(2)) {
     console.log('Dry run only. No worker changes made.');
     return;
   }
-  if (!process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) {
-    throw new Error('Apply requires the verified CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN');
+  if (!process.env.CLOUDFLARE_ACCOUNT_ID) {
+    throw new Error('Apply requires the verified CLOUDFLARE_ACCOUNT_ID');
   }
   const workerEnv = { ...process.env };
   delete workerEnv.BWS_ACCESS_TOKEN;

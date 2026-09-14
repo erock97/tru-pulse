@@ -29,7 +29,8 @@ and unresolved Infisical references stop the operation before any write.
    renew it before then. Revoke temporary setup tokens after use.
 3. Install the official [Bitwarden CLI](https://bitwarden.com/help/secrets-manager-cli/)
    and run `npm ci` in `worker/`.
-4. Supply the verified production `CLOUDFLARE_ACCOUNT_ID` and a protected
+4. Supply the verified production `CLOUDFLARE_ACCOUNT_ID`. An interactive operator
+   can use their existing Wrangler OAuth login. An unattended runner needs a protected
    `CLOUDFLARE_API_TOKEN` with Workers Scripts edit permission on that account.
    Confirm `tru-pulse-sync` exists in that account before applying. Credentials
    must be injected into the runner environment by its secure store.
