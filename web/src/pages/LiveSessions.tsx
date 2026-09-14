@@ -1859,6 +1859,7 @@ function AgentWorkspace({
             slide={slide}
             activity={activity}
             refresh={refresh}
+            onContinue={() => setChosen(state.session.currentSlideId)}
           />
         </>
       )}
@@ -1920,16 +1921,18 @@ function useEditorLock(key: string) {
   return { editable, supported };
 }
 
-function Activity({
+export function Activity({
   state,
   slide,
   activity,
   refresh,
+  onContinue,
 }: {
   state: LiveSessionState;
   slide: Slide;
   activity: WorkshopActivity;
   refresh: () => void;
+  onContinue: () => void;
 }) {
   const key = liveDraftKey(
       state.viewerId,
@@ -2082,6 +2085,11 @@ function Activity({
       {activity.kind !== "record" && editable && (
         <div className="live-card">
           <h2>{activity.prompt}</h2>
+          <p>
+            Write what you think, including “I’m not sure.” Short answers are not
+            graded and there are no required keywords. Submit to share your response
+            with your presenter, or continue with the presentation and return later.
+          </p>
           <fieldset disabled={sending || pending}>
             <legend className="live-sr">Your response</legend>
             {activity.choices?.length && (
@@ -2122,6 +2130,8 @@ function Activity({
                   ? "Submit a new attempt"
                   : "Submit response"}
           </button>
+          <button onClick={onContinue}>Continue with presenter</button>
+          <p>Continuing does not submit your writing. Your draft stays here for you to finish later.</p>
           {activity.kind === "roleplay" && (
             <p>
               This reflection does not replace your partner’s observation.

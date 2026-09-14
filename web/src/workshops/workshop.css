@@ -24,4 +24,5 @@
 .details-focus:focus-visible{outline:3px solid #487bac;outline-offset:5px}
 .details-figure figcaption{font-size:15px;line-height:1.5;margin-top:12px}
 .image-dialog{width:96vw;max-width:1810px}
+.reference-screen{margin:0}.reference-screen-scroll{width:100%;overflow:auto;border:1px solid #b9c3bd;border-radius:8px;background:#fff}.reference-screen img{display:block;width:1810px;min-width:100%;max-width:none;height:auto;cursor:default}.reference-screen figcaption{font-size:14px;color:var(--muted);margin-top:10px}.reference-screen-scroll:focus-visible{outline:3px solid #487bac;outline-offset:3px}
 .tools .live-session-link{display:inline-flex;align-items:center;min-height:36px;padding:7px 12px;border:1px solid #59635f;border-radius:7px;font-size:12px;text-decoration:none}

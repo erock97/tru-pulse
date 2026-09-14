@@ -17,9 +17,9 @@
     {
       "chapter": "Find the contact",
       "title": "Start in People",
-      "lead": "Review this People-list image together. The hands-on exercises open inside a simulated contact.",
-      "body": "<figure class=\"screen-figure\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list reference image\"><figcaption>Reference image · Enlarge to inspect the controls. Search and filters are not interactive here.</figcaption></figure>",
-      "notes": "Stay in TrueHQ and enlarge the reference image. Point out People, search, smart lists, and filtering. Ask learners which controls they would use and how they would confirm the source and recent activity. This is a walkthrough, not a completed search task. The simulator begins inside a contact; no external account is needed for today’s class.",
+      "lead": "The full People reference is open below. Review the controls together, then continue here.",
+      "body": "<figure class=\"reference-screen\"><div class=\"reference-screen-scroll\" role=\"region\" aria-label=\"Full People reference image; scroll to inspect all controls\" tabindex=\"0\"><img src=\"/rep-lab/list-full.png\" alt=\"Follow Up Boss People list reference image\"></div><figcaption>Reference image · Scroll to inspect the full screen. Search and filters are not interactive here.</figcaption></figure>",
+      "notes": "Stay in TrueHQ. The full reference image is already displayed on this page; scroll to inspect its controls. Point out People, search, smart lists, and filtering. Ask learners which controls they would use and how they would confirm the source and recent activity. This is a walkthrough, not a completed search task. The simulator begins inside a contact; no external account is needed for class.",
       "cue": "Which control would you use to find a contact by name?",
       "time": 1,
       "theme": "paper",

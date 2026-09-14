@@ -38,6 +38,12 @@ describe('rendered workshop responses',()=>{
   go(rounds[1]);expect(root.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('');
   go(rounds[0]);expect(root.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('First round correction');
  });
+ it('displays the People reference inline without an enlarge button',()=>{
+  const {root,go}=open(day1 as WorkshopData);go(1);
+  expect(root.querySelector('.reference-screen img')).not.toBeNull();
+  expect(root.querySelector('.reference-screen img')!.getAttribute('role')).toBeNull();
+  expect(root.querySelector('[aria-label^="Enlarge"]')).toBeNull();
+ });
  it.each([day2,day3,day4])('runs all Day $day practice choices, case rotations, score resets, and draft fields',raw=>{
   const data=raw as WorkshopData,{root,go}=open(data);
   data.slides.forEach((slide,i)=>{
