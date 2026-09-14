@@ -703,9 +703,10 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
         )}
       </SlideBody>
       {activity && (
-        <section className="live-card">
-          <h2>{activity.prompt}</h2>
-          {activity.fields?.map((f) => (
+        <section className={`live-card ${slide.theme?.includes('alms') ? 'live-alms-activity' : ''}`}>
+          {activity.prompt !== slide.lead && activity.prompt !== slide.title && <h2>{activity.prompt}</h2>}
+          {!totals && activity.choices && <ol className="live-choice-options" type="A">{activity.choices.map(c => <li key={c.id}>{c.text}</li>)}</ol>}
+          {activity.fields?.filter(f => f.label !== slide.lead && f.label !== activity.prompt).map((f) => (
             <p key={f.id}>{f.label}</p>
           ))}
           <p>

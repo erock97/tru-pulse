@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v6' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v6' : definition.day === 2 ? '2026-09-14-alms-onboarding-v1' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -52,8 +52,8 @@ describe('versioned live curriculum', () => {
     expect(note).toContain('Do not invent a timeline');
   });
 
-  it('starts Days 2–4 with individual responses and an observed attempt inside ten minutes', () => {
-    for (const day of [2, 3, 4]) {
+  it('preserves Days 3–4 while Day 2 introduces and teaches before practice', () => {
+    for (const day of [3, 4]) {
       const definition = workshopCatalog[day];
       expect(definition.slides[0].activity?.id).toBe(`day${day}-opening-decision`);
       expect(definition.slides[0].activity?.kind).toBe('choice');
@@ -63,7 +63,14 @@ describe('versioned live curriculum', () => {
       expect(definition.slides[1].notes).toContain('targeted retry');
       expect(definition.slides[1].notes).toContain('Do not label a peer or self-check as coach sign-off');
     }
-    const model = workshopCatalog[2].slides[0].activity!.model!;
+    const day2 = workshopCatalog[2];
+    expect(day2.slides[0].id).toBe('day2-welcome');
+    expect(day2.slides[1].id).toBe('day2-agenda');
+    expect(day2.slides.slice(0,6).every(s => !s.activity)).toBe(true);
+    expect(day2.slides.findIndex(s => s.id === 'day2-alms')).toBeLessThan(day2.slides.findIndex(s => s.id === 'day2-opening-decision'));
+    expect(day2.slides.findIndex(s => s.id === 'day2-whole-call-two')).toBeLessThan(day2.slides.findIndex(s => s.activity?.kind === 'roleplay'));
+    expect(JSON.stringify(day2)).not.toMatch(/\bLEAD\b/);
+    const model = day2.slides.find(s => s.id === 'day2-opening-decision')!.activity!.model!;
     expect(model).toContain('Sam with Northside Realty');
     expect(model).toContain('featured partner with Zillow');
     expect(model).toContain('calling about your request to see');
@@ -71,10 +78,9 @@ describe('versioned live curriculum', () => {
   });
 
   it('preserves full rotations and the existing instructional body behind the openings', () => {
-    expect(workshopCatalog[2].slides.find(slide => slide.sourceScreen === 14)?.time).toBe(16);
     expect(workshopCatalog[3].slides.find(slide => slide.sourceScreen === 15)?.time).toBe(16);
     expect(workshopCatalog[4].slides.find(slide => slide.sourceScreen === 12)?.time).toBe(8);
-    for (const [day, required] of [[2, [3, 4, 7, 8, 9, 10, 11, 13, 15, 16, 17, 18]], [3, [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19]], [4, [3, 4, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18]]] as const) {
+    for (const [day, required] of [[3, [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19]], [4, [3, 4, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18]]] as const) {
       for (const originalScreen of required) expect(workshopCatalog[day].slides.some(slide => slide.sourceScreen === originalScreen)).toBe(true);
     }
   });

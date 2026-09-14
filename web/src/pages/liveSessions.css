@@ -348,3 +348,7 @@
 .live-rep .live-top a:focus-visible {
   outline-color: #f2d798;
 }
+.live-alms-activity{border:0;border-radius:0;background:#e7ede5;color:#26383b;box-shadow:none}
+.live-choice-options{display:grid;gap:12px;margin:4px 0 20px;padding-left:30px;font-size:21px;line-height:1.45}
+.live-choice-options li{padding:10px 12px;border-bottom:1px solid #b7c5b6}
+.live-alms-activity>p{font-size:19px;line-height:1.5}.live-alms-activity>p:last-of-type{font-size:14px;color:#51635c}

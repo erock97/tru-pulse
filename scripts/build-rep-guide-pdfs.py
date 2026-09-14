@@ -4,6 +4,7 @@ Requires reportlab and beautifulsoup4. HTML remains the source of every paragrap
 Run: python scripts/build-rep-guide-pdfs.py
 """
 from pathlib import Path
+import sys
 from html import escape
 from bs4 import BeautifulSoup, NavigableString
 from reportlab.lib import colors
@@ -72,10 +73,12 @@ def flow(node):
     return result
 
 for day in range(1,5):
+    if len(sys.argv) > 1 and int(sys.argv[1]) != day:
+        continue
     for kind in ('guide','resources'):
         source = DIRECTORY / f'day{day}-{kind}.html'
         soup = BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')
-        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent worksheet')
+        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent reference and practice notes' if day == 2 else 'agent worksheet')
         output = source.with_suffix('.pdf')
         def footer(canvas,doc):
             canvas.saveState()
