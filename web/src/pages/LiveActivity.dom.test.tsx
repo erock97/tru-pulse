@@ -2,7 +2,7 @@
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {Activity,PracticeGroups} from './LiveSessions';
+import {Activity,PracticeGroups,ResponseWorkspace} from './LiveSessions';
 import {getWorkshopDefinition} from '../../../shared/workshopCatalog';
 import {liveDraftKey, type LiveSessionState} from '../../../shared/liveWorkshops';
 const mocks=vi.hoisted(()=>({request:vi.fn(async()=>({})),submit:vi.fn(async()=>({id:'saved',grade:null}))}));
@@ -48,4 +48,31 @@ describe('live short-answer continuation',()=>{
   expect(container.textContent).toContain(definition.cases![0].quote);
   expect(container.textContent?.includes(definition.cases![0].goal)).toBe(viewer==='buyer');
  });
+ it.each(['day2-lead-route-check','day2-channel-check'])('submits from the presentation response panel: %s',async slideId=>{
+  const definition=getWorkshopDefinition(2)!;
+  const current=definition.slides.find(s=>s.id===slideId)!;
+  const activity=current.activity!;
+  const value={...state,definition,session:{...state.session,currentSlideId:slideId},openedActivityIds:[activity.id],groups:[],participants:[]} as LiveSessionState;
+  const response=Object.fromEntries((activity.fields||[]).map(f=>[f.id,'Please call after 5. I will confirm that time.']));
+  if(activity.choices?.length)response.choiceId=activity.choices[0].id;
+  const draftKey=liveDraftKey('user','session','test',activity.id);
+  localStorage.setItem(draftKey,JSON.stringify(response));
+  await act(async()=>root.render(<ResponseWorkspace state={value} refresh={()=>{}}/>));
+  expect(container.querySelector('[data-slide]')).toBeNull();
+  if(activity.choices?.length)expect(container.querySelectorAll('input[type=radio]').length).toBe(activity.choices.length);
+  if(activity.fields?.length)expect(container.querySelectorAll('textarea').length).toBe(activity.fields.length);
+  const submit=[...container.querySelectorAll('button')].find(b=>b.textContent==='Submit response')!;
+  expect(submit.disabled).toBe(false);
+  await act(async()=>submit.click());
+  expect(mocks.submit).toHaveBeenCalledWith('session',draftKey,activity.id,response);
+  expect(container.textContent).toContain('Submitted');
+ });
+ it('does not expose a response form before the activity opens',async()=>{
+  const definition=getWorkshopDefinition(2)!;
+  const value={...state,definition,session:{...state.session,currentSlideId:'day2-lead-route-check'},openedActivityIds:[],groups:[]} as LiveSessionState;
+  await act(async()=>root.render(<ResponseWorkspace state={value} refresh={()=>{}}/>));
+  expect(container.textContent).toContain('Waiting for the presenter');
+  expect(container.querySelector('input')).toBeNull();
+ });
+
 });

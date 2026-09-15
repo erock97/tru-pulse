@@ -368,3 +368,28 @@
 .live-fit-content{background:transparent;border-radius:0}
 .live-engagement-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#e8dfcb;color:#26383b;padding:8px 14px;margin-bottom:8px;flex:none;font-size:13px}
 .live-engagement-bar button{padding:6px 12px;font-size:13px}.live-engagement-bar a{color:#26383b;text-decoration:underline}
+
+/* Match the TRU HQ forest/amber gradient system in truHqDark.css. */
+.live-shared{background:radial-gradient(130% 150% at 12% -25%,#14301f 0%,transparent 46%),linear-gradient(150deg,#0d2015 0%,#060d09 72%);color:#edf2ec}
+.live-slide-sheet.alms-cover{background:radial-gradient(130% 150% at 12% -25%,#14301f 0%,transparent 46%),linear-gradient(150deg,#0d2015 0%,#060d09 72%)}
+.live-shared button{background:linear-gradient(135deg,#ffdc93,#f2b23c);color:#231a0c;border:1px solid #f2b23c;border-radius:8px}
+.live-shared button:hover:not(:disabled){background:linear-gradient(135deg,#ffe7b6,#ffca64);color:#231a0c}
+.live-participation-toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:6px 0 10px;font-size:13px;flex:none;color:#a9b5ac}
+.live-participation-toolbar>span{margin-right:auto}.live-participation-toolbar a{color:#ffdc93}.live-participation-toolbar button{padding:7px 14px;font-size:13px}
+.live-engagement-bar{background:linear-gradient(110deg,#172a1e,#101d15);color:#edf2ec;border:1px solid #f2b23c52;border-radius:8px}
+.live-engagement-bar a{color:#ffdc93}
+.live-presentation-layout{display:flex;gap:18px;min-height:0;flex:1}
+.live-presentation-layout>.live-presentation-canvas{min-width:0}
+.live-response-panel{width:380px;flex:none;overflow:auto;overscroll-behavior:contain;padding:20px;background:linear-gradient(155deg,#101d15,#0c1610);border:1px solid #d6e8da24;border-radius:12px;color:#edf2ec;font-size:14px;line-height:1.5}
+.live-response-panel h2{font-size:21px;margin:0 0 8px}.live-response-panel h3{font-size:18px;margin:14px 0 10px}
+.live-response-panel p{font-size:14px;line-height:1.5}.live-response-panel .live-response-note{color:#a9b5ac;font-size:12px}
+.live-shared .live-response-panel .live-card{background:transparent;border:0;padding:0;margin:12px 0;font-size:14px;color:inherit;box-shadow:none}
+.live-response-panel .live-choice-list label{background:#e2f0e60b;border:1px solid #d6e8da24;border-radius:8px;color:#edf2ec;padding:12px;font-size:15px}
+.live-response-panel .live-choice-list label:has(input:checked){border-color:#f2b23c;background:#f2b23c1c}
+.live-response-panel :is(textarea,input,select){color:#edf2ec;background:#050b08;border-color:#d6e8da40;accent-color:#f2b23c}
+.live-response-panel textarea{min-height:100px}.live-response-panel fieldset{min-width:0}
+.live-response-panel button{font-size:14px;margin:6px 6px 6px 0}.live-response-panel .live-submit-status{color:#ffdc93;font-weight:600}.live-response-panel .live-error{color:#ffb8a3}
+@media(max-width:900px){.live-response-panel{width:310px;padding:14px}.live-presentation-layout{gap:10px}}
+@media(max-width:650px){.live-presentation-layout.with-responses{flex-direction:column;overflow:auto}.with-responses>.live-presentation-canvas{flex:none;min-height:220px}.live-response-panel{width:100%;box-sizing:border-box;overflow:visible}.live-participation-toolbar{gap:8px}}
+
+.live-response-picker{display:block;font-size:13px;margin:14px 0}.live-response-picker select{display:block;width:100%;padding:8px;margin-top:6px;border-radius:6px}
