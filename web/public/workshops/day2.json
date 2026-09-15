@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Winning the first conversation",
-  "version": "2026-09-14-alms-live-v4",
+  "version": "2026-09-14-alms-live-v5",
   "duration": 90,
   "slides": [
     {
@@ -330,7 +330,7 @@
     {
       "id": "day2-changed-plan",
       "chapter": "When the call changes",
-      "title": "Your turn: an unavailable home",
+      "title": "Your turn: a home under contract",
       "lead": "Variation: the home is under contract. The buyer wants garden space. What do you say next?",
       "body": "<label class=\"field\">Write your response and a useful next step.<textarea data-save=\"plan\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“The home is under contract. I can check whether a viewing is still possible. Since garden space matters, I can also research some options to compare. Would that be useful?” Keep access and unresearched alternatives conditional.</p><p>Tell the truth, use known priorities, keep possibilities conditional, and offer a next step. Do not merely hand the search back with “Want something else?”</p></div></details>",
       "time": 3,
@@ -391,7 +391,7 @@
       "chapter": "Put it together",
       "title": "The whole call: opening and discovery",
       "lead": "Demonstration. Follow the conversation rather than naming each step.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Sam</b> “Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”</p><p><b>Jordan</b> “Yes, morning works.”</p><p><b>Sam</b> “Have you got a few minutes so I can make our time useful? What’s changing where you live now?”</p><p><b>Jordan</b> “We rent in town. We’d like outdoor space.”</p></div>",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Sam</b> “Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”</p><p><b>Jordan</b> “Yes, morning works.”</p><p><b>Sam</b> “Have you got a few minutes so I can make our time useful?”</p><p><b>Jordan</b> “Sure.”</p><p><b>Sam</b> “What’s changing where you live now?”</p><p><b>Jordan</b> “We rent in town. We’d like outdoor space.”</p></div>",
       "time": 2,
       "theme": "tru alms",
       "notes": "Ask a volunteer to read Jordan or read both parts yourself. Do not stop to label every ALMS letter. Agents listen for what each answer gives the agent to work with. Continue directly to the next slide without opening a new discussion. Handoff: Jordan has just said “outdoor space.” Continue from those words. Sources: R013; adapted from INT-016. All buyers and property details in examples are fictional.",

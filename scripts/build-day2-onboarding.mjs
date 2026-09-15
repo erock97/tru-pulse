@@ -243,7 +243,7 @@ revise('under-contract','The home is under contract','Separate variation: you le
  dialogue([['Agent','“The home is under contract. I can check whether a viewing is still possible. What drew you to it?”'],['Buyer','“The yard. I want room for a garden.”'],['Agent','“I can also research homes with useful garden space. Would that help?”']])+note('State what you know. Keep access and unresearched alternatives conditional.'),
  'Apply Eric’s problem-solving principle only to this first-call scenario. We are not teaching a cancellation or showing-day workflow. Explain why the next step uses the buyer’s reason. Do not claim to have researched alternatives when you have not.',
  'Try giving that news with a specific next step tied to what the buyer told you.');
-revise('changed-plan','Your turn: an unavailable home','Variation: the home is under contract. The buyer wants garden space. What do you say next?',null,
+revise('changed-plan','Your turn: a home under contract','Variation: the home is under contract. The buyer wants garden space. What do you say next?',null,
  'Give 60 seconds for writing. Compare one bare status update with one truthful plan tied to garden space. Reveal after responses. Listen for unsupported promises about access or already-researched alternatives.',
  'Those were alternate situations. Return to Jordan’s original call: Saturday morning is preferred, garden space matters, and access is still pending.');
 revise('summary','The plan should use what Jordan told you','Back to the original call. Jordan wants sunny space for raised beds.',
@@ -255,7 +255,7 @@ revise('summary-practice','Your turn: the agreed next step','Jordan wants garden
  'You’ve practiced the parts. Watch how those same parts connect in one uninterrupted call.');
 get('summary-practice').activity.model='“Garden space matters, and Saturday morning is your preference. I’ll check access and research a comparison with room for a garden. I’ll text you the details after I hear back. Have I missed anything?”';
 revise('whole-call-one','The whole call: opening and discovery','Demonstration. Follow the conversation rather than naming each step.',
- dialogue([['Sam','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”'],['Jordan','“Yes, morning works.”'],['Sam','“Have you got a few minutes so I can make our time useful? What’s changing where you live now?”'],['Jordan','“We rent in town. We’d like outdoor space.”']]),
+ dialogue([['Sam','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”'],['Jordan','“Yes, morning works.”'],['Sam','“Have you got a few minutes so I can make our time useful?”'],['Jordan','“Sure.”'],['Sam','“What’s changing where you live now?”'],['Jordan','“We rent in town. We’d like outdoor space.”']]),
  'Ask a volunteer to read Jordan or read both parts yourself. Do not stop to label every ALMS letter. Agents listen for what each answer gives the agent to work with. Continue directly to the next slide without opening a new discussion.',
  'Jordan has just said “outdoor space.” Continue from those words.');
 revise('whole-call-two','The same call: discovery and agreement','Continue without restarting the conversation.',
@@ -310,7 +310,7 @@ slides.forEach((s,i)=>{
    `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${a.model}</p><p>${a.explanation}</p></div></details>`;
  }
 });
-const data={day:2,title:'Winning the first conversation',version:'2026-09-14-alms-live-v4',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+const data={day:2,title:'Winning the first conversation',version:'2026-09-14-alms-live-v5',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
  {name:'Jordan · a garden',quote:'I’d like to see 1234 Lane Saturday morning. The yard caught my eye.',goal:'Buyer: you rent locally and want sun and room for raised beds. Reveal those details after relevant questions. You are open to a comparison home. Access remains unconfirmed.'},
  {name:'Maya · text first',quote:'I’m at work. Please text me now; I can talk at five.',goal:'Begin with the text exchange, then fast-forward to the agreed call. Buyer: a shorter commute matters; reveal it when asked. Honor the contact preference and agree the later conversation.'},
  {name:'Alex · questions first',quote:'I only wanted to know about the roof. I’m not ready to book a showing.',goal:'Buyer: maintenance costs concern you. Reveal this after a relevant question. Decline the next invitation too. Agent should help with the question and agree how to return verified information.'}
