@@ -658,8 +658,8 @@ function SlideBody({
               .slide .content{min-width:0;flex:0;gap:20px}
               .slide,.slide.tru{padding:24px 32px;gap:12px;animation:none}
               .slide.alms{background:transparent!important}
-              .workshop:has(.lesson-practice-photo),.workshop:has(.lesson-closing-photo),.workshop:has(.alms-cover){background:transparent}
-              .slide.lesson-practice-photo>*,.slide.lesson-closing-photo>*,.slide.lesson-practice-photo .lead,.slide.lesson-closing-photo .lead{max-width:65%}
+              .workshop:has(.lesson-photo),.workshop:has(.lesson-practice-photo),.workshop:has(.lesson-closing-photo),.workshop:has(.alms-cover){background:transparent}
+              .slide.lesson-photo>*,.slide.lesson-photo .lead,.slide.lesson-practice-photo>*,.slide.lesson-closing-photo>*,.slide.lesson-practice-photo .lead,.slide.lesson-closing-photo .lead{max-width:65%}
               .slide h2,.preferred-live-workshop .slide.tru h2{font-size:36px}
               .slide .lead{font-size:20px;max-width:none}
               .slide .content{font-size:18px;gap:14px}

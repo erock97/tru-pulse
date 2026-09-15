@@ -131,3 +131,20 @@
 .slide.lesson-closing-photo .lesson-agenda li{font-size:21px;line-height:1.4;padding:10px 0;border-bottom:1px solid #d6d2c7}
 .slide.lesson-closing-photo .lesson-agenda strong{display:block;font-weight:700}
 @media(max-width:700px){.slide.lesson-framework .lesson-agenda{grid-template-columns:1fr}.slide.lesson-practice-photo>*,.slide.lesson-closing-photo>*{max-width:100%}.slide.lesson-practice-photo,.slide.lesson-closing-photo{background:#f2f0e9}}
+
+/* Photography from the landing-page brokerage collection. Stable per slide. */
+.photo-arrival{--lesson-photo:url('/workshops/backdrops/arrival.png')}
+.photo-home{--lesson-photo:url('/workshops/house.jpg')}
+.photo-follow-up{--lesson-photo:url('/workshops/backdrops/follow-up.png')}
+.photo-coaching{--lesson-photo:url('/workshops/backdrops/coaching.jpg')}
+.photo-questions{--lesson-photo:url('/workshops/backdrops/questions.png')}
+.photo-concern{--lesson-photo:url('/workshops/backdrops/concern.png')}
+.photo-practice{--lesson-photo:url('/workshops/backdrops/practice.jpg')}
+.photo-conversation{--lesson-photo:url('/workshops/backdrops/conversation.png')}
+
+.slide.lesson-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.04) 73%),var(--lesson-photo) center/cover;color:#171d22}
+.slide.lesson-photo>*,.slide.lesson-photo .lead{max-width:65%}
+.slide.lesson-photo .lesson-explanation,.slide.lesson-photo .lesson-agenda li{font-size:22px;line-height:1.45}
+.slide.lesson-photo .lesson-example{font-size:24px;line-height:1.45}
+.slide.lesson-photo .alms-call-turns p{grid-template-columns:80px minmax(0,1fr);font-size:22px;gap:12px;padding:8px 0}
+@media(max-width:700px){.slide.lesson-photo{background:#f2f0e9}.slide.lesson-photo>*,.slide.lesson-photo .lead{max-width:100%}}

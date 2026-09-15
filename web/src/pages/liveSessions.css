@@ -417,3 +417,15 @@
 .live-fit-bounds{animation:live-slide-enter 240ms ease-out both}
 @keyframes live-slide-enter{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){.live-fit-bounds{animation:none}}
+
+/* Photography from the landing-page brokerage collection. Stable per slide. */
+.photo-arrival{--lesson-photo:url('/workshops/backdrops/arrival.png')}
+.photo-home{--lesson-photo:url('/workshops/house.jpg')}
+.photo-follow-up{--lesson-photo:url('/workshops/backdrops/follow-up.png')}
+.photo-coaching{--lesson-photo:url('/workshops/backdrops/coaching.jpg')}
+.photo-questions{--lesson-photo:url('/workshops/backdrops/questions.png')}
+.photo-concern{--lesson-photo:url('/workshops/backdrops/concern.png')}
+.photo-practice{--lesson-photo:url('/workshops/backdrops/practice.jpg')}
+.photo-conversation{--lesson-photo:url('/workshops/backdrops/conversation.png')}
+
+.live-slide-sheet.alms.lesson-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.04) 73%),var(--lesson-photo) center/cover}

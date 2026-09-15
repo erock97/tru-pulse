@@ -228,16 +228,21 @@ add('reference','Day 2 wrap-up','From the next lead to the next step','Today, yo
  '<p class="lesson-source"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Keep your conversation starters and practice reference handy ↗</a></p>',1,
  'Close the training rather than introducing another lesson. Review the four outcomes briefly. Ask each learner which part they want to keep practicing, using their role-play experience. Remind them the reference includes questions they can keep beside them. Practice today is a starting point, not proof of mastery.',
  'Keep your reference available for the next lead, and bring the specific moment you want help with to your coach.');
-// Distinct compositions mark the framework, practice, and closing moments.
-for (const [id, theme] of [['alms','lesson-framework'],['objection-framework','lesson-framework lesson-three'],['unanswered','lesson-timeline'],['full-call-practice','lesson-practice-photo'],['reference','lesson-closing-photo']]) {
- slides.find(slide => slide.id === `day2-${id}`).theme += ` ${theme}`;
-}
+// Use a deliberate photo sequence; no random rotation during a live session.
+for (const [id, theme] of [
+ ['alms','lesson-framework'],['objection-framework','lesson-framework lesson-three'],['unanswered','lesson-timeline'],
+ ['agenda','lesson-photo photo-arrival'],['standard-tour','lesson-photo photo-home'],
+ ['channel','lesson-photo photo-follow-up'],['introduction','lesson-photo photo-coaching'],
+ ['discovery-practice','lesson-photo photo-questions'],['market-concern','lesson-photo photo-concern'],
+ ['full-call-practice','lesson-photo lesson-practice-photo photo-practice'],
+ ['reference','lesson-photo lesson-closing-photo photo-conversation']
+]) { slides.find(slide => slide.id === `day2-${id}`).theme += ` ${theme}`; }
 for(const s of slides){if(!s.activity)continue;const a=s.activity;
  s.body+=(a.choices?`<div class="choices" data-quiz="${s.id}">${a.choices.map(c=>`<button data-option-id="${c.id}" data-correct="${c.id===a.correctChoiceId}" data-feedback="${esc(a.explanation)}">${esc(c.text)}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`:'')+
  a.fields.map(f=>`<label class="field">${esc(f.label)}<textarea data-save="${f.id}" placeholder="Write your practice response."></textarea></label>`).join('')+
  `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${esc(a.model)}</p><p>${esc(a.explanation)}</p></div></details>`;
 }
-const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-lead-live-v15',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-lead-live-v16',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
  {name:'Tour request · a home office',quote:'I asked to see the Cedar Lane home. Saturday morning works for me.',goal:'Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked.'},
  {name:'Property question · maintenance',quote:'I wanted to know about the roof before deciding whether to tour.',goal:'Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated.'},
  {name:'Relocation · a later visit',quote:'We are relocating in two months. We cannot see homes this week.',goal:'Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing.'}
