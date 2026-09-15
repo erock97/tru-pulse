@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-alms-live-v9' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v10' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -93,7 +93,8 @@ describe('versioned live curriculum', () => {
     expect(position('changed-plan')).toBeLessThan(position('summary'));
     expect(position('summary-practice') + 1).toBe(position('whole-call-one'));
     expect(day2.slides.every(s => s.notes.includes('Handoff:') && s.cue.length > 30)).toBe(true);
-    expect(JSON.stringify(day2)).not.toMatch(/\bLEAD\b/);
+    expect(day2.slides.find(s => s.id === 'day2-alms')?.body).toContain('Lead with who you are');
+    expect(day2.slides.find(s => s.id === 'day2-channel')?.lead).toContain('normal business hours, 8 a.m.–8 p.m.');
   });
 
   it('preserves full rotations and the existing instructional body behind the openings', () => {

@@ -404,3 +404,5 @@
 .live-choice-options .live-discussion-choice:focus-visible{outline:3px solid #49658e;outline-offset:2px}
 .live-discussion-hint{font-size:16px;margin:0 12px;color:#515953}
 .live-choice-options li.discussion-selected{background:#c0d2fb;color:#171d22;border-radius:4px}
+
+.live-slide-notes>div{width:min(480px,80vw);max-height:65vh;overflow-y:auto;text-align:left}.live-discussion-hint>p{margin:4px 0 8px}.live-discussion-hint>button{padding:8px 16px}
