@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v13' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v14' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -74,7 +74,7 @@ describe('versioned live curriculum', () => {
     expect(day2.slides.find(s=>s.id==='day2-objection-framework')?.body).toContain('Ask questions to understand');
     expect(day2.slides.slice(0,3).every(s => !s.activity)).toBe(true);
     const position = (id: string) => day2.slides.findIndex(s => s.id === `day2-${id}`);
-    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['conversation-starters','discovery-practice'],['summary','summary-practice'],['objection-framework','objection-practice'],['market-concern','objection-practice'],['whole-call-two','full-call-practice']]) {
+    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['conversation-starters','discovery-practice'],['summary','summary-practice'],['objection-framework','buyer-concerns'],['buyer-concerns','market-concern'],['objection-framework','objection-practice'],['market-concern','objection-practice'],['whole-call-two','full-call-practice']]) {
       expect(position(instruction)).toBeGreaterThanOrEqual(0);
       expect(position(instruction)).toBeLessThan(position(practice));
     }
