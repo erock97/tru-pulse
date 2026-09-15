@@ -9,15 +9,16 @@
  * cached HTML shell while online, so this never does that:
  *
  *   - the page shell is network-FIRST, cache only as an offline fallback
- *   - /assets/* is cache-first, which is safe because Vite content-hashes those
- *     filenames: a new build produces new names, so a cached one can never be
- *     stale, only orphaned (and old caches are dropped on activate)
+ *   - /assets/* bypasses this worker; Vite content-hashed files use the browser
+ *     HTTP cache without replaying Cache API responses across request modes
  *   - anything cross-origin is never touched — Supabase and the sync Worker must
  *     always hit the network, or a leader could act on stale lead data
  *   - non-GET is never touched, so nothing that writes is ever replayed
  */
 
-const VERSION = 'tru-hq-v1';
+// Hashed build assets use the browser's HTTP cache, avoiding Cache API
+// response-mode collisions between module and stylesheet requests.
+const VERSION = 'tru-hq-v3';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 
@@ -70,16 +71,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── Hashed build output: safe to serve from cache, then top up. ──
-  if (url.pathname.startsWith('/assets/')) {
-    event.respondWith(
-      caches.match(req).then((hit) => hit ?? fetch(req).then((res) => {
-        if (res.ok) caches.open(ASSETS).then((c) => c.put(req, res.clone())).catch(() => undefined);
-        return res;
-      })),
-    );
-    return;
-  }
+  // Let the browser load hashed build assets directly. Its HTTP cache already
+  // handles these immutable URLs. Replaying a stored Fetch Response here can
+  // break module/stylesheet loading when the request mode differs.
+  if (url.pathname.startsWith('/assets/')) return;
 
   // ── Everything else same-origin (icons, poster image): network, then cache. ──
   event.respondWith(

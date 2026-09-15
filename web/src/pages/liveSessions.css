@@ -368,3 +368,29 @@
 .live-fit-content{background:transparent;border-radius:0}
 .live-engagement-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#e8dfcb;color:#26383b;padding:8px 14px;margin-bottom:8px;flex:none;font-size:13px}
 .live-engagement-bar button{padding:6px 12px;font-size:13px}.live-engagement-bar a{color:#26383b;text-decoration:underline}
+
+/* Match the live truhq.co/cinema.css theme (September 15, 2026). */
+.live-shared{--live-ink:#171d22;--live-paper:#f2f0e9;--live-stone:#d6d2c7;--live-blue:#b9d1fd;--live-line:#c9c9be;background:var(--live-ink);color:var(--live-paper);font-family:'DM Sans',sans-serif}
+.live-slide-sheet.alms-cover{background:linear-gradient(90deg,rgba(8,17,23,.77),rgba(8,17,23,.28) 55%,rgba(8,17,23,.05)),linear-gradient(0deg,rgba(8,17,23,.45),transparent 40%),url('/workshops/tru-website-poster.jpg') center/cover}
+.live-slide-sheet.alms:not(.alms-cover){background:var(--live-paper);color:var(--live-ink)}
+.live-shared button{background:var(--live-paper);color:var(--live-ink);border:1px solid var(--live-line);border-radius:4px}
+.live-shared button:hover:not(:disabled){background:var(--live-blue);color:var(--live-ink)}
+.live-participation-toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:6px 0 10px;font-size:13px;flex:none;color:#cbd0ce}
+.live-participation-toolbar>span{margin-right:auto}.live-participation-toolbar a{color:var(--live-blue)}.live-participation-toolbar button{padding:7px 14px;font-size:13px}
+.live-engagement-bar{background:#20292c;color:var(--live-paper);border:1px solid #ffffff20;border-radius:0}
+.live-engagement-bar a{color:var(--live-blue)}
+.live-presentation-layout{display:flex;gap:18px;min-height:0;flex:1}
+.live-presentation-layout>.live-presentation-canvas{min-width:0}
+.live-response-panel{width:380px;flex:none;overflow:auto;overscroll-behavior:contain;padding:20px;background:#e8e5dc;border:1px solid #ccc9be;border-radius:0;color:var(--live-ink);font-size:14px;line-height:1.5;color-scheme:light}
+.live-response-panel h2{font-size:21px;font-weight:500;margin:0 0 8px}.live-response-panel h3{font-size:18px;font-weight:500;margin:14px 0 10px}
+.live-response-panel p{font-size:14px;line-height:1.5}.live-response-panel .live-response-note{color:#5f6661;font-size:12px}
+.live-shared .live-response-panel .live-card{background:transparent;border:0;padding:0;margin:12px 0;font-size:14px;color:inherit;box-shadow:none}
+.live-response-panel .live-choice-list label{background:var(--live-paper);border:1px solid var(--live-line);border-radius:4px;color:var(--live-ink);padding:12px;font-size:15px}
+.live-response-panel .live-choice-list label:has(input:checked){border-color:var(--live-ink);background:var(--live-blue)}
+.live-response-panel :is(textarea,input,select){color:var(--live-ink);background:var(--live-paper);border-color:var(--live-line);accent-color:var(--live-ink)}
+.live-response-panel textarea{min-height:100px}.live-response-panel fieldset{min-width:0}
+.live-response-panel button{font-size:14px;margin:6px 6px 6px 0;background:var(--live-ink);color:white;border-color:var(--live-ink)}.live-response-panel .live-submit-status{color:var(--live-ink);font-weight:600}.live-response-panel .live-error{color:#892e23}
+.live-response-picker{display:block;font-size:13px;margin:14px 0}.live-response-picker select{display:block;width:100%;padding:8px;margin-top:6px;border-radius:4px}
+@media(max-width:900px){.live-response-panel{width:310px;padding:14px}.live-presentation-layout{gap:10px}}
+@media(max-width:650px){.live-presentation-layout.with-responses{flex-direction:column;overflow:auto}.with-responses>.live-presentation-canvas{flex:none;min-height:220px}.live-response-panel{width:100%;box-sizing:border-box;overflow:visible}.live-participation-toolbar{gap:8px}}
+.live-shared .live-alms-activity{background:#e8e5dc;color:#171d22}.live-shared .live-choice-options li{border-color:#c9c9be}

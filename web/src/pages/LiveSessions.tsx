@@ -414,7 +414,7 @@ function DeliveryLog({ preflight }: { preflight: LivePreflight }) {
   );
 }
 
-function Session({ id, view }: { id: string; view: LiveView }) {
+function Session({ id, view, responseOnly = false }: { id: string; view: LiveView; responseOnly?: boolean }) {
   const [state, setState] = useState<LiveSessionState | null>(null),
     [error, setError] = useState(""),
     [connected, setConnected] = useState(false),
@@ -493,6 +493,8 @@ function Session({ id, view }: { id: string; view: LiveView }) {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+  if (!state && responseOnly) return <p role={error ? "alert" : "status"}>{error || "Connecting your response form…"}</p>;
+  if (state && responseOnly) return <><p role="status">{connected ? "Connected · responses save to this session" : "Connection interrupted · retrying"}</p>{error && <p role="alert">{error}</p>}<ResponseWorkspace state={state} refresh={() => refresh.current()} /></>;
   if (!state)
     return (
       <Frame title="Live training">
@@ -632,6 +634,7 @@ function SlideBody({
               .slide h2,.preferred-live-workshop .slide.tru h2{font:600 clamp(30px,3.2vw,52px)/1.15 Manrope,system-ui,sans-serif;letter-spacing:-.04em;margin:0}
               .slide .content{min-width:0;flex:0;gap:20px}
               .slide,.slide.tru{padding:24px 32px;gap:12px;animation:none}
+              .slide.alms{background:transparent!important}
               .slide h2,.preferred-live-workshop .slide.tru h2{font-size:36px}
               .slide .lead{font-size:20px;max-width:none}
               .slide .content{font-size:18px;gap:14px}
@@ -672,7 +675,7 @@ function SlideBody({
     </div>
   );
 }
-function Projection({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
+export function Projection({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
   const slide =
     state.definition.slides.find(
       (s) => s.id === state.session.currentSlideId,
@@ -683,6 +686,8 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
     state.definition.slides[0];
   const activity = slide.activity,
     totals = activity ? state.choiceTotals[activity.id] : null;
+  const [showResponses,setShowResponses]=useState(state.rehearsal || !state.canPresent);
+  const nextActivity = state.definition.slides.slice(state.definition.slides.indexOf(slide) + 1).find(s => s.activity);
   const [activityError,setActivityError]=useState('');
   const [opening,setOpening]=useState(false);
   useEffect(()=>setActivityError(''),[slide.id]);
@@ -701,16 +706,21 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
         {state.canPresent ? "Present from this window. Use Previous / Next or the left and right arrow keys. " : "Slides change when the presenter advances. "}
         The whole slide fits this window.
       </p>
+      <div className="live-participation-toolbar">
+        <span>{activity ? "Your turn · choose or write, then submit" : nextActivity ? `Next participation: ${nextActivity.title}` : "Session wrap-up"}</span>
+        <button aria-pressed={showResponses} onClick={() => setShowResponses(!showResponses)}>{showResponses ? "Hide response panel" : state.rehearsal ? "Answer as test learner" : "Open my response panel"}</button>
+        {state.canPresent && <a href={link(state.session.id,"presenter")} target="_blank" rel="noreferrer">Presenter console</a>}
+      </div>
       {activity && <div className="live-engagement-bar">
         <strong>{activity.kind==='choice'?'VOTE NOW':activity.kind==='roleplay'?'BREAKOUT PRACTICE':'WRITE & DISCUSS'} · {slide.time} minutes</strong>
-        <span>Agents: answer in your signed-in session.</span>
+        <span>{showResponses ? "Submit in the response panel beside this slide." : "Open your response panel to answer."}</span>
         {state.canPresent && <>
           {state.openedActivityIds.includes(activity.id)?<span>Responses open</span>:<button disabled={opening || state.session.status==='ended'} onClick={()=>void startActivity()}>{opening?'Opening…':'Open responses for agents'}</button>}
           <a href={link(state.session.id,'presenter')} target="_blank" rel="noreferrer">{activity.kind==='roleplay'?'Assign pairs / trios':'Review responses & reveal'}</a>
-          {state.rehearsal && <a href={link(state.session.id,'agent')} target="_blank" rel="noreferrer">Open test learner</a>}
         </>}
         {activityError && <span role="alert">{activityError}</span>}
       </div>}
+      <div className={`live-presentation-layout ${showResponses ? "with-responses" : ""}`}>
       <PresentationFit key={slide.id} theme={slide.theme}>
       <SlideBody slide={slide} presentation>
         {slide.native === "deal" && (
@@ -728,7 +738,7 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
           </div>
         )}
       </SlideBody>
-      {activity && (
+      {activity && !showResponses && (
         <section className={`live-card ${slide.theme?.includes('alms') ? 'live-alms-activity' : ''}`}>
           {activity.prompt !== slide.lead && activity.prompt !== slide.title && <h2>{activity.prompt}</h2>}
           {!totals && activity.choices && <ol className="live-choice-options" type="A">{activity.choices.map(c => <li key={c.id}>{c.text}</li>)}</ol>}
@@ -754,6 +764,12 @@ function Projection({ state, refresh }: { state: LiveSessionState; refresh: () =
         </section>
       )}
       </PresentationFit>
+      {showResponses && <aside className="live-response-panel" aria-label="Live response panel">
+        <h2>{state.rehearsal ? "Test learner · your responses" : "Your responses"}</h2>
+        {state.rehearsal && <p className="live-response-note">Rehearsal: submissions and presenter feedback are saved here. No real agents are added.</p>}
+        <Session id={state.session.id} view="agent" responseOnly />
+      </aside>}
+      </div>
     </>
   );
 }
@@ -1990,18 +2006,37 @@ function useEditorLock(key: string) {
   return { editable, supported };
 }
 
+export function ResponseWorkspace({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
+  const [catchUp, setCatchUp] = useState("");
+  const slide = state.definition.slides.find(s => s.id === (catchUp || state.session.currentSlideId)) || state.definition.slides[0];
+  const activity = slide.activity;
+  const picker = <label className="live-response-picker">Your activity<select value={catchUp} onChange={e => setCatchUp(e.target.value)}><option value="">Follow current slide</option>{state.definition.slides.filter(s => s.activity && state.openedActivityIds.includes(s.activity.id)).map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>;
+  if (!state.myAgentId) return <p>This account is presenting. Agents can open their response panel from this same presentation link. Use a solo test session to rehearse submitting without agents.</p>;
+  if (!activity) return <>{picker}<p>Follow the presentation. Your quiz or short-answer form will open here when the presenter reaches an activity.</p></>;
+  if (!state.openedActivityIds.includes(activity.id)) return <p>Waiting for the presenter to open responses.</p>;
+  return <>
+    {picker}
+    <h3>{slide.title}</h3>
+    <Activity key={activity.id} state={state} slide={slide} activity={activity} refresh={refresh} onContinue={() => { setCatchUp(""); refresh(); }} compact />
+    <PracticeGroups state={state} activityId={activity.id} />
+    <ObservationForms state={state} activityId={activity.id} onSaved={refresh} />
+  </>;
+}
+
 export function Activity({
   state,
   slide,
   activity,
   refresh,
   onContinue,
+  compact = false,
 }: {
   state: LiveSessionState;
   slide: Slide;
   activity: WorkshopActivity;
   refresh: () => void;
   onContinue: () => void;
+  compact?: boolean;
 }) {
   const key = liveDraftKey(
       state.viewerId,
@@ -2115,7 +2150,7 @@ export function Activity({
               ? "The example has been revealed. New attempts will be marked assisted."
               : "Your first independent attempt is preserved."}
       </p>
-      {editable && (
+      {editable && (!compact || slide.native) && (
         <SlideBody slide={slide}>
           {slide.native === "practice" && (
             <div className="native-lab">

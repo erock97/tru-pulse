@@ -64,3 +64,8 @@
   Cache-Control: no-store
 /assets/index-CPrwxoH2.css
   Cache-Control: no-store
+
+# Public hashed assets must have one CORS-safe cache variant. Module scripts
+# always use CORS mode, even without a crossorigin attribute in the HTML.
+/assets/*
+  Access-Control-Allow-Origin: *
