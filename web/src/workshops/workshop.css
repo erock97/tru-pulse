@@ -143,7 +143,7 @@
 .photo-conversation{--lesson-photo:url('/workshops/backdrops/conversation.png')}
 
 .slide.lesson-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.04) 73%),var(--lesson-photo) center/cover;color:#171d22}
-.slide.lesson-photo>*,.slide.lesson-photo .lead{max-width:65%}
+.slide.lesson-photo>*,.slide.lesson-photo h2,.slide.lesson-photo .lead{max-width:65%}
 .slide.lesson-photo .lesson-explanation,.slide.lesson-photo .lesson-agenda li{font-size:22px;line-height:1.45}
 .slide.lesson-photo .lesson-example{font-size:24px;line-height:1.45}
 .slide.lesson-photo .alms-call-turns p{grid-template-columns:80px minmax(0,1fr);font-size:22px;gap:12px;padding:8px 0}

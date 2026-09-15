@@ -428,4 +428,6 @@
 .photo-practice{--lesson-photo:url('/workshops/backdrops/practice.jpg')}
 .photo-conversation{--lesson-photo:url('/workshops/backdrops/conversation.png')}
 
-.live-slide-sheet.alms.lesson-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.04) 73%),var(--lesson-photo) center/cover}
+.live-slide-sheet.alms.lesson-photo{background:#f2f0e9}
+.live-slide-sheet.lesson-photo::before{content:"";position:absolute;inset:0 0 0 63%;background:linear-gradient(90deg,#f2f0e9,rgba(242,240,233,0) 20%),var(--lesson-photo) var(--photo-focus,center)/cover;pointer-events:none}
+.photo-arrival{--photo-focus:35% center}.photo-follow-up{--photo-focus:46% center}.photo-practice{--photo-focus:58% center}.photo-questions{--photo-focus:65% center}
