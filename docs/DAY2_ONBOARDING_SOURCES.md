@@ -86,3 +86,13 @@ Zillow's five-minute acceptance window differs from TRU's first-contact standard
 Tests guard sequence, duration, redaction and response rendering. They do not
 judge whether prose makes sense to a new learner. Review the visible situation,
 explanation, example and spoken segue of every slide separately.
+
+## Response-time prediction (September 15 correction)
+
+Eric replaced the pre-LEAD call-opening check with a best-guess response-time question.
+The 2007 InsideSales.com / James Oldroyd study reports 100-times higher odds of contact
+for five versus 30 minutes; 21-times refers to qualification, not contact.
+This historical study covered web leads across six companies and is not Zillow-specific.
+Study: https://cdn2.hubspot.net/hub/25649/file-13535879-pdf/docs/mit_study.pdf
+Use this as a prediction before teaching the five-minute response standard, not as
+a scored recall test. Keep the call-opening decision after the LEAD demonstration.

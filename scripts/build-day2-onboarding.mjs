@@ -9,19 +9,10 @@ const visual=(images,text,url,label)=>`<div class="lesson-visual"><div class="le
 const slides=[];
 const discussionChoices={
   "lead-discussion": [
-    [
-      "both",
-      "Begin your introduction immediately; answering Zillow’s call has already connected you to the buyer."
-    ],
-    [
-      "distinct",
-      "Review the buyer’s inquiry, then select Connect to speak with the buyer.",
-      true
-    ],
-    [
-      "wait",
-      "Call the buyer’s number separately instead of using Connect."
-    ]
+    ["five", "Within 5 minutes", true],
+    ["ten", "Within 10 minutes"],
+    ["fifteen", "Within 15 minutes"],
+    ["twenty", "Within 20 minutes"]
   ],
   "channel-check": [
     [
@@ -125,13 +116,15 @@ add('standard-tour','Receive the lead','A standard tour request tells you what t
  q('“I see you requested a tour Saturday afternoon. Would that still work for you? I’ll check the showing arrangements and confirm the details.”')+
  p('A standard tour request may arrive as a live connection or an alert in Follow Up Boss. If the buyer is not already on the phone, your next job is to contact them.'),2,
  'Explain Follow Up Boss in full before abbreviating it to FUB. Show how the request gives you an opening. Distinguish preferred timing from booking status without making that obvious distinction into a quiz.',
- 'We have now seen the two phone experiences and a standard request. Let’s make sure the difference is clear before we move into your response.','INT-012');
-act('lead-discussion','Discuss the screens','You answered Zillow’s call. What happens next?','Zillow calls you with a live connection. You answer and see the buyer’s inquiry and a Connect button. You have not spoken to the buyer yet. What do you do next?',3,
- [['lead-response','Describe the next action for each type. Include anything on the screens you want explained.']],
- 'Review the inquiry so you know why the buyer reached out, then select Connect. That connects you to the waiting buyer; now introduce yourself. A Real-Time Touring request is different: review its proposed times, accept a workable request or pass, and contact the buyer after accepting. Accepting that request does not transfer a buyer onto the call.',
- 'The distinction changes what you prepare to do when the phone rings. A tour acceptance and a conversation with a waiting buyer are different tasks.',
- 'Give a minute to choose and explain. Discuss the selected answers and any screen questions. Return to a screenshot if the next action is unclear. This is an explanation check, not a trick question.',
- 'If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how to make contact.',null,'discussion');
+ 'We have seen what can arrive. Before we talk about what to say, take a guess at how much the timing of your response matters.','INT-012');
+act('lead-discussion','Before you make contact','Give your best guess: how quickly should you call?','A 2007 study of web leads found 100 times higher odds of making contact when the first call happened within ___ rather than 30 minutes. Which timeframe fills the blank?',3,
+ [['lead-response','Why do you think the response time changes the chance of a conversation?']],
+ 'Within 5 minutes. The study compared calls at five minutes with calls at 30 minutes and reported 100 times higher odds of contact. It studied web leads across six companies, not Zillow buyers specifically. The practical point: respond while the request is fresh.',
+ 'This is a prediction to start the discussion, not a test of a rule you have already learned. Ask what may change for a buyer while they wait. The research measured time from the web inquiry; our training standard starts when the agent receives the lead.',
+ 'Say: “Give me your best guess. Then tell me why you think timing would matter.” Hear a few answers before revealing five minutes. Attribute the statistic to the 2007 InsideSales.com and James Oldroyd study, not Zillow. Do not describe higher odds as a guaranteed result for an individual buyer.',
+ 'Five minutes is sooner than many people expect. Here is how to apply that when a new lead reaches you during business hours.',null,'discussion',
+ '<p class="lesson-source">Source: <a href="https://cdn2.hubspot.net/hub/25649/file-13535879-pdf/docs/mit_study.pdf" target="_blank" rel="noreferrer">InsideSales.com / James Oldroyd, 2007 Lead Response Management Study</a>. Historical web-lead research.</p>');
+slides.at(-1).activity.fields[0].label='Why do you think the response time changes the chance of a conversation?';
 add('channel','Make contact','Call promptly when the buyer has asked to hear from you','For a new lead received during normal business hours, 8 a.m.–8 p.m., call within five minutes unless the buyer gave a different contact instruction.',
  p('The buyer just asked for help with a home. A call lets you hear their tone, answer questions as they arise, and begin a conversation about what they need.')+
  p('Follow Up Boss may already have sent an automated introduction. That does not replace your own call. If the buyer requested a later callback or asked for text, respect that instruction.'),2,
@@ -273,7 +266,7 @@ for(const s of slides){if(!s.activity)continue;const a=s.activity;
  a.fields.map(f=>`<label class="field">${esc(f.label)}<textarea data-save="${f.id}" placeholder="Write your practice response."></textarea></label>`).join('')+
  `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${esc(a.model)}</p><p>${esc(a.explanation)}</p></div></details>`;
 }
-const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-lead-live-v10',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-lead-live-v11',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
  {name:'Tour request · a home office',quote:'I asked to see the Cedar Lane home. Saturday morning works for me.',goal:'Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked.'},
  {name:'Property question · maintenance',quote:'I wanted to know about the roof before deciding whether to tour.',goal:'Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated.'},
  {name:'Relocation · a later visit',quote:'We are relocating in two months. We cannot see homes this week.',goal:'Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing.'}
