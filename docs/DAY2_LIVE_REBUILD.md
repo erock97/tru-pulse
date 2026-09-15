@@ -51,3 +51,17 @@ Final UI cleanup removes repeated question headings, simulator-only status from 
 Final web publication: Pages `6c756e2f` verified the rehearsal finish label and saved feedback. The completed QA rehearsal has zero real participants, zero agent attempts, and zero follow-ups. The original rejected session retains its 38-slide snapshot.
 
 Clean rehearsal ready for Eric: [Presenter](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/presenter), [presentation](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/shared), [test learner](https://app.truhq.co/#/rep/sessions/a64cac95-5a28-4f79-b446-4c1c9c5d1554/agent). It starts at slide 1, with no submitted answers or revealed examples. Browser tabs are left open at these routes.
+
+### Presentation-page participation follow-up (PR #234)
+
+The shared page previously displayed static choices and sent participants to another page. It now loads the authorized agent view into a response panel beside the fixed 16:9 canvas. This uses the existing submission, draft, reveal, observations, and isolated rehearsal persistence paths. The panel is automatic in solo rehearsal and for participants; a presenter can hide it for screen sharing. Catch-up selection changes only the learner's activity.
+
+Production checks on isolated session `1dc133b7-7a03-4963-916f-7a7a6c66a291`:
+- Selected a quiz answer and submitted from `/shared`; presenter showed 1/1 attempted with the selected answer.
+- Presenter revealed the example; it appeared in the same response panel.
+- Typed and submitted a short answer from `/shared`; reloading retained the submitted attempt and text.
+- Opened existing test-session feedback from the panel's activity selector; saved presenter correction and retry were visible.
+- Measured the slide ratio at 1.77777788, with slide/canvas overflow hidden and the overall document fitting the viewport. Only the separate response panel scrolls.
+- Web typecheck and all 567 tests pass, including both panel submission types and unopened-activity gating.
+
+A production asset-loading failure during verification prompted a temporary rollback. Public build assets now receive an explicit CORS header and the service-worker asset cache version is rotated; subsequent production navigation, reload, styles, and submissions were verified. No curriculum, worker, database, real-agent assignment, or production roster changes in this follow-up.

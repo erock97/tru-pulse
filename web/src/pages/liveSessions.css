@@ -393,3 +393,6 @@
 @media(max-width:650px){.live-presentation-layout.with-responses{flex-direction:column;overflow:auto}.with-responses>.live-presentation-canvas{flex:none;min-height:220px}.live-response-panel{width:100%;box-sizing:border-box;overflow:visible}.live-participation-toolbar{gap:8px}}
 
 .live-response-picker{display:block;font-size:13px;margin:14px 0}.live-response-picker select{display:block;width:100%;padding:8px;margin-top:6px;border-radius:6px}
+.live-response-panel{color-scheme:dark}
+
+.live-slide-sheet.alms:not(.alms-cover){background:linear-gradient(135deg,#fbf7f0,#f2f0e9)}

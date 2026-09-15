@@ -17,7 +17,8 @@
  *   - non-GET is never touched, so nothing that writes is ever replayed
  */
 
-const VERSION = 'tru-hq-v1';
+// Drop asset responses cached before explicit public-asset CORS headers.
+const VERSION = 'tru-hq-v2';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 

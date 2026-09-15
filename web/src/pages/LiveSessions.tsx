@@ -634,6 +634,7 @@ function SlideBody({
               .slide h2,.preferred-live-workshop .slide.tru h2{font:600 clamp(30px,3.2vw,52px)/1.15 Manrope,system-ui,sans-serif;letter-spacing:-.04em;margin:0}
               .slide .content{min-width:0;flex:0;gap:20px}
               .slide,.slide.tru{padding:24px 32px;gap:12px;animation:none}
+              .slide.alms{background:transparent!important}
               .slide h2,.preferred-live-workshop .slide.tru h2{font-size:36px}
               .slide .lead{font-size:20px;max-width:none}
               .slide .content{font-size:18px;gap:14px}
@@ -706,7 +707,7 @@ export function Projection({ state, refresh }: { state: LiveSessionState; refres
         The whole slide fits this window.
       </p>
       <div className="live-participation-toolbar">
-        <span>{activity ? "Participate now · select or write, then submit" : nextActivity ? `Next participation: ${nextActivity.title}` : "Session wrap-up"}</span>
+        <span>{activity ? "Your turn · choose or write, then submit" : nextActivity ? `Next participation: ${nextActivity.title}` : "Session wrap-up"}</span>
         <button aria-pressed={showResponses} onClick={() => setShowResponses(!showResponses)}>{showResponses ? "Hide response panel" : state.rehearsal ? "Answer as test learner" : "Open my response panel"}</button>
         {state.canPresent && <a href={link(state.session.id,"presenter")} target="_blank" rel="noreferrer">Presenter console</a>}
       </div>
@@ -716,7 +717,6 @@ export function Projection({ state, refresh }: { state: LiveSessionState; refres
         {state.canPresent && <>
           {state.openedActivityIds.includes(activity.id)?<span>Responses open</span>:<button disabled={opening || state.session.status==='ended'} onClick={()=>void startActivity()}>{opening?'Opening…':'Open responses for agents'}</button>}
           <a href={link(state.session.id,'presenter')} target="_blank" rel="noreferrer">{activity.kind==='roleplay'?'Assign pairs / trios':'Review responses & reveal'}</a>
-          {state.rehearsal && <a href={link(state.session.id,'agent')} target="_blank" rel="noreferrer">Open test learner</a>}
         </>}
         {activityError && <span role="alert">{activityError}</span>}
       </div>}
