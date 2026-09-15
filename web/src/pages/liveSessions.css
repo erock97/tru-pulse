@@ -433,3 +433,5 @@
 .photo-arrival{--photo-focus:35% center}.photo-follow-up{--photo-focus:46% center}.photo-practice{--photo-focus:58% center}.photo-questions{--photo-focus:65% center}
 
 .photo-property{--lesson-photo:url('/workshops/tru-website-poster.jpg')}
+.live-slide-sheet.day3-polish.lesson-photo .live-alms-activity{width:65%;box-sizing:border-box;background:transparent;padding:12px 32px 24px;margin:0;border:0}
+.live-slide-sheet.day3-polish .live-choice-options li{line-height:1.45}
