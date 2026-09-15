@@ -98,3 +98,15 @@ Use this as a prediction before teaching the five-minute response standard, not 
 a scored recall test. Keep the call-opening decision after the LEAD demonstration.
 
 September 15 wording refinement: Eric approved A as “Ask questions that move the conversation forward.” E explicitly asks for the appointment immediately after the introduction and offers two concrete times. D summarizes priorities and next steps to build momentum toward the appointment.
+
+## September 15: question bank and reusable objection approach
+
+Eric directed that former slides 13–15 become one conversation-starter list,
+with a broader bank available after class. Replace the individual-objection
+sequence with common concerns, acknowledge the concern, ask questions to
+understand it, and offer a solution grounded in the answer. Teach the approach
+with a market-uncertainty example, then practice on a roof concern. Do not skip
+empathy, assume the cause, or push a visit instead of answering the question.
+The resulting deck is 27 slides, 90 minutes, six multiple-choice stops and two
+rotating-role practice rounds. Three minutes saved in discovery instruction go
+to longer feedback and retry in the paired practice.

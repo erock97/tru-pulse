@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-15-lead-live-v12",
+  "version": "2026-09-15-lead-live-v13",
   "duration": 90,
   "slides": [
     {
@@ -193,8 +193,8 @@
       "body": "<div class=\"choices\" data-quiz=\"day2-opening-decision\"><button data-option-id=\"interview\" data-correct=\"false\" data-feedback=\"An early invitation belongs here because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“Before we schedule, tell me about your buying timeline and what you’re looking for.”</button><button data-option-id=\"introduction-invitation\" data-correct=\"true\" data-feedback=\"An early invitation belongs here because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"opening-invitation\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.</p><p>An early invitation belongs here because the buyer asked to see the home. This is about order and purpose, not banning useful questions.</p></div></details>",
       "time": 3,
       "theme": "tru alms lesson alms-exercise",
-      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Allow a minute to respond. Ask what the interview-first agent hoped to learn, then show where discovery belongs after the invitation. Do not shame a choice. Demonstrate a revised opening.\nHandoff: Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.",
+      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Allow a minute to respond. Ask what the interview-first agent hoped to learn, then show where discovery belongs after the invitation. Do not shame a choice. Demonstrate a revised opening.\nHandoff: Once you have offered the appointment, good questions help you make it useful. Here are conversation starters you can use in your own words.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Once you have offered the appointment, good questions help you make it useful. Here are conversation starters you can use in your own words.",
       "activity": {
         "id": "day2-opening-decision",
         "kind": "choice",
@@ -221,37 +221,15 @@
       }
     },
     {
-      "id": "day2-permission",
+      "id": "day2-conversation-starters",
       "chapter": "Understand the buyer",
-      "title": "Ask permission before asking about their search",
-      "lead": "In our practice call, George has chosen Saturday morning for the Cedar Lane tour. You have not yet learned what he needs from a home.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Do you have a few minutes? I’d like to learn a little about your search so I can make our time together useful.”</span></p><p><b>George</b><span>“Sure.”</span></p><p><b>Agent</b><span>“Are you moving from nearby, or coming from somewhere else?”</span></p><p><b>George</b><span>“We’re renting an apartment here in town.”</span></p></div>",
-      "time": 2,
+      "title": "Questions you can use to start a conversation",
+      "lead": "Choose a question that fits what the buyer has already told you. Use the answer to decide what to ask next.",
+      "body": "<div class=\"lesson-question-bank\"><ol class=\"lesson-agenda\"><li>What made you click on this particular home?</li><li>Have you had a chance to look at other homes in the market?</li><li>What other homes have you been considering?</li><li>Where are you moving from?</li><li>Which areas are you considering, and what draws you to them?</li><li>What would you like your next home to do differently?</li><li>What prompted you to start looking?</li><li>Is this your first home purchase, or have you bought before?</li><li>What timing would work best for you?</li><li>What have you liked or disliked about the homes you’ve seen?</li></ol></div><p class=\"lesson-explanation\">Go deeper: “Tell me more about that.” · “What makes that important to you?” · “What would that change for you?”</p>",
+      "time": 5,
       "theme": "tru alms lesson",
-      "notes": "Read the exchange. Permission respects time and explains why you ask. If the buyer has only a minute, handle essentials and agree when to continue. Do not force every question.\nHandoff: George has told us he rents locally. That is a starting point for a conversation, not a completed discovery section.\nSources: TRU September 12 teaching, INT-016, INT-021, INT-023. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "George has told us he rents locally. That is a starting point for a conversation, not a completed discovery section."
-    },
-    {
-      "id": "day2-location",
-      "chapter": "Understand the buyer",
-      "title": "Learn why an area works for them",
-      "lead": "Our practice buyer George rents locally and wants to see the Cedar Lane home. Ask how that location fits his life.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“What attracted you to this part of town?”</span></p><p><b>George</b><span>“It would make my commute much shorter.”</span></p><p><b>Agent</b><span>“Are you focused on this area, or are there other places that would work for that commute?”</span></p><p><b>George</b><span>“This area and the neighborhood just east of it would both work.”</span></p></div><p class=\"lesson-explanation\">Now you know why the location matters and where a useful comparison home might be. The buyer defined the area; you did not assume it.</p>",
-      "time": 3,
-      "theme": "tru alms lesson",
-      "notes": "The follow-up comes from the commute answer. Location means more than a ZIP code. Keep criteria buyer-defined. Ask the room what new information the follow-up provided.\nHandoff: We know where George wants to be. Now let’s find out what he wants the home itself to do for him.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "We know where George wants to be. Now let’s find out what he wants the home itself to do for him."
-    },
-    {
-      "id": "day2-motivation",
-      "chapter": "Understand the buyer",
-      "title": "Ask what the feature will let them do",
-      "lead": "Our practice buyer George says the Cedar Lane home caught his eye because it has a larger yard.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“What would you like to be able to do with that extra outdoor space?”</span></p><p><b>George</b><span>“I want to grow vegetables. We can’t do that at the apartment.”</span></p><p><b>Agent</b><span>“What would you need from the yard for that?”</span></p><p><b>George</b><span>“Sun and room for a few raised beds.”</span></p></div><p class=\"lesson-explanation\">“A bigger yard” is a feature. Space for a vegetable garden explains why it matters. That reason will help you choose better comparisons.</p>",
-      "time": 3,
-      "theme": "tru alms lesson",
-      "notes": "Read the answers before each follow-up. Do not turn gardening into a required script or invent a matching personal anecdote. Ask what a large but shaded yard might fail to provide.\nHandoff: Now you will choose a follow-up for a different buyer. The situation is on the next slide; there is no hidden backstory.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Now you will choose a follow-up for a different buyer. The situation is on the next slide; there is no hidden backstory."
+      "notes": "Give agents a usable menu, not a list they must finish. Read two or three starters and ask a volunteer to answer one. Demonstrate a follow-up based on the answer. For “more space,” ask what they need room for. For an area, ask what makes it work for them. Check that the buyer has time for the conversation. The full question bank is in the reference.\nHandoff: Now use the same idea with a buyer who has already told you something. Choose the question that would help you understand it.\nSources: TRU September 12 teaching, Eric September 15 refinement; INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Now use the same idea with a buyer who has already told you something. Choose the question that would help you understand it."
     },
     {
       "id": "day2-next-question",
@@ -296,16 +274,16 @@
       "id": "day2-discovery-practice",
       "chapter": "Partner practice",
       "title": "Practice a short discovery conversation",
-      "lead": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Ask permission, then find out what “more space” means.",
-      "body": "<p class=\"lesson-explanation\"><strong>First turn: 3 minutes.</strong> Talk for two minutes, give one specific suggestion, then retry the sentence it changes.</p><p class=\"lesson-explanation\"><strong>Switch buyer and agent: 3 minutes.</strong> Use a different reason for needing space. Everyone practices speaking and listening.</p><p class=\"lesson-explanation\">Use one minute to form pairs and one minute to debrief. Submit your reflection when you return.</p><label class=\"field\">What did you learn that “more space” did not tell you?<textarea data-save=\"next-question\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What feedback did you receive, and what changed on your retry?<textarea data-save=\"discovery-retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Ask permission, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.</p><p>Record what you actually learned and changed. Reflection does not prove a coach observed the call.</p></div></details>",
-      "time": 8,
+      "lead": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Choose a conversation starter, then find out what “more space” means.",
+      "body": "<p class=\"lesson-explanation\"><strong>First turn: 4 minutes.</strong> Talk for two minutes, give one minute of specific feedback, then use one minute to retry.</p><p class=\"lesson-explanation\"><strong>Switch buyer and agent: 4 minutes.</strong> Use a different reason for needing space. Everyone practices speaking and listening.</p><p class=\"lesson-explanation\">Use one minute to form pairs and two minutes to debrief. Submit your reflection when you return.</p><label class=\"field\">What did you learn that “more space” did not tell you?<textarea data-save=\"next-question\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What feedback did you receive, and what changed on your retry?<textarea data-save=\"discovery-retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Choose a relevant starter, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.</p><p>Record what you actually learned and changed. Reflection does not prove a coach observed the call.</p></div></details>",
+      "time": 11,
       "theme": "tru alms lesson alms-exercise",
-      "notes": "1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 3 minutes: 2-minute conversation, 30-second feedback, 30-second retry. Switch buyer and agent. Final minute: debrief and reflection. Video rooms are managed in the meeting platform.\nHandoff: Discovery works best when we respond to the person. The same principle applies when a buyer says they only wanted an answer to a property question.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Discovery works best when we respond to the person. The same principle applies when a buyer says they only wanted an answer to a property question.",
+      "notes": "1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 4 minutes: 2-minute conversation, 1-minute feedback, 1-minute retry. Switch buyer and agent. Final 2 minutes: debrief and reflection. Video rooms are managed in the meeting platform.\nHandoff: Those follow-up questions also help when a buyer raises a concern. Let’s look at the objections you may hear and one approach you can use across them.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Those follow-up questions also help when a buyer raises a concern. Let’s look at the objections you may hear and one approach you can use across them.",
       "activity": {
         "id": "day2-discovery-practice",
         "kind": "roleplay",
-        "prompt": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Ask permission, then find out what “more space” means.",
+        "prompt": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Choose a conversation starter, then find out what “more space” means.",
         "fields": [
           {
             "id": "next-question",
@@ -316,12 +294,12 @@
             "label": "What feedback did you receive, and what changed on your retry?"
           }
         ],
-        "model": "Ask permission, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.",
+        "model": "Choose a relevant starter, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.",
         "explanation": "Record what you actually learned and changed. Reflection does not prove a coach observed the call.",
         "rubric": [
           {
-            "id": "permission",
-            "label": "Explains why the questions help and asks permission"
+            "id": "starter",
+            "label": "Uses a relevant conversation starter"
           },
           {
             "id": "follow",
@@ -331,125 +309,75 @@
       }
     },
     {
-      "id": "day2-questions-only",
-      "chapter": "Respond to buyer questions",
-      "title": "When the buyer says, “I only had a question”",
-      "lead": "Example: a buyer asks how old the roof is and says they are not ready to schedule a showing. You do not yet have a verified answer.",
-      "body": "<blockquote class=\"lesson-example\">“Of course. I’ll check the roof information and get you an answer. What is the main concern you’re trying to work out?”</blockquote><p class=\"lesson-explanation\">Listen to the concern. If seeing the home would help, explain why and offer a visit. If they still prefer an answer first, agree how and when you will return with the information.</p><blockquote class=\"lesson-example\">“I can bring the information when we look, or call you after I verify it. Which would be more useful?”</blockquote>",
+      "id": "day2-buyer-concerns",
+      "chapter": "Handle buyer concerns",
+      "title": "Common objections you may hear",
+      "lead": "Different words can hide very different concerns. Start by understanding what is behind the buyer’s hesitation.",
+      "body": "<div class=\"lesson-question-bank\"><ol class=\"lesson-agenda\"><li>“I only had a question about the home.”</li><li>“I’m not ready to buy yet.”</li><li>“I’m uncertain about the market.”</li><li>“I’m worried about the monthly payment.”</li><li>“We need to sell our home first.”</li><li>“The home I wanted is already under contract.”</li><li>“I only want to speak with the listing agent.”</li><li>“I don’t want to commit to an agent yet.”</li></ol></div><p class=\"lesson-explanation\">Which have you heard? What did the buyer actually need help understanding?</p>",
       "time": 3,
       "theme": "tru alms lesson",
-      "notes": "Teach the whole reasoning: acknowledge, learn context, make a useful invitation. Do not make an answer conditional on a visit. If the buyer declines again, stop pushing. Never guess the roof age or claim completed research.\nHandoff: A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now."
+      "notes": "Invite two people to name a concern they have heard. Do not diagnose it from the label alone: “not ready” could mean timing, money, uncertainty, or simply wanting information first. You do not need a separate memorized speech for each item.\nHandoff: The words vary, but your approach can stay simple: acknowledge the concern, ask to understand it, then offer a solution.\nSources: TRU September 12 teaching, Eric September 15 objection framework; INT-016–018. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "The words vary, but your approach can stay simple: acknowledge the concern, ask to understand it, then offer a solution."
     },
     {
-      "id": "day2-financing",
-      "chapter": "Respond to buyer questions",
-      "title": "Do not make preapproval the price of a first visit",
-      "lead": "A buyer who asks to see a home should not have to pass a financial interview before you help arrange it.",
-      "body": "<p class=\"lesson-explanation\">Avoid opening the first call with “Are you preapproved?” The buyer does not know you yet, and a private financial question can make the visit feel conditional.</p><p class=\"lesson-explanation\">If the buyer raises financing, respond to their concern and offer relevant lender help. The usual later opportunity is the end of the first showing, when the discussion has context.</p>",
-      "time": 2,
+      "id": "day2-objection-framework",
+      "chapter": "Handle buyer concerns",
+      "title": "Acknowledge. Ask. Offer a solution.",
+      "lead": "Help the buyer work through the concern. Do not rush past it to get back to your script.",
+      "body": "<ol class=\"lesson-agenda\"><li><strong>Acknowledge the concern:</strong> Recognize what feels difficult or uncertain. “I hear you—this is a big decision.”</li><li><strong>Ask questions to understand:</strong> Find out what is underneath it. “What part is worrying you most?” Then follow their answer.</li><li><strong>Offer a solution:</strong> Propose a specific next step that addresses what you learned. Explain how it helps, then ask, “Would that be useful?”</li></ol><p class=\"lesson-explanation\">An objection is not resolved just because you delivered a response. Listen to whether the proposed next step actually helps.</p>",
+      "time": 4,
       "theme": "tru alms lesson",
-      "notes": "Explain timing and framing, not a blanket ban on financing. A lender handles specifics. Do not make credit, approval or affordability promises. A long timeline does not automatically mean planning is too early.\nHandoff: Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition.\nSources: TRU September 12 teaching, R001–R004; INT-001–004, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition."
+      "notes": "Model empathy without assuming you know the problem. Ask before prescribing. A question about the roof may be about repair costs or a previous bad experience. A market concern may be about timing, payment, or making the wrong choice. The solution should follow the answer. If the buyer declines, respect that and agree on an appropriate next step.\nHandoff: Here is what that sounds like when the buyer says they are uncertain about the market.\nSources: TRU September 12 teaching, Eric September 15 objection framework. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Here is what that sounds like when the buyer says they are uncertain about the market."
     },
     {
-      "id": "day2-financing-check",
-      "chapter": "Discuss the response",
-      "title": "Help the buyer who raises financing",
-      "lead": "The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best helps the buyer? Choose an answer, then explain why.",
-      "body": "<div class=\"choices\" data-quiz=\"day2-financing-check\"><button data-option-id=\"delay\" data-correct=\"false\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“Let’s see the house first. We can discuss the money afterward.”</button><button data-option-id=\"context\" data-correct=\"true\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“A lender can help you work through that. I can help arrange an introduction as we plan the visit.”</button><button data-option-id=\"gate\" data-correct=\"false\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“Yes. Send me the preapproval letter and then we can schedule.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"reason\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.</p><p>Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.</p></div></details>",
-      "time": 3,
+      "id": "day2-market-concern",
+      "chapter": "Demonstrate the approach",
+      "title": "“I’m uncertain about the market right now.”",
+      "lead": "Example: the buyer is interested in the home but hesitates when you offer an appointment. Find out what is behind the concern before offering a solution.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Acknowledge</b><span>“I hear you. It’s a big decision, and you want to feel comfortable with it.”</span></p><p><b>Ask</b><span>“What is worrying you most about buying right now?”</span></p><p><b>Buyer</b><span>“I’m worried we’ll rush and choose the wrong home.”</span></p><p><b>Offer a solution</b><span>“We can use a visit to learn what works for you and compare it with other options. You don’t have to decide to buy today. Would seeing it with that purpose help?”</span></p></div>",
+      "time": 4,
+      "theme": "tru alms lesson",
+      "notes": "Read the buyer’s concern before the response. Emphasize that this buyer is worried about choosing the wrong home; we learned that by asking. Do not use the same solution automatically if the concern is affordability or a need to sell first. Do not predict rates or prices. Explain actual touring agreements accurately if asked; do not promise there are no forms or obligations.\nHandoff: Now apply the same three steps to a different concern. Focus on understanding the person before deciding what help to offer.\nSources: TRU September 12 teaching, Eric September 15 objection framework. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Now apply the same three steps to a different concern. Focus on understanding the person before deciding what help to offer."
+    },
+    {
+      "id": "day2-objection-practice",
+      "chapter": "Practice the approach",
+      "title": "A property question may have a concern behind it",
+      "lead": "A buyer says, “I only wanted to know about the roof. Our last house had an expensive leak, and I’m not ready to schedule anything.” You have not verified the roof information. Which response best acknowledges, explores, and offers relevant help? Choose an answer, then explain why.",
+      "body": "<div class=\"choices\" data-quiz=\"day2-objection-practice\"><button data-option-id=\"visit\" data-correct=\"false\" data-feedback=\"The response recognizes the experience, asks what information would help, and offers to verify it. An invitation can follow when it helps with the concern; it should not skip over the concern.\">“I understand why you’re cautious. Let’s tour it first so you can see how much you like it.”</button><button data-option-id=\"facts\" data-correct=\"false\" data-feedback=\"The response recognizes the experience, asks what information would help, and offers to verify it. An invitation can follow when it helps with the concern; it should not skip over the concern.\">“That sounds frustrating. I’ll send you the roof age when I find it, and you can call me when you’re ready.”</button><button data-option-id=\"understand\" data-correct=\"true\" data-feedback=\"The response recognizes the experience, asks what information would help, and offers to verify it. An invitation can follow when it helps with the concern; it should not skip over the concern.\">“After that experience, I understand why the roof matters. What would you need to know to feel comfortable? I can verify that information and we can decide on the next step.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"objection-reason\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“After that experience, I understand why the roof matters. What would you want to know before feeling comfortable taking another look? I can verify that information and we can decide on the next step from there.” Then listen. The buyer may need repair records, an answer about age, or help understanding what remains unknown. Do not guess the facts or make the answer conditional on a visit.</p><p>The response recognizes the experience, asks what information would help, and offers to verify it. An invitation can follow when it helps with the concern; it should not skip over the concern.</p></div></details>",
+      "time": 4,
       "theme": "tru alms lesson alms-exercise",
-      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Allow a vote, then ask what problem the buyer wants solved. Discuss offering help versus adding a gate. Do not automatically ask every new buyer about financing.\nHandoff: Buyers may also be unsure who Zillow connected them with. A direct answer about your role is usually enough.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Buyers may also be unsure who Zillow connected them with. A direct answer about your role is usually enough.",
+      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Take a choice and a reason, then ask two volunteers to say their own version using acknowledge, ask, and offer. Compare what each response assumes. Acknowledge does not mean pretending to know how the buyer feels. A useful solution follows the buyer’s answer.\nHandoff: Once you have worked through the concern and agreed on a useful next step, summarize the plan so the buyer knows what happens next.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Once you have worked through the concern and agreed on a useful next step, summarize the plan so the buyer knows what happens next.",
       "activity": {
-        "id": "day2-financing-check",
+        "id": "day2-objection-practice",
         "kind": "choice",
-        "prompt": "The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best helps the buyer? Choose an answer, then explain why.",
+        "prompt": "A buyer says, “I only wanted to know about the roof. Our last house had an expensive leak, and I’m not ready to schedule anything.” You have not verified the roof information. Which response best acknowledges, explores, and offers relevant help? Choose an answer, then explain why.",
         "fields": [
           {
-            "id": "reason",
+            "id": "objection-reason",
             "label": "Explain your choice. What would it communicate to the buyer or help you learn?"
           }
         ],
-        "model": "Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.",
-        "explanation": "Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.",
+        "model": "“After that experience, I understand why the roof matters. What would you want to know before feeling comfortable taking another look? I can verify that information and we can decide on the next step from there.” Then listen. The buyer may need repair records, an answer about age, or help understanding what remains unknown. Do not guess the facts or make the answer conditional on a visit.",
+        "explanation": "The response recognizes the experience, asks what information would help, and offers to verify it. An invitation can follow when it helps with the concern; it should not skip over the concern.",
         "choices": [
           {
-            "id": "delay",
-            "text": "“Let’s see the house first. We can discuss the money afterward.”"
+            "id": "visit",
+            "text": "“I understand why you’re cautious. Let’s tour it first so you can see how much you like it.”"
           },
           {
-            "id": "context",
-            "text": "“A lender can help you work through that. I can help arrange an introduction as we plan the visit.”"
+            "id": "facts",
+            "text": "“That sounds frustrating. I’ll send you the roof age when I find it, and you can call me when you’re ready.”"
           },
           {
-            "id": "gate",
-            "text": "“Yes. Send me the preapproval letter and then we can schedule.”"
+            "id": "understand",
+            "text": "“After that experience, I understand why the roof matters. What would you need to know to feel comfortable? I can verify that information and we can decide on the next step.”"
           }
         ],
-        "correctChoiceId": "context"
-      }
-    },
-    {
-      "id": "day2-listing-agent",
-      "chapter": "Respond to buyer questions",
-      "title": "Answer the question about your role directly",
-      "lead": "Example: Zillow connects you with a buyer who asks, “Are you the listing agent?” You are not.",
-      "body": "<blockquote class=\"lesson-example\">“I’m not the listing agent. I help buyers, and I can coordinate with the listing side about this home. What would you like to know?”</blockquote><p class=\"lesson-explanation\">Use your actual role and relationship. If the buyer wants the listing agent, offer to help with that connection. Ask whether a later check-in would be useful, then respect their choice.</p>",
-      "time": 2,
-      "theme": "tru alms lesson",
-      "notes": "A long agency lecture can derail a simple question. Do not invent an existing working relationship or assume the listing agent will fail to respond. Actual relationships and forms govern.\nHandoff: Sometimes the difficult answer is about the home itself. Being helpful means telling the truth and explaining what you can still do.\nSources: TRU September 12 teaching, INT-016–018. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Sometimes the difficult answer is about the home itself. Being helpful means telling the truth and explaining what you can still do."
-    },
-    {
-      "id": "day2-under-contract",
-      "chapter": "Respond to buyer questions",
-      "title": "If the home is under contract, keep helping",
-      "lead": "Example: during an initial inquiry, you verify that the requested home is under contract. The buyer says its garden space is what interested them.",
-      "body": "<blockquote class=\"lesson-example\">“The home is under contract. I can ask the listing agent whether a viewing is still possible. You mentioned the garden space; I can also look for homes with similar outdoor space. Would comparing those be useful?”</blockquote><p class=\"lesson-explanation\">Be honest about the status. Use what the buyer told you to propose useful work. Do not promise access or claim you have found alternatives before you have researched them.</p>",
-      "time": 3,
-      "theme": "tru alms lesson",
-      "notes": "Connect to Eric’s problem-solving principle. Bare bad news leaves the buyer to solve the problem. A relevant offer gives them a next step to accept or decline. Keep scope to the initial inquiry.\nHandoff: Try the same principle with a different priority. The next buyer cares about a work commute, not a garden.\nSources: TRU September 12 teaching, INT-014–015 applied to first inquiry. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Try the same principle with a different priority. The next buyer cares about a work commute, not a garden."
-    },
-    {
-      "id": "day2-changed-plan",
-      "chapter": "Practice a response",
-      "title": "Offer a useful next step after disappointing news",
-      "lead": "A buyer asks about a home you have verified is under contract. They tell you its location would shorten their commute. You have not researched other homes. Which response would you use? Choose an answer, then explain why.",
-      "body": "<div class=\"choices\" data-quiz=\"day2-changed-plan\"><button data-option-id=\"research\" data-correct=\"true\" data-feedback=\"Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.\">“It is under contract. What area works for your commute? I can check viewing options and research other homes there.”</button><button data-option-id=\"send\" data-correct=\"false\" data-feedback=\"Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.\">“It is under contract. Send me another listing when you find one you like.”</button><button data-option-id=\"promise\" data-correct=\"false\" data-feedback=\"Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.\">“It is under contract, but I have other homes nearby that will work for your commute.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"plan\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“The home is under contract. I can check whether a viewing is still possible. Since the commute is important, what area would work for you? I can research some other options there if that would help.”</p><p>Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.</p></div></details>",
-      "time": 2,
-      "theme": "tru alms lesson alms-exercise",
-      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Ask for the reason behind the choice. Read one response and ask whether the buyer has an understandable next step. If it ends at bad news, ask for one useful offer grounded in the commute.\nHandoff: Whether the call was straightforward or included a question, finish by saying what you understood and what happens next.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Whether the call was straightforward or included a question, finish by saying what you understood and what happens next.",
-      "activity": {
-        "id": "day2-changed-plan",
-        "kind": "choice",
-        "prompt": "A buyer asks about a home you have verified is under contract. They tell you its location would shorten their commute. You have not researched other homes. Which response would you use? Choose an answer, then explain why.",
-        "fields": [
-          {
-            "id": "plan",
-            "label": "Explain your choice. What would it communicate to the buyer or help you learn?"
-          }
-        ],
-        "model": "“The home is under contract. I can check whether a viewing is still possible. Since the commute is important, what area would work for you? I can research some other options there if that would help.”",
-        "explanation": "Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.",
-        "choices": [
-          {
-            "id": "research",
-            "text": "“It is under contract. What area works for your commute? I can check viewing options and research other homes there.”"
-          },
-          {
-            "id": "send",
-            "text": "“It is under contract. Send me another listing when you find one you like.”"
-          },
-          {
-            "id": "promise",
-            "text": "“It is under contract, but I have other homes nearby that will work for your commute.”"
-          }
-        ],
-        "correctChoiceId": "research"
+        "correctChoiceId": "understand"
       }
     },
     {
@@ -631,5 +559,6 @@
       "quote": "We are relocating in two months. We cannot see homes this week.",
       "goal": "Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing."
     }
-  ]
+  ],
+  "questionBank": "<h2>Conversation starters to keep beside you</h2><p>Choose what fits the conversation. You do not need to ask every question. Start with what the buyer already told you and follow their answers.</p><h3>Open the conversation</h3><ol class=\"lesson-agenda\"><li>What made you click on this particular home?</li><li>Have you had a chance to look at other homes in the market?</li><li>What other homes have you been considering?</li><li>What have you liked or disliked about the homes you’ve seen?</li><li>Is this your first home purchase, or have you bought before?</li></ol><h3>Understand what matters</h3><ol class=\"lesson-agenda\"><li>Where are you moving from?</li><li>Which areas are you considering, and what draws you to them?</li><li>What is working well in your current home?</li><li>What would you like your next home to do differently?</li><li>What prompted you to start looking?</li><li>What would that extra space let you do?</li></ol><h3>Explore timing and decisions</h3><ol class=\"lesson-agenda\"><li>What timing would work best for you?</li><li>What needs to happen before you can make a move?</li><li>Who else would you like involved in looking at homes or making the decision?</li></ol><h3>Follow an answer</h3><ol class=\"lesson-agenda\"><li>Tell me more about that.</li><li>What makes that important to you?</li><li>What would that change for you?</li><li>What would help you feel comfortable with the next step?</li></ol><h2>When a buyer raises a concern</h2><ol class=\"lesson-agenda\"><li>Acknowledge the concern: recognize the worry or frustration before moving on.</li><li>Ask questions to understand: What part concerns you most? What happened before? What would you need to know?</li><li>Offer a solution: propose a specific action tied to their answer, then check whether it would help.</li></ol><p>Useful next steps may include verifying property information, comparing homes, arranging lender help when the buyer raises financing, or agreeing on a later conversation. Be accurate about your role, property status, and what you can promise. Respect the buyer’s decision.</p>"
 }

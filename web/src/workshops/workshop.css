@@ -96,7 +96,7 @@
 .slide.alms-cover .meta,.slide.alms-cover .lead{color:#eeeee7}.alms-cover-line{color:#fff}
 
 /* Spoken exchanges: keep the speaker beside the words so the call reads down the page. */
-.alms-call-turns p{display:grid;grid-template-columns:76px minmax(0,1fr);gap:16px;padding:12px 0;font-size:22px;line-height:1.4}.alms-call-turns b{margin:4px 0 0;font-size:12px;letter-spacing:.06em}
+.alms-call-turns p{display:grid;grid-template-columns:140px minmax(0,1fr);gap:16px;padding:12px 0;font-size:22px;line-height:1.4}.alms-call-turns b{margin:4px 0 0;font-size:12px;letter-spacing:.06em}
 
 /* Day 2: complete explanations, readable source screens, and spoken examples. */
 .lesson-explanation{font-size:23px;line-height:1.48;margin:18px 0;max-width:1020px}
@@ -112,3 +112,5 @@
 .lesson-record{padding:8px 24px;background:#e8e5dc;border-left:3px solid #b9d1fd;font-size:23px;line-height:1.5}
 .lesson .alms-call-turns span{color:inherit}
 @media(max-width:700px){.lesson-visual{grid-template-columns:1fr}.lesson-phones img{height:300px}.lesson-explanation,.lesson-agenda li{font-size:20px}}
+
+.lesson-question-bank .lesson-agenda{columns:2;column-gap:44px;max-width:none;margin:14px 0}.lesson-question-bank .lesson-agenda li{break-inside:avoid;font-size:21px;line-height:1.4;padding:8px 0 8px 4px}

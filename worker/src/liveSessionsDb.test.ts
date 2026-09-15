@@ -58,7 +58,7 @@ describe('durable live session transactions and access',()=>{
   const practice=def.activities.find(a=>a.kind==='roleplay')!;
   await mutate(admin,'slide',{slideId:practice.slideId},sid);
   await rehearse(admin,'group',{group:{id:id(905),activityId:practice.id,round:1,agentId:sid,buyerId:null,observerId:null}});
-  await rehearse(admin,'observe',{id:id(906),groupId:id(905),criteria:{permission:true},correction:'Follow the buyer’s answer.',retry:'Asked what more space would make possible.',speakingObserved:true,retryObserved:true});
+  await rehearse(admin,'observe',{id:id(906),groupId:id(905),criteria:{starter:true},correction:'Follow the buyer’s answer.',retry:'Asked what more space would make possible.',speakingObserved:true,retryObserved:true});
   expect(liveStateForView(await load(),admin,'agent').observations[0].correction).toBe('Follow the buyer’s answer.');
   expect(liveStateForView(await load(),admin,'shared').observations).toEqual([]);
   await mutate(admin,'end',{},sid);
@@ -83,7 +83,7 @@ describe('durable live session transactions and access',()=>{
   const practice=def.activities.find(a=>a.kind==='roleplay')!;
   await mutate(admin,'slide',{slideId:practice.slideId},sid);
   await mutate(admin,'group',{group:{id:id(911),activityId:practice.id,round:1,agentId:agentA,buyerId:agentB,observerId:agentB}},sid);
-  await mutate(admin,'observe',{id:id(912),groupId:id(911),criteria:{permission:true},correction:'Follow their answer.',retry:'Asked about the purpose of more space.',speakingObserved:true,retryObserved:true},sid);
+  await mutate(admin,'observe',{id:id(912),groupId:id(911),criteria:{starter:true},correction:'Follow their answer.',retry:'Asked about the purpose of more space.',speakingObserved:true,retryObserved:true},sid);
   const learner=liveStateForView(await database.rpc('rep_live_read',{p_actor:userA,p_session:sid}),userA,'agent');
   expect(learner.observations[0]).toMatchObject({correction:'Follow their answer.',coachReviewed:true});
   expect(learner.myAgentId).toBe(agentA);
