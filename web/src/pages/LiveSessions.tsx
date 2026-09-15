@@ -554,6 +554,7 @@ function Session({ id, view, responseOnly = false, notesOnly = false }: { id: st
 
 type Slide = LiveSessionState["definition"]["slides"][number];
 export function PresenterSpeakingNotes({state}:{state:LiveSessionState}) {
+  useEffect(()=>{document.scrollingElement?.scrollTo?.({top:0});},[state.session.currentSlideId]);
   if (!state.canPresent) return <p role="alert">Only the presenter can open these notes.</p>;
   const index = Math.max(0,state.definition.slides.findIndex(s=>s.id === state.session.currentSlideId));
   const slide = state.definition.slides[index];
