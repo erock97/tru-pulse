@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-15-lead-live-v13",
+  "version": "2026-09-15-lead-live-v14",
   "duration": 90,
   "slides": [
     {
@@ -278,8 +278,8 @@
       "body": "<p class=\"lesson-explanation\"><strong>First turn: 4 minutes.</strong> Talk for two minutes, give one minute of specific feedback, then use one minute to retry.</p><p class=\"lesson-explanation\"><strong>Switch buyer and agent: 4 minutes.</strong> Use a different reason for needing space. Everyone practices speaking and listening.</p><p class=\"lesson-explanation\">Use one minute to form pairs and two minutes to debrief. Submit your reflection when you return.</p><label class=\"field\">What did you learn that “more space” did not tell you?<textarea data-save=\"next-question\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What feedback did you receive, and what changed on your retry?<textarea data-save=\"discovery-retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Choose a relevant starter, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.</p><p>Record what you actually learned and changed. Reflection does not prove a coach observed the call.</p></div></details>",
       "time": 11,
       "theme": "tru alms lesson alms-exercise",
-      "notes": "1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 4 minutes: 2-minute conversation, 1-minute feedback, 1-minute retry. Switch buyer and agent. Final 2 minutes: debrief and reflection. Video rooms are managed in the meeting platform.\nHandoff: Those follow-up questions also help when a buyer raises a concern. Let’s look at the objections you may hear and one approach you can use across them.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Those follow-up questions also help when a buyer raises a concern. Let’s look at the objections you may hear and one approach you can use across them.",
+      "notes": "1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 4 minutes: 2-minute conversation, 1-minute feedback, 1-minute retry. Switch buyer and agent. Final 2 minutes: debrief and reflection. Video rooms are managed in the meeting platform.\nHandoff: Those follow-up questions also help when a buyer raises a concern. Let’s learn a simple approach you can use whenever a buyer raises a concern.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Those follow-up questions also help when a buyer raises a concern. Let’s learn a simple approach you can use whenever a buyer raises a concern.",
       "activity": {
         "id": "day2-discovery-practice",
         "kind": "roleplay",
@@ -309,17 +309,6 @@
       }
     },
     {
-      "id": "day2-buyer-concerns",
-      "chapter": "Handle buyer concerns",
-      "title": "Common objections you may hear",
-      "lead": "Different words can hide very different concerns. Start by understanding what is behind the buyer’s hesitation.",
-      "body": "<div class=\"lesson-question-bank\"><ol class=\"lesson-agenda\"><li>“I only had a question about the home.”</li><li>“I’m not ready to buy yet.”</li><li>“I’m uncertain about the market.”</li><li>“I’m worried about the monthly payment.”</li><li>“We need to sell our home first.”</li><li>“The home I wanted is already under contract.”</li><li>“I only want to speak with the listing agent.”</li><li>“I don’t want to commit to an agent yet.”</li></ol></div><p class=\"lesson-explanation\">Which have you heard? What did the buyer actually need help understanding?</p>",
-      "time": 3,
-      "theme": "tru alms lesson",
-      "notes": "Invite two people to name a concern they have heard. Do not diagnose it from the label alone: “not ready” could mean timing, money, uncertainty, or simply wanting information first. You do not need a separate memorized speech for each item.\nHandoff: The words vary, but your approach can stay simple: acknowledge the concern, ask to understand it, then offer a solution.\nSources: TRU September 12 teaching, Eric September 15 objection framework; INT-016–018. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "The words vary, but your approach can stay simple: acknowledge the concern, ask to understand it, then offer a solution."
-    },
-    {
       "id": "day2-objection-framework",
       "chapter": "Handle buyer concerns",
       "title": "Acknowledge. Ask. Offer a solution.",
@@ -327,8 +316,19 @@
       "body": "<ol class=\"lesson-agenda\"><li><strong>Acknowledge the concern:</strong> Recognize what feels difficult or uncertain. “I hear you—this is a big decision.”</li><li><strong>Ask questions to understand:</strong> Find out what is underneath it. “What part is worrying you most?” Then follow their answer.</li><li><strong>Offer a solution:</strong> Propose a specific next step that addresses what you learned. Explain how it helps, then ask, “Would that be useful?”</li></ol><p class=\"lesson-explanation\">An objection is not resolved just because you delivered a response. Listen to whether the proposed next step actually helps.</p>",
       "time": 4,
       "theme": "tru alms lesson",
-      "notes": "Model empathy without assuming you know the problem. Ask before prescribing. A question about the roof may be about repair costs or a previous bad experience. A market concern may be about timing, payment, or making the wrong choice. The solution should follow the answer. If the buyer declines, respect that and agree on an appropriate next step.\nHandoff: Here is what that sounds like when the buyer says they are uncertain about the market.\nSources: TRU September 12 teaching, Eric September 15 objection framework. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Here is what that sounds like when the buyer says they are uncertain about the market."
+      "notes": "Model empathy without assuming you know the problem. Ask before prescribing. A question about the roof may be about repair costs or a previous bad experience. A market concern may be about timing, payment, or making the wrong choice. The solution should follow the answer. If the buyer declines, respect that and agree on an appropriate next step.\nHandoff: Now look at the concerns you may hear. For each one, think about what you would need to understand before offering a solution.\nSources: TRU September 12 teaching, Eric September 15 objection framework. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Now look at the concerns you may hear. For each one, think about what you would need to understand before offering a solution."
+    },
+    {
+      "id": "day2-buyer-concerns",
+      "chapter": "Handle buyer concerns",
+      "title": "Common objections you may hear",
+      "lead": "Different words can hide very different concerns. Start by understanding what is behind the buyer’s hesitation.",
+      "body": "<div class=\"lesson-question-bank\"><ol class=\"lesson-agenda\"><li>“I only had a question about the home.”</li><li>“I’m not ready to buy yet.”</li><li>“I’m uncertain about the market.”</li><li>“I’m worried about the monthly payment.”</li><li>“We need to sell our home first.”</li><li>“The home I wanted is already under contract.”</li><li>“I only want to speak with the listing agent.”</li><li>“I don’t want to commit to an agent yet.”</li></ol></div><p class=\"lesson-explanation\">Which have you heard? What did the buyer actually need help understanding?</p>",
+      "time": 3,
+      "theme": "tru alms lesson",
+      "notes": "Invite two people to name a concern they have heard. Do not diagnose it from the label alone: “not ready” could mean timing, money, uncertainty, or simply wanting information first. You do not need a separate memorized speech for each item.\nHandoff: Let’s apply those three steps to one of these concerns: uncertainty about the market.\nSources: TRU September 12 teaching, Eric September 15 objection framework; INT-016–018. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Let’s apply those three steps to one of these concerns: uncertainty about the market."
     },
     {
       "id": "day2-market-concern",
