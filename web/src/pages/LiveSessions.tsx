@@ -678,6 +678,22 @@ function SlideBody({
     </div>
   );
 }
+function DiscussionChoices({sessionId,activity,presenting,showSelection}:{sessionId:string;activity:WorkshopActivity;presenting:boolean;showSelection:boolean}) {
+  const key = 'tru-discussion-choice:' + sessionId + ':' + activity.id;
+  const [selected,setSelected] = useState(() => { try { return localStorage.getItem(key) || ''; } catch { return ''; } });
+  useEffect(() => {
+    const sync = (event: StorageEvent) => { if(event.key === key) setSelected(event.newValue || ''); };
+    window.addEventListener('storage',sync);
+    return () => window.removeEventListener('storage',sync);
+  },[key]);
+  function choose(id:string) {
+    const next=selected === id ? '' : id;
+    setSelected(next);
+    try { localStorage.setItem(key,next); } catch { /* The presenter can still select in this window. */ }
+  }
+  return <section className="live-card live-alms-activity"><ol className="live-choice-options" type="A">{activity.choices!.map(c => <li key={c.id} className={showSelection && selected === c.id ? 'discussion-selected' : ''}>{presenting ? <button className="live-discussion-choice" aria-pressed={selected === c.id} onClick={() => choose(c.id)}>{c.text}</button> : c.text}</li>)}</ol>{presenting && <p className="live-discussion-hint">Choose an option to discuss. Ask: “Why did you choose that?”</p>}</section>;
+}
+
 /** One current slide drives both the learner's form and the presenter's inbox. */
 export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionState; refresh: () => void; view: LiveView }) {
   const definition = learnerWorkshopDefinition(state.definition, state.revealedActivityIds);
@@ -696,6 +712,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
     catch (e) { setError(message(e)); return false; }
     finally { commandPending.current = false; setBusy(false); }
   }
+
   const rawActivity = activityOf(state, activity?.id || null);
   const answers = state.participants.map(p => ({ p, attempt: state.attempts.filter(a => a.agentId === p.agentId && a.activityId === activity?.id).at(-1) }));
   return <>
@@ -716,7 +733,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
           {slide.native === "deal" && <DealMock />}
           {slide.native === "practice" && !learner && <PracticeRecord scenario={slide.scenario as PracticeScenario} record={false} />}
         </SlideBody>
-        {activity?.choices && <section className="live-card live-alms-activity"><ol className="live-choice-options" type="A">{activity.choices.map(c => <li key={c.id}>{c.text}</li>)}</ol></section>}
+        {activity?.choices && <DiscussionChoices key={state.session.id + activity.id} sessionId={state.session.id} activity={activity} presenting={presenting} showSelection={presenting || (view === "shared" && state.canPresent)} />}
         {activity && (activity.model || activity.explanation) && <section className="live-card live-alms-activity"><h3>Discuss</h3><p>{activity.model || activity.explanation}</p></section>}
       </PresentationFit>
       {activity && learner && <aside className="live-response-panel" aria-label="Answer the current question">
