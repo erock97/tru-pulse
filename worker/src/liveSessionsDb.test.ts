@@ -37,22 +37,22 @@ describe('durable live session transactions and access',()=>{
   const database={rpc:async(fn:string,b:Record<string,unknown>)=>(await pg.query<{result:any}>(`select ${fn}(${Object.keys(b).map((k,i)=>`${k}=>$${i+1}`).join(',')}) result`,Object.values(b).map(x=>x!==null&&typeof x==='object'?JSON.stringify(x):x))).rows[0].result} as unknown as Db;
   const rehearse=(actor:string,action:string,body:unknown={})=>database.rpc('rep_live_rehearse',{p_actor:actor,p_session:sid,p_action:action,p_body:body});
   const load=async()=>rehearsalState(await database.rpc('rep_live_read',{p_actor:admin,p_session:sid}),admin);
-  const vote=def.activities.find(a=>a.kind==='choice' && !a.fields?.length)!;
+  const vote=def.activities.find(a=>a.kind==='choice')!;
   await expect(rehearse(userA,'join')).rejects.toThrow('Rehearsal access required');
   await rehearse(admin,'join');
-  await expect(submitLiveAttempt(database,admin,sid,{id:id(903),activityId:vote.id,response:{choiceId:vote.choices![0].id}})).rejects.toThrow('not open');
+  await expect(submitLiveAttempt(database,admin,sid,{id:id(903),activityId:vote.id,response:{choiceId:vote.choices![0].id,...Object.fromEntries(vote.fields!.map(f=>[f.id,"Reason for my selection."]))}})).rejects.toThrow('not open');
   await mutate(admin,'slide',{slideId:vote.slideId},sid);
   expect((await load()).session.opened_activity_ids).toContain(vote.id);
   await expect(submitLiveAttempt(database,admin,sid,{id:id(903),activityId:vote.id,response:{choiceId:'invalid'}})).rejects.toThrow('Choose an answer');
-  const body={id:id(903),activityId:vote.id,response:{choiceId:vote.choices![1].id}};
+  const body={id:id(903),activityId:vote.id,response:{choiceId:vote.choices![1].id,...Object.fromEntries(vote.fields!.map(f=>[f.id,"This follows the lead type."]))}};
   await submitLiveAttempt(database,admin,sid,body); await submitLiveAttempt(database,admin,sid,body);
   expect(liveStateForView(await load(),admin,'presenter').attempts).toHaveLength(1);
   expect(liveStateForView(await load(),admin,'agent').definition.activities.find(a=>a.id===vote.id)!.model).toBeUndefined();
   await mutate(admin,'reveal',{activityId:vote.id},sid);
   expect(liveStateForView(await load(),admin,'agent').definition.activities.find(a=>a.id===vote.id)!.model).toBe(vote.model);
-  const written=def.activities.find(a=>a.kind==='written')!;
+  const written=def.activities.find(a=>a.id==='day2-channel-check')!;
   await mutate(admin,'slide',{slideId:written.slideId},sid);
-  const response=Object.fromEntries(written.fields!.map(f=>[f.id,'I will introduce myself by text and keep the requested call time.']));
+  const response={choiceId:written.choices![1].id,...Object.fromEntries(written.fields!.map(f=>[f.id,'I will introduce myself by text and keep the requested call time.']))};
   await submitLiveAttempt(database,admin,sid,{id:id(904),activityId:written.id,response});
   expect(liveStateForView(await load(),admin,'presenter').attempts.at(-1)?.response).toEqual(response);
   const practice=def.activities.find(a=>a.kind==='roleplay')!;
@@ -71,9 +71,9 @@ describe('durable live session transactions and access',()=>{
   await mutate(admin,'create',{definition:def,timezone:'UTC',participants:[{agentId:agentA,coachId:coachA},{agentId:agentB,coachId:coachB}],presenterIds:[]},sid);
   await expect(database.rpc('rep_live_rehearse',{p_actor:admin,p_session:sid,p_action:'join',p_body:{}})).rejects.toThrow('Rehearsal access required');
   for(const actor of [userA,userB]) await mutate(actor,'join',{},sid);
-  for(const activity of [def.activities.find(a=>a.kind==='choice' && !a.fields?.length)!,def.activities.find(a=>a.kind==='written')!]){
+  for(const activity of [def.activities.find(a=>a.kind==='choice')!,def.activities.find(a=>a.id==='day2-channel-check')!]){
    await mutate(admin,'slide',{slideId:activity.slideId},sid);
-   const response=activity.choices?{choiceId:activity.choices[1].id}:Object.fromEntries(activity.fields!.map(f=>[f.id,'Hi Maya, I will call at five as requested.']));
+   const response={choiceId:activity.choices![1].id,...Object.fromEntries(activity.fields!.map(f=>[f.id,'I will respect the request and explain my next step.']))};
    await submitLiveAttempt(database,userA,sid,{id:crypto.randomUUID(),activityId:activity.id,response});
    const presenter=liveStateForView(await database.rpc('rep_live_read',{p_actor:admin,p_session:sid}),admin,'presenter');
    expect(presenter.attempts.at(-1)?.response).toEqual(response);

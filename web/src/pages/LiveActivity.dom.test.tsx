@@ -75,7 +75,7 @@ describe('live short-answer continuation',()=>{
   expect([...container.querySelectorAll('.live-choice-list label')].map(e=>e.textContent)).toEqual(definition.slides.find(s=>s.id==='day2-financing-check')!.activity!.choices!.map(c=>c.text));
   expect(container.textContent).not.toContain('Continue with presenter');
   await act(async()=>root.render(<ResponseWorkspace state={{...value,session:{...value.session,currentSlideId:'day2-channel-check'}}} refresh={()=>{}}/>));
-  expect(container.querySelectorAll('input[type=radio]')).toHaveLength(0);
+  expect(container.querySelectorAll('input[type=radio]')).toHaveLength(3);
   expect(container.querySelectorAll('textarea')).toHaveLength(1);
   expect(container.querySelector('select')).toBeNull();
  });
@@ -93,6 +93,23 @@ describe('live short-answer continuation',()=>{
   await act(async()=>root.render(<SimpleLiveStage state={withAnswer} view="shared" refresh={()=>{}}/>));
   expect(container.querySelector('[aria-label="Current question responses"]')).toBeNull();
   expect(container.textContent).not.toContain('Test learner');
+ });
+ it('selects discussion choices without submitting learner evidence and syncs the share window',async()=>{
+  vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+  const definition=getWorkshopDefinition(2)!;
+  const value={...state,definition,canPresent:true,session:{...state.session,currentSlideId:'day2-lead-discussion',status:'active'},openedActivityIds:['day2-lead-discussion'],groups:[],participants:[],choiceTotals:{}} as unknown as LiveSessionState;
+  await act(async()=>root.render(<SimpleLiveStage state={value} view="presenter" refresh={()=>{}}/>));
+  const options=container.querySelectorAll<HTMLButtonElement>('.live-discussion-choice');
+  expect(options).toHaveLength(3);
+  await act(async()=>options[1].click());
+  expect(options[1].getAttribute('aria-pressed')).toBe('true');
+  expect(mocks.submit).not.toHaveBeenCalled();
+  await act(async()=>root.render(<SimpleLiveStage state={value} view="shared" refresh={()=>{}}/>));
+  expect(container.querySelector('.discussion-selected')?.textContent).toContain('Live connection: review');
+  await act(async()=>window.dispatchEvent(new StorageEvent('storage',{key:'tru-discussion-choice:session:day2-lead-discussion',newValue:'both'})));
+  expect(container.querySelector('.discussion-selected')?.textContent).toContain('In either case');
+  await act(async()=>root.render(<SimpleLiveStage state={{...value,session:{...value.session,currentSlideId:'day2-channel-check'}}} view="presenter" refresh={()=>{}}/>));
+  expect(container.querySelector('.discussion-selected')).toBeNull();
  });
  it('does not expose a response form before the activity opens',async()=>{
   const definition=getWorkshopDefinition(2)!;
