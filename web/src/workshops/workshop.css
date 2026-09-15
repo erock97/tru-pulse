@@ -114,3 +114,20 @@
 @media(max-width:700px){.lesson-visual{grid-template-columns:1fr}.lesson-phones img{height:300px}.lesson-explanation,.lesson-agenda li{font-size:20px}}
 
 .lesson-question-bank .lesson-agenda{columns:2;column-gap:44px;max-width:none;margin:14px 0}.lesson-question-bank .lesson-agenda li{break-inside:avoid;font-size:21px;line-height:1.4;padding:8px 0 8px 4px}
+
+/* Chapter-specific compositions retain the website's paper, ink, and architecture. */
+.slide.lesson-framework .lesson-agenda{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:24px 36px;padding:0;max-width:none;margin:8px 0}
+.slide.lesson-framework .lesson-agenda li{border-top:2px solid #b9d1fd;padding:16px 0 0;font-size:21px;line-height:1.4}
+.slide.lesson-framework .lesson-agenda strong{display:block;font:600 24px/1.25 Manrope,sans-serif;margin-bottom:10px}
+.slide.lesson-framework .lesson-explanation{font-size:18px;color:#5f6661}
+.slide.lesson-three .lesson-agenda{grid-template-columns:repeat(3,1fr);gap:32px}
+.slide.lesson-three .lesson-agenda li{padding-top:22px;font-size:23px}
+.slide.lesson-timeline .content{border-left:3px solid #b9d1fd;padding-left:30px}
+.slide.lesson-timeline .lesson-explanation strong{display:block;font:600 28px/1.2 Manrope,sans-serif;margin-bottom:8px}
+.slide.lesson-practice-photo,.slide.lesson-closing-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.1) 74%),url('/workshops/tru-website-poster.jpg') right center/cover;color:#171d22}
+.slide.lesson-practice-photo>*,.slide.lesson-closing-photo>*{max-width:65%}
+.slide.lesson-practice-photo .lesson-explanation{font-size:25px;line-height:1.5}
+.slide.lesson-closing-photo .lesson-agenda{padding-left:0;list-style:none;margin:6px 0}
+.slide.lesson-closing-photo .lesson-agenda li{font-size:21px;line-height:1.4;padding:10px 0;border-bottom:1px solid #d6d2c7}
+.slide.lesson-closing-photo .lesson-agenda strong{display:block;font-weight:700}
+@media(max-width:700px){.slide.lesson-framework .lesson-agenda{grid-template-columns:1fr}.slide.lesson-practice-photo>*,.slide.lesson-closing-photo>*{max-width:100%}.slide.lesson-practice-photo,.slide.lesson-closing-photo{background:#f2f0e9}}

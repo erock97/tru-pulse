@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v14' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v15' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -68,13 +68,13 @@ describe('versioned live curriculum', () => {
     expect(day2.slides[1].id).toBe('day2-agenda');
     expect(day2.duration).toBe(90);
     expect(day2.activities).toHaveLength(8);
-    expect(day2.slides).toHaveLength(27);
+    expect(day2.slides).toHaveLength(25);
     expect(day2.slides.find(s=>s.id==='day2-conversation-starters')?.body).toContain('What made you click');
     expect(day2.slides.some(s=>['day2-permission','day2-location','day2-motivation','day2-financing','day2-under-contract'].includes(s.id))).toBe(false);
     expect(day2.slides.find(s=>s.id==='day2-objection-framework')?.body).toContain('Ask questions to understand');
     expect(day2.slides.slice(0,3).every(s => !s.activity)).toBe(true);
     const position = (id: string) => day2.slides.findIndex(s => s.id === `day2-${id}`);
-    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['conversation-starters','discovery-practice'],['summary','summary-practice'],['objection-framework','buyer-concerns'],['buyer-concerns','market-concern'],['objection-framework','objection-practice'],['market-concern','objection-practice'],['whole-call-two','full-call-practice']]) {
+    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['conversation-starters','discovery-practice'],['summary','summary-practice'],['objection-framework','buyer-concerns'],['buyer-concerns','market-concern'],['objection-framework','objection-practice'],['market-concern','objection-practice'],['summary-practice','full-call-practice']]) {
       expect(position(instruction)).toBeGreaterThanOrEqual(0);
       expect(position(instruction)).toBeLessThan(position(practice));
     }
@@ -93,9 +93,13 @@ describe('versioned live curriculum', () => {
     expect(day2.slides.find(s => s.id === 'day2-real-time-touring')?.body).toContain('rtt-request.png');
     expect(JSON.stringify(day2)).not.toMatch(/Jordan|Maya|Back to Jordan|Variation:/);
     expect(day2.slides.findIndex(s => s.id === 'day2-alms')).toBeLessThan(day2.slides.findIndex(s => s.id === 'day2-opening-decision'));
-    expect(position('whole-call-two')).toBeLessThan(position('full-call-practice'));
+    expect(position('whole-call-one')).toBe(-1);
+    expect(position('whole-call-two')).toBe(-1);
+    expect(position('no-answer') + 1).toBe(position('unanswered'));
+    expect(position('unanswered') + 1).toBe(position('channel-check'));
+    expect(day2.slides.find(s => s.id === 'day2-full-call-practice')?.time).toBe(16);
     expect(position('objection-practice')).toBeLessThan(position('summary'));
-    expect(position('summary-practice') + 1).toBe(position('whole-call-one'));
+    expect(position('summary-practice') + 1).toBe(position('full-call-practice'));
     expect(day2.slides.every(s => s.notes.includes('Handoff:') && s.cue.length > 30)).toBe(true);
     expect(day2.slides.find(s => s.id === 'day2-alms')?.body).toContain('Lead with who you are');
     expect(day2.slides.find(s => s.id === 'day2-channel')?.lead).toContain('normal business hours, 8 a.m.–8 p.m.');

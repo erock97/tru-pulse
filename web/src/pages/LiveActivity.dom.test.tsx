@@ -144,7 +144,7 @@ describe('live short-answer continuation',()=>{
   expect(container.textContent).toContain('What to say');
   expect(container.textContent).not.toContain('INT-016');
   await act(async()=>root.render(<PresenterSpeakingNotes state={{...value,session:{...value.session,currentSlideId:'day2-reference'}}}/>));
-  expect(container.textContent).toContain('Slide 27 of 27');
+  expect(container.textContent).toContain('Slide 25 of 25');
   expect(container.textContent).toContain('Which part would you like to practice again');
   expect(container.textContent).toContain('Close the session');
   await act(async()=>root.render(<PresenterSpeakingNotes state={{...value,canPresent:false}}/>));
