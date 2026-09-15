@@ -148,3 +148,19 @@
 .slide.lesson-photo .lesson-example{font-size:24px;line-height:1.45}
 .slide.lesson-photo .alms-call-turns p{grid-template-columns:110px minmax(0,1fr);font-size:22px;gap:12px;padding:8px 0}
 @media(max-width:700px){.slide.lesson-photo{background:#f2f0e9}.slide.lesson-photo>*,.slide.lesson-photo .lead{max-width:100%}}
+
+/* Day 3 visual overlay only: original words, controls, and ordering stay in the JSON. */
+.photo-property{--lesson-photo:url('/workshops/tru-website-poster.jpg')}
+.slide.day3-polish{color:#171d22;background:#f2f0e9}
+.slide.day3-polish .split{display:block}
+.slide.day3-polish .split>div:empty{display:none}
+.slide.day3-polish blockquote{font-size:28px;line-height:1.4;border-left:3px solid #b9d1fd;padding-left:22px;margin:16px 0 24px}
+.slide.day3-polish .rows{display:grid;gap:0}
+.slide.day3-polish .row{border-top:1px solid #d6d2c7;align-items:start}
+.slide.day3-polish .row h3{color:#171d22}
+.slide.day3-polish .row p{color:#3e4549}
+.slide.day3-polish.lesson-photo .row{grid-template-columns:165px minmax(0,1fr);gap:22px}
+.slide.day3-polish.lesson-photo blockquote{font-size:25px}
+.slide.day3-polish .scorecard{background:#e8e5dc;border:0;color:#171d22}
+.slide.day3-polish .field{margin-top:20px}
+.slide.day3-polish .actions{display:flex;gap:12px;margin-top:18px}
