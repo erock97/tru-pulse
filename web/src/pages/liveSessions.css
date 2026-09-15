@@ -412,3 +412,8 @@
 .live-speaking-notes h1{font-size:34px;line-height:1.2;margin:12px 0 20px}.live-speaking-notes h2{font-size:19px;margin:30px 0 8px;color:#515953;text-transform:uppercase;letter-spacing:.04em}
 .live-speaking-notes p{white-space:pre-line}.live-speaking-notes .live-notes-help{font-size:15px;color:#515953}.live-speaking-notes a{color:#314669}.live-speaking-script{font-size:24px}
 @media(max-width:600px){.live-speaking-notes{padding:22px;font-size:18px}.live-speaking-script{font-size:20px}.live-speaking-notes h1{font-size:27px}}
+
+.live-slide-sheet.alms.lesson-practice-photo,.live-slide-sheet.alms.lesson-closing-photo{background:linear-gradient(90deg,#f2f0e9 0%,#f2f0e9 63%,rgba(242,240,233,.1) 74%),url('/workshops/tru-website-poster.jpg') right center/cover}
+.live-fit-bounds{animation:live-slide-enter 240ms ease-out both}
+@keyframes live-slide-enter{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.live-fit-bounds{animation:none}}

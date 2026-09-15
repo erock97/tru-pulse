@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-15-lead-live-v14",
+  "version": "2026-09-15-lead-live-v15",
   "duration": 90,
   "slides": [
     {
@@ -121,8 +121,19 @@
       "body": "<blockquote class=\"lesson-example\">“Hi, this is [your name] with [your brokerage]. I just tried calling about your Zillow request to see 418 Cedar Lane. I’d be happy to help arrange a tour. I’m available for a call at 4 or 6 today. Would either time work for you?”</blockquote><p class=\"lesson-explanation\">Tell them who called, connect the call to their request, and offer a clear opportunity to talk. Use times you can actually make. You are offering a phone call here, not confirming a tour.</p>",
       "time": 2,
       "theme": "tru alms lesson",
-      "notes": "Read the example with your own name and brokerage. Distinguish phone-call availability from tour availability. This personal text follows the missed call. Do not mix weekly quotas into this example; those come after the first-call lesson.\nHandoff: That example had no special contact instruction. Now consider a buyer who has already told you when they can talk.\nSources: TRU September 12 teaching, INT-011. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "That example had no special contact instruction. Now consider a buyer who has already told you when they can talk."
+      "notes": "Read the example with your own name and brokerage. Distinguish phone-call availability from tour availability. This personal text follows the missed call. Next, explain how this first attempt fits into the ongoing outreach plan.\nHandoff: If this call and text still get no response, keep making personal attempts. Here is how to plan that follow-up.\nSources: TRU September 12 teaching, INT-011. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "If this call and text still get no response, keep making personal attempts. Here is how to plan that follow-up."
+    },
+    {
+      "id": "day2-unanswered",
+      "chapter": "Make contact",
+      "title": "Keep working a new lead that has not answered",
+      "lead": "The first missed call and personal text are the beginning of your outreach, not the entire plan.",
+      "body": "<p class=\"lesson-explanation\"><strong>Day one:</strong> Aim for three to four personal touches, with at least two calls and one personal text in the normal unanswered-lead flow.</p><p class=\"lesson-explanation\"><strong>First week:</strong> Aim for ten total touches, including day one. Make most attempts calls, vary the contact times, and make each text relevant to the inquiry.</p><p class=\"lesson-explanation\"><strong>Once the buyer responds:</strong> Follow the conversation and the plan you agree together. The unanswered-lead quota no longer applies. Honor stated contact restrictions throughout.</p>",
+      "time": 2,
+      "theme": "tru alms lesson lesson-timeline",
+      "notes": "These are the newer September 12 standards. Automation is not personal effort. Do not invent a compressed late-day schedule or a quota for an engaged buyer. Explain why repeating “just checking in” is not useful persistence.\nHandoff: Those outreach targets apply when there is no response. Now consider a buyer who has already told you when they can talk.\nSources: TRU September 12 teaching, INT-027–029, INT-054; R019. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Those outreach targets apply when there is no response. Now consider a buyer who has already told you when they can talk."
     },
     {
       "id": "day2-channel-check",
@@ -170,7 +181,7 @@
       "lead": "Introduce yourself. Ask for the appointment. Learn what matters. Confirm the plan.",
       "body": "<ol class=\"lesson-agenda\"><li><strong>L — Lead with who you are:</strong> Introduce yourself: your name, brokerage, connection to Zillow, and why you’re calling.</li><li><strong>E — Extend the invitation:</strong> Immediately after your introduction, ask for the appointment. Offer the buyer two concrete times to meet with you.</li><li><strong>A — Ask questions that move the conversation forward:</strong> Ask where they want to live, what prompted their search, and what matters to them. Use their answers to ask the next useful question.</li><li><strong>D — Deliver the summary:</strong> Summarize what matters to the buyer, confirm the next steps, and build momentum toward the appointment.</li></ol><p class=\"lesson-explanation\">You may also know Zillow’s ALMS: Appointment, Location, Motivation, Summarize. LEAD includes your introduction and uses location and motivation to guide your questions.</p>",
       "time": 2,
-      "theme": "tru alms lesson",
+      "theme": "tru alms lesson lesson-framework",
       "notes": "After introducing yourself, ask for the appointment and offer two concrete times. Then ask questions that move the conversation forward: where they want to live, what prompted their search, and what matters. Use each answer to choose the next useful question. Summarize next steps to build momentum into the appointment.\nHandoff: Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
       "cue": "Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call."
     },
@@ -315,7 +326,7 @@
       "lead": "Help the buyer work through the concern. Do not rush past it to get back to your script.",
       "body": "<ol class=\"lesson-agenda\"><li><strong>Acknowledge the concern:</strong> Recognize what feels difficult or uncertain. “I hear you—this is a big decision.”</li><li><strong>Ask questions to understand:</strong> Find out what is underneath it. “What part is worrying you most?” Then follow their answer.</li><li><strong>Offer a solution:</strong> Propose a specific next step that addresses what you learned. Explain how it helps, then ask, “Would that be useful?”</li></ol><p class=\"lesson-explanation\">An objection is not resolved just because you delivered a response. Listen to whether the proposed next step actually helps.</p>",
       "time": 4,
-      "theme": "tru alms lesson",
+      "theme": "tru alms lesson lesson-framework lesson-three",
       "notes": "Model empathy without assuming you know the problem. Ask before prescribing. A question about the roof may be about repair costs or a previous bad experience. A market concern may be about timing, payment, or making the wrong choice. The solution should follow the answer. If the buyer declines, respect that and agree on an appropriate next step.\nHandoff: Now look at the concerns you may hear. For each one, think about what you would need to understand before offering a solution.\nSources: TRU September 12 teaching, Eric September 15 objection framework. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
       "cue": "Now look at the concerns you may hear. For each one, think about what you would need to understand before offering a solution."
     },
@@ -399,8 +410,8 @@
       "body": "<div class=\"choices\" data-quiz=\"day2-summary-practice\"><button data-option-id=\"tour\" data-correct=\"false\" data-feedback=\"A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.\">“Let’s get a tour scheduled this week so you can decide before you move.”</button><button data-option-id=\"vague\" data-correct=\"false\" data-feedback=\"A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.\">“I’ll send some listings. Let me know if anything catches your eye.”</button><button data-option-id=\"agreed\" data-correct=\"true\" data-feedback=\"A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.\">“You’re moving in two months and need a home office. I’ll email three homes, and we’ll talk Tuesday at 6.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"summary\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“You’re planning to relocate in two months and need space for a home office. I’ll email three homes for you to look over, and we’ll talk Tuesday at six about what fits. Is there anything else you’d like me to keep in mind?”</p><p>A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.</p></div></details>",
       "time": 3,
       "theme": "tru alms lesson alms-exercise",
-      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Allow a minute to choose and explain. Check that answers distinguish the relocation timeline from the next call. Do not invent a showing or say properties were already sent.\nHandoff: You have practiced the pieces. Now listen to one complete call, starting with the buyer’s original request.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "You have practiced the pieces. Now listen to one complete call, starting with the buyer’s original request.",
+      "notes": "Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. Allow a minute to choose and explain. Check that answers distinguish the relocation timeline from the next call. Do not invent a showing or say properties were already sent.\nHandoff: You have practiced each part of the conversation. Now put them together in a role-play, with a buyer and an observer to help you improve.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "You have practiced each part of the conversation. Now put them together in a role-play, with a buyer and an observer to help you improve.",
       "activity": {
         "id": "day2-summary-practice",
         "kind": "choice",
@@ -431,37 +442,15 @@
       }
     },
     {
-      "id": "day2-whole-call-one",
-      "chapter": "Full-call demonstration",
-      "title": "Listen to the call from the beginning",
-      "lead": "Fictional case: George requested a tour of 418 Cedar Lane with no time selected. The agent can meet Saturday morning or afternoon and still needs to check property access.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Hi George, I’m [your name] with [your brokerage], a featured partner with Zillow. I’m calling about your Cedar Lane tour request. Would Saturday morning or afternoon work better?”</span></p><p><b>George</b><span>“Morning would be good.”</span></p><p><b>Agent</b><span>“I’ll check access. Do you have a few minutes so I can learn about your search?”</span></p><p><b>George</b><span>“Sure. We rent in town, but we’d like a shorter commute and space for a garden.”</span></p></div>",
-      "time": 2,
-      "theme": "tru alms lesson",
-      "notes": "Read without explaining between turns. A volunteer can voice George. The full situation is stated here so someone need not reconstruct previous slides. Continue the demonstration on the next slide.\nHandoff: George has just told us about the commute and garden. Continue by learning what those mean, then agree on the plan.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "George has just told us about the commute and garden. Continue by learning what those mean, then agree on the plan."
-    },
-    {
-      "id": "day2-whole-call-two",
-      "chapter": "Full-call demonstration",
-      "title": "Continue from what the buyer just told you",
-      "lead": "In the same practice call, George rents locally and wants a shorter commute and garden space. He prefers Saturday morning for the tour.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Which areas would work for your commute, and what would you want to grow?”</span></p><p><b>George</b><span>“Near Cedar Lane works. I’d like sun and room for raised vegetable beds.”</span></p><p><b>Agent</b><span>“Would you like me to find another home with that kind of space so we can compare while we’re out?”</span></p><p><b>George</b><span>“Yes, that would help.”</span></p><p><b>Agent</b><span>“So, a shorter commute and sun for a garden. I’ll check access, find a comparison and text the details for Saturday morning. Is text best for you?”</span></p><p><b>George</b><span>“Yes.”</span></p></div>",
-      "time": 2,
-      "theme": "tru alms lesson",
-      "notes": "Read continuously. Then model a brief explanation of the applicable touring form using actual terms. Debrief invitation, permission, priorities, comparison consent and next action. The two questions follow the two priorities just raised; agents can ask them separately.\nHandoff: Now everyone will lead a complete call. You will rotate through agent, buyer and observer, with a short retry after feedback.\nSources: TRU September 12 teaching, INT-015–016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Now everyone will lead a complete call. You will rotate through agent, buyer and observer, with a short retry after feedback."
-    },
-    {
       "id": "day2-full-call-practice",
       "chapter": "Group practice",
       "title": "Run a first call and retry one part",
       "lead": "Work in trios. The buyer uses an assigned fictional case; the agent responds to what the buyer says. The observer listens for an early invitation, useful follow-up questions and an accurate closing.",
-      "body": "<p class=\"lesson-explanation\"><strong>Three rounds, three minutes each.</strong> Two minutes for the call, 30 seconds for feedback, then a 30-second retry.</p><p class=\"lesson-explanation\"><strong>Rotate all three roles.</strong> Everyone takes a turn as agent, buyer and observer. Use one minute to set up and two minutes to debrief and submit.</p><label class=\"field\">What did you learn about your buyer?<textarea data-save=\"first-attempt\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What specific feedback did the observer give?<textarea data-save=\"correction\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What changed when you tried that part again?<textarea data-save=\"retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Introduce yourself, help with the request, ask permission, learn location and motivation, and summarize the actual plan. Adapt to the buyer’s question or time constraint. Report the conversation you practiced.</p><p>Everyone needs a speaking turn and a chance to improve a specific sentence. Peer feedback and reflection are not coach sign-off.</p></div></details>",
-      "time": 12,
-      "theme": "tru alms lesson alms-exercise",
-      "notes": "1 minute setup: assign trios and open meeting-platform rooms. Three rounds of 3 minutes: 2-minute call, 30-second observer feedback, 30-second targeted retry. Rotate all roles. Reserve 2 minutes for debrief and submissions. Buyer uses the assigned case; do not give the agent hidden buyer reasons before the call.\nHandoff: The call is not finished work until you follow through. We’ll end by showing what to put in FUB and what to do when a lead never answers.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "The call is not finished work until you follow through. We’ll end by showing what to put in FUB and what to do when a lead never answers.",
+      "body": "<p class=\"lesson-explanation\"><strong>Three rounds, four minutes each.</strong> Two minutes for the call, one minute for feedback, then a one-minute retry.</p><p class=\"lesson-explanation\"><strong>Rotate all three roles.</strong> Everyone takes a turn as agent, buyer and observer. Use one minute to set up and three minutes to debrief and submit.</p><label class=\"field\">What did you learn about your buyer?<textarea data-save=\"first-attempt\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What specific feedback did the observer give?<textarea data-save=\"correction\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What changed when you tried that part again?<textarea data-save=\"retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Introduce yourself, help with the request, ask permission, learn location and motivation, and summarize the actual plan. Adapt to the buyer’s question or time constraint. Report the conversation you practiced.</p><p>Everyone needs a speaking turn and a chance to improve a specific sentence. Peer feedback and reflection are not coach sign-off.</p></div></details>",
+      "time": 16,
+      "theme": "tru alms lesson alms-exercise lesson-practice-photo",
+      "notes": "1 minute setup: assign trios and open meeting-platform rooms. Three rounds of 4 minutes: 2-minute call, 1-minute observer feedback, 1-minute targeted retry. Rotate all roles. Reserve 3 minutes for debrief and submissions. Buyer uses the assigned case; do not give the agent hidden buyer reasons before the call.\nHandoff: You have made a plan with the buyer. Now record what you learned and what you owe them, so the next step actually happens.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "You have made a plan with the buyer. Now record what you learned and what you owe them, so the next step actually happens.",
       "activity": {
         "id": "day2-full-call-practice",
         "kind": "roleplay",
@@ -515,29 +504,18 @@
       "body": "<div class=\"lesson-record\"><p><strong>FUB note:</strong> Rents locally. Wants a shorter commute near Cedar Lane and sun for raised vegetable beds. Open to another home for comparison. Prefers Saturday morning. Text is the agreed channel. Tour access is not yet confirmed.</p><p><strong>Next task:</strong> Check access, research a relevant comparison, and text George the details. Set the task for the follow-up time you agreed.</p></div>",
       "time": 2,
       "theme": "tru alms lesson",
-      "notes": "Connect to Day 1. Separate facts learned from actions owed. Ask what would be lost if the note only said “wants to tour.” Do not mark an appointment confirmed without supporting arrangements.\nHandoff: That was a connected buyer. For a lead that never answers, the work is different: continue personal outreach instead of waiting on the automation.\nSources: TRU September 12 teaching, R020–R021; INT-035–039. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "That was a connected buyer. For a lead that never answers, the work is different: continue personal outreach instead of waiting on the automation."
-    },
-    {
-      "id": "day2-unanswered",
-      "chapter": "After the call",
-      "title": "Keep working a new lead that has not answered",
-      "lead": "The first missed call and personal text are the beginning of your outreach, not the entire plan.",
-      "body": "<p class=\"lesson-explanation\"><strong>Day one:</strong> Aim for three to four personal touches, with at least two calls and one personal text in the normal unanswered-lead flow.</p><p class=\"lesson-explanation\"><strong>First week:</strong> Aim for ten total touches, including day one. Make most attempts calls, vary the contact times, and make each text relevant to the inquiry.</p><p class=\"lesson-explanation\"><strong>Once the buyer responds:</strong> Follow the conversation and the plan you agree together. The unanswered-lead quota no longer applies. Honor stated contact restrictions throughout.</p>",
-      "time": 2,
-      "theme": "tru alms lesson",
-      "notes": "These are the newer September 12 standards. Automation is not personal effort. Do not invent a compressed late-day schedule or a quota for an engaged buyer. Explain why repeating “just checking in” is not useful persistence.\nHandoff: Whether you connect on the first attempt or later, the same job awaits: understand the request, help the buyer and agree what comes next.\nSources: TRU September 12 teaching, INT-027–029, INT-054; R019. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
-      "cue": "Whether you connect on the first attempt or later, the same job awaits: understand the request, help the buyer and agree what comes next."
+      "notes": "Connect to Day 1. Separate facts learned from actions owed. Ask what would be lost if the note only said “wants to tour.” Do not mark an appointment confirmed without supporting arrangements.\nHandoff: That completes the path from a new lead through the first conversation and follow-through. Let’s close by reviewing what you can take into your next call.\nSources: TRU September 12 teaching, R020–R021; INT-035–039. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "That completes the path from a new lead through the first conversation and follow-through. Let’s close by reviewing what you can take into your next call."
     },
     {
       "id": "day2-reference",
-      "chapter": "Wrap up",
-      "title": "Use the request to begin. Use the answers to continue.",
-      "lead": "You should be able to recognize the lead, start the conversation and leave the buyer knowing what happens next.",
-      "body": "<p class=\"lesson-explanation\">Introduce yourself clearly. Help with the appointment early. Ask permission to learn more, follow the buyer’s answers, and summarize the plan you actually agreed.</p><p class=\"lesson-explanation\">If a question changes the call, address it. If a fact needs checking, say so and follow through. The framework supports the conversation; the buyer’s situation determines the next sentence.</p><p class=\"lesson-source\"><a href=\"/workshops/day2-resources.html\" target=\"_blank\" rel=\"noreferrer\">Open the Day 2 reference, Zillow sources and practice notes</a></p>",
+      "chapter": "Day 2 wrap-up",
+      "title": "From the next lead to the next step",
+      "lead": "Today, you practiced the complete first-conversation process. Take these four actions into your next lead.",
+      "body": "<ol class=\"lesson-agenda\"><li><strong>Recognize the lead.</strong> Know whether you are joining a live buyer or responding to a new request.</li><li><strong>Start the conversation.</strong> Respond promptly, introduce yourself, and offer a useful appointment.</li><li><strong>Understand the buyer.</strong> Follow their answers and work through concerns with empathy, questions, and a solution.</li><li><strong>Agree and follow through.</strong> Summarize the plan, record it in FUB, and do what you promised.</li></ol><p class=\"lesson-source\"><a href=\"/workshops/day2-resources.html\" target=\"_blank\" rel=\"noreferrer\">Keep your conversation starters and practice reference handy ↗</a></p>",
       "time": 1,
-      "theme": "tru alms lesson",
-      "notes": "Ask each learner which part they want to keep practicing. Refer to submitted work. Completion is not demonstrated competence on every client conversation.\nHandoff: Keep your reference available for the next lead, and bring the specific moment you want help with to your coach.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "theme": "tru alms lesson lesson-closing-photo",
+      "notes": "Close the training rather than introducing another lesson. Review the four outcomes briefly. Ask each learner which part they want to keep practicing, using their role-play experience. Remind them the reference includes questions they can keep beside them. Practice today is a starting point, not proof of mastery.\nHandoff: Keep your reference available for the next lead, and bring the specific moment you want help with to your coach.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
       "cue": "Keep your reference available for the next lead, and bring the specific moment you want help with to your coach."
     }
   ],
