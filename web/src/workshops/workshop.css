@@ -146,5 +146,5 @@
 .slide.lesson-photo>*,.slide.lesson-photo h2,.slide.lesson-photo .lead{max-width:65%}
 .slide.lesson-photo .lesson-explanation,.slide.lesson-photo .lesson-agenda li{font-size:22px;line-height:1.45}
 .slide.lesson-photo .lesson-example{font-size:24px;line-height:1.45}
-.slide.lesson-photo .alms-call-turns p{grid-template-columns:80px minmax(0,1fr);font-size:22px;gap:12px;padding:8px 0}
+.slide.lesson-photo .alms-call-turns p{grid-template-columns:110px minmax(0,1fr);font-size:22px;gap:12px;padding:8px 0}
 @media(max-width:700px){.slide.lesson-photo{background:#f2f0e9}.slide.lesson-photo>*,.slide.lesson-photo .lead{max-width:100%}}
