@@ -731,6 +731,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
         {activity.kind === "roleplay" && <PartnerSetup state={state} activity={rawActivity} run={run} simple />}
       </aside>}
     </div>
+    {presenting && state.session.day === 2 && <p className="live-presenter-cue"><strong>Presenter cue:</strong> {state.definition.slides.find(s => s.id === slide.id)?.cue}</p>}
   </>;
 }
 

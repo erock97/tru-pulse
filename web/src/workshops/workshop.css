@@ -94,3 +94,6 @@
 /* Live website reference: https://truhq.co/cinema.css and its architectural poster. */
 .slide.alms-cover{background:linear-gradient(90deg,rgba(8,17,23,.77),rgba(8,17,23,.28) 55%,rgba(8,17,23,.05)),linear-gradient(0deg,rgba(8,17,23,.45),transparent 40%),url('/workshops/tru-website-poster.jpg') center/cover;color:#fff}
 .slide.alms-cover .meta,.slide.alms-cover .lead{color:#eeeee7}.alms-cover-line{color:#fff}
+
+/* Spoken exchanges: keep the speaker beside the words so the call reads down the page. */
+.alms-call-turns p{display:grid;grid-template-columns:76px minmax(0,1fr);gap:16px;padding:12px 0;font-size:22px;line-height:1.4}.alms-call-turns b{margin:4px 0 0;font-size:12px;letter-spacing:.06em}
