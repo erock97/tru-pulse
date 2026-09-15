@@ -6,10 +6,11 @@ import {
   ARCH, PERSONAL_TYPES, PERSONAL_LABELS, WORK_LABELS,
   type Axis, type AxisResult,
 } from '../lib/assessmentData';
+import { readAssessmentDraft, writeAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft';
 import '../truHqDark.css';
 import './assess.css';
 
-type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done'|'save';
+type Stage = 'pick'|'intro'|'personal'|'personalResult'|'pro'|'proResult'|'register'|'done';
 
 function AssessmentRecovery({message}:{message:string}) {
   return <div className="asx-shell tru-dark"><main className="asx-card"><div className="asx-eyebrow">TRU · Behavioral Assessment</div><h1 className="asx-h1">Let’s get you to the right place.</h1><p className="asx-sub" role="alert">{message}</p><a className="asx-pick" href="#/">Return to TRU HQ →</a></main></div>;
@@ -48,10 +49,18 @@ export default function Assess({ token }: { token: string }) {
   const [stage, setStage] = useState<Stage>(preview || self ? 'intro' : 'pick');
 
   // Lifted so Task 7's register/done stages can read the finished results.
-  const [pAns, setPAns] = useState<number[]>(() => Array(PERSONAL_QUESTIONS.length).fill(0));
-  const [bAns, setBAns] = useState<number[]>(() => Array(PRO_QUESTIONS.length).fill(0));
+  const [pAns, setPAns] = useState<number[]>([]);
+  const [bAns, setBAns] = useState<number[]>([]);
   const [personalResult, setPersonalResult] = useState<AxisResult | null>(null);
   const [proResult, setProResult] = useState<AxisResult | null>(null);
+
+  const [submissionId, setSubmissionId] = useState<string>(() => crypto.randomUUID());
+  const [draftWarning, setDraftWarning] = useState(false);
+  useEffect(() => {
+    if (self && agent && (pAns.length || bAns.length)) {
+      setDraftWarning(!writeAssessmentDraft(agent.id, { submissionId, pAns, bAns }));
+    }
+  }, [self, agent, submissionId, pAns, bAns]);
 
   useEffect(() => {
     if (preview) return; // dev preview: no roster fetch, no DB call.
@@ -59,7 +68,13 @@ export default function Assess({ token }: { token: string }) {
       myAgent().then((a) => {
         if (!a) { setErr('Sign in to take your assessment, then come back here.'); return; }
         setAgent({ id: a.id, name: a.name });
-        setStage('intro');
+        const draft = readAssessmentDraft(a.id);
+        if (draft) {
+          setSubmissionId(draft.submissionId); setPAns(draft.pAns); setBAns(draft.bAns);
+          if (draft.pAns.length === PERSONAL_QUESTIONS.length) setPersonalResult(scorePersonal(draft.pAns));
+          if (draft.bAns.length === PRO_QUESTIONS.length) setProResult(scorePro(draft.bAns));
+          setStage(draft.bAns.length === PRO_QUESTIONS.length ? 'proResult' : draft.bAns.length ? 'pro' : draft.pAns.length === PERSONAL_QUESTIONS.length ? 'personalResult' : 'personal');
+        } else setStage('intro');
       }).catch(() => setErr('Sign in to take your assessment, then come back here.'));
       return;
     }
@@ -95,18 +110,6 @@ export default function Assess({ token }: { token: string }) {
     );
   }
 
-  if (stage === 'save') {
-    return (
-      <SaveOwnFlow
-        agent={agent!}
-        personalResult={personalResult!}
-        proResult={proResult!}
-        pAns={pAns}
-        bAns={bAns}
-      />
-    );
-  }
-
   if (stage === 'register' || stage === 'done') {
     // personalResult/proResult are guaranteed non-null here — reaching this stage
     // requires having passed through proResult, which sets both.
@@ -126,21 +129,24 @@ export default function Assess({ token }: { token: string }) {
   }
 
   return (
+    <>
+    {draftWarning && <p role="alert">This browser couldn’t keep a backup. Keep this tab open until your result is saved.</p>}
     <AssessFlow
+      saveStatus={self && stage === 'proResult' && personalResult && proResult ? <SaveOwnFlow agent={agent!} submissionId={submissionId} personalResult={personalResult} proResult={proResult} pAns={pAns} bAns={bAns}/> : undefined}
       agent={agent!}
       stage={stage}
       setStage={setStage}
-      afterPro={self ? 'save' : 'register'}
       pAns={pAns} setPAns={setPAns}
       bAns={bAns} setBAns={setBAns}
       personalResult={personalResult} setPersonalResult={setPersonalResult}
       proResult={proResult} setProResult={setProResult}
     />
+    </>
   );
 }
 
 function AssessFlow({
-  agent, stage, setStage, afterPro = 'register',
+  agent, stage, setStage, saveStatus,
   pAns, setPAns, bAns, setBAns,
   personalResult, setPersonalResult,
   proResult, setProResult,
@@ -148,14 +154,14 @@ function AssessFlow({
   agent: { id: string; name: string };
   stage: Stage;
   setStage: (s: Stage) => void;
-  afterPro?: 'register' | 'save';
+  saveStatus?: React.ReactNode;
   pAns: number[]; setPAns: (a: number[]) => void;
   bAns: number[]; setBAns: (a: number[]) => void;
   personalResult: AxisResult | null; setPersonalResult: (r: AxisResult) => void;
   proResult: AxisResult | null; setProResult: (r: AxisResult) => void;
 }) {
-  const [pIdx, setPIdx] = useState(0);
-  const [bIdx, setBIdx] = useState(0);
+  const [pIdx, setPIdx] = useState(Math.min(pAns.length, PERSONAL_QUESTIONS.length - 1));
+  const [bIdx, setBIdx] = useState(Math.min(bAns.length, PRO_QUESTIONS.length - 1));
 
   function answerPersonal(v: number) {
     const next = pAns.slice(); next[pIdx] = v; setPAns(next);
@@ -313,7 +319,8 @@ function AssessFlow({
               ))}
             </div>
           )}
-          <button className="asx-cta" onClick={() => setStage(afterPro)}>See your full result →</button>
+          {saveStatus && <section><h2>Who you are: {PERSONAL_TYPES[personalResult.code].name}</h2><p>{PERSONAL_TYPES[personalResult.code].desc}</p></section>}
+          {saveStatus ?? <button className="asx-cta" onClick={() => setStage('register')}>See your full result →</button>}
         </div>
       </div>
     );
@@ -323,19 +330,23 @@ function AssessFlow({
 }
 
 function SaveOwnFlow({
-  agent, personalResult, proResult, pAns, bAns,
+  agent, submissionId, personalResult, proResult, pAns, bAns,
 }: {
+  submissionId: string;
   agent: { id: string; name: string };
   personalResult: AxisResult;
   proResult: AxisResult;
   pAns: number[];
   bAns: number[];
 }) {
-  const submitted = useRef(false);
-  const [err, setErr] = useState('');
+  const inFlight = useRef(false);
+  const saved = useRef(false);
+  const [status, setStatus] = useState<'saving' | 'saved' | 'error'>('saving');
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    if (submitted.current) return;
-    submitted.current = true;
+    if (inFlight.current || saved.current) return;
+    inFlight.current = true;
+    setStatus('saving');
     const tallies = {
       energy_p: proResult.axes.energy.letter === 'P' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
       energy_t: proResult.axes.energy.letter === 'T' ? proResult.axes.energy.pct : 100 - proResult.axes.energy.pct,
@@ -347,23 +358,33 @@ function SaveOwnFlow({
       decision_i: proResult.axes.decision.letter === 'I' ? proResult.axes.decision.pct : 100 - proResult.axes.decision.pct,
     };
     submitOwnAssessment({
+      submissionId,
       agentId: agent.id,
       personalCode: personalResult.code,
       personalAxes: personalResult.axes,
       businessCode: proResult.code,
       tallies,
       answers: { personal: pAns, pro: bAns },
-    }).then(() => { window.location.hash = '/coach'; })
-      .catch(() => setErr('Your result didn’t save — try again from Coach.'));
+    }).then(() => {
+      saved.current = true; clearAssessmentDraft(agent.id, submissionId); setStatus('saved');
+    }).catch(() => setStatus('error')).finally(() => { inFlight.current = false; });
+  }, [attempt]);
+  useEffect(() => {
+    const retry = () => setAttempt(a => a + 1);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
   }, []);
-  if (err) {
-    return (
-      <div className="asx-shell tru-dark">
-        <div className="asx-card asx-msg">{err}</div>
-      </div>
-    );
+  function download() {
+    const url = URL.createObjectURL(new Blob([JSON.stringify({ agentId: agent.id, submissionId, personalResult, proResult, answers: { personal: pAns, pro: bAns } }, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'TRU-assessment-results.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <div className="asx-shell tru-dark"><div className="spinner" /></div>;
+  return <div aria-live="polite">
+    <p>{status === 'saved' ? 'Your results are saved.' : status === 'saving' ? 'Saving your results…' : 'Your results are ready, but haven’t reached TRU HQ yet. Keep this tab open and retry. You can also download a copy.'}</p>
+    {status === 'error' && <button className="asx-cta" onClick={() => setAttempt(a => a + 1)}>Retry saving</button>}
+    <button className="asx-pick" onClick={download}>Download results</button>
+    {status === 'saved' && <a className="asx-cta" href="#/coach">Continue to Coach →</a>}
+  </div>;
 }
 
 // ── Task 7: gated submit + registration ─────────────────────────────────────
