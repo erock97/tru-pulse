@@ -65,3 +65,7 @@ Production checks on isolated session `1dc133b7-7a03-4963-916f-7a7a6c66a291`:
 - Web typecheck and all 567 tests pass, including both panel submission types and unopened-activity gating.
 
 A production asset-loading failure during verification prompted a temporary rollback. Public build assets now receive an explicit CORS header and the service-worker asset cache version is rotated; subsequent production navigation, reload, styles, and submissions were verified. No curriculum, worker, database, real-agent assignment, or production roster changes in this follow-up.
+
+### Website theme correction
+
+Eric clarified that the reference is the live website. Verified https://truhq.co/ in the browser and read its current https://truhq.co/cinema.css. That website is a separate, newer implementation from the old `forest.css` / `forge.css` sources in this checkout. Training now uses its exact ink #171d22, paper #f2f0e9, stone #d6d2c7, blue accent #b9d1fd, line #c9c9be, Manrope headings and DM Sans body. The cover reuses the website's architectural poster and the same image shading. The working inline responses and 16:9 canvas are retained.
