@@ -96,3 +96,5 @@ This historical study covered web leads across six companies and is not Zillow-s
 Study: https://cdn2.hubspot.net/hub/25649/file-13535879-pdf/docs/mit_study.pdf
 Use this as a prediction before teaching the five-minute response standard, not as
 a scored recall test. Keep the call-opening decision after the LEAD demonstration.
+
+September 15 wording refinement: Eric approved A as “Ask questions that move the conversation forward.” E explicitly asks for the appointment immediately after the introduction and offers two concrete times. D summarizes priorities and next steps to build momentum toward the appointment.

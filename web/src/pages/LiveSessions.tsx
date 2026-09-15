@@ -558,7 +558,7 @@ export function PresenterSpeakingNotes({state}:{state:LiveSessionState}) {
   if (!state.canPresent) return <p role="alert">Only the presenter can open these notes.</p>;
   const index = Math.max(0,state.definition.slides.findIndex(s=>s.id === state.session.currentSlideId));
   const slide = state.definition.slides[index];
-  const prompts = state.definition.version.includes('lead-live') ? day2SpeakingNotes[slide.id === 'day2-lead-discussion' && state.definition.version.endsWith('-v11') ? 'response-time' : slide.id.replace(/^day2-/,'')] : undefined;
+  const prompts = state.definition.version.includes('lead-live') ? day2SpeakingNotes[slide.id === 'day2-lead-discussion' && slide.activity?.choices?.some(c=>c.id === 'five') ? 'response-time' : slide.id.replace(/^day2-/,'')] : undefined;
   return <article className="live-speaking-notes">
     <p>PRIVATE PRESENTER NOTES · Slide {index+1} of {state.definition.slides.length} · {slide.time} minutes</p>
     <h1>{slide.title}</h1>

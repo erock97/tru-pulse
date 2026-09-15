@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-15-lead-live-v11",
+  "version": "2026-09-15-lead-live-v12",
   "duration": 90,
   "slides": [
     {
@@ -167,11 +167,11 @@
       "id": "day2-alms",
       "chapter": "Begin the conversation",
       "title": "Use LEAD to guide the conversation",
-      "lead": "LEAD gives you four steps: Lead with who you are, Extend the invitation, Ask and listen, and Deliver the summary.",
-      "body": "<ol class=\"lesson-agenda\"><li><strong>L — Lead with who you are:</strong> Name, brokerage, Zillow connection, and why you’re calling.</li><li><strong>E — Extend the invitation:</strong> Offer the visit early, with two workable options.</li><li><strong>A — Ask and listen:</strong> Ask permission, then learn where they want to live and what is prompting the move.</li><li><strong>D — Deliver the summary:</strong> Repeat what matters and agree on the next step.</li></ol><p class=\"lesson-explanation\">You may also know Zillow’s ALMS: Appointment, Location, Motivation, Summarize. LEAD includes your introduction and groups location and motivation under Ask and listen.</p>",
+      "lead": "Introduce yourself. Ask for the appointment. Learn what matters. Confirm the plan.",
+      "body": "<ol class=\"lesson-agenda\"><li><strong>L — Lead with who you are:</strong> Introduce yourself: your name, brokerage, connection to Zillow, and why you’re calling.</li><li><strong>E — Extend the invitation:</strong> Immediately after your introduction, ask for the appointment. Offer the buyer two concrete times to meet with you.</li><li><strong>A — Ask questions that move the conversation forward:</strong> Ask where they want to live, what prompted their search, and what matters to them. Use their answers to ask the next useful question.</li><li><strong>D — Deliver the summary:</strong> Summarize what matters to the buyer, confirm the next steps, and build momentum toward the appointment.</li></ol><p class=\"lesson-explanation\">You may also know Zillow’s ALMS: Appointment, Location, Motivation, Summarize. LEAD includes your introduction and uses location and motivation to guide your questions.</p>",
       "time": 2,
       "theme": "tru alms lesson",
-      "notes": "The buyer asked for help, so make that help tangible early. Then ask permission to learn more. Location and motivation can occur in either order. Do not delay the invitation until after qualification.\nHandoff: Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "notes": "After introducing yourself, ask for the appointment and offer two concrete times. Then ask questions that move the conversation forward: where they want to live, what prompted their search, and what matters. Use each answer to choose the next useful question. Summarize next steps to build momentum into the appointment.\nHandoff: Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
       "cue": "Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call."
     },
     {
