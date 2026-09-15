@@ -37,38 +37,6 @@
       "theme": "tru"
     },
     {
-      "id": "day1-capacity-decision",
-      "chapter": "Welcome to Preferred",
-      "title": "How many leads should Sam take?",
-      "lead": "Choose the answer that fits Sam’s workload.",
-      "body": "<section class=\"case-brief\"><h3>Sam already has a busy month</h3><p>Sam has six active buyers, two evenings available for showings, and a day job on Tuesdays. Sam wants to take 20 new leads this month.</p><p>Our monthly limit is 15 leads. New hires can receive no more than 10 in their first month.</p></section><div class=\"choices\" data-quiz=\"day1-capacity\"><button data-option-id=\"more\" data-correct=\"false\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">Ask for more than 20 leads.</button><button data-option-id=\"twenty\" data-correct=\"false\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">20 leads is a good number.</button><button data-option-id=\"fewer\" data-correct=\"true\" data-feedback=\"Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum.\">Ask for fewer than 20 leads.</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
-      "notes": "Keep this quick. Ask each agent to choose an answer. Explain that 15 is the monthly maximum and new hires are capped at 10 in month one. An agent can ask for fewer when their workload calls for it. Do not ask for a written explanation. A choice does not block them from continuing.",
-      "cue": "Should Sam ask for more than 20, 20, or fewer than 20 leads?",
-      "time": 2,
-      "theme": "tru",
-      "activity": {
-        "id": "day1-capacity-decision",
-        "kind": "choice",
-        "prompt": "Based on Sam’s workload, should Sam ask for 20 new leads?",
-        "choices": [
-          {
-            "id": "more",
-            "text": "Ask for more than 20 leads."
-          },
-          {
-            "id": "twenty",
-            "text": "20 leads is a good number."
-          },
-          {
-            "id": "fewer",
-            "text": "Ask for fewer than 20 leads."
-          }
-        ],
-        "correctChoiceId": "fewer",
-        "explanation": "Fewer than 20. Our limit is 15 leads per month, or 10 in your first month. With six active buyers and limited availability, Sam may need fewer than the maximum."
-      }
-    },
-    {
       "id": "day1-preferred-standards",
       "chapter": "Welcome to Preferred",
       "title": "The standards you must meet",
@@ -78,6 +46,38 @@
       "cue": "What is your first-month lead limit, and where must you make your calls and send your texts?",
       "time": 1,
       "theme": "tru"
+    },
+    {
+      "id": "day1-capacity-decision",
+      "chapter": "Welcome to Preferred",
+      "title": "What is the monthly lead limit?",
+      "lead": "Sam has completed the first month. What is the maximum number of new leads Sam can receive this month?",
+      "body": "<section class=\"case-brief\"><h3>Sam is past month one</h3><p>Sam is planning this month’s workload. Choose the monthly maximum; the team may agree on fewer leads based on capacity.</p></section><div class=\"choices\" data-quiz=\"day1-capacity\"><button data-option-id=\"ten\" data-correct=\"false\" data-feedback=\"15 new leads is the monthly maximum after the first month. New hires are capped at 10 in month one. Workload may call for fewer; the maximum is not a guarantee.\">10 new leads.</button><button data-option-id=\"fifteen\" data-correct=\"true\" data-feedback=\"15 new leads is the monthly maximum after the first month. New hires are capped at 10 in month one. Workload may call for fewer; the maximum is not a guarantee.\">15 new leads.</button><button data-option-id=\"twenty\" data-correct=\"false\" data-feedback=\"15 new leads is the monthly maximum after the first month. New hires are capped at 10 in month one. Workload may call for fewer; the maximum is not a guarantee.\">20 new leads.</button></div><p class=\"feedback\" aria-live=\"polite\"></p>",
+      "notes": "The standards slide comes first. Confirm 15 leads per month, or 10 in the first month. Workload can mean taking fewer. Do not subtract active buyers from the monthly cap: those are different measures.",
+      "cue": "Ask agents to choose 10, 15, or 20. After submissions, confirm 15 is the maximum, not a guaranteed allocation.",
+      "time": 2,
+      "theme": "tru",
+      "activity": {
+        "id": "day1-capacity-decision",
+        "kind": "choice",
+        "prompt": "Sam has completed the first month. What is the maximum number of new leads Sam can receive this month?",
+        "choices": [
+          {
+            "id": "ten",
+            "text": "10 new leads."
+          },
+          {
+            "id": "fifteen",
+            "text": "15 new leads."
+          },
+          {
+            "id": "twenty",
+            "text": "20 new leads."
+          }
+        ],
+        "correctChoiceId": "fifteen",
+        "explanation": "15 new leads is the monthly maximum after the first month. New hires are capped at 10 in month one. Workload may call for fewer; the maximum is not a guarantee."
+      }
     },
     {
       "id": "day1-fub-login-and-navigation",
@@ -477,7 +477,7 @@
   "cases": [],
   "hero": "/workshops/house.jpg",
   "resources": "<p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Program standards</a> · <a href=\"https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing\" target=\"_blank\" rel=\"noopener\">Agent capacity & routing</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status\" target=\"_blank\" rel=\"noopener\">My Agent</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a></p>",
-  "version": "2026-09-14-preferred-foundations-v6",
+  "version": "2026-09-14-preferred-foundations-v7",
   "duration": 57,
   "sources": [
     {

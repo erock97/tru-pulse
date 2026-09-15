@@ -20,6 +20,7 @@ import {
   liveDraftKey,
 } from "../../../shared/liveWorkshops";
 import { assignmentStatus } from "../../../shared/coachingAssignments";
+import { learnerWorkshopDefinition } from "../../../shared/workshopCatalog";
 import type { WorkshopActivity } from "../../../shared/workshopCatalog";
 import {
   liveRequest,
@@ -508,7 +509,7 @@ function Session({ id, view, responseOnly = false }: { id: string; view: LiveVie
     ? Math.max(0, Math.ceil((Date.parse(state.timerEndsAt) - now) / 1000))
     : null;
   return (
-    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={view === "shared"}>
+    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={(view !== "coach" && state.session.day <= 2) || view === "shared"}>
       <div className="live-session-bar">
         {view !== "shared" && <a href="#/rep/sessions">All sessions</a>}
         <span role="status">
@@ -528,12 +529,14 @@ function Session({ id, view, responseOnly = false }: { id: string; view: LiveVie
           {error}
         </p>
       )}
-      {state.rehearsal && view !== 'shared' && <section className="live-notice">
+      {state.rehearsal && state.session.day > 2 && view !== 'shared' && <section className="live-notice">
         <strong>Solo rehearsal · test evidence only</strong>
         <p>Submit as the test learner, then review and reveal from the presenter console. Responses and feedback are saved for this test; no agents receive assignments.</p>
         <div className="live-actions"><a href={link(id,'agent')} target="_blank" rel="noreferrer">Open test learner</a><a href={link(id,'presenter')} target="_blank" rel="noreferrer">Open presenter console</a><a href={link(id,'shared')} target="_blank" rel="noreferrer">Open presentation</a></div>
       </section>}
-      {view === "presenter" ? (
+      {state.session.day <= 2 && view !== "coach" ? (
+        <SimpleLiveStage state={state} refresh={() => refresh.current()} view={view} />
+      ) : view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
       ) : view === "shared" ? (
         <Projection state={state} refresh={() => refresh.current()} />
@@ -675,6 +678,62 @@ function SlideBody({
     </div>
   );
 }
+/** One current slide drives both the learner's form and the presenter's inbox. */
+export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionState; refresh: () => void; view: LiveView }) {
+  const definition = learnerWorkshopDefinition(state.definition, state.revealedActivityIds);
+  const slide = definition.slides.find(s => s.id === state.session.currentSlideId) || definition.slides[0];
+  const activity = slide.activity;
+  const presenting = view === "presenter" && state.canPresent;
+  const learner = view === "agent" || (view === "shared" && !state.canPresent);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const commandPending = useRef(false);
+  async function run(command: Parameters<typeof sessionCommand>[1]) {
+    if (commandPending.current) return false;
+    commandPending.current = true;
+    setBusy(true); setError("");
+    try { await sessionCommand(state.session.id, command); refresh(); return true; }
+    catch (e) { setError(message(e)); return false; }
+    finally { commandPending.current = false; setBusy(false); }
+  }
+  const rawActivity = activityOf(state, activity?.id || null);
+  const answers = state.participants.map(p => ({ p, attempt: state.attempts.filter(a => a.agentId === p.agentId && a.activityId === activity?.id).at(-1) }));
+  return <>
+    <div className="live-simple-toolbar">
+      <LiveSlideNavigation state={{...state, canPresent: presenting}} refresh={refresh} keyboard={presenting} />
+      {presenting && <details className="live-session-tools"><summary>Session</summary><div>
+        <a href={link(state.session.id,"shared")} target="_blank" rel="noreferrer">Open screen to share</a>
+        <a href={link(state.session.id,"agent")} target="_blank" rel="noreferrer">{state.rehearsal ? "Open test learner" : "Agent join link"}</a>
+        <details><summary>Presenter notes</summary><p>{state.definition.slides.find(s => s.id === slide.id)?.notes}</p></details>
+        <p>{state.rehearsal ? "Solo test · no real agents. Submit in the test learner tab; answers arrive here." : "Share the presentation window in your meeting. Agents open the join link on their own devices."}</p>
+        <button disabled={busy || state.session.status === "ended"} onClick={() => void run({action:"end"})}>End {state.rehearsal ? "rehearsal" : "session"}</button>
+      </div></details>}
+    </div>
+    {error && <p role="alert">{error}</p>}
+    <div className={`live-presentation-layout ${activity && (presenting || learner) ? "with-responses" : ""}`}>
+      <PresentationFit key={slide.id} theme={slide.theme}>
+        <SlideBody slide={slide} presentation>
+          {slide.native === "deal" && <DealMock />}
+          {slide.native === "practice" && !learner && <PracticeRecord scenario={slide.scenario as PracticeScenario} record={false} />}
+        </SlideBody>
+        {activity?.choices && <section className="live-card live-alms-activity"><ol className="live-choice-options" type="A">{activity.choices.map(c => <li key={c.id}>{c.text}</li>)}</ol></section>}
+        {activity && (activity.model || activity.explanation) && <section className="live-card live-alms-activity"><h3>Discuss</h3><p>{activity.model || activity.explanation}</p></section>}
+      </PresentationFit>
+      {activity && learner && <aside className="live-response-panel" aria-label="Answer the current question">
+        {view === "agent" ? <ResponseWorkspace state={state} refresh={refresh} /> : <Session id={state.session.id} view="agent" responseOnly />}
+      </aside>}
+      {activity && presenting && <aside className="live-response-panel" aria-label="Current question responses">
+        <h2>Answers · {answers.filter(a => a.attempt).length} / {answers.length}</h2>
+        {!answers.some(a => a.attempt) && <p>Answers appear here as agents submit.</p>}
+        {answers.filter(a => a.attempt).map(({p,attempt}) => <section className="live-card" key={p.agentId}><h3>{p.name}</h3><Attempt attempt={attempt!} activity={rawActivity} /></section>)}
+        <button disabled={busy || state.session.status === "ended" || state.revealedActivityIds.includes(activity.id)} onClick={() => void run({action:"reveal",activityId:activity.id})}>{state.revealedActivityIds.includes(activity.id) ? "Answer shared" : "Share answer & discuss"}</button>
+        {rawActivity && <details><summary>Teaching notes</summary><p>{rawActivity.explanation}</p><blockquote>{rawActivity.model}</blockquote></details>}
+        {activity.kind === "roleplay" && <PartnerSetup state={state} activity={rawActivity} run={run} simple />}
+      </aside>}
+    </div>
+  </>;
+}
+
 export function Projection({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
   const slide =
     state.definition.slides.find(
@@ -1449,10 +1508,12 @@ function PartnerSetup({
   state,
   activity,
   run,
+  simple = false,
 }: {
   state: LiveSessionState;
   activity?: WorkshopActivity;
   run: (c: Parameters<typeof sessionCommand>[1]) => Promise<boolean>;
+  simple?: boolean;
 }) {
   const [agent, setAgent] = useState(""),
     [buyer, setBuyer] = useState(""),
@@ -1467,6 +1528,7 @@ function PartnerSetup({
       for (let i = 0; i < people.length; i += size) {
         const members = people.slice(i, i + size);
         for (let turn = 0; turn < members.length; turn++) {
+          if (state.groups.some(g => g.activityId === activity.id && g.agentId === members[turn].agentId && g.round === turn + 1)) continue;
           const saved = await run({
             action: "group",
             group: {
@@ -1495,6 +1557,14 @@ function PartnerSetup({
     }
   }
   if (!activity?.rubric?.length) return null;
+  const allAssigned = state.participants.filter(p => p.joinedAt).length > 0 && state.participants.filter(p => p.joinedAt).every(p => state.groups.some(g => g.activityId === activity.id && g.agentId === p.agentId));
+  if (simple) return <section className="live-card">
+    <h3>Breakout practice</h3>
+    <p>Use your meeting platform for video rooms. Each person’s speaking turn and rotating roles appear automatically after setup.</p>
+    <button disabled={grouping || allAssigned || !state.participants.some(p => p.joinedAt)} onClick={() => void rotate(activity.useCases ? 3 : 2)}>{allAssigned ? "Roles assigned" : grouping ? "Assigning…" : "Assign speaking turns"}</button>
+    {state.groups.filter(g => g.activityId === activity.id).map(g => <p key={g.id}>Round {g.round}: {nameOf(state,g.agentId)} speaks · {g.buyerId ? nameOf(state,g.buyerId) + " is the buyer" : "presenter plays the buyer"}</p>)}
+    <ObservationForms state={state} activityId={activity.id} presenter onSaved={() => {}} />
+  </section>;
   const choose = (title: string, value: string, set: (v: string) => void) => (
     <label>
       {title}
@@ -2007,17 +2077,13 @@ function useEditorLock(key: string) {
 }
 
 export function ResponseWorkspace({ state, refresh }: { state: LiveSessionState; refresh: () => void }) {
-  const [catchUp, setCatchUp] = useState("");
-  const slide = state.definition.slides.find(s => s.id === (catchUp || state.session.currentSlideId)) || state.definition.slides[0];
+  const slide = state.definition.slides.find(s => s.id === state.session.currentSlideId) || state.definition.slides[0];
   const activity = slide.activity;
-  const picker = <label className="live-response-picker">Your activity<select value={catchUp} onChange={e => setCatchUp(e.target.value)}><option value="">Follow current slide</option>{state.definition.slides.filter(s => s.activity && state.openedActivityIds.includes(s.activity.id)).map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>;
   if (!state.myAgentId) return <p>This account is presenting. Agents can open their response panel from this same presentation link. Use a solo test session to rehearse submitting without agents.</p>;
-  if (!activity) return <>{picker}<p>Follow the presentation. Your quiz or short-answer form will open here when the presenter reaches an activity.</p></>;
+  if (!activity) return <p>Following the presenter.</p>;
   if (!state.openedActivityIds.includes(activity.id)) return <p>Waiting for the presenter to open responses.</p>;
   return <>
-    {picker}
-    <h3>{slide.title}</h3>
-    <Activity key={activity.id} state={state} slide={slide} activity={activity} refresh={refresh} onContinue={() => { setCatchUp(""); refresh(); }} compact />
+    <Activity key={activity.id} state={state} slide={slide} activity={activity} refresh={refresh} onContinue={refresh} compact />
     <PracticeGroups state={state} activityId={activity.id} />
     <ObservationForms state={state} activityId={activity.id} onSaved={refresh} />
   </>;
@@ -2141,7 +2207,7 @@ export function Activity({
     (!activity.choices?.length || !!draft.choiceId);
   return (
     <section className="live-activity">
-      <p role="status">
+      {(!compact || !editable) && <p role="status">
         {!editable
           ? "This activity is open for editing in another tab. Close it there to continue here."
           : !supported
@@ -2149,7 +2215,7 @@ export function Activity({
             : state.revealedActivityIds.includes(activity.id)
               ? "The example has been revealed. New attempts will be marked assisted."
               : "Your first independent attempt is preserved."}
-      </p>
+      </p>}
       {editable && (!compact || slide.native) && (
         <SlideBody slide={slide}>
           {slide.native === "practice" && (
@@ -2190,7 +2256,7 @@ export function Activity({
         <div className="live-card">
           <h3>{activity.prompt === slide.lead ? 'Your response' : activity.prompt}</h3>
           <p>
-            {activity.kind === "choice" && !fields.length ? "Choose an answer and submit it. You can continue with the presenter without getting the answer right." : <>Write what you think, including “I’m not sure.” Short answers are not
+            {compact ? "Submit your answer to the presenter." : activity.kind === "choice" && !fields.length ? "Choose an answer and submit it. You can continue with the presenter without getting the answer right." : <>Write what you think, including “I’m not sure.” Short answers are not
             graded and there are no required keywords. Submit to share your response
             with your presenter, or continue with the presentation and return later.</>}
           </p>
@@ -2198,7 +2264,7 @@ export function Activity({
             <legend className="live-sr">Your response</legend>
             {activity.choices?.length && (
               <div className="live-choice-list">
-                {orderedChoices(activity.choices, key).map((c) => (
+                {(compact ? activity.choices : orderedChoices(activity.choices, key)).map((c) => (
                   <label key={c.id}>
                     <input
                       type="radio"
@@ -2234,8 +2300,8 @@ export function Activity({
                   ? "Submit a new attempt"
                   : "Submit response"}
           </button>
-          <button onClick={onContinue}>Continue with presenter</button>
-          <p>{activity.kind === "choice" && !fields.length ? "Continuing does not submit your choice. You can return to it later." : "Continuing does not submit your writing. Your draft stays here for you to finish later."}</p>
+          {!compact && <><button onClick={onContinue}>Continue with presenter</button>
+          <p>{activity.kind === "choice" && !fields.length ? "Continuing does not submit your choice. You can return to it later." : "Continuing does not submit your writing. Your draft stays here for you to finish later."}</p></>}
           {activity.kind === "roleplay" && (
             <p>
               This reflection does not replace your partner’s observation.
@@ -2253,7 +2319,7 @@ export function Activity({
           {error}
         </p>
       )}
-      {activity.model && (
+      {(activity.model || activity.explanation) && (
         <section className="live-card">
           <h3>Revealed example</h3>
           <blockquote>{activity.model}</blockquote>
