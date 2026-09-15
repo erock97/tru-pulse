@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-alms-live-v8' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-alms-live-v9' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -169,4 +169,4 @@ it('teaches the cap before a quiz with an explicit valid maximum',()=>{
   expect(quiz.body).not.toContain('fewer than 20');
 });
 
-it('gives every Day 2 discussion question choices and an explanation field',()=>{const questions=getWorkshopDefinition(2)!.activities.filter(a=>a.kind!=='roleplay');expect(questions).toHaveLength(7);for(const question of questions){expect(question.kind).toBe('choice');expect(question.choices!.length).toBeGreaterThanOrEqual(2);expect(question.fields).toHaveLength(1);expect(question.prompt).toContain('explain why');}});
+it('gives every Day 2 discussion question choices and an explanation field',()=>{const questions=getWorkshopDefinition(2)!.activities.filter(a=>a.kind!=='roleplay');expect(questions).toHaveLength(7);for(const question of questions){expect(question.kind).toBe('choice');expect(question.choices!.length).toBeGreaterThanOrEqual(2);expect(question.fields).toHaveLength(1);expect(question.prompt).toContain('explain');}});

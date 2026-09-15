@@ -91,7 +91,7 @@ function act(id,chapter,title,prompt,time,fields,model,explanation,teach,handoff
  if(kind !== 'roleplay') {
   choices=choices || discussionChoices[id]; kind='choice';
   fields=[[fields[0]?.[0] || 'reason','Explain your choice. What would it communicate to the buyer or help you learn?']];
-  prompt += ' Choose an answer, then explain why.';
+  if (!prompt.includes('then explain')) prompt += ' Choose an answer, then explain why.';
   teach='Ask for a choice and a reason. People without HQ access can answer aloud; select an option on your presenter slide to discuss it. Learners with access submit their own choice and explanation. '+teach;
  }
  const s=add(id,chapter,title,prompt,body,time,teach,handoff);s.theme+=' alms-exercise';
@@ -273,7 +273,7 @@ for(const s of slides){if(!s.activity)continue;const a=s.activity;
  a.fields.map(f=>`<label class="field">${esc(f.label)}<textarea data-save="${f.id}" placeholder="Write your practice response."></textarea></label>`).join('')+
  `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${esc(a.model)}</p><p>${esc(a.explanation)}</p></div></details>`;
 }
-const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-alms-live-v8',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-alms-live-v9',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
  {name:'Tour request · a home office',quote:'I asked to see the Cedar Lane home. Saturday morning works for me.',goal:'Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked.'},
  {name:'Property question · maintenance',quote:'I wanted to know about the roof before deciding whether to tour.',goal:'Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated.'},
  {name:'Relocation · a later visit',quote:'We are relocating in two months. We cannot see homes this week.',goal:'Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing.'}

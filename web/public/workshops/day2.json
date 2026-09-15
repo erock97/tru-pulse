@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-15-alms-live-v8",
+  "version": "2026-09-15-alms-live-v9",
   "duration": 90,
   "slides": [
     {
@@ -185,7 +185,7 @@
       "id": "day2-opening-decision",
       "chapter": "Practice the opening",
       "title": "Which opening serves the buyer’s request?",
-      "lead": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer. Choose an answer, then explain why.",
+      "lead": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.",
       "body": "<div class=\"choices\" data-quiz=\"day2-opening-decision\"><button data-option-id=\"interview\" data-correct=\"false\" data-feedback=\"TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“Before we schedule, tell me about your buying timeline and what you’re looking for.”</button><button data-option-id=\"introduction-invitation\" data-correct=\"true\" data-feedback=\"TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would it communicate to the buyer or help you learn?<textarea data-save=\"opening-invitation\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.</p><p>TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.</p></div></details>",
       "time": 3,
       "theme": "tru alms lesson alms-exercise",
@@ -194,7 +194,7 @@
       "activity": {
         "id": "day2-opening-decision",
         "kind": "choice",
-        "prompt": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer. Choose an answer, then explain why.",
+        "prompt": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.",
         "fields": [
           {
             "id": "opening-invitation",
