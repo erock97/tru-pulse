@@ -1,319 +1,199 @@
 import fs from 'node:fs';
-
-// Source: Eric's TRU Sales Proccess memory bank (2026-09-12), R008–R016,
-// R019–R021 and INT-009–INT-016, INT-021–INT-023, INT-027–INT-039.
-// September 14 direction: onboarding first, ALMS, instruction before practice.
-const esc = s => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
-const rows = entries => `<div class="alms-rows">${entries.map(([a,b])=>`<div><h3>${a}</h3><p>${b}</p></div>`).join('')}</div>`;
-const quote = (text,label='Example wording · fictional buyer') => `<figure class="alms-quote"><blockquote>${text}</blockquote><figcaption>${label}</figcaption></figure>`;
-const note = text => `<p class="alms-note">${text}</p>`;
-const steps = items => `<ol class="alms-steps">${items.map(([a,b])=>`<li><h3>${a}</h3><p>${b}</p></li>`).join('')}</ol>`;
+// Eric's September 12 doctrine and interviews. Zillow visuals are credited originals.
+const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+const p=t=>`<p class="lesson-explanation">${t}</p>`;
+const q=t=>`<blockquote class="lesson-example">${t}</blockquote>`;
+const d=turns=>`<div class="alms-dialogue alms-call-turns">${turns.map(([who,text])=>`<p><b>${who}</b><span>${text}</span></p>`).join('')}</div>`;
+const list=items=>`<ol class="lesson-agenda">${items.map(t=>`<li>${t}</li>`).join('')}</ol>`;
+const visual=(images,text,url,label)=>`<div class="lesson-visual"><div class="lesson-phones">${images.map(([file,alt])=>`<img src="/workshops/zillow/${file}" alt="${esc(alt)}">`).join('')}</div><div>${text}</div></div><p class="lesson-source">Source: <a href="${url}" target="_blank" rel="noreferrer">${label}</a>. Zillow’s published demonstration; screens vary by app version.</p>`;
 const slides=[];
-function add(id,chapter,title,lead,body,source,time=1,theme='') {
-  const s={id:`day2-${id}`,chapter,title,lead,body,time,theme:`tru alms ${theme}`.trim(),notes:`Teach the point and its reason, then read the example naturally. Examples use fictional buyers; adapt names, facts, brokerage and availability. Source: ${source}.`,cue:'What would this change in your next buyer conversation?'};
-  slides.push(s); return s;
+function add(id,chapter,title,lead,body,time,teach,handoff,refs='INT-016'){
+ const s={id:`day2-${id}`,chapter,title,lead,body,time,theme:'tru alms lesson',notes:`${teach}\nHandoff: ${handoff}\nSources: TRU September 12 teaching, ${refs}. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.`,cue:handoff};slides.push(s);return s;
 }
-function activity(id,chapter,title,prompt,kind,fields,model,explanation,choices) {
-  const s=add(id,chapter,title,prompt,'','TRU Sales Proccess; application of the preceding instruction',kind==='roleplay'?8:2,'alms-exercise');
-  const a={id:s.id,kind,prompt,fields:fields.map(([id,label])=>({id,label})),model,explanation};
-  if(choices){a.choices=choices.map(([id,text])=>({id,text}));a.correctChoiceId=choices[0][0];}
-  s.activity=a;
-  s.notes='Let agents answer before revealing the explanation. Discuss their reasoning without treating a short answer as proof of live-call skill. In self-paced study, use the reveal to compare your answer and revisit the preceding lesson. '+s.notes;
-  s.cue='What led you to that answer?';
-  s.body=(choices?`<div class="choices" data-quiz="${id}">${a.choices.map(c=>`<button data-option-id="${c.id}" data-correct="${c.id===a.correctChoiceId}" data-feedback="${esc(explanation)}">${c.text}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`:'')+a.fields.map(f=>`<label class="field">${f.label}<textarea data-save="${f.id}" placeholder="Use fictional practice details."></textarea></label>`).join('')+`<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${model}</p><p>${explanation}</p></div></details>`;
-  return s;
+function act(id,chapter,title,prompt,time,fields,model,explanation,teach,handoff,choices=null,kind='written',body=''){
+ const s=add(id,chapter,title,prompt,body,time,teach,handoff);s.theme+=' alms-exercise';
+ s.activity={id:s.id,kind,prompt,fields:fields.map(([id,label])=>({id,label})),model,explanation};
+ if(choices){s.activity.choices=choices.map(([id,text])=>({id,text}));s.activity.correctChoiceId=choices.find(c=>c[2])?.[0];}return s;
 }
-
-add('welcome','Welcome','The first conversation','Day 2 · Handling a Zillow Preferred lead with confidence',
-  `<div class="alms-cover-line">From the first hello<br>to a useful next step.</div><p class="alms-cover-detail">Learn the lead routes. Choose the right response. Guide the call with ALMS.</p>`,'Eric’s September 14 Day 2 objective',1,'alms-cover');
-add('agenda','Welcome','What we’ll cover','Learn a piece, see an example, then try it.',steps([
- ['Recognize the lead','What the buyer requested, how it arrived, and what needs confirming.'],
- ['Start the conversation','Live connections, outbound calls, texts, and requested callbacks.'],
- ['Use ALMS','Appointment, Location, Motivation, and Summarize—with questions that follow the buyer’s answers.'],
- ['Put it together','Handle common turns, complete the call, and follow through.']]),'September 14 objective',1);
-add('purpose','Welcome','Help them take the next step','A request to see a home is interest in seeing it—not a promise to buy it.',rows([
- ['Make meeting easy','Introduce yourself, help with the request, and offer a useful appointment early.'],
- ['Understand the person','Learn what drew them to the home and why those details matter.'],
- ['Earn the next conversation','Give helpful answers and a clear plan. Success can include a buyer choosing to wait.']]),'R001–R002, R013, R024');
-
-add('lead-routes','Know the lead','Three lead routes','Read the lead’s type and actual request before choosing your response.',`<table class="alms-table"><thead><tr><th>Lead type</th><th>Buyer request</th><th>How it reaches you</th></tr></thead><tbody><tr><th>Connection / contact agent</th><td>Contact about a home for sale</td><td>Live phone connection or FUB alert with contact preference</td></tr><tr><th>Real-time touring</th><td>A tour, using availability supplied through ShowingTime</td><td>FUB alert; not a live call in TRU’s documented flow</td></tr><tr><th>Standard property tour</th><td>A tour at a requested time</td><td>Live connection or FUB alert; requested time may still need availability checks</td></tr></tbody></table>`,'INT-012; documented TRU operating flow',2);
-add('read-request','Know the lead','Read what they actually sent','A few details tell you how to begin.',rows([
- ['Request + property','Did they ask for information, agent contact, or a tour? Use the actual home and request in your opening.'],
- ['Time + channel','Check the requested tour time, callback time, or “text me first” preference. Those are different instructions.'],
- ['Buyer context','Use the timeframe and any supplied agreement answer. A question on an intake form does not tell you how this buyer answered.']])+note('A requested time, confirmed property access, and a completed showing are three different things.'),'INT-012–INT-013');
-add('touring','Know the lead','A tour request still needs your help','Real-time touring supplies a stronger starting point for scheduling.',rows([
- ['Real-time touring','The displayed slots draw on ShowingTime / MLS availability supplied by the seller or listing agent. Read the requested slot and verify the current arrangements.'],
- ['Standard tour request','Where that availability is not integrated, a displayed time can be a buyer request rather than available access. Check before promising it.'],
- ['Your response','Acknowledge the requested time. Tell the buyer what is confirmed and what you are checking. Do not make them start over.']]),'INT-012',2);
-activity('lead-route-check','Know the lead','Read the request','A standard tour lead asks for 5 p.m. The property’s availability is not confirmed. What do you do?', 'choice',[],
- 'Acknowledge 5 p.m., check access, and tell the buyer when you will confirm. Their request gives you a starting point; it does not prove the seller approved it.',
- 'Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.',
- [['check','Acknowledge 5 p.m. and verify property access.'],['promise','Tell them the showing is confirmed because they selected 5 p.m.'],['restart','Ignore 5 p.m. and ask when they want to tour.']]);
-
-add('channel','Make contact','Choose the response that fits','Calls help you hear tone, ask follow-up questions, and build a relationship.',rows([
- ['Already connected live','Begin the conversation. You already have the buyer on the phone; no separate outbound call is needed.'],
- ['New alert, no special preference','Call within five minutes of receiving it in TRU’s normal 8 a.m.–8 p.m. operating window. Automation does not replace your call.'],
- ['A stated preference','Honor text-first and requested callback instructions. An explicit “do not call” request is a boundary to respect.']]),'R008–R010; INT-009–INT-013, INT-054',2);
-add('no-answer','Make contact','If the first call is unanswered','Make it easy for the buyer to recognize you and respond.',steps([
- ['Call promptly','Place the call within five minutes of receipt in the normal flow. Leave an opening voicemail when appropriate.'],
- ['Follow with a personal text','Connect to the real inquiry and invite a phone conversation with genuine availability.'],
- ['Keep ownership','Continue useful outreach while unanswered. The automated introduction is separate from your work.']])+quote('Hi Jordan, this is Sam with Northside Realty. I just tried calling about your request to see 1234 Lane. I can talk at 4 or 6 today—does either work for you?'),'R009, R019',2);
-add('preferences','Make contact','“Text now” and “call at five”','Acknowledge the buyer now while respecting the plan they requested.',rows([
- ['“Text is better right now.”','“Of course. I can help here. A quick call would also let us talk through the home and your plans—would this evening work?” Text now; do not record a permanent no-call preference.'],
- ['“Call me at five.”','“Hi Maya, I’m Sam with Northside Realty, the agent who’ll call at five about your request. Let me know if you have questions before then.” Keep five unless the buyer agrees to change it.'],
- ['“Please do not call me.”','Honor that request. Give useful help through the agreed channel.']]),'R008, R010; INT-013, INT-043',2);
-activity('channel-check','Make contact','Choose your next message','Maya’s alert arrives at 2 p.m. and asks for a 5 p.m. call. Write your acknowledgment.', 'written',[['callback-text','What would you text Maya now?']],
- 'Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your inquiry. If you have a question before then, let me know. I’m also free earlier if that would help.',
- 'Introduce yourself promptly, keep the requested call time, and offer earlier availability only if it is real. Do not call immediately just to satisfy the normal five-minute default.');
-
-add('alms','Guide the call','ALMS is your call framework','Start with a clear introduction. Then help with the appointment before discovery.',`<div class="alms-sequence">${[['A','Appointment','Make it easy to meet.'],['L','Location','Understand where and what fits.'],['M','Motivation','Learn why it matters.'],['S','Summarize','Confirm what happens next.']].map(([a,b,c])=>`<div><strong>${a}</strong><h3>${b}</h3><p>${c}</p></div>`).join('')}</div>`+note('Location and motivation can flow in either order. Listen to the person; do not recite a checklist.'),'R012–R013; INT-015–INT-016',2);
-add('introduction','Guide the call','Take the first turn','Orient the buyer: your name, brokerage, Zillow connection, and reason for the conversation.',quote('Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m reaching out about your request to see 1234 Lane.')+rows([
- ['Live connection','“Zillow connected us about your request…” fits a buyer already on the line. Begin warmly instead of waiting in silence.'],
- ['Outbound call','“I’m calling about your request…” connects an unfamiliar number to something the buyer recognizes.']])+note('Use your real brokerage and role. Do not borrow claims about expertise or relationships that are not yours.'),'R013; INT-016');
-add('appointment','Guide the call','A · Appointment','Help with the reason they reached out before asking them to complete your process.',quote('I saw you requested Saturday morning. Let me check that time with the property. If we need another option, would Saturday afternoon work?')+rows([
- ['When no time is requested','Offer two genuine options: “Would this afternoon or tomorrow morning work better?” Check property access before confirming.'],
- ['Why it comes early','The buyer asked for help. An early invitation makes that help tangible; a long qualification interview can make the meeting feel conditional.']]),'R001, R013; INT-016',2);
-activity('opening-decision','Guide the call','Now try the opening','Jordan asked to see 1234 Lane and has not requested a time. How would you begin?', 'choice',[['opening-invitation','Write your introduction and early appointment invitation.']],
- 'Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane. Would Saturday morning or afternoon work better? I’ll verify access for the time we choose.',
- 'Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.',
- [['introduction-invitation','Introduce yourself and offer workable showing times.'],['budget','Start by asking for preapproval and budget.'],['process','Explain the entire buying process first.']]);
-add('permission','Ask and listen','Ask for a few minutes','Explain why the questions will help the buyer.',quote('Do you have a few minutes so I can learn what you’re looking for and make our time together useful?')+rows([
- ['If they have time','Ask one question, listen, and use the answer to choose the next question.'],
- ['If they are rushed','“Absolutely—let’s keep this quick.” Handle the appointment and essentials. Do not force the buyer through every question.']]),'R013; INT-016, INT-023');
-add('location','Ask and listen','L · Location','Learn where the buyer wants to be—and what makes it work for them.',rows([
- ['Start with their search','“What attracted you to this area?” or “Are there other areas you’re considering?”'],
- ['Understand the connection','“What would make this location convenient for you?” Let the buyer explain the priorities.'],
- ['Use what you already know','If they said they are moving from nearby, ask what is changing where they live now rather than repeating the intake form.']])+note('Location includes more than a ZIP code. Let the buyer define the places, routines, and tradeoffs that matter.'),'R013; INT-016, INT-021');
-add('motivation','Ask and listen','M · Motivation','Move from the feature to the reason behind it.',`<div class="alms-dialogue"><p><b>Buyer</b> “We really want a bigger yard.”</p><p><b>Agent</b> “What would you like to be able to do with that space?”</p><p><b>Buyer</b> “I want room for a vegetable garden.”</p><p><b>Agent</b> “That helps. What would the garden need from the space?”</p></div>`+note('“Big yard” is a feature. Gardening gives it meaning. Do not assume dogs, children, entertaining, or any other reason.'),'R013; INT-016, INT-021',2);
-add('follow-answer','Ask and listen','Stay with the answer','A conversation learns something. An interrogation just collects fields.',rows([
- ['Acknowledge','Respond to what they said: “That makes sense—you want space you can actually use.”'],
- ['Ask a relevant follow-up','“What is missing in your current place?” or “What would make the move worthwhile?”'],
- ['Use the answer','Choose the next question or property comparison from that information. Warmth comes from attention, not a memorized joke.']]),'R013; INT-021');
-activity('discovery-practice','Ask and listen','Ask the next question','The buyer says, “We’re already in town. We just need more space.”', 'written',[['next-question','What would you ask next, and what would that help you understand?']],
- '“What is feeling too tight in your current place?” Their answer could reveal the purpose of the space. Follow that answer rather than assuming a larger bedroom count solves it.',
- 'Choose a question connected to the buyer’s words. There is no required question count, personal anecdote, or fixed order for location and motivation.');
-add('comparison-plan','Build the plan','Make the outing useful','Propose two or three homes so the buyer can compare and you can learn their preferences.',quote('Since we’ll be out together, would it help to see a couple of other options? Now that I know the garden space matters, I can look for useful comparisons.')+rows([
- ['Explain the value','Comparisons help the buyer clarify what fits. They also give you options if one property becomes unavailable.'],
- ['Respect the answer','Do not make extra homes a condition for seeing the original one. Be honest when an option differs from their criteria.']]),'R012, R021; INT-015, INT-037–INT-039');
-add('summary','Build the plan','S · Summarize','Give the buyer back their priorities and the agreed next step.',quote('You’re looking in this area because it works for your commute, and usable garden space matters most. We’re aiming for Saturday morning. I’ll confirm access to 1234 Lane and send the details. You’re open to two nearby comparisons. Have I understood that correctly?')+note('Name what is agreed, what still needs checking, and who will do it. Invite the buyer to correct you.'),'R013; INT-016',2);
-add('closing','Build the plan','Before you hang up','A good close removes uncertainty.',rows([
- ['Appointment details','Restate the day, time, property or meeting location, and any access check still outstanding.'],
- ['What they will receive','Explain the applicable touring form briefly and accurately. Confirm what you will send and when you will follow up.'],
- ['What you will do','Research promised answers and comparisons. Save the buyer’s priorities and agreed next action in FUB.']])+note('If a form or existing agreement raises a question you cannot resolve, call your team lead. Use the actual form’s terms.'),'R013, R015–R016, R021');
-activity('summary-practice','Build the plan','Close this call','Jordan wants garden space, prefers Saturday morning, and is open to another home. Access is still unconfirmed.', 'written',[['summary','Write the summary and next step you would say aloud.']],
- '“The garden space is important, and Saturday morning is your preference. I’ll check access and find another useful comparison. I’ll send the confirmed details after I hear back. Is there anything I missed?”',
- 'Do not upgrade a requested time into a confirmed showing. Reflect the actual priorities and your promised action.');
-
-add('questions-only','When the call changes','“I just have questions.”','Help with the question; earn another invitation through useful service.',steps([
- ['Acknowledge and capture','“Of course—what would you like to know?” Answer accurately; say what you need to check.'],
- ['Learn the context','With permission, understand what drew them to the home and how the answer affects their search.'],
- ['Offer a useful next step','Explain how seeing the home could help. If they still decline, stop pushing and agree how you’ll bring back the answers.']])+note('Answers are not a reward for agreeing to a showing. Never guess or hide a known answer.'),'R014; INT-016',2);
-add('financing','When the call changes','Keep the first meeting easy','Do not open with a demand for preapproval, budget, or proof they are ready to buy.',rows([
- ['Why timing matters','They asked to see a home. A private financial interview from someone they do not know can turn that request into a barrier.'],
- ['If the buyer asks','Answer their question. Learn enough context to make guidance useful; involve a lender for financing specifics.'],
- ['The usual later opening','The end of the first showing offers context for a relevant financing conversation. A long buying timeline does not automatically rule out planning help.']]),'R001–R004; INT-001–INT-005, INT-016',2);
-activity('financing-check','When the call changes','Respond to their question','The buyer asks, “Should I talk to a lender before we look?” What is the best response?', 'choice',[],
- '“Happy to help. What timing do you have in mind for a move?” Use the context to explain a useful next step and offer lender help where it fits.',
- 'Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.',
- [['context','Understand their timing and concern, then offer relevant guidance.'],['refuse','Say financing can never be discussed on the first call.'],['gate','Require a preapproval letter before continuing.']]);
-add('listing-agent','When the call changes','“Are you the listing agent?”','Answer the role question clearly, then return to how you can help.',quote('I’m not the listing agent. I help buyers, and I can coordinate with the listing side about this home. What would you like to know?')+rows([
- ['If they prefer the listing agent','Offer to help with that connection and ask whether a service check-in would be useful. Respect their decision.'],
- ['Keep it accurate','Use your real role. Do not imply you represent the seller, invent a relationship, or launch into a full agency lecture.']]),'R015; INT-016–INT-018');
-add('under-contract','When the call changes','“Is this home still available?”','If the home is under contract, give the truth and a useful next step.',steps([
- ['Prepare from their priorities','Use what they told you to identify relevant alternatives.'],
- ['Explain what changed','Say the home is under contract. Offer to check whether viewing or another option is still possible; do not promise it.'],
- ['Keep the next step useful','Learn what drew them to this home and offer a relevant option to explore together. Let the buyer decide.']])+note('Do not end the conversation with a bare “It’s under contract. Want something else?” Ask what mattered and explain what you can check.'),'R011–R012 applied to the initial availability question',2);
-activity('changed-plan','When the call changes','Keep helping with the inquiry','On the first call, Jordan asks about a home that is under contract. You learn garden space matters. What do you say?', 'written',[['plan','Write your response and a useful next step.']],
- '“The home is under contract. I can check whether a viewing is still possible. Since garden space matters, I can also research some options to compare. Would that be useful?” Keep access and unresearched alternatives conditional.',
- 'Tell the truth, use known priorities, keep possibilities conditional, and offer a next step. Do not merely hand the search back with “Want something else?”');
-add('adapt','When the call changes','Adapt to the person in front of you','The framework supports judgment.',rows([
- ['“I have one minute.”','Keep it quick. Handle the appointment, explain the essential next steps, and respect the time constraint.'],
- ['“I can’t visit soon.”','Learn the purchase drivers, criteria, and timing. Agree on useful updates and a communication plan instead of forcing a near-term showing.'],
- ['“I’m not sure buying is right.”','Acknowledge the concern. Ask what is behind it, offer relevant education, and help them decide—even if the decision is to wait.']]),'R013, R020, R024; INT-023, INT-035–INT-036, INT-045–INT-050',2);
-
-add('whole-call-one','Put it together','One call, from the opening…','Fictional demonstration · use your own words and true availability.',`<div class="alms-dialogue"><p><b>Introduce</b> “Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane.”</p><p><b>Appointment</b> “Would Saturday morning or afternoon work better? I’ll verify access.”</p><p><b>Permission</b> “Have you got a few minutes so I can make our outing useful?”</p><p><b>Location</b> “What attracted you to this area?”<br><span>Jordan: “It would shorten my commute.”</span></p></div>`,'R013; adapted from INT-016',2);
-add('whole-call-two','Put it together','…to a clear next step','The next question comes from what the buyer says.',`<div class="alms-dialogue"><p><b>Motivation</b> “What else caught your eye?”<br><span>Jordan: “The yard. I’d like a vegetable garden.”</span><br>“What would you need from that space?”</p><p><b>Plan</b> “Would you like to compare a couple of other homes while we’re out?”</p><p><b>Summarize</b> “The commute and garden space matter. Saturday morning is your preference. I’ll check access, research the comparisons, and send the details. Is that right?”</p></div>`+note('Then briefly explain the applicable touring form and the follow-up you are actually committing to.'),'R012–R013, R016',2);
-const role=activity('full-call-practice','Put it together','Your turn: handle the whole call','Jordan asked for a tour. Practice the call, then replay one part after feedback.', 'roleplay',[['first-attempt','What did you learn about the buyer?'],['correction','What will you improve?'],['retry','What changed when you tried it again?']],
- 'Introduce yourself, offer the appointment early, ask permission, explore location and motivation through follow-up questions, and summarize the actual plan. Adapt if Jordan has limited time or a different request.',
- 'Use a partner as the buyer. When studying alone, say the agent’s turns aloud and compare with the two demonstration slides. A self-check is practice, not observed coach sign-off.');
-role.activity.rubric=[['introduction','Clear name, brokerage, Zillow connection and purpose'],['appointment','Useful early appointment invitation that respects the request'],['discovery','Permission, relevant location/motivation questions and a follow-up'],['summary','Accurate priorities, commitments and unresolved checks'],['adaptation','Responds to the buyer’s actual preference and circumstances']].map(([id,label])=>({id,label}));
-role.notes+=' Rotate agent, buyer and observer so everyone speaks. Give one specific correction and a targeted retry. Do not label a peer or self-check as coach sign-off. Buyer chooses a case from the practice cards; do not hand the agent all the buyer answers in advance.';
-add('follow-through','After the call','Follow through on what you promised','The next contact should have a reason the buyer recognizes.',rows([
- ['Record the useful details','Save the request, location, motivation, communication preference, and agreed plan in FUB. Distinguish requested from confirmed.'],
- ['Complete the promises','Get the property answer, check access, prepare the comparison, or send the agreed information. Set a task to remember it.'],
- ['Make the next contact relevant','“I checked the garden space you asked about…” is more useful than an empty “Just checking in.” Use the agreed channel and timing.']]),'R020–R021; INT-035–INT-039');
-add('unanswered','After the call','If the new lead stays unanswered','Continue useful personal outreach; do not confuse automation with your effort.',rows([
- ['Day one','Aim for three to four personal touches. The stated minimum is two calls and one personal text in the normal unanswered-lead flow.'],
- ['First week','Aim for ten total touches, including day one. Most attempts should be calls; use relevant texts and vary contact times.'],
- ['When they respond','Follow the conversation and agreed plan. Stop applying the unanswered-lead quota. An explicit contact restriction still governs.']])+note('If an engaged buyer later goes quiet, keep making thoughtful attempts. The stopping point is discretionary; there is no fixed new quota.'),'R019; INT-027–INT-031, INT-054',2);
-activity('recall','After the call','Check your understanding','Without looking back, explain how you would handle the next lead.', 'written',[['recall-alms','What does ALMS stand for, and why does the appointment come early?'],['recall-channel','What changes when the buyer asks for a later call or text first?'],['recall-discovery','Give one follow-up question that turns a feature into a reason.']],
- 'ALMS: Appointment, Location, Motivation, Summarize. Introduce yourself first. Offer useful help early, honor stated contact preferences, and follow the buyer’s answers instead of collecting a checklist.',
- 'If one part feels uncertain, return to that chapter and its examples. Ask your coach about the specific moment you want to practice.');
-add('reference','Your call reference','Keep this beside you','Introduction → Appointment → Location / Motivation → Summarize',rows([
- ['Before contact','Lead type · actual request · property · tour or callback time · contact preference'],
- ['During the call','Orient them · offer the meeting · ask permission · follow an answer · propose useful comparisons'],
- ['Before you finish','Restate priorities · distinguish confirmed from pending · explain the next step · record and follow through']])+`<p class="alms-note"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Open your Day 2 reference and practice notes</a>. Revisit any chapter whenever you need it.</p>`,'September 14 reference requirement; R008–R016, R019–R021');
-
-// One call supplies the thread. Explicit variations teach judgment without
-// silently changing the buyer's facts. Keep each activity's durable IDs stable.
-const get = id => slides.find(s => s.id === `day2-${id}`);
-const dialogue = turns => `<div class="alms-dialogue alms-call-turns">${turns.map(([who,words])=>`<p><b>${who}</b> ${words}</p>`).join('')}</div>`;
-function revise(id,title,lead,body,teach,handoff) {
- const s=get(id);s.title=title;s.lead=lead;if(body!==null)s.body=body;
- s.notes=`${teach} Handoff: ${handoff} Sources: ${s.notes.match(/Source: ([^.]+)\./)?.[1] || 'TRU-R013; INT-016'}. All buyers and property details in examples are fictional.`;
- s.cue=handoff;
- if(s.activity)s.activity.prompt=lead;
- return s;
+add('welcome','Welcome','Handling your first Zillow lead','Day 2 · A 90-minute live workshop',
+ '<div class="alms-cover-line">Know what you received.<br>Know how to begin.</div><p class="alms-cover-detail">Learn how to respond to the lead, lead the first conversation, and agree on a useful next step with the buyer.</p>',1,
+ 'Introduce yourself. Day 1 covered the record; today teaches the conversation and the actions that belong in that record. Ask participants to open their learner session for submissions.',
+ 'Before we practice what to say, we need to recognize what Zillow is sending us.').theme+=' alms-cover';
+add('agenda','Welcome','What we will learn and practice','We will work through the job in the order you do it.',
+ list(['<strong>Receive the lead.</strong> Recognize Zillow’s screens and decide how to make contact.','<strong>Start the call.</strong> Introduce yourself and help arrange the appointment.','<strong>Understand the buyer.</strong> Ask useful questions and practice listening with a partner.','<strong>Agree on the next step.</strong> Handle questions, summarize the plan, and practice the full call.']),1,
+ 'Explain demonstrations, individual answers and discussion, then pairs and trios. On question slides learners answer and press Submit; you receive their answers. They do not select a separate activity.',
+ 'First, here is what an incoming live connection actually looks like.');
+add('live-connection','Receive the lead','A live connection puts a buyer on the phone','Zillow calls you first. You review the inquiry, then connect to the waiting buyer.',
+ visual([['live-screen-0.png','Zillow’s incoming Premier Agent call with Decline and Accept buttons'],['live-screen-1.png','Zillow’s pre-connection screen with the buyer inquiry and Connect button']],
+ p('<strong>Answer the incoming call.</strong> Zillow provides information about the buyer and the home before you speak to the buyer.')+p('<strong>Read the inquiry, then connect.</strong> In this example, the buyer asks about a property’s HOA fee. Begin by introducing yourself and acknowledging that question.'),
+ 'https://www.zillowstatic.com/bedrock/app/uploads/sites/33/2023/05/Zillow-Premier-Agent-Conversion-Playbook_Oct2023.pdf','Zillow Conversion Playbook, page 7'),3,
+ 'Point to Accept on the first screen and Connect on the second. These are Zillow’s own simulated training screens. Read the inquiry. The names and address belong to Zillow’s illustration, not our later practice case. The current In-App Connections FAQ confirms answer/review/connect. Do not read every property field.',
+ 'A Real-Time Touring notification can also ring your phone, but the next step is different: you review a tour request rather than join a buyer on a live call.',
+ 'INT-012; Zillow Conversion Playbook Oct 2023 p7; Zillow In-App Connections FAQ Oct 2025');
+add('real-time-touring','Receive the lead','Real-Time Touring asks you to accept a tour','The phone alert identifies Real-Time Touring. The app then shows the buyer’s requested times.',
+ visual([['rtt-ringing.png','Real-Time Touring incoming call in Zillow’s official demonstration'],['rtt-request.png','Tour request showing buyer-selected times and commitment choices']],
+ p('<strong>Review the request in the app.</strong> Zillow gives you five minutes to accept a time you can attend or pass on the request.')+p('<strong>This is not a live buyer transfer.</strong> After accepting, review the booking details and contact the buyer about the appointment.'),
+ 'https://www.zillow.com/premier-agent/real-time-touring/','Zillow Real-Time Touring demonstration'),4,
+ 'Read the Real-Time Touring label and buyer-selected times. Distinguish Zillow’s five-minute acceptance window from TRU’s first-contact standard. Dates and property are sample data. Eric’s “not a live call” means no live buyer conversation; do not teach that the phone never rings. Booking uses ShowingTime availability. Follow actual status and notifications.',
+ 'You may also receive a standard tour request. That buyer still wants to see a home, but the request does not use this same real-time booking process.',
+ 'INT-012; Zillow Real-Time Touring page and linked Oct 2025 demonstration');
+add('standard-tour','Receive the lead','A standard tour request tells you what the buyer wants','The buyer has asked to see a particular home. They may have supplied a preferred day and time.',
+ p('Read the request before you contact them. Use the property and preferred time in your opening so the buyer does not have to start over.')+
+ q('“I see you requested a tour Saturday afternoon. Would that still work for you? I’ll check the showing arrangements and confirm the details.”')+
+ p('A standard tour request may arrive as a live connection or an alert in Follow Up Boss. If the buyer is not already on the phone, your next job is to contact them.'),2,
+ 'Explain Follow Up Boss in full before abbreviating it to FUB. Show how the request gives you an opening. Distinguish preferred timing from booking status without making that obvious distinction into a quiz.',
+ 'We have now seen the two phone experiences and a standard request. Let’s make sure the difference is clear before we move into your response.','INT-012');
+act('lead-discussion','Discuss the screens','Explain what happens after you answer','Compare the two Zillow examples: a live connection and a Real-Time Touring alert. What will you do immediately after answering each one?',3,
+ [['lead-response','Describe the next action for each type. Include anything on the screens you want explained.']],
+ 'Live connection: read the inquiry and connect to the waiting buyer. Real-Time Touring: review the tour times and accept a workable tour or pass; then contact the buyer. There is no live buyer transfer in the touring flow.',
+ 'The distinction changes what you prepare to do when the phone rings. A tour acceptance and a conversation with a waiting buyer are different tasks.',
+ 'Give a minute to write. Confirm submissions arrive, then discuss two answers and any screen questions. Return to a screenshot if the next action is unclear. This is an explanation check, not a trick question.',
+ 'If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how TRU expects you to make contact.',null,'discussion');
+add('channel','Make contact','Call promptly when the buyer has asked to hear from you','For a new lead received during TRU’s normal 8 a.m.–8 p.m. operating window, call within five minutes unless the buyer gave a different contact instruction.',
+ p('The buyer just asked for help with a home. A call lets you hear their tone, answer questions as they arise, and begin a conversation about what they need.')+
+ p('Follow Up Boss may already have sent an automated introduction. That does not replace your own call. If the buyer requested a later callback or asked for text, respect that instruction.'),2,
+ 'Explain Eric’s reason: the buyer just expressed interest, rather than being a random person being interrupted. Hearing and responding in real time matters. Do not repeat unverified response-rate statistics. The clock starts at agent receipt; do not invent after-hours rules.',
+ 'Calling promptly does not mean the buyer will always answer. Here is what to do when your first call goes unanswered.','INT-009, INT-011–013');
+add('no-answer','Make contact','If the call goes unanswered, send a personal text','Example: a buyer requested a tour of 418 Cedar Lane. You just called, but they did not answer. The address is fictional.',
+ q('“Hi, this is [your name] with [your brokerage]. I just tried calling about your Zillow request to see 418 Cedar Lane. I’d be happy to help arrange a tour. I’m available for a call at 4 or 6 today. Would either time work for you?”')+
+ p('Tell them who called, connect the call to their request, and offer a clear opportunity to talk. Use times you can actually make. You are offering a phone call here, not confirming a tour.'),2,
+ 'Read the example with your own name and brokerage. Distinguish phone-call availability from tour availability. This personal text follows the missed call. Do not mix weekly quotas into this example; those come after the first-call lesson.',
+ 'That example had no special contact instruction. Now consider a buyer who has already told you when they can talk.','INT-011');
+act('channel-check','Make contact','Respond to a buyer who is at work','A new Zillow inquiry arrives at 2 p.m. The buyer writes: “I’m at work. Please call at 5 about the Cedar Lane home.” Write the text you would send now, then state when you will call.',3,
+ [['callback-text','Write your text and the planned call time.']],
+ '“Hi, I’m [your name] with [your brokerage]. I’ll be the agent calling at 5 about the Cedar Lane home. If you have questions before then, you’re welcome to text me.” Call at 5 as requested.',
+ 'Acknowledge now so the buyer knows who will call. The requested time governs the call; the default does not justify interrupting them at work.',
+ 'Before writing, teach Eric’s exception: acknowledge by text now and call at the requested time. Demonstrate “I’ll be the agent calling you at five.” Then let learners write their version. Review whether it introduces the agent and preserves the callback. Earlier availability is optional.',
+ 'Once the buyer answers, the task changes from making contact to leading a useful conversation. ALMS gives you an order for that conversation.');
+add('alms','Begin the conversation','Introduce yourself, then use ALMS','ALMS means Appointment, Location, Motivation, and Summarize. It gives the call a purpose without turning it into an interview.',
+ list(['<strong>Appointment:</strong> Help arrange the visit near the beginning of the call.','<strong>Location:</strong> Learn where the buyer is looking and why that area works.','<strong>Motivation:</strong> Learn what they want to change about their current home.','<strong>Summarize:</strong> Repeat what matters and agree on what happens next.']),2,
+ 'The buyer asked for help, so make that help tangible early. Then ask permission to learn more. Location and motivation can occur in either order. Do not delay the invitation until after qualification.',
+ 'Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.','INT-016, INT-021');
+add('introduction','Begin the conversation','Demonstration: introduce yourself and offer the visit','Practice buyer George requested a tour of 418 Cedar Lane through Zillow. No time was selected. You can meet Saturday morning or afternoon; property access still needs checking.',
+ d([['Agent','“Hi George, I’m [your name] with [your brokerage], a featured partner with Zillow. I’m calling about your request to see 418 Cedar Lane.”'],['Agent','“I can meet Saturday morning or afternoon. Which would work better for you? I’ll check access for that time.”'],['George','“Saturday morning would be good.”']]),3,
+ 'Introduce George as a fictional buyer adapted from Eric’s demonstration. Read both sides. Identify name, brokerage, Zillow connection and purpose. On a live transfer, say “Zillow connected us about…” Use true affiliation and availability.',
+ 'Both the words and their order matter. Compare two openings for that same tour request and explain which one you would use.','INT-016');
+act('opening-decision','Practice the opening','Which opening serves the buyer’s request?','A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.',3,
+ [['opening-invitation','Explain your choice in terms of the buyer’s experience.']],
+ 'The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.',
+ 'TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.',
+ 'Allow a minute to respond. Ask what the interview-first agent hoped to learn, then show where discovery belongs after the invitation. Do not shame a choice. Demonstrate a revised opening.',
+ 'Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.',
+ [['interview','“Before we schedule, tell me about your buying timeline and what you’re looking for.”'],['introduction-invitation','“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”',true]],'choice');
+add('permission','Understand the buyer','Ask permission before asking about their search','In our practice call, George has chosen Saturday morning for the Cedar Lane tour. You have not yet learned what he needs from a home.',
+ d([['Agent','“Do you have a few minutes? I’d like to learn a little about your search so I can make our time together useful.”'],['George','“Sure.”'],['Agent','“Are you moving from nearby, or coming from somewhere else?”'],['George','“We’re renting an apartment here in town.”']]),2,
+ 'Read the exchange. Permission respects time and explains why you ask. If the buyer has only a minute, handle essentials and agree when to continue. Do not force every question.',
+ 'George has told us he rents locally. That is a starting point for a conversation, not a completed discovery section.','INT-016, INT-021, INT-023');
+add('location','Understand the buyer','Learn why an area works for them','Our practice buyer George rents locally and wants to see the Cedar Lane home. Ask how that location fits his life.',
+ d([['Agent','“What attracted you to this part of town?”'],['George','“It would make my commute much shorter.”'],['Agent','“Are you focused on this area, or are there other places that would work for that commute?”'],['George','“This area and the neighborhood just east of it would both work.”']])+
+ p('Now you know why the location matters and where a useful comparison home might be. The buyer defined the area; you did not assume it.'),3,
+ 'The follow-up comes from the commute answer. Location means more than a ZIP code. Keep criteria buyer-defined. Ask the room what new information the follow-up provided.',
+ 'We know where George wants to be. Now let’s find out what he wants the home itself to do for him.','INT-016, INT-021');
+add('motivation','Understand the buyer','Ask what the feature will let them do','Our practice buyer George says the Cedar Lane home caught his eye because it has a larger yard.',
+ d([['Agent','“What would you like to be able to do with that extra outdoor space?”'],['George','“I want to grow vegetables. We can’t do that at the apartment.”'],['Agent','“What would you need from the yard for that?”'],['George','“Sun and room for a few raised beds.”']])+
+ p('“A bigger yard” is a feature. Space for a vegetable garden explains why it matters. That reason will help you choose better comparisons.'),3,
+ 'Read the answers before each follow-up. Do not turn gardening into a required script or invent a matching personal anecdote. Ask what a large but shaded yard might fail to provide.',
+ 'Now you will choose a follow-up for a different buyer. The situation is on the next slide; there is no hidden backstory.','INT-016, INT-021');
+act('next-question','Practice discovery','Write the next sentence you would say','During a first call, a buyer tells you: “We’re already in town. We need more space, but we don’t want to leave our neighborhood.” Write one follow-up question and explain what you hope to learn.',3,
+ [['follow-up','Your next question and what its answer would help you understand.']],
+ '“What is feeling too tight in your current home?” This could reveal whether they need bedrooms, work space, storage or something else. Then explore why staying in the neighborhood matters.',
+ 'A useful question follows the buyer’s words and reveals a reason or tradeoff that shapes the search.',
+ 'Give a minute to write, then read two contrasting questions. Ask what a possible answer would tell the agent. Different wording is not an error; look for curiosity tied to the situation.',
+ 'Writing a question is one part of the skill. In pairs, practice listening to the answer and deciding what to ask next.');
+const pair=act('discovery-practice','Partner practice','Practice a short discovery conversation','One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Ask permission, then find out what “more space” means.',8,
+ [['next-question','What did you learn that “more space” did not tell you?'],['discovery-retry','What feedback did you receive, and what changed on your retry?']],
+ 'Ask permission, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.',
+ 'Record what you actually learned and changed. Reflection does not prove a coach observed the call.',
+ '1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 3 minutes: 2-minute conversation, 30-second feedback, 30-second retry. Switch buyer and agent. Final minute: debrief and reflection. Video rooms are managed in the meeting platform.',
+ 'Discovery works best when we respond to the person. The same principle applies when a buyer says they only wanted an answer to a property question.',null,'roleplay',
+ p('<strong>First turn: 3 minutes.</strong> Talk for two minutes, give one specific suggestion, then retry the sentence it changes.')+p('<strong>Switch buyer and agent: 3 minutes.</strong> Use a different reason for needing space. Everyone practices speaking and listening.')+p('Use one minute to form pairs and one minute to debrief. Submit your reflection when you return.'));
+pair.activity.rubric=[{id:'permission',label:'Explains why the questions help and asks permission'},{id:'follow',label:'Follows a buyer answer rather than switching to a checklist'}];
+add('questions-only','Respond to buyer questions','When the buyer says, “I only had a question”','Example: a buyer asks how old the roof is and says they are not ready to schedule a showing. You do not yet have a verified answer.',
+ q('“Of course. I’ll check the roof information and get you an answer. What is the main concern you’re trying to work out?”')+
+ p('Listen to the concern. If seeing the home would help, explain why and offer a visit. If they still prefer an answer first, agree how and when you will return with the information.')+
+ q('“I can bring the information when we look, or call you after I verify it. Which would be more useful?”'),3,
+ 'Teach the whole reasoning: acknowledge, learn context, make a useful invitation. Do not make an answer conditional on a visit. If the buyer declines again, stop pushing. Never guess the roof age or claim completed research.',
+ 'A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now.','INT-016');
+add('financing','Respond to buyer questions','Do not make preapproval the price of a first visit','A buyer who asks to see a home should not have to pass a financial interview before you help arrange it.',
+ p('TRU does not teach opening the first call with “Are you preapproved?” The buyer does not know you yet, and a private financial question can make the visit feel conditional.')+
+ p('If the buyer raises financing, respond to their concern and offer relevant lender help. The usual later opportunity is the end of the first showing, when the discussion has context.'),2,
+ 'Explain timing and framing, not a blanket ban on financing. A lender handles specifics. Do not make credit, approval or affordability promises. A long timeline does not automatically mean planning is too early.',
+ 'Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition.','R001–R004; INT-001–004, INT-016');
+act('financing-check','Discuss the response','Help the buyer who raises financing','The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best fits TRU’s approach?',3,
+ [],'Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.',
+ 'Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.',
+ 'Allow a vote, then ask what problem the buyer wants solved. Discuss offering help versus adding a gate. Do not automatically ask every new buyer about financing.',
+ 'Buyers may also be unsure who Zillow connected them with. A direct answer about your role is usually enough.',
+ [['delay','“Let’s see the house first. We can discuss the money afterward.”'],['context','“A lender can help you work through that. I can help arrange an introduction as we plan the visit.”',true],['gate','“Yes. Send me the preapproval letter and then we can schedule.”']],'choice');
+add('listing-agent','Respond to buyer questions','Answer the question about your role directly','Example: Zillow connects you with a buyer who asks, “Are you the listing agent?” You are not.',
+ q('“I’m not the listing agent. I help buyers, and I can coordinate with the listing side about this home. What would you like to know?”')+
+ p('Use your actual role and relationship. If the buyer wants the listing agent, offer to help with that connection. Ask whether a later check-in would be useful, then respect their choice.'),2,
+ 'A long agency lecture can derail a simple question. Do not invent an existing working relationship or assume the listing agent will fail to respond. Actual relationships and forms govern.',
+ 'Sometimes the difficult answer is about the home itself. Being helpful means telling the truth and explaining what you can still do.','INT-016–018');
+add('under-contract','Respond to buyer questions','If the home is under contract, keep helping','Example: during an initial inquiry, you verify that the requested home is under contract. The buyer says its garden space is what interested them.',
+ q('“The home is under contract. I can ask the listing agent whether a viewing is still possible. You mentioned the garden space; I can also look for homes with similar outdoor space. Would comparing those be useful?”')+
+ p('Be honest about the status. Use what the buyer told you to propose useful work. Do not promise access or claim you have found alternatives before you have researched them.'),3,
+ 'Connect to Eric’s problem-solving principle. Bare bad news leaves the buyer to solve the problem. A relevant offer gives them a next step to accept or decline. Keep scope to the initial inquiry.',
+ 'Try the same principle with a different priority. The next buyer cares about a work commute, not a garden.','INT-014–015 applied to first inquiry');
+act('changed-plan','Practice a response','Offer a useful next step after disappointing news','A buyer asks about a home you have verified is under contract. They tell you its location would shorten their commute. You have not researched other homes. Write what you would say next.',2,
+ [['plan','Write your response as you would say it to the buyer.']],
+ '“The home is under contract. I can check whether a viewing is still possible. Since the commute is important, what area would work for you? I can research some other options there if that would help.”',
+ 'Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.',
+ 'Ask for spoken language. Read one response and ask whether the buyer has an understandable next step. If it ends at bad news, ask for one useful offer grounded in the commute.',
+ 'Whether the call was straightforward or included a question, finish by saying what you understood and what happens next.');
+add('summary','Agree on the next step','Summarize the buyer’s priorities and the plan','Return to practice buyer George: he wants a shorter commute and garden space. He prefers Saturday morning for Cedar Lane and has agreed to compare another home. Access is still pending.',
+ q('“You’d like a shorter commute and a sunny space for a vegetable garden. We’re aiming for Saturday morning. I’ll check access to Cedar Lane and research another home to compare. I’ll text you the confirmed details once I have them. Have I understood everything correctly?”')+
+ p('Before ending, confirm the communication plan and explain the applicable touring form. Describe its actual terms and what the buyer will receive.'),3,
+ 'Trace each fact to the case. Comparison consent is supplied here; it is not assumed from interest. The full call shows how to ask. Avoid generic promises about every state or form.',
+ 'Practice a close with a different plan: the buyer cannot tour this week and has agreed to a later phone conversation.','INT-016, INT-023, INT-035');
+act('summary-practice','Practice the close','Close a call when the buyer cannot tour yet','A buyer is relocating in two months. They want room for a home office and cannot visit this week. You agreed to email three possible homes and speak Tuesday at 6 p.m. Write the closing summary.',3,
+ [['summary','Say what matters to the buyer, what you will send, and the agreed next conversation.']],
+ '“You’re planning to relocate in two months and need space for a home office. I’ll email three homes for you to look over, and we’ll talk Tuesday at six about what fits. Is there anything else you’d like me to keep in mind?”',
+ 'A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.',
+ 'Allow a minute to write. Check that answers distinguish the relocation timeline from the next call. Do not invent a showing or say properties were already sent.',
+ 'You have practiced the pieces. Now listen to one complete call, starting with the buyer’s original request.');
+add('whole-call-one','Full-call demonstration','Listen to the call from the beginning','Fictional case: George requested a tour of 418 Cedar Lane with no time selected. The agent can meet Saturday morning or afternoon and still needs to check property access.',
+ d([['Agent','“Hi George, I’m [your name] with [your brokerage], a featured partner with Zillow. I’m calling about your Cedar Lane tour request. Would Saturday morning or afternoon work better?”'],['George','“Morning would be good.”'],['Agent','“I’ll check access. Do you have a few minutes so I can learn about your search?”'],['George','“Sure. We rent in town, but we’d like a shorter commute and space for a garden.”']]),2,
+ 'Read without explaining between turns. A volunteer can voice George. The full situation is stated here so someone need not reconstruct previous slides. Continue the demonstration on the next slide.',
+ 'George has just told us about the commute and garden. Continue by learning what those mean, then agree on the plan.','INT-016, INT-021');
+add('whole-call-two','Full-call demonstration','Continue from what the buyer just told you','In the same practice call, George rents locally and wants a shorter commute and garden space. He prefers Saturday morning for the tour.',
+ d([['Agent','“Which areas would work for your commute, and what would you want to grow?”'],['George','“Near Cedar Lane works. I’d like sun and room for raised vegetable beds.”'],['Agent','“Would you like me to find another home with that kind of space so we can compare while we’re out?”'],['George','“Yes, that would help.”'],['Agent','“So, a shorter commute and sun for a garden. I’ll check access, find a comparison and text the details for Saturday morning. Is text best for you?”'],['George','“Yes.”']]),2,
+ 'Read continuously. Then model a brief explanation of the applicable touring form using actual terms. Debrief invitation, permission, priorities, comparison consent and next action. The two questions follow the two priorities just raised; agents can ask them separately.',
+ 'Now everyone will lead a complete call. You will rotate through agent, buyer and observer, with a short retry after feedback.','INT-015–016, INT-021');
+const full=act('full-call-practice','Group practice','Run a first call and retry one part','Work in trios. The buyer uses an assigned fictional case; the agent responds to what the buyer says. The observer listens for an early invitation, useful follow-up questions and an accurate closing.',12,
+ [['first-attempt','What did you learn about your buyer?'],['correction','What specific feedback did the observer give?'],['retry','What changed when you tried that part again?']],
+ 'Introduce yourself, help with the request, ask permission, learn location and motivation, and summarize the actual plan. Adapt to the buyer’s question or time constraint. Report the conversation you practiced.',
+ 'Everyone needs a speaking turn and a chance to improve a specific sentence. Peer feedback and reflection are not coach sign-off.',
+ '1 minute setup: assign trios and open meeting-platform rooms. Three rounds of 3 minutes: 2-minute call, 30-second observer feedback, 30-second targeted retry. Rotate all roles. Reserve 2 minutes for debrief and submissions. Buyer uses the assigned case; do not give the agent hidden buyer reasons before the call.',
+ 'The call is not finished work until you follow through. We’ll end by showing what to put in FUB and what to do when a lead never answers.',null,'roleplay',
+ p('<strong>Three rounds, three minutes each.</strong> Two minutes for the call, 30 seconds for feedback, then a 30-second retry.')+p('<strong>Rotate all three roles.</strong> Everyone takes a turn as agent, buyer and observer. Use one minute to set up and two minutes to debrief and submit.'));
+full.activity.useCases=true;
+full.activity.rubric=[['introduction','Identifies agent, brokerage, Zillow connection and purpose'],['appointment','Helps with the appointment early while respecting the request'],['discovery','Asks permission and follows an answer'],['summary','Restates priorities and the agreed next action'],['adaptation','Responds usefully to the buyer’s question or time constraint']].map(([id,label])=>({id,label}));
+add('follow-through','After the call','Save the details that make your next contact useful','Example: after the practice call, George wants a shorter commute and a sunny garden. Saturday morning is preferred; access and a comparison home still need checking.',
+ `<div class="lesson-record"><p><strong>FUB note:</strong> Rents locally. Wants a shorter commute near Cedar Lane and sun for raised vegetable beds. Open to another home for comparison. Prefers Saturday morning. Text is the agreed channel. Tour access is not yet confirmed.</p><p><strong>Next task:</strong> Check access, research a relevant comparison, and text George the details. Set the task for the follow-up time you agreed.</p></div>`,2,
+ 'Connect to Day 1. Separate facts learned from actions owed. Ask what would be lost if the note only said “wants to tour.” Do not mark an appointment confirmed without supporting arrangements.',
+ 'That was a connected buyer. For a lead that never answers, the work is different: continue personal outreach instead of waiting on the automation.','R020–R021; INT-035–039');
+add('unanswered','After the call','Keep working a new lead that has not answered','The first missed call and personal text are the beginning of your outreach, not the entire plan.',
+ p('<strong>Day one:</strong> Aim for three to four personal touches, with at least two calls and one personal text in the normal unanswered-lead flow.')+
+ p('<strong>First week:</strong> Aim for ten total touches, including day one. Make most attempts calls, vary the contact times, and make each text relevant to the inquiry.')+
+ p('<strong>Once the buyer responds:</strong> Follow the conversation and the plan you agree together. The unanswered-lead quota no longer applies. Honor stated contact restrictions throughout.'),2,
+ 'These are the newer September 12 standards. Automation is not personal effort. Do not invent a compressed late-day schedule or a quota for an engaged buyer. Explain why repeating “just checking in” is not useful persistence.',
+ 'Whether you connect on the first attempt or later, the same job awaits: understand the request, help the buyer and agree what comes next.','INT-027–029, INT-054; R019');
+add('reference','Wrap up','Use the request to begin. Use the answers to continue.','You should be able to recognize the lead, start the conversation and leave the buyer knowing what happens next.',
+ p('Introduce yourself clearly. Help with the appointment early. Ask permission to learn more, follow the buyer’s answers, and summarize the plan you actually agreed.')+
+ p('If a question changes the call, address it. If a fact needs checking, say so and follow through. The framework supports the conversation; the buyer’s situation determines the next sentence.')+
+ '<p class="lesson-source"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Open the Day 2 reference, Zillow sources and practice notes</a></p>',1,
+ 'Ask each learner which part they want to keep practicing. Refer to submitted work. Completion is not demonstrated competence on every client conversation.',
+ 'Keep your reference available for the next lead, and bring the specific moment you want help with to your coach.');
+for(const s of slides){if(!s.activity)continue;const a=s.activity;
+ s.body+=(a.choices?`<div class="choices" data-quiz="${s.id}">${a.choices.map(c=>`<button data-option-id="${c.id}" data-correct="${c.id===a.correctChoiceId}" data-feedback="${esc(a.explanation)}">${esc(c.text)}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`:'')+
+ a.fields.map(f=>`<label class="field">${esc(f.label)}<textarea data-save="${f.id}" placeholder="Write your practice response."></textarea></label>`).join('')+
+ `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${esc(a.model)}</p><p>${esc(a.explanation)}</p></div></details>`;
 }
-revise('welcome','The first conversation','Day 2: a Zillow Preferred lead arrives. What happens next?',
- `<div class="alms-cover-line">A buyer asks about a home.<br>How do you help?</div><p class="alms-cover-detail">We’ll work from the lead alert through the first call and the next step you agree together.</p>`,
- 'Welcome the group. Connect to Day 1: they learned where work belongs in FUB. Today they will learn what to say and do when the lead arrives. Introduce yourself and explain that the examples use fictional buyers.',
- 'Yesterday we worked inside the record. Today we’ll work through the conversation that gives that record meaning.');
-revise('agenda','The route through today’s session','We’ll follow Jordan’s request, then try a few clearly marked variations.',
- steps([['Receipt and first response','Read the request, choose the contact method, then submit a vote and a text.'],['The first conversation','Watch the opening and discovery. Practice a follow-up with a partner.'],['Questions, closing, and a full call','Handle a buyer’s question, agree the plan, then rotate through a complete call.']])+note('You answer on the current slide in your own session. Submit, then we’ll discuss. The presenter advances everyone together.'),
- 'Explain the 90-minute plan and two speaking practices. Ask everyone to open their learner session now. Explain that the first vote is also a connection check: pause there until actual responses arrive. Do not claim attendance alone proves submission works.',
- 'Let’s start where the agent starts: the request that just arrived.');
-revise('lead-routes','The request tells you how to begin','Our example: Jordan asks to see 1234 Lane on Saturday morning.',
- `<table class="alms-table"><thead><tr><th>Lead route</th><th>What you receive</th><th>What to check</th></tr></thead><tbody><tr><th>Connection / contact agent</th><td>A question about a home, live or by FUB alert</td><td>The question and contact preference</td></tr><tr><th>Real-time touring</th><td>A tour alert using ShowingTime availability</td><td>The selected time and current arrangements</td></tr><tr><th>Standard tour</th><td>A tour request, live or by FUB alert</td><td>Whether the requested time is available</td></tr></tbody></table>`+note('Jordan’s is a standard tour request. Saturday morning is the buyer’s preference. Property access still needs checking.'),
- 'Explain each route through the decision it changes. Real-time touring does not arrive as a live call in Eric’s documented flow. Read actual timeframe and representation answers when supplied; a form question is not the buyer’s answer. Demonstrate: “I saw Saturday morning. I’ll check access and confirm with you.”',
- 'Before we contact Jordan, let’s check that distinction between a requested time and confirmed access.');
-revise('lead-route-check','Your turn: requested or confirmed?','Another standard tour lead asks for 5 p.m. Access is unconfirmed. What do you do?',null,
- 'Allow 45 seconds for the vote. Verify submissions reach your presenter view. Ask one agent why they chose their answer. Reveal the explanation and emphasize that acknowledging a preference does not promise access. If answers do not arrive, resolve the join/submission problem before continuing.',
- 'We know what needs checking. Now we need to decide how to reach the buyer.');
-revise('channel','How will you contact the buyer?','Back to Jordan: an alert arrived, with no special contact instruction.',
- rows([['Already on a live call','Introduce yourself and begin.'],['FUB alert, no preference','Call within five minutes of receipt during TRU’s 8 a.m.–8 p.m. operating window.'],['A specific instruction','Use the requested channel or callback time. Acknowledge a later callback by text now.']]),
- 'Point to Jordan’s alert example and choose the default call. Explain why: a conversation lets the agent hear the buyer and respond to their answers. Distinguish the automated introduction from the agent’s own call. Do not invent an after-hours deadline.',
- 'Let’s try that call. First, what happens if Jordan doesn’t pick up?');
-revise('no-answer','Jordan does not answer','Your personal text connects the missed call to the original request.',
- quote('Hi Jordan, this is Sam with Northside Realty. I just called about your request to see 1234 Lane Saturday morning. I can talk at 4 or 6 today. Does either work?')+
- rows([['While unanswered','Day one: aim for 3–4 personal touches, including at least 2 calls and 1 text. First week: 10 total including day one, mostly calls.'],['When Jordan replies','Continue from the reply and agree a plan. The unanswered-lead quota stops.']]),
- 'Read the text aloud. Explain the recognizable property, reason for calling, and genuine times offered. Mention an opening voicemail when appropriate. Automation is separate from personal effort. These are normal-flow targets, not an invented late-day schedule, and a stated contact restriction governs.',
- 'That was the default with no preference. Now change one fact: the buyer has told us when to call.');
-revise('preferences','A requested callback changes the response','Variation: Maya is at work and asks for a call at five.',
- quote('Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your request. Let me know if you have a question before then.')+
- rows([['Text first for now','Help by text now. Offer a later call if useful.'],['An explicit no-call request','Honor it. Continue through the agreed channel.']]),
- 'Make the contrast explicit: Jordan gave no contact instruction; Maya did. Read the acknowledgment. The five-minute default does not justify ignoring her requested time. Offering an earlier call is optional and must reflect real availability. Text-first now is different from a permanent no-call instruction.',
- 'You’ve heard an acknowledgment. Write your own version for Maya.');
-revise('channel-check','Your turn: acknowledge Maya','Maya’s alert arrives at 2 p.m. and asks for a 5 p.m. call. Write your acknowledgment.',null,
- 'Give 60 seconds to write and submit. Read two responses, noticing whether each introduces the agent and preserves five o’clock. Reveal the example. Do not turn a difference in wording into an error if the meaning is accurate.',
- 'Now return to Jordan. The call connects. What should the conversation accomplish?');
-revise('alms','Jordan answers. Where does the call go?','Introduce yourself first. ALMS gives the conversation a direction.',
- `<div class="alms-sequence">${[['A','Appointment','Help with the requested visit.'],['L','Location','Learn where they want to be.'],['M','Motivation','Learn why it matters.'],['S','Summarize','Agree what happens next.']].map(([a,b,c])=>`<div><strong>${a}</strong><h3>${b}</h3><p>${c}</p></div>`).join('')}</div>`+note('Location and motivation can come in either order. The buyer’s answers guide the next question.'),
- 'Give the whole route before demonstrating pieces. Explain that the appointment invitation comes early because the buyer asked for help with a home. ALMS should help the agent listen, not become a list to recite.',
- 'Here is the first part aloud: an introduction that leads directly into Jordan’s request.');
-revise('introduction','The opening answers “Who is this?”','Jordan requested Saturday morning. Use that information.',
- dialogue([['Agent','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane.”'],['Agent','“I saw Saturday morning. I’ll check access for that time. Would morning still work for you?”'],['Jordan','“Yes, morning works.”']])+note('No time selected? Offer two times you can actually make. Property access still needs confirmation.'),
- 'Read both sides. Pause after the introduction to identify name, brokerage, Zillow connection, and purpose. Then demonstrate the early invitation. On a live transfer, say Zillow connected you about the request. Use the real affiliation and available times. Never borrow an invented expertise claim.',
- 'Now try the same opening skill with one change: no tour time was selected.');
-revise('opening-decision','Your turn: no time was selected','Practice variation: Jordan asked to see 1234 Lane but selected no time. How would you begin?',null,
- 'Give 90 seconds to choose and write. Discuss one opening that connects naturally to the inquiry. The invitation should precede a qualification interview, while preserving uncertain access. Reveal the example after responses. Say explicitly that this was a variation; the main example returns to Saturday morning next.',
- 'Back in our main call, Jordan prefers Saturday morning. We have a starting plan, but we still know very little about Jordan.');
-revise('permission','The appointment opens a conversation','Before asking about the search, explain why the questions help.',
- dialogue([['Agent','“Do you have a few minutes so I can learn what you’re looking for and make our time together useful?”'],['Jordan','“Sure. We’re already in town.”'],['Agent','“What’s changing where you live now?”'],['Jordan','“We rent an apartment. We’d like outdoor space.”']])+note('If they have only a minute, keep it brief. Handle the request and agreed next action without forcing a full interview.'),
- 'Read the exchange. Ask aloud what the follow-up learned that “in town” alone did not tell us. Connect this to location: use their current situation and ask which areas work for them and why. Do not assume a lease end, children, or a reason for moving.',
- 'Jordan mentioned outdoor space. That gives us the next question.');
-revise('motivation','“Outdoor space” needs a follow-up','The feature becomes useful when you understand its purpose.',
- dialogue([['Agent','“What would you like to do with that space?”'],['Jordan','“I’d like a vegetable garden.”'],['Agent','“What would you need from the space for that?”'],['Jordan','“Somewhere sunny, with room for raised beds.”']])+note('Now the search has a reason: usable garden space. A large yard alone may not solve it.'),
- 'Read each turn and point to the link between the answer and the next question. Briefly contrast “Great, how many bedrooms?” which abandons the answer. Use authentic warmth without a memorized personal anecdote. Ask the room what they now know they did not know before.',
- 'You’ve heard a follow-up reveal the reason. Practice finding the reason with a partner.');
-const discovery=revise('discovery-practice','Partner practice: what does “more space” mean?','Practice variation: your buyer says, “We need more space.” Learn what that means, then switch roles.',null,
- '8 minutes: 1 minute setup, 3 minutes each direction (2-minute conversation and 1-minute correction/retry), 1-minute debrief. Assign speaking turns and open the meeting platform’s rooms. Buyer invents a simple reason and reveals it when asked. Listen for permission and a question connected to the actual answer. On return, ask one pair what changed on the retry.',
- 'You have a way to learn what matters. Before we close the call, let’s handle questions that can interrupt that plan.');
-discovery.activity.kind='roleplay';
-discovery.activity.rubric=[{id:'permission',label:'Ask permission before discovery'},{id:'follow',label:'Ask a follow-up based on the buyer’s actual answer'}];
-discovery.activity.fields.push({id:'discovery-retry',label:'What did your partner suggest, and how did your retry change?'});
-discovery.body=steps([['First turn: 3 minutes','Ask permission, follow the buyer’s answer, then use one correction to retry.'],['Switch buyer and agent: 3 minutes','Use a new reason for needing more space. Everyone gets a speaking turn.'],['Room debrief: 1 minute','Share the follow-up that taught you something useful.']])+note('1 minute to set up. Video rooms are in your meeting platform. Submit your reflection after practice.');
-revise('questions-only','What if the buyer only wants an answer?','Variation: the buyer declines a tour and asks about the roof.',
- dialogue([['Agent','“Of course. What would you like to know?”'],['Buyer','“How old is the roof?”'],['Agent','“I’ll check that. Can I ask what concerns you about it?”'],['Buyer','“I’m worried about taking on repairs.”']])+note('Bring the answer back. Explain how a viewing could help them decide. If they still decline, agree how to return the information.'),
- 'Make clear this is an alternate buyer response, not a new fact about Jordan. Demonstrate a useful second invitation: “Seeing it could help you decide whether it fits, and I can bring the roof answer. Would that be useful?” If declined, stop pushing and arrange the answer. Answer known facts now. Do not make information conditional on meeting.',
- 'A property question can reveal a concern. The same applies when the buyer asks about financing.');
-revise('financing','When the buyer asks about a lender','Variation: “Should I talk to a lender before we look?”',
- dialogue([['Agent','“A lender can help you understand your options. What are you hoping to work out before we look?”'],['Buyer','“I don’t know what payment I’d be comfortable with.”'],['Agent','“That’s useful to work through. I can help connect you with a lender to discuss those numbers.”']])+note('Help with the concern. Do not turn the showing request into a demand for preapproval.'),
- 'Read the example. The buyer introduced financing, so address it. Explain that lender-specific numbers belong with the lender. Eric’s usual later opening is the end of the first showing; today covers the buyer-raised first-call question only. Do not lecture on loan products.',
- 'Choose the response that helps with that concern while keeping the meeting easy.');
-revise('financing-check','Your turn: a financing question','The buyer asks, “Should I talk to a lender before we look?” What is the best response?',null,
- 'Allow a short vote, then ask someone to say the answer in everyday language. Reveal and discuss why both refusing the topic and imposing a blanket preapproval gate miss the buyer’s question.',
- 'Another question may be about who you represent. Keep that answer just as direct.');
-get('financing-check').activity.model='“A lender can help you understand your options. What are you hoping to work out before we look?” If they need help with payments or financing options, offer a lender connection.';
-revise('listing-agent','“Are you the listing agent?”','The buyer needs a clear answer about your role.',
- quote('I’m not the listing agent. I help buyers and can coordinate with the listing side. What would you like to know?')+note('If they prefer the listing agent, offer to help with that connection. Respect their choice.'),
- 'Read the short answer and return to the property question. Use the real role. If an existing representation agreement raises an unresolved question, involve the team lead using the actual circumstances and form. Avoid an agency lecture.',
- 'Your role is clear. Now suppose the answer about the property itself is disappointing.');
-revise('under-contract','The home is under contract','Separate variation: you learn this during the first inquiry. No showing is confirmed.',
- dialogue([['Agent','“The home is under contract. I can check whether a viewing is still possible. What drew you to it?”'],['Buyer','“The yard. I want room for a garden.”'],['Agent','“I can also research homes with useful garden space. Would that help?”']])+note('State what you know. Keep access and unresearched alternatives conditional.'),
- 'Apply Eric’s problem-solving principle only to this first-call scenario. We are not teaching a cancellation or showing-day workflow. Explain why the next step uses the buyer’s reason. Do not claim to have researched alternatives when you have not.',
- 'Try giving that news with a specific next step tied to what the buyer told you.');
-revise('changed-plan','Your turn: a home under contract','Variation: the home is under contract. The buyer wants garden space. What do you say next?',null,
- 'Give 60 seconds for writing. Compare one bare status update with one truthful plan tied to garden space. Reveal after responses. Listen for unsupported promises about access or already-researched alternatives.',
- 'Those were alternate situations. Return to Jordan’s original call: Saturday morning is preferred, garden space matters, and access is still pending.');
-revise('summary','The plan should use what Jordan told you','Back to the original call. Jordan wants sunny space for raised beds.',
- dialogue([['Agent','“Would it help to compare another home with usable garden space while we’re out?”'],['Jordan','“Yes, that would help.”'],['Agent','“Saturday morning is your preference. I’ll check access to 1234 Lane and research a comparison with garden space. I’ll text you the details after I hear back. Is that right?”'],['Jordan','“Yes. Text is good.”']]),
- 'Demonstrate obtaining agreement before adding comparisons. Explain Eric’s goal of two or three homes without making extra homes a condition. The summary reflects actual priorities, permission, pending checks, and the agreed channel. Briefly explain the applicable touring form and what you will send, using its actual terms. Do not invent signing status.',
- 'Now close that call in your own words, using only what Jordan has agreed to.');
-revise('summary-practice','Your turn: the agreed next step','Jordan wants garden space, prefers Saturday morning, accepts a comparison home, and agrees to text. Access is pending.',null,
- 'Give 60 seconds to submit. Ask which parts are agreed and which remain pending. Reveal and discuss. A useful close can be brief; it must preserve the buyer’s facts and the agent’s actual commitment.',
- 'You’ve practiced the parts. Watch how those same parts connect in one uninterrupted call.');
-get('summary-practice').activity.model='“Garden space matters, and Saturday morning is your preference. I’ll check access and research a comparison with room for a garden. I’ll text you the details after I hear back. Have I missed anything?”';
-revise('whole-call-one','The whole call: opening and discovery','Demonstration. Follow the conversation rather than naming each step.',
- dialogue([['Sam','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”'],['Jordan','“Yes, morning works.”'],['Sam','“Have you got a few minutes so I can make our time useful?”'],['Jordan','“Sure.”'],['Sam','“What’s changing where you live now?”'],['Jordan','“We rent in town. We’d like outdoor space.”']]),
- 'Ask a volunteer to read Jordan or read both parts yourself. Do not stop to label every ALMS letter. Agents listen for what each answer gives the agent to work with. Continue directly to the next slide without opening a new discussion.',
- 'Jordan has just said “outdoor space.” Continue from those words.');
-revise('whole-call-two','The same call: discovery and agreement','Continue without restarting the conversation.',
- dialogue([['Sam','“What would you like to do with that space?”'],['Jordan','“A vegetable garden. I need sun and room for raised beds.”'],['Sam','“Would comparing another home with garden space help?”'],['Jordan','“Yes.”'],['Sam','“Saturday morning is your preference. I’ll check access and research that comparison, then text the details. Does that work?”'],['Jordan','“Yes, text is good.”']]),
- 'Finish the demonstration aloud. Briefly explain the applicable touring form and promised follow-up in accurate terms. Ask what made the next step specific to Jordan. Then give practice instructions; do not introduce another topic.',
- 'Now run a call yourselves. Keep the sequence, but respond to the buyer you actually hear.');
-revise('full-call-practice','Group practice: the complete first call','Trios rotate through agent, buyer, and observer. Everyone speaks.',null,
- '15 minutes: 1 minute setup, three 4-minute rounds (3-minute call and 1-minute correction/retry), 2-minute debrief. Assign speaking turns, then use the meeting platform’s rooms. Buyer uses the assigned card and reveals the underlying reason in conversation. Observer gives one concrete correction. On return, ask which buyer answer changed the agent’s next question. A simulated or peer check is not coach sign-off.',
- 'The call is finished. Your next action should make good on the promise you just made.');
-role.activity.useCases=true;
-role.body=steps([['Call: 3 minutes','Use the buyer card. Introduce yourself, help with the request, follow answers, and agree a next step.'],['Feedback and retry: 1 minute','Observer names one moment. Agent replays that part.'],['Rotate, then debrief','Repeat until all three have spoken. Submit the reflection after your turn.']])+note('1 minute setup, three 4-minute rounds, 2-minute debrief. Your assigned roles appear in your session. Video rooms are in your meeting platform.');
-revise('follow-through','The record should match the call','Day 1 showed where to save the work. Here is what Jordan’s call gives you.',
- rows([['Conversation note','Rents locally. Wants sunny space for raised beds. Prefers Saturday morning. Open to a comparison home. Text agreed.'],['Pending action','Check access to 1234 Lane and research a useful comparison.'],['Task and next contact','Set a task for the promised work. Text the details after the access answer, as agreed.']])+note('Saturday morning remains requested until access is confirmed. Do not record a completed showing or an agreement the buyer did not make.'),
- 'Connect directly to the note and task skills from Day 1. Read the example record against the call. Ask which phrase prevents the next person reading the record from mistaking the request for confirmed access. Keep this to immediate follow-through, not later sales stages.',
- 'Before we finish, explain the decisions you would make on the next lead.');
-revise('recall','Your turn: explain the next lead','Without looking back, explain the first-call decisions in your own words.',null,
- 'Give 90 seconds for the three short responses. Use the remaining time to address the most common uncertainty. This checks understanding, not certification or observed call performance. Point to the specific example that resolves a misunderstanding.',
- 'Keep this reference beside you when the next lead arrives.');
-revise('reference','Your first-call reference','Read the request. Help with it. Agree what happens next.',
- rows([['Before contact','Check the lead route, home, requested time, and contact preference.'],['When connected','Introduce yourself. Offer the appointment early. Ask permission, then follow the buyer’s answers about location and motivation.'],['Before finishing','Summarize priorities, pending checks, and the agreed next action. Save the note and task.']])+`<p class="alms-note"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Open the examples and first-call reference</a></p>`,
- 'Recap one idea from each part. Point agents to their reference and explain the next coaching check. End the session only after the final submissions are saved.',
- 'Your next call starts with the buyer’s actual request. Use the reference, listen, and keep the promise you make.');
-
-// Plausible novice choices, shown in the same order to everyone.
-get('lead-route-check').activity.choices=[
- {id:'promise',text:'Confirm 5 p.m. now and check access afterward.'},
- {id:'check',text:'Acknowledge 5 p.m. and verify property access.'},
- {id:'restart',text:'Ask for a new time before checking the requested one.'}
-];
-get('opening-decision').activity.choices=[
- {id:'budget',text:'Ask about budget and preapproval before offering a time.'},
- {id:'process',text:'Explain the buying process before discussing the visit.'},
- {id:'introduction-invitation',text:'Introduce yourself and offer workable showing times.'}
-];
-get('financing-check').activity.choices=[
- {id:'context',text:'Ask what they need to work out, then offer relevant lender help.'},
- {id:'refuse',text:'Save the financing question for the showing and move on.'},
- {id:'gate',text:'Ask for a preapproval letter before scheduling the showing.'}
-];
-
-const order=['welcome','agenda','lead-routes','lead-route-check','channel','no-answer','preferences','channel-check','alms','introduction','opening-decision','permission','motivation','discovery-practice','questions-only','financing','financing-check','listing-agent','under-contract','changed-plan','summary','summary-practice','whole-call-one','whole-call-two','full-call-practice','follow-through','recall','reference'];
-const minutes=[1,2,4,3,3,3,2,3,2,3,4,3,3,8,2,2,3,2,2,3,3,3,2,2,15,3,3,1];
-slides.splice(0,slides.length,...order.map(get));
-slides.forEach((s,i)=>{
- s.time=minutes[i];
- // Build every self-paced activity from the same prompt, fields, and answer
- // used by the live form; changing an example cannot leave old feedback behind.
- if(s.activity){const a=s.activity;
-  const instruction=a.kind==='roleplay'?s.body:'';
-  s.body=instruction+(a.choices?`<div class="choices" data-quiz="${s.id}">${a.choices.map(c=>`<button data-option-id="${c.id}" data-correct="${c.id===a.correctChoiceId}" data-feedback="${esc(a.explanation)}">${c.text}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`:'')+
-   a.fields.map(f=>`<label class="field">${f.label}<textarea data-save="${f.id}" placeholder="Use fictional practice details."></textarea></label>`).join('')+
-   `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${a.model}</p><p>${a.explanation}</p></div></details>`;
- }
-});
-const data={day:2,title:'Winning the first conversation',version:'2026-09-14-alms-live-v5',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
- {name:'Jordan · a garden',quote:'I’d like to see 1234 Lane Saturday morning. The yard caught my eye.',goal:'Buyer: you rent locally and want sun and room for raised beds. Reveal those details after relevant questions. You are open to a comparison home. Access remains unconfirmed.'},
- {name:'Maya · text first',quote:'I’m at work. Please text me now; I can talk at five.',goal:'Begin with the text exchange, then fast-forward to the agreed call. Buyer: a shorter commute matters; reveal it when asked. Honor the contact preference and agree the later conversation.'},
- {name:'Alex · questions first',quote:'I only wanted to know about the roof. I’m not ready to book a showing.',goal:'Buyer: maintenance costs concern you. Reveal this after a relevant question. Decline the next invitation too. Agent should help with the question and agree how to return verified information.'}
+const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-14-alms-live-v7',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+ {name:'Tour request · a home office',quote:'I asked to see the Cedar Lane home. Saturday morning works for me.',goal:'Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked.'},
+ {name:'Property question · maintenance',quote:'I wanted to know about the roof before deciding whether to tour.',goal:'Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated.'},
+ {name:'Relocation · a later visit',quote:'We are relocating in two months. We cannot see homes this week.',goal:'Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing.'}
 ]};
 if(data.duration!==90)throw new Error(`Timing is ${data.duration}, expected 90`);
 fs.writeFileSync(new URL('../web/public/workshops/day2.json',import.meta.url),JSON.stringify(data,null,2)+'\n');

@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-14-alms-live-v5' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-14-alms-live-v7' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -70,30 +70,30 @@ describe('versioned live curriculum', () => {
     expect(day2.activities).toHaveLength(9);
     expect(day2.slides.slice(0,3).every(s => !s.activity)).toBe(true);
     const position = (id: string) => day2.slides.findIndex(s => s.id === `day2-${id}`);
-    for (const [instruction, practice] of [['lead-routes','lead-route-check'],['preferences','channel-check'],['introduction','opening-decision'],['motivation','discovery-practice'],['summary','summary-practice'],['financing','financing-check'],['under-contract','changed-plan'],['whole-call-two','full-call-practice']]) {
+    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['motivation','discovery-practice'],['summary','summary-practice'],['financing','financing-check'],['under-contract','changed-plan'],['whole-call-two','full-call-practice']]) {
       expect(position(instruction)).toBeGreaterThanOrEqual(0);
       expect(position(instruction)).toBeLessThan(position(practice));
     }
     expect(day2.activities.filter(a => a.kind === 'roleplay').map(a => a.id)).toEqual(['day2-discovery-practice','day2-full-call-practice']);
     expect(day2.activities.find(a => a.id === 'day2-full-call-practice')?.useCases).toBe(true);
     expect(day2.slides.find(s => s.id === 'day2-discovery-practice')?.body).toContain('Switch buyer and agent');
-    // No long uninterrupted lecture: activities are separated by at most three teaching slides.
-    let teaching = 0;
+    // Screenshot walkthroughs need room to teach before the first submitted check.
+    // Cap uninterrupted instruction by minutes, rather than forcing a quiz every few slides.
+    let teachingMinutes = 0;
     for (const slide of day2.slides) {
-      if (slide.activity) teaching = 0;
-      else expect(++teaching).toBeLessThanOrEqual(3);
+      if (slide.activity) teachingMinutes = 0;
+      else expect(teachingMinutes += slide.time).toBeLessThanOrEqual(13);
     }
+    expect(position('lead-route-check')).toBe(-1);
+    expect(day2.slides.find(s => s.id === 'day2-live-connection')?.body).toContain('live-screen-0.png');
+    expect(day2.slides.find(s => s.id === 'day2-real-time-touring')?.body).toContain('rtt-request.png');
+    expect(JSON.stringify(day2)).not.toMatch(/Jordan|Maya|Back to Jordan|Variation:/);
     expect(day2.slides.findIndex(s => s.id === 'day2-alms')).toBeLessThan(day2.slides.findIndex(s => s.id === 'day2-opening-decision'));
     expect(position('whole-call-two')).toBeLessThan(position('full-call-practice'));
     expect(position('changed-plan')).toBeLessThan(position('summary'));
     expect(position('summary-practice') + 1).toBe(position('whole-call-one'));
     expect(day2.slides.every(s => s.notes.includes('Handoff:') && s.cue.length > 30)).toBe(true);
     expect(JSON.stringify(day2)).not.toMatch(/\bLEAD\b/);
-    const model = day2.slides.find(s => s.id === 'day2-opening-decision')!.activity!.model!;
-    expect(model).toContain('Sam with Northside Realty');
-    expect(model).toContain('featured partner with Zillow');
-    expect(model).toContain('calling about your request to see');
-    expect(model).toContain('Saturday morning or afternoon');
   });
 
   it('preserves full rotations and the existing instructional body behind the openings', () => {

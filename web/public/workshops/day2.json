@@ -1,189 +1,186 @@
 {
   "day": 2,
-  "title": "Winning the first conversation",
-  "version": "2026-09-14-alms-live-v5",
+  "title": "Handling your first Zillow lead",
+  "version": "2026-09-14-alms-live-v7",
   "duration": 90,
   "slides": [
     {
       "id": "day2-welcome",
       "chapter": "Welcome",
-      "title": "The first conversation",
-      "lead": "Day 2: a Zillow Preferred lead arrives. What happens next?",
-      "body": "<div class=\"alms-cover-line\">A buyer asks about a home.<br>How do you help?</div><p class=\"alms-cover-detail\">We’ll work from the lead alert through the first call and the next step you agree together.</p>",
+      "title": "Handling your first Zillow lead",
+      "lead": "Day 2 · A 90-minute live workshop",
+      "body": "<div class=\"alms-cover-line\">Know what you received.<br>Know how to begin.</div><p class=\"alms-cover-detail\">Learn how to respond to the lead, lead the first conversation, and agree on a useful next step with the buyer.</p>",
       "time": 1,
-      "theme": "tru alms alms-cover",
-      "notes": "Welcome the group. Connect to Day 1: they learned where work belongs in FUB. Today they will learn what to say and do when the lead arrives. Introduce yourself and explain that the examples use fictional buyers. Handoff: Yesterday we worked inside the record. Today we’ll work through the conversation that gives that record meaning. Sources: Eric’s September 14 Day 2 objective. All buyers and property details in examples are fictional.",
-      "cue": "Yesterday we worked inside the record. Today we’ll work through the conversation that gives that record meaning."
+      "theme": "tru alms lesson alms-cover",
+      "notes": "Introduce yourself. Day 1 covered the record; today teaches the conversation and the actions that belong in that record. Ask participants to open their learner session for submissions.\nHandoff: Before we practice what to say, we need to recognize what Zillow is sending us.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Before we practice what to say, we need to recognize what Zillow is sending us."
     },
     {
       "id": "day2-agenda",
       "chapter": "Welcome",
-      "title": "The route through today’s session",
-      "lead": "We’ll follow Jordan’s request, then try a few clearly marked variations.",
-      "body": "<ol class=\"alms-steps\"><li><h3>Receipt and first response</h3><p>Read the request, choose the contact method, then submit a vote and a text.</p></li><li><h3>The first conversation</h3><p>Watch the opening and discovery. Practice a follow-up with a partner.</p></li><li><h3>Questions, closing, and a full call</h3><p>Handle a buyer’s question, agree the plan, then rotate through a complete call.</p></li></ol><p class=\"alms-note\">You answer on the current slide in your own session. Submit, then we’ll discuss. The presenter advances everyone together.</p>",
-      "time": 2,
-      "theme": "tru alms",
-      "notes": "Explain the 90-minute plan and two speaking practices. Ask everyone to open their learner session now. Explain that the first vote is also a connection check: pause there until actual responses arrive. Do not claim attendance alone proves submission works. Handoff: Let’s start where the agent starts: the request that just arrived. Sources: September 14 objective. All buyers and property details in examples are fictional.",
-      "cue": "Let’s start where the agent starts: the request that just arrived."
+      "title": "What we will learn and practice",
+      "lead": "We will work through the job in the order you do it.",
+      "body": "<ol class=\"lesson-agenda\"><li><strong>Receive the lead.</strong> Recognize Zillow’s screens and decide how to make contact.</li><li><strong>Start the call.</strong> Introduce yourself and help arrange the appointment.</li><li><strong>Understand the buyer.</strong> Ask useful questions and practice listening with a partner.</li><li><strong>Agree on the next step.</strong> Handle questions, summarize the plan, and practice the full call.</li></ol>",
+      "time": 1,
+      "theme": "tru alms lesson",
+      "notes": "Explain demonstrations, individual answers and discussion, then pairs and trios. On question slides learners answer and press Submit; you receive their answers. They do not select a separate activity.\nHandoff: First, here is what an incoming live connection actually looks like.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "First, here is what an incoming live connection actually looks like."
     },
     {
-      "id": "day2-lead-routes",
-      "chapter": "Know the lead",
-      "title": "The request tells you how to begin",
-      "lead": "Our example: Jordan asks to see 1234 Lane on Saturday morning.",
-      "body": "<table class=\"alms-table\"><thead><tr><th>Lead route</th><th>What you receive</th><th>What to check</th></tr></thead><tbody><tr><th>Connection / contact agent</th><td>A question about a home, live or by FUB alert</td><td>The question and contact preference</td></tr><tr><th>Real-time touring</th><td>A tour alert using ShowingTime availability</td><td>The selected time and current arrangements</td></tr><tr><th>Standard tour</th><td>A tour request, live or by FUB alert</td><td>Whether the requested time is available</td></tr></tbody></table><p class=\"alms-note\">Jordan’s is a standard tour request. Saturday morning is the buyer’s preference. Property access still needs checking.</p>",
-      "time": 4,
-      "theme": "tru alms",
-      "notes": "Explain each route through the decision it changes. Real-time touring does not arrive as a live call in Eric’s documented flow. Read actual timeframe and representation answers when supplied; a form question is not the buyer’s answer. Demonstrate: “I saw Saturday morning. I’ll check access and confirm with you.” Handoff: Before we contact Jordan, let’s check that distinction between a requested time and confirmed access. Sources: INT-012; documented TRU operating flow. All buyers and property details in examples are fictional.",
-      "cue": "Before we contact Jordan, let’s check that distinction between a requested time and confirmed access."
-    },
-    {
-      "id": "day2-lead-route-check",
-      "chapter": "Know the lead",
-      "title": "Your turn: requested or confirmed?",
-      "lead": "Another standard tour lead asks for 5 p.m. Access is unconfirmed. What do you do?",
-      "body": "<div class=\"choices\" data-quiz=\"day2-lead-route-check\"><button data-option-id=\"promise\" data-correct=\"false\" data-feedback=\"Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.\">Confirm 5 p.m. now and check access afterward.</button><button data-option-id=\"check\" data-correct=\"true\" data-feedback=\"Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.\">Acknowledge 5 p.m. and verify property access.</button><button data-option-id=\"restart\" data-correct=\"false\" data-feedback=\"Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.\">Ask for a new time before checking the requested one.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Acknowledge 5 p.m., check access, and tell the buyer when you will confirm. Their request gives you a starting point; it does not prove the seller approved it.</p><p>Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.</p></div></details>",
+      "id": "day2-live-connection",
+      "chapter": "Receive the lead",
+      "title": "A live connection puts a buyer on the phone",
+      "lead": "Zillow calls you first. You review the inquiry, then connect to the waiting buyer.",
+      "body": "<div class=\"lesson-visual\"><div class=\"lesson-phones\"><img src=\"/workshops/zillow/live-screen-0.png\" alt=\"Zillow’s incoming Premier Agent call with Decline and Accept buttons\"><img src=\"/workshops/zillow/live-screen-1.png\" alt=\"Zillow’s pre-connection screen with the buyer inquiry and Connect button\"></div><div><p class=\"lesson-explanation\"><strong>Answer the incoming call.</strong> Zillow provides information about the buyer and the home before you speak to the buyer.</p><p class=\"lesson-explanation\"><strong>Read the inquiry, then connect.</strong> In this example, the buyer asks about a property’s HOA fee. Begin by introducing yourself and acknowledging that question.</p></div></div><p class=\"lesson-source\">Source: <a href=\"https://www.zillowstatic.com/bedrock/app/uploads/sites/33/2023/05/Zillow-Premier-Agent-Conversion-Playbook_Oct2023.pdf\" target=\"_blank\" rel=\"noreferrer\">Zillow Conversion Playbook, page 7</a>. Zillow’s published demonstration; screens vary by app version.</p>",
       "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Allow 45 seconds for the vote. Verify submissions reach your presenter view. Ask one agent why they chose their answer. Reveal the explanation and emphasize that acknowledging a preference does not promise access. If answers do not arrive, resolve the join/submission problem before continuing. Handoff: We know what needs checking. Now we need to decide how to reach the buyer. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "We know what needs checking. Now we need to decide how to reach the buyer.",
+      "theme": "tru alms lesson",
+      "notes": "Point to Accept on the first screen and Connect on the second. These are Zillow’s own simulated training screens. Read the inquiry. The names and address belong to Zillow’s illustration, not our later practice case. The current In-App Connections FAQ confirms answer/review/connect. Do not read every property field.\nHandoff: A Real-Time Touring notification can also ring your phone, but the next step is different: you review a tour request rather than join a buyer on a live call.\nSources: TRU September 12 teaching, INT-012; Zillow Conversion Playbook Oct 2023 p7; Zillow In-App Connections FAQ Oct 2025. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "A Real-Time Touring notification can also ring your phone, but the next step is different: you review a tour request rather than join a buyer on a live call."
+    },
+    {
+      "id": "day2-real-time-touring",
+      "chapter": "Receive the lead",
+      "title": "Real-Time Touring asks you to accept a tour",
+      "lead": "The phone alert identifies Real-Time Touring. The app then shows the buyer’s requested times.",
+      "body": "<div class=\"lesson-visual\"><div class=\"lesson-phones\"><img src=\"/workshops/zillow/rtt-ringing.png\" alt=\"Real-Time Touring incoming call in Zillow’s official demonstration\"><img src=\"/workshops/zillow/rtt-request.png\" alt=\"Tour request showing buyer-selected times and commitment choices\"></div><div><p class=\"lesson-explanation\"><strong>Review the request in the app.</strong> Zillow gives you five minutes to accept a time you can attend or pass on the request.</p><p class=\"lesson-explanation\"><strong>This is not a live buyer transfer.</strong> After accepting, review the booking details and contact the buyer about the appointment.</p></div></div><p class=\"lesson-source\">Source: <a href=\"https://www.zillow.com/premier-agent/real-time-touring/\" target=\"_blank\" rel=\"noreferrer\">Zillow Real-Time Touring demonstration</a>. Zillow’s published demonstration; screens vary by app version.</p>",
+      "time": 4,
+      "theme": "tru alms lesson",
+      "notes": "Read the Real-Time Touring label and buyer-selected times. Distinguish Zillow’s five-minute acceptance window from TRU’s first-contact standard. Dates and property are sample data. Eric’s “not a live call” means no live buyer conversation; do not teach that the phone never rings. Booking uses ShowingTime availability. Follow actual status and notifications.\nHandoff: You may also receive a standard tour request. That buyer still wants to see a home, but the request does not use this same real-time booking process.\nSources: TRU September 12 teaching, INT-012; Zillow Real-Time Touring page and linked Oct 2025 demonstration. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "You may also receive a standard tour request. That buyer still wants to see a home, but the request does not use this same real-time booking process."
+    },
+    {
+      "id": "day2-standard-tour",
+      "chapter": "Receive the lead",
+      "title": "A standard tour request tells you what the buyer wants",
+      "lead": "The buyer has asked to see a particular home. They may have supplied a preferred day and time.",
+      "body": "<p class=\"lesson-explanation\">Read the request before you contact them. Use the property and preferred time in your opening so the buyer does not have to start over.</p><blockquote class=\"lesson-example\">“I see you requested a tour Saturday afternoon. Would that still work for you? I’ll check the showing arrangements and confirm the details.”</blockquote><p class=\"lesson-explanation\">A standard tour request may arrive as a live connection or an alert in Follow Up Boss. If the buyer is not already on the phone, your next job is to contact them.</p>",
+      "time": 2,
+      "theme": "tru alms lesson",
+      "notes": "Explain Follow Up Boss in full before abbreviating it to FUB. Show how the request gives you an opening. Distinguish preferred timing from booking status without making that obvious distinction into a quiz.\nHandoff: We have now seen the two phone experiences and a standard request. Let’s make sure the difference is clear before we move into your response.\nSources: TRU September 12 teaching, INT-012. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "We have now seen the two phone experiences and a standard request. Let’s make sure the difference is clear before we move into your response."
+    },
+    {
+      "id": "day2-lead-discussion",
+      "chapter": "Discuss the screens",
+      "title": "Explain what happens after you answer",
+      "lead": "Compare the two Zillow examples: a live connection and a Real-Time Touring alert. What will you do immediately after answering each one?",
+      "body": "<label class=\"field\">Describe the next action for each type. Include anything on the screens you want explained.<textarea data-save=\"lead-response\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Live connection: read the inquiry and connect to the waiting buyer. Real-Time Touring: review the tour times and accept a workable tour or pass; then contact the buyer. There is no live buyer transfer in the touring flow.</p><p>The distinction changes what you prepare to do when the phone rings. A tour acceptance and a conversation with a waiting buyer are different tasks.</p></div></details>",
+      "time": 3,
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Give a minute to write. Confirm submissions arrive, then discuss two answers and any screen questions. Return to a screenshot if the next action is unclear. This is an explanation check, not a trick question.\nHandoff: If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how TRU expects you to make contact.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how TRU expects you to make contact.",
       "activity": {
-        "id": "day2-lead-route-check",
-        "kind": "choice",
-        "prompt": "Another standard tour lead asks for 5 p.m. Access is unconfirmed. What do you do?",
-        "fields": [],
-        "model": "Acknowledge 5 p.m., check access, and tell the buyer when you will confirm. Their request gives you a starting point; it does not prove the seller approved it.",
-        "explanation": "Use the requested time while keeping an unverified arrangement separate from a confirmed appointment.",
-        "choices": [
+        "id": "day2-lead-discussion",
+        "kind": "discussion",
+        "prompt": "Compare the two Zillow examples: a live connection and a Real-Time Touring alert. What will you do immediately after answering each one?",
+        "fields": [
           {
-            "id": "promise",
-            "text": "Confirm 5 p.m. now and check access afterward."
-          },
-          {
-            "id": "check",
-            "text": "Acknowledge 5 p.m. and verify property access."
-          },
-          {
-            "id": "restart",
-            "text": "Ask for a new time before checking the requested one."
+            "id": "lead-response",
+            "label": "Describe the next action for each type. Include anything on the screens you want explained."
           }
         ],
-        "correctChoiceId": "check"
+        "model": "Live connection: read the inquiry and connect to the waiting buyer. Real-Time Touring: review the tour times and accept a workable tour or pass; then contact the buyer. There is no live buyer transfer in the touring flow.",
+        "explanation": "The distinction changes what you prepare to do when the phone rings. A tour acceptance and a conversation with a waiting buyer are different tasks."
       }
     },
     {
       "id": "day2-channel",
       "chapter": "Make contact",
-      "title": "How will you contact the buyer?",
-      "lead": "Back to Jordan: an alert arrived, with no special contact instruction.",
-      "body": "<div class=\"alms-rows\"><div><h3>Already on a live call</h3><p>Introduce yourself and begin.</p></div><div><h3>FUB alert, no preference</h3><p>Call within five minutes of receipt during TRU’s 8 a.m.–8 p.m. operating window.</p></div><div><h3>A specific instruction</h3><p>Use the requested channel or callback time. Acknowledge a later callback by text now.</p></div></div>",
-      "time": 3,
-      "theme": "tru alms",
-      "notes": "Point to Jordan’s alert example and choose the default call. Explain why: a conversation lets the agent hear the buyer and respond to their answers. Distinguish the automated introduction from the agent’s own call. Do not invent an after-hours deadline. Handoff: Let’s try that call. First, what happens if Jordan doesn’t pick up? Sources: R008–R010; INT-009–INT-013, INT-054. All buyers and property details in examples are fictional.",
-      "cue": "Let’s try that call. First, what happens if Jordan doesn’t pick up?"
+      "title": "Call promptly when the buyer has asked to hear from you",
+      "lead": "For a new lead received during TRU’s normal 8 a.m.–8 p.m. operating window, call within five minutes unless the buyer gave a different contact instruction.",
+      "body": "<p class=\"lesson-explanation\">The buyer just asked for help with a home. A call lets you hear their tone, answer questions as they arise, and begin a conversation about what they need.</p><p class=\"lesson-explanation\">Follow Up Boss may already have sent an automated introduction. That does not replace your own call. If the buyer requested a later callback or asked for text, respect that instruction.</p>",
+      "time": 2,
+      "theme": "tru alms lesson",
+      "notes": "Explain Eric’s reason: the buyer just expressed interest, rather than being a random person being interrupted. Hearing and responding in real time matters. Do not repeat unverified response-rate statistics. The clock starts at agent receipt; do not invent after-hours rules.\nHandoff: Calling promptly does not mean the buyer will always answer. Here is what to do when your first call goes unanswered.\nSources: TRU September 12 teaching, INT-009, INT-011–013. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Calling promptly does not mean the buyer will always answer. Here is what to do when your first call goes unanswered."
     },
     {
       "id": "day2-no-answer",
       "chapter": "Make contact",
-      "title": "Jordan does not answer",
-      "lead": "Your personal text connects the missed call to the original request.",
-      "body": "<figure class=\"alms-quote\"><blockquote>Hi Jordan, this is Sam with Northside Realty. I just called about your request to see 1234 Lane Saturday morning. I can talk at 4 or 6 today. Does either work?</blockquote><figcaption>Example wording · fictional buyer</figcaption></figure><div class=\"alms-rows\"><div><h3>While unanswered</h3><p>Day one: aim for 3–4 personal touches, including at least 2 calls and 1 text. First week: 10 total including day one, mostly calls.</p></div><div><h3>When Jordan replies</h3><p>Continue from the reply and agree a plan. The unanswered-lead quota stops.</p></div></div>",
-      "time": 3,
-      "theme": "tru alms",
-      "notes": "Read the text aloud. Explain the recognizable property, reason for calling, and genuine times offered. Mention an opening voicemail when appropriate. Automation is separate from personal effort. These are normal-flow targets, not an invented late-day schedule, and a stated contact restriction governs. Handoff: That was the default with no preference. Now change one fact: the buyer has told us when to call. Sources: R009, R019. All buyers and property details in examples are fictional.",
-      "cue": "That was the default with no preference. Now change one fact: the buyer has told us when to call."
-    },
-    {
-      "id": "day2-preferences",
-      "chapter": "Make contact",
-      "title": "A requested callback changes the response",
-      "lead": "Variation: Maya is at work and asks for a call at five.",
-      "body": "<figure class=\"alms-quote\"><blockquote>Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your request. Let me know if you have a question before then.</blockquote><figcaption>Example wording · fictional buyer</figcaption></figure><div class=\"alms-rows\"><div><h3>Text first for now</h3><p>Help by text now. Offer a later call if useful.</p></div><div><h3>An explicit no-call request</h3><p>Honor it. Continue through the agreed channel.</p></div></div>",
+      "title": "If the call goes unanswered, send a personal text",
+      "lead": "Example: a buyer requested a tour of 418 Cedar Lane. You just called, but they did not answer. The address is fictional.",
+      "body": "<blockquote class=\"lesson-example\">“Hi, this is [your name] with [your brokerage]. I just tried calling about your Zillow request to see 418 Cedar Lane. I’d be happy to help arrange a tour. I’m available for a call at 4 or 6 today. Would either time work for you?”</blockquote><p class=\"lesson-explanation\">Tell them who called, connect the call to their request, and offer a clear opportunity to talk. Use times you can actually make. You are offering a phone call here, not confirming a tour.</p>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Make the contrast explicit: Jordan gave no contact instruction; Maya did. Read the acknowledgment. The five-minute default does not justify ignoring her requested time. Offering an earlier call is optional and must reflect real availability. Text-first now is different from a permanent no-call instruction. Handoff: You’ve heard an acknowledgment. Write your own version for Maya. Sources: R008, R010; INT-013, INT-043. All buyers and property details in examples are fictional.",
-      "cue": "You’ve heard an acknowledgment. Write your own version for Maya."
+      "theme": "tru alms lesson",
+      "notes": "Read the example with your own name and brokerage. Distinguish phone-call availability from tour availability. This personal text follows the missed call. Do not mix weekly quotas into this example; those come after the first-call lesson.\nHandoff: That example had no special contact instruction. Now consider a buyer who has already told you when they can talk.\nSources: TRU September 12 teaching, INT-011. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "That example had no special contact instruction. Now consider a buyer who has already told you when they can talk."
     },
     {
       "id": "day2-channel-check",
       "chapter": "Make contact",
-      "title": "Your turn: acknowledge Maya",
-      "lead": "Maya’s alert arrives at 2 p.m. and asks for a 5 p.m. call. Write your acknowledgment.",
-      "body": "<label class=\"field\">What would you text Maya now?<textarea data-save=\"callback-text\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your inquiry. If you have a question before then, let me know. I’m also free earlier if that would help.</p><p>Introduce yourself promptly, keep the requested call time, and offer earlier availability only if it is real. Do not call immediately just to satisfy the normal five-minute default.</p></div></details>",
+      "title": "Respond to a buyer who is at work",
+      "lead": "A new Zillow inquiry arrives at 2 p.m. The buyer writes: “I’m at work. Please call at 5 about the Cedar Lane home.” Write the text you would send now, then state when you will call.",
+      "body": "<label class=\"field\">Write your text and the planned call time.<textarea data-save=\"callback-text\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“Hi, I’m [your name] with [your brokerage]. I’ll be the agent calling at 5 about the Cedar Lane home. If you have questions before then, you’re welcome to text me.” Call at 5 as requested.</p><p>Acknowledge now so the buyer knows who will call. The requested time governs the call; the default does not justify interrupting them at work.</p></div></details>",
       "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Give 60 seconds to write and submit. Read two responses, noticing whether each introduces the agent and preserves five o’clock. Reveal the example. Do not turn a difference in wording into an error if the meaning is accurate. Handoff: Now return to Jordan. The call connects. What should the conversation accomplish? Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "Now return to Jordan. The call connects. What should the conversation accomplish?",
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Before writing, teach Eric’s exception: acknowledge by text now and call at the requested time. Demonstrate “I’ll be the agent calling you at five.” Then let learners write their version. Review whether it introduces the agent and preserves the callback. Earlier availability is optional.\nHandoff: Once the buyer answers, the task changes from making contact to leading a useful conversation. ALMS gives you an order for that conversation.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Once the buyer answers, the task changes from making contact to leading a useful conversation. ALMS gives you an order for that conversation.",
       "activity": {
         "id": "day2-channel-check",
         "kind": "written",
-        "prompt": "Maya’s alert arrives at 2 p.m. and asks for a 5 p.m. call. Write your acknowledgment.",
+        "prompt": "A new Zillow inquiry arrives at 2 p.m. The buyer writes: “I’m at work. Please call at 5 about the Cedar Lane home.” Write the text you would send now, then state when you will call.",
         "fields": [
           {
             "id": "callback-text",
-            "label": "What would you text Maya now?"
+            "label": "Write your text and the planned call time."
           }
         ],
-        "model": "Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your inquiry. If you have a question before then, let me know. I’m also free earlier if that would help.",
-        "explanation": "Introduce yourself promptly, keep the requested call time, and offer earlier availability only if it is real. Do not call immediately just to satisfy the normal five-minute default."
+        "model": "“Hi, I’m [your name] with [your brokerage]. I’ll be the agent calling at 5 about the Cedar Lane home. If you have questions before then, you’re welcome to text me.” Call at 5 as requested.",
+        "explanation": "Acknowledge now so the buyer knows who will call. The requested time governs the call; the default does not justify interrupting them at work."
       }
     },
     {
       "id": "day2-alms",
-      "chapter": "Guide the call",
-      "title": "Jordan answers. Where does the call go?",
-      "lead": "Introduce yourself first. ALMS gives the conversation a direction.",
-      "body": "<div class=\"alms-sequence\"><div><strong>A</strong><h3>Appointment</h3><p>Help with the requested visit.</p></div><div><strong>L</strong><h3>Location</h3><p>Learn where they want to be.</p></div><div><strong>M</strong><h3>Motivation</h3><p>Learn why it matters.</p></div><div><strong>S</strong><h3>Summarize</h3><p>Agree what happens next.</p></div></div><p class=\"alms-note\">Location and motivation can come in either order. The buyer’s answers guide the next question.</p>",
+      "chapter": "Begin the conversation",
+      "title": "Introduce yourself, then use ALMS",
+      "lead": "ALMS means Appointment, Location, Motivation, and Summarize. It gives the call a purpose without turning it into an interview.",
+      "body": "<ol class=\"lesson-agenda\"><li><strong>Appointment:</strong> Help arrange the visit near the beginning of the call.</li><li><strong>Location:</strong> Learn where the buyer is looking and why that area works.</li><li><strong>Motivation:</strong> Learn what they want to change about their current home.</li><li><strong>Summarize:</strong> Repeat what matters and agree on what happens next.</li></ol>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Give the whole route before demonstrating pieces. Explain that the appointment invitation comes early because the buyer asked for help with a home. ALMS should help the agent listen, not become a list to recite. Handoff: Here is the first part aloud: an introduction that leads directly into Jordan’s request. Sources: R012–R013; INT-015–INT-016. All buyers and property details in examples are fictional.",
-      "cue": "Here is the first part aloud: an introduction that leads directly into Jordan’s request."
+      "theme": "tru alms lesson",
+      "notes": "The buyer asked for help, so make that help tangible early. Then ask permission to learn more. Location and motivation can occur in either order. Do not delay the invitation until after qualification.\nHandoff: Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call."
     },
     {
       "id": "day2-introduction",
-      "chapter": "Guide the call",
-      "title": "The opening answers “Who is this?”",
-      "lead": "Jordan requested Saturday morning. Use that information.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane.”</p><p><b>Agent</b> “I saw Saturday morning. I’ll check access for that time. Would morning still work for you?”</p><p><b>Jordan</b> “Yes, morning works.”</p></div><p class=\"alms-note\">No time selected? Offer two times you can actually make. Property access still needs confirmation.</p>",
+      "chapter": "Begin the conversation",
+      "title": "Demonstration: introduce yourself and offer the visit",
+      "lead": "Practice buyer George requested a tour of 418 Cedar Lane through Zillow. No time was selected. You can meet Saturday morning or afternoon; property access still needs checking.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Hi George, I’m [your name] with [your brokerage], a featured partner with Zillow. I’m calling about your request to see 418 Cedar Lane.”</span></p><p><b>Agent</b><span>“I can meet Saturday morning or afternoon. Which would work better for you? I’ll check access for that time.”</span></p><p><b>George</b><span>“Saturday morning would be good.”</span></p></div>",
       "time": 3,
-      "theme": "tru alms",
-      "notes": "Read both sides. Pause after the introduction to identify name, brokerage, Zillow connection, and purpose. Then demonstrate the early invitation. On a live transfer, say Zillow connected you about the request. Use the real affiliation and available times. Never borrow an invented expertise claim. Handoff: Now try the same opening skill with one change: no tour time was selected. Sources: R013; INT-016. All buyers and property details in examples are fictional.",
-      "cue": "Now try the same opening skill with one change: no tour time was selected."
+      "theme": "tru alms lesson",
+      "notes": "Introduce George as a fictional buyer adapted from Eric’s demonstration. Read both sides. Identify name, brokerage, Zillow connection and purpose. On a live transfer, say “Zillow connected us about…” Use true affiliation and availability.\nHandoff: Both the words and their order matter. Compare two openings for that same tour request and explain which one you would use.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Both the words and their order matter. Compare two openings for that same tour request and explain which one you would use."
     },
     {
       "id": "day2-opening-decision",
-      "chapter": "Guide the call",
-      "title": "Your turn: no time was selected",
-      "lead": "Practice variation: Jordan asked to see 1234 Lane but selected no time. How would you begin?",
-      "body": "<div class=\"choices\" data-quiz=\"day2-opening-decision\"><button data-option-id=\"budget\" data-correct=\"false\" data-feedback=\"Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.\">Ask about budget and preapproval before offering a time.</button><button data-option-id=\"process\" data-correct=\"false\" data-feedback=\"Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.\">Explain the buying process before discussing the visit.</button><button data-option-id=\"introduction-invitation\" data-correct=\"true\" data-feedback=\"Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.\">Introduce yourself and offer workable showing times.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Write your introduction and early appointment invitation.<textarea data-save=\"opening-invitation\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane. Would Saturday morning or afternoon work better? I’ll verify access for the time we choose.</p><p>Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.</p></div></details>",
-      "time": 4,
-      "theme": "tru alms alms-exercise",
-      "notes": "Give 90 seconds to choose and write. Discuss one opening that connects naturally to the inquiry. The invitation should precede a qualification interview, while preserving uncertain access. Reveal the example after responses. Say explicitly that this was a variation; the main example returns to Saturday morning next. Handoff: Back in our main call, Jordan prefers Saturday morning. We have a starting plan, but we still know very little about Jordan. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "Back in our main call, Jordan prefers Saturday morning. We have a starting plan, but we still know very little about Jordan.",
+      "chapter": "Practice the opening",
+      "title": "Which opening serves the buyer’s request?",
+      "lead": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.",
+      "body": "<div class=\"choices\" data-quiz=\"day2-opening-decision\"><button data-option-id=\"interview\" data-correct=\"false\" data-feedback=\"TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“Before we schedule, tell me about your buying timeline and what you’re looking for.”</button><button data-option-id=\"introduction-invitation\" data-correct=\"true\" data-feedback=\"TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.\">“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice in terms of the buyer’s experience.<textarea data-save=\"opening-invitation\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.</p><p>TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.</p></div></details>",
+      "time": 3,
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Allow a minute to respond. Ask what the interview-first agent hoped to learn, then show where discovery belongs after the invitation. Do not shame a choice. Demonstrate a revised opening.\nHandoff: Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.",
       "activity": {
         "id": "day2-opening-decision",
         "kind": "choice",
-        "prompt": "Practice variation: Jordan asked to see 1234 Lane but selected no time. How would you begin?",
+        "prompt": "A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.",
         "fields": [
           {
             "id": "opening-invitation",
-            "label": "Write your introduction and early appointment invitation."
+            "label": "Explain your choice in terms of the buyer’s experience."
           }
         ],
-        "model": "Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane. Would Saturday morning or afternoon work better? I’ll verify access for the time we choose.",
-        "explanation": "Orient the buyer and offer useful times before discovery. Use actual availability. The invitation is a strong default, not a reason to ignore a buyer’s stated circumstances.",
+        "model": "The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.",
+        "explanation": "TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.",
         "choices": [
           {
-            "id": "budget",
-            "text": "Ask about budget and preapproval before offering a time."
-          },
-          {
-            "id": "process",
-            "text": "Explain the buying process before discussing the visit."
+            "id": "interview",
+            "text": "“Before we schedule, tell me about your buying timeline and what you’re looking for.”"
           },
           {
             "id": "introduction-invitation",
-            "text": "Introduce yourself and offer workable showing times."
+            "text": "“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”"
           }
         ],
         "correctChoiceId": "introduction-invitation"
@@ -191,115 +188,150 @@
     },
     {
       "id": "day2-permission",
-      "chapter": "Ask and listen",
-      "title": "The appointment opens a conversation",
-      "lead": "Before asking about the search, explain why the questions help.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “Do you have a few minutes so I can learn what you’re looking for and make our time together useful?”</p><p><b>Jordan</b> “Sure. We’re already in town.”</p><p><b>Agent</b> “What’s changing where you live now?”</p><p><b>Jordan</b> “We rent an apartment. We’d like outdoor space.”</p></div><p class=\"alms-note\">If they have only a minute, keep it brief. Handle the request and agreed next action without forcing a full interview.</p>",
+      "chapter": "Understand the buyer",
+      "title": "Ask permission before asking about their search",
+      "lead": "In our practice call, George has chosen Saturday morning for the Cedar Lane tour. You have not yet learned what he needs from a home.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Do you have a few minutes? I’d like to learn a little about your search so I can make our time together useful.”</span></p><p><b>George</b><span>“Sure.”</span></p><p><b>Agent</b><span>“Are you moving from nearby, or coming from somewhere else?”</span></p><p><b>George</b><span>“We’re renting an apartment here in town.”</span></p></div>",
+      "time": 2,
+      "theme": "tru alms lesson",
+      "notes": "Read the exchange. Permission respects time and explains why you ask. If the buyer has only a minute, handle essentials and agree when to continue. Do not force every question.\nHandoff: George has told us he rents locally. That is a starting point for a conversation, not a completed discovery section.\nSources: TRU September 12 teaching, INT-016, INT-021, INT-023. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "George has told us he rents locally. That is a starting point for a conversation, not a completed discovery section."
+    },
+    {
+      "id": "day2-location",
+      "chapter": "Understand the buyer",
+      "title": "Learn why an area works for them",
+      "lead": "Our practice buyer George rents locally and wants to see the Cedar Lane home. Ask how that location fits his life.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“What attracted you to this part of town?”</span></p><p><b>George</b><span>“It would make my commute much shorter.”</span></p><p><b>Agent</b><span>“Are you focused on this area, or are there other places that would work for that commute?”</span></p><p><b>George</b><span>“This area and the neighborhood just east of it would both work.”</span></p></div><p class=\"lesson-explanation\">Now you know why the location matters and where a useful comparison home might be. The buyer defined the area; you did not assume it.</p>",
       "time": 3,
-      "theme": "tru alms",
-      "notes": "Read the exchange. Ask aloud what the follow-up learned that “in town” alone did not tell us. Connect this to location: use their current situation and ask which areas work for them and why. Do not assume a lease end, children, or a reason for moving. Handoff: Jordan mentioned outdoor space. That gives us the next question. Sources: R013; INT-016, INT-023. All buyers and property details in examples are fictional.",
-      "cue": "Jordan mentioned outdoor space. That gives us the next question."
+      "theme": "tru alms lesson",
+      "notes": "The follow-up comes from the commute answer. Location means more than a ZIP code. Keep criteria buyer-defined. Ask the room what new information the follow-up provided.\nHandoff: We know where George wants to be. Now let’s find out what he wants the home itself to do for him.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "We know where George wants to be. Now let’s find out what he wants the home itself to do for him."
     },
     {
       "id": "day2-motivation",
-      "chapter": "Ask and listen",
-      "title": "“Outdoor space” needs a follow-up",
-      "lead": "The feature becomes useful when you understand its purpose.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “What would you like to do with that space?”</p><p><b>Jordan</b> “I’d like a vegetable garden.”</p><p><b>Agent</b> “What would you need from the space for that?”</p><p><b>Jordan</b> “Somewhere sunny, with room for raised beds.”</p></div><p class=\"alms-note\">Now the search has a reason: usable garden space. A large yard alone may not solve it.</p>",
+      "chapter": "Understand the buyer",
+      "title": "Ask what the feature will let them do",
+      "lead": "Our practice buyer George says the Cedar Lane home caught his eye because it has a larger yard.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“What would you like to be able to do with that extra outdoor space?”</span></p><p><b>George</b><span>“I want to grow vegetables. We can’t do that at the apartment.”</span></p><p><b>Agent</b><span>“What would you need from the yard for that?”</span></p><p><b>George</b><span>“Sun and room for a few raised beds.”</span></p></div><p class=\"lesson-explanation\">“A bigger yard” is a feature. Space for a vegetable garden explains why it matters. That reason will help you choose better comparisons.</p>",
       "time": 3,
-      "theme": "tru alms",
-      "notes": "Read each turn and point to the link between the answer and the next question. Briefly contrast “Great, how many bedrooms?” which abandons the answer. Use authentic warmth without a memorized personal anecdote. Ask the room what they now know they did not know before. Handoff: You’ve heard a follow-up reveal the reason. Practice finding the reason with a partner. Sources: R013; INT-016, INT-021. All buyers and property details in examples are fictional.",
-      "cue": "You’ve heard a follow-up reveal the reason. Practice finding the reason with a partner."
+      "theme": "tru alms lesson",
+      "notes": "Read the answers before each follow-up. Do not turn gardening into a required script or invent a matching personal anecdote. Ask what a large but shaded yard might fail to provide.\nHandoff: Now you will choose a follow-up for a different buyer. The situation is on the next slide; there is no hidden backstory.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Now you will choose a follow-up for a different buyer. The situation is on the next slide; there is no hidden backstory."
+    },
+    {
+      "id": "day2-next-question",
+      "chapter": "Practice discovery",
+      "title": "Write the next sentence you would say",
+      "lead": "During a first call, a buyer tells you: “We’re already in town. We need more space, but we don’t want to leave our neighborhood.” Write one follow-up question and explain what you hope to learn.",
+      "body": "<label class=\"field\">Your next question and what its answer would help you understand.<textarea data-save=\"follow-up\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“What is feeling too tight in your current home?” This could reveal whether they need bedrooms, work space, storage or something else. Then explore why staying in the neighborhood matters.</p><p>A useful question follows the buyer’s words and reveals a reason or tradeoff that shapes the search.</p></div></details>",
+      "time": 3,
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Give a minute to write, then read two contrasting questions. Ask what a possible answer would tell the agent. Different wording is not an error; look for curiosity tied to the situation.\nHandoff: Writing a question is one part of the skill. In pairs, practice listening to the answer and deciding what to ask next.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Writing a question is one part of the skill. In pairs, practice listening to the answer and deciding what to ask next.",
+      "activity": {
+        "id": "day2-next-question",
+        "kind": "written",
+        "prompt": "During a first call, a buyer tells you: “We’re already in town. We need more space, but we don’t want to leave our neighborhood.” Write one follow-up question and explain what you hope to learn.",
+        "fields": [
+          {
+            "id": "follow-up",
+            "label": "Your next question and what its answer would help you understand."
+          }
+        ],
+        "model": "“What is feeling too tight in your current home?” This could reveal whether they need bedrooms, work space, storage or something else. Then explore why staying in the neighborhood matters.",
+        "explanation": "A useful question follows the buyer’s words and reveals a reason or tradeoff that shapes the search."
+      }
     },
     {
       "id": "day2-discovery-practice",
-      "chapter": "Ask and listen",
-      "title": "Partner practice: what does “more space” mean?",
-      "lead": "Practice variation: your buyer says, “We need more space.” Learn what that means, then switch roles.",
-      "body": "<ol class=\"alms-steps\"><li><h3>First turn: 3 minutes</h3><p>Ask permission, follow the buyer’s answer, then use one correction to retry.</p></li><li><h3>Switch buyer and agent: 3 minutes</h3><p>Use a new reason for needing more space. Everyone gets a speaking turn.</p></li><li><h3>Room debrief: 1 minute</h3><p>Share the follow-up that taught you something useful.</p></li></ol><p class=\"alms-note\">1 minute to set up. Video rooms are in your meeting platform. Submit your reflection after practice.</p><label class=\"field\">What would you ask next, and what would that help you understand?<textarea data-save=\"next-question\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">What did your partner suggest, and how did your retry change?<textarea data-save=\"discovery-retry\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“What is feeling too tight in your current place?” Their answer could reveal the purpose of the space. Follow that answer rather than assuming a larger bedroom count solves it.</p><p>Choose a question connected to the buyer’s words. There is no required question count, personal anecdote, or fixed order for location and motivation.</p></div></details>",
+      "chapter": "Partner practice",
+      "title": "Practice a short discovery conversation",
+      "lead": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Ask permission, then find out what “more space” means.",
+      "body": "<p class=\"lesson-explanation\"><strong>First turn: 3 minutes.</strong> Talk for two minutes, give one specific suggestion, then retry the sentence it changes.</p><p class=\"lesson-explanation\"><strong>Switch buyer and agent: 3 minutes.</strong> Use a different reason for needing space. Everyone practices speaking and listening.</p><p class=\"lesson-explanation\">Use one minute to form pairs and one minute to debrief. Submit your reflection when you return.</p><label class=\"field\">What did you learn that “more space” did not tell you?<textarea data-save=\"next-question\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What feedback did you receive, and what changed on your retry?<textarea data-save=\"discovery-retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Ask permission, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.</p><p>Record what you actually learned and changed. Reflection does not prove a coach observed the call.</p></div></details>",
       "time": 8,
-      "theme": "tru alms alms-exercise",
-      "notes": "8 minutes: 1 minute setup, 3 minutes each direction (2-minute conversation and 1-minute correction/retry), 1-minute debrief. Assign speaking turns and open the meeting platform’s rooms. Buyer invents a simple reason and reveals it when asked. Listen for permission and a question connected to the actual answer. On return, ask one pair what changed on the retry. Handoff: You have a way to learn what matters. Before we close the call, let’s handle questions that can interrupt that plan. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "You have a way to learn what matters. Before we close the call, let’s handle questions that can interrupt that plan.",
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "1 minute setup. Buyer privately chooses a reason for needing space and reveals it after a relevant question. Each turn is 3 minutes: 2-minute conversation, 30-second feedback, 30-second retry. Switch buyer and agent. Final minute: debrief and reflection. Video rooms are managed in the meeting platform.\nHandoff: Discovery works best when we respond to the person. The same principle applies when a buyer says they only wanted an answer to a property question.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Discovery works best when we respond to the person. The same principle applies when a buyer says they only wanted an answer to a property question.",
       "activity": {
         "id": "day2-discovery-practice",
         "kind": "roleplay",
-        "prompt": "Practice variation: your buyer says, “We need more space.” Learn what that means, then switch roles.",
+        "prompt": "One person plays a buyer who wants to stay in the neighborhood but needs more space. The other plays the agent, after an appointment has been discussed. Ask permission, then find out what “more space” means.",
         "fields": [
           {
             "id": "next-question",
-            "label": "What would you ask next, and what would that help you understand?"
+            "label": "What did you learn that “more space” did not tell you?"
           },
           {
             "id": "discovery-retry",
-            "label": "What did your partner suggest, and how did your retry change?"
+            "label": "What feedback did you receive, and what changed on your retry?"
           }
         ],
-        "model": "“What is feeling too tight in your current place?” Their answer could reveal the purpose of the space. Follow that answer rather than assuming a larger bedroom count solves it.",
-        "explanation": "Choose a question connected to the buyer’s words. There is no required question count, personal anecdote, or fixed order for location and motivation.",
+        "model": "Ask permission, explore the current situation, and follow the answer. Learning that the buyer works at the kitchen table points toward a work-space need, not automatically more bedrooms.",
+        "explanation": "Record what you actually learned and changed. Reflection does not prove a coach observed the call.",
         "rubric": [
           {
             "id": "permission",
-            "label": "Ask permission before discovery"
+            "label": "Explains why the questions help and asks permission"
           },
           {
             "id": "follow",
-            "label": "Ask a follow-up based on the buyer’s actual answer"
+            "label": "Follows a buyer answer rather than switching to a checklist"
           }
         ]
       }
     },
     {
       "id": "day2-questions-only",
-      "chapter": "When the call changes",
-      "title": "What if the buyer only wants an answer?",
-      "lead": "Variation: the buyer declines a tour and asks about the roof.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “Of course. What would you like to know?”</p><p><b>Buyer</b> “How old is the roof?”</p><p><b>Agent</b> “I’ll check that. Can I ask what concerns you about it?”</p><p><b>Buyer</b> “I’m worried about taking on repairs.”</p></div><p class=\"alms-note\">Bring the answer back. Explain how a viewing could help them decide. If they still decline, agree how to return the information.</p>",
-      "time": 2,
-      "theme": "tru alms",
-      "notes": "Make clear this is an alternate buyer response, not a new fact about Jordan. Demonstrate a useful second invitation: “Seeing it could help you decide whether it fits, and I can bring the roof answer. Would that be useful?” If declined, stop pushing and arrange the answer. Answer known facts now. Do not make information conditional on meeting. Handoff: A property question can reveal a concern. The same applies when the buyer asks about financing. Sources: R014; INT-016. All buyers and property details in examples are fictional.",
-      "cue": "A property question can reveal a concern. The same applies when the buyer asks about financing."
+      "chapter": "Respond to buyer questions",
+      "title": "When the buyer says, “I only had a question”",
+      "lead": "Example: a buyer asks how old the roof is and says they are not ready to schedule a showing. You do not yet have a verified answer.",
+      "body": "<blockquote class=\"lesson-example\">“Of course. I’ll check the roof information and get you an answer. What is the main concern you’re trying to work out?”</blockquote><p class=\"lesson-explanation\">Listen to the concern. If seeing the home would help, explain why and offer a visit. If they still prefer an answer first, agree how and when you will return with the information.</p><blockquote class=\"lesson-example\">“I can bring the information when we look, or call you after I verify it. Which would be more useful?”</blockquote>",
+      "time": 3,
+      "theme": "tru alms lesson",
+      "notes": "Teach the whole reasoning: acknowledge, learn context, make a useful invitation. Do not make an answer conditional on a visit. If the buyer declines again, stop pushing. Never guess the roof age or claim completed research.\nHandoff: A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now."
     },
     {
       "id": "day2-financing",
-      "chapter": "When the call changes",
-      "title": "When the buyer asks about a lender",
-      "lead": "Variation: “Should I talk to a lender before we look?”",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “A lender can help you understand your options. What are you hoping to work out before we look?”</p><p><b>Buyer</b> “I don’t know what payment I’d be comfortable with.”</p><p><b>Agent</b> “That’s useful to work through. I can help connect you with a lender to discuss those numbers.”</p></div><p class=\"alms-note\">Help with the concern. Do not turn the showing request into a demand for preapproval.</p>",
+      "chapter": "Respond to buyer questions",
+      "title": "Do not make preapproval the price of a first visit",
+      "lead": "A buyer who asks to see a home should not have to pass a financial interview before you help arrange it.",
+      "body": "<p class=\"lesson-explanation\">TRU does not teach opening the first call with “Are you preapproved?” The buyer does not know you yet, and a private financial question can make the visit feel conditional.</p><p class=\"lesson-explanation\">If the buyer raises financing, respond to their concern and offer relevant lender help. The usual later opportunity is the end of the first showing, when the discussion has context.</p>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Read the example. The buyer introduced financing, so address it. Explain that lender-specific numbers belong with the lender. Eric’s usual later opening is the end of the first showing; today covers the buyer-raised first-call question only. Do not lecture on loan products. Handoff: Choose the response that helps with that concern while keeping the meeting easy. Sources: R001–R004; INT-001–INT-005, INT-016. All buyers and property details in examples are fictional.",
-      "cue": "Choose the response that helps with that concern while keeping the meeting easy."
+      "theme": "tru alms lesson",
+      "notes": "Explain timing and framing, not a blanket ban on financing. A lender handles specifics. Do not make credit, approval or affordability promises. A long timeline does not automatically mean planning is too early.\nHandoff: Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition.\nSources: TRU September 12 teaching, R001–R004; INT-001–004, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition."
     },
     {
       "id": "day2-financing-check",
-      "chapter": "When the call changes",
-      "title": "Your turn: a financing question",
-      "lead": "The buyer asks, “Should I talk to a lender before we look?” What is the best response?",
-      "body": "<div class=\"choices\" data-quiz=\"day2-financing-check\"><button data-option-id=\"context\" data-correct=\"true\" data-feedback=\"Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.\">Ask what they need to work out, then offer relevant lender help.</button><button data-option-id=\"refuse\" data-correct=\"false\" data-feedback=\"Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.\">Save the financing question for the showing and move on.</button><button data-option-id=\"gate\" data-correct=\"false\" data-feedback=\"Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.\">Ask for a preapproval letter before scheduling the showing.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“A lender can help you understand your options. What are you hoping to work out before we look?” If they need help with payments or financing options, offer a lender connection.</p><p>Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.</p></div></details>",
+      "chapter": "Discuss the response",
+      "title": "Help the buyer who raises financing",
+      "lead": "The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best fits TRU’s approach?",
+      "body": "<div class=\"choices\" data-quiz=\"day2-financing-check\"><button data-option-id=\"delay\" data-correct=\"false\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“Let’s see the house first. We can discuss the money afterward.”</button><button data-option-id=\"context\" data-correct=\"true\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“A lender can help you work through that. I can help arrange an introduction as we plan the visit.”</button><button data-option-id=\"gate\" data-correct=\"false\" data-feedback=\"Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.\">“Yes. Send me the preapproval letter and then we can schedule.”</button></div><p class=\"feedback\" aria-live=\"polite\"></p><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.</p><p>Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.</p></div></details>",
       "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Allow a short vote, then ask someone to say the answer in everyday language. Reveal and discuss why both refusing the topic and imposing a blanket preapproval gate miss the buyer’s question. Handoff: Another question may be about who you represent. Keep that answer just as direct. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "Another question may be about who you represent. Keep that answer just as direct.",
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Allow a vote, then ask what problem the buyer wants solved. Discuss offering help versus adding a gate. Do not automatically ask every new buyer about financing.\nHandoff: Buyers may also be unsure who Zillow connected them with. A direct answer about your role is usually enough.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Buyers may also be unsure who Zillow connected them with. A direct answer about your role is usually enough.",
       "activity": {
         "id": "day2-financing-check",
         "kind": "choice",
-        "prompt": "The buyer asks, “Should I talk to a lender before we look?” What is the best response?",
+        "prompt": "The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best fits TRU’s approach?",
         "fields": [],
-        "model": "“A lender can help you understand your options. What are you hoping to work out before we look?” If they need help with payments or financing options, offer a lender connection.",
-        "explanation": "Buyer-initiated financing questions deserve an answer. Avoid both a blanket refusal to discuss money and a blanket requirement to obtain preapproval before receiving help.",
+        "model": "Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.",
+        "explanation": "Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.",
         "choices": [
           {
-            "id": "context",
-            "text": "Ask what they need to work out, then offer relevant lender help."
+            "id": "delay",
+            "text": "“Let’s see the house first. We can discuss the money afterward.”"
           },
           {
-            "id": "refuse",
-            "text": "Save the financing question for the showing and move on."
+            "id": "context",
+            "text": "“A lender can help you work through that. I can help arrange an introduction as we plan the visit.”"
           },
           {
             "id": "gate",
-            "text": "Ask for a preapproval letter before scheduling the showing."
+            "text": "“Yes. Send me the preapproval letter and then we can schedule.”"
           }
         ],
         "correctChoiceId": "context"
@@ -307,234 +339,213 @@
     },
     {
       "id": "day2-listing-agent",
-      "chapter": "When the call changes",
-      "title": "“Are you the listing agent?”",
-      "lead": "The buyer needs a clear answer about your role.",
-      "body": "<figure class=\"alms-quote\"><blockquote>I’m not the listing agent. I help buyers and can coordinate with the listing side. What would you like to know?</blockquote><figcaption>Example wording · fictional buyer</figcaption></figure><p class=\"alms-note\">If they prefer the listing agent, offer to help with that connection. Respect their choice.</p>",
+      "chapter": "Respond to buyer questions",
+      "title": "Answer the question about your role directly",
+      "lead": "Example: Zillow connects you with a buyer who asks, “Are you the listing agent?” You are not.",
+      "body": "<blockquote class=\"lesson-example\">“I’m not the listing agent. I help buyers, and I can coordinate with the listing side about this home. What would you like to know?”</blockquote><p class=\"lesson-explanation\">Use your actual role and relationship. If the buyer wants the listing agent, offer to help with that connection. Ask whether a later check-in would be useful, then respect their choice.</p>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Read the short answer and return to the property question. Use the real role. If an existing representation agreement raises an unresolved question, involve the team lead using the actual circumstances and form. Avoid an agency lecture. Handoff: Your role is clear. Now suppose the answer about the property itself is disappointing. Sources: R015; INT-016–INT-018. All buyers and property details in examples are fictional.",
-      "cue": "Your role is clear. Now suppose the answer about the property itself is disappointing."
+      "theme": "tru alms lesson",
+      "notes": "A long agency lecture can derail a simple question. Do not invent an existing working relationship or assume the listing agent will fail to respond. Actual relationships and forms govern.\nHandoff: Sometimes the difficult answer is about the home itself. Being helpful means telling the truth and explaining what you can still do.\nSources: TRU September 12 teaching, INT-016–018. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Sometimes the difficult answer is about the home itself. Being helpful means telling the truth and explaining what you can still do."
     },
     {
       "id": "day2-under-contract",
-      "chapter": "When the call changes",
-      "title": "The home is under contract",
-      "lead": "Separate variation: you learn this during the first inquiry. No showing is confirmed.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “The home is under contract. I can check whether a viewing is still possible. What drew you to it?”</p><p><b>Buyer</b> “The yard. I want room for a garden.”</p><p><b>Agent</b> “I can also research homes with useful garden space. Would that help?”</p></div><p class=\"alms-note\">State what you know. Keep access and unresearched alternatives conditional.</p>",
-      "time": 2,
-      "theme": "tru alms",
-      "notes": "Apply Eric’s problem-solving principle only to this first-call scenario. We are not teaching a cancellation or showing-day workflow. Explain why the next step uses the buyer’s reason. Do not claim to have researched alternatives when you have not. Handoff: Try giving that news with a specific next step tied to what the buyer told you. Sources: R011–R012 applied to the initial availability question. All buyers and property details in examples are fictional.",
-      "cue": "Try giving that news with a specific next step tied to what the buyer told you."
+      "chapter": "Respond to buyer questions",
+      "title": "If the home is under contract, keep helping",
+      "lead": "Example: during an initial inquiry, you verify that the requested home is under contract. The buyer says its garden space is what interested them.",
+      "body": "<blockquote class=\"lesson-example\">“The home is under contract. I can ask the listing agent whether a viewing is still possible. You mentioned the garden space; I can also look for homes with similar outdoor space. Would comparing those be useful?”</blockquote><p class=\"lesson-explanation\">Be honest about the status. Use what the buyer told you to propose useful work. Do not promise access or claim you have found alternatives before you have researched them.</p>",
+      "time": 3,
+      "theme": "tru alms lesson",
+      "notes": "Connect to Eric’s problem-solving principle. Bare bad news leaves the buyer to solve the problem. A relevant offer gives them a next step to accept or decline. Keep scope to the initial inquiry.\nHandoff: Try the same principle with a different priority. The next buyer cares about a work commute, not a garden.\nSources: TRU September 12 teaching, INT-014–015 applied to first inquiry. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Try the same principle with a different priority. The next buyer cares about a work commute, not a garden."
     },
     {
       "id": "day2-changed-plan",
-      "chapter": "When the call changes",
-      "title": "Your turn: a home under contract",
-      "lead": "Variation: the home is under contract. The buyer wants garden space. What do you say next?",
-      "body": "<label class=\"field\">Write your response and a useful next step.<textarea data-save=\"plan\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“The home is under contract. I can check whether a viewing is still possible. Since garden space matters, I can also research some options to compare. Would that be useful?” Keep access and unresearched alternatives conditional.</p><p>Tell the truth, use known priorities, keep possibilities conditional, and offer a next step. Do not merely hand the search back with “Want something else?”</p></div></details>",
-      "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Give 60 seconds for writing. Compare one bare status update with one truthful plan tied to garden space. Reveal after responses. Listen for unsupported promises about access or already-researched alternatives. Handoff: Those were alternate situations. Return to Jordan’s original call: Saturday morning is preferred, garden space matters, and access is still pending. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "Those were alternate situations. Return to Jordan’s original call: Saturday morning is preferred, garden space matters, and access is still pending.",
+      "chapter": "Practice a response",
+      "title": "Offer a useful next step after disappointing news",
+      "lead": "A buyer asks about a home you have verified is under contract. They tell you its location would shorten their commute. You have not researched other homes. Write what you would say next.",
+      "body": "<label class=\"field\">Write your response as you would say it to the buyer.<textarea data-save=\"plan\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“The home is under contract. I can check whether a viewing is still possible. Since the commute is important, what area would work for you? I can research some other options there if that would help.”</p><p>Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties.</p></div></details>",
+      "time": 2,
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Ask for spoken language. Read one response and ask whether the buyer has an understandable next step. If it ends at bad news, ask for one useful offer grounded in the commute.\nHandoff: Whether the call was straightforward or included a question, finish by saying what you understood and what happens next.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Whether the call was straightforward or included a question, finish by saying what you understood and what happens next.",
       "activity": {
         "id": "day2-changed-plan",
         "kind": "written",
-        "prompt": "Variation: the home is under contract. The buyer wants garden space. What do you say next?",
+        "prompt": "A buyer asks about a home you have verified is under contract. They tell you its location would shorten their commute. You have not researched other homes. Write what you would say next.",
         "fields": [
           {
             "id": "plan",
-            "label": "Write your response and a useful next step."
+            "label": "Write your response as you would say it to the buyer."
           }
         ],
-        "model": "“The home is under contract. I can check whether a viewing is still possible. Since garden space matters, I can also research some options to compare. Would that be useful?” Keep access and unresearched alternatives conditional.",
-        "explanation": "Tell the truth, use known priorities, keep possibilities conditional, and offer a next step. Do not merely hand the search back with “Want something else?”"
+        "model": "“The home is under contract. I can check whether a viewing is still possible. Since the commute is important, what area would work for you? I can research some other options there if that would help.”",
+        "explanation": "Tell the truth, connect the offer to the commute, and keep unverified possibilities conditional. Do not invent available properties."
       }
     },
     {
       "id": "day2-summary",
-      "chapter": "Build the plan",
-      "title": "The plan should use what Jordan told you",
-      "lead": "Back to the original call. Jordan wants sunny space for raised beds.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b> “Would it help to compare another home with usable garden space while we’re out?”</p><p><b>Jordan</b> “Yes, that would help.”</p><p><b>Agent</b> “Saturday morning is your preference. I’ll check access to 1234 Lane and research a comparison with garden space. I’ll text you the details after I hear back. Is that right?”</p><p><b>Jordan</b> “Yes. Text is good.”</p></div>",
+      "chapter": "Agree on the next step",
+      "title": "Summarize the buyer’s priorities and the plan",
+      "lead": "Return to practice buyer George: he wants a shorter commute and garden space. He prefers Saturday morning for Cedar Lane and has agreed to compare another home. Access is still pending.",
+      "body": "<blockquote class=\"lesson-example\">“You’d like a shorter commute and a sunny space for a vegetable garden. We’re aiming for Saturday morning. I’ll check access to Cedar Lane and research another home to compare. I’ll text you the confirmed details once I have them. Have I understood everything correctly?”</blockquote><p class=\"lesson-explanation\">Before ending, confirm the communication plan and explain the applicable touring form. Describe its actual terms and what the buyer will receive.</p>",
       "time": 3,
-      "theme": "tru alms",
-      "notes": "Demonstrate obtaining agreement before adding comparisons. Explain Eric’s goal of two or three homes without making extra homes a condition. The summary reflects actual priorities, permission, pending checks, and the agreed channel. Briefly explain the applicable touring form and what you will send, using its actual terms. Do not invent signing status. Handoff: Now close that call in your own words, using only what Jordan has agreed to. Sources: R013; INT-016. All buyers and property details in examples are fictional.",
-      "cue": "Now close that call in your own words, using only what Jordan has agreed to."
+      "theme": "tru alms lesson",
+      "notes": "Trace each fact to the case. Comparison consent is supplied here; it is not assumed from interest. The full call shows how to ask. Avoid generic promises about every state or form.\nHandoff: Practice a close with a different plan: the buyer cannot tour this week and has agreed to a later phone conversation.\nSources: TRU September 12 teaching, INT-016, INT-023, INT-035. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Practice a close with a different plan: the buyer cannot tour this week and has agreed to a later phone conversation."
     },
     {
       "id": "day2-summary-practice",
-      "chapter": "Build the plan",
-      "title": "Your turn: the agreed next step",
-      "lead": "Jordan wants garden space, prefers Saturday morning, accepts a comparison home, and agrees to text. Access is pending.",
-      "body": "<label class=\"field\">Write the summary and next step you would say aloud.<textarea data-save=\"summary\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“Garden space matters, and Saturday morning is your preference. I’ll check access and research a comparison with room for a garden. I’ll text you the details after I hear back. Have I missed anything?”</p><p>Do not upgrade a requested time into a confirmed showing. Reflect the actual priorities and your promised action.</p></div></details>",
+      "chapter": "Practice the close",
+      "title": "Close a call when the buyer cannot tour yet",
+      "lead": "A buyer is relocating in two months. They want room for a home office and cannot visit this week. You agreed to email three possible homes and speak Tuesday at 6 p.m. Write the closing summary.",
+      "body": "<label class=\"field\">Say what matters to the buyer, what you will send, and the agreed next conversation.<textarea data-save=\"summary\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>“You’re planning to relocate in two months and need space for a home office. I’ll email three homes for you to look over, and we’ll talk Tuesday at six about what fits. Is there anything else you’d like me to keep in mind?”</p><p>A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer.</p></div></details>",
       "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Give 60 seconds to submit. Ask which parts are agreed and which remain pending. Reveal and discuss. A useful close can be brief; it must preserve the buyer’s facts and the agent’s actual commitment. Handoff: You’ve practiced the parts. Watch how those same parts connect in one uninterrupted call. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "You’ve practiced the parts. Watch how those same parts connect in one uninterrupted call.",
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "Allow a minute to write. Check that answers distinguish the relocation timeline from the next call. Do not invent a showing or say properties were already sent.\nHandoff: You have practiced the pieces. Now listen to one complete call, starting with the buyer’s original request.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "You have practiced the pieces. Now listen to one complete call, starting with the buyer’s original request.",
       "activity": {
         "id": "day2-summary-practice",
         "kind": "written",
-        "prompt": "Jordan wants garden space, prefers Saturday morning, accepts a comparison home, and agrees to text. Access is pending.",
+        "prompt": "A buyer is relocating in two months. They want room for a home office and cannot visit this week. You agreed to email three possible homes and speak Tuesday at 6 p.m. Write the closing summary.",
         "fields": [
           {
             "id": "summary",
-            "label": "Write the summary and next step you would say aloud."
+            "label": "Say what matters to the buyer, what you will send, and the agreed next conversation."
           }
         ],
-        "model": "“Garden space matters, and Saturday morning is your preference. I’ll check access and research a comparison with room for a garden. I’ll text you the details after I hear back. Have I missed anything?”",
-        "explanation": "Do not upgrade a requested time into a confirmed showing. Reflect the actual priorities and your promised action."
+        "model": "“You’re planning to relocate in two months and need space for a home office. I’ll email three homes for you to look over, and we’ll talk Tuesday at six about what fits. Is there anything else you’d like me to keep in mind?”",
+        "explanation": "A useful next step does not always mean a near-term showing. Reflect the timeline and agreement instead of forcing the tour example onto this buyer."
       }
     },
     {
       "id": "day2-whole-call-one",
-      "chapter": "Put it together",
-      "title": "The whole call: opening and discovery",
-      "lead": "Demonstration. Follow the conversation rather than naming each step.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Sam</b> “Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”</p><p><b>Jordan</b> “Yes, morning works.”</p><p><b>Sam</b> “Have you got a few minutes so I can make our time useful?”</p><p><b>Jordan</b> “Sure.”</p><p><b>Sam</b> “What’s changing where you live now?”</p><p><b>Jordan</b> “We rent in town. We’d like outdoor space.”</p></div>",
+      "chapter": "Full-call demonstration",
+      "title": "Listen to the call from the beginning",
+      "lead": "Fictional case: George requested a tour of 418 Cedar Lane with no time selected. The agent can meet Saturday morning or afternoon and still needs to check property access.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Hi George, I’m [your name] with [your brokerage], a featured partner with Zillow. I’m calling about your Cedar Lane tour request. Would Saturday morning or afternoon work better?”</span></p><p><b>George</b><span>“Morning would be good.”</span></p><p><b>Agent</b><span>“I’ll check access. Do you have a few minutes so I can learn about your search?”</span></p><p><b>George</b><span>“Sure. We rent in town, but we’d like a shorter commute and space for a garden.”</span></p></div>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Ask a volunteer to read Jordan or read both parts yourself. Do not stop to label every ALMS letter. Agents listen for what each answer gives the agent to work with. Continue directly to the next slide without opening a new discussion. Handoff: Jordan has just said “outdoor space.” Continue from those words. Sources: R013; adapted from INT-016. All buyers and property details in examples are fictional.",
-      "cue": "Jordan has just said “outdoor space.” Continue from those words."
+      "theme": "tru alms lesson",
+      "notes": "Read without explaining between turns. A volunteer can voice George. The full situation is stated here so someone need not reconstruct previous slides. Continue the demonstration on the next slide.\nHandoff: George has just told us about the commute and garden. Continue by learning what those mean, then agree on the plan.\nSources: TRU September 12 teaching, INT-016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "George has just told us about the commute and garden. Continue by learning what those mean, then agree on the plan."
     },
     {
       "id": "day2-whole-call-two",
-      "chapter": "Put it together",
-      "title": "The same call: discovery and agreement",
-      "lead": "Continue without restarting the conversation.",
-      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Sam</b> “What would you like to do with that space?”</p><p><b>Jordan</b> “A vegetable garden. I need sun and room for raised beds.”</p><p><b>Sam</b> “Would comparing another home with garden space help?”</p><p><b>Jordan</b> “Yes.”</p><p><b>Sam</b> “Saturday morning is your preference. I’ll check access and research that comparison, then text the details. Does that work?”</p><p><b>Jordan</b> “Yes, text is good.”</p></div>",
+      "chapter": "Full-call demonstration",
+      "title": "Continue from what the buyer just told you",
+      "lead": "In the same practice call, George rents locally and wants a shorter commute and garden space. He prefers Saturday morning for the tour.",
+      "body": "<div class=\"alms-dialogue alms-call-turns\"><p><b>Agent</b><span>“Which areas would work for your commute, and what would you want to grow?”</span></p><p><b>George</b><span>“Near Cedar Lane works. I’d like sun and room for raised vegetable beds.”</span></p><p><b>Agent</b><span>“Would you like me to find another home with that kind of space so we can compare while we’re out?”</span></p><p><b>George</b><span>“Yes, that would help.”</span></p><p><b>Agent</b><span>“So, a shorter commute and sun for a garden. I’ll check access, find a comparison and text the details for Saturday morning. Is text best for you?”</span></p><p><b>George</b><span>“Yes.”</span></p></div>",
       "time": 2,
-      "theme": "tru alms",
-      "notes": "Finish the demonstration aloud. Briefly explain the applicable touring form and promised follow-up in accurate terms. Ask what made the next step specific to Jordan. Then give practice instructions; do not introduce another topic. Handoff: Now run a call yourselves. Keep the sequence, but respond to the buyer you actually hear. Sources: R012–R013, R016. All buyers and property details in examples are fictional.",
-      "cue": "Now run a call yourselves. Keep the sequence, but respond to the buyer you actually hear."
+      "theme": "tru alms lesson",
+      "notes": "Read continuously. Then model a brief explanation of the applicable touring form using actual terms. Debrief invitation, permission, priorities, comparison consent and next action. The two questions follow the two priorities just raised; agents can ask them separately.\nHandoff: Now everyone will lead a complete call. You will rotate through agent, buyer and observer, with a short retry after feedback.\nSources: TRU September 12 teaching, INT-015–016, INT-021. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Now everyone will lead a complete call. You will rotate through agent, buyer and observer, with a short retry after feedback."
     },
     {
       "id": "day2-full-call-practice",
-      "chapter": "Put it together",
-      "title": "Group practice: the complete first call",
-      "lead": "Trios rotate through agent, buyer, and observer. Everyone speaks.",
-      "body": "<ol class=\"alms-steps\"><li><h3>Call: 3 minutes</h3><p>Use the buyer card. Introduce yourself, help with the request, follow answers, and agree a next step.</p></li><li><h3>Feedback and retry: 1 minute</h3><p>Observer names one moment. Agent replays that part.</p></li><li><h3>Rotate, then debrief</h3><p>Repeat until all three have spoken. Submit the reflection after your turn.</p></li></ol><p class=\"alms-note\">1 minute setup, three 4-minute rounds, 2-minute debrief. Your assigned roles appear in your session. Video rooms are in your meeting platform.</p><label class=\"field\">What did you learn about the buyer?<textarea data-save=\"first-attempt\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">What will you improve?<textarea data-save=\"correction\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">What changed when you tried it again?<textarea data-save=\"retry\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Introduce yourself, offer the appointment early, ask permission, explore location and motivation through follow-up questions, and summarize the actual plan. Adapt if Jordan has limited time or a different request.</p><p>Use a partner as the buyer. When studying alone, say the agent’s turns aloud and compare with the two demonstration slides. A self-check is practice, not observed coach sign-off.</p></div></details>",
-      "time": 15,
-      "theme": "tru alms alms-exercise",
-      "notes": "15 minutes: 1 minute setup, three 4-minute rounds (3-minute call and 1-minute correction/retry), 2-minute debrief. Assign speaking turns, then use the meeting platform’s rooms. Buyer uses the assigned card and reveals the underlying reason in conversation. Observer gives one concrete correction. On return, ask which buyer answer changed the agent’s next question. A simulated or peer check is not coach sign-off. Handoff: The call is finished. Your next action should make good on the promise you just made. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "The call is finished. Your next action should make good on the promise you just made.",
+      "chapter": "Group practice",
+      "title": "Run a first call and retry one part",
+      "lead": "Work in trios. The buyer uses an assigned fictional case; the agent responds to what the buyer says. The observer listens for an early invitation, useful follow-up questions and an accurate closing.",
+      "body": "<p class=\"lesson-explanation\"><strong>Three rounds, three minutes each.</strong> Two minutes for the call, 30 seconds for feedback, then a 30-second retry.</p><p class=\"lesson-explanation\"><strong>Rotate all three roles.</strong> Everyone takes a turn as agent, buyer and observer. Use one minute to set up and two minutes to debrief and submit.</p><label class=\"field\">What did you learn about your buyer?<textarea data-save=\"first-attempt\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What specific feedback did the observer give?<textarea data-save=\"correction\" placeholder=\"Write your practice response.\"></textarea></label><label class=\"field\">What changed when you tried that part again?<textarea data-save=\"retry\" placeholder=\"Write your practice response.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>Introduce yourself, help with the request, ask permission, learn location and motivation, and summarize the actual plan. Adapt to the buyer’s question or time constraint. Report the conversation you practiced.</p><p>Everyone needs a speaking turn and a chance to improve a specific sentence. Peer feedback and reflection are not coach sign-off.</p></div></details>",
+      "time": 12,
+      "theme": "tru alms lesson alms-exercise",
+      "notes": "1 minute setup: assign trios and open meeting-platform rooms. Three rounds of 3 minutes: 2-minute call, 30-second observer feedback, 30-second targeted retry. Rotate all roles. Reserve 2 minutes for debrief and submissions. Buyer uses the assigned case; do not give the agent hidden buyer reasons before the call.\nHandoff: The call is not finished work until you follow through. We’ll end by showing what to put in FUB and what to do when a lead never answers.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "The call is not finished work until you follow through. We’ll end by showing what to put in FUB and what to do when a lead never answers.",
       "activity": {
         "id": "day2-full-call-practice",
         "kind": "roleplay",
-        "prompt": "Trios rotate through agent, buyer, and observer. Everyone speaks.",
+        "prompt": "Work in trios. The buyer uses an assigned fictional case; the agent responds to what the buyer says. The observer listens for an early invitation, useful follow-up questions and an accurate closing.",
         "fields": [
           {
             "id": "first-attempt",
-            "label": "What did you learn about the buyer?"
+            "label": "What did you learn about your buyer?"
           },
           {
             "id": "correction",
-            "label": "What will you improve?"
+            "label": "What specific feedback did the observer give?"
           },
           {
             "id": "retry",
-            "label": "What changed when you tried it again?"
+            "label": "What changed when you tried that part again?"
           }
         ],
-        "model": "Introduce yourself, offer the appointment early, ask permission, explore location and motivation through follow-up questions, and summarize the actual plan. Adapt if Jordan has limited time or a different request.",
-        "explanation": "Use a partner as the buyer. When studying alone, say the agent’s turns aloud and compare with the two demonstration slides. A self-check is practice, not observed coach sign-off.",
+        "model": "Introduce yourself, help with the request, ask permission, learn location and motivation, and summarize the actual plan. Adapt to the buyer’s question or time constraint. Report the conversation you practiced.",
+        "explanation": "Everyone needs a speaking turn and a chance to improve a specific sentence. Peer feedback and reflection are not coach sign-off.",
+        "useCases": true,
         "rubric": [
           {
             "id": "introduction",
-            "label": "Clear name, brokerage, Zillow connection and purpose"
+            "label": "Identifies agent, brokerage, Zillow connection and purpose"
           },
           {
             "id": "appointment",
-            "label": "Useful early appointment invitation that respects the request"
+            "label": "Helps with the appointment early while respecting the request"
           },
           {
             "id": "discovery",
-            "label": "Permission, relevant location/motivation questions and a follow-up"
+            "label": "Asks permission and follows an answer"
           },
           {
             "id": "summary",
-            "label": "Accurate priorities, commitments and unresolved checks"
+            "label": "Restates priorities and the agreed next action"
           },
           {
             "id": "adaptation",
-            "label": "Responds to the buyer’s actual preference and circumstances"
+            "label": "Responds usefully to the buyer’s question or time constraint"
           }
-        ],
-        "useCases": true
+        ]
       }
     },
     {
       "id": "day2-follow-through",
       "chapter": "After the call",
-      "title": "The record should match the call",
-      "lead": "Day 1 showed where to save the work. Here is what Jordan’s call gives you.",
-      "body": "<div class=\"alms-rows\"><div><h3>Conversation note</h3><p>Rents locally. Wants sunny space for raised beds. Prefers Saturday morning. Open to a comparison home. Text agreed.</p></div><div><h3>Pending action</h3><p>Check access to 1234 Lane and research a useful comparison.</p></div><div><h3>Task and next contact</h3><p>Set a task for the promised work. Text the details after the access answer, as agreed.</p></div></div><p class=\"alms-note\">Saturday morning remains requested until access is confirmed. Do not record a completed showing or an agreement the buyer did not make.</p>",
-      "time": 3,
-      "theme": "tru alms",
-      "notes": "Connect directly to the note and task skills from Day 1. Read the example record against the call. Ask which phrase prevents the next person reading the record from mistaking the request for confirmed access. Keep this to immediate follow-through, not later sales stages. Handoff: Before we finish, explain the decisions you would make on the next lead. Sources: R020–R021; INT-035–INT-039. All buyers and property details in examples are fictional.",
-      "cue": "Before we finish, explain the decisions you would make on the next lead."
+      "title": "Save the details that make your next contact useful",
+      "lead": "Example: after the practice call, George wants a shorter commute and a sunny garden. Saturday morning is preferred; access and a comparison home still need checking.",
+      "body": "<div class=\"lesson-record\"><p><strong>FUB note:</strong> Rents locally. Wants a shorter commute near Cedar Lane and sun for raised vegetable beds. Open to another home for comparison. Prefers Saturday morning. Text is the agreed channel. Tour access is not yet confirmed.</p><p><strong>Next task:</strong> Check access, research a relevant comparison, and text George the details. Set the task for the follow-up time you agreed.</p></div>",
+      "time": 2,
+      "theme": "tru alms lesson",
+      "notes": "Connect to Day 1. Separate facts learned from actions owed. Ask what would be lost if the note only said “wants to tour.” Do not mark an appointment confirmed without supporting arrangements.\nHandoff: That was a connected buyer. For a lead that never answers, the work is different: continue personal outreach instead of waiting on the automation.\nSources: TRU September 12 teaching, R020–R021; INT-035–039. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "That was a connected buyer. For a lead that never answers, the work is different: continue personal outreach instead of waiting on the automation."
     },
     {
-      "id": "day2-recall",
+      "id": "day2-unanswered",
       "chapter": "After the call",
-      "title": "Your turn: explain the next lead",
-      "lead": "Without looking back, explain the first-call decisions in your own words.",
-      "body": "<label class=\"field\">What does ALMS stand for, and why does the appointment come early?<textarea data-save=\"recall-alms\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">What changes when the buyer asks for a later call or text first?<textarea data-save=\"recall-channel\" placeholder=\"Use fictional practice details.\"></textarea></label><label class=\"field\">Give one follow-up question that turns a feature into a reason.<textarea data-save=\"recall-discovery\" placeholder=\"Use fictional practice details.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div><p>ALMS: Appointment, Location, Motivation, Summarize. Introduce yourself first. Offer useful help early, honor stated contact preferences, and follow the buyer’s answers instead of collecting a checklist.</p><p>If one part feels uncertain, return to that chapter and its examples. Ask your coach about the specific moment you want to practice.</p></div></details>",
-      "time": 3,
-      "theme": "tru alms alms-exercise",
-      "notes": "Give 90 seconds for the three short responses. Use the remaining time to address the most common uncertainty. This checks understanding, not certification or observed call performance. Point to the specific example that resolves a misunderstanding. Handoff: Keep this reference beside you when the next lead arrives. Sources: TRU Sales Proccess; application of the preceding instruction. All buyers and property details in examples are fictional.",
-      "cue": "Keep this reference beside you when the next lead arrives.",
-      "activity": {
-        "id": "day2-recall",
-        "kind": "written",
-        "prompt": "Without looking back, explain the first-call decisions in your own words.",
-        "fields": [
-          {
-            "id": "recall-alms",
-            "label": "What does ALMS stand for, and why does the appointment come early?"
-          },
-          {
-            "id": "recall-channel",
-            "label": "What changes when the buyer asks for a later call or text first?"
-          },
-          {
-            "id": "recall-discovery",
-            "label": "Give one follow-up question that turns a feature into a reason."
-          }
-        ],
-        "model": "ALMS: Appointment, Location, Motivation, Summarize. Introduce yourself first. Offer useful help early, honor stated contact preferences, and follow the buyer’s answers instead of collecting a checklist.",
-        "explanation": "If one part feels uncertain, return to that chapter and its examples. Ask your coach about the specific moment you want to practice."
-      }
+      "title": "Keep working a new lead that has not answered",
+      "lead": "The first missed call and personal text are the beginning of your outreach, not the entire plan.",
+      "body": "<p class=\"lesson-explanation\"><strong>Day one:</strong> Aim for three to four personal touches, with at least two calls and one personal text in the normal unanswered-lead flow.</p><p class=\"lesson-explanation\"><strong>First week:</strong> Aim for ten total touches, including day one. Make most attempts calls, vary the contact times, and make each text relevant to the inquiry.</p><p class=\"lesson-explanation\"><strong>Once the buyer responds:</strong> Follow the conversation and the plan you agree together. The unanswered-lead quota no longer applies. Honor stated contact restrictions throughout.</p>",
+      "time": 2,
+      "theme": "tru alms lesson",
+      "notes": "These are the newer September 12 standards. Automation is not personal effort. Do not invent a compressed late-day schedule or a quota for an engaged buyer. Explain why repeating “just checking in” is not useful persistence.\nHandoff: Whether you connect on the first attempt or later, the same job awaits: understand the request, help the buyer and agree what comes next.\nSources: TRU September 12 teaching, INT-027–029, INT-054; R019. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Whether you connect on the first attempt or later, the same job awaits: understand the request, help the buyer and agree what comes next."
     },
     {
       "id": "day2-reference",
-      "chapter": "Your call reference",
-      "title": "Your first-call reference",
-      "lead": "Read the request. Help with it. Agree what happens next.",
-      "body": "<div class=\"alms-rows\"><div><h3>Before contact</h3><p>Check the lead route, home, requested time, and contact preference.</p></div><div><h3>When connected</h3><p>Introduce yourself. Offer the appointment early. Ask permission, then follow the buyer’s answers about location and motivation.</p></div><div><h3>Before finishing</h3><p>Summarize priorities, pending checks, and the agreed next action. Save the note and task.</p></div></div><p class=\"alms-note\"><a href=\"/workshops/day2-resources.html\" target=\"_blank\" rel=\"noreferrer\">Open the examples and first-call reference</a></p>",
+      "chapter": "Wrap up",
+      "title": "Use the request to begin. Use the answers to continue.",
+      "lead": "You should be able to recognize the lead, start the conversation and leave the buyer knowing what happens next.",
+      "body": "<p class=\"lesson-explanation\">Introduce yourself clearly. Help with the appointment early. Ask permission to learn more, follow the buyer’s answers, and summarize the plan you actually agreed.</p><p class=\"lesson-explanation\">If a question changes the call, address it. If a fact needs checking, say so and follow through. The framework supports the conversation; the buyer’s situation determines the next sentence.</p><p class=\"lesson-source\"><a href=\"/workshops/day2-resources.html\" target=\"_blank\" rel=\"noreferrer\">Open the Day 2 reference, Zillow sources and practice notes</a></p>",
       "time": 1,
-      "theme": "tru alms",
-      "notes": "Recap one idea from each part. Point agents to their reference and explain the next coaching check. End the session only after the final submissions are saved. Handoff: Your next call starts with the buyer’s actual request. Use the reference, listen, and keep the promise you make. Sources: September 14 reference requirement; R008–R016, R019–R021. All buyers and property details in examples are fictional.",
-      "cue": "Your next call starts with the buyer’s actual request. Use the reference, listen, and keep the promise you make."
+      "theme": "tru alms lesson",
+      "notes": "Ask each learner which part they want to keep practicing. Refer to submitted work. Completion is not demonstrated competence on every client conversation.\nHandoff: Keep your reference available for the next lead, and bring the specific moment you want help with to your coach.\nSources: TRU September 12 teaching, INT-016. Examples are fictional unless credited to Zillow. Use true names, brokerage, availability and property facts.",
+      "cue": "Keep your reference available for the next lead, and bring the specific moment you want help with to your coach."
     }
   ],
   "hero": "",
   "resources": "day2-resources.html",
   "cases": [
     {
-      "name": "Jordan · a garden",
-      "quote": "I’d like to see 1234 Lane Saturday morning. The yard caught my eye.",
-      "goal": "Buyer: you rent locally and want sun and room for raised beds. Reveal those details after relevant questions. You are open to a comparison home. Access remains unconfirmed."
+      "name": "Tour request · a home office",
+      "quote": "I asked to see the Cedar Lane home. Saturday morning works for me.",
+      "goal": "Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked."
     },
     {
-      "name": "Maya · text first",
-      "quote": "I’m at work. Please text me now; I can talk at five.",
-      "goal": "Begin with the text exchange, then fast-forward to the agreed call. Buyer: a shorter commute matters; reveal it when asked. Honor the contact preference and agree the later conversation."
+      "name": "Property question · maintenance",
+      "quote": "I wanted to know about the roof before deciding whether to tour.",
+      "goal": "Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated."
     },
     {
-      "name": "Alex · questions first",
-      "quote": "I only wanted to know about the roof. I’m not ready to book a showing.",
-      "goal": "Buyer: maintenance costs concern you. Reveal this after a relevant question. Decline the next invitation too. Agent should help with the question and agree how to return verified information."
+      "name": "Relocation · a later visit",
+      "quote": "We are relocating in two months. We cannot see homes this week.",
+      "goal": "Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing."
     }
   ]
 }

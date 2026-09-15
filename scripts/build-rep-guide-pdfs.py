@@ -11,7 +11,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, KeepTogether, Table, TableStyle, Image
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / 'web/public/workshops'
@@ -34,6 +34,7 @@ def inline(node):
         return escape(clean(str(node)))
     inner = ''.join(inline(child) for child in node.children)
     if node.name == 'strong': return f'<b>{inner}</b>'
+    if node.name == 'b': return f'<b>{inner}</b> '
     if node.name in ('em','i'): return f'<i>{inner}</i>'
     if node.name == 'br': return '<br/>'
     if node.name == 'a' and node.get('href','').startswith('https://'):
@@ -42,6 +43,18 @@ def inline(node):
 
 def flow(node):
     if isinstance(node,NavigableString) or node.name == 'nav': return []
+    if 'lesson-phones' in node.get('class',[]):
+        images = []
+        for tag in node.find_all('img'):
+            relative = tag.get('src','').removeprefix('/workshops/')
+            asset = (DIRECTORY / relative).resolve()
+            if asset.is_relative_to(DIRECTORY.resolve()) and asset.exists():
+                image = Image(str(asset))
+                factor = min(200 / image.imageWidth, 300 / image.imageHeight)
+                image.drawWidth = image.imageWidth * factor
+                image.drawHeight = image.imageHeight * factor
+                images.append(image)
+        return [Table([images], hAlign='LEFT'), Spacer(1,12)] if images else []
     if node.name == 'strong': return [Paragraph(inline(node),styles['h2'])]
     if node.name == 'table':
         rows = [[Paragraph(inline(cell), styles['p']) for cell in row.find_all(['th','td'],recursive=False)] for row in node.find_all('tr')]
@@ -56,6 +69,8 @@ def flow(node):
         if node.name == 'li': text = '- ' + text
         paragraph = Paragraph(text,styles[key])
         if node.name == 'p' and node.get_text(strip=True).endswith(':'):
+            paragraph.keepWithNext = True
+        if node.name == 'p' and node.find_next_sibling() is not None and 'lesson-visual' in node.find_next_sibling().get('class',[]):
             paragraph.keepWithNext = True
         return [paragraph]
     result = []
