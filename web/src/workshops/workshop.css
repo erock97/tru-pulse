@@ -97,3 +97,18 @@
 
 /* Spoken exchanges: keep the speaker beside the words so the call reads down the page. */
 .alms-call-turns p{display:grid;grid-template-columns:76px minmax(0,1fr);gap:16px;padding:12px 0;font-size:22px;line-height:1.4}.alms-call-turns b{margin:4px 0 0;font-size:12px;letter-spacing:.06em}
+
+/* Day 2: complete explanations, readable source screens, and spoken examples. */
+.lesson-explanation{font-size:23px;line-height:1.48;margin:18px 0;max-width:1020px}
+.lesson-example{font-size:27px;line-height:1.45;margin:22px 0;padding:0 0 0 22px;border-left:3px solid #b9d1fd;font-style:normal}
+.lesson-agenda{margin:18px 0;padding-left:30px;max-width:1040px}
+.lesson-agenda li{font-size:23px;line-height:1.5;padding:10px 0 10px 8px}
+.lesson-source{font-size:13px;line-height:1.4;margin:14px 0 0;color:#5f6661}
+.lesson-source a{color:#234c69}
+.lesson-visual{display:grid;grid-template-columns:1.1fr 1fr;gap:38px;align-items:center;margin-top:10px}
+.lesson-phones{display:flex;gap:18px;justify-content:center;align-items:center}
+.lesson-phones img{display:block;height:390px;width:auto;max-width:48%;object-fit:contain}
+.lesson-visual .lesson-explanation{font-size:23px;line-height:1.45;margin:0 0 26px}
+.lesson-record{padding:8px 24px;background:#e8e5dc;border-left:3px solid #b9d1fd;font-size:23px;line-height:1.5}
+.lesson .alms-call-turns span{color:inherit}
+@media(max-width:700px){.lesson-visual{grid-template-columns:1fr}.lesson-phones img{height:300px}.lesson-explanation,.lesson-agenda li{font-size:20px}}

@@ -45,3 +45,42 @@ snapshots. Existing sessions retain their saved curriculum. Create a fresh Day 2
 test for review; do not rewrite agent responses or existing session snapshots.
 The agent reference includes instructional content; the facilitator guide includes
 answers. Live activity responses remain separate from quiz certification.
+
+## September 14 rebuild: Zillow visuals and complete teaching examples
+
+The rejected requested-versus-confirmed quiz is removed. Day 2 now starts with
+Zillow's published incoming connection and Real-Time Touring screens, then
+teaches contact, introduction/ALMS, discovery, questions, closing and follow-through.
+Every practice contains its situation in its visible prompt. No assumed Jordan
+or Maya backstory remains. The fictional George/Cedar Lane case is introduced
+on each demonstration where it is used.
+
+### Visual provenance
+
+- `zillow/live-screen-0.png` and `live-screen-1.png`: original embedded images
+  from page 7 of Zillow's October 2023 Conversion Playbook. Zillow labels them
+  as simulated screen images. They are Zillow-authored training examples, not
+  recreated screens or screenshots of an actual customer account.
+  https://www.zillowstatic.com/bedrock/app/uploads/sites/33/2023/05/Zillow-Premier-Agent-Conversion-Playbook_Oct2023.pdf
+- `zillow/rtt-ringing.png` and `rtt-request.png`: frames at 3 and 8 seconds of
+  the agent demonstration linked on https://www.zillow.com/premier-agent/real-time-touring/
+  Original: https://www.zillowstatic.com/bedrock/app/uploads/sites/52/2025/10/rtt-mobile-video-1.mp4
+- The answer/review/connect sequence is also in the current In-App Connections FAQ:
+  https://zillow.zendesk.com/hc/en-us/articles/360041281894-In-App-Connections-FAQ
+
+Reviewed September 14, 2026. Screens vary by app version and device. Names,
+addresses, dates and property details inside the visuals are Zillow's sample data.
+Extraction and frame rendering preserve the source UI.
+
+### Real-Time Touring delivery clarification
+
+INT-012 says RTT is not a live call. Zillow explains the agent's phone can ring
+with a Real-Time Touring label, but there is no live buyer transfer. The lesson
+makes that distinction explicit rather than claiming RTT cannot ring the phone.
+Zillow's five-minute acceptance window differs from TRU's first-contact standard.
+
+### Review limits
+
+Tests guard sequence, duration, redaction and response rendering. They do not
+judge whether prose makes sense to a new learner. Review the visible situation,
+explanation, example and spoken segue of every slide separately.

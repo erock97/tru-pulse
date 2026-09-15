@@ -55,7 +55,7 @@ describe('Rep workshop integration',()=>{
    for(let day=1;day<=4;day++){
      const d=data(day);expect(d.slides.length).toBeGreaterThan(10);
      for(const slide of d.slides){expect(slide.title).toBeTruthy();expect(slide.notes).toBeTruthy();expect(slide.cue).toBeTruthy();expect(slide.time).toBeGreaterThan(0);}
-     expect(d.slides.some(s=>s.body.includes(day===1?'data-save="readiness':'data-save="recall'))).toBe(true);
+     expect(d.slides.some(s=>s.body.includes(day===1?'data-save="readiness':day===2?'data-save="retry':'data-save="recall'))).toBe(true);
      if(day===2||day===3)expect(d.cases).toHaveLength(3);
      expect([guide1,guide2,guide3,guide4][day-1]).toContain(d.title);
    }
