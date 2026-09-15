@@ -154,42 +154,167 @@ add('reference','Your call reference','Keep this beside you','Introduction → A
  ['During the call','Orient them · offer the meeting · ask permission · follow an answer · propose useful comparisons'],
  ['Before you finish','Restate priorities · distinguish confirmed from pending · explain the next step · record and follow through']])+`<p class="alms-note"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Open your Day 2 reference and practice notes</a>. Revisit any chapter whenever you need it.</p>`,'September 14 reference requirement; R008–R016, R019–R021');
 
-// A 90-minute facilitated lesson: teaching, response, discussion, and two rotations.
+// One call supplies the thread. Explicit variations teach judgment without
+// silently changing the buyer's facts. Keep each activity's durable IDs stable.
 const get = id => slides.find(s => s.id === `day2-${id}`);
-get('channel').body = rows([
- ['Already connected','Introduce yourself and help with the request. You are already on the call.'],
- ['New alert, no preference','Call within five minutes of receipt during TRU’s 8 a.m.–8 p.m. operating window. If unanswered, follow with a personal text.'],
- ['Text first / requested callback','Acknowledge by text now; honor the requested call time or explicit no-call preference.']
-]);
-get('introduction').body += quote('Would Saturday morning or afternoon work better? I’ll check access with the property.','Then offer an appointment early');
-get('permission').title='Ask permission, then learn what fits';
-get('permission').body=quote('Do you have a few minutes so I can learn what you’re looking for and make our time together useful?')+rows([['Location','What attracted you to this area? What makes that location work for you?'],['Follow the answer','If they mention a shorter commute, ask what would improve. Do not jump to the next checklist item.']]);
-get('listing-agent').title='Answer honestly and keep helping';
-get('listing-agent').body=rows([['Your role','“I’m not the listing agent. I help buyers and can coordinate with the listing side. What would you like to know?”'],['Availability','If the home is under contract, say so. Check any uncertain access; do not promise a showing.'],['Useful next step','Ask what attracted them to the home and offer relevant options, with their permission.']]);
-get('follow-through').body=rows([['After a conversation','Record their priorities, contact preference, pending access checks, and the exact next action you promised.'],['If unanswered','Day one: aim for three to four personal touches, at least two calls and one text. First week: ten total including day one, mostly calls.'],['Once they reply','Follow the conversation and agreed plan. Stop applying the unanswered-lead quota.']]);
-const discovery=get('discovery-practice');
+const dialogue = turns => `<div class="alms-dialogue alms-call-turns">${turns.map(([who,words])=>`<p><b>${who}</b> ${words}</p>`).join('')}</div>`;
+function revise(id,title,lead,body,teach,handoff) {
+ const s=get(id);s.title=title;s.lead=lead;if(body!==null)s.body=body;
+ s.notes=`${teach} Handoff: ${handoff} Sources: ${s.notes.match(/Source: ([^.]+)\./)?.[1] || 'TRU-R013; INT-016'}. All buyers and property details in examples are fictional.`;
+ s.cue=handoff;
+ if(s.activity)s.activity.prompt=lead;
+ return s;
+}
+revise('welcome','The first conversation','Day 2: a Zillow Preferred lead arrives. What happens next?',
+ `<div class="alms-cover-line">A buyer asks about a home.<br>How do you help?</div><p class="alms-cover-detail">We’ll work from the lead alert through the first call and the next step you agree together.</p>`,
+ 'Welcome the group. Connect to Day 1: they learned where work belongs in FUB. Today they will learn what to say and do when the lead arrives. Introduce yourself and explain that the examples use fictional buyers.',
+ 'Yesterday we worked inside the record. Today we’ll work through the conversation that gives that record meaning.');
+revise('agenda','The route through today’s session','We’ll follow Jordan’s request, then try a few clearly marked variations.',
+ steps([['Receipt and first response','Read the request, choose the contact method, then submit a vote and a text.'],['The first conversation','Watch the opening and discovery. Practice a follow-up with a partner.'],['Questions, closing, and a full call','Handle a buyer’s question, agree the plan, then rotate through a complete call.']])+note('You answer on the current slide in your own session. Submit, then we’ll discuss. The presenter advances everyone together.'),
+ 'Explain the 90-minute plan and two speaking practices. Ask everyone to open their learner session now. Explain that the first vote is also a connection check: pause there until actual responses arrive. Do not claim attendance alone proves submission works.',
+ 'Let’s start where the agent starts: the request that just arrived.');
+revise('lead-routes','The request tells you how to begin','Our example: Jordan asks to see 1234 Lane on Saturday morning.',
+ `<table class="alms-table"><thead><tr><th>Lead route</th><th>What you receive</th><th>What to check</th></tr></thead><tbody><tr><th>Connection / contact agent</th><td>A question about a home, live or by FUB alert</td><td>The question and contact preference</td></tr><tr><th>Real-time touring</th><td>A tour alert using ShowingTime availability</td><td>The selected time and current arrangements</td></tr><tr><th>Standard tour</th><td>A tour request, live or by FUB alert</td><td>Whether the requested time is available</td></tr></tbody></table>`+note('Jordan’s is a standard tour request. Saturday morning is the buyer’s preference. Property access still needs checking.'),
+ 'Explain each route through the decision it changes. Real-time touring does not arrive as a live call in Eric’s documented flow. Read actual timeframe and representation answers when supplied; a form question is not the buyer’s answer. Demonstrate: “I saw Saturday morning. I’ll check access and confirm with you.”',
+ 'Before we contact Jordan, let’s check that distinction between a requested time and confirmed access.');
+revise('lead-route-check','Your turn: requested or confirmed?','Another standard tour lead asks for 5 p.m. Access is unconfirmed. What do you do?',null,
+ 'Allow 45 seconds for the vote. Verify submissions reach your presenter view. Ask one agent why they chose their answer. Reveal the explanation and emphasize that acknowledging a preference does not promise access. If answers do not arrive, resolve the join/submission problem before continuing.',
+ 'We know what needs checking. Now we need to decide how to reach the buyer.');
+revise('channel','How will you contact the buyer?','Back to Jordan: an alert arrived, with no special contact instruction.',
+ rows([['Already on a live call','Introduce yourself and begin.'],['FUB alert, no preference','Call within five minutes of receipt during TRU’s 8 a.m.–8 p.m. operating window.'],['A specific instruction','Use the requested channel or callback time. Acknowledge a later callback by text now.']]),
+ 'Point to Jordan’s alert example and choose the default call. Explain why: a conversation lets the agent hear the buyer and respond to their answers. Distinguish the automated introduction from the agent’s own call. Do not invent an after-hours deadline.',
+ 'Let’s try that call. First, what happens if Jordan doesn’t pick up?');
+revise('no-answer','Jordan does not answer','Your personal text connects the missed call to the original request.',
+ quote('Hi Jordan, this is Sam with Northside Realty. I just called about your request to see 1234 Lane Saturday morning. I can talk at 4 or 6 today. Does either work?')+
+ rows([['While unanswered','Day one: aim for 3–4 personal touches, including at least 2 calls and 1 text. First week: 10 total including day one, mostly calls.'],['When Jordan replies','Continue from the reply and agree a plan. The unanswered-lead quota stops.']]),
+ 'Read the text aloud. Explain the recognizable property, reason for calling, and genuine times offered. Mention an opening voicemail when appropriate. Automation is separate from personal effort. These are normal-flow targets, not an invented late-day schedule, and a stated contact restriction governs.',
+ 'That was the default with no preference. Now change one fact: the buyer has told us when to call.');
+revise('preferences','A requested callback changes the response','Variation: Maya is at work and asks for a call at five.',
+ quote('Hi Maya, I’m Sam with Northside Realty. I’ll be calling at five about your request. Let me know if you have a question before then.')+
+ rows([['Text first for now','Help by text now. Offer a later call if useful.'],['An explicit no-call request','Honor it. Continue through the agreed channel.']]),
+ 'Make the contrast explicit: Jordan gave no contact instruction; Maya did. Read the acknowledgment. The five-minute default does not justify ignoring her requested time. Offering an earlier call is optional and must reflect real availability. Text-first now is different from a permanent no-call instruction.',
+ 'You’ve heard an acknowledgment. Write your own version for Maya.');
+revise('channel-check','Your turn: acknowledge Maya','Maya’s alert arrives at 2 p.m. and asks for a 5 p.m. call. Write your acknowledgment.',null,
+ 'Give 60 seconds to write and submit. Read two responses, noticing whether each introduces the agent and preserves five o’clock. Reveal the example. Do not turn a difference in wording into an error if the meaning is accurate.',
+ 'Now return to Jordan. The call connects. What should the conversation accomplish?');
+revise('alms','Jordan answers. Where does the call go?','Introduce yourself first. ALMS gives the conversation a direction.',
+ `<div class="alms-sequence">${[['A','Appointment','Help with the requested visit.'],['L','Location','Learn where they want to be.'],['M','Motivation','Learn why it matters.'],['S','Summarize','Agree what happens next.']].map(([a,b,c])=>`<div><strong>${a}</strong><h3>${b}</h3><p>${c}</p></div>`).join('')}</div>`+note('Location and motivation can come in either order. The buyer’s answers guide the next question.'),
+ 'Give the whole route before demonstrating pieces. Explain that the appointment invitation comes early because the buyer asked for help with a home. ALMS should help the agent listen, not become a list to recite.',
+ 'Here is the first part aloud: an introduction that leads directly into Jordan’s request.');
+revise('introduction','The opening answers “Who is this?”','Jordan requested Saturday morning. Use that information.',
+ dialogue([['Agent','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about your request to see 1234 Lane.”'],['Agent','“I saw Saturday morning. I’ll check access for that time. Would morning still work for you?”'],['Jordan','“Yes, morning works.”']])+note('No time selected? Offer two times you can actually make. Property access still needs confirmation.'),
+ 'Read both sides. Pause after the introduction to identify name, brokerage, Zillow connection, and purpose. Then demonstrate the early invitation. On a live transfer, say Zillow connected you about the request. Use the real affiliation and available times. Never borrow an invented expertise claim.',
+ 'Now try the same opening skill with one change: no tour time was selected.');
+revise('opening-decision','Your turn: no time was selected','Practice variation: Jordan asked to see 1234 Lane but selected no time. How would you begin?',null,
+ 'Give 90 seconds to choose and write. Discuss one opening that connects naturally to the inquiry. The invitation should precede a qualification interview, while preserving uncertain access. Reveal the example after responses. Say explicitly that this was a variation; the main example returns to Saturday morning next.',
+ 'Back in our main call, Jordan prefers Saturday morning. We have a starting plan, but we still know very little about Jordan.');
+revise('permission','The appointment opens a conversation','Before asking about the search, explain why the questions help.',
+ dialogue([['Agent','“Do you have a few minutes so I can learn what you’re looking for and make our time together useful?”'],['Jordan','“Sure. We’re already in town.”'],['Agent','“What’s changing where you live now?”'],['Jordan','“We rent an apartment. We’d like outdoor space.”']])+note('If they have only a minute, keep it brief. Handle the request and agreed next action without forcing a full interview.'),
+ 'Read the exchange. Ask aloud what the follow-up learned that “in town” alone did not tell us. Connect this to location: use their current situation and ask which areas work for them and why. Do not assume a lease end, children, or a reason for moving.',
+ 'Jordan mentioned outdoor space. That gives us the next question.');
+revise('motivation','“Outdoor space” needs a follow-up','The feature becomes useful when you understand its purpose.',
+ dialogue([['Agent','“What would you like to do with that space?”'],['Jordan','“I’d like a vegetable garden.”'],['Agent','“What would you need from the space for that?”'],['Jordan','“Somewhere sunny, with room for raised beds.”']])+note('Now the search has a reason: usable garden space. A large yard alone may not solve it.'),
+ 'Read each turn and point to the link between the answer and the next question. Briefly contrast “Great, how many bedrooms?” which abandons the answer. Use authentic warmth without a memorized personal anecdote. Ask the room what they now know they did not know before.',
+ 'You’ve heard a follow-up reveal the reason. Practice finding the reason with a partner.');
+const discovery=revise('discovery-practice','Partner practice: what does “more space” mean?','Practice variation: your buyer says, “We need more space.” Learn what that means, then switch roles.',null,
+ '8 minutes: 1 minute setup, 3 minutes each direction (2-minute conversation and 1-minute correction/retry), 1-minute debrief. Assign speaking turns and open the meeting platform’s rooms. Buyer invents a simple reason and reveals it when asked. Listen for permission and a question connected to the actual answer. On return, ask one pair what changed on the retry.',
+ 'You have a way to learn what matters. Before we close the call, let’s handle questions that can interrupt that plan.');
 discovery.activity.kind='roleplay';
 discovery.activity.rubric=[{id:'permission',label:'Ask permission before discovery'},{id:'follow',label:'Ask a follow-up based on the buyer’s actual answer'}];
 discovery.activity.fields.push({id:'discovery-retry',label:'What did your partner suggest, and how did your retry change?'});
-discovery.body += '<label class="field">What did your partner suggest, and how did your retry change?<textarea data-save="discovery-retry"></textarea></label>';
-discovery.activity.prompt='Pairs: one buyer says “We need more space.” Ask permission, learn what that means, and follow their answer. Switch roles.';
-discovery.lead=discovery.activity.prompt;
-discovery.notes='8 minutes: 1 minute setup; 3 minutes each direction (2-minute conversation plus 1-minute feedback and retry); 1-minute room debrief. Create rotating pairs in the presenter console, then open the meeting breakout rooms. '+discovery.notes;
-role.activity.prompt='Trios: agent, buyer, observer. Run the full first call using the buyer card, give one specific correction, retry, then rotate until everyone has spoken.';
-role.lead=role.activity.prompt;
-role.notes='15 minutes: 1 minute setup; three 4-minute rotations (3-minute call, 1-minute feedback and targeted retry); 2-minute room debrief. Use Jordan, Maya or Alex buyer cards. Create rotating trios in the presenter console and place the same groups in meeting breakout rooms. '+role.notes;
+discovery.body=steps([['First turn: 3 minutes','Ask permission, follow the buyer’s answer, then use one correction to retry.'],['Switch buyer and agent: 3 minutes','Use a new reason for needing more space. Everyone gets a speaking turn.'],['Room debrief: 1 minute','Share the follow-up that taught you something useful.']])+note('1 minute to set up. Video rooms are in your meeting platform. Submit your reflection after practice.');
+revise('questions-only','What if the buyer only wants an answer?','Variation: the buyer declines a tour and asks about the roof.',
+ dialogue([['Agent','“Of course. What would you like to know?”'],['Buyer','“How old is the roof?”'],['Agent','“I’ll check that. Can I ask what concerns you about it?”'],['Buyer','“I’m worried about taking on repairs.”']])+note('Bring the answer back. Explain how a viewing could help them decide. If they still decline, agree how to return the information.'),
+ 'Make clear this is an alternate buyer response, not a new fact about Jordan. Demonstrate a useful second invitation: “Seeing it could help you decide whether it fits, and I can bring the roof answer. Would that be useful?” If declined, stop pushing and arrange the answer. Answer known facts now. Do not make information conditional on meeting.',
+ 'A property question can reveal a concern. The same applies when the buyer asks about financing.');
+revise('financing','When the buyer asks about a lender','Variation: “Should I talk to a lender before we look?”',
+ dialogue([['Agent','“A lender can help you understand your options. What are you hoping to work out before we look?”'],['Buyer','“I don’t know what payment I’d be comfortable with.”'],['Agent','“That’s useful to work through. I can help connect you with a lender to discuss those numbers.”']])+note('Help with the concern. Do not turn the showing request into a demand for preapproval.'),
+ 'Read the example. The buyer introduced financing, so address it. Explain that lender-specific numbers belong with the lender. Eric’s usual later opening is the end of the first showing; today covers the buyer-raised first-call question only. Do not lecture on loan products.',
+ 'Choose the response that helps with that concern while keeping the meeting easy.');
+revise('financing-check','Your turn: a financing question','The buyer asks, “Should I talk to a lender before we look?” What is the best response?',null,
+ 'Allow a short vote, then ask someone to say the answer in everyday language. Reveal and discuss why both refusing the topic and imposing a blanket preapproval gate miss the buyer’s question.',
+ 'Another question may be about who you represent. Keep that answer just as direct.');
+get('financing-check').activity.model='“A lender can help you understand your options. What are you hoping to work out before we look?” If they need help with payments or financing options, offer a lender connection.';
+revise('listing-agent','“Are you the listing agent?”','The buyer needs a clear answer about your role.',
+ quote('I’m not the listing agent. I help buyers and can coordinate with the listing side. What would you like to know?')+note('If they prefer the listing agent, offer to help with that connection. Respect their choice.'),
+ 'Read the short answer and return to the property question. Use the real role. If an existing representation agreement raises an unresolved question, involve the team lead using the actual circumstances and form. Avoid an agency lecture.',
+ 'Your role is clear. Now suppose the answer about the property itself is disappointing.');
+revise('under-contract','The home is under contract','Separate variation: you learn this during the first inquiry. No showing is confirmed.',
+ dialogue([['Agent','“The home is under contract. I can check whether a viewing is still possible. What drew you to it?”'],['Buyer','“The yard. I want room for a garden.”'],['Agent','“I can also research homes with useful garden space. Would that help?”']])+note('State what you know. Keep access and unresearched alternatives conditional.'),
+ 'Apply Eric’s problem-solving principle only to this first-call scenario. We are not teaching a cancellation or showing-day workflow. Explain why the next step uses the buyer’s reason. Do not claim to have researched alternatives when you have not.',
+ 'Try giving that news with a specific next step tied to what the buyer told you.');
+revise('changed-plan','Your turn: a home under contract','Variation: the home is under contract. The buyer wants garden space. What do you say next?',null,
+ 'Give 60 seconds for writing. Compare one bare status update with one truthful plan tied to garden space. Reveal after responses. Listen for unsupported promises about access or already-researched alternatives.',
+ 'Those were alternate situations. Return to Jordan’s original call: Saturday morning is preferred, garden space matters, and access is still pending.');
+revise('summary','The plan should use what Jordan told you','Back to the original call. Jordan wants sunny space for raised beds.',
+ dialogue([['Agent','“Would it help to compare another home with usable garden space while we’re out?”'],['Jordan','“Yes, that would help.”'],['Agent','“Saturday morning is your preference. I’ll check access to 1234 Lane and research a comparison with garden space. I’ll text you the details after I hear back. Is that right?”'],['Jordan','“Yes. Text is good.”']]),
+ 'Demonstrate obtaining agreement before adding comparisons. Explain Eric’s goal of two or three homes without making extra homes a condition. The summary reflects actual priorities, permission, pending checks, and the agreed channel. Briefly explain the applicable touring form and what you will send, using its actual terms. Do not invent signing status.',
+ 'Now close that call in your own words, using only what Jordan has agreed to.');
+revise('summary-practice','Your turn: the agreed next step','Jordan wants garden space, prefers Saturday morning, accepts a comparison home, and agrees to text. Access is pending.',null,
+ 'Give 60 seconds to submit. Ask which parts are agreed and which remain pending. Reveal and discuss. A useful close can be brief; it must preserve the buyer’s facts and the agent’s actual commitment.',
+ 'You’ve practiced the parts. Watch how those same parts connect in one uninterrupted call.');
+get('summary-practice').activity.model='“Garden space matters, and Saturday morning is your preference. I’ll check access and research a comparison with room for a garden. I’ll text you the details after I hear back. Have I missed anything?”';
+revise('whole-call-one','The whole call: opening and discovery','Demonstration. Follow the conversation rather than naming each step.',
+ dialogue([['Sam','“Hi Jordan, I’m Sam with Northside Realty, a featured partner with Zillow. I’m calling about 1234 Lane. I saw Saturday morning. Would that still work? I’ll check access.”'],['Jordan','“Yes, morning works.”'],['Sam','“Have you got a few minutes so I can make our time useful?”'],['Jordan','“Sure.”'],['Sam','“What’s changing where you live now?”'],['Jordan','“We rent in town. We’d like outdoor space.”']]),
+ 'Ask a volunteer to read Jordan or read both parts yourself. Do not stop to label every ALMS letter. Agents listen for what each answer gives the agent to work with. Continue directly to the next slide without opening a new discussion.',
+ 'Jordan has just said “outdoor space.” Continue from those words.');
+revise('whole-call-two','The same call: discovery and agreement','Continue without restarting the conversation.',
+ dialogue([['Sam','“What would you like to do with that space?”'],['Jordan','“A vegetable garden. I need sun and room for raised beds.”'],['Sam','“Would comparing another home with garden space help?”'],['Jordan','“Yes.”'],['Sam','“Saturday morning is your preference. I’ll check access and research that comparison, then text the details. Does that work?”'],['Jordan','“Yes, text is good.”']]),
+ 'Finish the demonstration aloud. Briefly explain the applicable touring form and promised follow-up in accurate terms. Ask what made the next step specific to Jordan. Then give practice instructions; do not introduce another topic.',
+ 'Now run a call yourselves. Keep the sequence, but respond to the buyer you actually hear.');
+revise('full-call-practice','Group practice: the complete first call','Trios rotate through agent, buyer, and observer. Everyone speaks.',null,
+ '15 minutes: 1 minute setup, three 4-minute rounds (3-minute call and 1-minute correction/retry), 2-minute debrief. Assign speaking turns, then use the meeting platform’s rooms. Buyer uses the assigned card and reveals the underlying reason in conversation. Observer gives one concrete correction. On return, ask which buyer answer changed the agent’s next question. A simulated or peer check is not coach sign-off.',
+ 'The call is finished. Your next action should make good on the promise you just made.');
 role.activity.useCases=true;
-discovery.body=note('1 minute to set up · 2-minute conversation + 1-minute feedback/retry each way · 1-minute debrief. Switch buyer and agent after the first turn. Your presenter assigns groups; video rooms are in your meeting platform.')+discovery.body;
-role.body=note('1 minute to set up · three 4-minute rounds: 3-minute call + 1-minute correction/retry · 2-minute debrief. Rotate agent → observer → buyer so everyone speaks. Submit your reflection after your turn.')+role.body;
-get('lead-routes').body+=note('Example: “I requested 4 p.m.” on a standard tour is a requested time. “I’ll check access and confirm with you” keeps the request moving without promising unverified access.');
-get('follow-through').body+=note('Set a task for the promised action. Use the buyer’s agreed channel and timing; a reply ends the unanswered-lead quota, not your responsibility to follow through.');
-const order=['welcome','agenda','lead-routes','lead-route-check','channel','no-answer','preferences','channel-check','alms','introduction','opening-decision','permission','motivation','discovery-practice','summary','summary-practice','questions-only','financing','financing-check','listing-agent','changed-plan','whole-call-one','whole-call-two','full-call-practice','follow-through','recall','reference'];
-const minutes=[1,2,4,3,3,2,2,3,2,3,4,3,3,8,3,4,3,2,3,3,3,2,2,15,3,3,1];
+role.body=steps([['Call: 3 minutes','Use the buyer card. Introduce yourself, help with the request, follow answers, and agree a next step.'],['Feedback and retry: 1 minute','Observer names one moment. Agent replays that part.'],['Rotate, then debrief','Repeat until all three have spoken. Submit the reflection after your turn.']])+note('1 minute setup, three 4-minute rounds, 2-minute debrief. Your assigned roles appear in your session. Video rooms are in your meeting platform.');
+revise('follow-through','The record should match the call','Day 1 showed where to save the work. Here is what Jordan’s call gives you.',
+ rows([['Conversation note','Rents locally. Wants sunny space for raised beds. Prefers Saturday morning. Open to a comparison home. Text agreed.'],['Pending action','Check access to 1234 Lane and research a useful comparison.'],['Task and next contact','Set a task for the promised work. Text the details after the access answer, as agreed.']])+note('Saturday morning remains requested until access is confirmed. Do not record a completed showing or an agreement the buyer did not make.'),
+ 'Connect directly to the note and task skills from Day 1. Read the example record against the call. Ask which phrase prevents the next person reading the record from mistaking the request for confirmed access. Keep this to immediate follow-through, not later sales stages.',
+ 'Before we finish, explain the decisions you would make on the next lead.');
+revise('recall','Your turn: explain the next lead','Without looking back, explain the first-call decisions in your own words.',null,
+ 'Give 90 seconds for the three short responses. Use the remaining time to address the most common uncertainty. This checks understanding, not certification or observed call performance. Point to the specific example that resolves a misunderstanding.',
+ 'Keep this reference beside you when the next lead arrives.');
+revise('reference','Your first-call reference','Read the request. Help with it. Agree what happens next.',
+ rows([['Before contact','Check the lead route, home, requested time, and contact preference.'],['When connected','Introduce yourself. Offer the appointment early. Ask permission, then follow the buyer’s answers about location and motivation.'],['Before finishing','Summarize priorities, pending checks, and the agreed next action. Save the note and task.']])+`<p class="alms-note"><a href="/workshops/day2-resources.html" target="_blank" rel="noreferrer">Open the examples and first-call reference</a></p>`,
+ 'Recap one idea from each part. Point agents to their reference and explain the next coaching check. End the session only after the final submissions are saved.',
+ 'Your next call starts with the buyer’s actual request. Use the reference, listen, and keep the promise you make.');
+
+// Plausible novice choices, shown in the same order to everyone.
+get('lead-route-check').activity.choices=[
+ {id:'promise',text:'Confirm 5 p.m. now and check access afterward.'},
+ {id:'check',text:'Acknowledge 5 p.m. and verify property access.'},
+ {id:'restart',text:'Ask for a new time before checking the requested one.'}
+];
+get('opening-decision').activity.choices=[
+ {id:'budget',text:'Ask about budget and preapproval before offering a time.'},
+ {id:'process',text:'Explain the buying process before discussing the visit.'},
+ {id:'introduction-invitation',text:'Introduce yourself and offer workable showing times.'}
+];
+get('financing-check').activity.choices=[
+ {id:'context',text:'Ask what they need to work out, then offer relevant lender help.'},
+ {id:'refuse',text:'Save the financing question for the showing and move on.'},
+ {id:'gate',text:'Ask for a preapproval letter before scheduling the showing.'}
+];
+
+const order=['welcome','agenda','lead-routes','lead-route-check','channel','no-answer','preferences','channel-check','alms','introduction','opening-decision','permission','motivation','discovery-practice','questions-only','financing','financing-check','listing-agent','under-contract','changed-plan','summary','summary-practice','whole-call-one','whole-call-two','full-call-practice','follow-through','recall','reference'];
+const minutes=[1,2,4,3,3,3,2,3,2,3,4,3,3,8,2,2,3,2,2,3,3,3,2,2,15,3,3,1];
 slides.splice(0,slides.length,...order.map(get));
-slides.forEach((s,i)=>{s.time=minutes[i];if(s.activity){const mode=s.activity.kind==='choice'?'VOTE':s.activity.kind==='roleplay'?'BREAKOUT':'WRITE & DISCUSS';s.title=mode+' · '+s.title;s.cue=s.activity.kind==='roleplay'?'Give one specific observation, retry, and rotate.':'Answer individually first. Then compare reasoning before the teaching example.';if(s.activity.kind!=='roleplay')s.notes=`${s.time} minutes: individual response first, compare two approaches, then reveal and discuss the example. `+s.notes;}});
-get('agenda').body=steps([['Recognize and respond','Read the three lead routes. Choose a call, text, or requested callback. Vote and write your response.'],['Guide the conversation','Introduce yourself, invite early, and use ALMS. Watch the examples, then practice discovery in pairs.'],['Adapt and agree a plan','Handle questions and changed circumstances. Watch a full call, then rotate agent, buyer, and observer in trios.'],['Follow through','Record what matters, keep your promises, and leave with a first-call reference.']])+note('Use your signed-in learner session for votes and short answers. Submit first; then we compare reasoning and reveal the example.');
-get('welcome').cue='Which part of the first call feels least comfortable today?';
-get('agenda').cue='Open your agent session now. We will pause for responses throughout.';
-const data={day:2,title:'Winning the first conversation',version:'2026-09-14-alms-live-v3',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[{name:'Jordan · a garden',quote:'I’d like to see 1234 Lane Saturday morning. The yard caught my eye.',goal:'Buyer: the reason is a vegetable garden; reveal it after a relevant question. Agent confirms what still needs checking.'},{name:'Maya · text first',quote:'I’m at work. Please text me now; I can talk at five.',goal:'Begin with the text exchange, then fast-forward to the agreed call. Buyer: a shorter commute matters; reveal it when asked. Honor the current preference and agree the later conversation.'},{name:'Alex · questions first',quote:'I only wanted to know about the roof. I’m not ready to book a showing.',goal:'Help with the question, learn context with permission, and respect a declined invitation. Buyer: you want to understand potential maintenance before deciding to tour.'}]};
+slides.forEach((s,i)=>{
+ s.time=minutes[i];
+ // Build every self-paced activity from the same prompt, fields, and answer
+ // used by the live form; changing an example cannot leave old feedback behind.
+ if(s.activity){const a=s.activity;
+  const instruction=a.kind==='roleplay'?s.body:'';
+  s.body=instruction+(a.choices?`<div class="choices" data-quiz="${s.id}">${a.choices.map(c=>`<button data-option-id="${c.id}" data-correct="${c.id===a.correctChoiceId}" data-feedback="${esc(a.explanation)}">${c.text}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`:'')+
+   a.fields.map(f=>`<label class="field">${f.label}<textarea data-save="${f.id}" placeholder="Use fictional practice details."></textarea></label>`).join('')+
+   `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${a.model}</p><p>${a.explanation}</p></div></details>`;
+ }
+});
+const data={day:2,title:'Winning the first conversation',version:'2026-09-14-alms-live-v5',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+ {name:'Jordan · a garden',quote:'I’d like to see 1234 Lane Saturday morning. The yard caught my eye.',goal:'Buyer: you rent locally and want sun and room for raised beds. Reveal those details after relevant questions. You are open to a comparison home. Access remains unconfirmed.'},
+ {name:'Maya · text first',quote:'I’m at work. Please text me now; I can talk at five.',goal:'Begin with the text exchange, then fast-forward to the agreed call. Buyer: a shorter commute matters; reveal it when asked. Honor the contact preference and agree the later conversation.'},
+ {name:'Alex · questions first',quote:'I only wanted to know about the roof. I’m not ready to book a showing.',goal:'Buyer: maintenance costs concern you. Reveal this after a relevant question. Decline the next invitation too. Agent should help with the question and agree how to return verified information.'}
+]};
+if(data.duration!==90)throw new Error(`Timing is ${data.duration}, expected 90`);
 fs.writeFileSync(new URL('../web/public/workshops/day2.json',import.meta.url),JSON.stringify(data,null,2)+'\n');
 console.log(`Day 2: ${slides.length} slides, ${data.duration} minutes, ${slides.filter(s=>s.activity).length} activities.`);
