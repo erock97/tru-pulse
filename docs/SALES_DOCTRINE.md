@@ -2,13 +2,13 @@
 
 ## September 14, 2026: Day 2 onboarding source update
 
-For Day 2 first-conversation training, Eric explicitly directs **ALMS: Appointment,
-Location, Motivation, Summarize**, with a clear introduction before ALMS. The
-September 12 TRU Sales Proccess memory bank and its September 9–10 interviews
-supersede the older LEAD and first-week outreach teaching below for this course.
-See [Day 2 source and scope](DAY2_ONBOARDING_SOURCES.md). The older sections remain
-historical context for existing coaching labels; they must not be copied into the
-revised Day 2 course where they conflict with those newer instructions.
+For Day 2, Eric’s September 15 correction restores **LEAD** as the primary
+framework: Lead with who you are, Extend the invitation, Ask and listen,
+Deliver the summary. Mention Zillow’s ALMS once as related terminology.
+This supersedes his earlier request to label the course with ALMS. September 12
+outreach and first-conversation guidance still applies; do not restore older
+outreach quotas. Normal business hours for this training are 8 a.m.–8 p.m.
+TRU provides the training; it is not the participating agents’ brokerage.
 
 **What TRU coaches real estate agents to do, and why.**
 

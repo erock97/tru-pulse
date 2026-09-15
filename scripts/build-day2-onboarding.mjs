@@ -11,16 +11,16 @@ const discussionChoices={
   "lead-discussion": [
     [
       "both",
-      "In either case, introduce yourself immediately to the buyer on the phone."
+      "Begin your introduction immediately; answering Zillow’s call has already connected you to the buyer."
     ],
     [
       "distinct",
-      "Live connection: review the inquiry and connect. Touring alert: review the times, accept or pass, then contact the buyer.",
+      "Review the buyer’s inquiry, then select Connect to speak with the buyer.",
       true
     ],
     [
       "wait",
-      "In either case, wait for the buyer to call you after the notification."
+      "Call the buyer’s number separately instead of using Connect."
     ]
   ],
   "channel-check": [
@@ -117,7 +117,7 @@ add('real-time-touring','Receive the lead','Real-Time Touring asks you to accept
  visual([['rtt-ringing.png','Real-Time Touring incoming call in Zillow’s official demonstration'],['rtt-request.png','Tour request showing buyer-selected times and commitment choices']],
  p('<strong>Review the request in the app.</strong> Zillow gives you five minutes to accept a time you can attend or pass on the request.')+p('<strong>This is not a live buyer transfer.</strong> After accepting, review the booking details and contact the buyer about the appointment.'),
  'https://www.zillow.com/premier-agent/real-time-touring/','Zillow Real-Time Touring demonstration'),4,
- 'Read the Real-Time Touring label and buyer-selected times. Distinguish Zillow’s five-minute acceptance window from TRU’s first-contact standard. Dates and property are sample data. Eric’s “not a live call” means no live buyer conversation; do not teach that the phone never rings. Booking uses ShowingTime availability. Follow actual status and notifications.',
+ 'Read the Real-Time Touring label and buyer-selected times. Distinguish Zillow’s five-minute acceptance window from the five-minute first-contact standard taught here. Dates and property are sample data. Eric’s “not a live call” means no live buyer conversation; do not teach that the phone never rings. Booking uses ShowingTime availability. Follow actual status and notifications.',
  'You may also receive a standard tour request. That buyer still wants to see a home, but the request does not use this same real-time booking process.',
  'INT-012; Zillow Real-Time Touring page and linked Oct 2025 demonstration');
 add('standard-tour','Receive the lead','A standard tour request tells you what the buyer wants','The buyer has asked to see a particular home. They may have supplied a preferred day and time.',
@@ -126,13 +126,13 @@ add('standard-tour','Receive the lead','A standard tour request tells you what t
  p('A standard tour request may arrive as a live connection or an alert in Follow Up Boss. If the buyer is not already on the phone, your next job is to contact them.'),2,
  'Explain Follow Up Boss in full before abbreviating it to FUB. Show how the request gives you an opening. Distinguish preferred timing from booking status without making that obvious distinction into a quiz.',
  'We have now seen the two phone experiences and a standard request. Let’s make sure the difference is clear before we move into your response.','INT-012');
-act('lead-discussion','Discuss the screens','Explain what happens after you answer','Compare the two Zillow examples: a live connection and a Real-Time Touring alert. Which option describes your next action in each case?',3,
+act('lead-discussion','Discuss the screens','You answered Zillow’s call. What happens next?','Zillow calls you with a live connection. You answer and see the buyer’s inquiry and a Connect button. You have not spoken to the buyer yet. What do you do next?',3,
  [['lead-response','Describe the next action for each type. Include anything on the screens you want explained.']],
- 'Live connection: read the inquiry and connect to the waiting buyer. Real-Time Touring: review the tour times and accept a workable tour or pass; then contact the buyer. There is no live buyer transfer in the touring flow.',
+ 'Review the inquiry so you know why the buyer reached out, then select Connect. That connects you to the waiting buyer; now introduce yourself. A Real-Time Touring request is different: review its proposed times, accept a workable request or pass, and contact the buyer after accepting. Accepting that request does not transfer a buyer onto the call.',
  'The distinction changes what you prepare to do when the phone rings. A tour acceptance and a conversation with a waiting buyer are different tasks.',
  'Give a minute to choose and explain. Discuss the selected answers and any screen questions. Return to a screenshot if the next action is unclear. This is an explanation check, not a trick question.',
- 'If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how TRU expects you to make contact.',null,'discussion');
-add('channel','Make contact','Call promptly when the buyer has asked to hear from you','For a new lead received during TRU’s normal 8 a.m.–8 p.m. operating window, call within five minutes unless the buyer gave a different contact instruction.',
+ 'If the buyer is already on the phone, begin the conversation. If you received an alert instead, here is how to make contact.',null,'discussion');
+add('channel','Make contact','Call promptly when the buyer has asked to hear from you','For a new lead received during normal business hours, 8 a.m.–8 p.m., call within five minutes unless the buyer gave a different contact instruction.',
  p('The buyer just asked for help with a home. A call lets you hear their tone, answer questions as they arise, and begin a conversation about what they need.')+
  p('Follow Up Boss may already have sent an automated introduction. That does not replace your own call. If the buyer requested a later callback or asked for text, respect that instruction.'),2,
  'Explain Eric’s reason: the buyer just expressed interest, rather than being a random person being interrupted. Hearing and responding in real time matters. Do not repeat unverified response-rate statistics. The clock starts at agent receipt; do not invent after-hours rules.',
@@ -147,9 +147,9 @@ act('channel-check','Make contact','Respond to a buyer who is at work','A new Zi
  '“Hi, I’m [your name] with [your brokerage]. I’ll be the agent calling at 5 about the Cedar Lane home. If you have questions before then, you’re welcome to text me.” Call at 5 as requested.',
  'Acknowledge now so the buyer knows who will call. The requested time governs the call; the default does not justify interrupting them at work.',
  'Before voting, teach Eric’s exception: acknowledge by text now and call at the requested time. Demonstrate “I’ll be the agent calling you at five.” Then let learners choose and explain. Review whether it introduces the agent and preserves the callback. Earlier availability is optional.',
- 'Once the buyer answers, the task changes from making contact to leading a useful conversation. ALMS gives you an order for that conversation.');
-add('alms','Begin the conversation','Introduce yourself, then use ALMS','ALMS means Appointment, Location, Motivation, and Summarize. It gives the call a purpose without turning it into an interview.',
- list(['<strong>Appointment:</strong> Help arrange the visit near the beginning of the call.','<strong>Location:</strong> Learn where the buyer is looking and why that area works.','<strong>Motivation:</strong> Learn what they want to change about their current home.','<strong>Summarize:</strong> Repeat what matters and agree on what happens next.']),2,
+ 'Once the buyer answers, the task changes from making contact to leading a useful conversation. LEAD gives you an order for that conversation.');
+add('alms','Begin the conversation','Use LEAD to guide the conversation','LEAD gives you four steps: Lead with who you are, Extend the invitation, Ask and listen, and Deliver the summary.',
+ list(['<strong>L — Lead with who you are:</strong> Name, brokerage, Zillow connection, and why you’re calling.','<strong>E — Extend the invitation:</strong> Offer the visit early, with two workable options.','<strong>A — Ask and listen:</strong> Ask permission, then learn where they want to live and what is prompting the move.','<strong>D — Deliver the summary:</strong> Repeat what matters and agree on the next step.'])+p('You may also know Zillow’s ALMS: Appointment, Location, Motivation, Summarize. LEAD includes your introduction and groups location and motivation under Ask and listen.'),2,
  'The buyer asked for help, so make that help tangible early. Then ask permission to learn more. Location and motivation can occur in either order. Do not delay the invitation until after qualification.',
  'Let’s hear the opening with a complete example. I’ll introduce the buyer and the situation before we read the call.','INT-016, INT-021');
 add('introduction','Begin the conversation','Demonstration: introduce yourself and offer the visit','Practice buyer George requested a tour of 418 Cedar Lane through Zillow. No time was selected. You can meet Saturday morning or afternoon; property access still needs checking.',
@@ -159,7 +159,7 @@ add('introduction','Begin the conversation','Demonstration: introduce yourself a
 act('opening-decision','Practice the opening','Which opening serves the buyer’s request?','A buyer requested a Zillow tour but selected no time. Both agents introduce themselves. Choose the continuation you would use, then explain what the other version could communicate to the buyer.',3,
  [['opening-invitation','Explain your choice in terms of the buyer’s experience.']],
  'The appointment-first opening helps with the request immediately. Asking about readiness before offering the visit can make the buyer feel they must qualify for help. Discovery still belongs in the call, after the early invitation and permission.',
- 'TRU teaches an early invitation because the buyer asked to see the home. This is about order and purpose, not banning useful questions.',
+ 'An early invitation belongs here because the buyer asked to see the home. This is about order and purpose, not banning useful questions.',
  'Allow a minute to respond. Ask what the interview-first agent hoped to learn, then show where discovery belongs after the invitation. Do not shame a choice. Demonstrate a revised opening.',
  'Offering the visit gives the call a direction. Next, ask permission to learn enough about the buyer to make that visit worthwhile.',
  [['interview','“Before we schedule, tell me about your buying timeline and what you’re looking for.”'],['introduction-invitation','“I can meet Saturday morning or afternoon. Which works better? I’ll check the showing arrangements.”',true]],'choice');
@@ -198,11 +198,11 @@ add('questions-only','Respond to buyer questions','When the buyer says, “I onl
  'Teach the whole reasoning: acknowledge, learn context, make a useful invitation. Do not make an answer conditional on a visit. If the buyer declines again, stop pushing. Never guess the roof age or claim completed research.',
  'A financing question also deserves an answer. The important distinction is who raised it and why it is relevant now.','INT-016');
 add('financing','Respond to buyer questions','Do not make preapproval the price of a first visit','A buyer who asks to see a home should not have to pass a financial interview before you help arrange it.',
- p('TRU does not teach opening the first call with “Are you preapproved?” The buyer does not know you yet, and a private financial question can make the visit feel conditional.')+
+ p('Avoid opening the first call with “Are you preapproved?” The buyer does not know you yet, and a private financial question can make the visit feel conditional.')+
  p('If the buyer raises financing, respond to their concern and offer relevant lender help. The usual later opportunity is the end of the first showing, when the discussion has context.'),2,
  'Explain timing and framing, not a blanket ban on financing. A lender handles specifics. Do not make credit, approval or affordability promises. A long timeline does not automatically mean planning is too early.',
  'Compare the responses to this buyer’s financing concern. Decide which one helps without turning the visit into a condition.','R001–R004; INT-001–004, INT-016');
-act('financing-check','Discuss the response','Help the buyer who raises financing','The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best fits TRU’s approach?',3,
+act('financing-check','Discuss the response','Help the buyer who raises financing','The buyer says: “We want to look at the house, but I’m not sure what we can comfortably afford. Should we speak with a lender?” Which response best helps the buyer?',3,
  [],'Acknowledge the affordability concern and offer lender help while continuing to help with the visit. The buyer introduced financing, so avoiding it would ignore their need.',
  'Respond to the actual concern. Do not require a letter before helping or promise the buyer can afford the home.',
  'Allow a vote, then ask what problem the buyer wants solved. Discuss offering help versus adding a gate. Do not automatically ask every new buyer about financing.',
@@ -273,7 +273,7 @@ for(const s of slides){if(!s.activity)continue;const a=s.activity;
  a.fields.map(f=>`<label class="field">${esc(f.label)}<textarea data-save="${f.id}" placeholder="Write your practice response."></textarea></label>`).join('')+
  `<details class="reveal"><summary>Compare with the teaching example</summary><div><p>${esc(a.model)}</p><p>${esc(a.explanation)}</p></div></details>`;
 }
-const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-alms-live-v9',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
+const data={day:2,title:'Handling your first Zillow lead',version:'2026-09-15-lead-live-v10',duration:slides.reduce((n,s)=>n+s.time,0),slides,hero:'',resources:'day2-resources.html',cases:[
  {name:'Tour request · a home office',quote:'I asked to see the Cedar Lane home. Saturday morning works for me.',goal:'Fictional buyer: you rent locally and work at the kitchen table. You need a separate work space and want to stay near your neighborhood. Reveal the reason after a relevant question. You are open to a comparison home. Access has not been checked.'},
  {name:'Property question · maintenance',quote:'I wanted to know about the roof before deciding whether to tour.',goal:'Fictional buyer: surprise maintenance costs concern you. The agent does not have verified roof information. Explain the concern when asked. Prefer a call with verified information before booking; do not agree merely because the invitation is repeated.'},
  {name:'Relocation · a later visit',quote:'We are relocating in two months. We cannot see homes this week.',goal:'Fictional buyer: you need room for a home office. You can review emailed properties and talk Tuesday at six. Share details after relevant questions. The useful next step is planning, not a forced immediate showing.'}

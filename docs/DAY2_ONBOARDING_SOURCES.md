@@ -2,7 +2,9 @@
 
 Eric's September 14 objective is confidence receiving a Zillow Preferred lead and
 handling the first call from beginning to end. Start with introduction and agenda,
-teach before practice, use ALMS, and keep material available for later reference.
+teach before practice, and keep material available for later reference. On September 15,
+Eric restored LEAD as the primary framework, with one mention of Zillow’s ALMS.
+Use the original LEAD definitions in SALES_DOCTRINE.md; retain September 12 outreach guidance.
 Do not import the entire sales process. First-showing delivery, post-showing
 discovery, lender training, and later transaction work belong in other courses.
 
@@ -21,7 +23,7 @@ not client facts or mandatory scripts.
 |---|---|---|
 | Three lead routes and supplied details | INT-012 | Connection, real-time touring, standard tour; requested versus confirmed availability |
 | Call or text, speed, no answer | R008–R010; INT-009, INT-011–013, INT-043–044, INT-054 | Five minutes from agent receipt in normal operating hours; real channel/callback exceptions |
-| Introduction and ALMS | R012–R013; INT-015–016, INT-021, INT-023 | Appointment early; permission; location and motivation in conversational order; follow-up question; accurate summary |
+| Introduction and LEAD (related: ALMS) | R012–R013; INT-015–016, INT-021, INT-023 | Appointment early; permission; location and motivation in conversational order; follow-up question; accurate summary |
 | Questions-only and role questions | R014–R015; INT-016–018 | Answer honestly, offer help, respect the buyer's choice; no agency lecture |
 | Financing raised by the buyer | R001–R004; INT-001–005, INT-016 | Do not create a preapproval gate; respond usefully when the buyer asks |
 | Home already under contract | R011–R012; INT-014–015 | Apply the truthful problem-solving principle to the initial availability question; no showing-day workflow |

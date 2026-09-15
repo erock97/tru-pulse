@@ -678,20 +678,22 @@ function SlideBody({
     </div>
   );
 }
-function DiscussionChoices({sessionId,activity,presenting,showSelection}:{sessionId:string;activity:WorkshopActivity;presenting:boolean;showSelection:boolean}) {
+function DiscussionChoices({sessionId,activity,presenting,showSelection,disabled,onSubmit}:{sessionId:string;activity:WorkshopActivity;presenting:boolean;showSelection:boolean;disabled:boolean;onSubmit:()=>Promise<boolean>}) {
   const key = 'tru-discussion-choice:' + sessionId + ':' + activity.id;
   const [selected,setSelected] = useState(() => { try { return localStorage.getItem(key) || ''; } catch { return ''; } });
+  const [submitted,setSubmitted] = useState(false);
   useEffect(() => {
     const sync = (event: StorageEvent) => { if(event.key === key) setSelected(event.newValue || ''); };
     window.addEventListener('storage',sync);
     return () => window.removeEventListener('storage',sync);
   },[key]);
   function choose(id:string) {
+    setSubmitted(false);
     const next=selected === id ? '' : id;
     setSelected(next);
     try { localStorage.setItem(key,next); } catch { /* The presenter can still select in this window. */ }
   }
-  return <section className="live-card live-alms-activity"><ol className="live-choice-options" type="A">{activity.choices!.map(c => <li key={c.id} className={showSelection && selected === c.id ? 'discussion-selected' : ''}>{presenting ? <button className="live-discussion-choice" aria-pressed={selected === c.id} onClick={() => choose(c.id)}>{c.text}</button> : c.text}</li>)}</ol>{presenting && <p className="live-discussion-hint">Choose an option to discuss. Ask: “Why did you choose that?”</p>}</section>;
+  return <section className="live-card live-alms-activity"><ol className="live-choice-options" type="A">{activity.choices!.map(c => <li key={c.id} className={showSelection && selected === c.id ? 'discussion-selected' : ''}>{presenting ? <button className="live-discussion-choice" disabled={disabled} aria-pressed={selected === c.id} onClick={() => choose(c.id)}>{c.text}</button> : c.text}</li>)}</ol>{presenting && <div className="live-discussion-hint"><p>Choose the group’s answer and ask why. Submit to show the explanation.</p><button disabled={disabled || !selected || submitted} onClick={async()=>{if(await onSubmit()) setSubmitted(true);}}>{submitted ? 'Answer submitted' : 'Submit answer'}</button></div>}</section>;
 }
 
 /** One current slide drives both the learner's form and the presenter's inbox. */
@@ -721,10 +723,10 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
       {presenting && <details className="live-session-tools"><summary>Session</summary><div>
         <a href={link(state.session.id,"shared")} target="_blank" rel="noreferrer">Open screen to share</a>
         <a href={link(state.session.id,"agent")} target="_blank" rel="noreferrer">{state.rehearsal ? "Open test learner" : "Agent join link"}</a>
-        <details><summary>Presenter notes</summary><p>{state.definition.slides.find(s => s.id === slide.id)?.notes}</p></details>
         <p>{state.rehearsal ? "Solo test · no real agents. Submit in the test learner tab; answers arrive here." : "Share the presentation window in your meeting. Agents open the join link on their own devices."}</p>
         <button disabled={busy || state.session.status === "ended"} onClick={() => void run({action:"end"})}>End {state.rehearsal ? "rehearsal" : "session"}</button>
       </div></details>}
+      {presenting && <details className="live-session-tools live-slide-notes"><summary>Presenter notes</summary><div><h3>{slide.title}</h3><p style={{whiteSpace:'pre-line'}}>{state.definition.slides.find(s => s.id === slide.id)?.notes}</p><p>Keep this presenter window on your screen. In Session, open the screen to share for your audience.</p></div></details>}
     </div>
     {error && <p role="alert">{error}</p>}
     <div className={`live-presentation-layout ${activity && (presenting || learner) ? "with-responses" : ""}`}>
@@ -733,7 +735,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
           {slide.native === "deal" && <DealMock />}
           {slide.native === "practice" && !learner && <PracticeRecord scenario={slide.scenario as PracticeScenario} record={false} />}
         </SlideBody>
-        {activity?.choices && <DiscussionChoices key={state.session.id + activity.id} sessionId={state.session.id} activity={activity} presenting={presenting} showSelection={presenting || (view === "shared" && state.canPresent)} />}
+        {activity?.choices && <DiscussionChoices key={state.session.id + activity.id} sessionId={state.session.id} activity={activity} presenting={presenting} showSelection={presenting || (view === "shared" && state.canPresent)} disabled={busy || state.session.status === 'ended'} onSubmit={()=>run({action:'reveal',activityId:activity.id})} />}
         {activity && (activity.model || activity.explanation) && <section className="live-card live-alms-activity"><h3>Discuss</h3><p>{activity.model || activity.explanation}</p></section>}
       </PresentationFit>
       {activity && learner && <aside className="live-response-panel" aria-label="Answer the current question">
