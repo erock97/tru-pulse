@@ -34,6 +34,7 @@ def inline(node):
         return escape(clean(str(node)))
     inner = ''.join(inline(child) for child in node.children)
     if node.name == 'strong': return f'<b>{inner}</b>'
+    if node.name == 'b': return f'<b>{inner}</b> '
     if node.name in ('em','i'): return f'<i>{inner}</i>'
     if node.name == 'br': return '<br/>'
     if node.name == 'a' and node.get('href','').startswith('https://'):
@@ -68,6 +69,8 @@ def flow(node):
         if node.name == 'li': text = '- ' + text
         paragraph = Paragraph(text,styles[key])
         if node.name == 'p' and node.get_text(strip=True).endswith(':'):
+            paragraph.keepWithNext = True
+        if node.name == 'p' and node.find_next_sibling() is not None and 'lesson-visual' in node.find_next_sibling().get('class',[]):
             paragraph.keepWithNext = True
         return [paragraph]
     result = []
