@@ -100,14 +100,14 @@ describe('live short-answer continuation',()=>{
   const value={...state,definition,canPresent:true,session:{...state.session,currentSlideId:'day2-lead-discussion',status:'active'},openedActivityIds:['day2-lead-discussion'],groups:[],participants:[],choiceTotals:{}} as unknown as LiveSessionState;
   await act(async()=>root.render(<SimpleLiveStage state={value} view="presenter" refresh={()=>{}}/>));
   const options=container.querySelectorAll<HTMLButtonElement>('.live-discussion-choice');
-  expect(options).toHaveLength(3);
+  expect(options).toHaveLength(4);
   await act(async()=>options[1].click());
   expect(options[1].getAttribute('aria-pressed')).toBe('true');
   expect(mocks.submit).not.toHaveBeenCalled();
   await act(async()=>root.render(<SimpleLiveStage state={value} view="shared" refresh={()=>{}}/>));
-  expect(container.querySelector('.discussion-selected')?.textContent).toContain('Review the buyer’s inquiry');
-  await act(async()=>window.dispatchEvent(new StorageEvent('storage',{key:'tru-discussion-choice:session:day2-lead-discussion',newValue:'both'})));
-  expect(container.querySelector('.discussion-selected')?.textContent).toContain('Begin your introduction');
+  expect(container.querySelector('.discussion-selected')?.textContent).toContain('Within 10 minutes');
+  await act(async()=>window.dispatchEvent(new StorageEvent('storage',{key:'tru-discussion-choice:session:day2-lead-discussion',newValue:'five'})));
+  expect(container.querySelector('.discussion-selected')?.textContent).toContain('Within 5 minutes');
   await act(async()=>root.render(<SimpleLiveStage state={{...value,session:{...value.session,currentSlideId:'day2-channel-check'}}} view="presenter" refresh={()=>{}}/>));
   expect(container.querySelector('.discussion-selected')).toBeNull();
  });
