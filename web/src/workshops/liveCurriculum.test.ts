@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v6' : definition.day === 2 ? '2026-09-14-alms-live-v3' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-14-alms-live-v3' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -155,4 +155,13 @@ describe('versioned live curriculum', () => {
     expect(worksheet2).not.toContain(workshopCatalog[2].activities[0].model);
     expect(worksheet2).toContain('this printable worksheet is a backup');
   });
+});
+
+it('teaches the cap before a quiz with an explicit valid maximum',()=>{
+  const day=getWorkshopDefinition(1)!;
+  const quiz=day.slides.find(s=>s.id==='day1-capacity-decision')!;
+  expect(day.slides.findIndex(s=>s.id==='day1-preferred-standards')).toBeLessThan(day.slides.indexOf(quiz));
+  expect(quiz.activity!.choices!.find(c=>c.id===quiz.activity!.correctChoiceId)!.text).toBe('15 new leads.');
+  expect(quiz.lead).toContain('completed the first month');
+  expect(quiz.body).not.toContain('fewer than 20');
 });
