@@ -2,7 +2,7 @@
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {Activity,PracticeGroups,ResponseWorkspace,SimpleLiveStage} from './LiveSessions';
+import {Activity,PracticeGroups,ResponseWorkspace,SimpleLiveStage,PresenterSpeakingNotes} from './LiveSessions';
 import {getWorkshopDefinition} from '../../../shared/workshopCatalog';
 import {liveDraftKey, type LiveSessionState} from '../../../shared/liveWorkshops';
 const mocks=vi.hoisted(()=>({request:vi.fn(async(..._args:unknown[])=>({})),submit:vi.fn(async()=>({id:'saved',grade:null}))}));
@@ -132,9 +132,24 @@ describe('live short-answer continuation',()=>{
   expect(refresh).toHaveBeenCalledTimes(1);
   expect(container.textContent).toContain('Answer submitted');
   expect(mocks.submit).not.toHaveBeenCalled();
-  expect([...container.querySelectorAll('summary')].some(s=>s.textContent==='Presenter notes')).toBe(true);
+  expect(container.querySelector('a[href*="notes=1"]')?.getAttribute('target')).toBe('_blank');
   await act(async()=>root.render(<SimpleLiveStage state={value} view="shared" refresh={refresh}/>));
-  expect([...container.querySelectorAll('summary')].some(s=>s.textContent==='Presenter notes')).toBe(false);
+  expect(container.querySelector('a[href*="notes=1"]')).toBeNull();
+ });
+ it('follows slides with plain-language private notes and rejects non-presenters',async()=>{
+  const definition=getWorkshopDefinition(2)!;
+  const value={...state,definition,canPresent:true,session:{...state.session,currentSlideId:'day2-alms'}} as LiveSessionState;
+  await act(async()=>root.render(<PresenterSpeakingNotes state={value}/>));
+  expect(container.textContent).toContain('LEAD gives us a simple order.');
+  expect(container.textContent).toContain('What to say');
+  expect(container.textContent).not.toContain('INT-016');
+  await act(async()=>root.render(<PresenterSpeakingNotes state={{...value,session:{...value.session,currentSlideId:'day2-reference'}}}/>));
+  expect(container.textContent).toContain('Slide 31 of 31');
+  expect(container.textContent).toContain('Which part would you like to practice again');
+  expect(container.textContent).toContain('Close the session');
+  await act(async()=>root.render(<PresenterSpeakingNotes state={{...value,canPresent:false}}/>));
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain('Only the presenter');
+  expect(container.textContent).not.toContain('LEAD gives us');
  });
  it('does not expose a response form before the activity opens',async()=>{
   const definition=getWorkshopDefinition(2)!;

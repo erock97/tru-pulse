@@ -42,6 +42,7 @@ import recordCss from "../workshops/practiceRecord.css?inline";
 import "./liveSessions.css";
 import { LiveSlideNavigation } from "./LiveSlideNavigation";
 import { PresentationFit } from "./PresentationFit";
+import { day2SpeakingNotes } from "./day2SpeakingNotes";
 
 const message = (e: unknown) =>
   e instanceof Error ? e.message : "The request could not be completed.";
@@ -90,14 +91,16 @@ function Frame({
 export default function LiveSessions({ route }: { route: string }) {
   const requestedDay = Number(new URLSearchParams(route.split('?')[1] || '').get('day'));
   const initialDay = [1, 2, 3, 4].includes(requestedDay) ? requestedDay : 1;
-  const match = route.match(
+  const notesOnly = new URLSearchParams(route.split('?')[1] || '').get('notes') === '1';
+  const match = route.split('?')[0].match(
     /^\/rep\/sessions\/([a-f0-9-]+)\/(presenter|shared|agent|coach)$/i,
   );
   return match ? (
     <Session
-      key={`${match[1]}:${match[2]}`}
+      key={`${match[1]}:${match[2]}:${notesOnly}`}
       id={match[1]}
       view={match[2] as LiveView}
+      notesOnly={notesOnly && match[2] === 'presenter'}
     />
   ) : (
     <Lobby key={initialDay} initialDay={initialDay} />
@@ -415,7 +418,7 @@ function DeliveryLog({ preflight }: { preflight: LivePreflight }) {
   );
 }
 
-function Session({ id, view, responseOnly = false }: { id: string; view: LiveView; responseOnly?: boolean }) {
+function Session({ id, view, responseOnly = false, notesOnly = false }: { id: string; view: LiveView; responseOnly?: boolean; notesOnly?: boolean }) {
   const [state, setState] = useState<LiveSessionState | null>(null),
     [error, setError] = useState(""),
     [connected, setConnected] = useState(false),
@@ -534,7 +537,7 @@ function Session({ id, view, responseOnly = false }: { id: string; view: LiveVie
         <p>Submit as the test learner, then review and reveal from the presenter console. Responses and feedback are saved for this test; no agents receive assignments.</p>
         <div className="live-actions"><a href={link(id,'agent')} target="_blank" rel="noreferrer">Open test learner</a><a href={link(id,'presenter')} target="_blank" rel="noreferrer">Open presenter console</a><a href={link(id,'shared')} target="_blank" rel="noreferrer">Open presentation</a></div>
       </section>}
-      {state.session.day <= 2 && view !== "coach" ? (
+      {notesOnly ? <PresenterSpeakingNotes state={state} /> : state.session.day <= 2 && view !== "coach" ? (
         <SimpleLiveStage state={state} refresh={() => refresh.current()} view={view} />
       ) : view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
@@ -550,6 +553,22 @@ function Session({ id, view, responseOnly = false }: { id: string; view: LiveVie
 }
 
 type Slide = LiveSessionState["definition"]["slides"][number];
+export function PresenterSpeakingNotes({state}:{state:LiveSessionState}) {
+  if (!state.canPresent) return <p role="alert">Only the presenter can open these notes.</p>;
+  const index = Math.max(0,state.definition.slides.findIndex(s=>s.id === state.session.currentSlideId));
+  const slide = state.definition.slides[index];
+  const prompts = state.definition.version.includes('lead-live') ? day2SpeakingNotes[slide.id.replace(/^day2-/,'')] : undefined;
+  return <article className="live-speaking-notes">
+    <p>PRIVATE PRESENTER NOTES · Slide {index+1} of {state.definition.slides.length} · {slide.time} minutes</p>
+    <h1>{slide.title}</h1>
+    <p className="live-notes-help">These notes follow the live slide automatically. Keep this tab on your other screen or device. In your meeting, share only the presentation tab or window.</p>
+    <h2>What to say</h2><p className="live-speaking-script">{prompts?.[0] || slide.notes.split('Handoff:')[0]}</p>
+    {prompts && <><h2>Ask or demonstrate</h2><p>{prompts[1]}</p></>}
+    {slide.activity?.choices && <><h2>Run the question</h2><p>Ask for a choice and a reason. People with HQ access submit their own responses. For people answering aloud, select the group’s choice in the presenter window and click Submit answer to show the explanation.</p><p><strong>Answer to discuss: </strong>{slide.activity.choices.find(c=>c.id === slide.activity?.correctChoiceId)?.text}</p><p>{slide.activity.model}</p></>}
+    <h2>{index === state.definition.slides.length-1 ? 'Close the session' : 'Move to the next slide'}</h2><p className="live-speaking-script">{slide.cue}</p>
+    <a href={link(state.session.id,'presenter')} target="_blank" rel="noreferrer">Open presenter controls</a>
+  </article>;
+}
 function SlideBody({
   slide,
   children,
@@ -726,7 +745,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
         <p>{state.rehearsal ? "Solo test · no real agents. Submit in the test learner tab; answers arrive here." : "Share the presentation window in your meeting. Agents open the join link on their own devices."}</p>
         <button disabled={busy || state.session.status === "ended"} onClick={() => void run({action:"end"})}>End {state.rehearsal ? "rehearsal" : "session"}</button>
       </div></details>}
-      {presenting && <details className="live-session-tools live-slide-notes"><summary>Presenter notes</summary><div><h3>{slide.title}</h3><p style={{whiteSpace:'pre-line'}}>{state.definition.slides.find(s => s.id === slide.id)?.notes}</p><p>Keep this presenter window on your screen. In Session, open the screen to share for your audience.</p></div></details>}
+      {presenting && <a className="live-open-notes" href={link(state.session.id,'presenter')+'?notes=1'} target="_blank" rel="noreferrer">Open presenter notes ↗</a>}
     </div>
     {error && <p role="alert">{error}</p>}
     <div className={`live-presentation-layout ${activity && (presenting || learner) ? "with-responses" : ""}`}>
