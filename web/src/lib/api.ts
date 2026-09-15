@@ -1357,11 +1357,12 @@ export async function resolveCohortRoster(token: string): Promise<{ id: string; 
 }
 
 export async function submitOwnAssessment(input: {
-  agentId: string; personalCode: string; personalAxes: unknown;
+  submissionId?: string; agentId: string; personalCode: string; personalAxes: unknown;
   businessCode: string; tallies: Record<string, number>; answers: unknown;
 }): Promise<void> {
   const res = await workerFetch('/data/coach/submit-own', {
     method: 'POST',
+    signal: AbortSignal.timeout(20000),
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error('Could not save your assessment.');

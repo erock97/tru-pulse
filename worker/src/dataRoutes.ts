@@ -618,32 +618,13 @@ export async function handleDataRoutes(
     if (url.pathname === '/data/coach/submit-own') {
       const agentId = String(body.agentId ?? '');
       if (!UUID_RE.test(agentId)) return json({ error: 'invalid agentId' }, 422, cors);
-      const mine = await db.select<{ id: string; org_id: string; team_id: string }>(
-        'agents', `select=id,org_id,team_id&id=eq.${agentId}&auth_id=eq.${db.userId}&limit=1`,
-      );
-      if (!mine[0]) return json({ error: 'not allowed' }, 403, cors);
-      const tallies = (body.tallies ?? {}) as Record<string, number>;
-      const created = await db.insert('assessments', {
-        org_id: mine[0].org_id,
-        team_id: mine[0].team_id,
-        agent_id: agentId,
-        code: body.businessCode,
-        answers: body.answers ?? null,
-        energy_p: tallies.energy_p ?? null,
-        energy_t: tallies.energy_t ?? null,
-        approach_pro: tallies.approach_pro ?? null,
-        approach_rec: tallies.approach_rec ?? null,
-        deal_r: tallies.deal_r ?? null,
-        deal_v: tallies.deal_v ?? null,
-        decision_d: tallies.decision_d ?? null,
-        decision_i: tallies.decision_i ?? null,
+      const submissionId = body.submissionId == null ? crypto.randomUUID() : String(body.submissionId);
+      if (!UUID_RE.test(submissionId)) return json({ error: 'invalid submissionId' }, 422, cors);
+      const saved = await db.rpc<{ id: string }>('submit_own_assessment', {
+        p_agent_id: agentId, p_submission_id: submissionId, p_result: body,
       });
-      if (!created) return json({ error: 'not allowed' }, 403, cors);
-      await db.update('agents', `id=eq.${agentId}`, {
-        personal_code: body.personalCode ?? null,
-        personal_axes: body.personalAxes ?? null,
-      });
-      return json({ ok: true }, 200, cors);
+      if (!saved.ok || !saved.data?.id) return json({ error: 'Assessment could not be saved. Your answers can be retried.' }, 403, cors);
+      return json({ ok: true, id: saved.data.id }, 200, cors);
     }
 
     // Add / update / toggle / delete a commitment.
