@@ -393,3 +393,4 @@
 .live-response-picker{display:block;font-size:13px;margin:14px 0}.live-response-picker select{display:block;width:100%;padding:8px;margin-top:6px;border-radius:4px}
 @media(max-width:900px){.live-response-panel{width:310px;padding:14px}.live-presentation-layout{gap:10px}}
 @media(max-width:650px){.live-presentation-layout.with-responses{flex-direction:column;overflow:auto}.with-responses>.live-presentation-canvas{flex:none;min-height:220px}.live-response-panel{width:100%;box-sizing:border-box;overflow:visible}.live-participation-toolbar{gap:8px}}
+.live-shared .live-alms-activity{background:#e8e5dc;color:#171d22}.live-shared .live-choice-options li{border-color:#c9c9be}
