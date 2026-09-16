@@ -662,7 +662,7 @@ function SlideBody({
               .slide .row p,.slide.tru .row p{font-size:18px;line-height:1.45}
               .slide .row h3,.slide.tru .row h3{font-size:22px}
               .slide.training-depth.lesson-photo>*,.slide.training-depth.lesson-photo h2,.slide.training-depth.lesson-photo .lead{max-width:58%}
-              .slide.training-depth.quadrant-cover{min-height:600px;color:#f2f0e9}
+              .slide.training-depth.quadrant-cover{min-height:600px;color:#17232d}
               .slide.training-depth .quadrant-agenda{gap:24px 36px}
               .slide.training-depth .quadrant-agenda h3{font-size:22px}
               .slide.training-depth .quadrant-agenda p{font-size:18px}

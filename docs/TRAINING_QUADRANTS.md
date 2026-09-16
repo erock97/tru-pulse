@@ -51,3 +51,9 @@ PDF generation needs ReportLab and Beautiful Soup. The Day 2 and Day 3 original 
 - Generated references rendered for visual review.
 
 Release requires the normal worker-first, web-second process because the worker bundles the shared curriculum. Previewing only the web build does not replace the live worker's catalog. No production data or schema changes are required. Existing live sessions should be left intact; create new sessions for this edition.
+
+## Standing presentation standard — Eric's review
+
+Every section must announce the topic change and show the same discuss → learn → practice flow (Day One: demonstrate → practice → review). Exercises must serve their section; relocate, rewrite or remove a mismatched prompt rather than preserving it to fill a slide. Plain English remains required. Preserve the TRU palette and original imagery, use content-appropriate visual variety, and inspect animation and transitions in the browser. A slide must read as part of the presentation, not float on an application backdrop. Keep navigation aligned and practice-card tools out of the slide canvas until requested.
+
+The first revision after review replaces Day Three's home-selection challenge with an applied tour-preparation exercise and turns slide 14's question bank into a sequenced conversation example. The review renderer now preserves photo themes, uses a full-width canvas and distinctive section dividers, and puts practice writing in an optional disclosure. Optimized JPEG exports preserve the original source imagery; generate them with `python scripts/build-review-artwork.py`. Do not embed large image values in CSS custom properties: browser size limits can silently discard them. The same section and conversation layouts are included in Rep/live styles.

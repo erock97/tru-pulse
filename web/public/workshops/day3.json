@@ -29,9 +29,9 @@
       "chapter": "1. Prepare before you arrive",
       "title": "Prepare before you arrive",
       "lead": "Research the homes and build a tour that serves this buyer.",
-      "body": "<p class=\"quadrant-number\">01</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">01</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-1",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What should be ready before tomorrow’s showing?. Connect it to the action you just practiced.",
       "cue": "Next: What should be ready before tomorrow’s showing?. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -67,7 +67,7 @@
       "lead": "Know what the available records say and which questions remain unanswered.",
       "body": "<div class=\"rows\"><div class=\"row\"><h3>Read the available documents</h3><p>Review the listing and seller disclosures. Identify facts that affect the buyer’s stated needs and flag missing information.</p></div><div class=\"row\"><h3>Prepare useful comparisons</h3><p>Review three relevant comparable sales where available. Note the differences that make each comparison useful rather than assuming the prices are directly interchangeable.</p></div><div class=\"row\"><h3>Check practical details</h3><p>Review property taxes and school district information. Record the source and any question that needs confirmation. Explain the information without guessing.</p></div></div>",
       "time": 3,
-      "theme": "tru alms lesson training-depth",
+      "theme": "tru alms lesson training-depth lesson-photo photo-property",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Call the listing agent with specific questions. Connect it to the action you just practiced.",
       "cue": "Next: Call the listing agent with specific questions. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -79,7 +79,7 @@
       "lead": "Use the call to prepare accurate information and confirm the visit.",
       "body": "<div class=\"rows\"><div class=\"row\"><h3>Ask about the listing</h3><p>“Is there an offer deadline or offer activity we should know about?” Ask about seller timing and any rent-back request.</p></div><div class=\"row\"><h3>Ask about unresolved facts</h3><p>“The available materials do not state the roof age. Is there documentation you can share?” Keep reported information separate from verified documents.</p></div><div class=\"row\"><h3>Confirm access</h3><p>Check appointment approval and showing instructions. A buyer’s preferred time does not establish access. If an answer is pending, record it and plan the update.</p></div></div>",
       "time": 3,
-      "theme": "tru alms lesson training-depth",
+      "theme": "tru alms lesson training-depth lesson-photo photo-follow-up",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Choose two to four homes for a useful comparison. Connect it to the action you just practiced.",
       "cue": "Next: Choose two to four homes for a useful comparison. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -91,7 +91,7 @@
       "lead": "Use the buyer’s priorities, available time and confirmed access to shape the tour.",
       "body": "<div class=\"rows\"><div class=\"row\"><h3>Explain why each home belongs</h3><p>“This home has the enclosed office you wanted. The yard is smaller. Would comparing the layout still be useful?”</p></div><div class=\"row\"><h3>Respect firm requirements</h3><p>If the yard is nonnegotiable, revise the options. More homes are useful only when the comparisons help the buyer decide.</p></div><div class=\"row\"><h3>Confirm the tour plan</h3><p>Agree on the meeting place, sequence and timing. Review access instructions and the applicable brokerage-approved agreement before the visit.</p></div></div>",
       "time": 3,
-      "theme": "tru alms lesson training-depth",
+      "theme": "tru alms lesson training-depth lesson-photo photo-home tour-comparison",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Bring information the buyer can use during the tour. Connect it to the action you just practiced.",
       "cue": "Next: Bring information the buyer can use during the tour. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -103,48 +103,32 @@
       "lead": "Prepare the packet before leaving so you can focus on the buyer at the home.",
       "body": "<div class=\"rows\"><div class=\"row\"><h3>For each home</h3><p>Include the MLS sheet and useful comparable sales. Add relevant neighborhood information with its source.</p></div><div class=\"row\"><h3>For the conversation</h3><p>Mark the property facts tied to the buyer’s needs and keep unresolved questions visible. Use the packet to support an explanation rather than read every field aloud.</p></div><div class=\"row\"><h3>Before you leave</h3><p>Recheck appointment confirmations, showing instructions and the meeting plan. Bring a physical packet as in the preparation example.</p></div></div>",
       "time": 2,
-      "theme": "tru alms lesson training-depth",
-      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Respond when the buyer questions your home selection. Connect it to the action you just practiced.",
-      "cue": "Next: Respond when the buyer questions your home selection. Connect it to the action you just practiced.",
+      "theme": "tru alms lesson training-depth lesson-photo photo-questions",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
+      "cue": "Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
       "quadrant": 1
     },
     {
       "id": "day3-comparison-discussion",
       "chapter": "1. Prepare before you arrive",
-      "title": "Respond when the buyer questions your home selection",
-      "lead": "A buyer wants a home office and a large yard. Your suggested home has an office but a small yard. They say, “You are not listening.” What is your best next move? Explain why.",
-      "body": "<div class=\"choices\" data-quiz=\"day3-comparison-discussion\"><button data-option-id=\"tour\" data-correct=\"false\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Explain why the office makes this home worth seeing and finish the tour.</button><button data-option-id=\"clarify\" data-correct=\"true\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Acknowledge the mismatch and ask what they need from the yard before revising the plan.</button><button data-option-id=\"replace\" data-correct=\"false\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Replace it with the largest-yard home in the search and keep the appointment time.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would change if the yard were nonnegotiable?<textarea data-save=\"reason\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.</div></details>",
+      "title": "Practice preparing tomorrow’s tour",
+      "lead": "Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.",
+      "body": "<ol class=\"discussion-questions\"><li>Choose two to four homes and explain why each belongs on this buyer’s tour.</li><li>Name the information you would research and the questions you would ask the listing agents.</li><li>Explain what you would confirm with the buyer and bring to the appointment.</li></ol><label class=\"field\">What would you do, and why? What information would change your answer?<textarea data-save=\"thinking\"></textarea></label><details class=\"reveal\"><summary>After your answer: review the explanation</summary><div>A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met.</div></details>",
       "time": 4,
-      "theme": "tru alms lesson day3-polish lesson-question training-depth",
-      "notes": "Give everyone thirty seconds to choose and submit. Hear two different reasons before sharing the example. Ask: What could you have said before adding this home to the tour? What changes if the buyer has already said the yard is nonnegotiable? The point is to understand their priority, not win approval for your pick.\n\nSources: R021; INT-038–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Conduct the showing. Connect it to the action you just practiced.",
+      "theme": "tru alms lesson training-depth lesson-question preparation-practice",
+      "notes": "Present the situation without giving the answer. Allow a quiet first response, then hear two different approaches. Recognize sound reasoning and identify gaps before moving to the teaching slides. This discussion is ungraded.\n\nSources: Eric’s September 16 teaching format; existing TRU curriculum.\nHandoff: Next: Conduct the showing. Connect it to the action you just practiced.",
       "cue": "Next: Conduct the showing. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-comparison-discussion",
-        "kind": "choice",
-        "prompt": "A buyer wants a home office and a large yard. Your suggested home has an office but a small yard. They say, “You are not listening.” What is your best next move? Explain why.",
+        "kind": "discussion",
+        "prompt": "Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.",
         "fields": [
           {
-            "id": "reason",
-            "label": "Explain your choice. What would change if the yard were nonnegotiable?"
+            "id": "thinking",
+            "label": "What would you do, and why? What information would change your answer?"
           }
         ],
-        "model": "Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.",
-        "choices": [
-          {
-            "id": "tour",
-            "text": "Explain why the office makes this home worth seeing and finish the tour."
-          },
-          {
-            "id": "clarify",
-            "text": "Acknowledge the mismatch and ask what they need from the yard before revising the plan."
-          },
-          {
-            "id": "replace",
-            "text": "Replace it with the largest-yard home in the search and keep the appointment time."
-          }
-        ],
-        "correctChoiceId": "clarify",
-        "explanation": "Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction."
+        "model": "A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met."
       },
       "quadrant": 1
     },
@@ -153,9 +137,9 @@
       "chapter": "2. Conduct the showing",
       "title": "Conduct the showing",
       "lead": "Welcome honest reactions and learn what the home needs to do for the buyer.",
-      "body": "<p class=\"quadrant-number\">02</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">02</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-2",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: How would you respond when buyers react differently?. Connect it to the action you just practiced.",
       "cue": "Next: How would you respond when buyers react differently?. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -191,7 +175,7 @@
       "lead": "“Drop the rope” means the buyer can be honest without having to defend their reaction.",
       "body": "<blockquote class=\"lesson-example\">“I’m excited to show you around. You do not have to make this home work. Tell me what you like and what you would change. That helps us figure out what to look for next.”</blockquote>",
       "time": 2,
-      "theme": "tru alms lesson day3-polish lesson-photo photo-arrival training-depth",
+      "theme": "tru alms lesson day3-polish lesson-photo photo-arrival training-depth welcome-quote",
       "notes": "Demonstrate this as a normal welcome, not a memorized speech. Explain that the goal is to help them find the right fit, whether this home works or the search takes longer. Follow through: if they criticize the kitchen, get curious instead of defending it. Invite someone to describe what an agent could do later that would contradict this welcome.\n\nSources: Repository SALES_DOCTRINE: Drop the rope; R021; INT-038–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Let them experience the home. Connect it to the action you just practiced.",
       "cue": "Next: Let them experience the home. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -204,18 +188,18 @@
       "body": "<div class=\"rows\"><div class=\"row\"><h3>Give them room</h3><p>Let the buyer look and talk. You do not need to narrate every room.</p></div><div class=\"row\"><h3>Follow their reaction</h3><p>“You paused in the office. What were you picturing using it for?”</p></div><div class=\"row\"><h3>Separate fact from guess</h3><p>If a property question is unresolved, say so and explain how you will seek the answer.</p></div></div>",
       "time": 2,
       "theme": "tru alms lesson day3-polish lesson-photo photo-conversation training-depth",
-      "notes": "Demonstrate a short silence while the buyer looks around, then a question based on something they actually said. Do not read a facial expression as a conclusion. Being quiet is not disappearing: be available and answer useful questions. Preserve the existing showing teaching about giving space. Tie factual uncertainty to Eric’s problem-solving rule: prepare a useful next step, not a guessed answer.\n\nSources: Existing Day 3 showing conduct; R002; R025. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Questions that make the next home a better fit. Connect it to the action you just practiced.",
-      "cue": "Next: Questions that make the next home a better fit. Connect it to the action you just practiced.",
+      "notes": "Demonstrate a short silence while the buyer looks around, then a question based on something they actually said. Do not read a facial expression as a conclusion. Being quiet is not disappearing: be available and answer useful questions. Preserve the existing showing teaching about giving space. Tie factual uncertainty to Eric’s problem-solving rule: prepare a useful next step, not a guessed answer.\n\nSources: Existing Day 3 showing conduct; R002; R025. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Let the buyer’s reaction lead to one useful question. Connect it to the action you just practiced.",
+      "cue": "Next: Let the buyer’s reaction lead to one useful question. Connect it to the action you just practiced.",
       "quadrant": 2
     },
     {
       "id": "day3-question-bank",
       "chapter": "2. Conduct the showing",
-      "title": "Questions that make the next home a better fit",
-      "lead": "Choose a question that follows the buyer’s answer. You do not need to ask the whole list.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Understand the use</h3><p>“How would you use this space?” · “What is difficult about your current setup?”</p></div><div class=\"row\"><h3>Find the difference</h3><p>“What worked better in the other home?” · “What made this one feel different in person?”</p></div><div class=\"row\"><h3>Explore priorities</h3><p>“Which part would you miss most?” · “What would make that tradeoff worth considering?”</p></div><div class=\"row\"><h3>Check your understanding</h3><p>“So a separate workspace matters more than an extra bedroom—is that right?”</p></div></div>",
+      "title": "Let the buyer’s reaction lead to one useful question",
+      "lead": "Give them time to experience the room. When they share a reaction, follow that thought instead of starting a list of questions.",
+      "body": "<div class=\"conversation-sequence\"><div class=\"conversation-turn\"><span>Buyer</span><blockquote>“This office could work.”</blockquote><p>Let them look around and finish their thought.</p></div><div class=\"conversation-turn\"><span>Agent</span><blockquote>“What would work better here than in your current setup?”</blockquote><p>Ask one question tied to what they just said. Then listen.</p></div><div class=\"conversation-turn\"><span>Buyer</span><blockquote>“I could close the door during calls.”</blockquote><p>Now you know why the room matters. Check your understanding before changing the search.</p></div></div><p class=\"conversation-close\">“So having a quiet room you can close off is what matters most. Have I understood that?”</p>",
       "time": 2,
-      "theme": "tru alms lesson day3-polish training-depth",
+      "theme": "tru alms lesson day3-polish training-depth conversation-example",
       "notes": "Give agents this as a working question bank, not a checklist. Model asking one question, listening, and building the next question from the answer. “A bigger house” becomes useful when we learn why the current space fails. A summary is a check with the buyer, not an agent deciding their priorities for them.\n\nSources: R005; R021; INT-005–007,038. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Ask what each buyer needs from the home. Connect it to the action you just practiced.",
       "cue": "Next: Ask what each buyer needs from the home. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -265,9 +249,9 @@
       "chapter": "3. Lead the post-tour conversation",
       "title": "Lead the post-tour conversation",
       "lead": "Ask about an offer, then follow the buyer’s answer.",
-      "body": "<p class=\"quadrant-number\">03</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">03</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-3",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you ask before the buyer leaves?. Connect it to the action you just practiced.",
       "cue": "Next: What would you ask before the buyer leaves?. Connect it to the action you just practiced.",
       "quadrant": 3
@@ -337,9 +321,9 @@
       "chapter": "4. Understand concerns and agree on a plan",
       "title": "Understand concerns and agree on a plan",
       "lead": "Connect useful help to the buyer’s reason and follow through.",
-      "body": "<p class=\"quadrant-number\">04</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">04</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-4",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Reasons buyers may hesitate after a showing. Connect it to the action you just practiced.",
       "cue": "Next: Reasons buyers may hesitate after a showing. Connect it to the action you just practiced.",
       "quadrant": 4
@@ -589,7 +573,7 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<p class=\"lesson-explanation\">Use the question bank and buyer cards to practice again. In a live session, submit your responses through your learner screen. The printed worksheet does not submit answers. Keep practice evidence separate from observed work with an actual client.</p>",
-  "version": "2026-09-16-day3-quadrants-v1",
+  "version": "2026-09-16-day3-quadrants-v2",
   "duration": 75,
   "quadrants": [
     {

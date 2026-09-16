@@ -30,9 +30,9 @@
       "chapter": "1. Get ready and find your way around",
       "title": "Get ready and find your way around",
       "lead": "Understand the program, then locate the controls you will use.",
-      "body": "<p class=\"quadrant-number\">01</p><p class=\"lesson-explanation\">You will watch the relevant steps, complete the exercise, and verify what saved.</p>",
+      "body": "<p class=\"quadrant-number\">01</p><div class=\"section-flow\"><div><span>01</span><p>Watch the demonstration</p></div><div><span>02</span><p>Practice the steps</p></div><div><span>03</span><p>Review your work</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-1",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: How Zillow Preferred works. Connect it to the action you just practiced.",
       "cue": "Next: How Zillow Preferred works. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -149,9 +149,9 @@
       "chapter": "2. Update the contact after a conversation",
       "title": "Update the contact after a conversation",
       "lead": "Save the stage and a useful note from what actually happened.",
-      "body": "<p class=\"quadrant-number\">02</p><p class=\"lesson-explanation\">You will watch the relevant steps, complete the exercise, and verify what saved.</p>",
+      "body": "<p class=\"quadrant-number\">02</p><div class=\"section-flow\"><div><span>01</span><p>Watch the demonstration</p></div><div><span>02</span><p>Practice the steps</p></div><div><span>03</span><p>Review your work</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-2",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: The welcome text has already gone out. Connect it to the action you just practiced.",
       "cue": "Next: The welcome text has already gone out. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -301,9 +301,9 @@
       "chapter": "3. Organize and complete the follow-up",
       "title": "Organize and complete the follow-up",
       "lead": "Use tasks and appointments correctly, then repair an incomplete record.",
-      "body": "<p class=\"quadrant-number\">03</p><p class=\"lesson-explanation\">You will watch the relevant steps, complete the exercise, and verify what saved.</p>",
+      "body": "<p class=\"quadrant-number\">03</p><div class=\"section-flow\"><div><span>01</span><p>Watch the demonstration</p></div><div><span>02</span><p>Practice the steps</p></div><div><span>03</span><p>Review your work</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-3",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Demo: schedule the next call. Connect it to the action you just practiced.",
       "cue": "Next: Demo: schedule the next call. Connect it to the action you just practiced.",
       "quadrant": 3
@@ -461,9 +461,9 @@
       "chapter": "4. Record the accepted offer and check your work",
       "title": "Record the accepted offer and check your work",
       "lead": "Practice the deal entry and leave a record the team can continue from.",
-      "body": "<p class=\"quadrant-number\">04</p><p class=\"lesson-explanation\">You will watch the relevant steps, complete the exercise, and verify what saved.</p>",
+      "body": "<p class=\"quadrant-number\">04</p><div class=\"section-flow\"><div><span>01</span><p>Watch the demonstration</p></div><div><span>02</span><p>Practice the steps</p></div><div><span>03</span><p>Review your work</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-4",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Demo: add the accepted offer as a deal. Connect it to the action you just practiced.",
       "cue": "Next: Demo: add the accepted offer as a deal. Connect it to the action you just practiced.",
       "quadrant": 4
@@ -590,7 +590,7 @@
   "cases": [],
   "hero": "/workshops/house.jpg",
   "resources": "<p class=\"source\">Official reference: <a href=\"https://www.zillow.com/preferred/program-standards/\" target=\"_blank\" rel=\"noopener\">Program standards</a> · <a href=\"https://zillow.zendesk.com/hc/en-us/articles/1500004362661-Agent-Capacity-and-Lead-Routing\" target=\"_blank\" rel=\"noopener\">Agent capacity & routing</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/37957434220055-Smart-Actions\" target=\"_blank\" rel=\"noopener\">Smart Actions</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/31678029831703-My-Agent-Status\" target=\"_blank\" rel=\"noopener\">My Agent</a> · <a href=\"https://help.followupboss.com/hc/en-us/articles/9538400649495-Lead-Profile-Overview\" target=\"_blank\" rel=\"noopener\">Contact record</a></p>",
-  "version": "2026-09-16-day1-quadrants-v1",
+  "version": "2026-09-16-day1-quadrants-v2",
   "duration": 61,
   "sources": [
     {

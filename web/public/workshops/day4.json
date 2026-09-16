@@ -29,9 +29,9 @@
       "chapter": "1. Recognize when lender help would be useful",
       "title": "Recognize when lender help would be useful",
       "lead": "Understand the buyer’s question before recommending an introduction.",
-      "body": "<p class=\"quadrant-number\">01</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">01</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-1",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Jordan wants to make an offer. Connect it to the action you just practiced.",
       "cue": "Next: Jordan wants to make an offer. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -114,9 +114,9 @@
       "chapter": "2. Know what to explain and what the lender must confirm",
       "title": "Know what to explain and what the lender must confirm",
       "lead": "Separate an initial discussion from a confirmed financing outcome.",
-      "body": "<p class=\"quadrant-number\">02</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">02</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-2",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you clarify about the buyer’s financing?. Connect it to the action you just practiced.",
       "cue": "Next: What would you clarify about the buyer’s financing?. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -210,9 +210,9 @@
       "chapter": "3. Offer an introduction and understand concerns",
       "title": "Offer an introduction and understand concerns",
       "lead": "Hear the buyer’s reason, explain useful help, and ask permission.",
-      "body": "<p class=\"quadrant-number\">03</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">03</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-3",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you ask when the buyer already has a lender?. Connect it to the action you just practiced.",
       "cue": "Next: What would you ask when the buyer already has a lender?. Connect it to the action you just practiced.",
       "quadrant": 3
@@ -342,9 +342,9 @@
       "chapter": "4. Complete the handoff and follow through",
       "title": "Complete the handoff and follow through",
       "lead": "Make sure the introduction reaches someone and the buyer knows the next step.",
-      "body": "<p class=\"quadrant-number\">04</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">04</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-4",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you do after an unanswered introduction?. Connect it to the action you just practiced.",
       "cue": "Next: What would you do after an unanswered introduction?. Connect it to the action you just practiced.",
       "quadrant": 4
@@ -604,7 +604,7 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<div class=\"rows\"><div class=\"row\"><h3>Live sessions</h3><p>Sign in to your assigned session. Submit answers to your presenter; unsubmitted text remains private. If the presenter moves on, finish the current activity and use Return to presenter to catch up.</p></div><div class=\"row\"><h3>Practice again</h3><p>Complete your 24-hour recall, three-day fresh case, and seven-day coaching review in Rep. In self-paced study, arrange these checks with a coach.</p></div><div class=\"row\"><h3>What completion means</h3><p>A record check is evidence of saved actions. Observed practice, coach readiness, quiz certification, and activation are separate.</p></div></div>",
-  "version": "2026-09-16-day4-quadrants-v1",
+  "version": "2026-09-16-day4-quadrants-v2",
   "duration": 71,
   "quadrants": [
     {

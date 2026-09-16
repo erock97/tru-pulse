@@ -70,7 +70,7 @@ export function reviseTraining(data) {
    make('listing-agent-call','Call the listing agent with specific questions','Use the call to prepare accurate information and confirm the visit.',rows([['Ask about the listing','“Is there an offer deadline or offer activity we should know about?” Ask about seller timing and any rent-back request.'],['Ask about unresolved facts','“The available materials do not state the roof age. Is there documentation you can share?” Keep reported information separate from verified documents.'],['Confirm access','Check appointment approval and showing instructions. A buyer’s preferred time does not establish access. If an answer is pending, record it and plan the update.']]),3),
    make('prepare','Choose two to four homes for a useful comparison','Use the buyer’s priorities, available time and confirmed access to shape the tour.',rows([['Explain why each home belongs','“This home has the enclosed office you wanted. The yard is smaller. Would comparing the layout still be useful?”'],['Respect firm requirements','If the yard is nonnegotiable, revise the options. More homes are useful only when the comparisons help the buyer decide.'],['Confirm the tour plan','Agree on the meeting place, sequence and timing. Review access instructions and the applicable brokerage-approved agreement before the visit.']]),3),
    make('buyer-packet','Bring information the buyer can use during the tour','Prepare the packet before leaving so you can focus on the buyer at the home.',rows([['For each home','Include the MLS sheet and useful comparable sales. Add relevant neighborhood information with its source.'],['For the conversation','Mark the property facts tied to the buyer’s needs and keep unresolved questions visible. Use the packet to support an explanation rather than read every field aloud.'],['Before you leave','Recheck appointment confirmations, showing instructions and the meeting plan. Bring a physical packet as in the preparation example.']]),2),
-   get('comparison-discussion')
+   discussion('comparison-discussion','Practice preparing tomorrow’s tour','Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.',['Choose two to four homes and explain why each belongs on this buyer’s tour.','Name the information you would research and the questions you would ask the listing agents.','Explain what you would confirm with the buyer and bring to the appointment.'],'A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met.',4)
   ]);
   group('Conduct the showing','Welcome honest reactions and learn what the home needs to do for the buyer.',[
    discussion('discuss-showing','How would you respond when buyers react differently?','During the first tour, one buyer loves the open living area. Their partner says, “I could never work from home here.”',['What would you say first?','What do you need to understand before suggesting a solution?'],'Invite each buyer to explain how they would use the home. Learn what work calls require before suggesting a room change. Make honest reactions welcome and avoid choosing a priority on their behalf.'),
@@ -119,7 +119,8 @@ export function reviseTraining(data) {
  const ordered=[welcome,agenda];
  groups.forEach((g,i)=>{
   const section=make(`quadrant-${i+1}`,g.title,g.purpose,para(day===1?'You will watch the relevant steps, complete the exercise, and verify what saved.':'Start by explaining what you would do. The teaching and worked examples follow your discussion.'),0);
-  section.theme='tru alms training-depth quadrant-cover';
+  section.theme=`tru alms training-depth quadrant-cover section-${i+1}`;
+  section.body=`<div class="section-flow">${(day===1?['Watch the demonstration','Practice the steps','Review your work']:['Discuss your approach','Learn the steps','Put it into practice']).map((label,j)=>`<div><span>0${j+1}</span><p>${label}</p></div>`).join('')}</div>`;
   section.chapter=`${i+1}. ${g.title}`; section.quadrant=i+1;
   ordered.push(section);
   for(const s of g.slides){
@@ -135,6 +136,20 @@ export function reviseTraining(data) {
  review.chapter='Review and reference';ordered.push(review);
  for(const s of ordered){
   if(s.title==='What would you do?')s.title=s.id.includes('different-priorities')?'Ask what each buyer needs from the home':s.id.includes('pending-answer')?'Update the buyer when a property answer is still pending':'Respond when the buyer questions your home selection';
+  if(day===3){
+   const photos={'property-research':'property','listing-agent-call':'follow-up','prepare':'home','buyer-packet':'questions','drop-the-rope':'arrival','during-the-visit':'conversation'};
+   const key=s.id.slice(5);
+   if(photos[key])s.theme+=' lesson-photo photo-'+photos[key];
+   if(key==='prepare')s.theme+=' tour-comparison';
+   if(key==='drop-the-rope')s.theme+=' welcome-quote';
+   if(key==='comparison-discussion')s.theme+=' preparation-practice';
+   if(key==='question-bank'){
+    s.title='Let the buyer’s reaction lead to one useful question';
+    s.lead='Give them time to experience the room. When they share a reaction, follow that thought instead of starting a list of questions.';
+    s.body='<div class="conversation-sequence"><div class="conversation-turn"><span>Buyer</span><blockquote>“This office could work.”</blockquote><p>Let them look around and finish their thought.</p></div><div class="conversation-turn"><span>Agent</span><blockquote>“What would work better here than in your current setup?”</blockquote><p>Ask one question tied to what they just said. Then listen.</p></div><div class="conversation-turn"><span>Buyer</span><blockquote>“I could close the door during calls.”</blockquote><p>Now you know why the room matters. Check your understanding before changing the search.</p></div></div><p class="conversation-close">“So having a quiet room you can close off is what matters most. Have I understood that?”</p>';
+    s.theme+=' conversation-example';
+   }
+  }
   if(s.id==='day2-objection-framework')s.title='Understand the concern before offering help';
   if(s.id==='day4-how-would-you-answer-jordan')s.title='Explain the buyer’s lender choice';
   if(s.id==='day4-how-to-introduce-your-loan-officer')s.notes='Use the visible example to explain each part before the practice. Ask agents which question would help this buyer. Preserve their choice.\nHandoff: Practice the introduction with a buyer who can respond.';
@@ -153,7 +168,7 @@ export function reviseTraining(data) {
  });
  data.slides=ordered;
  data.quadrants=groups.map((g,i)=>({number:i+1,title:g.title,purpose:g.purpose}));
- data.version=`2026-09-16-day${day}-quadrants-v1`;
+ data.version=`2026-09-16-day${day}-quadrants-v2`;
  data.duration=ordered.reduce((n,s)=>n+s.time,0);
  if(day!==1)welcome.lead=`Day ${day} · ${data.duration} minutes including discussion and practice`;
  return data;

@@ -1,7 +1,7 @@
 {
   "day": 2,
   "title": "Handling your first Zillow lead",
-  "version": "2026-09-16-day2-quadrants-v1",
+  "version": "2026-09-16-day2-quadrants-v2",
   "duration": 90,
   "slides": [
     {
@@ -31,9 +31,9 @@
       "chapter": "1. Recognize the lead and respond",
       "title": "Recognize the lead and respond",
       "lead": "Identify the request before choosing your first action.",
-      "body": "<p class=\"quadrant-number\">01</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">01</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-1",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you do when this lead arrives?. Connect it to the action you just practiced.",
       "cue": "Next: What would you do when this lead arrives?. Connect it to the action you just practiced.",
       "quadrant": 1
@@ -223,9 +223,9 @@
       "chapter": "2. Open the first conversation",
       "title": "Open the first conversation",
       "lead": "Introduce yourself and invite the appointment early.",
-      "body": "<p class=\"quadrant-number\">02</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">02</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-2",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: How would you open this call?. Connect it to the action you just practiced.",
       "cue": "Next: How would you open this call?. Connect it to the action you just practiced.",
       "quadrant": 2
@@ -319,9 +319,9 @@
       "chapter": "3. Understand what the buyer needs",
       "title": "Understand what the buyer needs",
       "lead": "Use each answer to choose a useful follow-up question.",
-      "body": "<p class=\"quadrant-number\">03</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">03</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-3",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you ask about needing more space?. Connect it to the action you just practiced.",
       "cue": "Next: What would you ask about needing more space?. Connect it to the action you just practiced.",
       "quadrant": 3
@@ -458,9 +458,9 @@
       "chapter": "4. Work through concerns and agree on the next step",
       "title": "Work through concerns and agree on the next step",
       "lead": "Understand the reason, offer useful help, and summarize the agreement.",
-      "body": "<p class=\"quadrant-number\">04</p><p class=\"lesson-explanation\">Start by explaining what you would do. The teaching and worked examples follow your discussion.</p>",
+      "body": "<p class=\"quadrant-number\">04</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
       "time": 0,
-      "theme": "tru alms lesson training-depth quadrant-cover",
+      "theme": "tru alms lesson training-depth quadrant-cover section-4",
       "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Common objections you may hear. Connect it to the action you just practiced.",
       "cue": "Next: Common objections you may hear. Connect it to the action you just practiced.",
       "quadrant": 4

@@ -196,3 +196,13 @@
 @keyframes teaching-row-enter{from{opacity:.4;translate:0 6px}to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){.training-depth .content>.rows .row{animation:none}}
 @media(max-width:700px){.training-depth .quadrant-agenda{grid-template-columns:1fr}.slide.training-depth.lesson-photo>*,.slide.training-depth.lesson-photo h2,.slide.training-depth.lesson-photo .lead{max-width:100%}.training-depth .discussion-questions{font-size:20px}}
+/* Clear section breaks and worked conversation layouts shared with review decks. */
+.slide.training-depth.quadrant-cover{background:linear-gradient(90deg,#dfceb0 0%,#dfceb0 52%,#dfceb020 75%),url('/workshops/review-artwork/arrival.jpg') center/cover;color:#17232d;min-height:650px;border-top:7px solid #b7986d;position:relative}
+.slide.training-depth.quadrant-cover.section-1{background-image:linear-gradient(90deg,#dfceb0 0%,#dfceb0 52%,#dfceb020 75%),url('/workshops/review-artwork/property.jpg')}
+.slide.training-depth.quadrant-cover.section-3{background-image:linear-gradient(90deg,#dfceb0 0%,#dfceb0 52%,#dfceb020 75%),url('/workshops/review-artwork/conversation.jpg')}
+.slide.training-depth.quadrant-cover.section-4{background-image:linear-gradient(90deg,#dfceb0 0%,#dfceb0 52%,#dfceb020 75%),url('/workshops/review-artwork/follow-up.jpg')}
+.slide.training-depth.quadrant-cover h2,.slide.training-depth.quadrant-cover .lead,.slide.training-depth.quadrant-cover .content{max-width:60%;color:#17232d}
+.slide.training-depth.quadrant-cover .quadrant-number{font-size:110px;line-height:1;color:#8b6a3e;margin:0 0 18px}
+.section-flow{display:flex;gap:24px;border-top:1px solid #a99575;padding-top:22px;margin-top:24px}.section-flow>div{flex:1}.section-flow span{font-size:12px;color:#7b6244}.section-flow p{font-size:19px;line-height:1.4;margin-top:8px}
+.conversation-sequence{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:30px;margin:26px 0}.conversation-turn{border-top:2px solid #b99a6d;padding-top:18px}.conversation-turn>span{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#7b6244}.slide .conversation-turn blockquote{padding:0;border:0;font-size:25px;margin:18px 0}.conversation-turn p{font-size:18px;line-height:1.45}.conversation-close{background:#dfceb0;padding:20px 24px;font-size:24px;line-height:1.4}
+@media(max-width:700px){.conversation-sequence{grid-template-columns:1fr}.section-flow{flex-direction:column}.slide.training-depth.quadrant-cover h2,.slide.training-depth.quadrant-cover .lead,.slide.training-depth.quadrant-cover .content{max-width:100%}}
