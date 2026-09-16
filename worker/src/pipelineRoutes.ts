@@ -4,7 +4,7 @@ import { db as serviceDb } from './db.js';
 import { readHistoryVersion } from './historyMetadata.js';
 import { calculatePipeline, mergePipelineLeads, pipelineSnapshotContent, PIPELINE_CATEGORIES,
   type PipelineFilters, type PipelineTeam, type PipelineLead, type PipelineAgent, type PipelineReport, type StageMapping } from '../../shared/pipeline.js';
-
+import { pipelineInsights } from './pipelineInsights.js';
 import { PipelineError, digest } from './pipelineSupport.js';
 export { PipelineError, digest } from './pipelineSupport.js';
 
@@ -102,6 +102,18 @@ export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,c
       if(body.mappingVersion!==await digest(JSON.stringify(teams[0].pipeline_stage_mappings || {})))throw new PipelineError('Stage mappings changed. Refresh before saving.',409);
       await serviceDb(env).update('teams','id=eq.'+filters.teamId+'&org_id=eq.'+filters.orgId,{pipeline_stage_mappings:mappings});
       return json({saved:true});
+    }
+    if(url.pathname==='/data/pipeline/insights'&&req.method==='POST'){
+      const report=await loadPipeline(env,db,filters);
+      if(body.snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed. Refresh the report before generating insights.',409);
+      const owner=report.agents.find(a=>a.key===body.agentKey);
+      if(!owner||!owner.agentId||owner.kind!=='agent')throw new PipelineError('Choose an agent with a verified identity.',422);
+      if(!report.insightsEnabled)throw new PipelineError('AI insights are awaiting release validation.',503);
+      const result=await pipelineInsights(env,db,report,owner);
+      // Never attach an answer to a different pipeline after an in-flight update.
+      const current=await loadPipeline(env,db,filters);
+      if(current.snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed while insights were generated. Refresh and retry.',409);
+      return json(result);
     }
     return json({error:'Unsupported pipeline operation.'},405);
   }catch(e){
