@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { HqShell } from '../components/hqShell';
 import { Avatar } from '../components/hqUi';
+import NameEditor from '../components/NameEditor';
 import {
   loadTeamRoster, setExcluded, setCoaching, setTeamRole, inviteAgent,
   signOutClean, TEAM_ROLE_LABELS, type TeamMember, type TeamRole,
@@ -349,6 +350,7 @@ export default function TeamAdmin({
                           <Avatar name={m.name} size={34} tone={i % 5} />
                           <div>
                             <div className="cell-name">{m.name}</div>
+                            <NameEditor agentId={m.id} name={m.name} onSaved={name => setRows(rs => (rs ?? []).map(row => row.id === m.id ? { ...row, name } : row))} />
                             {/* Its own line, above the email: sharing the email's
                                 line ran past the ellipsis cutoff and half the
                                 digits vanished. */}

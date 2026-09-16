@@ -351,9 +351,9 @@ export async function syncPeopleByIds(env: Env, database: Db, team: TeamRow, ids
   return syncPeople(env, database, team, fubKey, people);
 }
 
-const normName = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const normEmail = (s: unknown) => String(s ?? '').trim().toLowerCase();
 
-async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
+export async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
   const users = await pullUsers(fubKey);
   if (!users.length) return;
   const existing = (await database.select(
@@ -361,13 +361,29 @@ async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
     `team_id=eq.${team.id}&select=id,name,email,phone,fub_user_id`,
   )) as Array<{ id: string; name: string; email: string | null; phone: string | null; fub_user_id: number | null }>;
   const byFub = new Map(existing.filter((a) => a.fub_user_id != null).map((a) => [String(a.fub_user_id), a]));
-  const byName = new Map(existing.map((a) => [normName(a.name), a]));
+  // Email bootstraps a link; the stored FUB ID keeps it stable if CRM email changes.
+  // Ambiguous emails must never silently merge two people's training/accounts.
+  const byEmail = new Map<string, typeof existing>();
+  for (const agent of existing) {
+    const email = normEmail(agent.email);
+    if (email) byEmail.set(email, [...(byEmail.get(email) ?? []), agent]);
+  }
+  const emailCounts = new Map<string, number>();
+  for (const user of users) {
+    const email = normEmail(user.email);
+    if (email) emailCounts.set(email, (emailCounts.get(email) ?? 0) + 1);
+  }
   for (const u of users) {
     const name = String(u.name ?? '').trim();
     if (!name) continue;
-    const email = u.email ?? null;
+    const email = normEmail(u.email) || null;
     const phone = u.phone ?? u.phoneNumber ?? null;
-    const hit = byFub.get(String(u.id)) ?? byName.get(normName(name));
+    const linked = byFub.get(String(u.id));
+    const matches = email ? byEmail.get(email) ?? [] : [];
+    // Skip ambiguous/conflicting unlinked identities for manual resolution.
+    if (!linked && email && (emailCounts.get(email)! > 1 || matches.length > 1 ||
+      (matches.length === 1 && matches[0].fub_user_id != null))) continue;
+    const hit = linked ?? matches[0];
     if (hit) {
       const patch: Record<string, unknown> = {};
       if (hit.fub_user_id == null) patch.fub_user_id = u.id;
@@ -375,7 +391,9 @@ async function syncAgents(database: Db, team: TeamRow, fubKey: string) {
       if (!hit.phone && phone) patch.phone = phone;
       if (Object.keys(patch).length) await database.update('agents', `id=eq.${hit.id}`, patch);
     } else {
-      await database.insert('agents', { org_id: team.org_id, team_id: team.id, fub_user_id: u.id, name, email, phone });
+      const added = await database.insert('agents', { org_id: team.org_id, team_id: team.id, fub_user_id: u.id, name, email, phone });
+      byFub.set(String(u.id), added);
+      if (email) byEmail.set(email, [added]);
     }
   }
 }
