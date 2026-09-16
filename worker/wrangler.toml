@@ -21,6 +21,7 @@ routes = [
 
 
 [vars]
+PIPELINE_IDENTITY_ENABLED = "1"
 # Enabled after Eric's release approval and the additive live-session migration.
 REP_LIVE_SESSIONS = "1"
 REP_LIVE_DIGESTS = "1"

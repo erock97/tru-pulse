@@ -1,4 +1,8 @@
 export interface Env {
+  /** Enable identity capture only after the reviewed additive migration. */
+  PIPELINE_IDENTITY_ENABLED?: string;
+  /** Separately release AI after reporting and evidence checks pass. */
+  PIPELINE_INSIGHTS_ENABLED?: string;
   TRUEBRAIN?: Fetcher;
   TRUEBRAIN_GATEWAY_TOKEN?: string;
   TRUEBRAIN_OWNER_ID?: string;

@@ -80,6 +80,15 @@ beforeEach(() => {
 });
 
 describe('syncPeople — which leads are in scope', () => {
+  it('captures stable pipeline IDs only after the additive migration is enabled', async () => {
+    const before=stubDb(),after=stubDb();
+    const p=person({stageId:19,assignedUserId:8,assignedPondId:7});
+    await syncPeople(env,before.db,TEAM,'k',[p]);
+    await syncPeople({...env,PIPELINE_IDENTITY_ENABLED:'1'},after.db,TEAM,'k',[p]);
+    expect(before.leadRows()[0]).not.toHaveProperty('stage_id');
+    expect(after.leadRows()[0]).toMatchObject({stage_id:19,assigned_user_id:8,assigned_pond_id:7});
+    expect(after.leadRows()[0].flag).toBe(before.leadRows()[0].flag);
+  });
   it('keeps tracked paid sources and drops everything else', async () => {
     const s = stubDb();
     const r = await syncPeople(env, s.db, TEAM, 'k', [
