@@ -24,6 +24,19 @@ async function call(db:UserClient,path='/data/pipeline',method='GET',body:Record
 }
 beforeEach(()=>{vi.clearAllMocks();mocks.events.mockResolvedValue([]);mocks.history.mockResolvedValue({snapshot:null,coverage:{state:'not_started',complete:false}});});
 describe('pipeline route isolation and consistency',()=>{
+ it('overlaps at most four history batches without dropping leads or changing snapshots',async()=>{
+  let active=0,maximum=0;
+  mocks.events.mockImplementation(async(_table,query)=>{
+   active++;maximum=Math.max(maximum,active);
+   const ids=new URLSearchParams(query).get('person_id')!.slice(4,-1).split(',').map(Number);
+   await new Promise(r=>setTimeout(r,ids[0]===1?12:1));active--;
+   return ids.map(id=>({org_id:org,team_id:team,person_id:id,from_stage:'Lead',to_stage:'Met with Customer',occurred_at:'2026-03-01T00:00:00Z',upstream_id:'event-'+id,upstream_kind:'webhook'}));
+  });
+  const leads=Array.from({length:999},(_,i)=>({...lead,fub_person_id:i+1}));
+  const first=await loadPipeline(env,client({leads}),filters);
+  expect(maximum).toBe(4);expect(first.progression.find(s=>s.key==='met')?.count).toBe(999);
+  expect((await loadPipeline(env,client({leads}),filters)).snapshotId).toBe(first.snapshotId);
+ });
  it('reads retained webhook progression after the current lead has moved to Nurture',async()=>{
   mocks.events.mockResolvedValue([{org_id:org,team_id:team,person_id:1,from_stage:null,to_stage:'Met with Customer',occurred_at:'2026-03-01T00:00:00Z',upstream_id:'met',upstream_kind:'peopleStageUpdated'},
    {org_id:org,team_id:team,person_id:1,from_stage:null,to_stage:'Nurture',occurred_at:'2026-04-01T00:00:00Z',upstream_id:'nurture',upstream_kind:'peopleStageUpdated'}]);
