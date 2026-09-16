@@ -20,7 +20,7 @@ import {
   liveDraftKey,
 } from "../../../shared/liveWorkshops";
 import { assignmentStatus } from "../../../shared/coachingAssignments";
-import { learnerWorkshopDefinition } from "../../../shared/workshopCatalog";
+import { learnerWorkshopDefinition, workshopCatalog } from "../../../shared/workshopCatalog";
 import type { WorkshopActivity } from "../../../shared/workshopCatalog";
 import {
   liveRequest,
@@ -232,12 +232,7 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
                 value={day}
                 onChange={(e) => setDay(Number(e.target.value))}
               >
-                <option value={1}>Day 1 · Welcome to Zillow Preferred</option>
-                <option value={2}>
-                  Day 2 · Winning the First Conversation
-                </option>
-                <option value={3}>Day 3 · Show Like a Pro</option>
-                <option value={4}>Day 4 · Zillow Home Loans</option>
+                {Object.values(workshopCatalog).map(d=><option key={d.day} value={d.day}>Day {d.day} · {d.title}</option>)}
               </select>
             </label>
             <label>
@@ -512,7 +507,7 @@ function Session({ id, view, responseOnly = false, notesOnly = false }: { id: st
     ? Math.max(0, Math.ceil((Date.parse(state.timerEndsAt) - now) / 1000))
     : null;
   return (
-    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={(view !== "coach" && state.session.day <= 3) || view === "shared"}>
+    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={(view !== "coach" && state.session.day <= 4) || view === "shared"}>
       <div className="live-session-bar">
         {view !== "shared" && <a href="#/rep/sessions">All sessions</a>}
         <span role="status">
@@ -537,7 +532,7 @@ function Session({ id, view, responseOnly = false, notesOnly = false }: { id: st
         <p>Submit as the test learner, then review and reveal from the presenter console. Responses and feedback are saved for this test; no agents receive assignments.</p>
         <div className="live-actions"><a href={link(id,'agent')} target="_blank" rel="noreferrer">Open test learner</a><a href={link(id,'presenter')} target="_blank" rel="noreferrer">Open presenter console</a><a href={link(id,'shared')} target="_blank" rel="noreferrer">Open presentation</a></div>
       </section>}
-      {notesOnly ? <PresenterSpeakingNotes state={state} /> : state.session.day <= 3 && view !== "coach" ? (
+      {notesOnly ? <PresenterSpeakingNotes state={state} /> : state.session.day <= 4 && view !== "coach" ? (
         <SimpleLiveStage state={state} refresh={() => refresh.current()} view={view} />
       ) : view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
@@ -558,12 +553,12 @@ export function PresenterSpeakingNotes({state}:{state:LiveSessionState}) {
   if (!state.canPresent) return <p role="alert">Only the presenter can open these notes.</p>;
   const index = Math.max(0,state.definition.slides.findIndex(s=>s.id === state.session.currentSlideId));
   const slide = state.definition.slides[index];
-  const prompts = state.definition.version.includes('lead-live') ? day2SpeakingNotes[slide.id === 'day2-lead-discussion' && slide.activity?.choices?.some(c=>c.id === 'five') ? 'response-time' : slide.id.replace(/^day2-/,'')] : undefined;
+  const prompts = state.definition.day === 2 ? day2SpeakingNotes[slide.id === 'day2-lead-discussion' && slide.activity?.choices?.some(c=>c.id === 'five') ? 'response-time' : slide.id.replace(/^day2-/,'')] : undefined;
   return <article className="live-speaking-notes">
     <p>PRIVATE PRESENTER NOTES · Slide {index+1} of {state.definition.slides.length} · {slide.time} minutes</p>
     <h1>{slide.title}</h1>
     <p className="live-notes-help">These notes follow the live slide automatically. Keep this tab on your other screen or device. In your meeting, share only the presentation tab or window.</p>
-    <h2>What to say</h2><p className="live-speaking-script">{prompts?.[0] || slide.notes.split('Handoff:')[0]}</p>
+    <h2>What to say</h2><p className="live-speaking-script">{prompts?.[0] || slide.notes.split('Handoff:')[0].split('Sources:')[0]}</p>
     {prompts && <><h2>Ask or demonstrate</h2><p>{prompts[1]}</p></>}
     {slide.activity?.choices && <><h2>Run the question</h2><p>Ask for a choice and a reason. People with HQ access submit their own responses. For people answering aloud, select the group’s choice in the presenter window and click Submit answer to show the explanation.</p><p><strong>Answer to discuss: </strong>{slide.activity.choices.find(c=>c.id === slide.activity?.correctChoiceId)?.text}</p><p>{slide.activity.model}</p></>}
     <h2>{index === state.definition.slides.length-1 ? 'Close the session' : 'Move to the next slide'}</h2><p className="live-speaking-script">{slide.cue}</p>
@@ -666,6 +661,11 @@ function SlideBody({
               .slide .row,.slide.tru .row{padding:14px 0;gap:24px;grid-template-columns:210px minmax(0,1fr)}
               .slide .row p,.slide.tru .row p{font-size:18px;line-height:1.45}
               .slide .row h3,.slide.tru .row h3{font-size:22px}
+              .slide.training-depth.lesson-photo>*,.slide.training-depth.lesson-photo h2,.slide.training-depth.lesson-photo .lead{max-width:58%}
+              .slide.training-depth.quadrant-cover{min-height:600px;color:#f2f0e9}
+              .slide.training-depth .quadrant-agenda{gap:24px 36px}
+              .slide.training-depth .quadrant-agenda h3{font-size:22px}
+              .slide.training-depth .quadrant-agenda p{font-size:18px}
               .reference-screen-scroll{overflow:visible;border:0}
               .slide .reference-screen img,.slide.tru .reference-screen img,.product-reference img,.product-pair img,.screen-figure>img{width:auto;min-width:0;max-width:100%;max-height:440px;height:auto;object-fit:contain;margin-inline:auto}
               .reference-screen figcaption,.product-reference figcaption{font-size:12px}

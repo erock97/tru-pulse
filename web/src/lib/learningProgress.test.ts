@@ -18,7 +18,7 @@ describe('certification evidence', () => {
 
 describe('lesson display titles', () => {
   it('resolves the known Day 1 module without guessing from generic text', () => {
-    expect(learningTitle({id:'a6666666-6666-6666-6666-666666666666',title:'Official Training'})).toBe('Welcome to Zillow Preferred');
+    expect(learningTitle({id:'a6666666-6666-6666-6666-666666666666',title:'Official Training'})).toBe('Work your Zillow leads in Follow Up Boss');
     expect(learningTitle({id:'custom',title:'Official Training'})).toBe('Official Training');
     expect(learningTitle({id:'custom',title:'Team orientation'})).toBe('Team orientation');
   });

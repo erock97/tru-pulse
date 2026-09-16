@@ -172,3 +172,27 @@
 .slide.day3-polish .buyer-concern-list li{border-top:1px solid #c9c9be;padding:16px 0}
 .slide.day3-polish .buyer-discussion-prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;list-style:none;padding:0;margin:12px 0;font-size:22px;line-height:1.4}
 .slide.day3-polish .buyer-discussion-prompts li{border-top:1px solid #c9c9be;padding:16px 0}
+
+/* Four-quadrant teaching: editorial layouts, clear hierarchy, restrained motion. */
+.slide.training-depth:not(.alms-cover){background:#f2f0e9;color:#171d22}
+.training-depth .quadrant-agenda{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:28px 36px;padding:0;margin:8px 0}
+.training-depth .quadrant-agenda li{display:flex;gap:18px;border-top:1px solid #adb5ad;padding-top:20px}
+.training-depth .quadrant-agenda span{font:500 32px/1.1 Manrope,sans-serif;color:#536b8d}
+.training-depth .quadrant-agenda h3{font-size:23px;margin-bottom:10px}
+.training-depth .quadrant-agenda p{font-size:19px;line-height:1.45;margin:0}
+.training-depth .discussion-questions{padding-left:30px;margin:8px 0;font-size:24px;line-height:1.5}
+.training-depth .discussion-questions li{padding:10px 0 10px 8px}
+.slide.training-depth .rows{display:grid;gap:0}
+.slide.training-depth .row{border-top:1px solid #c9c9be;align-items:start}
+.slide.training-depth .row h3{color:#171d22}
+.slide.training-depth .row p{color:#3e4549}
+.slide.training-depth.quadrant-cover{background:#20292c;color:#f2f0e9;min-height:600px;justify-content:center}
+.slide.training-depth.quadrant-cover .meta,.slide.training-depth.quadrant-cover .lead{color:#d6d2c7}
+.training-depth .quadrant-number{font:500 72px/1 Manrope,sans-serif;color:#b9d1fd;margin:8px 0 24px}
+.slide.training-depth.quadrant-cover h1,.slide.training-depth.quadrant-cover h2{max-width:880px}
+.slide.training-depth.lesson-photo>*,.slide.training-depth.lesson-photo h2,.slide.training-depth.lesson-photo .lead{max-width:58%}
+.training-depth .content>.rows .row{animation:teaching-row-enter .35s ease-out both}
+.training-depth .content>.rows .row:nth-child(2){animation-delay:.06s}.training-depth .content>.rows .row:nth-child(3){animation-delay:.12s}
+@keyframes teaching-row-enter{from{opacity:.4;translate:0 6px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.training-depth .content>.rows .row{animation:none}}
+@media(max-width:700px){.training-depth .quadrant-agenda{grid-template-columns:1fr}.slide.training-depth.lesson-photo>*,.slide.training-depth.lesson-photo h2,.slide.training-depth.lesson-photo .lead{max-width:100%}.training-depth .discussion-questions{font-size:20px}}

@@ -443,3 +443,12 @@
 .live-slide-sheet.day3-polish.lesson-question .live-choice-options li::before{content:counter(answer,upper-alpha) ".";font-weight:700;line-height:1.45}
 .live-slide-sheet.day3-polish.lesson-question .live-discussion-choice,.live-slide-sheet.day3-polish.lesson-question .live-discussion-option{display:block;min-width:0;padding:0;margin:0;border:0;line-height:1.45}
 .live-slide-sheet.day3-polish.lesson-question .live-choice-options li.discussion-selected,.live-slide-sheet.day3-polish.lesson-question .live-discussion-choice[aria-pressed="true"]{background:#c0d2fb}
+
+/* All revised days share the same aligned response layout. */
+.live-slide-sheet.training-depth.quadrant-cover{background:#20292c;color:#f2f0e9}
+.live-slide-sheet.training-depth.lesson-question .live-alms-activity{margin:0;padding:0 32px 24px;border:0;background:transparent}
+.live-slide-sheet.training-depth.lesson-question .live-choice-options{counter-reset:answer;list-style:none;padding:0;margin:0 0 18px;gap:10px;font-size:21px}
+.live-slide-sheet.training-depth.lesson-question .live-choice-options li{counter-increment:answer;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:12px 16px;border:1px solid #c9c9be;border-radius:4px;background:#e8e5dc;align-items:start}
+.live-slide-sheet.training-depth.lesson-question .live-choice-options li::before{content:counter(answer,upper-alpha) '.';font-weight:700;line-height:1.45}
+.live-slide-sheet.training-depth.lesson-question .live-discussion-choice,.live-slide-sheet.training-depth.lesson-question .live-discussion-option{display:block;min-width:0;padding:0;margin:0;border:0;line-height:1.45}
+.live-slide-sheet.training-depth.lesson-question .live-choice-options li.discussion-selected{background:#c0d2fb}

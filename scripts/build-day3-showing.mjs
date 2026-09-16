@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { reviseTraining } from './training-quadrants.mjs';
 
 // Source map and limits: docs/DAY3_SHOWING_SOURCES.md.
 const p = text => `<p class="lesson-explanation">${text}</p>`;
@@ -127,5 +128,5 @@ for(const slide of slides) {
 const duration=slides.reduce((n,s)=>n+s.time,0);
 if(duration!==75) throw new Error(`Expected 75 minutes, got ${duration}`);
 const data={day:3,title:'Show like a pro',slides,cases,hero:'/workshops/house.jpg',resources:p('Use the question bank and buyer cards to practice again. In a live session, submit your responses through your learner screen. The printed worksheet does not submit answers. Keep practice evidence separate from observed work with an actual client.'),version:'2026-09-16-day3-showing-v5',duration};
-fs.writeFileSync(new URL('../web/public/workshops/day3.json',import.meta.url),JSON.stringify(data,null,2)+'\n');
+fs.writeFileSync(new URL('../web/public/workshops/day3.json',import.meta.url),JSON.stringify(reviseTraining(data),null,2)+'\n');
 console.log(`Day 3: ${slides.length} slides, ${duration} minutes, ${slides.filter(s=>s.activity).length} activities.`);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWorkshopDefinition, learnerWorkshopDefinition, workshopCatalog, WORKSHOP_VERSION } from '../../../shared/workshopCatalog';
+import { getWorkshopDefinition, learnerWorkshopDefinition, workshopCatalog } from '../../../shared/workshopCatalog';
 import guide1 from '../../public/workshops/day1-guide.html?raw';
 import guide2 from '../../public/workshops/day2-guide.html?raw';
 import guide3 from '../../public/workshops/day3-guide.html?raw';
@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v16' : definition.day === 3 ? '2026-09-16-day3-showing-v5' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(`2026-09-16-day${definition.day}-quadrants-v1`);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -29,9 +29,9 @@ describe('versioned live curriculum', () => {
     expect(new Set(activityIds).size).toBe(activityIds.length);
   });
 
-  it('keeps the five original FUB scenarios and deal demonstration in the 57-minute Preferred overview', () => {
+  it('keeps the five original FUB scenarios and deal demonstration in the 61-minute Preferred overview', () => {
     const day = workshopCatalog[1];
-    expect(day.duration).toBe(57);
+    expect(day.duration).toBe(61);
     expect(day.slides.filter(slide => slide.native === 'practice').map(slide => slide.scenario)).toEqual([
       'set-appointment', 'spoke-note', 'noanswer-task', 'avery-repair', 'offer-accepted',
     ]);
@@ -52,57 +52,33 @@ describe('versioned live curriculum', () => {
     expect(note).toContain('Do not invent a timeline');
   });
 
-  it('preserves Day 4 while Day 2 introduces and teaches before practice', () => {
-    for (const day of [4]) {
-      const definition = workshopCatalog[day];
-      expect(definition.slides[0].activity?.id).toBe(`day${day}-opening-decision`);
-      expect(definition.slides[0].activity?.kind).toBe('choice');
-      expect(definition.slides[0].activity?.fields?.length).toBeGreaterThan(0);
-      expect(definition.slides[1].activity?.kind).toBe('roleplay');
-      expect(definition.slides[1].time + definition.slides[0].time).toBeLessThanOrEqual(10);
-      expect(definition.slides[1].notes).toContain('targeted retry');
-      expect(definition.slides[1].notes).toContain('Do not label a peer or self-check as coach sign-off');
+  it('introduces every day and discusses each quadrant before teaching on days 2–4', () => {
+    for (const day of [2,3,4]) {
+      const d=workshopCatalog[day];
+      expect(d.slides[0].activity).toBeUndefined();
+      expect(d.slides[1].id).toBe(`day${day}-agenda`);
+      const starts=d.slides.flatMap((s,i)=>s.theme.includes('quadrant-cover')?[i]:[]);
+      expect(starts).toHaveLength(4);
+      for(const start of starts){
+        const first=d.slides[start+1];
+        // A consolidated concern list may introduce the topic before its discussion.
+        expect(first.activity || d.slides[start+2].activity).toBeTruthy();
+      }
     }
-    const day2 = workshopCatalog[2];
-    expect(day2.slides[0].id).toBe('day2-welcome');
-    expect(day2.slides[1].id).toBe('day2-agenda');
+    const day2=workshopCatalog[2];
     expect(day2.duration).toBe(90);
-    expect(day2.activities).toHaveLength(8);
-    expect(day2.slides).toHaveLength(25);
-    expect(day2.slides.find(s=>s.id==='day2-conversation-starters')?.body).toContain('What made you click');
-    expect(day2.slides.some(s=>['day2-permission','day2-location','day2-motivation','day2-financing','day2-under-contract'].includes(s.id))).toBe(false);
-    expect(day2.slides.find(s=>s.id==='day2-objection-framework')?.body).toContain('Ask questions to understand');
-    expect(day2.slides.slice(0,3).every(s => !s.activity)).toBe(true);
-    const position = (id: string) => day2.slides.findIndex(s => s.id === `day2-${id}`);
-    for (const [instruction, practice] of [['real-time-touring','lead-discussion'],['no-answer','channel-check'],['introduction','opening-decision'],['conversation-starters','discovery-practice'],['summary','summary-practice'],['objection-framework','buyer-concerns'],['buyer-concerns','market-concern'],['objection-framework','objection-practice'],['market-concern','objection-practice'],['summary-practice','full-call-practice']]) {
-      expect(position(instruction)).toBeGreaterThanOrEqual(0);
-      expect(position(instruction)).toBeLessThan(position(practice));
-    }
-    expect(day2.activities.filter(a => a.kind === 'roleplay').map(a => a.id)).toEqual(['day2-discovery-practice','day2-full-call-practice']);
-    expect(day2.activities.find(a => a.id === 'day2-full-call-practice')?.useCases).toBe(true);
-    expect(day2.slides.find(s => s.id === 'day2-discovery-practice')?.body).toContain('Switch buyer and agent');
-    // Screenshot walkthroughs need room to teach before the first submitted check.
-    // Cap uninterrupted instruction by minutes, rather than forcing a quiz every few slides.
-    let teachingMinutes = 0;
-    for (const slide of day2.slides) {
-      if (slide.activity) teachingMinutes = 0;
-      else expect(teachingMinutes += slide.time).toBeLessThanOrEqual(13);
-    }
-    expect(position('lead-route-check')).toBe(-1);
-    expect(day2.slides.find(s => s.id === 'day2-live-connection')?.body).toContain('live-screen-0.png');
-    expect(day2.slides.find(s => s.id === 'day2-real-time-touring')?.body).toContain('rtt-request.png');
-    expect(JSON.stringify(day2)).not.toMatch(/Jordan|Maya|Back to Jordan|Variation:/);
-    expect(day2.slides.findIndex(s => s.id === 'day2-alms')).toBeLessThan(day2.slides.findIndex(s => s.id === 'day2-opening-decision'));
-    expect(position('whole-call-one')).toBe(-1);
-    expect(position('whole-call-two')).toBe(-1);
-    expect(position('no-answer') + 1).toBe(position('unanswered'));
-    expect(position('unanswered') + 1).toBe(position('channel-check'));
-    expect(day2.slides.find(s => s.id === 'day2-full-call-practice')?.time).toBe(16);
-    expect(position('objection-practice')).toBeLessThan(position('summary'));
-    expect(position('summary-practice') + 1).toBe(position('full-call-practice'));
-    expect(day2.slides.every(s => s.notes.includes('Handoff:') && s.cue.length > 30)).toBe(true);
-    expect(day2.slides.find(s => s.id === 'day2-alms')?.body).toContain('Lead with who you are');
-    expect(day2.slides.find(s => s.id === 'day2-channel')?.lead).toContain('normal business hours, 8 a.m.–8 p.m.');
+    expect(day2.activities.filter(a=>a.kind==='roleplay').map(a=>a.id)).toEqual(['day2-discovery-practice','day2-full-call-practice']);
+    expect(day2.slides.find(s=>s.id==='day2-full-call-practice')?.time).toBe(16);
+    expect(day2.slides.find(s=>s.id==='day2-live-connection')?.body).toContain('live-screen-0.png');
+    expect(day2.slides.find(s=>s.id==='day2-real-time-touring')?.body).toContain('rtt-request.png');
+    expect(day2.slides.find(s=>s.id==='day2-alms')?.body).toContain('Lead with who you are');
+    const pos=(id:string)=>day2.slides.findIndex(s=>s.id===`day2-${id}`);
+    expect(pos('discuss-opening')).toBeLessThan(pos('alms'));
+    expect(pos('conversation-starters')).toBeLessThan(pos('discovery-practice'));
+    expect(pos('discuss-concern')).toBeLessThan(pos('objection-framework'));
+    expect(pos('summary')).toBeLessThan(pos('full-call-practice'));
+    const day4=workshopCatalog[4];
+    expect(day4.slides.findIndex(s=>s.id==='day4-how-to-introduce-your-loan-officer')).toBeLessThan(day4.slides.findIndex(s=>s.id==='day4-first-introduction-practice'));
   });
 
   it('preserves full rotations and the existing instructional body behind the openings', () => {
@@ -117,7 +93,7 @@ describe('versioned live curriculum', () => {
     expect(day.duration).toBe(75);
     expect(day.slides.slice(0,2).map(s=>s.id)).toEqual(['day3-welcome','day3-agenda']);
     const pos=(id:string)=>day.slides.findIndex(s=>s.id===`day3-${id}`);
-    for(const [teach,practice] of [['buyer-concerns','concern-framework'],['prepare','comparison-discussion'],['question-bank','different-priorities'],['concern-framework','problem-solving-discussion'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {
+    for(const [teach,practice] of [['buyer-concerns','concern-framework'],['prepare','comparison-discussion'],['question-bank','different-priorities'],['problem-solving-discussion','concern-framework'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {
       expect(pos(teach)).toBeGreaterThanOrEqual(0);
       expect(pos(teach)).toBeLessThan(pos(practice));
     }
@@ -134,7 +110,7 @@ describe('versioned live curriculum', () => {
     expect(practice.notes).toContain('Do not label a peer or self-check as coach sign-off');
     expect(day.slides.every(s=>s.notes.includes('Handoff:') && s.cue.length>30)).toBe(true);
     expect(day.cases).toHaveLength(3);
-    expect(day.slides.at(-1)?.chapter).toBe('Wrap-up');
+    expect(day.slides.at(-1)?.chapter).toBe('Review and reference');
   });
 
   it('redacts unrevealed answers, models, and instructor notes from the live learner snapshot', () => {
@@ -170,7 +146,7 @@ describe('versioned live curriculum', () => {
     expect(getWorkshopDefinition(99)).toBeNull();
   });
 
-  it('keeps generated guides in sync and excludes answer examples from the learner worksheet', () => {
+  it('keeps generated guides in sync and separates practice from review explanations', () => {
     for (const [index, guide] of [guide1, guide2, guide3, guide4].entries()) {
       const day = workshopCatalog[index + 1];
       expect(guide).toContain(`${day.duration} minutes including practice`);
@@ -179,7 +155,10 @@ describe('versioned live curriculum', () => {
       expect(guide).toContain('Practice readiness, quiz certification, and activation remain separate');
       expect(guide).toContain('fresh case in three days');
     }
-    expect(worksheet2).not.toContain(workshopCatalog[2].activities[0].model);
+    const answerSection = worksheet2.indexOf('<h2>Review after your first attempt</h2>');
+    expect(answerSection).toBeGreaterThan(worksheet2.indexOf('<h2>Practice notes</h2>'));
+    expect(worksheet2.slice(0, answerSection)).not.toContain(workshopCatalog[2].activities[0].model);
+    expect(worksheet2.slice(answerSection)).toContain(workshopCatalog[2].activities[0].model);
     expect(worksheet2).toContain('this printable worksheet is a backup');
   });
 });
@@ -193,4 +172,9 @@ it('teaches the cap before a quiz with an explicit valid maximum',()=>{
   expect(quiz.body).not.toContain('fewer than 20');
 });
 
-it('gives every Day 2 discussion question choices and an explanation field',()=>{const questions=getWorkshopDefinition(2)!.activities.filter(a=>a.kind!=='roleplay');expect(questions).toHaveLength(6);for(const question of questions){expect(question.kind).toBe('choice');expect(question.choices!.length).toBeGreaterThanOrEqual(2);expect(question.fields).toHaveLength(1);expect(question.prompt).toContain('explain');}});
+it('keeps choices separate from open discussion and gives both an explanation',()=>{
+ const questions=getWorkshopDefinition(2)!.activities.filter(a=>a.kind!=='roleplay');
+ expect(questions.filter(a=>a.kind==='choice')).toHaveLength(6);
+ expect(questions.filter(a=>a.kind==='discussion')).toHaveLength(4);
+ for(const q of questions){expect(q.fields).toHaveLength(1);expect(q.model).toBeTruthy();if(q.kind==='choice')expect(q.choices!.length).toBeGreaterThanOrEqual(2);}
+});

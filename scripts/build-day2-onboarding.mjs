@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { reviseTraining } from './training-quadrants.mjs';
 // Eric's September 12 doctrine and interviews. Zillow visuals are credited originals.
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const p=t=>`<p class="lesson-explanation">${t}</p>`;
@@ -254,5 +255,5 @@ data.questionBank='<h2>Conversation starters to keep beside you</h2><p>Choose wh
  ['Follow an answer',['Tell me more about that.','What makes that important to you?','What would that change for you?','What would help you feel comfortable with the next step?']]
 ].map(([title,questions])=>'<h3>'+title+'</h3>'+list(questions)).join('')+'<h2>When a buyer raises a concern</h2>'+list(['Acknowledge the concern: recognize the worry or frustration before moving on.','Ask questions to understand: What part concerns you most? What happened before? What would you need to know?','Offer a solution: propose a specific action tied to their answer, then check whether it would help.'])+'<p>Useful next steps may include verifying property information, comparing homes, arranging lender help when the buyer raises financing, or agreeing on a later conversation. Be accurate about your role, property status, and what you can promise. Respect the buyer’s decision.</p>';
 if(data.duration!==90)throw new Error(`Timing is ${data.duration}, expected 90`);
-fs.writeFileSync(new URL('../web/public/workshops/day2.json',import.meta.url),JSON.stringify(data,null,2)+'\n');
+fs.writeFileSync(new URL('../web/public/workshops/day2.json',import.meta.url),JSON.stringify(reviseTraining(data),null,2)+'\n');
 console.log(`Day 2: ${slides.length} slides, ${data.duration} minutes, ${slides.filter(s=>s.activity).length} activities.`);

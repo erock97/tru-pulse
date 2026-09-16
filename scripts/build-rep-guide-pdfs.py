@@ -93,7 +93,7 @@ for day in range(1,5):
     for kind in ('guide','resources'):
         source = DIRECTORY / f'day{day}-{kind}.html'
         soup = BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')
-        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent reference and practice notes' if day == 2 else 'agent worksheet')
+        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent reference and practice notes')
         output = source.with_suffix('.pdf')
         def footer(canvas,doc):
             canvas.saveState()
