@@ -128,7 +128,7 @@ generation. Failures leave the report usable and offer retry.
    `supabase/migrations/20260916190216_pulse_pipeline.sql` before application.
    It adds nullable `stage_id`, `assigned_user_id`, `assigned_pond_id` to leads
    and a team JSONB mapping field. It does not alter RLS or existing rows.
-   **The migration has only been tested in an embedded local database.**
+   The migration was tested in embedded Postgres and applied September 16 after the live rollout was authorized.
 2. Apply that reviewed migration through the normal release process. Deploy the
    Worker before the web app. Enable `PIPELINE_IDENTITY_ENABLED=1` only after
    the columns exist. This opt-in persists the IDs in existing people syncs.
@@ -141,8 +141,8 @@ generation. Failures leave the report usable and offer retry.
    doctrine checks pass, including a controlled provider smoke test. Set it to
    `1` separately after review. The report works with this flag off.
 
-Both flags default off in this PR. Neither the migration nor production releases
-are performed by the preview workflow. The test suite mocks provider calls;
+Identity capture is enabled for the authorized release; AI remains off. Initially, neither the migration nor production releases
+were performed by the preview workflow. The test suite mocks provider calls;
 passing tests do not certify live provider output or production evidence quality.
 
 ## Validation
@@ -202,3 +202,23 @@ Web DOM tests cover exact lead drilldowns, preserved team denominators, filter
 changes, custom-date boundaries, coverage, AI request scope, stale responses and
 failure recovery. Browser review covers desktop and 390px mobile layouts. Run
 the Worker/web typechecks and complete test suites, plus the web production build.
+
+## Authorized live rollout — September 16
+
+Eric authorized publishing the reports for every active team. The initial live
+cohort is month to date in America/Los_Angeles, with ordinary date/source filters
+available. Seven active teams are included. The owner/stage identity migration
+and `20260916230059_pipeline_inquiry_values.sql` have been applied; both are
+additive and preserve existing RLS/grants. The latter adds a nullable JSONB field
+for minimal derived inquiry evidence. API checks persist that evidence only after
+report/team authorization and a final metric snapshot check. Saved values are
+scoped to visible current leads and the current calculation-policy version.
+
+This supersedes the temporary browser-only value behavior of the earlier preview.
+Missing inquiry coverage stays explicit; historical periods not yet checked do
+not inherit a fabricated value. AI remains off and value observations do not enter
+coaching inputs. Existing runtime variables are preserved during deployment.
+
+Platform-admin status uses the existing `is_admin` RPC because the admins table
+is intentionally private to RLS users. Team and lead reads continue using the
+signed-in user's token and existing membership rules; no access policy is widened.

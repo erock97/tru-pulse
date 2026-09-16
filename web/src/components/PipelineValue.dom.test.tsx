@@ -32,3 +32,9 @@ it('discards in-flight values after filters change and leaves failures retryable
  expect(host.querySelector('[role=alert]')?.textContent).toContain('FUB unavailable');
  expect([...host.querySelectorAll('button')].find(b=>b.textContent?.includes('Check next'))?.disabled).toBe(false);
 });
+it('restores saved evidence when a report is loaded',async()=>{
+ const r={...pipelineFixture(),snapshotId:'saved'},values=demoValues(r);
+ await act(async()=>root.render(<PipelineValue report={{...r,propertyValues:values}} agentKey=""/>));
+ expect(host.textContent).toContain('307 of 504 leads included');
+ expect(host.textContent).toContain('Verified results are saved');
+});

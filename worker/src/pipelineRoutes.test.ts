@@ -14,7 +14,7 @@ const lead={team_id:team,fub_person_id:1,name:'Buyer',assigned_to:'Agent',assign
 const env={SESSIONS:{get:vi.fn().mockResolvedValue(null)},PIPELINE_INSIGHTS_ENABLED:'1'} as unknown as Env;
 function client(over:Record<string,unknown[]>={}){
  const tables:Record<string,unknown[]>={memberships:[{role:'leader'}],admins:[],teams:[teamRow],leads:[lead],agents:[{id:agent,team_id:team,name:'Agent',fub_user_id:3}],org_settings:[],...over};
- return {userId:'user',select:vi.fn(async(table:string,query:string)=>Number(new URLSearchParams(query).get('offset')||0)>0?[]:tables[table]||[])} as unknown as UserClient;
+ return {userId:'user',rpc:vi.fn(async()=>({ok:true,data:!!tables.admins.length})),select:vi.fn(async(table:string,query:string)=>Number(new URLSearchParams(query).get('offset')||0)>0?[]:tables[table]||[])} as unknown as UserClient;
 }
 async function call(db:UserClient,path='/data/pipeline',method='GET',body:Record<string,unknown>={},origin=true){
  const url=new URL('https://api.test'+path);
@@ -103,8 +103,16 @@ describe('pipeline route isolation and consistency',()=>{
   const db=client(),report=await loadPipeline(env,db,filters);
   expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:'old',leadKeys:[team+':1']})).status).toBe(409);
   expect(mocks.values).not.toHaveBeenCalled();
-  mocks.values.mockResolvedValue({});
+  mocks.values.mockResolvedValue({[team+':1']:{status:'included',amount:300000}});
   expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:report.snapshotId,leadKeys:[team+':1']})).status).toBe(200);
+  expect(mocks.update).toHaveBeenCalledWith('leads','team_id=eq.'+team+'&fub_person_id=eq.1',{pipeline_inquiry_value:{status:'included',amount:300000}});
+ });
+ it('loads only current policy values from visible leads without changing the metric snapshot',async()=>{
+  const original=await loadPipeline(env,client(),filters);
+  const saved={policy:'inquiry-v1',status:'included',amount:300000};
+  const r=await loadPipeline(env,client({leads:[{...lead,pipeline_inquiry_value:saved}]}),filters);
+  expect(r.propertyValues).toEqual({[team+':1']:saved});expect(r.snapshotId).toBe(original.snapshotId);
+  expect((await loadPipeline(env,client({leads:[{...lead,pipeline_inquiry_value:{...saved,policy:'old'}}]}),filters)).propertyValues).toEqual({});
  });
  it('discards values when the pipeline changes during inquiry retrieval',async()=>{
   const db=client(),r=await loadPipeline(env,db,filters),original=db.select;

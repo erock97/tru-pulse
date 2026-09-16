@@ -6,6 +6,7 @@ import { calculatePipeline, mergePipelineLeads, pipelineSnapshotContent, PIPELIN
   type PipelineFilters, type PipelineTeam, type PipelineLead, type PipelineAgent, type PipelineReport, type StageMapping } from '../../shared/pipeline.js';
 import { pipelineInsights } from './pipelineInsights.js';
 import { checkPipelineValues } from './pipelineValue.js';
+import { VALUE_POLICY, type InquiryValue } from '../../shared/pipelineValue.js';
 import type { ProgressEvent } from '../../shared/pipelineProgress.js';
 import { PipelineError, digest } from './pipelineSupport.js';
 export { PipelineError, digest } from './pipelineSupport.js';
@@ -35,10 +36,10 @@ async function all<T>(db:UserClient,table:string,query:string):Promise<T[]> {
 export async function pipelineAccess(db:UserClient,filters:PipelineFilters) {
   const [members,admins,teams]=await Promise.all([
     db.select<{role:string}>('memberships','select=role&user_id=eq.'+db.userId+'&org_id=eq.'+filters.orgId,{strict:true}),
-    db.select<{id:string}>('admins','select=id&id=eq.'+db.userId,{strict:true}),
+    db.rpc<boolean>('is_admin',{}),
     db.select<PipelineTeam>('teams','select=*&org_id=eq.'+filters.orgId+(filters.teamId?'&id=eq.'+filters.teamId:''),{strict:true}),
   ]);
-  const manage=!!admins.length||members.some(m=>['leader','admin','owner'].includes(m.role));
+  const manage=admins.ok&&admins.data===true||members.some(m=>['leader','admin','owner'].includes(m.role));
   if(!manage&&!members.some(m=>m.role==='coach')||!teams.length||teams.some(t=>t.org_id!==filters.orgId || filters.teamId&&t.id!==filters.teamId))throw new PipelineError('You cannot access this team.',403);
   return {teams,manage};
 }
@@ -47,7 +48,7 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   const ids=teams.map(t=>t.id);
   if(ids.some(id=>!UUID.test(id)))throw new PipelineError('Invalid team configuration.',502);
   const [raw,roster,settings]=await Promise.all([
-    all<PipelineLead>(db,'leads','select=*&team_id=in.('+ids.join(',')+')&order=team_id.asc,fub_person_id.asc'),
+    all<PipelineLead & {pipeline_inquiry_value?:InquiryValue}>(db,'leads','select=*&team_id=in.('+ids.join(',')+')&order=team_id.asc,fub_person_id.asc'),
     all<PipelineAgent>(db,'agents','select=id,team_id,name,fub_user_id,excluded,role&team_id=in.('+ids.join(',')+')&order=id.asc'),
     db.select<{sources:string[]|null}>('org_settings','select=sources&org_id=eq.'+filters.orgId,{strict:true}),
   ]);
@@ -88,6 +89,9 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   const report=calculatePipeline({leads,agents:roster,teams:teams.map(t=>({id:t.id,org_id:t.org_id,name:t.name,fub_subdomain:t.fub_subdomain,pipeline_stage_mappings:t.pipeline_stage_mappings})),
     filters,events,historyState,historyThrough,canMapStages:manage,insightsEnabled:env.PIPELINE_INSIGHTS_ENABLED==='1'});
   report.snapshotId=await digest(pipelineSnapshotContent(report));
+  const visible=new Set(report.leads.filter(l=>!l.historicalOnly).map(l=>l.key));
+  report.propertyValues=Object.fromEntries(raw.filter(l=>visible.has(l.team_id+':'+l.fub_person_id)&&l.pipeline_inquiry_value?.policy===VALUE_POLICY)
+    .map(l=>[l.team_id+':'+l.fub_person_id,l.pipeline_inquiry_value!]));
   return report;
 }
 /** Canonical history is private. Call only after user/RLS team authorization.
@@ -128,6 +132,10 @@ export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,c
       if(body.snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed. Refresh before checking inquiry values.',409);
       const values=await checkPipelineValues(env,report,body.leadKeys);
       if((await loadPipeline(env,db,filters)).snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed during the check. Refresh and retry.',409);
+      for(const [key,value] of Object.entries(values)){
+        const lead=report.leads.find(l=>l.key===key)!;
+        await serviceDb(env).update('leads','team_id=eq.'+lead.team_id+'&fub_person_id=eq.'+lead.fub_person_id,{pipeline_inquiry_value:value});
+      }
       return json({snapshotId:report.snapshotId,values,evidenceVersion:await digest(JSON.stringify(values))});
     }
     if(url.pathname==='/data/pipeline/mappings'&&req.method==='PUT'){

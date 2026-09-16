@@ -1,4 +1,5 @@
 import { PROGRESSION, progressForLead, type ProgressEvent, type ProgressProof, type ProgressRow } from './pipelineProgress';
+import type { InquiryValue } from './pipelineValue';
 /** Received-date cohorts with current dispositions and retained stage progression. */
 export const PIPELINE_CATEGORIES = ['active', 'under_contract', 'closed', 'nurture', 'rejected', 'unmapped'] as const;
 export type PipelineCategory = typeof PIPELINE_CATEGORIES[number];
@@ -39,6 +40,7 @@ export interface PipelineRecord extends PipelineLead {
   progress: Record<string, ProgressProof>;
 }
 export interface PipelineReport {
+  propertyValues?: Record<string,InquiryValue>;
   filters: PipelineFilters; snapshotId: string; generatedAt: string; teams: PipelineTeam[];
   sources: string[]; totals: PipelineCount; agents: PipelineOwner[]; stages: PipelineStage[]; leads: PipelineRecord[];
   progression: ProgressRow[];
