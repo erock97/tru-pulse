@@ -1,3 +1,4 @@
+import { refineDay3 } from './day3-language.mjs';
 // Eric's approved four-quadrant structure. Apply after the original generators.
 // Existing IDs, native FUB exercises, and response contracts remain stable.
 const esc = s => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -70,7 +71,6 @@ export function reviseTraining(data) {
    make('listing-agent-call','Call the listing agent with specific questions','Use the call to prepare accurate information and confirm the visit.',rows([['Ask about the listing','“Is there an offer deadline or offer activity we should know about?” Ask about seller timing and any rent-back request.'],['Ask about unresolved facts','“The available materials do not state the roof age. Is there documentation you can share?” Keep reported information separate from verified documents.'],['Confirm access','Check appointment approval and showing instructions. A buyer’s preferred time does not establish access. If an answer is pending, record it and plan the update.']]),3),
    make('prepare','Choose two to four homes for a useful comparison','Use the buyer’s priorities, available time and confirmed access to shape the tour.',rows([['Explain why each home belongs','“This home has the enclosed office you wanted. The yard is smaller. Would comparing the layout still be useful?”'],['Respect firm requirements','If the yard is nonnegotiable, revise the options. More homes are useful only when the comparisons help the buyer decide.'],['Confirm the tour plan','Agree on the meeting place, sequence and timing. Review access instructions and the applicable brokerage-approved agreement before the visit.']]),3),
    make('buyer-packet','Bring information the buyer can use during the tour','Prepare the packet before leaving so you can focus on the buyer at the home.',rows([['For each home','Include the MLS sheet and useful comparable sales. Add relevant neighborhood information with its source.'],['For the conversation','Mark the property facts tied to the buyer’s needs and keep unresolved questions visible. Use the packet to support an explanation rather than read every field aloud.'],['Before you leave','Recheck appointment confirmations, showing instructions and the meeting plan. Bring a physical packet as in the preparation example.']]),2),
-   make('real-mls-example','Use a real MLS sheet to prepare for the showing','Historical example: 2075 SW Sailing Ct, McMinnville, Oregon.',`<figure class="real-mls-sheet"><a href="https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf#page=94" target="_blank" rel="noopener"><img src="/workshops/examples/real-mls-sailing-ct.jpg" alt="Original MLS report excerpt for 2075 SW Sailing Ct, marked Sold, with a report date of March 24, 2025. MLS number 23022380." /></a><figcaption>Original report excerpt; source markup retained. <a href="https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf#page=94" target="_blank" rel="noopener">Open the full sheet in Yamhill County’s public document · PDF page 94 ↗</a></figcaption></figure><div class="mls-reading-points"><div><h3>Check status and date first</h3><p>This sheet is marked Sold and dated March 24, 2025. Use it to study the format, not as a currently available home.</p></div><div><h3>Connect the facts to the search</h3><p>The sheet lists 2,446 square feet and 0.51 acres. Use the actual fields to compare properties; size alone does not show whether the layout fits the buyer.</p></div><div><h3>Identify what still needs an answer</h3><p>A year built is not a roof-replacement date. Record the buyer’s unanswered property questions and seek supporting information before the tour.</p></div></div>`,3),
    discussion('comparison-discussion','Practice preparing tomorrow’s tour','Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.',['Choose two to four homes and explain why each belongs on this buyer’s tour.','Name the information you would research and the questions you would ask the listing agents.','Explain what you would confirm with the buyer and bring to the appointment.'],'A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met.',4)
   ]);
   group('Conduct the showing','Welcome honest reactions and learn what the home needs to do for the buyer.',[
@@ -79,14 +79,14 @@ export function reviseTraining(data) {
   ]);
   group('Lead the post-tour conversation','Ask about an offer, then follow the buyer’s answer.',[
    discussion('discuss-post-tour','What would you ask before the buyer leaves?','The tour has finished. The buyer has mentioned things they liked and things that did not work.',['How would you ask for a few minutes?','What would your first question be?','What changes if they say yes, no or unsure?'],'Ask for a few minutes and explain the purpose. Start with “Did we see any homes we want to write an offer on?” Then follow the answer. Do not infer a decision from silence, criticism or a rating.'),
-   ...['after-the-tour','feedback-demo'].map(get),
+   get('after-the-tour'),
    make('offer-answer','Let the offer answer guide your next question','Start with: “Did we see any homes we want to write an offer on?”',rows([['If they say yes','Clarify which home and what they need to move into the offer conversation. Interest does not resolve unanswered property or financing questions.'],['If they say no','Ask what worked and what did not. “Which home came closest? What was missing?” Use the answer to refine the next search.'],['If they are unsure','Ask what would help them decide. Identify the missing information or concern and agree how to address it. A high rating alone is not permission to write.']]),2)
   ]);
   group('Understand concerns and agree on a plan','Connect useful help to the buyer’s reason and follow through.',[
    get('buyer-concerns'),get('problem-solving-discussion'),get('concern-framework'),get('plan-demo'),get('pending-answer'),get('plan-check'),get('record-the-plan'),get('full-showing-practice'),get('write-the-follow-up-record')
   ]);
   closing=get('wrap');
-  const timings={'drop-the-rope':2,'during-the-visit':2,'question-bank':2,'different-priorities':2,'after-the-tour':2,'feedback-demo':2,'buyer-concerns':1,'problem-solving-discussion':3,'concern-framework':2,'plan-demo':2,'pending-answer':2,'plan-check':2,'record-the-plan':1,'write-the-follow-up-record':2};
+  const timings={'drop-the-rope':2,'during-the-visit':2,'question-bank':2,'different-priorities':2,'after-the-tour':3,'feedback-demo':2,'buyer-concerns':1,'problem-solving-discussion':3,'concern-framework':2,'plan-demo':2,'pending-answer':2,'plan-check':2,'record-the-plan':1,'write-the-follow-up-record':2};
   for(const g of groups)for(const s of g.slides)if(timings[s.id.slice(5)])s.time=timings[s.id.slice(5)];
   data.title='Prepare for the showing and help the buyer decide';
  } else if(day===4){
@@ -141,14 +141,13 @@ export function reviseTraining(data) {
    const photos={'property-research':'property','listing-agent-call':'follow-up','prepare':'home','buyer-packet':'questions','drop-the-rope':'arrival','during-the-visit':'conversation'};
    const key=s.id.slice(5);
    if(photos[key])s.theme+=' lesson-photo photo-'+photos[key];
-   if(key==='real-mls-example'){s.theme+=' real-example-slide';s.notes='Show the original MLS excerpt, then open the linked full sheet if useful. It is a real historical report, not a fictional listing or an available tour option. The red annotation is present in the county source. Read status and report date first; distinguish reported property facts from unanswered questions. Source: Yamhill County B.O. 25-413, PDF page 94, Exhibit A-4 page 13; report dated March 24, 2025. Accessed September 16, 2026.';}
    if(key==='prepare')s.theme+=' tour-comparison';
    if(key==='drop-the-rope')s.theme+=' welcome-quote';
    if(key==='comparison-discussion')s.theme+=' preparation-practice';
    if(key==='question-bank'){
     s.title='Let the buyer’s reaction lead to one useful question';
     s.lead='Give them time to experience the room. When they share a reaction, follow that thought instead of starting a list of questions.';
-    s.body='<div class="conversation-sequence"><div class="conversation-turn"><span>Buyer</span><blockquote>“This office could work.”</blockquote><p>Let them look around and finish their thought.</p></div><div class="conversation-turn"><span>Agent</span><blockquote>“What would work better here than in your current setup?”</blockquote><p>Ask one question tied to what they just said. Then listen.</p></div><div class="conversation-turn"><span>Buyer</span><blockquote>“I could close the door during calls.”</blockquote><p>Now you know why the room matters. Check your understanding before changing the search.</p></div></div><p class="conversation-close">“So having a quiet room you can close off is what matters most. Have I understood that?”</p>';
+    s.body='<div class="conversation-sequence"><div class="conversation-turn"><span>Buyer</span><blockquote>“This office could work.”</blockquote><p>Let them look around and finish their thought.</p></div><div class="conversation-turn"><span>Agent</span><blockquote>“What would work better here than in your current setup?”</blockquote><p>Ask one question tied to what they just said. Then listen.</p></div><div class="conversation-turn"><span>Buyer</span><blockquote>“I could close the door during calls.”</blockquote><p>Now you know why the room matters. Check your understanding before changing the search.</p></div></div><p class="conversation-close">“So you need a room where you can close the door for calls. Is that right?”</p>';
     s.theme+=' conversation-example';
    }
   }
@@ -162,6 +161,7 @@ export function reviseTraining(data) {
   // Every deck uses the existing website palette and consistent question layouts.
   if(!s.native&&!s.theme.includes('alms-cover'))s.theme=[...new Set(`tru alms lesson ${s.theme} training-depth`.split(/\s+/))].join(' ');
  }
+ if(day===3)refineDay3(ordered);
  ordered.forEach((s,i)=>{
   if(s.theme.includes('quadrant-cover'))s.body=`<p class="quadrant-number">0${s.quadrant}</p>`+s.body;
   if(s.id==='day2-channel-check')s.notes=s.notes.replace('Before voting, teach Eric’s exception: acknowledge by text now and call at the requested time.','Hear the responses first, then reinforce Eric’s exception: acknowledge by text now and call at the requested time.');
@@ -170,7 +170,7 @@ export function reviseTraining(data) {
  });
  data.slides=ordered;
  data.quadrants=groups.map((g,i)=>({number:i+1,title:g.title,purpose:g.purpose}));
- data.version=`2026-09-16-day${day}-quadrants-v${day===3?3:2}`;
+ data.version=`2026-09-16-day${day}-quadrants-v${day===3?4:2}`;
  data.duration=ordered.reduce((n,s)=>n+s.time,0);
  if(day!==1)welcome.lead=`Day ${day} · ${data.duration} minutes including discussion and practice`;
  return data;
