@@ -1,4 +1,7 @@
 export interface Env {
+  TRUEBRAIN?: Fetcher;
+  TRUEBRAIN_GATEWAY_TOKEN?: string;
+  TRUEBRAIN_OWNER_ID?: string;
   /** Encrypted worker secret delivered by ops/sync-bitwarden-secrets.mjs. */
   BITWARDEN_TRUHQ_SECRETS?: string;
   /** Opt-in only after the additive live-session migration is approved. */

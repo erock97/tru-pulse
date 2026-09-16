@@ -1,5 +1,18 @@
 # TRU Pulse — rules for agents
 
+## TrueBrain repair authority (Eric, September 16, 2026)
+
+The designated TrueBrain repair executor may merge and publish verified TrueHQ
+bug fixes and small quality-of-life corrections without per-fix human approval.
+It must establish TrueHQ scope from evidence, use isolated branches, obtain
+independent review and passing checks for the exact release revision, serialize
+releases, and verify the deployed result. This exception supersedes the blanket
+production prohibition below for that executor only. Major redesigns, feature
+removal, destructive data operations, weakening access controls, and unclear
+product policy are not covered. Uncertain scope creates an owner alert and no
+coding task. All customer email replies remain drafts; never send automatically.
+Other agents continue to follow the ordinary preview and release boundaries.
+
 Read this before you touch anything. It applies to every agent working in this
 repo, whatever tool you are running under.
 
