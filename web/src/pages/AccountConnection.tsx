@@ -25,7 +25,8 @@ export default function AccountConnection({ email }: { email: string | null }) {
         <h1 className="tru-auth-title">Let’s connect your account.</h1>
         <p className="tru-auth-sub">We couldn’t find your team access for this login.</p>
         {email && <p>Signed in as <strong>{email}</strong></p>}
-        <p>Use the same email address that received your TRU HQ invitation. If this is the right address, try again or ask your team leader to check your invitation.</p>
+        <p>Use the same email address that received your TRU HQ invitation. This connects your agent account to your Follow Up Boss profile so your activity and reporting stay linked to you. If you sign in with Google, choose that same email address.</p>
+        <p>If this is the right address, try again or ask your team leader to check your invitation.</p>
         <p>You don’t need to provide any Follow Up Boss credentials.</p>
         {error && <p className="err" role="alert">{error}</p>}
         <button className="btn full" disabled={busy} onClick={() => window.location.reload()}>Try again</button>
