@@ -104,8 +104,14 @@ export default function Login({ linkFailed = false }: { linkFailed?: boolean }) 
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              aria-describedby="door-email-help"
               autoFocus={mode === 'reset'}
             />
+            <p id="door-email-help" className="tru-door-note">
+              Invited to TRU HQ? Use the email address that received your invitation.
+              For agents, this connects your Follow Up Boss profile so your activity and reporting stay linked to you.
+              {mode !== 'reset' && ' If you continue with Google, choose that same email address.'}
+            </p>
             {mode !== 'reset' && <>
             <label className="tru-door-label" htmlFor="door-password">Password</label>
             <input

@@ -33,7 +33,7 @@ export type AgentHqTab = 'home' | 'coach' | 'training' | 'profile';
 export const SET_PASSWORD_TITLE = 'Set your password to finish setting up.';
 export const SET_PASSWORD_SUB = 'One login for your HQ — training and Coach, in one place.';
 export const SET_PASSWORD_EMAIL_NOTE =
-  'This is the address your invite was sent to. Use it — a different one will not connect to your HQ.';
+  'This is the address your invite was sent to. Use this same email every time you sign in. For agents, it connects your HQ to your Follow Up Boss profile so your activity and reporting stay linked to you. A different email will not connect to your HQ.';
 
 /** Session email on the invite link. Empty / missing means claim cannot stick. */
 export function lockedInviteEmail(sessionEmail: string | null | undefined): string | null {

@@ -32,8 +32,8 @@ export function inviteEmailHtml(o: { name: string; orgName: string; link: string
     : `${name}, your ${org} account is ready.`;
   const body = kind === 'agent'
     ? (email
-      ? `Set your login and password for ${email}. That is the address this HQ is tied to &mdash; a different one will not connect. You&rsquo;ll land in your own HQ &mdash; training, your Coach, and the work ahead.`
-      : `Set your login and password. You&rsquo;ll land in your own HQ &mdash; training, your Coach, and the work ahead.`)
+      ? `Use <strong>${email}</strong> &mdash; the email address that received this invitation &mdash; whenever you sign in to TRU HQ. This connects your HQ to your Follow Up Boss profile so your activity and reporting stay linked to you. A different one will not connect. If you sign in with Google, choose this same email address. Set your password below to open your training and Coach.`
+      : `Use the email address that received this invitation whenever you sign in to TRU HQ. This connects your HQ to your Follow Up Boss profile so your activity and reporting stay linked to you. If you sign in with Google, choose this same email address. Set your password below to open your training and Coach.`)
     : `Set your password and you&rsquo;re in &mdash; Pulse and Coach, your whole team in one place.`;
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#111014;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
