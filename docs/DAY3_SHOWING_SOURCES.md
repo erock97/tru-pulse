@@ -1,6 +1,6 @@
 # Day 3: conduct a first showing and leave with a plan
 
-Edition: `2026-09-15-day3-showing-v4`. 20 slides, 75 minutes.
+Edition: `2026-09-16-day3-showing-v5`. 20 slides, 75 minutes.
 
 Eric's current instruction expands the previously visual-only Day 3 work into a content rebuild. Preserve the approved website palette, 16:9 canvas, varied brand photography, private notes, and simple current-slide response flow. Day 2 is unchanged.
 
@@ -43,3 +43,7 @@ New live sessions are required to use this curriculum snapshot. Deploy worker be
 ## September 15 review corrections
 
 Eric requested complete scenario descriptions, consistent question layouts, and a clear text gutter beside photographs. Common buyer concerns now appear together before the problem-solving process. Renting, a six-month timeline, and other constraints may be valid reasons; the objective is a useful preparation plan, not persuading the buyer to purchase sooner. The lender example explores options against the buyer’s lease timing without promising an outcome.
+
+## September 16 post-tour opener
+
+Eric requires the first post-tour question to be “Did we see any homes we want to write an offer on?” Slide 10 now teaches this opening followed by optional questions about likes, dislikes, ratings, and useful next steps. Notes explain branching from yes, no, or uncertainty without assuming a negative reaction.
