@@ -2,6 +2,7 @@ import {CONTACT_DECISION_HOLD,observedContactFlag} from '../../shared/contactEvi
 import {initializeAssignments,type TeamRow} from './sync.js';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
+import { displayNames, handleDisplayName } from './displayNames.js';
 // Data the browser used to fetch straight from Supabase, now fetched here — as the
 // user, so row-level security still decides what they can see.
 //
@@ -47,6 +48,7 @@ export async function handleDataRoutes(
   if (!db) return json({ error: 'not signed in' }, 401, cors);
   if (url.pathname === '/data/coaching-assignments') return handleCoachingAssignments(req, env, db, cors, originOk);
   if (url.pathname === '/data/personal-profile') return handlePersonalProfile(req, env, db, cors, originOk);
+  if (url.pathname === '/data/display-name') return handleDisplayName(req, db, cors, originOk);
 
   if(url.pathname==='/data/assignments/initialize'&&req.method==='POST'){
     if(!originOk)return json({error:'origin denied'},403,cors);
@@ -342,7 +344,7 @@ export async function handleDataRoutes(
   if (url.pathname === '/data/team/roster' && req.method === 'GET') {
     const { ok, data } = await db.rpc('team_admin_roster', {});
     if (!ok) return json({ error: 'not allowed' }, 403, cors);
-    return json({ agents: data ?? [] }, 200, cors);
+    return json({ agents: await displayNames(db, (data ?? []) as Array<{id:string;name:string}>) }, 200, cors);
   }
 
   // ── Coach: the per-team public assessment join links. ──
@@ -448,7 +450,7 @@ export async function handleDataRoutes(
       db.select('agents', 'select=id,name,email,auth_id&excluded=eq.false&order=name.asc'),
       db.select('rep_practice', 'select=agent_id,scenario,status,score,passed,created_at'),
     ]);
-    return json({ modules, questions, progress, agents, practice }, 200, cors);
+    return json({ modules, questions, progress, agents: await displayNames(db, agents as Array<{id:string;name:string}>), practice }, 200, cors);
   }
 
   // ── Rep: one agent's own course view (loadCourse). ──
@@ -488,7 +490,7 @@ export async function handleDataRoutes(
       );
       role = rows[0]?.role ?? null;
     }
-    return json({ org, agent: agents[0] ?? null, role }, 200, cors);
+    return json({ org, agent: (await displayNames(db, agents))[0] ?? null, role }, 200, cors);
   }
 
   // ── Rep authoring: this org's own modules, at any status. ──

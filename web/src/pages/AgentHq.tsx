@@ -34,7 +34,7 @@ import { Lesson, Quiz, Result } from './AgentCourse';
 import type { GradeResult } from '../lib/api';
 import '../truHqDark.css';
 
-export default function AgentHq({ agent }: { agent: AgentIdentity }) {
+export default function AgentHq({ agent, onNameSaved }: { agent: AgentIdentity; onNameSaved: (name: string) => void }) {
   const [profileDirty, setProfileDirty] = useState(false);
   const [route, setRoute] = useState(() => window.location.hash.replace(/^#/, '') || '/');
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function AgentHq({ agent }: { agent: AgentIdentity }) {
         <div className="ah-canvas">
           <div className="ah-ambient" aria-hidden />
           {loadError&&tab!=='profile'&&<p className="ah-home-error" role="alert">{loadError}<button onClick={refresh}>Retry</button></p>}
-          {tab === 'profile' && <PersonalProfile key={agent.id} name={agent.name} onDirtyChange={setProfileDirty} />}
+          {tab === 'profile' && <PersonalProfile key={agent.id} agentId={agent.id} name={agent.name} onNameSaved={onNameSaved} onDirtyChange={setProfileDirty} />}
           {tab === 'home' && (
             <HomeTab
               agentId={agent.id}

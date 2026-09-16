@@ -1496,6 +1496,16 @@ export async function setTeamRole(agentId: string, role: TeamRole): Promise<void
   if (!res.ok) throw new Error('Could not change this person’s role.');
 }
 
+export async function saveDisplayName(agentId: string, name: string): Promise<string> {
+  if (isDemo) return name;
+  const res = await workerFetch('/data/display-name', {
+    method: 'POST', body: JSON.stringify({ agentId, name }),
+  });
+  const body = await res.json() as { name?: string; error?: string };
+  if (!res.ok || !body.name) throw new Error(body.error ?? 'Your name could not be saved.');
+  return body.name;
+}
+
 export async function setExcluded(agentId: string, excluded: boolean): Promise<void> {
   if (isDemo) return;
   const res = await workerFetch('/data/coach/agent-flags', {

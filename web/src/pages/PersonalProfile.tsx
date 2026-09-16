@@ -5,11 +5,13 @@ import { deletePersonalProfile, prepareProfilePhoto, readPersonalProfile, savePe
 import './personalProfile.css';
 import InterestPin from '../components/InterestPin';
 import AchievementEmblem from '../components/AchievementEmblem';
+import NameEditor from '../components/NameEditor';
 
 const LABELS: Record<ProfileSection, string> = { about: 'About', interests: 'Interests', gallery: 'Photos', achievements: 'Accomplishments', goals: 'Goals' };
 const INTERESTS = ['Hiking', 'Coffee', 'Cooking', 'Travel', 'Dogs', 'Gardening', 'Live music', 'Jazz', 'Blues', 'Rock', 'Country', 'Hip-hop', 'R&B', 'Classical', 'Electronic', 'Pop', 'Indie', 'Folk', 'Metal', 'Architecture', 'Fitness', 'Photography', 'Reading', 'Family', 'Volunteering', 'Sports', 'Football', 'Seahawks', 'Art', 'The outdoors'];
 
-export default function PersonalProfile({ name, onDirtyChange }: { name: string; onDirtyChange: (dirty: boolean) => void }) {
+export default function PersonalProfile({ agentId, name, onNameSaved, onDirtyChange }: { agentId: string; name: string; onNameSaved: (name: string) => void; onDirtyChange: (dirty: boolean) => void }) {
+  const [nameDirty, setNameDirty] = useState(false);
   const [record, setRecord] = useState<ProfileRecord | null>(null);
   const [draft, setDraft] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
@@ -30,8 +32,8 @@ export default function PersonalProfile({ name, onDirtyChange }: { name: string;
   const editorRef = useRef<HTMLElement>(null);
   const dirty = !!record && !!draft && JSON.stringify(record.profile) !== JSON.stringify(draft);
   useEffect(() => { alive.current = true; void readPersonalProfile().then(r => { if (alive.current) { setRecord(r); setDraft(r.profile); } }).catch(e => { if (alive.current) setError(e.message); }); return () => { alive.current = false; }; }, []);
-  useEffect(() => { onDirtyChange(dirty || busy || uploading); return () => onDirtyChange(false); }, [dirty, busy, uploading, onDirtyChange]);
-  useEffect(() => { if (!dirty) return; const guard = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; }; window.addEventListener('beforeunload', guard); return () => window.removeEventListener('beforeunload', guard); }, [dirty]);
+  useEffect(() => { onDirtyChange(dirty || busy || uploading || nameDirty); return () => onDirtyChange(false); }, [dirty, busy, uploading, nameDirty, onDirtyChange]);
+  useEffect(() => { if (!dirty && !nameDirty) return; const guard = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; }; window.addEventListener('beforeunload', guard); return () => window.removeEventListener('beforeunload', guard); }, [dirty, nameDirty]);
   const update = <K extends keyof Profile>(key: K, value: Profile[K]) => { setDraft(p => p ? { ...p, [key]: value } : p); setSavedMessage(''); };
   const finishEditing = () => { if (record) setDraft(record.profile); setEditing(false); setDiscarding(false); setError(''); };
   const removeProfile = async () => {
@@ -77,6 +79,7 @@ export default function PersonalProfile({ name, onDirtyChange }: { name: string;
           {p.cover ? <img src={p.cover} alt="Profile cover" style={{objectPosition:`50% ${p.coverPosition}%`}} /> : <div className="pp-cover-art" aria-hidden><i /><i /><i /></div>}
         </div>
         <header className="pp-identity">
+          <NameEditor agentId={agentId} name={name} onSaved={onNameSaved} onDirtyChange={setNameDirty} />
           <div className="pp-name"><h2>{name}</h2>{p.headline&&<p className="pp-headline">{p.headline}</p>}<div className="pp-meta">{p.location && <span>{p.location}</span>}{p.careerStart && <span>In real estate since {p.careerStart} <small>· added by you</small></span>}</div></div>
 
         </header>

@@ -304,7 +304,7 @@ export default function App() {
   }
 
   if (isDemo && (route === '/learn' || route.startsWith('/learn/'))) {
-    return <AgentHq agent={{ id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} />;
+    return <AgentHq agent={agent ?? { id: 'demo-agent', org_id: 'demo', name: 'Jordan Rivera', team_id: 'demo' }} onNameSaved={name => setAgent({ id: 'demo-agent', org_id: 'demo', name, team_id: 'demo' })} />;
   }
   if (isDemo) return <OperationsProvider key='demo'>{shell({ id: 'demo', name: 'Sample Realty' })}</OperationsProvider>;
   if (recovery && exchanging) {
@@ -341,7 +341,7 @@ export default function App() {
     if (admin === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (admin) return <OperationsProvider key={session.user.id+':hq'}>{shell({ id: 'hq', name: 'TRU HQ' }, admin)}</OperationsProvider>;
     if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
-    if (agent) return <AgentHq agent={agent} />;
+    if (agent) return <AgentHq agent={agent} onNameSaved={name => setAgent({ ...agent, name })} />;
     return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
   }
   // Impersonated session → the shell's sidebar carries the "Exit — switch teams"

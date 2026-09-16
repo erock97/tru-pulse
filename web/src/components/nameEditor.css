@@ -1,0 +1,12 @@
+.name-editor { font: inherit; margin-top: .4rem; }
+.name-editor .name-edit-link { background: transparent; color: inherit; border: 0; padding: .25rem 0; text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; }
+.name-editor > span { display: block; font-size: .8rem; }
+.name-editor form { max-width: 28rem; padding: 1rem; border: 1px solid #a9926b; border-radius: .65rem; background: #f6f1e6; color: #263238; }
+.name-editor label { display: grid; gap: .4rem; font-size: .9rem; }
+.name-editor input { width: 100%; box-sizing: border-box; padding: .65rem; border: 1px solid #9a927f; border-radius: .3rem; background: #fffdf8; color: #263238; font: inherit; }
+.name-editor p { font-size: .8rem; line-height: 1.5; margin: .65rem 0; white-space: normal; }
+.name-editor [role=alert] { color: #9b3029; }
+.name-editor-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.name-editor-actions button { padding: .55rem .85rem; border: 1px solid #85704d; border-radius: .3rem; background: #e8d8b7; color: #263238; cursor: pointer; font: inherit; }
+.name-editor button:disabled { opacity: .65; cursor: wait; }
+.name-editor :focus-visible { outline: 2px solid #96703b; outline-offset: 3px; }
