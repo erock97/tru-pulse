@@ -1,4 +1,5 @@
 import {CONTACT_DECISION_HOLD,observedContactFlag} from '../../shared/contactEvidence.js';
+import {handlePipeline} from './pipelineRoutes.js';
 import {initializeAssignments,type TeamRow} from './sync.js';
 import {handleCoachingAssignments} from './coachingAssignments.js';
 import { handlePersonalProfile } from './personalProfile.js';
@@ -46,6 +47,8 @@ export async function handleDataRoutes(
 
   const db = await supabaseAsUser(env, readCookie(req));
   if (!db) return json({ error: 'not signed in' }, 401, cors);
+  const pipeline = await handlePipeline(req,env,db,url,cors,originOk);
+  if (pipeline) return pipeline;
   if (url.pathname === '/data/coaching-assignments') return handleCoachingAssignments(req, env, db, cors, originOk);
   if (url.pathname === '/data/personal-profile') return handlePersonalProfile(req, env, db, cors, originOk);
   if (url.pathname === '/data/display-name') return handleDisplayName(req, db, cors, originOk);

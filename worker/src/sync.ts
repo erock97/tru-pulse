@@ -200,6 +200,11 @@ export async function syncPeople(_env: Env, database: Db, team: TeamRow, fubKey:
       source: p.source ?? null,
       source_family: sourceFamily(p.source),
       stage: p.stage ?? null,
+      ...(_env.PIPELINE_IDENTITY_ENABLED === '1' ? {
+        stage_id: p.stageId ?? null,
+        assigned_user_id: p.assignedUserId ?? null,
+        assigned_pond_id: p.assignedPondId ?? null,
+      } : {}),
       assigned_to: p.assignedTo ?? null,
       pond: p.assignedPondId ? (ponds.get(Number(p.assignedPondId)) ?? 'Pond') : null,
       tags,
