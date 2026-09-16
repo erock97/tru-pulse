@@ -20,7 +20,7 @@ Section dividers have no additional planned minutes. Timing includes practice an
 
 ## Review materials
 
-`/workshops/training-review.html` links to all four portable HTML decks and agent PDF references. HTML decks embed their images and font, include navigation, answer reveals, saved local notes and a reading view. They work as standalone files. Native record practice links back to Rep, where the controls and saved-action checks run. The portable files do not submit live evidence or issue certification.
+`/workshops/training-review.html` links to all four portable HTML decks and agent PDF references. HTML decks embed their images and font, include navigation, answer reveals, saved local notes and a reading view. The hosted decks load a same-origin script to comply with the existing Content Security Policy. The portable output embeds that script too and works as a standalone file. Native record practice links back to Rep, where the controls and saved-action checks run. The portable files do not submit live evidence or issue certification.
 
 Agent references now contain teaching explanations, practice space and a separate answer-review section. Facilitator guides retain cues, timing and observation instructions. Live learners still receive redacted answers until the presenter reveals them; the downloadable reference deliberately contains the complete material for later study.
 
@@ -35,7 +35,7 @@ Run from the repository root:
 ```sh
 node scripts/build-training-quadrants.mjs
 node scripts/build-rep-guides.mjs
-node scripts/build-training-review.mjs
+node scripts/build-training-review.mjs --portable-dir=/path/to/review-package
 node scripts/build-training-review-index.mjs
 python scripts/build-rep-guide-pdfs.py
 ```
