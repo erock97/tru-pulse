@@ -2,7 +2,7 @@ import type { RawLiveState } from './liveSessions.js';
 
 /** Empty-roster sessions are administrator rehearsals. No agent identities are created. */
 export function rehearsalState(raw: RawLiveState, viewerId: string): RawLiveState {
-  if (!raw.canPresent || raw.session.day !== 2 || raw.session.roster.length) return raw;
+  if (!raw.canPresent || ![2, 3].includes(raw.session.day) || raw.session.roster.length) return raw;
   const s = raw.session, evidence = s.rehearsal_evidence ?? {};
   const participant = { agentId: s.id, userId: viewerId, orgId: '', teamId: '',
     name: 'Test learner', teamName: 'Solo rehearsal', coachId: viewerId,

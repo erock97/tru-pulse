@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v16' : definition.day === 3 ? '2026-09-15-day3-visual-v2' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v16' : definition.day === 3 ? '2026-09-15-day3-showing-v3' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -52,8 +52,8 @@ describe('versioned live curriculum', () => {
     expect(note).toContain('Do not invent a timeline');
   });
 
-  it('preserves Days 3–4 while Day 2 introduces and teaches before practice', () => {
-    for (const day of [3, 4]) {
+  it('preserves Day 4 while Day 2 introduces and teaches before practice', () => {
+    for (const day of [4]) {
       const definition = workshopCatalog[day];
       expect(definition.slides[0].activity?.id).toBe(`day${day}-opening-decision`);
       expect(definition.slides[0].activity?.kind).toBe('choice');
@@ -106,20 +106,35 @@ describe('versioned live curriculum', () => {
   });
 
   it('preserves full rotations and the existing instructional body behind the openings', () => {
-    expect(workshopCatalog[3].slides.find(slide => slide.sourceScreen === 15)?.time).toBe(16);
     expect(workshopCatalog[4].slides.find(slide => slide.sourceScreen === 12)?.time).toBe(8);
-    for (const [day, required] of [[3, [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19]], [4, [3, 4, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18]]] as const) {
+    for (const [day, required] of [[4, [3, 4, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18]]] as const) {
       for (const originalScreen of required) expect(workshopCatalog[day].slides.some(slide => slide.sourceScreen === originalScreen)).toBe(true);
     }
   });
 
-  it('asks for a changed showing plan only after the buyer has supplied an answer', () => {
-    const [opening, practice] = workshopCatalog[3].slides;
-    expect(opening.activity!.fields!.map(field => field.id)).toEqual(['next-question']);
-    expect(opening.body).not.toContain('data-save="plan-change"');
-    expect(practice.activity!.fields!.map(field => field.id)).toEqual(['buyer-answer', 'plan-change', 'retry']);
+  it('teaches Day 3 before practice and makes reasoning and an agreed plan observable', () => {
+    const day=workshopCatalog[3];
+    expect(day.duration).toBe(75);
+    expect(day.slides.slice(0,2).map(s=>s.id)).toEqual(['day3-welcome','day3-agenda']);
+    const pos=(id:string)=>day.slides.findIndex(s=>s.id===`day3-${id}`);
+    for(const [teach,practice] of [['prepare','comparison-discussion'],['question-bank','different-priorities'],['concern-framework','renting-discussion'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {
+      expect(pos(teach)).toBeGreaterThanOrEqual(0);
+      expect(pos(teach)).toBeLessThan(pos(practice));
+    }
+    expect(day.activities.filter(a=>a.kind==='choice').every(a=>a.fields?.some(f=>f.id==='reason'))).toBe(true);
+    const discussion=day.activities.find(a=>a.id==='day3-renting-discussion')!;
+    expect(discussion.kind).toBe('discussion');
+    expect(discussion.correctChoiceId).toBeUndefined();
+    expect(discussion.fields!.map(f=>f.id)).toEqual(['question','branches']);
+    const practice=day.slides.find(s=>s.id==='day3-full-showing-practice')!;
+    expect(practice.time).toBe(16);
+    expect(practice.activity?.useCases).toBe(true);
+    expect(practice.activity?.fields?.map(f=>f.id)).toEqual(['buyer-answer','plan-change','retry']);
     expect(practice.notes).toContain('after the conversation, not before the buyer has spoken');
-    expect(practice.notes).toContain('previous opening activity’s model');
+    expect(practice.notes).toContain('Do not label a peer or self-check as coach sign-off');
+    expect(day.slides.every(s=>s.notes.includes('Handoff:') && s.cue.length>30)).toBe(true);
+    expect(day.cases).toHaveLength(3);
+    expect(day.slides.at(-1)?.chapter).toBe('Wrap-up');
   });
 
   it('redacts unrevealed answers, models, and instructor notes from the live learner snapshot', () => {

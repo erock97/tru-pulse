@@ -23,6 +23,7 @@ beforeAll(async()=>{
  create table coach_teams(org_id uuid,user_id uuid,team_id uuid);`);
  await pg.exec(readFileSync(new URL('../../db/hq_rep_live.sql',import.meta.url),'utf8'));
  await pg.exec(readFileSync(new URL('../../supabase/migrations/20260914232619_rep_live_rehearsal.sql',import.meta.url),'utf8'));
+ await pg.exec(readFileSync(new URL('../../supabase/migrations/20260916020456_rep_day3_rehearsal.sql',import.meta.url),'utf8'));
  await pg.exec(`insert into auth.users(id,email) select x::uuid,x||'@example.test' from unnest(array['${admin}','${coachA}','${coachB}','${userA}','${userB}','${stranger}']) x;
  insert into admins values('${admin}');insert into orgs values('${orgA}'),('${orgB}');
  insert into teams values('${teamA}','${orgA}','A',true),('${teamB}','${orgB}','B',true);
@@ -31,8 +32,8 @@ beforeAll(async()=>{
 },30000);
 afterAll(async()=>{await pg?.close();});
 describe('durable live session transactions and access',()=>{
- it('persists solo learner submissions and presenter feedback without creating agent evidence',async()=>{
-  const sid=id(902),def=getWorkshopDefinition(2)!;
+ it.each([2,3])('persists Day %s solo learner submissions and presenter feedback without agent evidence',async day=>{
+  const sid=id(902+day),def=getWorkshopDefinition(day)!;
   await mutate(admin,'create',{definition:def,timezone:'UTC',participants:[],presenterIds:[]},sid);
   const database={rpc:async(fn:string,b:Record<string,unknown>)=>(await pg.query<{result:any}>(`select ${fn}(${Object.keys(b).map((k,i)=>`${k}=>$${i+1}`).join(',')}) result`,Object.values(b).map(x=>x!==null&&typeof x==='object'?JSON.stringify(x):x))).rows[0].result} as unknown as Db;
   const rehearse=(actor:string,action:string,body:unknown={})=>database.rpc('rep_live_rehearse',{p_actor:actor,p_session:sid,p_action:action,p_body:body});
@@ -50,30 +51,30 @@ describe('durable live session transactions and access',()=>{
   expect(liveStateForView(await load(),admin,'agent').definition.activities.find(a=>a.id===vote.id)!.model).toBeUndefined();
   await mutate(admin,'reveal',{activityId:vote.id},sid);
   expect(liveStateForView(await load(),admin,'agent').definition.activities.find(a=>a.id===vote.id)!.model).toBe(vote.model);
-  const written=def.activities.find(a=>a.id==='day2-channel-check')!;
+  const written=def.activities.find(a=>day===2 ? a.id==='day2-channel-check' : a.kind==='discussion')!;
   await mutate(admin,'slide',{slideId:written.slideId},sid);
-  const response={choiceId:written.choices![1].id,...Object.fromEntries(written.fields!.map(f=>[f.id,'I will introduce myself by text and keep the requested call time.']))};
+  const response={...(written.choices ? {choiceId:written.choices[1].id}:{}),...Object.fromEntries(written.fields!.map(f=>[f.id,'I will introduce myself by text and keep the requested call time.']))};
   await submitLiveAttempt(database,admin,sid,{id:id(904),activityId:written.id,response});
   expect(liveStateForView(await load(),admin,'presenter').attempts.at(-1)?.response).toEqual(response);
   const practice=def.activities.find(a=>a.kind==='roleplay')!;
   await mutate(admin,'slide',{slideId:practice.slideId},sid);
   await rehearse(admin,'group',{group:{id:id(905),activityId:practice.id,round:1,agentId:sid,buyerId:null,observerId:null}});
-  await rehearse(admin,'observe',{id:id(906),groupId:id(905),criteria:{starter:true},correction:'Follow the buyer’s answer.',retry:'Asked what more space would make possible.',speakingObserved:true,retryObserved:true});
+  await rehearse(admin,'observe',{id:id(906),groupId:id(905),criteria:{[practice.rubric![0].id]:true},correction:'Follow the buyer’s answer.',retry:'Asked what more space would make possible.',speakingObserved:true,retryObserved:true});
   expect(liveStateForView(await load(),admin,'agent').observations[0].correction).toBe('Follow the buyer’s answer.');
   expect(liveStateForView(await load(),admin,'shared').observations).toEqual([]);
   await mutate(admin,'end',{},sid);
   for(const table of ['rep_live_attempts','rep_live_observations','rep_live_followups']) expect((await pg.query(`select * from ${table} where session_id=$1`,[sid])).rows).toEqual([]);
   await expect(rehearse(admin,'join')).rejects.toThrow('ended');
  });
- it('runs Day 2 votes, writing, and observed practice through assigned learner identities',async()=>{
-  const sid=id(910),def=getWorkshopDefinition(2)!;
+ it.each([2,3])('runs Day %s submissions and feedback through assigned learner identities',async day=>{
+  const sid=id(910+day),def=getWorkshopDefinition(day)!;
   const database={rpc:async(fn:string,b:Record<string,unknown>)=>(await pg.query<{result:any}>(`select ${fn}(${Object.keys(b).map((k,i)=>`${k}=>$${i+1}`).join(',')}) result`,Object.values(b).map(x=>x!==null&&typeof x==='object'?JSON.stringify(x):x))).rows[0].result} as unknown as Db;
   await mutate(admin,'create',{definition:def,timezone:'UTC',participants:[{agentId:agentA,coachId:coachA},{agentId:agentB,coachId:coachB}],presenterIds:[]},sid);
   await expect(database.rpc('rep_live_rehearse',{p_actor:admin,p_session:sid,p_action:'join',p_body:{}})).rejects.toThrow('Rehearsal access required');
   for(const actor of [userA,userB]) await mutate(actor,'join',{},sid);
-  for(const activity of [def.activities.find(a=>a.kind==='choice')!,def.activities.find(a=>a.id==='day2-channel-check')!]){
+  for(const activity of [def.activities.find(a=>a.kind==='choice')!,def.activities.find(a=>day===2 ? a.id==='day2-channel-check' : a.kind==='discussion')!]){
    await mutate(admin,'slide',{slideId:activity.slideId},sid);
-   const response={choiceId:activity.choices![1].id,...Object.fromEntries(activity.fields!.map(f=>[f.id,'I will respect the request and explain my next step.']))};
+   const response={...(activity.choices ? {choiceId:activity.choices[1].id}:{}),...Object.fromEntries(activity.fields!.map(f=>[f.id,'I will respect the request and explain my next step.']))};
    await submitLiveAttempt(database,userA,sid,{id:crypto.randomUUID(),activityId:activity.id,response});
    const presenter=liveStateForView(await database.rpc('rep_live_read',{p_actor:admin,p_session:sid}),admin,'presenter');
    expect(presenter.attempts.at(-1)?.response).toEqual(response);
@@ -83,7 +84,7 @@ describe('durable live session transactions and access',()=>{
   const practice=def.activities.find(a=>a.kind==='roleplay')!;
   await mutate(admin,'slide',{slideId:practice.slideId},sid);
   await mutate(admin,'group',{group:{id:id(911),activityId:practice.id,round:1,agentId:agentA,buyerId:agentB,observerId:agentB}},sid);
-  await mutate(admin,'observe',{id:id(912),groupId:id(911),criteria:{starter:true},correction:'Follow their answer.',retry:'Asked about the purpose of more space.',speakingObserved:true,retryObserved:true},sid);
+  await mutate(admin,'observe',{id:id(920+day),groupId:id(911),criteria:{[practice.rubric![0].id]:true},correction:'Follow their answer.',retry:'Asked about the purpose of more space.',speakingObserved:true,retryObserved:true},sid);
   const learner=liveStateForView(await database.rpc('rep_live_read',{p_actor:userA,p_session:sid}),userA,'agent');
   expect(learner.observations[0]).toMatchObject({correction:'Follow their answer.',coachReviewed:true});
   expect(learner.myAgentId).toBe(agentA);

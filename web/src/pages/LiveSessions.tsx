@@ -263,7 +263,7 @@ export function Lobby({ initialDay = 1 }: { initialDay?: number }) {
             <button disabled={busy || !timezone} onClick={() => void create(true)}>
               Test Day {day} without agents
             </button>
-            <p>{day === 2 ? 'Test the presentation, submit as a test learner, and review saved responses and feedback.' : 'Open the real presenter and shared presentation screens on your own.'} No agents are added and no agent follow-up is created.</p>
+            <p>{day <= 3 ? 'Test the presentation, submit as a test learner, and review saved responses and feedback.' : 'Open the real presenter and shared presentation screens on your own.'} No agents are added and no agent follow-up is created.</p>
           </section>
           <fieldset>
             <legend>Select agents</legend>
@@ -512,7 +512,7 @@ function Session({ id, view, responseOnly = false, notesOnly = false }: { id: st
     ? Math.max(0, Math.ceil((Date.parse(state.timerEndsAt) - now) / 1000))
     : null;
   return (
-    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={(view !== "coach" && state.session.day <= 2) || view === "shared"}>
+    <Frame title={`Day ${state.session.day} · ${state.session.title}`} shared={(view !== "coach" && state.session.day <= 3) || view === "shared"}>
       <div className="live-session-bar">
         {view !== "shared" && <a href="#/rep/sessions">All sessions</a>}
         <span role="status">
@@ -532,12 +532,12 @@ function Session({ id, view, responseOnly = false, notesOnly = false }: { id: st
           {error}
         </p>
       )}
-      {state.rehearsal && state.session.day > 2 && view !== 'shared' && <section className="live-notice">
+      {state.rehearsal && state.session.day > 3 && view !== 'shared' && <section className="live-notice">
         <strong>Solo rehearsal · test evidence only</strong>
         <p>Submit as the test learner, then review and reveal from the presenter console. Responses and feedback are saved for this test; no agents receive assignments.</p>
         <div className="live-actions"><a href={link(id,'agent')} target="_blank" rel="noreferrer">Open test learner</a><a href={link(id,'presenter')} target="_blank" rel="noreferrer">Open presenter console</a><a href={link(id,'shared')} target="_blank" rel="noreferrer">Open presentation</a></div>
       </section>}
-      {notesOnly ? <PresenterSpeakingNotes state={state} /> : state.session.day <= 2 && view !== "coach" ? (
+      {notesOnly ? <PresenterSpeakingNotes state={state} /> : state.session.day <= 3 && view !== "coach" ? (
         <SimpleLiveStage state={state} refresh={() => refresh.current()} view={view} />
       ) : view === "presenter" ? (
         <Presenter state={state} refresh={() => refresh.current()} />
@@ -772,7 +772,7 @@ export function SimpleLiveStage({ state, refresh, view }: { state: LiveSessionSt
         {activity.kind === "roleplay" && <PartnerSetup state={state} activity={rawActivity} run={run} simple />}
       </aside>}
     </div>
-    {presenting && state.session.day === 2 && <p className="live-presenter-cue"><strong>Presenter cue:</strong> {state.definition.slides.find(s => s.id === slide.id)?.cue}</p>}
+    {presenting && (state.session.day === 2 || state.session.day === 3) && <p className="live-presenter-cue"><strong>Presenter cue:</strong> {state.definition.slides.find(s => s.id === slide.id)?.cue}</p>}
   </>;
 }
 
