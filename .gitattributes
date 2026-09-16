@@ -1,2 +1,4 @@
 # PDF cross-reference offsets require byte-for-byte preservation on Windows.
 *.pdf binary
+# SQL function replacement migrations compare exact newlines.
+*.sql text eol=lf

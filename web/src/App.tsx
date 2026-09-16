@@ -17,6 +17,7 @@ import AdminRevenue from './pages/AdminRevenue';
 import AdminContracts from './pages/AdminContracts';
 import AdminCalendar from './pages/AdminCalendar';
 import AdminFailureLogs from './pages/AdminFailureLogs';
+import { AdminBrain } from './pages/AdminBrain';
 import TeamAdmin from './pages/TeamAdmin';
 import PulseLab from './pages/PulseLab';
 import Lab from './pages/Lab';
@@ -196,7 +197,9 @@ export default function App() {
     // adminLeaders being non-null — which only happens when the Worker answered
     // /admin/leaders with 200. A team lead who types #/admin/agents falls
     // straight through to their roster, because for them this is undefined.
-    adminLeaders && route === '/admin/agents'
+    adminLeaders && route === '/admin/brain'
+      ? <AdminBrain onOpenPulse={() => go('/pulse')} onOpenCoach={() => go('/coach')} onOpenRep={() => go('/rep')} />
+    : adminLeaders && route === '/admin/agents'
       ? <AdminAutomations
           onOpenPulse={() => go('/pulse')}
           onOpenCoach={() => go('/coach')}

@@ -900,6 +900,12 @@ export default {
       const adminRows = await database.select('admins', `id=eq.${userId}&select=id`);
       if (!adminRows.length) return json({ error: 'forbidden' }, 403);
 
+      if (url.pathname === '/admin/brain' || url.pathname.startsWith('/admin/brain/')) {
+        const ownerSession = await readSession(env, readCookie(req));
+        const result = await handleBrainRoute(req, env, userId, Boolean(ownerSession?.returnSid));
+        return json(await result.json(), result.status);
+      }
+
       // TRU Agents. Mounted here so it inherits the admins check above and can
       // never be reached without it. Returns null for anything it does not own,
       // so every existing /admin route below is untouched.
@@ -1726,3 +1732,4 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
+import { handleBrainRoute } from './brainRoutes.js';

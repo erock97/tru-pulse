@@ -96,3 +96,6 @@ new_sqlite_classes = ["AssignmentLedger"]
 [[migrations]]
 tag = "v3-timeline-collector"
 new_sqlite_classes = ["TimelineCollector", "FubSyncQueue"]
+[[services]]
+binding = "TRUEBRAIN"
+service = "tru-brain"

@@ -1,9 +1,9 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { TruLogo } from './TruLogo';
 import { Avatar, Icon } from './hqUi';
 import { useForceHqDark } from '../hqHooks';
-import { hasAdminReturn, adminReturn, isDemo } from '../lib/api';
+import { hasAdminReturn, adminReturn, isDemo, workerFetch } from '../lib/api';
 import { CommandBar } from './commandBar';
 import { FocusWire } from './focusWire';
 import { useDeckFocus } from './deckFocus';
@@ -122,12 +122,20 @@ export function HqShell({
       // Agents is a sub-screen reached from Admin, not a tab of its own — the
       // Admin tab stays lit while you're on it.
       : route === 'admin/failure-logs' ? 'failure-logs'
+      : route === 'admin/brain' ? 'brain'
       : route === 'admin' || route === 'admin/agents' || (isAdmin && route === '') ? 'admin'
       : route === 'home' ? 'home'
         : 'pulse';
   // Platform owner impersonating a team → show a clear exit (adminReturn drops them
   // back to their HQ "Act as a team" picker, not the login).
   const impersonating = hasAdminReturn();
+  const [brainOwner,setBrainOwner]=useState(false);
+  useEffect(()=>{
+    let current=true;
+    if(isAdmin&&!impersonating) void workerFetch('/admin/brain/access').then(r=>{if(current)setBrainOwner(r.ok);}).catch(()=>{});
+    else setBrainOwner(false);
+    return()=>{current=false;};
+  },[isAdmin,impersonating]);
   useForceHqDark();
   // The room answers the cursor and lags the scroll. One delegated listener for
   // the whole shell; see lib/deckLight.
@@ -193,6 +201,7 @@ export function HqShell({
         ...(onOpenContracts ? [{ key: 'contracts', label: 'Contracts', icon: 'contract', onClick: onOpenContracts }] : []),
         ...(onOpenCalendar ? [{ key: 'calendar', label: 'Calendar', icon: 'calendar', onClick: onOpenCalendar }] : []),
         ...(onOpenFailureLogs ? [{ key: 'failure-logs', label: 'Failure Logs', icon: 'alert', onClick: onOpenFailureLogs }] : []),
+        ...(brainOwner&&!impersonating ? [{ key: 'brain', label: 'TrueBrain', icon: 'coach', onClick: () => { window.location.hash = '/admin/brain'; } }] : []),
       ]
     : [
         { key: 'today', label: 'Today', icon: 'calendar', onClick: () => { window.location.hash = '/today'; } },
