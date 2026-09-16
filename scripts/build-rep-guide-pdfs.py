@@ -43,6 +43,17 @@ def inline(node):
 
 def flow(node):
     if isinstance(node,NavigableString) or node.name == 'nav': return []
+    if 'real-mls-sheet' in node.get('class',[]):
+        tag = node.find('img')
+        asset = (DIRECTORY / tag['src'].removeprefix('/workshops/')).resolve()
+        if not asset.is_relative_to(DIRECTORY.resolve()) or not asset.exists():
+            raise ValueError('MLS example image is missing or outside the workshop directory')
+        image = Image(str(asset))
+        factor = min(528 / image.imageWidth, 220 / image.imageHeight)
+        image.drawWidth = image.imageWidth * factor
+        image.drawHeight = image.imageHeight * factor
+        caption = Paragraph(inline(node.find('figcaption')), styles['p'])
+        return [KeepTogether([image, Spacer(1,6), caption]), Spacer(1,8)]
     if 'lesson-phones' in node.get('class',[]):
         images = []
         for tag in node.find_all('img'):

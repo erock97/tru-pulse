@@ -6,7 +6,7 @@
       "id": "day3-welcome",
       "chapter": "Welcome",
       "title": "Prepare for a successful showing",
-      "lead": "Day 3 · 75 minutes including discussion and practice",
+      "lead": "Day 3 · 78 minutes including discussion and practice",
       "body": "<blockquote class=\"lesson-example\">Help the buyer understand what works, what does not, and what to do next.</blockquote>",
       "time": 1,
       "theme": "tru alms alms-cover training-depth",
@@ -104,7 +104,19 @@
       "body": "<div class=\"rows\"><div class=\"row\"><h3>For each home</h3><p>Include the MLS sheet and useful comparable sales. Add relevant neighborhood information with its source.</p></div><div class=\"row\"><h3>For the conversation</h3><p>Mark the property facts tied to the buyer’s needs and keep unresolved questions visible. Use the packet to support an explanation rather than read every field aloud.</p></div><div class=\"row\"><h3>Before you leave</h3><p>Recheck appointment confirmations, showing instructions and the meeting plan. Bring a physical packet as in the preparation example.</p></div></div>",
       "time": 2,
       "theme": "tru alms lesson training-depth lesson-photo photo-questions",
-      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Use a real MLS sheet to prepare for the showing. Connect it to the action you just practiced.",
+      "cue": "Next: Use a real MLS sheet to prepare for the showing. Connect it to the action you just practiced.",
+      "quadrant": 1
+    },
+    {
+      "id": "day3-real-mls-example",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Use a real MLS sheet to prepare for the showing",
+      "lead": "Historical example: 2075 SW Sailing Ct, McMinnville, Oregon.",
+      "body": "<figure class=\"real-mls-sheet\"><a href=\"https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf#page=94\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/examples/real-mls-sailing-ct.jpg\" alt=\"Original MLS report excerpt for 2075 SW Sailing Ct, marked Sold, with a report date of March 24, 2025. MLS number 23022380.\" /></a><figcaption>Original report excerpt; source markup retained. <a href=\"https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf#page=94\" target=\"_blank\" rel=\"noopener\">Open the full sheet in Yamhill County’s public document · PDF page 94 ↗</a></figcaption></figure><div class=\"mls-reading-points\"><div><h3>Check status and date first</h3><p>This sheet is marked Sold and dated March 24, 2025. Use it to study the format, not as a currently available home.</p></div><div><h3>Connect the facts to the search</h3><p>The sheet lists 2,446 square feet and 0.51 acres. Use the actual fields to compare properties; size alone does not show whether the layout fits the buyer.</p></div><div><h3>Identify what still needs an answer</h3><p>A year built is not a roof-replacement date. Record the buyer’s unanswered property questions and seek supporting information before the tour.</p></div></div>",
+      "time": 3,
+      "theme": "tru alms lesson training-depth real-example-slide",
+      "notes": "Show the original MLS excerpt, then open the linked full sheet if useful. It is a real historical report, not a fictional listing or an available tour option. The red annotation is present in the county source. Read status and report date first; distinguish reported property facts from unanswered questions. Source: Yamhill County B.O. 25-413, PDF page 94, Exhibit A-4 page 13; report dated March 24, 2025. Accessed September 16, 2026.\nHandoff: Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
       "cue": "Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
       "quadrant": 1
     },
@@ -573,8 +585,8 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<p class=\"lesson-explanation\">Use the question bank and buyer cards to practice again. In a live session, submit your responses through your learner screen. The printed worksheet does not submit answers. Keep practice evidence separate from observed work with an actual client.</p>",
-  "version": "2026-09-16-day3-quadrants-v2",
-  "duration": 75,
+  "version": "2026-09-16-day3-quadrants-v3",
+  "duration": 78,
   "quadrants": [
     {
       "number": 1,

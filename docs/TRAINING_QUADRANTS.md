@@ -13,7 +13,7 @@ September 16, 2026. The curriculum JSON files are shared by Rep and the live-ses
 | --- | ---: | ---: |
 | Follow Up Boss | 40 | 61 |
 | First conversation | 35 | 90 |
-| Showing and buyer decision | 32 | 75 |
+| Showing and buyer decision | 33 | 78 |
 | Lender introduction | 28 | 71 |
 
 Section dividers have no additional planned minutes. Timing includes practice and discussion.
@@ -57,3 +57,5 @@ Release requires the normal worker-first, web-second process because the worker 
 Every section must announce the topic change and show the same discuss → learn → practice flow (Day One: demonstrate → practice → review). Exercises must serve their section; relocate, rewrite or remove a mismatched prompt rather than preserving it to fill a slide. Plain English remains required. Preserve the TRU palette and original imagery, use content-appropriate visual variety, and inspect animation and transitions in the browser. A slide must read as part of the presentation, not float on an application backdrop. Keep navigation aligned and practice-card tools out of the slide canvas until requested.
 
 The first revision after review replaces Day Three's home-selection challenge with an applied tour-preparation exercise and turns slide 14's question bank into a sequenced conversation example. The review renderer now preserves photo themes, uses a full-width canvas and distinctive section dividers, and puts practice writing in an optional disclosure. Optimized JPEG exports preserve the original source imagery; generate them with `python scripts/build-review-artwork.py`. Do not embed large image values in CSS custom properties: browser size limits can silently discard them. The same section and conversation layouts are included in Rep/live styles.
+
+Day Three v3 adds an original historical MLS report excerpt after the buyer packet lesson. Source: https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf, PDF page 94 (Exhibit A-4 page 13), report dated March 24, 2025; accessed September 16, 2026. The crop preserves original facts and source annotations and omits marketing remarks. It is labeled Sold and historical; no listing data was invented. The full source is linked in the slide and agent reference.

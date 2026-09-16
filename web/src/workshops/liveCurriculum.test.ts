@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(`2026-09-16-day${definition.day}-quadrants-v2`);
+      expect(definition.version).toBe(`2026-09-16-day${definition.day}-quadrants-v${definition.day===3?3:2}`);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -90,7 +90,7 @@ describe('versioned live curriculum', () => {
 
   it('teaches Day 3 before practice and makes reasoning and an agreed plan observable', () => {
     const day=workshopCatalog[3];
-    expect(day.duration).toBe(75);
+    expect(day.duration).toBe(78);
     expect(day.slides.slice(0,2).map(s=>s.id)).toEqual(['day3-welcome','day3-agenda']);
     const pos=(id:string)=>day.slides.findIndex(s=>s.id===`day3-${id}`);
     for(const [teach,practice] of [['buyer-concerns','concern-framework'],['prepare','comparison-discussion'],['question-bank','different-priorities'],['problem-solving-discussion','concern-framework'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {

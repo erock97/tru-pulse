@@ -211,3 +211,4 @@
 .slide.training-depth.quadrant-cover .meta{color:#4f513e}
 .slide.training-depth.quadrant-cover h1{max-width:60%}
 @media(max-width:700px){.slide.training-depth.quadrant-cover h1{max-width:100%}}
+.real-mls-sheet{margin:0 0 16px}.real-mls-sheet img{display:block;width:100%;max-width:1180px;max-height:280px;object-fit:contain;object-position:left center;background:#fff;border:1px solid #c8cbc5}.real-mls-sheet figcaption{font-size:12px;line-height:1.5;margin-top:8px}.mls-reading-points{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}.mls-reading-points>div{border-top:2px solid #b99a6d;padding-top:16px}.mls-reading-points h3{font-size:21px!important;margin-bottom:10px}.mls-reading-points p{font-size:18px;line-height:1.5}@media(max-width:700px){.mls-reading-points{grid-template-columns:1fr}}
