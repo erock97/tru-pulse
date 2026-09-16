@@ -164,3 +164,11 @@
 .slide.day3-polish .scorecard{background:#e8e5dc;border:0;color:#171d22}
 .slide.day3-polish .field{margin-top:20px}
 .slide.day3-polish .actions{display:flex;gap:12px;margin-top:18px}
+
+/* Day 3 keeps every text block clear of the photo panel. */
+.slide.day3-polish.lesson-photo>*,.slide.day3-polish.lesson-photo h2,.slide.day3-polish.lesson-photo .lead{max-width:58%}
+.slide.day3-polish.lesson-question .content:empty{display:none}
+.slide.day3-polish .buyer-concern-list{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;list-style:none;padding:0;margin:12px 0;font-size:23px;line-height:1.4}
+.slide.day3-polish .buyer-concern-list li{border-top:1px solid #c9c9be;padding:16px 0}
+.slide.day3-polish .buyer-discussion-prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;list-style:none;padding:0;margin:12px 0;font-size:22px;line-height:1.4}
+.slide.day3-polish .buyer-discussion-prompts li{border-top:1px solid #c9c9be;padding:16px 0}

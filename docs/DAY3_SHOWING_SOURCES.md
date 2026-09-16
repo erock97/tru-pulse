@@ -1,6 +1,6 @@
 # Day 3: conduct a first showing and leave with a plan
 
-Edition: `2026-09-15-day3-showing-v3`. 20 slides, 75 minutes.
+Edition: `2026-09-15-day3-showing-v4`. 20 slides, 75 minutes.
 
 Eric's current instruction expands the previously visual-only Day 3 work into a content rebuild. Preserve the approved website palette, 16:9 canvas, varied brand photography, private notes, and simple current-slide response flow. Day 2 is unchanged.
 
@@ -17,8 +17,8 @@ Read `TRU-SALES-TEACHING.md` and the relevant original entries in `TRU-Interview
 | Prepare, comparison discussion | R012, R016, R018, R021; INT-015, 037–039. Explain the purpose and limitations of comparisons; respect the buyer's criteria and decision. |
 | Drop the rope, during the visit | Repository doctrine plus existing showing conduct. Make honest reactions welcome, give space, remain useful. |
 | Question bank, different priorities, feedback demonstration | R002, R005; INT-005–006. Learn specific needs, follow answers, and distinguish a hypothetical better home from the actual rejected home. |
-| Concern framework, renting discussion | R006, R024; INT-007, 045–050. Acknowledge, ask to understand, then recommend from the answer. Waiting may be appropriate. |
-| Financing and timing, plan demonstration | R001–005, R020, R024; INT-003–005, 035–036, 050. Preparation serves the buyer's needs; a date or rating alone proves no purchase commitment. |
+| Buyer concerns, concern framework, problem-solving discussion | R006, R024; INT-007, 045–050. Acknowledge, ask to understand, then recommend from the answer. Waiting may be appropriate. |
+| Plan demonstration | R001–005, R020, R024; INT-003–005, 035–036, 050. Preparation serves the buyer's needs; a date or rating alone proves no purchase commitment. |
 | Pending answer | R025; INT-051. Keep the buyer informed and use team resources when an answer is urgent; never guarantee a third-party response. |
 | Plan check, record, practice | R020–025; INT-035–039. Useful next contact, agreed actions, factual notes, and tasks supporting follow-through. |
 
@@ -39,3 +39,7 @@ Presenter group selections reveal teaching discussion; they do not impersonate a
 `python scripts/build-rep-guide-pdfs.py 3`
 
 New live sessions are required to use this curriculum snapshot. Deploy worker before web.
+
+## September 15 review corrections
+
+Eric requested complete scenario descriptions, consistent question layouts, and a clear text gutter beside photographs. Common buyer concerns now appear together before the problem-solving process. Renting, a six-month timeline, and other constraints may be valid reasons; the objective is a useful preparation plan, not persuading the buyer to purchase sooner. The lender example explores options against the buyer’s lease timing without promising an outcome.

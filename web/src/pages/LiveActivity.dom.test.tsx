@@ -48,7 +48,7 @@ describe('live short-answer continuation',()=>{
   expect(container.textContent).toContain(definition.cases![0].quote);
   expect(container.textContent?.includes(definition.cases![0].goal)).toBe(viewer==='buyer');
  });
- it.each(['day2-objection-practice','day2-channel-check','day3-comparison-discussion','day3-renting-discussion','day3-write-the-follow-up-record'])('submits from the presentation response panel: %s',async slideId=>{
+ it.each(['day2-objection-practice','day2-channel-check','day3-comparison-discussion','day3-problem-solving-discussion','day3-write-the-follow-up-record'])('submits from the presentation response panel: %s',async slideId=>{
   const definition=getWorkshopDefinition(slideId.startsWith('day3-') ? 3 : 2)!;
   const current=definition.slides.find(s=>s.id===slideId)!;
   const activity=current.activity!;
