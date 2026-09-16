@@ -8,6 +8,7 @@ import { metricCandidates } from '../../../shared/pipelineInsightCandidates';
 import type { PipelineInsightResult } from '../../../shared/pipelineInsights';
 import './pipeline.css';
 import { PipelineValue } from './PipelineValue';
+import { reconcilePipeline } from '../../../shared/pipelineReconciliation';
 
 const percent=(value:number|null)=>value===null?'—':value.toFixed(1)+'%';
 const categoryLabel={active:'Active pipeline',under_contract:'Under contract',closed:'Closed',nurture:'Nurture',rejected:'Rejected',unmapped:'Unmapped stages'};
@@ -49,7 +50,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
     orgId,teamId:teamId||null,...range.value,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,sources:source?[source]:[],
   }:null,[orgId,teamId,source,range]);
   useEffect(()=>{
-    const version=++requestVersion.current;
+    const version=++requestVersion.current,controller=new AbortController();
     ++insightVersion.current;setInsights(null);setAiBusy(false);setAiError('');setProof(null);setError('');setBusy(true);
     if(!filters){setBusy(false);return;}
     const load=async()=>{
@@ -60,7 +61,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           const params=new URLSearchParams({orgId:filters.orgId,through:filters.through,timezone:filters.timezone});
           if(filters.from)params.set('from',filters.from);if(filters.teamId)params.set('teamId',filters.teamId);
           filters.sources.forEach(s=>params.append('source',s));
-          data=await result<PipelineReport>(await workerFetch('/data/pipeline?'+params));
+          data=await result<PipelineReport>(await workerFetch('/data/pipeline?'+params,{signal:controller.signal}));
         }
         if(version!==requestVersion.current)return;
         setReport(data);setTeams(old=>!filters.teamId?data.teams:old.length?old:data.teams);
@@ -70,11 +71,12 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
       finally{if(version===requestVersion.current)setBusy(false);}
     };
     void load();
-    return()=>{requestVersion.current++;insightVersion.current++;};
+    return()=>{controller.abort();requestVersion.current++;insightVersion.current++;};
   },[filters]);
   useEffect(()=>{setAgentKey('');},[orgId,teamId]);
   const agent=report?.agents.find(a=>a.key===agentKey),selected=report?.leads.filter(l=>!agent||l.ownerKey===agent.key)||[];
   const counts=pipelineCounts(selected);
+  const reconciliation=useMemo(()=>report?reconcilePipeline(report):null,[report]);
   const owners=(report?.agents || []).filter(a=>a.name.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):
     (b[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1)-(a[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1));
   const showLeads=(title:string,keys:string[],progressKey?:string)=>{setProof({title,keys,progressKey});setTimeout(()=>proofRef.current?.focus(),0);};
@@ -109,7 +111,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
   const countButton=(label:string,value:number,keys:string[])=><button className="pipeline-number" aria-label={label+': '+value+' leads'} onClick={()=>showLeads(label,keys)}>{value.toLocaleString()}</button>;
   return <section className="pipeline-panel" aria-label="Pipeline report">
     <header className="pipeline-intro"><div><span className="pipeline-eyebrow">The current picture</span><h2>Every lead has a place.</h2><p>See where your leads sit, who owns them, and where to focus your next coaching conversation.</p></div>
-      <button className="pipeline-button" disabled={busy} onClick={()=>setRefresh(v=>v+1)}>Refresh report</button></header>
+      <button className="pipeline-button" disabled={busy} onClick={()=>setRefresh(v=>v+1)}>{busy?'Updating report…':'Refresh report'}</button></header>
     {isDemo&&<p className="pipeline-notice">Demonstration · fictitious names and sample leads, using the reference report’s counts. AI readouts here are illustrative.</p>}
     <div className="pipeline-filters">
       <label>Leads received<select value={custom?'custom':String(selectedPeriod)} onChange={e=>{setCustom(e.target.value==='custom');if(e.target.value!=='custom'){const p=WINDOWS.find(w=>String(w.days)===e.target.value);setSelectedPeriod(p?.days??null);}}}>
@@ -120,7 +122,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
     </div>
     <p className="pipeline-caption">Received-date filter · current owner · {filters?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}. Stage progression retains completed steps. Current conversions = currently under contract + closed, each lead once.</p>
     {(error||range.error)&&<div role="alert" className="pipeline-notice">{error||range.error} <button onClick={()=>setRefresh(v=>v+1)}>Retry</button></div>}
-    {busy&&<p role="status">Loading pipeline…</p>}
+    {busy&&<div className="pipeline-loading" role="status" aria-live="polite"><span className="pipeline-spinner" aria-hidden="true"/><div><strong>Updating your pipeline</strong><p>Your filters have been received. Loading leads and their stage history…</p></div></div>}
     {!busy&&!error&&!range.error&&report&&<>
       <div className="pipeline-summary" aria-label="Team pipeline summary">
         {[{label:'Team leads',value:report.totals.total,keys:report.leads.map(l=>l.key),detail:'In the selected received-date period'},
@@ -129,6 +131,12 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           {label:'Rejected',value:report.totals.rejected,keys:report.leads.filter(l=>l.category==='rejected').map(l=>l.key),detail:percent(report.totals.rejectedPct)+' of team leads'}].map(c=><div key={c.label}><span>{c.label}</span>{countButton(c.label,c.value,c.keys)}<small>{c.detail}</small></div>)}
       </div>
       <div className="pipeline-health">
+        <details><summary>How these counts reconcile</summary>
+          <p>{reconciliation?.ok?'All report counts reconcile to their matching leads.':'Report reconciliation needs review. Refresh before relying on these counts.'}</p>
+          <p>{reconciliation?.leadCount.toLocaleString()} unique leads checked across ownership, current stages and retained progression. Open any count to inspect its matching records and FUB links.</p>
+          <p>This checks the report’s arithmetic and drilldowns. It does not prove that every upstream FUB update or historical event is available. Review Coverage and definitions for those gaps.</p>
+          <p>Report reference: <code>{report.snapshotId}</code></p>
+        </details>
         <span>Latest observation: {report.freshness.newestSync?new Date(report.freshness.newestSync).toLocaleString():'not available'}</span>
         <details><summary>Coverage and definitions</summary>
           <p>{report.coverage.undated} leads without a received date are excluded. {report.coverage.unknownStages} leads have an unmapped stage. {report.coverage.unresolvedOwners} lead owners need a refreshed FUB identity.</p>

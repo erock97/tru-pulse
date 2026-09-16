@@ -99,22 +99,34 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
  * a later Nurture status, and the older offer-only compatibility projection. */
 async function readProgressEvents(env:Env,orgId:string,teamIds:string[],leads:PipelineLead[]):Promise<ProgressEvent[]> {
   const database=serviceDb(env),events:ProgressEvent[]=[];
+  const batches:Array<{teamId:string;selectedIds:number[]}>=[];
   for(const teamId of teamIds){
    const personIds=[...new Set(leads.filter(l=>l.team_id===teamId&&Number.isSafeInteger(l.fub_person_id)).map(l=>l.fub_person_id))];
    for(let batch=0;batch<personIds.length;batch+=200){
-    const selectedIds=personIds.slice(batch,batch+200);
+    batches.push({teamId,selectedIds:personIds.slice(batch,batch+200)});
+   }
+  }
+  // Bound database pressure while avoiding a serial round trip per 200 leads.
+  let next=0;
+  const ordered:ProgressEvent[][]=[];
+  await Promise.all(Array.from({length:Math.min(4,batches.length)},async()=>{
+   while(next<batches.length){
+    const index=next++,{teamId,selectedIds}=batches[index];
+    ordered[index]=[];
     for(let offset=0;;offset+=1000){
     if(events.length>=200000)throw new PipelineError('Stage history is too large. Choose a shorter received-date period.',422);
     const page=await database.select('history_stage_events',
       'select=org_id,team_id,person_id,from_stage,to_stage,occurred_at,upstream_id,upstream_kind&org_id=eq.'+orgId+
       '&team_id=eq.'+teamId+'&person_id=in.('+selectedIds.join(',')+')&order=person_id.asc,upstream_kind.asc,upstream_id.asc&limit=1000&offset='+offset);
     if(page.some(e=>e.org_id!==orgId||e.team_id!==teamId||!selectedIds.includes(e.person_id)))throw new PipelineError('Stage history scope mismatch.',502);
-    events.push(...page.map(({org_id:_org,...event})=>event as ProgressEvent));
+    if(events.length+page.length>200000)throw new PipelineError('Stage history is too large. Choose a shorter received-date period.',422);
+    const rows=page.map(({org_id:_org,...event})=>event as ProgressEvent);
+    events.push(...rows);ordered[index].push(...rows);
     if(page.length<1000)break;
     }
    }
-  }
-  return events;
+  }));
+  return ordered.flat();
 }
 export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,cors:Record<string,string>,originOk:boolean):Promise<Response|null> {
   if(!url.pathname.startsWith('/data/pipeline'))return null;

@@ -71,6 +71,20 @@ it('rejects invalid custom ranges and uses exclusive next-day boundaries',()=>{
  expect(()=>pipelineDateRange('mtd',true,'2026-09-06','2026-09-05',now)).toThrow();
  expect(()=>pipelineDateRange('mtd',true,'2026-09-01','2026-09-20',now)).toThrow();
 });
+it('acknowledges pending filter changes, cancels obsolete reads and hides old counts',async()=>{
+ await render();let finish!:(response:Response)=>void;
+ mocks.fetch.mockReturnValueOnce(new Promise<Response>(r=>{finish=r;}));
+ const select=host.querySelector<HTMLSelectElement>('select')!;
+ await act(async()=>{select.value='90';select.dispatchEvent(new Event('change',{bubbles:true}));});
+ expect(host.querySelector('[role=status]')?.textContent).toContain('Your filters have been received');
+ expect(host.querySelector('[aria-label="Team pipeline summary"]')).toBeNull();
+ const pending=mocks.fetch.mock.calls.at(-1)![1].signal;
+ await act(async()=>{select.value='mtd';select.dispatchEvent(new Event('change',{bubbles:true}));});
+ expect(pending.aborted).toBe(true);
+ await act(async()=>finish(Response.json({...report(),totals:{...report().totals,total:99999}})));
+ expect(host.textContent).not.toContain('99,999');
+ expect(host.querySelector('[role=status]')).toBeNull();
+});
 it('keeps custom midnight boundaries across daylight-saving transitions',()=>{
  for(const day of ['2026-03-08','2026-11-01']){
   const range=pipelineDateRange('mtd',true,day,day,new Date(2026,11,1));
