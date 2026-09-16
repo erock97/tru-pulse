@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v16' : definition.day === 3 ? '2026-09-15-day3-showing-v3' : WORKSHOP_VERSION);
+      expect(definition.version).toBe(definition.day === 1 ? '2026-09-14-preferred-foundations-v7' : definition.day === 2 ? '2026-09-15-lead-live-v16' : definition.day === 3 ? '2026-09-15-day3-showing-v4' : WORKSHOP_VERSION);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -117,12 +117,12 @@ describe('versioned live curriculum', () => {
     expect(day.duration).toBe(75);
     expect(day.slides.slice(0,2).map(s=>s.id)).toEqual(['day3-welcome','day3-agenda']);
     const pos=(id:string)=>day.slides.findIndex(s=>s.id===`day3-${id}`);
-    for(const [teach,practice] of [['prepare','comparison-discussion'],['question-bank','different-priorities'],['concern-framework','renting-discussion'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {
+    for(const [teach,practice] of [['buyer-concerns','concern-framework'],['prepare','comparison-discussion'],['question-bank','different-priorities'],['concern-framework','problem-solving-discussion'],['plan-demo','full-showing-practice'],['record-the-plan','write-the-follow-up-record']]) {
       expect(pos(teach)).toBeGreaterThanOrEqual(0);
       expect(pos(teach)).toBeLessThan(pos(practice));
     }
     expect(day.activities.filter(a=>a.kind==='choice').every(a=>a.fields?.some(f=>f.id==='reason'))).toBe(true);
-    const discussion=day.activities.find(a=>a.id==='day3-renting-discussion')!;
+    const discussion=day.activities.find(a=>a.id==='day3-problem-solving-discussion')!;
     expect(discussion.kind).toBe('discussion');
     expect(discussion.correctChoiceId).toBeUndefined();
     expect(discussion.fields!.map(f=>f.id)).toEqual(['question','branches']);

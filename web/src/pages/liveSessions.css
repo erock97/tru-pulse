@@ -433,5 +433,13 @@
 .photo-arrival{--photo-focus:35% center}.photo-follow-up{--photo-focus:46% center}.photo-practice{--photo-focus:58% center}.photo-questions{--photo-focus:65% center}
 
 .photo-property{--lesson-photo:url('/workshops/tru-website-poster.jpg')}
-.live-slide-sheet.day3-polish.lesson-photo .live-alms-activity{width:65%;box-sizing:border-box;background:transparent;padding:12px 32px 24px;margin:0;border:0}
+.live-slide-sheet.day3-polish.lesson-photo .live-alms-activity{width:60%;box-sizing:border-box;background:transparent;padding:12px 32px 24px;margin:0;border:0}
 .live-slide-sheet.day3-polish .live-choice-options li{line-height:1.45}
+
+/* Match question, choice and explanation edges in every live view. */
+.live-slide-sheet.day3-polish.lesson-question .live-alms-activity{margin:0;padding:0 32px 24px;border:0;background:transparent}
+.live-slide-sheet.day3-polish.lesson-question .live-choice-options{counter-reset:answer;list-style:none;padding:0;margin:0 0 18px;gap:10px;font-size:21px}
+.live-slide-sheet.day3-polish.lesson-question .live-choice-options li{counter-increment:answer;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:12px 16px;border:1px solid #c9c9be;border-radius:6px;background:#e8e5dc;align-items:start}
+.live-slide-sheet.day3-polish.lesson-question .live-choice-options li::before{content:counter(answer,upper-alpha) ".";font-weight:700;line-height:1.45}
+.live-slide-sheet.day3-polish.lesson-question .live-discussion-choice,.live-slide-sheet.day3-polish.lesson-question .live-discussion-option{display:block;min-width:0;padding:0;margin:0;border:0;line-height:1.45}
+.live-slide-sheet.day3-polish.lesson-question .live-choice-options li.discussion-selected,.live-slide-sheet.day3-polish.lesson-question .live-discussion-choice[aria-pressed="true"]{background:#c0d2fb}
