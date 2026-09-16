@@ -34,7 +34,7 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function say(s){$('#announcement').textContent=s}
 function stopTimer(){clearInterval(timerId);timerId=null;$('#timer-toggle').textContent='Start timer'}
 function render(focus=false){stopTimer();remaining=Number($('#timer-duration').value);drawClock();const s=SLIDES[index];
- $('#stage').innerHTML=`<section class="slide ${s.theme}" aria-labelledby="slide-title"><div class="meta"><span>${esc(s.chapter)} / Day ${data.day}</span><span>${s.time} min · ${String(index+1).padStart(2,'0')}</span></div><h1 id="slide-title">${s.title}</h1><p class="lead">${s.lead}</p><div class="content">${s.native?'<div id="native-slot"></div>':s.body}</div></section>`;
+ $('#stage').innerHTML=`<section class="slide ${s.theme}" aria-labelledby="slide-title"><div class="meta"><span>${esc(s.chapter)} / Day ${data.day}</span><span>${s.time===0?'New section':s.time+' min'} · ${String(index+1).padStart(2,'0')}</span></div><h1 id="slide-title">${s.title}</h1><p class="lead">${s.lead}</p><div class="content">${s.native?'<div id="native-slot"></div>':s.body}</div></section>`;
  if(s.theme==='hero')$('.slide').style.backgroundImage=`linear-gradient(90deg,rgba(23,29,34,.97) 0%,rgba(23,29,34,.80) 44%,rgba(23,29,34,.36) 100%),url("${HERO}")`;
  $('#cue').textContent=s.cue;$('#count').textContent=`${index+1} / ${SLIDES.length}`;$('#progress').style.width=`${(index+1)/SLIDES.length*100}%`;
  $('[data-action="prev"]').disabled=index===0;$('[data-action="next"]').disabled=!!s.native&&s.native==='practice'&&!passed.has(index)&&!hooks.preview;
@@ -48,7 +48,7 @@ function render(focus=false){stopTimer();remaining=Number($('#timer-duration').v
  if(!s.native&&s.activity?.fields?.length){const hint=document.createElement('p');hint.className='response-guidance';hint.textContent='Write your own thinking. Short answers are not graded and have no required keywords. You can continue without answering. In this preview or self-paced lesson, notes stay in your browser; use your assigned live session to submit responses to your presenter.';$('.content').prepend(hint);}
  root.querySelectorAll('.screen-figure img:not(.details-focus img)').forEach(img=>{img.tabIndex=0;img.setAttribute('role','button');img.setAttribute('aria-label','Enlarge '+img.alt);});
  $('.chapters').innerHTML=chapters.map(c=>`<button data-go="${SLIDES.findIndex(s=>s.chapter===c)}" ${c===s.chapter?'aria-current="step"':''}>${c}</button>`).join('');
- $('#agenda-list').innerHTML=SLIDES.map((s,i)=>`<button data-go="${i}" aria-current="${i===index}"><span>${String(i+1).padStart(2,'0')}</span><span>${s.title}</span><small>${s.time} min</small></button>`).join('');
+ $('#agenda-list').innerHTML=SLIDES.map((s,i)=>`<button data-go="${i}" aria-current="${i===index}"><span>${String(i+1).padStart(2,'0')}</span><span>${s.title}</span><small>${s.time===0?'Section':s.time+' min'}</small></button>`).join('');
  root.querySelectorAll('[data-save]').forEach(el=>{if(el.type==='checkbox')el.checked=saved[el.dataset.save]===true;else el.value=typeof saved[el.dataset.save]==='string'?saved[el.dataset.save]:''});
  const quiz=$('[data-quiz]');if(quiz){const savedChoice=saved['quiz-'+quiz.dataset.quiz];const b=typeof savedChoice==='string'?[...quiz.querySelectorAll('button')].find(b=>b.dataset.optionId===savedChoice):Number.isInteger(savedChoice)?quiz.querySelectorAll('button')[savedChoice]:null;if(b)applyAnswer(b,false)}
  if($('#scenario'))renderCase();if($('#objection-case'))renderObjection();score();storageStatus();
