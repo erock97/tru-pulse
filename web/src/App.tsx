@@ -8,7 +8,7 @@ import { myOrg, isDemo, adminLeaders, claimAgent, myAgent, type AdminLeader, typ
 import { userIdOf, identityChanged } from './lib/authIdentity';
 import { isCoachRoute, parseCoachAgentId, parseCoachView, coachRoute, coachProfileRoute } from './lib/coachRoute';
 import Login from './pages/Login';
-import Onboarding from './pages/Onboarding';
+import AccountConnection from './pages/AccountConnection';
 import Home from './pages/Home';
 import AdminTeams from './pages/AdminTeams';
 import AdminAutomations from './pages/AdminAutomations';
@@ -159,7 +159,7 @@ export default function App() {
   }, [session]);
 
   // Signed in but org-less → platform owner? (The worker verifies against the
-  // admins table server-side; everyone else gets null → onboarding as before.)
+  // admins table server-side; an unmatched account gets connection help.)
   const [admin, setAdmin] = useState<AdminLeader[] | null | undefined>(undefined);
   useEffect(() => {
     if (isDemo || !session || org !== null) return;
@@ -173,10 +173,14 @@ export default function App() {
   useEffect(() => {
     if (isDemo || !session || org !== null || admin !== null) return;
     setAgent(undefined);
+    let cancelled = false;
     (async () => {
-      await claimAgent();
-      setAgent(await myAgent());
+      // A failed claim must not prevent an already-linked account from resolving.
+      await claimAgent().catch(() => null);
+      const resolved = await myAgent().catch(() => null);
+      if (!cancelled) setAgent(resolved);
     })();
+    return () => { cancelled = true; };
   }, [session, org, admin]);
 
   // The HQ shell, by hash route. Landing on the roster rather than a page of
@@ -342,7 +346,8 @@ export default function App() {
     if (admin) return <OperationsProvider key={session.user.id+':hq'}>{shell({ id: 'hq', name: 'TRU HQ' }, admin)}</OperationsProvider>;
     if (agent === undefined) return <div className="center-wrap"><div className="spinner" /></div>;
     if (agent) return <AgentHq agent={agent} onNameSaved={name => setAgent({ ...agent, name })} />;
-    return <Onboarding onDone={() => myOrg().then((o) => setOrg(o))} />;
+    // Missing membership is not permission or intent to create a brokerage.
+    return <AccountConnection email={session.user.email} />;
   }
   // Impersonated session → the shell's sidebar carries the "Exit — switch teams"
   // control (adminReturn drops the owner back to their HQ act-as picker).
