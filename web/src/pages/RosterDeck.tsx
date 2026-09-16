@@ -1,3 +1,4 @@
+import { PipelinePanel } from '../components/PipelinePanel';
 import { CONTACT_DECISION_HOLD } from '../../../shared/contactEvidence';
 import './pauseRecommendation.css';
 import { ConversionComparison } from '../components/ConversionComparison';
@@ -88,7 +89,7 @@ function Deck({
     const refresh=async()=>{try{const response=await workerFetch(`/data/assignments?orgId=${encodeURIComponent(orgId)}&timezone=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`);if(!response.ok)throw Error();const data=await response.json() as {reports:{agents:{agentName:string;count:number}[];lastSyncAt:string|null;uncertain:number}[]};if(!active)return;if(data.reports.some(r=>!r.lastSyncAt))void workerFetch(`/data/assignments/initialize?orgId=${encodeURIComponent(orgId)}`,{method:'POST'});const counts=new Map<string,number>();for(const report of data.reports)for(const a of report.agents)counts.set(norm(a.agentName),(counts.get(norm(a.agentName))||0)+a.count);setAssignmentCounts(counts);setAssignmentStatus(data.reports.some(r=>r.lastSyncAt)?'Live assignment tracking is active. Counts include confirmed assignments this month; older assignments with uncertain dates are excluded.':'Waiting for the first connected assignment sync.');}catch{if(active){setAssignmentCounts(new Map());setAssignmentStatus('Live assignment counts could not be loaded.');}}};
     void refresh();const timer=setInterval(refresh,60000);return()=>{active=false;clearInterval(timer);};
   },[orgId]);
-  const [mode,setMode] = useState<'cohort'|'production'|'hustle'|'speed'>('cohort');
+  const [mode,setMode] = useState<'cohort'|'production'|'hustle'|'speed'|'pipeline'>(new URLSearchParams(window.location.search).get('pipeline')==='1'?'pipeline':'cohort');
   const [hasHustle,setHasHustle]=useState(isDemo);
   useEffect(()=>{if(isDemo)return;let active=true;setHasHustle(false);workerFetch(`/data/hustle?orgId=${encodeURIComponent(orgId)}`).then(async r=>r.ok?await r.json() as {scores:unknown[]}:null).then(d=>{if(active)setHasHustle(!!d?.scores.length);}).catch(()=>{});return()=>{active=false;};},[orgId]);
   const [reviewOnly, setReviewOnly] = useState(false);
@@ -165,7 +166,7 @@ function Deck({
         onSignOut={() => signOutClean()}
         nav={{ onOpenPulse, onOpenCoach, onOpenRep, onOpenTeam: () => { window.location.hash = '/team'; } }}
         hideTopbar
-        islandSlot={mode === 'speed' || mode === 'hustle' ? undefined : windowTabs}
+        islandSlot={mode === 'speed' || mode === 'hustle' || mode === 'pipeline' ? undefined : windowTabs}
         // The room warms with the floor: ember once somebody is past your line,
         // amber while there are conversations owed, sea when nobody needs you.
         mood={!totals ? 'calm' : (overall.totals?.pastLine ?? 0) > 0 ? 'hot' : priorities.length > 0 ? 'watch' : 'calm'}
@@ -177,6 +178,8 @@ function Deck({
     </div>
   );
 
+  const modeTabs = (<div className="operations-tabs"><button aria-pressed={mode==='speed'} onClick={()=>setMode('speed')}>Contact timing</button><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button>{hasHustle&&<button aria-pressed={mode==='hustle'} onClick={()=>setMode('hustle')}>Weekly Hustle</button>}<button aria-pressed={mode==='pipeline'} onClick={()=>setMode('pipeline')}>Pipeline</button><button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>);
+  if (mode === 'pipeline') return frame(<><header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1></div></header>{modeTabs}<PipelinePanel key={orgId} orgId={orgId} period={win.days}/></>);
   if (err) return frame(<div className="ps-emptyview"><h3>{err}</h3></div>);
   if (!rows || !totals) return frame(<div className="spinner" />);
 
@@ -210,7 +213,7 @@ function Deck({
       <header className="pulse-heading"><div><span className="pulse-kicker">Pulse</span><h1>Team performance.</h1><p>{mode === 'speed' ? 'Verified personal outreach, with the calculation behind each result' : mode === 'hustle' ? 'Latest published weekly report' : 'Lead cohorts and recorded production · ' + win.label + ' view'}</p></div><div className="pulse-thresholds"><details className="pulse-target"><summary>Minimum expectation <strong>1 : {line}</strong><span>Edit</span></summary><TargetControl target={target} label="Maximum leads per contract" defaultValue={DEFAULT_LINE} /></details><details className="pulse-target"><summary>Leads before pause <strong>{pauseTarget.saved}</strong><span>Edit</span></summary><TargetControl target={pauseTarget} label="New assignments per agent · month to date" defaultValue={15} /><p className="pause-setting-note">Review for pause when the agent reaches this count. Saving this setting does not pause anyone in Zillow. {assignmentStatus}</p></details></div></header>
       <p className="pulse-data-notes" role="status">{CONTACT_DECISION_HOLD.reason} Recorded lead and production data remain available.</p>
       {historyCoverage&&!historyCoverage.complete&&<p className="pulse-data-notes" role="status">Year-to-date historical coverage is incomplete. {historyInfo?'The saved baseline below remains available.':'Historical stage totals are unavailable until collection is verified.'} Missing history is not a zero result.</p>}
-      {historyInfo&&<p className="pulse-data-notes">Historical baseline through {historyInfo.through}. Sources: {Object.entries(historyInfo.sourceStarts).map(([source,start])=>source+' since '+start).join('; ')}. New leads and recorded stage changes update automatically.</p>}<div className="operations-tabs"><button aria-pressed={mode==='speed'} onClick={()=>setMode('speed')}>Contact timing</button><button aria-pressed={mode==='cohort'} onClick={()=>setMode('cohort')}>Lead cohorts</button><button aria-pressed={mode==='production'} onClick={()=>setMode('production')}>Recorded production</button>{hasHustle&&<button aria-pressed={mode==='hustle'} onClick={()=>setMode('hustle')}>Weekly Hustle</button>}<button onClick={()=>{window.location.hash='/earnings';}}>Earnings ↗</button></div>{mode === 'speed' ? <ContactSpeedPanel orgId={orgId}/> : mode === 'hustle' ? <HustlePanel orgId={orgId}/> : mode === 'production' ? <ProductionPanel period={win.days} orgId={orgId}/> : <><section className="pulse-summary" aria-label="Team performance summary">
+      {historyInfo&&<p className="pulse-data-notes">Historical baseline through {historyInfo.through}. Sources: {Object.entries(historyInfo.sourceStarts).map(([source,start])=>source+' since '+start).join('; ')}. New leads and recorded stage changes update automatically.</p>}{modeTabs}{mode === 'speed' ? <ContactSpeedPanel orgId={orgId}/> : mode === 'hustle' ? <HustlePanel orgId={orgId}/> : mode === 'production' ? <ProductionPanel period={win.days} orgId={orgId}/> : <><section className="pulse-summary" aria-label="Team performance summary">
         <div><span>Leads</span><strong>{totals.leads.toLocaleString()}</strong><small>Created in this reporting window</small></div>
         <div><span>Reached an offer</span><strong>{totals.offers.toLocaleString()}</strong><small>Among leads created in this window</small></div>
         <div><span>Under contract</span><strong>{totals.contracts.toLocaleString()}</strong><small>Among leads created in this window</small></div>
