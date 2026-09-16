@@ -13,7 +13,7 @@ September 16, 2026. The curriculum JSON files are shared by Rep and the live-ses
 | --- | ---: | ---: |
 | Follow Up Boss | 40 | 61 |
 | First conversation | 35 | 90 |
-| Showing and buyer decision | 33 | 78 |
+| Showing and buyer decision | 31 | 74 |
 | Lender introduction | 28 | 71 |
 
 Section dividers have no additional planned minutes. Timing includes practice and discussion.
@@ -59,3 +59,5 @@ Every section must announce the topic change and show the same discuss → learn
 The first revision after review replaces Day Three's home-selection challenge with an applied tour-preparation exercise and turns slide 14's question bank into a sequenced conversation example. The review renderer now preserves photo themes, uses a full-width canvas and distinctive section dividers, and puts practice writing in an optional disclosure. Optimized JPEG exports preserve the original source imagery; generate them with `python scripts/build-review-artwork.py`. Do not embed large image values in CSS custom properties: browser size limits can silently discard them. The same section and conversation layouts are included in Rep/live styles.
 
 Day Three v3 adds an original historical MLS report excerpt after the buyer packet lesson. Source: https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf, PDF page 94 (Exhibit A-4 page 13), report dated March 24, 2025; accessed September 16, 2026. The crop preserves original facts and source annotations and omits marketing remarks. It is labeled Sold and historical; no listing data was invented. The full source is linked in the slide and agent reference.
+
+Day Three v4 removes the MLS example following Eric’s feedback and consolidates the post-tour invitation and offer opener. The language pass replaces vague instructions with concrete actions, natural sample wording and explicit follow-up commitments. The four sections, original imagery and practice activities remain. Source overlay: scripts/day3-language.mjs.

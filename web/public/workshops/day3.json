@@ -287,7 +287,7 @@
       "lead": "Before everyone leaves the last home, ask the buyers to stay for a short conversation.",
       "body": "<div class=\"conversation-sequence\"><div class=\"conversation-turn\"><span>Invite the conversation</span><blockquote>“We’ve looked at several houses today. Before we wrap up, I like to take five minutes with my clients to talk through what we saw. Do you have a few minutes now?”</blockquote><p>If you toured one home, say “this house.” If they need to leave, agree on a specific time to talk.</p></div><div class=\"conversation-turn\"><span>Ask the first question</span><blockquote>“Did we see any homes we want to write an offer on?”</blockquote><p>Pause and let them answer. Give each buyer time to speak before you recommend a next step.</p></div></div><p class=\"conversation-close\">Use their answer to choose your next question: which home, what did not work, or what they still need to know.</p>",
       "time": 3,
-      "theme": "tru alms lesson training-depth conversation-example",
+      "theme": "tru alms lesson training-depth conversation-example post-tour-opening",
       "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Let the offer answer guide your next question. Connect it to the action you just practiced.",
       "cue": "Next: Let the offer answer guide your next question. Connect it to the action you just practiced.",
       "quadrant": 3
