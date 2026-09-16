@@ -1,7 +1,7 @@
 # Pulse Pipeline and coaching insights
 
-Pipeline is a tab in Pulse (`#/pulse`). It reports the current stages of tracked
-leads received in the selected period. It does not change accountability,
+Pipeline is a tab in Pulse (`#/pulse`). It reports retained stage progression and
+current dispositions of tracked leads received in the selected period. It does not change accountability,
 achievement history, FUB stages, lead routing, or the webhook subscriptions.
 
 ## Review and preview
@@ -10,7 +10,9 @@ Open `?demo=1&pipeline=1#/pulse` on the branch preview. This is an interactive
 sample, with fictitious names and no customer lead records or links. The Alex
 Morgan sample reproduces the supplied Adam example: 165 of 504 leads (32.7%),
 12 of 31 conversions (38.7%), 7.3% conversion rate, 76 nurture and 26 rejected.
-The demo insights are explicitly illustrative and do not call a model.
+The demo insights are explicitly illustrative and do not call a model. One
+sample Nurture lead also has illustrative Met-with history to demonstrate
+retained progression. The supplied screenshots do not establish its history.
 
 The deployed web preview does not install the new Worker endpoints. Signed-in
 end-to-end validation requires a reviewed Worker deployment and the migration
@@ -33,7 +35,44 @@ separate rows. Saved historical-only records have an unverified-owner row.
 Under contract and closed remain separate stages. Unknown stages remain visible
 as unmapped; known names use exact normalized matches. Optional team mappings
 categorize raw IDs/names without writing to FUB. Agent selection never changes
-the team denominator. Stage and owner counts reconcile to the selected leads.
+the team denominator. Current-stage and owner counts reconcile to the selected
+leads. Progression counts intentionally overlap and do not sum to 100%.
+
+### September 16 correction: completed progression
+
+Eric confirmed that reaching a later stage counts every preceding progression
+step. The main chart now uses `shared/pipelineProgress.ts`: Lead received,
+Attempted contact, Spoke with customer, Appointment set, Met with customer,
+Showing homes, Submitting offers, Under contract, Closed. Moving directly from
+Lead to Met with includes all steps through Met with. Moving to Nurture retains
+those steps without adding Showing, Offer, Contract or Closed. This is a reporting
+rule, not an optional earned-credit mode or a coaching issue about CRM updates.
+
+The service combines saved JSON milestone proof, saved stage-log entries, current
+FUB stages, and canonical `history_stage_events` from the historical change log
+and retained webhooks. Canonical reads occur only after user/RLS team authorization,
+are explicitly organization/team scoped, and fail rather than return partial pages.
+This closes the Pipeline reporting gap where retained Met-with webhook events
+were not included in the older offer-only compatibility sync projection.
+
+Each lead appears once per progression step. A historical `from` stage proves
+prior progress without inventing its original entry date. Dated entry evidence
+retains the earliest available date; current status alone grants progression
+without inventing historical dates. Missing history remains a coverage gap,
+never an allegation of missing work. The received-date filter selects leads;
+it does not exclude their subsequent progression. Current-owner attribution
+and historical-only identity warnings remain intact.
+
+The top conversion metrics retain the approved **current under-contract/closed**
+definition and are now explicitly labeled current conversions. Historical
+under-contract/closed progress stays visible in the main chart even if a lead
+later moves backwards. Raw current FUB stages remain available in a disclosure.
+Progress evidence participates in the report snapshot and therefore invalidates
+AI caches even when the lead's current status has not changed. The AI prompt
+and sales doctrine prohibit criticism for skipped intermediate stage updates.
+
+No new migration is required for this correction, and it does not republish or
+rewrite the historical JSON, canonical events, or legacy production calculations.
 
 Dates use the existing Pulse local-time presets and show the browser timezone.
 Custom dates start at local midnight and end at the next local midnight

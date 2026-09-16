@@ -15,6 +15,8 @@ export function pipelineFixture(filters?: PipelineFilters) {
     team_id:'demo-team',fub_person_id:++id,name:'Sample lead '+id,stage:stages[s],stage_id:s+1,
     assigned_to:names[a],assigned_user_id:a+1,assigned_pond_id:a===2?1:null,pond:a===2?'Team Profile':null,
     source:'Zillow',source_family:'Zillow',fub_created:created,synced_at:now.toISOString(),
+    // Illustrative history: a lead that reached Met with and is now in Nurture.
+    ...(a===0&&s===9&&i===0?{history:{met:{date:created,eventId:'demo-met-to-nurture'}}}:{}),
   });}));
   return calculatePipeline({leads,teams:[{id:'demo-team',org_id:'demo',name:'Sample Realty',fub_subdomain:null}],
     agents:names.filter((_,i)=>i!==2).map(name=>({id:'demo-agent-'+(names.indexOf(name)+1),team_id:'demo-team',name,fub_user_id:names.indexOf(name)+1})),

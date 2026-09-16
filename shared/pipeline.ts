@@ -1,4 +1,5 @@
-/** Current-stage cohorts only. Deliberately independent of achievement metrics. */
+import { PROGRESSION, progressForLead, type ProgressEvent, type ProgressProof, type ProgressRow } from './pipelineProgress';
+/** Received-date cohorts with current dispositions and retained stage progression. */
 export const PIPELINE_CATEGORIES = ['active', 'under_contract', 'closed', 'nurture', 'rejected', 'unmapped'] as const;
 export type PipelineCategory = typeof PIPELINE_CATEGORIES[number];
 export interface PipelineLead {
@@ -7,6 +8,7 @@ export interface PipelineLead {
   assigned_user_id?: number | null; assigned_pond_id?: number | null; pond?: string | null;
   source?: string | null; source_family: string | null; fub_created: string | null;
   synced_at?: string | null; historicalOnly?: boolean;
+  history?: Record<string, {date?: string | null; eventId?: string} | null>;
 }
 export interface PipelineAgent {
   id: string; team_id: string; name: string; fub_user_id: number | null; excluded?: boolean; role?: string | null;
@@ -34,10 +36,12 @@ export interface PipelineStage {
 }
 export interface PipelineRecord extends PipelineLead {
   key: string; ownerKey: string; stageKey: string; category: PipelineCategory; fubUrl: string | null;
+  progress: Record<string, ProgressProof>;
 }
 export interface PipelineReport {
   filters: PipelineFilters; snapshotId: string; generatedAt: string; teams: PipelineTeam[];
   sources: string[]; totals: PipelineCount; agents: PipelineOwner[]; stages: PipelineStage[]; leads: PipelineRecord[];
+  progression: ProgressRow[];
   coverage: { undated: number; historicalOnly: number; unresolvedOwners: number; unknownStages: number; historyState: string; historyThrough: string | null };
   freshness: { oldestSync: string | null; newestSync: string | null; unknown: number };
   canMapStages: boolean; insightsEnabled: boolean;
@@ -103,6 +107,7 @@ export function mergePipelineLeads(saved: PipelineLead[], live: PipelineLead[], 
 export function calculatePipeline(input: {
   leads: PipelineLead[]; agents: PipelineAgent[]; teams: PipelineTeam[]; filters: PipelineFilters;
   historyState?: string; historyThrough?: string | null; now?: string; canMapStages?: boolean; insightsEnabled?: boolean;
+  events?: ProgressEvent[];
 }): PipelineReport {
   const {filters} = input, teams = input.teams.filter(t=>t.org_id===filters.orgId && (!filters.teamId || t.id===filters.teamId));
   const teamMap = new Map(teams.map(t=>[t.id,t]));
@@ -120,6 +125,11 @@ export function calculatePipeline(input: {
     if (!Number.isFinite(created)) { undated++; return false; }
     return (!filters.from || created>=Date.parse(filters.from)) && created<Date.parse(filters.through);
   });
+  const eventsByLead=new Map<string,ProgressEvent[]>();
+  for(const e of input.events || []){
+    const key=e.team_id+':'+e.person_id;
+    const events=eventsByLead.get(key) || [];events.push(e);eventsByLead.set(key,events);
+  }
   const owners=new Map<string,ReturnType<typeof owner>>(), stages=new Map<string,PipelineStage>();
   const leads = selected.map(l=>{
     const team=teamMap.get(l.team_id)!, o=owner(l,input.agents), mapping=classifyPipelineStage(l,team.pipeline_stage_mappings);
@@ -127,7 +137,8 @@ export function calculatePipeline(input: {
     const sk=l.team_id+':'+stageKey(l), key=leadKey(l);
     if(!stages.has(sk)) stages.set(sk,{key:sk,teamId:l.team_id,rawName:l.stage || 'No stage recorded',stageId:l.stage_id ?? null,...mapping,count:0,percent:null,leadKeys:[]});
     const s=stages.get(sk)!;s.count++;s.leadKeys.push(key);
-    return {...l,key,ownerKey:o.key,stageKey:sk,category:mapping.category,fubUrl:safeFubUrl(team.fub_subdomain,l.fub_person_id)};
+    return {...l,key,ownerKey:o.key,stageKey:sk,category:mapping.category,fubUrl:safeFubUrl(team.fub_subdomain,l.fub_person_id),
+      progress:progressForLead(l,eventsByLead.get(key) || [],input.now?Date.parse(input.now):Date.now(),mapping.category)};
   }).sort((a,b)=>a.key.localeCompare(b.key));
   // Active roster members with no leads remain visible, separately by team/id.
   for(const a of input.agents) if(teamMap.has(a.team_id)&&!a.excluded&&a.fub_user_id!=null){
@@ -141,6 +152,7 @@ export function calculatePipeline(input: {
   }).sort((a,b)=>b.total-a.total||a.key.localeCompare(b.key));
   const times=leads.filter(l=>!l.historicalOnly).map(l=>l.synced_at).filter((s):s is string=>!!s&&Number.isFinite(Date.parse(s))).sort();
   return {filters,snapshotId:'',generatedAt:input.now || new Date().toISOString(),teams,sources,totals,agents,leads,
+    progression:PROGRESSION.map(([key,label])=>{const leadKeys=leads.filter(l=>!!l.progress[key]).map(l=>l.key);return {key,label,leadKeys,count:leadKeys.length,percent:percentage(leadKeys.length,totals.total)};}),
     stages:[...stages.values()].map(s=>({...s,percent:percentage(s.count,totals.total)})).sort((a,b)=>a.order-b.order||a.rawName.localeCompare(b.rawName)||a.key.localeCompare(b.key)),
     coverage:{undated,historicalOnly:leads.filter(l=>l.historicalOnly).length,unresolvedOwners:leads.filter(l=>l.ownerKey.includes(':unresolved:')).length,unknownStages:leads.filter(l=>l.category==='unmapped').length,historyState:input.historyState || 'not_available',historyThrough:input.historyThrough || null},
     freshness:{oldestSync:times[0] || null,newestSync:times.at(-1) || null,unknown:leads.filter(l=>!l.synced_at&&!l.historicalOnly).length},

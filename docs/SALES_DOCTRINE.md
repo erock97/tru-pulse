@@ -1,5 +1,16 @@
 # TRU Sales Doctrine
 
+## September 16, 2026: Pipeline stage progression
+
+Eric confirmed that reaching a stage counts all preceding progression steps.
+Moving directly from Lead to Met with includes attempted contact, speaking with
+the buyer, and setting an appointment. Agents do not need to record each
+intermediate CRM stage. Skipped stage updates are not a coaching issue.
+
+Moving from Met with to Nurture retains those steps through Met with and grants
+nothing further down the funnel. Nurture and Rejected are dispositions, not
+forward progression stages. Missing recorded history is not proof of missing work.
+
 ## September 14, 2026: Day 2 onboarding source update
 
 For Day 2, Eric’s September 15 correction restores **LEAD** as the primary

@@ -35,7 +35,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
   const [report,setReport]=useState<PipelineReport|null>(null),[teams,setTeams]=useState<PipelineTeam[]>([]);
   const [busy,setBusy]=useState(true),[error,setError]=useState('');
   const [agentKey,setAgentKey]=useState(''),[query,setQuery]=useState(''),[sort,setSort]=useState('total');
-  const [proof,setProof]=useState<{title:string;keys:string[]}|null>(null);
+  const [proof,setProof]=useState<{title:string;keys:string[];progressKey?:string}|null>(null);
   const [insights,setInsights]=useState<PipelineInsightResult|null>(null),[aiError,setAiError]=useState(''),[aiBusy,setAiBusy]=useState(false);
   const requestVersion=useRef(0),insightVersion=useRef(0),proofRef=useRef<HTMLElement>(null),detailRef=useRef<HTMLElement>(null);
   const [mapping,setMapping]=useState<Record<string,StageMapping>>({}),[mapBusy,setMapBusy]=useState(false),[mapMessage,setMapMessage]=useState('');
@@ -76,7 +76,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
   const counts=pipelineCounts(selected);
   const owners=(report?.agents || []).filter(a=>a.name.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):
     (b[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1)-(a[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1));
-  const showLeads=(title:string,keys:string[])=>{setProof({title,keys});setTimeout(()=>proofRef.current?.focus(),0);};
+  const showLeads=(title:string,keys:string[],progressKey?:string)=>{setProof({title,keys,progressKey});setTimeout(()=>proofRef.current?.focus(),0);};
   const chooseAgent=(key:string)=>{setAgentKey(key);setProof(null);setInsights(null);setAiError('');setAiBusy(false);insightVersion.current++;
     if(key)setTimeout(()=>{detailRef.current?.focus({preventScroll:true});detailRef.current?.scrollIntoView?.({behavior:'smooth',block:'start'});},0);
   };
@@ -117,13 +117,13 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
       <label>Team<select value={teamId} onChange={e=>{setTeamId(e.target.value);setSource('');}}><option value="">All available teams</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       <label>Source<select value={source} onChange={e=>setSource(e.target.value)}><option value="">All enabled sources</option>{(report?.sources || []).map(s=><option key={s}>{s}</option>)}</select></label>
     </div>
-    <p className="pipeline-caption">Received-date filter · current stage · current owner · {filters?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}. Conversions = under contract + closed, each lead once.</p>
+    <p className="pipeline-caption">Received-date filter · current owner · {filters?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}. Stage progression retains completed steps. Current conversions = currently under contract + closed, each lead once.</p>
     {(error||range.error)&&<div role="alert" className="pipeline-notice">{error||range.error} <button onClick={()=>setRefresh(v=>v+1)}>Retry</button></div>}
     {busy&&<p role="status">Loading pipeline…</p>}
     {!busy&&!error&&!range.error&&report&&<>
       <div className="pipeline-summary" aria-label="Team pipeline summary">
         {[{label:'Team leads',value:report.totals.total,keys:report.leads.map(l=>l.key),detail:'In the selected received-date period'},
-          {label:'Conversions',value:report.totals.conversions,keys:report.leads.filter(l=>['under_contract','closed'].includes(l.category)).map(l=>l.key),detail:percent(report.totals.conversionRate)+' of team leads'},
+          {label:'Current conversions',value:report.totals.conversions,keys:report.leads.filter(l=>['under_contract','closed'].includes(l.category)).map(l=>l.key),detail:percent(report.totals.conversionRate)+' of team leads'},
           {label:'Nurture',value:report.totals.nurture,keys:report.leads.filter(l=>l.category==='nurture').map(l=>l.key),detail:percent(report.totals.nurturePct)+' of team leads'},
           {label:'Rejected',value:report.totals.rejected,keys:report.leads.filter(l=>l.category==='rejected').map(l=>l.key),detail:percent(report.totals.rejectedPct)+' of team leads'}].map(c=><div key={c.label}><span>{c.label}</span>{countButton(c.label,c.value,c.keys)}<small>{c.detail}</small></div>)}
       </div>
@@ -133,14 +133,15 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           <p>{report.coverage.undated} leads without a received date are excluded. {report.coverage.unknownStages} leads have an unmapped stage. {report.coverage.unresolvedOwners} lead owners need a refreshed FUB identity.</p>
           <p>{report.coverage.historicalOnly} leads are available only from historical records; their recorded stage is included, but their current owner and stage are unverified. They appear in a separate ownership row.</p>
           <p>Historical coverage: {report.coverage.historyState}{report.coverage.historyThrough?' · through '+report.coverage.historyThrough:''}. Oldest current observation: {report.freshness.oldestSync?new Date(report.freshness.oldestSync).toLocaleString():'not available'}. {report.freshness.unknown} leads have no observation timestamp.</p>
-          <p>This is a current-stage view of a received-date cohort. Recorded production and cumulative cohort milestones elsewhere in Pulse answer different questions. An agent’s share always uses the whole selected team as its denominator. Outside the active pipeline does not mean a lead exited during this date range.</p>
+          <p>Stage progression includes every step through the furthest stage recorded, using the historical backfill and retained FUB changes. Leads can appear at multiple completed steps, so these percentages do not add to 100%. Nurture and rejected show current status and never remove earlier progress. Conversion figures above describe current contracts and closings. An agent’s share always uses the whole selected team as its denominator.</p>
+          <p>{report.leads.filter(l=>['nurture','rejected','unmapped'].includes(l.category)&&Object.keys(l.progress).length===1).length} leads outside the known progression have no earlier progress available in this report. Missing history is not evidence of missing work.</p>
         </details>
       </div>
       <div className="pipeline-workspace">
         <section className="pipeline-card pipeline-roster"><div className="pipeline-card-head"><div><span className="pipeline-eyebrow">Contribution</span><h3>Your agents</h3></div><span>{report.agents.length} ownership rows</span></div>
           <div className="pipeline-table-tools"><input aria-label="Find a pipeline agent" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)}/>
             <select aria-label="Sort pipeline agents" value={sort} onChange={e=>setSort(e.target.value)}><option value="total">Most leads</option><option value="conversionShare">Conversion share</option><option value="conversionRate">Conversion rate</option><option value="nurturePct">Nurture share</option><option value="name">Name</option></select></div>
-          <div className="pipeline-table-scroll"><table><thead><tr><th>Agent / owner</th><th>Leads</th><th>Team lead share</th><th>Team conversion share</th><th>Conversion rate</th><th>Nurture</th><th>Rejected</th></tr></thead>
+          <div className="pipeline-table-scroll"><table><thead><tr><th>Agent / owner</th><th>Leads</th><th>Team lead share</th><th>Team current conversion share</th><th>Current conversion rate</th><th>Nurture</th><th>Rejected</th></tr></thead>
             <tbody>{owners.map(a=>{const own=report.leads.filter(l=>l.ownerKey===a.key);return <tr key={a.key} aria-selected={agentKey===a.key}>
               <th scope="row"><button className="pipeline-agent" onClick={()=>chooseAgent(a.key)}>{a.name}<small>{report.teams.find(t=>t.id===a.teamId)?.name}{a.kind==='former'?' · former/excluded team member':''}</small></button></th>
               <td>{countButton(a.name+' leads',a.total,a.leadKeys)}</td><td>{percent(a.leadShare)}</td><td>{percent(a.conversionShare)}</td><td>{percent(a.conversionRate)}</td>
@@ -150,18 +151,36 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           {!owners.length&&<p>No agents match this search.</p>}
         </section>
         <section ref={detailRef} tabIndex={-1} className="pipeline-card pipeline-detail" aria-label="Stage breakdown">
-          <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'Where leads sit today'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
-          <p className="pipeline-caption">{counts.total} leads · {percent(counts.conversionRate)} conversion rate{agent?' · '+percent(agent.leadShare)+' of team leads · '+percent(agent.conversionShare)+' of team conversions':''}</p>
+          <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'How far leads have progressed'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
+          <p className="pipeline-caption">{counts.total} leads · {percent(counts.conversionRate)} current conversion rate{agent?' · '+percent(agent.leadShare)+' of team leads · '+percent(agent.conversionShare)+' of team current conversions':''}</p>
+          <p className="pipeline-caption">Reaching a stage includes the steps before it. Moving to Nurture or Rejected keeps that progress. Agents do not need to enter each intermediate stage. A lead can count at multiple steps.</p>
           <div className="pipeline-stage-legend"><span>Stage</span><span>{agent?'Agent / team':'Team'} share</span></div>
+          <div className="pipeline-stage-group"><h4>Stage progression</h4>{report.progression.map(s=>{
+            const keys=selected.filter(l=>!!l.progress[s.key]).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;
+            return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.label,keys,s.key)} aria-label={s.label+': '+keys.length+' leads'}>
+              <span className="pipeline-stage-label">{s.label}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/>{agent&&<b style={{left:(s.percent||0)+'%'}}/>}</span>
+              <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(s.percent)} ({s.count})</small>}</span>
+            </button>;
+          })}</div>
+          <div className="pipeline-stage-group"><h4>Outside the active pipeline · current status</h4>{(['nurture','rejected'] as const).map(category=>{
+            const keys=selected.filter(l=>l.category===category).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;
+            const teamCount=report.leads.filter(l=>l.category===category).length;
+            return <button className="pipeline-stage" key={category} onClick={()=>showLeads(categoryLabel[category],keys)} aria-label={categoryLabel[category]+': '+keys.length+' leads'}>
+              <span className="pipeline-stage-label">{categoryLabel[category]}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/></span>
+              <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(report.totals.total?teamCount/report.totals.total*100:null)} ({teamCount})</small>}</span>
+            </button>;
+          })}</div>
+          <details><summary>Current FUB stages · {report.coverage.unknownStages} unmapped leads</summary>
           {PIPELINE_CATEGORIES.map(category=>{
             const stages=report.stages.filter(s=>s.category===category);if(!stages.length)return null;
             return <div className="pipeline-stage-group" key={category}><h4>{category==='nurture'?'Outside the active pipeline · Nurture':category==='rejected'?'Outside the active pipeline · Rejected':categoryLabel[category]}</h4>
-              {stages.map(s=>{const keys=selected.filter(l=>l.stageKey===s.key).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.rawName,keys)} aria-label={s.rawName+': '+keys.length+' leads'}>
+              {stages.map(s=>{const keys=selected.filter(l=>l.stageKey===s.key).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.rawName,keys)} aria-label={'Current '+s.rawName+': '+keys.length+' leads'}>
                 <span className="pipeline-stage-label">{s.rawName}{report.teams.length>1&&<small>{report.teams.find(t=>t.id===s.teamId)?.name}</small>}</span>
                 <span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/>{agent&&<b style={{left:(s.percent||0)+'%'}}/>}</span>
                 <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(s.percent)} ({s.count})</small>}</span>
               </button>;})}</div>;
           })}
+          </details>
           {!counts.total&&<p>No leads in this selection. Try another period or source.</p>}
           {agent&&<div className="pipeline-agent-actions"><button className="pipeline-button pipeline-primary" disabled={aiBusy||!agent.agentId||agent.kind!=='agent'||!agent.total||!report.insightsEnabled} onClick={()=>void generate()}>{aiBusy?'Preparing insights…':'AI insights'}</button>
             {agent.agentId&&<a href={'#/coach/'+encodeURIComponent(agent.agentId)}>Open Coach ↗</a>}
@@ -177,7 +196,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
         </section>
       </div>
       {proof&&<section ref={proofRef} tabIndex={-1} className="pipeline-card pipeline-proof" aria-label="Matching leads"><div className="pipeline-card-head"><div><h3>{proof.title}</h3><p>{proof.keys.length} matching leads</p></div><button className="pipeline-button" onClick={()=>setProof(null)}>Close lead list</button></div>
-        <ul>{report.leads.filter(l=>proof.keys.includes(l.key)).map(l=><li key={l.key}><span>{l.fubUrl?<a href={l.fubUrl} target="_blank" rel="noreferrer">{l.name || 'Unnamed lead'} ↗</a>:l.name || 'Unnamed lead'}<small>{l.stage || 'No stage'} · {l.source_family} · received {new Date(l.fub_created!).toLocaleDateString()}{l.historicalOnly?' · historical only':''}</small></span><span>{l.assigned_to || l.pond || 'Unassigned'}</span></li>)}</ul>
+        <ul>{report.leads.filter(l=>proof.keys.includes(l.key)).map(l=><li key={l.key}><span>{l.fubUrl?<a href={l.fubUrl} target="_blank" rel="noreferrer">{l.name || 'Unnamed lead'} ↗</a>:l.name || 'Unnamed lead'}<small>{l.stage || 'No stage'} · {l.source_family} · received {new Date(l.fub_created!).toLocaleDateString()}{l.historicalOnly?' · historical only':''}</small>{proof.progressKey&&l.progress[proof.progressKey]&&<small>Progress includes {l.progress[proof.progressKey].basis} · {l.progress[proof.progressKey].source}{l.progress[proof.progressKey].at?' · basis recorded '+new Date(l.progress[proof.progressKey].at!).toLocaleDateString():''}</small>}</span><span>{l.assigned_to || l.pond || 'Unassigned'}</span></li>)}</ul>
         {!proof.keys.length&&<p>No leads match this count.</p>}
       </section>}
       {report.canMapStages&&<details className="pipeline-card pipeline-mappings"><summary>Stage reporting settings</summary><p>Map your team’s FUB stages into reporting categories. Raw FUB names stay visible and are never changed in Follow Up Boss.</p>

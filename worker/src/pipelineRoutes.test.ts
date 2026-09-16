@@ -2,9 +2,9 @@ import {describe,it,expect,vi,beforeEach} from 'vitest';
 import {handlePipeline,loadPipeline,parsePipelineFilters,digest} from './pipelineRoutes';
 import type {UserClient} from './asUser';
 import type {Env} from './env';
-const mocks=vi.hoisted(()=>({history:vi.fn(),update:vi.fn(),insights:vi.fn()}));
+const mocks=vi.hoisted(()=>({history:vi.fn(),update:vi.fn(),insights:vi.fn(),events:vi.fn()}));
 vi.mock('./historyMetadata',()=>({readHistoryVersion:mocks.history}));
-vi.mock('./db',()=>({db:()=>({update:mocks.update})}));
+vi.mock('./db',()=>({db:()=>({update:mocks.update,select:mocks.events})}));
 vi.mock('./pipelineInsights',()=>({pipelineInsights:mocks.insights}));
 const org='00000000-0000-4000-8000-000000000001',team='00000000-0000-4000-8000-000000000002',agent='00000000-0000-4000-8000-000000000003';
 const filters={orgId:org,teamId:team,from:'2026-01-01T00:00:00Z',through:new Date().toISOString(),timezone:'America/Los_Angeles',sources:[]};
@@ -21,8 +21,27 @@ async function call(db:UserClient,path='/data/pipeline',method='GET',body:Record
  const req=new Request(url,{method,...(method==='GET'?{}:{body:JSON.stringify({...filters,...body})})});
  return (await handlePipeline(req,env,db,url,{},origin))!;
 }
-beforeEach(()=>{vi.clearAllMocks();mocks.history.mockResolvedValue({snapshot:null,coverage:{state:'not_started',complete:false}});});
+beforeEach(()=>{vi.clearAllMocks();mocks.events.mockResolvedValue([]);mocks.history.mockResolvedValue({snapshot:null,coverage:{state:'not_started',complete:false}});});
 describe('pipeline route isolation and consistency',()=>{
+ it('reads retained webhook progression after the current lead has moved to Nurture',async()=>{
+  mocks.events.mockResolvedValue([{org_id:org,team_id:team,person_id:1,from_stage:null,to_stage:'Met with Customer',occurred_at:'2026-03-01T00:00:00Z',upstream_id:'met',upstream_kind:'peopleStageUpdated'},
+   {org_id:org,team_id:team,person_id:1,from_stage:null,to_stage:'Nurture',occurred_at:'2026-04-01T00:00:00Z',upstream_id:'nurture',upstream_kind:'peopleStageUpdated'}]);
+  const report=await loadPipeline(env,client(),filters);
+  expect(report.progression.filter(s=>s.count).map(s=>s.key)).toEqual(['lead','attempted','spoke','appointment','met']);
+  expect(report.totals.nurture).toBe(1);
+  expect(mocks.events.mock.calls[0][1]).toContain('org_id=eq.'+org);
+  expect(mocks.events.mock.calls[0][1]).toContain('team_id=eq.'+team);
+  expect(mocks.events.mock.calls[0][1]).toContain('person_id=in.(1)');
+ });
+ it('rejects foreign or partially fetched canonical history',async()=>{
+  mocks.events.mockResolvedValue([{org_id:'foreign',team_id:team}]);
+  expect((await call(client())).status).toBe(502);
+  mocks.events.mockImplementation(async(_table,query)=>{
+   if(query.includes('offset=1000'))throw Error('incomplete');
+   return Array.from({length:1000},()=>({org_id:org,team_id:team,person_id:1,from_stage:null,to_stage:'Lead'}));
+  });
+  expect((await call(client())).status).toBe(502);
+ });
  it('returns an authenticated scoped report with a stable hash',async()=>{
   const db=client(),response=await call(db),r=await response.json() as any;
   expect(response.status).toBe(200);expect(r.totals.total).toBe(1);expect(r.snapshotId).toMatch(/^[a-f0-9]{64}$/);
@@ -32,6 +51,7 @@ describe('pipeline route isolation and consistency',()=>{
  it('rejects ordinary agents and unaffiliated users before reading leads or history',async()=>{
   const db=client({memberships:[{role:'agent'}]});expect((await call(db)).status).toBe(403);
   expect((db.select as any).mock.calls.some((c:any[])=>c[0]==='leads')).toBe(false);expect(mocks.history).not.toHaveBeenCalled();
+  expect(mocks.events).not.toHaveBeenCalled();
  });
  it('rejects a team that is not visible to the user',async()=>expect((await call(client({teams:[]}))).status).toBe(403));
  it('allows platform owners while still requiring visible team scope',async()=>{

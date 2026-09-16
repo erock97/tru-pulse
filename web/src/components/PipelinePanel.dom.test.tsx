@@ -20,11 +20,26 @@ const click=async(label:string)=>{const b=[...host.querySelectorAll('button')].f
 it('selects an agent without shrinking team denominators and reveals exactly the nurture records',async()=>{
  await render();await click('Alex Morgan');
  const detail=host.querySelector('[aria-label="Stage breakdown"]')!;
- expect(detail.textContent).toContain('32.7% of team leads');expect(detail.textContent).toContain('38.7% of team conversions');
+ expect(detail.textContent).toContain('32.7% of team leads');expect(detail.textContent).toContain('38.7% of team current conversions');
  const nurture=detail.querySelector<HTMLButtonElement>('[aria-label="Nurture: 76 leads"]')!;
  await act(async()=>nurture.click());
  expect(host.querySelector('[aria-label="Matching leads"]')?.querySelectorAll('li')).toHaveLength(76);
  expect(host.querySelector('[aria-label="Team pipeline summary"]')?.textContent).toContain('504');
+});
+it('shows retained progression and opens the exact leads including the lead now in Nurture',async()=>{
+ await render();await click('Alex Morgan');
+ const detail=host.querySelector('[aria-label="Stage breakdown"]')!;
+ const counts:Record<string,number>={'Lead received':165,'Attempted contact':56,'Spoke with customer':49,'Appointment set':34,'Met with customer':32,'Showing homes':18,'Submitting offers':12,'Under contract':12,'Closed':11};
+ for(const [stage,count] of Object.entries(counts)){
+  const button=detail.querySelector<HTMLButtonElement>('[aria-label="'+stage+': '+count+' leads"]');
+  expect(button).not.toBeNull();await act(async()=>button!.click());
+  const list=host.querySelector('[aria-label="Matching leads"]')!;
+  expect(list.querySelectorAll('li')).toHaveLength(count);
+  if(stage==='Met with customer'||stage==='Appointment set'){
+   expect(list.textContent).toContain('Sample lead 64');expect(list.textContent).toContain('historical backfill');
+  }
+  if(stage==='Showing homes')expect([...list.querySelectorAll('li')].some(li=>li.textContent?.startsWith('Sample lead 64'))).toBe(false);
+ }
 });
 it('sends the selected snapshot and owner to AI and leaves report usable on failure',async()=>{
  await render();await click('Alex Morgan');

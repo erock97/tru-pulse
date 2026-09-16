@@ -5,6 +5,7 @@ import { readHistoryVersion } from './historyMetadata.js';
 import { calculatePipeline, mergePipelineLeads, pipelineSnapshotContent, PIPELINE_CATEGORIES,
   type PipelineFilters, type PipelineTeam, type PipelineLead, type PipelineAgent, type PipelineReport, type StageMapping } from '../../shared/pipeline.js';
 import { pipelineInsights } from './pipelineInsights.js';
+import type { ProgressEvent } from '../../shared/pipelineProgress.js';
 import { PipelineError, digest } from './pipelineSupport.js';
 export { PipelineError, digest } from './pipelineSupport.js';
 
@@ -49,6 +50,7 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
     all<PipelineAgent>(db,'agents','select=id,team_id,name,fub_user_id,excluded,role&team_id=in.('+ids.join(',')+')&order=id.asc'),
     db.select<{sources:string[]|null}>('org_settings','select=sources&org_id=eq.'+filters.orgId,{strict:true}),
   ]);
+  const events:ProgressEvent[]=[];
   // Allowlist response fields; select=* supports a schema rolling out separately.
   let leads:PipelineLead[]=raw.map(l=>({team_id:l.team_id,fub_person_id:l.fub_person_id,name:l.name,stage:l.stage,
     stage_id:l.stage_id,assigned_to:l.assigned_to,assigned_user_id:l.assigned_user_id,assigned_pond_id:l.assigned_pond_id,
@@ -58,13 +60,17 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   let history;
   try{history=await readHistoryVersion(serviceDb(env),filters.orgId,legacy);}
   catch{throw new PipelineError('Historical coverage could not be verified. Refresh to retry.',502);}
-  const snap=history.snapshot as {orgId:string;teamId:string;leads:PipelineLead[];sourceStarts:Record<string,string>;through:string}|null;
+  const snap=history.snapshot as {orgId:string;teamId:string;leads:PipelineLead[];sourceStarts:Record<string,string>;through:string;stageLog?:Array<{team_id:string;fub_person_id:number;stage_class:string;changed_at:string|null;date_source:string;event_id?:string}>}|null;
   if(snap){
     if(snap.orgId!==filters.orgId)throw new PipelineError('Historical report scope mismatch.',502);
     // History may belong to a different, inaccessible team in the same org.
     if(ids.includes(snap.teamId)){
       if(!Array.isArray(snap.leads)||!snap.sourceStarts)throw new PipelineError('Historical report is incomplete.',502);
       leads=[...leads.filter(l=>l.team_id!==snap.teamId),...mergePipelineLeads(snap.leads,leads,snap.teamId,snap.sourceStarts)];
+      for(const hit of snap.stageLog || [])if(hit.team_id===snap.teamId&&hit.date_source!=='seed')events.push({
+        team_id:hit.team_id,person_id:hit.fub_person_id,from_stage:null,to_stage:hit.stage_class,
+        occurred_at:hit.changed_at,upstream_kind:'historical backfill',upstream_id:hit.event_id || 'snapshot:'+hit.fub_person_id+':'+hit.stage_class,
+      });
       historyThrough=snap.through;
     }
   }
@@ -74,10 +80,36 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
     const currentFamilies=new Map(raw.map(l=>[l.team_id+':'+l.fub_person_id,l.source_family]));
     leads=leads.filter(l=>enabled.includes(l.source_family || '') || enabled.includes(currentFamilies.get(l.team_id+':'+l.fub_person_id) || ''));
   }
+  const cohort=leads.filter(l=>Number.isFinite(Date.parse(l.fub_created || ''))&&
+    (!filters.from||Date.parse(l.fub_created!)>=Date.parse(filters.from))&&Date.parse(l.fub_created!)<Date.parse(filters.through)&&
+    (!filters.sources.length||filters.sources.includes(l.source_family || '')));
+  events.push(...await readProgressEvents(env,filters.orgId,ids,cohort));
   const report=calculatePipeline({leads,agents:roster,teams:teams.map(t=>({id:t.id,org_id:t.org_id,name:t.name,fub_subdomain:t.fub_subdomain,pipeline_stage_mappings:t.pipeline_stage_mappings})),
-    filters,historyState,historyThrough,canMapStages:manage,insightsEnabled:env.PIPELINE_INSIGHTS_ENABLED==='1'});
+    filters,events,historyState,historyThrough,canMapStages:manage,insightsEnabled:env.PIPELINE_INSIGHTS_ENABLED==='1'});
   report.snapshotId=await digest(pipelineSnapshotContent(report));
   return report;
+}
+/** Canonical history is private. Call only after user/RLS team authorization.
+ * Read retained webhook events directly so progress survives queue coalescing,
+ * a later Nurture status, and the older offer-only compatibility projection. */
+async function readProgressEvents(env:Env,orgId:string,teamIds:string[],leads:PipelineLead[]):Promise<ProgressEvent[]> {
+  const database=serviceDb(env),events:ProgressEvent[]=[];
+  for(const teamId of teamIds){
+   const personIds=[...new Set(leads.filter(l=>l.team_id===teamId&&Number.isSafeInteger(l.fub_person_id)).map(l=>l.fub_person_id))];
+   for(let batch=0;batch<personIds.length;batch+=200){
+    const selectedIds=personIds.slice(batch,batch+200);
+    for(let offset=0;;offset+=1000){
+    if(events.length>=200000)throw new PipelineError('Stage history is too large. Choose a shorter received-date period.',422);
+    const page=await database.select('history_stage_events',
+      'select=org_id,team_id,person_id,from_stage,to_stage,occurred_at,upstream_id,upstream_kind&org_id=eq.'+orgId+
+      '&team_id=eq.'+teamId+'&person_id=in.('+selectedIds.join(',')+')&order=person_id.asc,upstream_kind.asc,upstream_id.asc&limit=1000&offset='+offset);
+    if(page.some(e=>e.org_id!==orgId||e.team_id!==teamId||!selectedIds.includes(e.person_id)))throw new PipelineError('Stage history scope mismatch.',502);
+    events.push(...page.map(({org_id:_org,...event})=>event as ProgressEvent));
+    if(page.length<1000)break;
+    }
+   }
+  }
+  return events;
 }
 export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,cors:Record<string,string>,originOk:boolean):Promise<Response|null> {
   if(!url.pathname.startsWith('/data/pipeline'))return null;
