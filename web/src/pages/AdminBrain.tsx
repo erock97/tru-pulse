@@ -11,7 +11,7 @@ const parse=(s:string)=>{try{return JSON.parse(s);}catch{return null;}};
 async function api(path='',body?:Row){
   const response=await workerFetch(`/admin/brain${path}`,body?{method:'POST',body:JSON.stringify(body)}:{});
   const value=await response.json();
-  if(!response.ok)throw new Error(value.error||'TrueBrain could not complete this request');
+  if(!response.ok)throw Object.assign(new Error([401,403].includes(response.status)?'TrueBrain requires your owner session. It is unavailable while acting as a team.':value.error||'TrueBrain could not complete this request'),{status:response.status});
   return value;
 }
 
@@ -23,13 +23,14 @@ export function AdminBrain({onOpenPulse,onOpenCoach,onOpenRep}:{onOpenPulse:()=>
   const [supersedes,setSupersedes]=useState<string|null>(null);
   const [deviceLabel,setDeviceLabel]=useState(''),[deviceProject,setDeviceProject]=useState('');
   const [credential,setCredential]=useState<Row|null>(null),[adapters,setAdapters]=useState<string[]>([]);
-  const load=useCallback(async()=>{try{setData(await api());}catch(e){setError((e as Error).message);}},[]);
+  const clearPrivateState=useCallback(()=>{setData(null);setSelectedId('');setEvents([]);setReason('');setMemoryText('');setMemoryKey('');setSupersedes(null);setCredential(null);},[]);
+  const load=useCallback(async()=>{try{setData(await api());setError('');}catch(e){if([401,403].includes((e as Row).status))clearPrivateState();setError((e as Error).message);}},[clearPrivateState]);
   useEffect(()=>{void load();const timer=setInterval(()=>void load(),15000);return()=>clearInterval(timer);},[load]);
   useEffect(()=>{if(!selectedId)return;let active=true;void api(`/events?taskId=${encodeURIComponent(selectedId)}`).then(value=>{if(active)setEvents(value);}).catch(e=>setError(e.message));return()=>{active=false;};},[selectedId,data]);
   const act=async(body:Row)=>{
     setBusy(true);setError('');
     try{const result=await api('/control',body);await load();return result;}
-    catch(e){setError((e as Error).message);return null;}finally{setBusy(false);}
+    catch(e){if([401,403].includes((e as Row).status))clearPrivateState();setError((e as Error).message);return null;}finally{setBusy(false);}
   };
   const open=(id:string)=>{setSelectedId(id);setEvents([]);setReason('');setTab('Work');};
   const selected=data?.tasks.find(t=>t.id===selectedId);
