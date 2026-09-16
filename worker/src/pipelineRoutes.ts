@@ -5,6 +5,7 @@ import { readHistoryVersion } from './historyMetadata.js';
 import { calculatePipeline, mergePipelineLeads, pipelineSnapshotContent, PIPELINE_CATEGORIES,
   type PipelineFilters, type PipelineTeam, type PipelineLead, type PipelineAgent, type PipelineReport, type StageMapping } from '../../shared/pipeline.js';
 import { pipelineInsights } from './pipelineInsights.js';
+import { checkPipelineValues } from './pipelineValue.js';
 import type { ProgressEvent } from '../../shared/pipelineProgress.js';
 import { PipelineError, digest } from './pipelineSupport.js';
 export { PipelineError, digest } from './pipelineSupport.js';
@@ -122,6 +123,13 @@ export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,c
     if(req.method==='GET')body.sources=url.searchParams.getAll('source');
     const filters=parsePipelineFilters(body);
     if(url.pathname==='/data/pipeline'&&req.method==='GET')return json(await loadPipeline(env,db,filters));
+    if(url.pathname==='/data/pipeline/property-values'&&req.method==='POST'){
+      const report=await loadPipeline(env,db,filters);
+      if(body.snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed. Refresh before checking inquiry values.',409);
+      const values=await checkPipelineValues(env,report,body.leadKeys);
+      if((await loadPipeline(env,db,filters)).snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed during the check. Refresh and retry.',409);
+      return json({snapshotId:report.snapshotId,values,evidenceVersion:await digest(JSON.stringify(values))});
+    }
     if(url.pathname==='/data/pipeline/mappings'&&req.method==='PUT'){
       const {teams,manage}=await pipelineAccess(db,filters);
       if(!manage||!filters.teamId||teams.length!==1)throw new PipelineError('Only a team leader can change stage mappings.',403);

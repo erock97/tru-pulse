@@ -2,7 +2,8 @@ import {describe,it,expect,vi,beforeEach} from 'vitest';
 import {handlePipeline,loadPipeline,parsePipelineFilters,digest} from './pipelineRoutes';
 import type {UserClient} from './asUser';
 import type {Env} from './env';
-const mocks=vi.hoisted(()=>({history:vi.fn(),update:vi.fn(),insights:vi.fn(),events:vi.fn()}));
+const mocks=vi.hoisted(()=>({history:vi.fn(),update:vi.fn(),insights:vi.fn(),events:vi.fn(),values:vi.fn()}));
+vi.mock('./pipelineValue',()=>({checkPipelineValues:mocks.values}));
 vi.mock('./historyMetadata',()=>({readHistoryVersion:mocks.history}));
 vi.mock('./db',()=>({db:()=>({update:mocks.update,select:mocks.events})}));
 vi.mock('./pipelineInsights',()=>({pipelineInsights:mocks.insights}));
@@ -97,5 +98,17 @@ describe('pipeline route isolation and consistency',()=>{
  });
  it('excludes disabled sources without broadening the historical denominator',async()=>{
   expect((await loadPipeline(env,client({org_settings:[{sources:['Facebook']}]}),filters)).totals.total).toBe(0);
+ });
+ it('binds inquiry checks to authorized snapshots and rejects stale requests',async()=>{
+  const db=client(),report=await loadPipeline(env,db,filters);
+  expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:'old',leadKeys:[team+':1']})).status).toBe(409);
+  expect(mocks.values).not.toHaveBeenCalled();
+  mocks.values.mockResolvedValue({});
+  expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:report.snapshotId,leadKeys:[team+':1']})).status).toBe(200);
+ });
+ it('discards values when the pipeline changes during inquiry retrieval',async()=>{
+  const db=client(),r=await loadPipeline(env,db,filters),original=db.select;
+  mocks.values.mockImplementation(async()=>{db.select=vi.fn(async(t,q,o)=>t==='leads'?[{...lead,stage:'Closed'}] as any:original(t,q,o));return {};});
+  expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:r.snapshotId,leadKeys:[team+':1']})).status).toBe(409);
  });
 });

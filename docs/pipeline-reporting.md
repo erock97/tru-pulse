@@ -147,6 +147,50 @@ passing tests do not certify live provider output or production evidence quality
 
 ## Validation
 
+### Inquiry property volume testing increment
+
+The preview adds **Estimated property volume**, scoped to the same received-date,
+source, team and current-owner selection. It sums buyer property inquiry amounts
+once per unique lead across all current stages, including nurture/rejected/closed;
+it is explicitly not active deal value, commission, expected revenue or verified
+purchase budget. Seller inquiry estimates are a separate subtotal. Missing values
+are never extrapolated or counted as zero-valued properties.
+
+`shared/pipelineValue.ts` is the shared deterministic policy (`inquiry-v1`). It
+uses the earliest accessible inquiry by occurred/created time only when it is
+within five minutes of lead creation and available event pagination is complete.
+It never falls back to the contact price or substitutes a later higher-priced
+property. Conflicting simultaneous inquiries, missing timestamps/prices, payment
+signals, rentals, unknown rental classification and historical-only identities
+are excluded. The preview review range is $25,000–$100 million; values outside
+that range are ambiguous, not automatically labelled mortgage payments. These
+are conservative preview guardrails, not a claim that every low-priced property
+is invalid. FUB may hide events from the API even after accessible pagination is
+complete, so the UI says earliest available rather than guaranteeing original.
+
+`POST /data/pipeline/property-values` accepts the existing filters, snapshotId,
+and one to five distinct leadKeys. Existing JWT/RLS authorization runs first;
+every key must belong to the authorized report. The server retrieves the existing
+encrypted team credential, verifies the FUB account domain, then reads up to
+three event pages per lead with pacing and existing API retries. Foreign cursor
+URLs are never followed. It rechecks the pipeline snapshot before returning
+minimal evidence and an evidence hash. No raw conversation text, contact price,
+API credential, address or full event payload is returned. No FUB mutations,
+schema changes, sync modifications or additional webhooks are introduced.
+
+The signed-in test flow is explicitly **Check next 5 leads**. Results remain in
+the current browser component and reset when filters/report change. Each amount
+opens matching lead evidence with FUB links, event dates and exclusion reasons.
+Failure leaves existing pipeline counts and checked evidence usable. Inquiry
+values are not inputs to AI coaching in this increment. Persistent collection,
+shared caching and automated full-team backfill are intentionally outside this
+testing increment. They need a separately reviewed ingestion/release design.
+
+The hosted demo uses only fictional amounts and evidence. This web preview does
+not deploy the Worker; signed-in endpoint testing requires a reviewed Worker
+environment. Real API sampling uses read-only Bitwarden credentials and the same
+compiled calculation module separately, with no production database writes.
+
 Worker tests cover the supplied example, count reconciliation, duplicate IDs and
 names, reassignment, source/date bounds, zero denominators, custom mappings,
 unknown stages, historical source coverage, owner ambiguity, team isolation,

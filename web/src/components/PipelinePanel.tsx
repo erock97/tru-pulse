@@ -7,6 +7,7 @@ import { pipelineFixture } from '../../../shared/pipelineFixture';
 import { metricCandidates } from '../../../shared/pipelineInsightCandidates';
 import type { PipelineInsightResult } from '../../../shared/pipelineInsights';
 import './pipeline.css';
+import { PipelineValue } from './PipelineValue';
 
 const percent=(value:number|null)=>value===null?'—':value.toFixed(1)+'%';
 const categoryLabel={active:'Active pipeline',under_contract:'Under contract',closed:'Closed',nurture:'Nurture',rejected:'Rejected',unmapped:'Unmapped stages'};
@@ -137,6 +138,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           <p>{report.leads.filter(l=>['nurture','rejected','unmapped'].includes(l.category)&&Object.keys(l.progress).length===1).length} leads outside the known progression have no earlier progress available in this report. Missing history is not evidence of missing work.</p>
         </details>
       </div>
+      <PipelineValue report={report} agentKey={agent?.key || ''}/>
       <div className="pipeline-workspace">
         <section className="pipeline-card pipeline-roster"><div className="pipeline-card-head"><div><span className="pipeline-eyebrow">Contribution</span><h3>Your agents</h3></div><span>{report.agents.length} ownership rows</span></div>
           <div className="pipeline-table-tools"><input aria-label="Find a pipeline agent" placeholder="Find an agent…" value={query} onChange={e=>setQuery(e.target.value)}/>
