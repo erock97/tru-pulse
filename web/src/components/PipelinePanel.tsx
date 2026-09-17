@@ -125,11 +125,11 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
     {(error||range.error)&&<div role="alert" className="pipeline-notice">{error||range.error} <button onClick={()=>setRefresh(v=>v+1)}>Retry</button></div>}
     {busy&&<div className="pipeline-loading" role="status" aria-live="polite"><span className="pipeline-spinner" aria-hidden="true"/><div><strong>Updating your pipeline</strong><p>Your filters have been received. Loading leads and their stage history…</p></div></div>}
     {!busy&&!error&&!range.error&&report&&<>
-      <div className="pipeline-summary" aria-label="Team pipeline summary">
-        {[{label:'Team leads',value:report.totals.total,keys:report.leads.map(l=>l.key),detail:'In the selected received-date period'},
-          {label:'Current conversions',value:report.totals.conversions,keys:report.leads.filter(l=>['under_contract','closed'].includes(l.category)).map(l=>l.key),detail:percent(report.totals.conversionRate)+' of team leads'},
-          {label:'Nurture',value:report.totals.nurture,keys:report.leads.filter(l=>l.category==='nurture').map(l=>l.key),detail:percent(report.totals.nurturePct)+' of team leads'},
-          {label:'Rejected',value:report.totals.rejected,keys:report.leads.filter(l=>l.category==='rejected').map(l=>l.key),detail:percent(report.totals.rejectedPct)+' of team leads'}].map(c=><div key={c.label}><span>{c.label}</span>{countButton(c.label,c.value,c.keys)}<small>{c.detail}</small></div>)}
+      <div className="pipeline-summary" aria-label={agent?"Agent pipeline summary":"Team pipeline summary"}>
+        {[{label:agent?agent.name+' leads':'Team leads',value:counts.total,keys:selected.map(l=>l.key),detail:'In the selected received-date period'},
+          {label:'Current conversions',value:counts.conversions,keys:selected.filter(l=>['under_contract','closed'].includes(l.category)).map(l=>l.key),detail:percent(counts.conversionRate)+' of '+(agent?'agent':'team')+' leads'},
+          {label:'Nurture',value:counts.nurture,keys:selected.filter(l=>l.category==='nurture').map(l=>l.key),detail:percent(counts.nurturePct)+' of '+(agent?'agent':'team')+' leads'},
+          {label:'Rejected',value:counts.rejected,keys:selected.filter(l=>l.category==='rejected').map(l=>l.key),detail:percent(counts.rejectedPct)+' of '+(agent?'agent':'team')+' leads'}].map(c=><div key={c.label}><span>{c.label}</span>{countButton(c.label,c.value,c.keys)}<small>{c.detail}</small></div>)}
       </div>
       <div className="pipeline-health">
         <details><summary>How these counts reconcile</summary>
@@ -147,11 +147,11 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           <p>{report.leads.filter(l=>['nurture','rejected','unmapped'].includes(l.category)&&Object.keys(l.progress).length===1).length} leads outside the known progression have no earlier progress available in this report. Missing history is not evidence of missing work.</p>
         </details>
       </div>
-      <div className={agent?"pipeline-workspace pipeline-workspace-agent":"pipeline-workspace"}>
+      <div className="pipeline-workspace">
         <section ref={detailRef} tabIndex={-1} className="pipeline-card pipeline-detail" aria-label="Stage breakdown">
           <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'Where your leads are now'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
           <p className="pipeline-caption">{counts.total} leads · {percent(counts.conversionRate)} current conversion rate{agent?' · '+percent(agent.leadShare)+' of team leads · '+percent(agent.conversionShare)+' of team current conversions':''}</p>
-          <div className={agent?"pipeline-agent-overview":"pipeline-team-overview"}>
+          <div className="pipeline-team-overview">
           <div className="pipeline-current-stages" aria-label="Current stage distribution"><h4>Where leads sit now</h4><p className="pipeline-caption">Each lead appears once. Bars show the share of {agent?'this agent’s':'the team’s'} leads in each current stage.{agent?' The marker shows the team share.':''}</p>
           {PIPELINE_CATEGORIES.map(category=>{
             if(category==='nurture'||category==='rejected'){

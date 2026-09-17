@@ -26,7 +26,11 @@ it('provides an agent filter and visible current-stage bars with exact matching 
  expect(buttons.reduce((n,b)=>n+Number(b.querySelector('strong')!.textContent),0)).toBe(165);
  const nurture=buttons.find(b=>b.getAttribute('aria-label')==='Current Nurture: 76 leads')!;
  await act(async()=>nurture.click());expect(host.querySelector('[aria-label="Matching leads"]')?.querySelectorAll('li')).toHaveLength(76);
- expect(host.querySelector('[aria-label="Team pipeline summary"]')?.textContent).toContain('504');
+ expect(host.querySelector('[aria-label="Agent pipeline summary"]')?.textContent).toContain('165');
+ expect(host.querySelector('[aria-label="Team pipeline summary"]')).toBeNull();
+ expect(host.querySelector('.pipeline-workspace')?.classList.contains('pipeline-workspace-agent')).toBe(false);
+ expect(host.querySelector('.pipeline-roster')?.textContent).toContain('32.7%');
+ expect(host.querySelector('.pipeline-roster')?.textContent).toContain('38.7%');
 });
 it('selects an agent without shrinking team denominators and reveals exactly the nurture records',async()=>{
  await render();await click('Alex Morgan');
@@ -35,7 +39,11 @@ it('selects an agent without shrinking team denominators and reveals exactly the
  const nurture=detail.querySelector<HTMLButtonElement>('[aria-label="Nurture: 76 leads"]')!;
  await act(async()=>nurture.click());
  expect(host.querySelector('[aria-label="Matching leads"]')?.querySelectorAll('li')).toHaveLength(76);
- expect(host.querySelector('[aria-label="Team pipeline summary"]')?.textContent).toContain('504');
+ expect(host.querySelector('[aria-label="Agent pipeline summary"]')?.textContent).toContain('165');
+ expect(host.querySelector('[aria-label="Team pipeline summary"]')).toBeNull();
+ expect(host.querySelector('.pipeline-workspace')?.classList.contains('pipeline-workspace-agent')).toBe(false);
+ expect(host.querySelector('.pipeline-roster')?.textContent).toContain('32.7%');
+ expect(host.querySelector('.pipeline-roster')?.textContent).toContain('38.7%');
 });
 it('shows retained progression and opens the exact leads including the lead now in Nurture',async()=>{
  await render();await click('Alex Morgan');
