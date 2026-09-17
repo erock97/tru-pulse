@@ -5,7 +5,7 @@
     {
       "id": "day4-welcome",
       "title": "Zillow Home Loans and the buyer introduction",
-      "lead": "Day Four · 59 minutes including discussion and breakout practice",
+      "lead": "Day Four · 63 minutes including discussion and breakout practice",
       "body": "<p class=\"lesson-explanation\">Understand what ZHL offers. Learn when an introduction fits the buyer’s plans, then practice connecting the buyer and loan officer at the end of the first appointment.</p>",
       "time": 1,
       "chapter": "Welcome",
@@ -76,11 +76,35 @@
       "id": "day4-loan-options",
       "title": "Know the loan options you can ask ZHL about",
       "lead": "Name the option, then let the loan officer explain whether it fits this buyer.",
-      "body": "<div class=\"zhl-options\"><div><h3>Conventional</h3><p>A mortgage without a federal government guarantee. Ask about available fixed-rate and adjustable-rate options.</p></div><div><h3>FHA</h3><p>Insured by the Federal Housing Administration. Ask about down payment and mortgage insurance when comparing it with a conventional loan.</p></div><div><h3>VA</h3><p>For eligible veterans, service members and certain surviving spouses. The loan officer confirms eligibility and explains any funding fee.</p></div><div><h3>Jumbo</h3><p>A loan above the applicable conforming limit. Ask which limit applies to the property and what ZHL requires for the larger amount.</p></div></div><p class=\"zhl-note\">ZHL also offers refinance options. Rates, down payments and program requirements must be confirmed for the individual file. ZHL currently lists availability in U.S. states except New York; territories are excluded.</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">Current loan types and availability ↗</a> · Reviewed September 17, 2026</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">What the loan types mean ↗</a> · Reviewed September 17, 2026</p>",
+      "body": "<div class=\"zhl-options\"><div><h3>Conventional</h3><p>A mortgage without a federal government guarantee. Ask about available fixed-rate and adjustable-rate options.</p></div><div><h3>FHA</h3><p>Insured by the Federal Housing Administration. Ask about down payment and mortgage insurance when comparing it with a conventional loan.</p></div><div><h3>VA</h3><p>For eligible veterans, service members and certain surviving spouses. The loan officer confirms eligibility and explains any funding fee.</p></div><div><h3>Jumbo</h3><p>A loan above the applicable conforming limit. Ask which limit applies to the property and what ZHL requires for the larger amount.</p></div></div><p class=\"zhl-note\">Published terms include 10-, 15-, 20- and 30-year fixed loans; 20-, 25- and 30-year FHA; and 30-year VA and jumbo. Confirm which terms apply to the buyer. Next: the 7/6 ARM and 2-1 buydown.</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">Current loan types and availability ↗</a> · Reviewed September 17, 2026</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">What the loan types mean ↗</a> · Reviewed September 17, 2026</p>",
       "time": 3,
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
       "theme": "tru alms lesson training-depth zhl-lesson ",
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Understand fixed rates and adjustable rates",
+      "cue": "Next: Understand fixed rates and adjustable rates"
+    },
+    {
+      "id": "day4-fixed-and-adjustable",
+      "title": "Understand fixed rates and adjustable rates",
+      "lead": "ZHL offers both. The important difference is what happens to the payment over time.",
+      "body": "<div class=\"zhl-options\"><div><h3>Fixed-rate mortgage</h3><p>The interest rate stays the same for the loan term. Principal and interest stay level; taxes and insurance can still change the total payment.</p><p><strong>Ask the loan officer:</strong> “How do the payment, cash needed and total cost compare across the available terms?”</p></div><div><h3>7/6 adjustable-rate mortgage</h3><p>The rate is fixed for the first seven years. After that, it can adjust every six months under the loan’s terms.</p><p><strong>Ask the loan officer:</strong> “What are the adjustment caps, how is the new rate calculated, and what could the payment become?”</p></div></div><p class=\"zhl-note\">An ARM may be worth comparing when the buyer asks about the initial payment and expected time in the home. Have the loan officer compare the risk as well as the cost. Do not assume the buyer will be able to sell or refinance before the rate changes.</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/mortgage-rates/\">ZHL fixed and adjustable options ↗</a> · <a href=\"https://www.chase.com/personal/mortgage/education/financing-a-home/adjustable-rate-mortgage\">How ARM periods work ↗</a></p>",
+      "time": 2,
+      "chapter": "1. Zillow Home Loans overview",
+      "quadrant": 1,
+      "theme": "tru alms lesson training-depth zhl-lesson ",
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Understand ZHL’s 2-1 buydown",
+      "cue": "Next: Understand ZHL’s 2-1 buydown"
+    },
+    {
+      "id": "day4-temporary-buydown",
+      "title": "Understand ZHL’s 2-1 buydown",
+      "lead": "Temporary payment relief during the first two years of an eligible loan.",
+      "body": "<div class=\"buydown-years\"><div><span>YEAR 1</span><h3>2 points lower</h3><p>Payment is calculated using a rate two percentage points below the rate in the loan agreement.</p></div><div><span>YEAR 2</span><h3>1 point lower</h3><p>Payment is calculated using a rate one percentage point below the rate in the loan agreement.</p></div><div><span>YEAR 3 ONWARD</span><h3>Full loan rate</h3><p>The temporary subsidy ends. The borrower pays the regular principal and interest payment.</p></div></div><div class=\"zhl-options buydown-questions\"><div><h3>When to discuss it</h3><p>If the buyer asks about early payment relief or a seller credit, ask the loan officer whether a seller-paid 2-1 buydown fits the loan and offer.</p></div><div><h3>What to confirm</h3><p>Ask who funds it, what it costs, which loans qualify, and what the full payment will be after year two. Compare that with other uses of the seller credit.</p></div></div><p class=\"zhl-note\">This does not permanently reduce the rate in the loan agreement. The buyer needs to understand the later payment without relying on a future refinance.</p><p class=\"lesson-source\"><a href=\"https://delivery.digitallibrary.zillowgroup.com/public/Handout2-1Seller-PaidBuydown_pdf_Original.pdf\">ZHL’s official 2-1 buydown handout and payment example ↗</a></p>",
+      "time": 2,
+      "chapter": "1. Zillow Home Loans overview",
+      "quadrant": 1,
+      "theme": "tru alms lesson training-depth zhl-lesson buydown-lesson",
       "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: What buyers see in BuyAbility",
       "cue": "Next: What buyers see in BuyAbility"
     },
@@ -362,7 +386,7 @@
       "id": "day4-independent-review",
       "title": "Keep the steps and current references available",
       "lead": "Use the agent reference after class. Practice the introduction again with a partner.",
-      "body": "<div class=\"reference-links\"><p><a href=\"https://www.zillow.com/homeloans/\">ZHL loan options and availability ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\">Pre-approval and credit-check FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\">ZHL tools and support for agents ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\">FUB transfer instructions ↗</a></p></div><p class=\"zhl-note\">Product information reviewed September 17, 2026. Confirm current programs and terms with the loan officer. Use Section 1 for the knowledge overview and Section 2 for timing, sample wording and the handoff checklist.</p>",
+      "body": "<p class=\"zhl-note\">ZHL also offers refinancing to change an existing loan’s rate or term, plus cash-out options. Have the loan officer compare costs, payment, loan length and total borrowing cost. <a href=\"https://www.zillow.com/homeloans/refinance/\">Review refinance options ↗</a></p><div class=\"reference-links\"><p><a href=\"https://www.zillow.com/homeloans/\">ZHL loan options and availability ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\">Pre-approval and credit-check FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\">ZHL tools and support for agents ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\">FUB transfer instructions ↗</a></p></div><p class=\"zhl-note\">Product information reviewed September 17, 2026. Confirm current programs and terms with the loan officer. Use Section 1 for the knowledge overview and Section 2 for timing, sample wording and the handoff checklist.</p>",
       "time": 1,
       "chapter": "2. Introduce the buyer and practice the connection",
       "quadrant": 2,
@@ -394,9 +418,9 @@
     }
   ],
   "hero": "/workshops/house.jpg",
-  "resources": "<h3>Day Four reference</h3><p>Two sections: ZHL overview, then buyer introductions and breakout practice. Use the downloadable agent reference for the knowledge, timing guidance and sample wording.</p><p><a href=\"/workshops/day4-resources.pdf\">Download agent reference</a></p><p><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">Loan type definitions ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">ZHL overview ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">Follow Up Boss transfer instructions ↗</a></p>",
-  "version": "2026-09-17-day4-two-sections-v9",
-  "duration": 59,
+  "resources": "<h3>Day Four reference</h3><p>ZHL also offers refinancing, including changing a rate or term and cash-out options. These replace an existing loan. Ask the loan officer to compare closing costs, the new payment, the term and total borrowing cost. Refinancing later is not guaranteed.</p><p><a href=\"https://www.zillow.com/homeloans/refinance/\">ZHL refinance options</a></p><p>Two sections: ZHL overview, then buyer introductions and breakout practice. Use the downloadable agent reference for the knowledge, timing guidance and sample wording.</p><p><a href=\"/workshops/day4-resources.pdf\">Download agent reference</a></p><p><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">Loan type definitions ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">ZHL overview ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">Follow Up Boss transfer instructions ↗</a></p>",
+  "version": "2026-09-17-day4-two-sections-v10",
+  "duration": 63,
   "quadrants": [
     {
       "number": 1,
