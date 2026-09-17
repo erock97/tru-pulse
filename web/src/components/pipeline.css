@@ -71,3 +71,4 @@
 .pipeline-agent-overview .pipeline-value-amount{font-size:clamp(28px,3vw,36px)}
 @media(min-width:1400px){.pipeline-workspace:not(.pipeline-workspace-agent){grid-template-columns:minmax(0,1fr) minmax(0,1.14fr)}}
 @media(max-width:1000px){.pipeline-agent-overview{grid-template-columns:minmax(0,1fr)}.pipeline-agent-overview .pipeline-value{margin:0}}
+@media(min-width:1400px){.pipeline-workspace:not(.pipeline-workspace-agent){grid-template-columns:minmax(0,1.14fr) minmax(0,1fr)}.pipeline-workspace:not(.pipeline-workspace-agent)>.pipeline-roster{grid-column:1;grid-row:1}.pipeline-workspace:not(.pipeline-workspace-agent)>.pipeline-detail{grid-column:2;grid-row:1}}
