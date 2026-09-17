@@ -21,7 +21,7 @@ it('provides an agent filter and visible current-stage bars with exact matching 
  await render();const select=host.querySelector<HTMLSelectElement>('[aria-label="Pipeline agent"]')!;
  await act(async()=>{select.value='demo-team:user:1';select.dispatchEvent(new Event('change',{bubbles:true}));});
  const chart=host.querySelector('[aria-label="Current stage distribution"]')!;
- expect(chart.closest('details')).toBeNull();expect(chart.textContent).toContain('Where leads sit now');
+ expect(chart.closest('details')).not.toBeNull();expect(chart.textContent).toContain('Where leads sit now');
  const buttons=[...chart.querySelectorAll<HTMLButtonElement>('button')];
  expect(buttons.reduce((n,b)=>n+Number(b.querySelector('strong')!.textContent),0)).toBe(165);
  const nurture=buttons.find(b=>b.getAttribute('aria-label')==='Current Nurture: 76 leads')!;
@@ -48,6 +48,8 @@ it('selects an agent without shrinking team denominators and reveals exactly the
 it('shows retained progression and opens the exact leads including the lead now in Nurture',async()=>{
  await render();await click('Alex Morgan');
  const detail=host.querySelector('[aria-label="Stage breakdown"]')!;
+ expect(detail.querySelector('[aria-label="Historical stage progression"]')?.closest('details')).toBeNull();
+ expect(detail.querySelector('.pipeline-track b')).toBeNull();
  const counts:Record<string,number>={'Lead received':165,'Attempted contact':56,'Spoke with customer':49,'Appointment set':34,'Met with customer':32,'Showing homes':18,'Submitting offers':12,'Under contract':12,'Closed':11};
  for(const [stage,count] of Object.entries(counts)){
   const button=detail.querySelector<HTMLButtonElement>('[aria-label="'+stage+': '+count+' leads"]');
