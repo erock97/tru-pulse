@@ -78,7 +78,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
   const counts=pipelineCounts(selected);
   const reconciliation=useMemo(()=>report?reconcilePipeline(report):null,[report]);
   const owners=(report?.agents || []).filter(a=>a.name.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):
-    (b[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1)-(a[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1));
+    (b[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1)-(a[sort as 'total'|'conversionShare'|'nurturePct'|'conversionRate']??-1)).sort((a,b)=>Number(b.key===agentKey)-Number(a.key===agentKey));
   const showLeads=(title:string,keys:string[],progressKey?:string)=>{setProof({title,keys,progressKey});setTimeout(()=>proofRef.current?.focus(),0);};
   const chooseAgent=(key:string)=>{setAgentKey(key);setProof(null);setInsights(null);setAiError('');setAiBusy(false);insightVersion.current++;
     if(key)setTimeout(()=>{detailRef.current?.focus({preventScroll:true});detailRef.current?.scrollIntoView?.({behavior:'smooth',block:'start'});},0);
