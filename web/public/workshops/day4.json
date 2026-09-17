@@ -81,51 +81,15 @@
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
       "theme": "tru alms lesson training-depth zhl-lesson ",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: BuyAbility is a tool buyers use themselves",
-      "cue": "Next: BuyAbility is a tool buyers use themselves"
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: What buyers see in BuyAbility",
+      "cue": "Next: What buyers see in BuyAbility"
     },
     {
       "id": "day4-buyability",
-      "title": "BuyAbility is a tool buyers use themselves",
-      "lead": "",
-      "body": "<div class=\"buyability-screens\"><figure class=\"buyability-step-1\"><figcaption><span class=\"buyability-step-label\">BUYABILITY · BUYER EXPERIENCE 1 OF 4</span><h3>Recognize what the buyer may already have seen</h3><p>Buyers may use BuyAbility in Zillow to explore their purchasing power before speaking with you.</p><p class=\"buyability-guidance\">This overview helps you understand their experience. Agents are not expected to introduce the tool or guide buyers through it.</p></figcaption><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media1_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen\"><img src=\"/workshops/assets/buyability-step-1.png\" alt=\"Zillow published BuyAbility demonstration: Recognize what the buyer may already have seen\" /></a></figure></div><p class=\"lesson-source\">Detail from Zillow’s demonstration screen. Figures are illustrative. <a href=\"https://www.zillow.com/pro/buyability/\" target=\"_blank\" rel=\"noopener\">Source ↗</a> · Select the image to open the full screen.</p>",
-      "time": 1,
-      "chapter": "1. Zillow Home Loans overview",
-      "quadrant": 1,
-      "theme": "tru alms lesson training-depth zhl-lesson buyability-walkthrough",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: The estimate starts with the buyer’s information",
-      "cue": "Next: The estimate starts with the buyer’s information"
-    },
-    {
-      "id": "day4-buyability-inputs",
-      "title": "The estimate starts with the buyer’s information",
-      "lead": "",
-      "body": "<div class=\"buyability-screens\"><figure class=\"buyability-step-2\"><figcaption><span class=\"buyability-step-label\">BUYABILITY · BUYER EXPERIENCE 2 OF 4</span><h3>The buyer supplies the details</h3><p>The tool asks about location, down payment savings and a comfortable monthly payment. The buyer completes this independently.</p><p class=\"buyability-guidance\">These are buyer-provided inputs. Seeing a BuyAbility result does not mean a loan officer has verified that information.</p></figcaption><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media2_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen\"><img src=\"/workshops/assets/buyability-step-2.png\" alt=\"Zillow published BuyAbility demonstration: The buyer supplies the details\" /></a></figure></div><p class=\"lesson-source\">Detail from Zillow’s demonstration screen. Figures are illustrative. <a href=\"https://www.zillow.com/pro/buyability/\" target=\"_blank\" rel=\"noopener\">Source ↗</a> · Select the image to open the full screen.</p>",
-      "time": 1,
-      "chapter": "1. Zillow Home Loans overview",
-      "quadrant": 1,
-      "theme": "tru alms lesson training-depth zhl-lesson buyability-walkthrough",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: What a BuyAbility result tells the buyer",
-      "cue": "Next: What a BuyAbility result tells the buyer"
-    },
-    {
-      "id": "day4-buyability-results",
-      "title": "What a BuyAbility result tells the buyer",
-      "lead": "",
-      "body": "<div class=\"buyability-screens\"><figure class=\"buyability-step-3\"><figcaption><span class=\"buyability-step-label\">BUYABILITY · BUYER EXPERIENCE 3 OF 4</span><h3>An estimate of purchasing power</h3><p>The result shows an estimated purchase amount and monthly payment based on the information used by the tool.</p><p class=\"buyability-guidance\">If a buyer mentions this number, recognize where it came from. It is not verified loan approval; the loan officer reviews financing.</p></figcaption><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media3_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen\"><img src=\"/workshops/assets/buyability-step-3.png\" alt=\"Zillow published BuyAbility demonstration: An estimate of purchasing power\" /></a></figure></div><p class=\"lesson-source\">Detail from Zillow’s demonstration screen. Figures are illustrative. <a href=\"https://www.zillow.com/pro/buyability/\" target=\"_blank\" rel=\"noopener\">Source ↗</a> · Select the image to open the full screen.</p>",
-      "time": 1,
-      "chapter": "1. Zillow Home Loans overview",
-      "quadrant": 1,
-      "theme": "tru alms lesson training-depth zhl-lesson buyability-walkthrough",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Buyers may see BuyAbility on home listings",
-      "cue": "Next: Buyers may see BuyAbility on home listings"
-    },
-    {
-      "id": "day4-buyability-search",
-      "title": "Buyers may see BuyAbility on home listings",
-      "lead": "",
-      "body": "<div class=\"buyability-screens\"><figure class=\"buyability-step-4\"><figcaption><span class=\"buyability-step-label\">BUYABILITY · BUYER EXPERIENCE 4 OF 4</span><h3>What “Within BuyAbility” means</h3><p>Buyers may see this label while browsing homes that fall within their estimated purchasing power.</p><p class=\"buyability-guidance\">The label helps explain why a buyer may believe a home fits their budget. It does not confirm approval for that home.</p></figcaption><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media4_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen\"><img src=\"/workshops/assets/buyability-step-4.png\" alt=\"Zillow published BuyAbility demonstration: What “Within BuyAbility” means\" /></a></figure></div><p class=\"lesson-source\">Detail from Zillow’s demonstration screen. Figures are illustrative. <a href=\"https://www.zillow.com/pro/buyability/\" target=\"_blank\" rel=\"noopener\">Source ↗</a> · Select the image to open the full screen.</p>",
-      "time": 1,
+      "title": "What buyers see in BuyAbility",
+      "lead": "Buyers use this tool themselves to explore what they may be able to afford.",
+      "body": "<div class=\"buyability-gallery buyability-screens\"><figure class=\"buyability-card\"><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media1_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen 1\"><img src=\"/workshops/assets/buyability-step-1.png\" alt=\"Zillow demonstration: Where buyers start\" /></a><figcaption><h3><span>01</span>Where buyers start</h3><p>Buyers can find BuyAbility in Zillow’s Home Loans tab.</p></figcaption></figure><figure class=\"buyability-card\"><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media2_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen 2\"><img src=\"/workshops/assets/buyability-step-2.png\" alt=\"Zillow demonstration: What buyers enter\" /></a><figcaption><h3><span>02</span>What buyers enter</h3><p>Location, savings and a comfortable monthly payment help inform the estimate.</p></figcaption></figure><figure class=\"buyability-card\"><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media3_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen 3\"><img src=\"/workshops/assets/buyability-step-3.png\" alt=\"Zillow demonstration: What buyers see\" /></a><figcaption><h3><span>03</span>What buyers see</h3><p>An estimated purchase amount and payment give buyers a starting point.</p></figcaption></figure><figure class=\"buyability-card\"><a class=\"buyability-image\" href=\"https://delivery.digitallibrary.zillowgroup.com/public/SZ_AgentBuyAbility_Media4_desktop_png_Original.png\" target=\"_blank\" rel=\"noopener\" aria-label=\"Open full Zillow demonstration screen 4\"><img src=\"/workshops/assets/buyability-step-4.png\" alt=\"Zillow demonstration: How it appears in search\" /></a><figcaption><h3><span>04</span>How it appears in search</h3><p>“Within BuyAbility” identifies homes within the estimated purchasing power.</p></figcaption></figure></div><div class=\"buyability-takeaway\"><strong>What this means for the agent</strong><p>A buyer may arrive with a BuyAbility number in mind. Recognize where that number came from: it is an estimate based on buyer inputs, not verified loan approval. The loan officer reviews the buyer’s financing.</p></div><p class=\"lesson-source\">Zillow’s demonstration screens; figures are illustrative. <a href=\"https://www.zillow.com/pro/buyability/\" target=\"_blank\" rel=\"noopener\">Source ↗</a> · Select any screen to view the original.</p>",
+      "time": 4,
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
       "theme": "tru alms lesson training-depth zhl-lesson buyability-walkthrough",
@@ -419,7 +383,7 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<h3>Day Four reference</h3><p>Two sections: ZHL overview, then buyer introductions and breakout practice. Use the downloadable agent reference for the knowledge, timing guidance and sample wording.</p><p><a href=\"/workshops/day4-resources.pdf\">Download agent reference</a></p><p><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">Loan type definitions ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">ZHL overview ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">Follow Up Boss transfer instructions ↗</a></p>",
-  "version": "2026-09-17-day4-two-sections-v6",
+  "version": "2026-09-17-day4-two-sections-v7",
   "duration": 57,
   "quadrants": [
     {
