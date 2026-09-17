@@ -100,19 +100,19 @@
       "id": "day4-pre-qualification-pre-approval-and-final-approval",
       "title": "Understand the stages before calling a buyer approved",
       "lead": "Ask what the lender has reviewed and what still needs to happen.",
-      "body": "<div class=\"zhl-columns\"><div><span class=\"zhl-step\">01</span><h3>Pre-qualification</h3><p>An initial estimate using self-reported income and assets plus a soft credit check. It does not mean the documents have all been verified.</p></div><div><span class=\"zhl-step\">02</span><h3>Verified pre-approval</h3><p>The buyer submits documents to confirm financial information. Ask what has been verified and which conditions remain.</p></div><div><span class=\"zhl-step\">03</span><h3>Final approval and funding</h3><p>The lender must complete the remaining borrower and property requirements. A pre-approval letter does not guarantee funding.</p></div></div><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL pre-qualification and pre-approval FAQ ↗</a> · Reviewed September 17, 2026</p>",
+      "body": "<div class=\"zhl-columns\"><div><span class=\"zhl-step\">01</span><h3>Pre-qualification</h3><p>An initial estimate using self-reported income and assets plus a soft credit check. It does not mean the documents have all been verified.</p></div><div><span class=\"zhl-step\">02</span><h3>Verified pre-approval</h3><p>The lender verifies income, assets and credit. ZHL describes a soft-pull option; confirm the inquiry type and remaining conditions with the loan officer.</p></div><div><span class=\"zhl-step\">03</span><h3>Final approval and funding</h3><p>The lender must complete the remaining borrower and property requirements. A pre-approval letter does not guarantee funding.</p></div></div><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL pre-qualification and pre-approval FAQ ↗</a> · Reviewed September 17, 2026</p>",
       "time": 3,
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
       "theme": "tru alms lesson training-depth zhl-lesson ",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Explain the credit check without making a promise",
-      "cue": "Next: Explain the credit check without making a promise"
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: How ZHL reviews credit during pre-approval",
+      "cue": "Next: How ZHL reviews credit during pre-approval"
     },
     {
       "id": "day4-credit-review",
-      "title": "Explain the credit check without making a promise",
-      "lead": "Use this wording when a buyer asks whether checking financing affects their credit.",
-      "body": "<blockquote class=\"lesson-example\">“ZHL’s pre-qualification starts with a soft credit check. Before you go further, let’s have the loan officer explain which credit checks your application will need.”</blockquote><div class=\"rows\"><div class=\"row\"><h3>What agents should know</h3><p>A hard inquiry may be required later. Do not say that the entire loan process has no effect on credit.</p></div><div class=\"row\"><h3>What the buyer should confirm</h3><p>Ask the loan officer to explain the credit inquiry before proceeding with the next step.</p></div></div><p class=\"lesson-source\"><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL credit-check FAQ ↗</a> · Reviewed September 17, 2026</p>",
+      "title": "How ZHL reviews credit during pre-approval",
+      "lead": "Pre-approval includes verification of income, assets and credit.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Soft-pull pre-approval</h3><p>ZHL describes a pre-approval option that uses a soft credit inquiry. That inquiry does not affect the buyer’s credit score.</p></div><div class=\"row\"><h3>When an earlier hard pull may help</h3><p>If the buyer is close to the loan program’s minimum credit score, the loan officer may recommend a hard pull before issuing the letter. The purpose is to resolve eligibility concerns before the buyer shops relying on that approval.</p></div><div class=\"row\"><h3>What to confirm with the loan officer</h3><p>Ask: “Does this buyer need a hard pull before you issue the pre-approval? What minimum score applies to their program?” Confirm the answer before describing the credit check to the buyer.</p></div></div><p class=\"zhl-note\">A soft inquiry and a hard inquiry are different. A hard inquiry can affect the credit score. The loan officer determines when it is needed; do not assume it always waits until the buyer is ready to make an offer.</p><p class=\"lesson-source\"><a href=\"https://www.zillow.com/learn/does-mortgage-pre-approval-affect-credit-score/\" target=\"_blank\" rel=\"noopener\">ZHL soft-pull pre-approval explanation ↗</a> · <a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p>",
       "time": 2,
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
@@ -383,7 +383,7 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<h3>Day Four reference</h3><p>Two sections: ZHL overview, then buyer introductions and breakout practice. Use the downloadable agent reference for the knowledge, timing guidance and sample wording.</p><p><a href=\"/workshops/day4-resources.pdf\">Download agent reference</a></p><p><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">Loan type definitions ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">ZHL overview ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">Follow Up Boss transfer instructions ↗</a></p>",
-  "version": "2026-09-17-day4-two-sections-v7",
+  "version": "2026-09-17-day4-two-sections-v8",
   "duration": 57,
   "quadrants": [
     {
