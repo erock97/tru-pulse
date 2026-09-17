@@ -9,11 +9,12 @@ export class PipelineValueCollector {
  constructor(private state:DurableObjectState,private env:Env){}
  async fetch(req:Request){
   if(req.method==='GET')return Response.json(await this.state.storage.get('status')||{state:'waiting'});
-  const {teamId}=await req.json() as {teamId:string};
+  const {teamId,wake=false}=await req.json() as {teamId:string;wake?:boolean};
   const old=await this.state.storage.get<string>('teamId');
   if(!UUID.test(teamId)||old&&old!==teamId)return new Response('Invalid team',{status:400});
   await this.state.storage.put('teamId',teamId);
-  if(!await this.state.storage.getAlarm())await this.state.storage.setAlarm(Date.now()+1000);
+  const alarm=await this.state.storage.getAlarm();
+  if(!alarm||wake&&alarm>Date.now()+1000)await this.state.storage.setAlarm(Date.now()+1000);
   return Response.json({queued:true});
  }
  async alarm(){
@@ -54,11 +55,11 @@ export class PipelineValueCollector {
   }
  }
 }
-export async function queuePipelineValues(env:Env,teamIds:string[]){
+export async function queuePipelineValues(env:Env,teamIds:string[],wake=false){
  if(!env.PIPELINE_VALUES)throw Error('Property collection is not available.');
  for(const teamId of teamIds){
   if(!UUID.test(teamId))throw Error('Invalid team');
-  const response=await env.PIPELINE_VALUES.get(env.PIPELINE_VALUES.idFromName(teamId)).fetch('https://values/queue',{method:'POST',body:JSON.stringify({teamId})});
+  const response=await env.PIPELINE_VALUES.get(env.PIPELINE_VALUES.idFromName(teamId)).fetch('https://values/queue',{method:'POST',body:JSON.stringify({teamId,wake})});
   if(!response.ok)throw Error('Property collection could not be queued.');
  }
 }
