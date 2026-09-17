@@ -1,4 +1,4 @@
-# Four-quadrant training edition
+# TRU training structure and presentation standards
 
 September 16, 2026. The curriculum JSON files are shared by Rep and the live-session catalog. A newly created live session snapshots this edition; existing sessions retain their original content and evidence.
 
@@ -6,7 +6,7 @@ September 16, 2026. The curriculum JSON files are shared by Rep and the live-ses
 
 - Day 1: demonstrate, practice in the simulated Follow Up Boss record, and review the saved result. All five record scenarios, the contact tool map, and the deal demonstration remain.
 - Days 2–4: introduce the topic, hear agents' initial reasoning, teach the steps and examples, then practice. New discussions are ungraded. Existing roleplay, observation and retry contracts remain.
-- Each day has four named sections, an agenda, section dividers and independent-review directions. Teaching explanations appear in the slides, not only in presenter notes.
+- Days 1–3 have four named sections. Day 4 uses Eric’s September 17 two-section brief. Each day has an agenda, section dividers and independent-review directions. Teaching explanations appear in the slides, not only in presenter notes.
 - Day 3 starts with preparation: property research, listing-agent questions, a relevant tour of two to four homes when appropriate, confirmation of access and buyer priorities, and a useful packet. The post-tour opening remains “Did we see any homes we want to write an offer on?”
 
 | Day | Slides | Planned minutes |
@@ -14,7 +14,7 @@ September 16, 2026. The curriculum JSON files are shared by Rep and the live-ses
 | Follow Up Boss | 40 | 61 |
 | First conversation | 35 | 90 |
 | Showing and buyer decision | 31 | 74 |
-| Lender introduction | 28 | 71 |
+| ZHL overview and introductions | 23 | 55 |
 
 Section dividers have no additional planned minutes. Timing includes practice and discussion.
 
@@ -61,3 +61,9 @@ The first revision after review replaces Day Three's home-selection challenge wi
 Day Three v3 adds an original historical MLS report excerpt after the buyer packet lesson. Source: https://www.yamhillcounty.gov/DocumentCenter/View/19100/BO-25-413-pdf, PDF page 94 (Exhibit A-4 page 13), report dated March 24, 2025; accessed September 16, 2026. The crop preserves original facts and source annotations and omits marketing remarks. It is labeled Sold and historical; no listing data was invented. The full source is linked in the slide and agent reference.
 
 Day Three v4 removes the MLS example following Eric’s feedback and consolidates the post-tour invitation and offer opener. The language pass replaces vague instructions with concrete actions, natural sample wording and explicit follow-up commitments. The four sections, original imagery and practice activities remain. Source overlay: scripts/day3-language.mjs.
+
+## Day Four — September 17 revision
+
+Eric replaced the four-section structure with two sections: a comprehensive ZHL overview, then a brief introduction lesson and breakout practice. Each opens with discussion before teaching. The overview retains approval, credit, coordination and financing-readiness knowledge and adds sourced loan-option explanations. The second section teaches purchase timing, credit concerns, buyer permission, the FUB transfer and the group introduction. Breakouts protect three four-minute rounds with feedback and retry. The twelve-month and six-month guidance is TRU introduction timing, not lender eligibility; a buyer requesting near-term credit help may choose a loan-officer conversation.
+
+Source: scripts/day4-training.mjs. Official ZHL overview, FAQ, agent tools, loan-type guide and FUB transfer documentation were reviewed September 17, 2026 and linked in the deck. No current rates, approval promises, invented customer testimonials or unverified performance claims are used. ZHL FAQ credit-inquiry wording remains inconsistent across sections; agents are taught to confirm the next inquiry with the loan officer.

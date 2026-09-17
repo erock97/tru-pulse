@@ -1,3 +1,4 @@
+import { reviseDay4 } from './day4-training.mjs';
 import { refineDay3 } from './day3-language.mjs';
 // Eric's approved four-quadrant structure. Apply after the original generators.
 // Existing IDs, native FUB exercises, and response contracts remain stable.
@@ -6,6 +7,7 @@ const rows = items => `<div class="rows">${items.map(([title,text])=>`<div class
 const para = text => `<p class="lesson-explanation">${text}</p>`;
 const quote = text => `<blockquote class="lesson-example">${text}</blockquote>`;
 export function reviseTraining(data) {
+ if(data.day===4)return reviseDay4(data);
  const day=data.day, original=new Map(data.slides.map(s=>[s.id,s]));
  const get = id => {const s=original.get(`day${day}-${id}`);if(!s)throw Error(`Missing day${day}-${id}`);return structuredClone(s)};
  const make=(id,title,lead,body,time=2)=>({id:`day${day}-${id}`,chapter:'',title,lead,body,time,theme:'tru alms lesson training-depth',notes:'Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Connect this example to the next action the agent needs to take.',cue:'Use the answer to explain why the next action matters to this buyer.'});
@@ -89,29 +91,6 @@ export function reviseTraining(data) {
   const timings={'drop-the-rope':2,'during-the-visit':2,'question-bank':2,'different-priorities':2,'after-the-tour':3,'feedback-demo':2,'buyer-concerns':1,'problem-solving-discussion':3,'concern-framework':2,'plan-demo':2,'pending-answer':2,'plan-check':2,'record-the-plan':1,'write-the-follow-up-record':2};
   for(const g of groups)for(const s of g.slides)if(timings[s.id.slice(5)])s.time=timings[s.id.slice(5)];
   data.title='Prepare for the showing and help the buyer decide';
- } else if(day===4){
-  welcome=make('welcome','Help buyers prepare for a lender conversation','Day 4: explain the purpose, respect the buyer’s choice, and complete the handoff.',para('Learn how to connect financing questions to useful lender help. Practice the introduction and the follow-through so the buyer knows who will contact them and what happens next.'),1);
-  group('Recognize when lender help would be useful','Understand the buyer’s question before recommending an introduction.',[
-   get('opening-decision'),
-   make('identify-lender-help','Connect the lender conversation to a specific need','A useful recommendation begins with what the buyer wants to understand.',rows([['Understand the reason','“What would you need to know before deciding whether buying fits your plans?” Listen for the question instead of assuming they want to buy now.'],['Explain the purpose','“A loan officer can help you understand the payment and what would need to happen next. Would that information help you plan?”'],['Respect their relationship','Ask about a lender they already work with. Offer an introduction when useful and accepted. A buyer can choose to keep their current lender.']]),3),
-   get('what-zillow-home-loans-offers-your-buyer')
-  ]);
-  group('Know what to explain and what the lender must confirm','Separate an initial discussion from a confirmed financing outcome.',[
-   discussion('discuss-financing','What would you clarify about the buyer’s financing?','A buyer says, “My bank gave me a letter, so I’m ready to offer tonight.”',['What do you know from that statement?','What would you ask the loan officer to confirm?'],'Ask what the lender has reviewed, what is still conditional, whether the property affects the review, and what timing the file can support. Let the loan officer confirm the process for this buyer. Avoid promising approval, credit impact or a closing date.'),
-   ...['pre-qualification-pre-approval-and-final-approval','questions-for-the-loan-officer','how-would-you-explain-the-credit-check'].map(get)
-  ]);
-  group('Offer an introduction and understand concerns','Hear the buyer’s reason, explain useful help, and ask permission.',[
-   discussion('discuss-introduction','What would you ask when the buyer already has a lender?','The buyer says, “My bank has handled everything for years. Why would I need another conversation?”',['What would you acknowledge?','What would you ask before suggesting a comparison?','What would you do if they decline?'],'Acknowledge the existing relationship. Ask whether anything remains unclear. Offer a second conversation only if it would help. Identify Zillow Home Loans clearly, ask permission and respect a decline.'),
-   get('responding-to-common-concerns'),get('how-to-introduce-your-loan-officer'),
-   make('introduction-example','Explain the reason before asking for an introduction','Fictional buyer: Jordan wants to understand payment options before deciding on the next step.',quote('“You said the monthly payment is what you need to understand. Would a conversation with a loan officer at Zillow Home Loans help you compare your options? You choose your lender. If you want the introduction, how would you prefer to connect?”')+para('If Jordan agrees, confirm the contact method and availability. If Jordan declines, respect the answer and agree on any useful next step with their chosen lender.')),
-   get('first-introduction-practice')
-  ]);
-  group('Complete the handoff and follow through','Make sure the introduction reaches someone and the buyer knows the next step.',[
-   discussion('discuss-handoff','What would you do after an unanswered introduction?','The buyer agreed to an introduction. You sent it, but neither the buyer nor loan officer has confirmed a call.',['What remains incomplete?','Who would you contact?','What would you record and follow up on?'],'Check that the loan officer received the introduction and confirm a workable contact time with both parties. Tell the buyer what to expect. Record permission, the next owner and the follow-up time. Sending a message alone does not confirm the handoff.'),
-   ...['make-the-introduction-and-confirm-the-call','follow-up-on-incomplete-introductions','check-financing-before-writing-an-offer','practice-with-a-buyer-and-an-observer','what-do-you-remember','how-would-you-answer-jordan','plan-your-next-practice'].map(get)
-  ]);
-  closing=get('what-to-do-after-this-training');
-  data.title='Make a useful lender introduction and follow through';
  }
  agenda=make('agenda','What you will learn and practice',day===1?'Watch the demonstration, practice in your own record, then check what saved.':'For each topic, share your thinking first. Then study the explanation and practice the approach.',`<ol class="quadrant-agenda">${groups.map((g,i)=>`<li><span>0${i+1}</span><div><h3>${g.title}</h3><p>${g.purpose}</p></div></li>`).join('')}</ol>`,1);
  welcome.chapter=welcome.chapter||'Welcome';

@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(`2026-09-16-day${definition.day}-quadrants-v${definition.day===3?4:2}`);
+      expect(definition.version).toBe(definition.day===4?'2026-09-17-day4-two-sections-v3':`2026-09-16-day${definition.day}-quadrants-v${definition.day===3?4:2}`);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
@@ -58,7 +58,7 @@ describe('versioned live curriculum', () => {
       expect(d.slides[0].activity).toBeUndefined();
       expect(d.slides[1].id).toBe(`day${day}-agenda`);
       const starts=d.slides.flatMap((s,i)=>s.theme.includes('quadrant-cover')?[i]:[]);
-      expect(starts).toHaveLength(4);
+      expect(starts).toHaveLength(day===4?2:4);
       for(const start of starts){
         const first=d.slides[start+1];
         // A consolidated concern list may introduce the topic before its discussion.
@@ -78,14 +78,22 @@ describe('versioned live curriculum', () => {
     expect(pos('discuss-concern')).toBeLessThan(pos('objection-framework'));
     expect(pos('summary')).toBeLessThan(pos('full-call-practice'));
     const day4=workshopCatalog[4];
-    expect(day4.slides.findIndex(s=>s.id==='day4-how-to-introduce-your-loan-officer')).toBeLessThan(day4.slides.findIndex(s=>s.id==='day4-first-introduction-practice'));
+    expect(day4.slides.findIndex(s=>s.id==='day4-how-to-introduce-your-loan-officer')).toBeLessThan(day4.slides.findIndex(s=>s.id==='day4-practice-with-a-buyer-and-an-observer'));
   });
 
-  it('preserves full rotations and the existing instructional body behind the openings', () => {
-    expect(workshopCatalog[4].slides.find(slide => slide.sourceScreen === 12)?.time).toBe(8);
-    for (const [day, required] of [[4, [3, 4, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18]]] as const) {
-      for (const originalScreen of required) expect(workshopCatalog[day].slides.some(slide => slide.sourceScreen === originalScreen)).toBe(true);
-    }
+  it('retains lender knowledge and protects a speaking turn for every agent in Day Four', () => {
+    const day=workshopCatalog[4];
+    const ids=day.slides.map(s=>s.id);
+    for(const id of ['loan-options','buyability','pre-qualification-pre-approval-and-final-approval','credit-review','lender-collaboration','questions-for-the-loan-officer'])expect(ids).toContain(`day4-${id}`);
+    expect(ids.indexOf('day4-lender-experience')).toBeLessThan(ids.indexOf('day4-what-zillow-home-loans-offers-your-buyer'));
+    expect(ids.indexOf('day4-discuss-introduction')).toBeLessThan(ids.indexOf('day4-when-to-introduce'));
+    const practice=day.slides.find(s=>s.id==='day4-practice-with-a-buyer-and-an-observer')!;
+    expect(practice.time).toBe(13);
+    expect(practice.body).toContain('Three rounds · 4 minutes each');
+    expect(practice.activity?.useCases).toBe(true);
+    expect(day.cases).toHaveLength(4);
+    expect(day.slides.find(s=>s.id==='day4-when-to-introduce')!.body).toContain('not a ZHL lending requirement');
+    expect(day.slides.find(s=>s.id==='day4-credit-concerns')!.body).toContain('Let the loan officer assess credit and loan eligibility');
   });
 
   it('teaches Day 3 before practice and makes reasoning and an agreed plan observable', () => {

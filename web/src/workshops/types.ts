@@ -13,7 +13,7 @@ const summaries: Record<number,string> = {
   1:'Watch the steps, practice five Follow Up Boss record scenarios, and verify saved actions.',
   2:'Discuss and practice lead response, LEAD, discovery, and an agreed next step.',
   3:'Prepare the tour, conduct the showing, ask about an offer, and agree on a useful plan.',
-  4:'Understand financing questions, offer a useful lender introduction, and complete the handoff.',
+  4:'Discuss ZHL services, learn when to introduce a buyer, and practice the connection in breakout rooms.',
 };
 export const workshopMeta: Record<number,{title:string;summary:string;minutes:number;screens:number}> = Object.fromEntries(
   Object.values(workshopCatalog).map(day => [day.day,{title:day.title,summary:summaries[day.day],minutes:day.duration,screens:day.slides.length}])

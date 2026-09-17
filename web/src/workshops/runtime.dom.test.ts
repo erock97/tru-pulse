@@ -31,7 +31,10 @@ describe('rendered workshop responses',()=>{
   });
  });
   it('keeps corrections independent across rounds and restores a previous answer',()=>{
-   const data=day4 as WorkshopData,{root,go}=open(data);
+   const data=structuredClone(day4) as WorkshopData;
+   const second=structuredClone(data.slides.find(s=>s.activity?.fields?.some(f=>f.id==='correction'))!);
+   second.id='day4-test-second-round';second.activity!.id=second.id;data.slides.push(second);
+   const {root,go}=open(data);
   const rounds=data.slides.flatMap((s,i)=>s.activity?.fields?.some(f=>f.id==='correction')?[i]:[]);
   go(rounds[0]);const first=root.querySelector<HTMLTextAreaElement>('textarea')!;
   first.value='First round correction';first.dispatchEvent(new Event('input',{bubbles:true}));
@@ -53,7 +56,7 @@ describe('rendered workshop responses',()=>{
     expect(choice.getAttribute('aria-pressed')).toBe('true');
    }
    const nextCase=root.querySelector<HTMLButtonElement>('[data-action="scenario"]');
-   if(nextCase){const first=root.querySelector('#scenario')!.textContent;nextCase.click();expect(root.querySelector('#scenario')!.textContent).not.toBe(first);nextCase.click();nextCase.click();expect(root.querySelector('#scenario')!.textContent).toBe(first);}
+   if(nextCase){const first=root.querySelector('#scenario')!.textContent;nextCase.click();expect(root.querySelector('#scenario')!.textContent).not.toBe(first);for(let n=1;n<(data.cases?.length||3);n++)nextCase.click();expect(root.querySelector('#scenario')!.textContent).toBe(first);}
    const rubric=[...root.querySelectorAll<HTMLInputElement>('.scorecard input')];
    if(rubric.length){for(const field of rubric){field.checked=true;field.dispatchEvent(new Event('input',{bubbles:true}));}expect(root.querySelector('#score')!.textContent).toContain(`${rubric.length} / ${rubric.length}`);root.querySelector<HTMLButtonElement>('[data-action="clear-score"]')!.click();expect(rubric.every(el=>!el.checked)).toBe(true);}
    for(const field of root.querySelectorAll<HTMLTextAreaElement>('textarea[data-save]')){field.value=`QA ${slide.id} ${field.dataset.save}`;field.dispatchEvent(new Event('input',{bubbles:true}));}
