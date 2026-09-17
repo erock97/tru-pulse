@@ -1218,6 +1218,10 @@ export async function loadDashboard(orgId?:string): Promise<DashboardData> {
       d.teams=d.teams.map(t=>t.id===snapshot.teamId?{...t,fub_subdomain:snapshot.account}:t);
     }
   }
+  if(!d.historyInfo){
+    const merged=mergeDashboardHistory([],d.leads,[],d.stageLog||[],new Set(d.teams.map(t=>t.id)));
+    d.leads=merged.leads;d.stageLog=merged.stageLog;
+  }
   return {
     contactDecisions:d.contactDecisions,
     historyCoverage:d.historyCoverage,

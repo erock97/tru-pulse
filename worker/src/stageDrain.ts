@@ -3,6 +3,7 @@ import type {Db} from './db.js';
 import {decryptTeamKey,type TeamRow} from './sync.js';
 import {fubGet,getPeopleByIds} from './fub.js';
 import type {StageReceipt} from './stageEnvelope.js';
+import {PROGRESSION,progressionRank} from '../../shared/pipelineProgress.js';
 import {HISTORY_POLICY,classifyHistorySource} from '../../shared/historyPolicy.js';
 
 export async function drainStageReceipts(storage:DurableObjectStorage,env:Env,database:Db,team:TeamRow){
@@ -45,6 +46,15 @@ export async function drainStageReceipts(storage:DurableObjectStorage,env:Env,da
   const bytes=new TextEncoder().encode(JSON.stringify(event));
   const contentHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
   if(interpretation.disposition==='eligible')await database.rpc('history_import_events',{p_account_id:account.account_id,p_team_id:team.id,p_org_id:team.org_id,p_events:[event]});
+  // Project the retained event, not the person's latest stage: rapid later moves must not erase it.
+  if(interpretation.disposition==='eligible'){
+   const rank=progressionRank(r.stage),category=rank>=0?PROGRESSION[rank][0]:/^nurture$/i.test(r.stage.trim())?'nurture':/^(trash|rejected)$/i.test(r.stage.trim())?'rejected':null;
+   if(category){
+    await database.upsert('person_stage_log',[{org_id:team.org_id,team_id:team.id,fub_person_id:Number(r.personId),stage:r.stage,stage_class:category,changed_at:r.occurredAt,detected_at:r.capturedAt,date_source:'fub_webhook',agent_name:person.assignedTo??null,agent_user_id:person.assignedUserId??null}],'team_id,fub_person_id,stage',{ignoreDuplicates:true});
+    // Earlier factual occurrence replaces a seed/later observation, without rewriting existing attribution.
+    await database.update('person_stage_log','team_id=eq.'+team.id+'&fub_person_id=eq.'+r.personId+'&stage=eq.'+encodeURIComponent(r.stage)+'&or=(changed_at.is.null,changed_at.gt.'+encodeURIComponent(r.occurredAt)+')',{changed_at:r.occurredAt,stage_class:category,date_source:'fub_webhook'});
+   }
+  }
   await database.upsert('history_receipts',[{account_id:account.account_id,person_id:r.personId,content_hash:contentHash,captured_at:r.capturedAt,source_raw:interpretation.sourceRaw,source_policy:HISTORY_POLICY,parser_version:'webhook-envelope-v1',provenance:{kind:'peopleStageUpdated',eventId:r.eventId,occurrence:r.occurredAt,...interpretation}}],'account_id,person_id,content_hash',{ignoreDuplicates:true});
   await storage.put('stage-processed:'+r.eventId+':'+r.personId,{processedAt:new Date().toISOString(),disposition:interpretation.disposition});
   await storage.delete(pendingKey);processed++;

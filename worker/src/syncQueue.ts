@@ -2,6 +2,7 @@ import type {Env} from './env.js';
 import {db} from './db.js';
 import {syncTeam,syncPeopleByIds,type TeamRow} from './sync.js';
 import {stageEnvelope,retainStageEnvelope} from './stageEnvelope.js';
+import {queuePipelineValues} from './pipelineValueCollector.js';
 import {drainStageReceipts} from './stageDrain.js';
 type Pending='full'|string[];
 /** A webhook is acknowledged only after its work is durably recorded. */
@@ -43,6 +44,8 @@ export class FubSyncQueue {
    const pending=fullDue<=Date.now()?'full':await this.state.storage.get<Pending>('pending')||'full';
    await this.state.storage.delete('pending');
    if(pending==='full')await syncTeam(this.env,database,team);else await syncPeopleByIds(this.env,database,team,pending.join(','));
+   // Wake only after lead rows have been saved. A separate collector failure must not undo stage sync.
+   if(this.env.PIPELINE_VALUES){try{await queuePipelineValues(this.env,[team.id],true);}catch{await this.state.storage.put('value-health',{error:'Value collector wake failed; periodic retry remains active',at:new Date().toISOString()});}}
    if(pending==='full')await this.state.storage.put('fullDue',Date.now()+30*60000);
    await this.state.storage.setAlarm(pending==='full'?Date.now()+30*60000:fullDue);
    const status={lastSuccess:new Date().toISOString(),stage:await this.state.storage.get('stage-health')??null};

@@ -1,3 +1,4 @@
+import {PROGRESSION,progressionRank} from '../../../shared/pipelineProgress';
 import type {LeadRow,StageLogRow} from './api';
 /** Saved milestones remain evidence; live fields and new leads must not disappear beneath a snapshot. */
 export function mergeDashboardHistory(saved:LeadRow[],live:LeadRow[],savedLog:StageLogRow[],liveLog:StageLogRow[],teamIds:Set<string>,sourceStarts?:Record<string,string>){
@@ -30,9 +31,10 @@ export function mergeDashboardHistory(saved:LeadRow[],live:LeadRow[],savedLog:St
  }
  for(const event of logs.values()){
   const lead=rows.get(key(event));if(!lead||!event.changed_at||event.date_source==='seed')continue;
-  const rank=['met','offer','uc','closed'].indexOf(event.stage_class||'');if(rank<0)continue;
+  const canonical=PROGRESSION.findIndex(([key])=>key===event.stage_class);
+  const rank=canonical>=0?canonical:progressionRank(event.stage_class);if(rank<0)continue;
   const history=lead.history?{...lead.history}:{};
-  for(const category of ['met','offer','uc','closed'].slice(0,rank+1))if(!history[category]||evidenced(event)&&Date.parse(event.changed_at)<Date.parse(history[category]!.date||''))history[category]={eventId:event.event_id||'sync:'+event.changed_at,date:event.changed_at,description:'Stage recorded in FUB',kind:category===(event.basis||event.stage_class)?'observed':'rule-based',basis:event.basis||event.stage_class||'',direction:'to'};
+  for(const [category] of PROGRESSION.slice(0,rank+1))if(!history[category]||evidenced(event)&&Date.parse(event.changed_at)<Date.parse(history[category]!.date||''))history[category]={eventId:event.event_id||'sync:'+event.changed_at,date:event.changed_at,description:'Stage recorded in FUB',kind:category===(event.basis||event.stage_class)?'observed':'rule-based',basis:event.basis||event.stage_class||'',direction:'to'};
   lead.history=history;
  }
  return {leads:[...rows.values()],stageLog:[...logs.values()]};

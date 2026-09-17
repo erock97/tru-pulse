@@ -29,3 +29,10 @@ it('keeps checking for new leads after the current backlog is complete',async()=
  const x=make();await queue(x.collector);mocks.select.mockImplementation(async(t:string)=>t==='teams'?[{id:teamId}]:[]);
  await x.collector.alarm();expect(x.data.get('status')).toMatchObject({state:'up_to_date'});expect(x.alarm()).toBeGreaterThan(Date.now()+14*60000);
 });
+
+it('a webhook wake advances an idle alarm without changing saved values',async()=>{
+ const x=make();await queue(x.collector);mocks.select.mockImplementation(async(t:string)=>t==='teams'?[{id:teamId}]:[]);await x.collector.alarm();
+ expect(x.alarm()).toBeGreaterThan(Date.now()+14*60000);
+ await x.collector.fetch(new Request('https://values/queue',{method:'POST',body:JSON.stringify({teamId,wake:true})}));
+ expect(x.alarm()).toBeLessThanOrEqual(Date.now()+1100);expect(mocks.update).not.toHaveBeenCalled();
+});

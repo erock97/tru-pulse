@@ -7,13 +7,13 @@ const team={id:'team',org_id:'org',fub_subdomain:'domain'};
 function setup(){
  const m=new Map<string,any>([['stage-pending:one:42',{teamId:'team',orgId:'org',personId:'42',eventId:'one',occurredAt:'2026-09-12T01:00:00Z',stage:'Nurture',capturedAt:'2026-09-12T02:00:00Z'}]]);
  const storage={list:async({prefix,limit}:any)=>new Map([...m].filter(([k])=>k.startsWith(prefix)).slice(0,limit)),get:async(k:string)=>m.get(k),put:async(k:string,v:any)=>{m.set(k,v);},delete:async(k:string)=>m.delete(k)} as any;
- const database={select:async()=>[{account_id:1,domain:'domain'}],rpc:vi.fn(async()=>1),upsert:vi.fn(async()=>{})} as any;
+ const database={select:async()=>[{account_id:1,domain:'domain'}],rpc:vi.fn(async()=>1),upsert:vi.fn(async()=>{}),update:vi.fn(async()=>{})} as any;
  return {m,storage,database};
 }
 beforeEach(()=>{vi.clearAllMocks();mocks.identity.mockResolvedValue({status:200,body:{account:{id:1,domain:'domain'}}});mocks.people.mockResolvedValue([{id:42,source:'Zillow'}]);});
 it('imports the supplied occurrence and stage and retains a provenance receipt',async()=>{
  const {m,storage,database}=setup();await drainStageReceipts(storage,{} as any,database,team);
- expect(database.rpc.mock.calls[0][1].p_events[0]).toMatchObject({to:'Nurture',occurredAt:'2026-09-12T01:00:00Z'});expect(database.upsert).toHaveBeenCalledTimes(1);expect(m.has('stage-pending:one:42')).toBe(false);
+ expect(database.rpc.mock.calls[0][1].p_events[0]).toMatchObject({to:'Nurture',occurredAt:'2026-09-12T01:00:00Z'});expect(database.upsert).toHaveBeenCalledTimes(2);expect(m.has('stage-pending:one:42')).toBe(false);
 });
 it('does not create canonical events for excluded sources',async()=>{
  const {storage,database}=setup();mocks.people.mockResolvedValue([{id:42,source:'Zillow Rentals'}]);await drainStageReceipts(storage,{} as any,database,team);expect(database.rpc).not.toHaveBeenCalled();expect(database.upsert).toHaveBeenCalledTimes(1);
@@ -34,4 +34,15 @@ it('retries inaccessible records after the backoff when access returns',async()=
  m.get('stage-unresolved:one:42').lastAttempt=new Date(Date.now()-31*60000).toISOString();
  await drainStageReceipts(storage,{} as any,database,team);
  expect(database.rpc).toHaveBeenCalledTimes(1);expect(m.has('stage-unresolved:one:42')).toBe(false);
+});
+
+it('projects Met with even when the fetched person is already Nurture, and retries projection failures',async()=>{
+ const {m,storage,database}=setup();m.get('stage-pending:one:42').stage='Met with customer';
+ mocks.people.mockResolvedValue([{id:42,source:'Zillow',stage:'Nurture',assignedTo:'Agent',assignedUserId:7}]);
+ database.update.mockRejectedValueOnce(Error('offline'));
+ await expect(drainStageReceipts(storage,{} as any,database,team)).rejects.toThrow();expect(m.has('stage-pending:one:42')).toBe(true);
+ await drainStageReceipts(storage,{} as any,database,team);
+ const rows=database.upsert.mock.calls.filter((c:any[])=>c[0]==='person_stage_log').flatMap((c:any[])=>c[1]);
+ expect(rows.every((r:any)=>r.stage_class==='met'&&r.changed_at==='2026-09-12T01:00:00Z')).toBe(true);
+ expect(m.has('stage-pending:one:42')).toBe(false);
 });

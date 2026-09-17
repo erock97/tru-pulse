@@ -28,3 +28,10 @@ it('prefers dated evidence over seeds and later observations while repeated mile
  const r=mergeDashboardHistory([lead],[],[{...event,date_source:'seed'}],[{...event,changed_at:'2026-07-01T00:00:00Z',date_source:'live'},event,{...event,changed_at:'2026-08-01T00:00:00Z'}],new Set(['t']));
  expect(r.stageLog).toHaveLength(1);expect(r.stageLog[0].changed_at).toBe(event.changed_at);
 });
+
+it('retains Met with and only earlier steps after a webhook-driven move to Nurture',()=>{
+ const log:any={team_id:'t',fub_person_id:1,stage_class:'met',changed_at:'2026-09-17T00:00:00Z',date_source:'fub_webhook'};
+ const r=mergeDashboardHistory([], [{...lead,history:undefined,stage:'Nurture'}],[],[log],new Set(['t']));
+ expect(Object.keys(r.leads[0].history!)).toEqual(['lead','attempted','spoke','appointment','met']);
+ expect(r.leads[0].stage).toBe('Nurture');expect(r.leads[0].history?.showing).toBeUndefined();expect(r.leads[0].history?.uc).toBeUndefined();
+});
