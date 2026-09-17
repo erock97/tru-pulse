@@ -152,37 +152,15 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
       </div>
       <div className="pipeline-workspace">
         <section ref={detailRef} tabIndex={-1} className="pipeline-card pipeline-detail" aria-label="Stage breakdown">
-          <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'Where your leads are now'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
+          <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'Team stage progression'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
           <p className="pipeline-caption">{counts.total} leads · {percent(counts.conversionRate)} current conversion rate{agent?' · '+percent(agent.leadShare)+' of team leads · '+percent(agent.conversionShare)+' of team current conversions':''}</p>
-          <div className="pipeline-team-overview">
-          <div className="pipeline-current-stages" aria-label="Current stage distribution"><h4>Where leads sit now</h4><p className="pipeline-caption">Each lead appears once. Bars show the share of {agent?'this agent’s':'the team’s'} leads in each current stage.{agent?' The marker shows the team share.':''}</p>
-          {PIPELINE_CATEGORIES.map(category=>{
-            if(category==='nurture'||category==='rejected'){
-              const keys=selected.filter(l=>l.category===category).map(l=>l.key),teamCount=report.leads.filter(l=>l.category===category).length;
-              const share=counts.total?keys.length/counts.total*100:0,teamShare=report.totals.total?teamCount/report.totals.total*100:0;
-              return <div className="pipeline-stage-group" key={category}><h4>Outside the active pipeline{category==='rejected'?' · includes Trash':''}</h4><button className="pipeline-stage" onClick={()=>showLeads(categoryLabel[category],keys)} aria-label={'Current '+categoryLabel[category]+': '+keys.length+' leads'}>
-                <span className="pipeline-stage-label">{categoryLabel[category]}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/>{agent&&<b style={{left:teamShare+'%'}}/>}</span>
-                <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(report.totals.total?teamShare:null)} ({teamCount})</small>}</span>
-              </button></div>;
-            }
-            const stages=report.stages.filter(s=>s.category===category);if(!stages.length)return null;
-            return <div className="pipeline-stage-group" key={category}><h4>{categoryLabel[category]}</h4>
-              {stages.map(s=>{const keys=selected.filter(l=>l.stageKey===s.key).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.rawName,keys)} aria-label={'Current '+s.rawName+': '+keys.length+' leads'}>
-                <span className="pipeline-stage-label">{s.rawName}{report.teams.length>1&&<small>{report.teams.find(t=>t.id===s.teamId)?.name}</small>}</span>
-                <span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/>{agent&&<b style={{left:(s.percent||0)+'%'}}/>}</span>
-                <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(s.percent)} ({s.count})</small>}</span>
-              </button>;})}</div>;
-          })}
-          </div>
-          {agent&&<PipelineValue key={agent.key} report={report} agentKey={agent.key}/>}
-          </div>
-          <details className="pipeline-progression"><summary>Completed stage progression · earlier work retained</summary>
-          <p className="pipeline-caption">Reaching a stage includes the steps before it. Moving to Nurture or Rejected keeps that progress. Agents do not need to enter each intermediate stage. A lead can count at multiple steps.</p>
+          <section className="pipeline-progression pipeline-current-stages" aria-label="Historical stage progression"><h4>Stage progression</h4>
+          <p className="pipeline-caption">Closed includes Under contract and every earlier step. Reaching Met with includes contact, conversation and appointment. Moving to Nurture or Rejected retains prior progress. Uses imported change-log history and retained FUB updates; each lead counts once per step, so percentages do not add to 100%.</p>
           <div className="pipeline-stage-legend"><span>Stage</span><span>{agent?'Agent / team':'Team'} share</span></div>
           <div className="pipeline-stage-group"><h4>Stage progression</h4>{report.progression.map(s=>{
             const keys=selected.filter(l=>!!l.progress[s.key]).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;
             return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.label,keys,s.key)} aria-label={s.label+': '+keys.length+' leads'}>
-              <span className="pipeline-stage-label">{s.label}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/>{agent&&<b style={{left:(s.percent||0)+'%'}}/>}</span>
+              <span className="pipeline-stage-label">{s.label}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/></span>
               <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(s.percent)} ({s.count})</small>}</span>
             </button>;
           })}</div>
@@ -195,7 +173,31 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
             </button>;
           })}</div>
 
+          </section>
+          <details className="pipeline-current-detail"><summary>Current stages · where leads sit today</summary>
+          <div className="pipeline-current-stages" aria-label="Current stage distribution"><h4>Where leads sit now</h4><p className="pipeline-caption">Each lead appears once. Bars show the share of {agent?'this agent’s':'the team’s'} leads in each current stage.</p>
+          {PIPELINE_CATEGORIES.map(category=>{
+            if(category==='nurture'||category==='rejected'){
+              const keys=selected.filter(l=>l.category===category).map(l=>l.key),teamCount=report.leads.filter(l=>l.category===category).length;
+              const share=counts.total?keys.length/counts.total*100:0,teamShare=report.totals.total?teamCount/report.totals.total*100:0;
+              return <div className="pipeline-stage-group" key={category}><h4>Outside the active pipeline{category==='rejected'?' · includes Trash':''}</h4><button className="pipeline-stage" onClick={()=>showLeads(categoryLabel[category],keys)} aria-label={'Current '+categoryLabel[category]+': '+keys.length+' leads'}>
+                <span className="pipeline-stage-label">{categoryLabel[category]}</span><span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/></span>
+                <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(report.totals.total?teamShare:null)} ({teamCount})</small>}</span>
+              </button></div>;
+            }
+            const stages=report.stages.filter(s=>s.category===category);if(!stages.length)return null;
+            return <div className="pipeline-stage-group" key={category}><h4>{categoryLabel[category]}</h4>
+              {stages.map(s=>{const keys=selected.filter(l=>l.stageKey===s.key).map(l=>l.key),share=counts.total?keys.length/counts.total*100:0;return <button className="pipeline-stage" key={s.key} onClick={()=>showLeads((agent?agent.name+' · ':'')+s.rawName,keys)} aria-label={'Current '+s.rawName+': '+keys.length+' leads'}>
+                <span className="pipeline-stage-label">{s.rawName}{report.teams.length>1&&<small>{report.teams.find(t=>t.id===s.teamId)?.name}</small>}</span>
+                <span className="pipeline-track" aria-hidden><i style={{width:share+'%'}}/></span>
+                <span><strong>{keys.length}</strong> · {percent(counts.total?share:null)}{agent&&<small>team {percent(s.percent)} ({s.count})</small>}</span>
+              </button>;})}</div>;
+          })}
+          </div>
+
           </details>
+          {agent&&<PipelineValue key={agent.key} report={report} agentKey={agent.key}/>}
+
           {!counts.total&&<p>No leads in this selection. Try another period or source.</p>}
           {agent&&<div className="pipeline-agent-actions"><button className="pipeline-button pipeline-primary" disabled={aiBusy||!agent.agentId||agent.kind!=='agent'||!agent.total||!report.insightsEnabled} onClick={()=>void generate()}>{aiBusy?'Preparing insights…':'AI insights'}</button>
             {agent.agentId&&<a href={'#/coach/'+encodeURIComponent(agent.agentId)}>Open Coach ↗</a>}
