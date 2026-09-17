@@ -10,6 +10,9 @@ import './pipeline.css';
 import { PipelineValue } from './PipelineValue';
 import { reconcilePipeline } from '../../../shared/pipelineReconciliation';
 
+const periodOrder:PulsePeriod[]=['mtd','ytd',7,14,30,90,'6mo',365,'2yr',null];
+const receivedWindows=[...WINDOWS].sort((a,b)=>periodOrder.indexOf(a.days)-periodOrder.indexOf(b.days));
+const periodLabel=(w:typeof WINDOWS[number])=>typeof w.days==='number'&&w.days<365?w.days+' days':w.days==='6mo'?'6 months':w.label;
 const percent=(value:number|null)=>value===null?'—':value.toFixed(1)+'%';
 const categoryLabel={active:'Active pipeline',under_contract:'Under contract',closed:'Closed',nurture:'Nurture',rejected:'Rejected',unmapped:'Unmapped stages'};
 const localDay=(date:Date)=>[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
@@ -115,7 +118,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
     {isDemo&&<p className="pipeline-notice">Demonstration · fictitious names and sample leads, using the reference report’s counts. AI readouts here are illustrative.</p>}
     <div className="pipeline-filters">
       <label>Leads received<select value={custom?'custom':String(selectedPeriod)} onChange={e=>{setCustom(e.target.value==='custom');if(e.target.value!=='custom'){const p=WINDOWS.find(w=>String(w.days)===e.target.value);setSelectedPeriod(p?.days??null);}}}>
-        {WINDOWS.map(w=><option key={w.key} value={String(w.days)}>{w.label}</option>)}<option value="custom">Custom dates</option></select></label>
+        <optgroup label="Calendar periods">{receivedWindows.filter(w=>w.days==='mtd'||w.days==='ytd').map(w=><option key={w.key} value={String(w.days)}>{periodLabel(w)}</option>)}</optgroup><optgroup label="Rolling windows">{receivedWindows.filter(w=>w.days!=='mtd'&&w.days!=='ytd').map(w=><option key={w.key} value={String(w.days)}>{periodLabel(w)}</option>)}</optgroup><option value="custom">Custom dates</option></select></label>
       {custom&&<><label>From<input type="date" value={start} max={end} onChange={e=>setStart(e.target.value)}/></label><label>Through<input type="date" value={end} min={start} max={localDay(new Date())} onChange={e=>setEnd(e.target.value)}/></label></>}
       <label>Team<select value={teamId} onChange={e=>{setTeamId(e.target.value);setSource('');}}><option value="">All available teams</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       <label>Agent<select aria-label="Pipeline agent" value={agent?.key || ''} disabled={busy} onChange={e=>chooseAgent(e.target.value)}><option value="">All agents / team view</option>{[...(report?.agents || [])].sort((a,b)=>a.name.localeCompare(b.name)).map(a=><option key={a.key} value={a.key}>{a.name} · {a.total} leads</option>)}</select></label>
