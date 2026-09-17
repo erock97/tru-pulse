@@ -14,7 +14,7 @@ September 16, 2026. The curriculum JSON files are shared by Rep and the live-ses
 | Follow Up Boss | 40 | 61 |
 | First conversation | 35 | 90 |
 | Showing and buyer decision | 31 | 74 |
-| ZHL overview and introductions | 23 | 55 |
+| ZHL overview and introductions | 26 | 63 |
 
 Section dividers have no additional planned minutes. Timing includes practice and discussion.
 
@@ -44,7 +44,7 @@ PDF generation needs ReportLab and Beautiful Soup. The Day 2 and Day 3 original 
 
 ## Validation and release
 
-- Web: 594 tests; TypeScript and production build checked.
+- Web: 610 tests; TypeScript and production build checked.
 - Worker: TypeScript checked; 954 tests passed. Two existing failures in `liveSessionsDb.test.ts` reproduce on unchanged `origin/main`: the solo-test migration's source-string guard and its dependent test. No database code or migration is changed here.
 - Operations: nine checks passed.
 - Browser: all 135 portable slides inspected for missing images and footer overlap; Day 3 live submission, presenter receipt and answer reveal exercised against local fixture handlers; Day 1 simulated stage save and record check passed.
@@ -67,3 +67,5 @@ Day Three v4 removes the MLS example following Eric’s feedback and consolidate
 Eric replaced the four-section structure with two sections: a comprehensive ZHL overview, then a brief introduction lesson and breakout practice. Each opens with discussion before teaching. The overview retains approval, credit, coordination and financing-readiness knowledge and adds sourced loan-option explanations. The second section teaches purchase timing, credit concerns, buyer permission, the FUB transfer and the group introduction. Breakouts protect three four-minute rounds with feedback and retry. The twelve-month and six-month guidance is TRU introduction timing, not lender eligibility; a buyer requesting near-term credit help may choose a loan-officer conversation.
 
 Source: scripts/day4-training.mjs. Official ZHL overview, FAQ, agent tools, loan-type guide and FUB transfer documentation were reviewed September 17, 2026 and linked in the deck. No current rates, approval promises, invented customer testimonials or unverified performance claims are used. ZHL FAQ credit-inquiry wording remains inconsistent across sections; agents are taught to confirm the next inquiry with the loan officer.
+
+Release approved by Eric on September 17, 2026. Day Four edition v11 includes the consolidated BuyAbility visual, official FUB status and letter screenshots, soft-pull pre-approval guidance, and fixed/ARM and 2-1 buydown explanations. Existing live-session snapshots remain unchanged.
