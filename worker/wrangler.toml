@@ -75,6 +75,7 @@ id = "d491e3cf16db4de8bd10addcab4d1a3f"
 # without this binding the Contracts tab's SEND and VOID stay locked.
 [durable_objects]
 bindings = [
+  { name = "PIPELINE_VALUES", class_name = "PipelineValueCollector" },
   { name = "FUB_SYNC", class_name = "FubSyncQueue" },
   { name = "TIMELINES", class_name = "TimelineCollector" },
   { name = "ASSIGNMENTS", class_name = "AssignmentLedger" },
@@ -100,3 +101,7 @@ new_sqlite_classes = ["TimelineCollector", "FubSyncQueue"]
 [[services]]
 binding = "TRUEBRAIN"
 service = "tru-brain"
+
+[[migrations]]
+tag = "v4-pipeline-values"
+new_sqlite_classes = ["PipelineValueCollector"]

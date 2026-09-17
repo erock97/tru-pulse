@@ -222,3 +222,45 @@ coaching inputs. Existing runtime variables are preserved during deployment.
 Platform-admin status uses the existing `is_admin` RPC because the admins table
 is intentionally private to RLS users. Team and lead reads continue using the
 signed-in user's token and existing membership rules; no access policy is widened.
+
+## Completed value collection and agent presentation
+
+The manual five-lead workflow is replaced by a per-team `PipelineValueCollector`
+Durable Object. Existing scheduled ticks enqueue every active team. Each object
+continues independently of browser sessions, selects a bounded current lead,
+verifies the FUB account and stores minimal derived evidence in the existing
+`pipeline_inquiry_value` column. It checks for new leads every 15 minutes after
+draining its backlog. Failures retry with backoff; after three failed attempts,
+the lead is explicitly marked failed and retried after a day, allowing other
+leads to continue. Incomplete reads retry daily. Recent leads without an inquiry
+retry after an hour so late-arriving inquiry events are not missed permanently.
+No extra FUB webhook subscriptions or Postgres schema changes are required.
+
+Only the four inquiry event types used by the value policy are requested, which
+avoids paging through unrelated browsing events. Rental/payment exclusions and
+the original-inquiry policy remain unchanged. Collection never invents prices,
+changes pipeline stages, or writes to FUB. Updates include team/person identity
+and eligibility predicates to preserve concurrently saved observations.
+
+`GET /data/pipeline/property-values` refreshes saved evidence and collector health
+after the same leader/coach/platform-owner authorization as the report. It uses
+RLS-scoped minimal lead fields and does not rebuild stage history or contact FUB.
+`POST /data/pipeline/property-values/collect` can enqueue authorized teams; it
+cannot select foreign teams. The existing bounded check API remains compatible.
+
+The interface has a top-level agent selector and expanded current-stage bars.
+Trash is blended into Rejected while raw stages remain visible in lead evidence.
+Completed progression remains available separately and its calculations are
+unchanged. Team contribution denominators remain the full filtered team.
+
+There is no team-wide property-value card. The selected agent sees the priced
+portion of their database, checked coverage, unusable-price counts, pending
+lookups and failures separately. Incomplete collection does not display a full
+database amount as its headline. Pending values refresh every 15 seconds; polling
+stops once no pending/failed lookups remain. Missing prices are not extrapolated.
+
+Release backfill: read every accessible inquiry page for each verified FUB account,
+match only stored team/person IDs, apply the same value policy, compare against
+previously saved decisions, then fill previously null derived values. This is
+complete collection of API-accessible inquiries, not a promise that every lead
+has an accessible original inquiry or a usable purchase price.

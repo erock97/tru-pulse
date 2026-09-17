@@ -24,6 +24,20 @@ async function call(db:UserClient,path='/data/pipeline',method='GET',body:Record
 }
 beforeEach(()=>{vi.clearAllMocks();mocks.events.mockResolvedValue([]);mocks.history.mockResolvedValue({snapshot:null,coverage:{state:'not_started',complete:false}});});
 describe('pipeline route isolation and consistency',()=>{
+ it('restricts saved-value refresh and collection to authorized teams',async()=>{
+  for(const [path,method] of [['/data/pipeline/property-values','GET'],['/data/pipeline/property-values/collect','POST']]){
+   const db=client({memberships:[{role:'agent'}]});expect((await call(db,path,method)).status).toBe(403);
+   expect((db.select as any).mock.calls.some((c:any[])=>c[0]==='leads')).toBe(false);
+   expect((await call(client({teams:[]}),path,method)).status).toBe(403);
+  }
+ });
+ it('refreshes minimal saved values without rebuilding stage history or accessing FUB',async()=>{
+  const value={policy:'inquiry-v1',status:'included',amount:300000};
+  const db=client({leads:[{...lead,pipeline_inquiry_value:value},{...lead,fub_person_id:2,pipeline_inquiry_value:{...value,policy:'old'}}]});
+  const response=await call(db,'/data/pipeline/property-values'),body=await response.json() as any;
+  expect(body.values).toEqual({[team+':1']:value});expect(mocks.history).not.toHaveBeenCalled();expect(mocks.values).not.toHaveBeenCalled();
+  expect((db.select as any).mock.calls.find((c:any[])=>c[0]==='leads')[1]).toContain('team_id=in.('+team+')');
+ });
  it('overlaps at most four history batches without dropping leads or changing snapshots',async()=>{
   let active=0,maximum=0;
   mocks.events.mockImplementation(async(_table,query)=>{

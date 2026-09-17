@@ -8,7 +8,7 @@ export interface InquiryEvent {
 export interface InquiryEvidence {
   events: InquiryEvent[]; complete: boolean; checkedAt: string; receivedAt: string | null;
 }
-export type ValueStatus = 'included' | 'seller' | 'missing' | 'ambiguous' | 'rental' | 'incomplete' | 'historical' | 'unchecked';
+export type ValueStatus = 'included' | 'seller' | 'missing' | 'ambiguous' | 'rental' | 'incomplete' | 'historical' | 'unchecked' | 'failed';
 export interface InquiryValue {
   status: ValueStatus; amount: number | null; eventId: string | null; eventAt: string | null;
   observedAmount: number | null;
@@ -18,7 +18,7 @@ export function inquiryValue(evidence?: InquiryEvidence, historicalOnly=false): 
   const base={amount:null,observedAmount:null,eventId:null,eventAt:null,checkedAt:evidence?.checkedAt || null,policy:VALUE_POLICY};
   const excluded=(status:ValueStatus,reason:string):InquiryValue=>({...base,status,reason});
   if(historicalOnly)return excluded('historical','Historical-only lead; current identity has not been refreshed.');
-  if(!evidence)return excluded('unchecked','Inquiry evidence has not been checked.');
+  if(!evidence)return excluded('unchecked','Property inquiry lookup is pending.');
   if(!evidence.complete)return excluded('incomplete','Available event pages could not be fully retrieved.');
   const candidates=evidence.events.filter(e=>['Property Inquiry','Seller Inquiry','Inquiry','General Inquiry'].includes(e.type));
   if(!candidates.length)return excluded('missing','No accessible inquiry event.');
@@ -52,5 +52,8 @@ export function valueSummary(leads:Array<{key:string;historicalOnly?:boolean}>,v
     amount:buyer.length?buyer.reduce((sum,r)=>sum+(r.value.amount || 0),0):null,
     sellerAmount:seller.length?seller.reduce((sum,r)=>sum+(r.value.amount || 0),0):null,
     unchecked:rows.filter(r=>r.value.status==='unchecked').length,
-    excluded:rows.filter(r=>!['included','seller','unchecked'].includes(r.value.status)).length};
+    failed:rows.filter(r=>r.value.status==='failed').length,
+    historical:rows.filter(r=>r.value.status==='historical').length,
+    checked:rows.filter(r=>!['unchecked','failed','historical'].includes(r.value.status)).length,
+    excluded:rows.filter(r=>!['included','seller','unchecked','failed','historical'].includes(r.value.status)).length};
 }

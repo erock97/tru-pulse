@@ -1,4 +1,5 @@
 export interface Env {
+  PIPELINE_VALUES?: DurableObjectNamespace;
   /** Enable identity capture only after the reviewed additive migration. */
   PIPELINE_IDENTITY_ENABLED?: string;
   /** Separately release AI after reporting and evidence checks pass. */
