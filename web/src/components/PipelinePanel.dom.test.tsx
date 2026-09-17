@@ -17,6 +17,17 @@ beforeEach(()=>{
 afterEach(async()=>{await act(async()=>root.unmount());host.remove();vi.unstubAllGlobals();});
 const render=async()=>{await act(async()=>root.render(<PipelinePanel orgId="org" period="mtd"/>));};
 const click=async(label:string)=>{const b=[...host.querySelectorAll('button')].find(b=>b.textContent?.includes(label));expect(b).toBeTruthy();await act(async()=>b!.click());};
+it('provides an agent filter and visible current-stage bars with exact matching records',async()=>{
+ await render();const select=host.querySelector<HTMLSelectElement>('[aria-label="Pipeline agent"]')!;
+ await act(async()=>{select.value='demo-team:user:1';select.dispatchEvent(new Event('change',{bubbles:true}));});
+ const chart=host.querySelector('[aria-label="Current stage distribution"]')!;
+ expect(chart.closest('details')).toBeNull();expect(chart.textContent).toContain('Where leads sit now');
+ const buttons=[...chart.querySelectorAll<HTMLButtonElement>('button')];
+ expect(buttons.reduce((n,b)=>n+Number(b.querySelector('strong')!.textContent),0)).toBe(165);
+ const nurture=buttons.find(b=>b.getAttribute('aria-label')==='Current Nurture: 76 leads')!;
+ await act(async()=>nurture.click());expect(host.querySelector('[aria-label="Matching leads"]')?.querySelectorAll('li')).toHaveLength(76);
+ expect(host.querySelector('[aria-label="Team pipeline summary"]')?.textContent).toContain('504');
+});
 it('selects an agent without shrinking team denominators and reveals exactly the nurture records',async()=>{
  await render();await click('Alex Morgan');
  const detail=host.querySelector('[aria-label="Stage breakdown"]')!;

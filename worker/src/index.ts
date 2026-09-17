@@ -1,4 +1,6 @@
 export {FubSyncQueue} from './syncQueue.js';
+export {PipelineValueCollector} from './pipelineValueCollector.js';
+import {queueActivePipelineValues} from './pipelineValueCollector.js';
 import {queueActiveTeams} from './syncQueue.js';
 export { TimelineCollector } from './timelineCollector.js';
 export { AssignmentLedger } from './assignmentLedger.js';
@@ -1708,6 +1710,8 @@ export default {
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const database = db(env);
     await queueActiveTeams(env);
+    try { await queueActivePipelineValues(env); }
+    catch { console.error('Pipeline property collection queue needs retry.'); }
     // The brief tick is LIGHT — one indexed select, and on almost every minute
     // of the day it finds nothing due and returns. It must never pull a full
     // multi-tenant FUB sync behind it, which is why this handler is now a switch

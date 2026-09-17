@@ -6,6 +6,7 @@ import { calculatePipeline, mergePipelineLeads, pipelineSnapshotContent, PIPELIN
   type PipelineFilters, type PipelineTeam, type PipelineLead, type PipelineAgent, type PipelineReport, type StageMapping } from '../../shared/pipeline.js';
 import { pipelineInsights } from './pipelineInsights.js';
 import { checkPipelineValues } from './pipelineValue.js';
+import {queuePipelineValues} from './pipelineValueCollector.js';
 import { VALUE_POLICY, type InquiryValue } from '../../shared/pipelineValue.js';
 import type { ProgressEvent } from '../../shared/pipelineProgress.js';
 import { sourceFamily } from '../../shared/flags.js';
@@ -139,7 +140,22 @@ export async function handlePipeline(req:Request,env:Env,db:UserClient,url:URL,c
     const body=rawBody as Record<string,unknown>;
     if(req.method==='GET')body.sources=url.searchParams.getAll('source');
     const filters=parsePipelineFilters(body);
-    if(url.pathname==='/data/pipeline'&&req.method==='GET')return json(await loadPipeline(env,db,filters));
+      if(url.pathname==='/data/pipeline'&&req.method==='GET')return json(await loadPipeline(env,db,filters));
+      if(url.pathname==='/data/pipeline/property-values'&&req.method==='GET'){
+        const {teams}=await pipelineAccess(db,filters);
+        const rows=await all<{team_id:string;fub_person_id:number;pipeline_inquiry_value:InquiryValue}>(db,'leads',
+          'select=team_id,fub_person_id,pipeline_inquiry_value&team_id=in.('+teams.map(t=>t.id).join(',')+')&pipeline_inquiry_value=not.is.null&order=team_id.asc,fub_person_id.asc');
+        const collection=env.PIPELINE_VALUES?await Promise.all(teams.map(async team=>{
+          try{const r=await env.PIPELINE_VALUES!.get(env.PIPELINE_VALUES!.idFromName(team.id)).fetch('https://values/status');return {teamId:team.id,...await r.json() as object};}
+          catch{return {teamId:team.id,state:'unavailable'};}
+        })):[];
+        return json({values:Object.fromEntries(rows.filter(l=>l.pipeline_inquiry_value?.policy===VALUE_POLICY).map(l=>[l.team_id+':'+l.fub_person_id,l.pipeline_inquiry_value])),automatic:!!env.PIPELINE_VALUES,collection});
+      }
+      if(url.pathname==='/data/pipeline/property-values/collect'&&req.method==='POST'){
+        const {teams}=await pipelineAccess(db,filters);
+        await queuePipelineValues(env,teams.map(t=>t.id));
+        return json({queued:true});
+      }
     if(url.pathname==='/data/pipeline/property-values'&&req.method==='POST'){
       const report=await loadPipeline(env,db,filters);
       if(body.snapshotId!==report.snapshotId)throw new PipelineError('The pipeline changed. Refresh before checking inquiry values.',409);

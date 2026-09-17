@@ -1,13 +1,14 @@
 import {inquiryValue,type InquiryEvent,type InquiryValue} from '../../shared/pipelineValue.js';
-import type {PipelineReport} from '../../shared/pipeline.js';
+import type {PipelineRecord,PipelineTeam} from '../../shared/pipeline.js';
 import type {Env} from './env.js';
 import {db} from './db.js';
 import {decryptTeamKey} from './sync.js';
 import {fubGet} from './fub.js';
 import {PipelineError} from './pipelineSupport.js';
 
-/** Bounded, explicit read-only preview. Does not run during sync or write lead data. */
-export async function checkPipelineValues(env:Env,report:PipelineReport,keys:unknown):Promise<Record<string,InquiryValue>>{
+type ValueScope={leads:Array<Pick<PipelineRecord,'key'|'team_id'|'fub_person_id'|'fub_created'|'historicalOnly'>>;teams:Array<Pick<PipelineTeam,'id'|'fub_subdomain'>>};
+/** Shared bounded lookup for authorized reports and the per-team collector. */
+export async function checkPipelineValues(env:Env,report:ValueScope,keys:unknown):Promise<Record<string,InquiryValue>>{
  if(!Array.isArray(keys)||!keys.length||keys.length>5||keys.some(k=>typeof k!=='string')||new Set(keys).size!==keys.length)
   throw new PipelineError('Choose between one and five distinct leads.',400);
  const leads=keys.map(key=>report.leads.find(l=>l.key===key));
@@ -28,7 +29,7 @@ export async function checkPipelineValues(env:Env,report:PipelineReport,keys:unk
   for(let page=0;page<3;page++){
    // Keep below the event API's per-key rate limit, including successive leads.
    await new Promise(resolve=>setTimeout(resolve,2500));
-   const response=await fubGet(key,'/events',{personId:lead.fub_person_id,limit:100,...(next?{next}:{})});
+   const response=await fubGet(key,'/events',{personId:lead.fub_person_id,type:'Property Inquiry,Seller Inquiry,Inquiry,General Inquiry',limit:100,...(next?{next}:{})});
    if(response.status!==200||!Array.isArray(response.body?.events))throw new PipelineError('Inquiry lookup failed. Retry; existing pipeline counts are unchanged.',502);
    for(const e of response.body.events){
     if(Number(e.personId)!==lead.fub_person_id)throw new PipelineError('Inquiry identity mismatch.',502);
