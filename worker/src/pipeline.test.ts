@@ -38,7 +38,18 @@ describe('current-stage pipeline cohorts',()=>{
   expect(r.totals.total).toBe(3);expect(r.agents.filter(a=>a.total).map(a=>a.kind).sort()).toEqual(['former','pond','unassigned']);
  });
  it('never silently classifies custom or negative stage names',()=>{
-  for(const stage of ['Not under contract','Nurture - six months','Trash','Inactive','No longer looking','Disclosure'])expect(classifyPipelineStage(lead({stage})).category).toBe('unmapped');
+  for(const stage of ['Not under contract','Nurture - six months','Inactive','No longer looking','Disclosure'])expect(classifyPipelineStage(lead({stage})).category).toBe('unmapped');
+ });
+ it('blends Trash with Rejected while preserving raw stage and earlier progress',()=>{
+  const r=calc([lead({stage:'Trash',history:{met:{date:'2026-09-02T00:00:00Z'}}}),lead({fub_person_id:2,stage:'Rejected'})]);
+  expect(r.totals.rejected).toBe(2);expect(r.totals.rejectedPct).toBe(100);expect(r.totals.conversions).toBe(0);
+  expect(r.stages.map(s=>s.rawName)).toContain('Trash');
+  expect(r.leads[0].progress.met).toBeTruthy();expect(r.leads[0].progress.appointment).toBeTruthy();expect(r.leads[0].progress.offer).toBeUndefined();
+ });
+ it('retains prior observed steps without inventing an achievement date or future steps',()=>{
+  const r=calc([lead({stage:'Trash',observedStages:{'Met with customer':'2026-09-01T12:00:00Z','Closed':'2099-01-01T00:00:00Z'}})]);
+  expect(r.leads[0].progress.met).toMatchObject({source:'previous FUB observation',at:null});
+  expect(r.leads[0].progress.appointment).toBeTruthy();expect(r.leads[0].progress.closed).toBeUndefined();
  });
  it('uses team-specific stage-ID mappings without losing raw labels',()=>{
   const r=calculatePipeline({leads:[lead({stage:'Long horizon',stage_id:42})],agents:roster,teams:[{...team,pipeline_stage_mappings:{'id:42':{category:'nurture',order:90}}}],filters});

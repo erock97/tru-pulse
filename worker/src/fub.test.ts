@@ -3,7 +3,7 @@
 // cursor pagination, the retry/backoff contract, the cursor walk + window stop, and
 // the per-person contact counts the "worked" rule is built on.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { detectSubdomain, fubGetUrl, pullPeople, countOutgoingTexts, countCalls, pullPonds } from './fub.js';
+import { detectSubdomain, fubGetUrl, pullPeople, getPeopleByIds, countOutgoingTexts, countCalls, pullPonds } from './fub.js';
 
 const KEY = 'fka_test_key';
 
@@ -60,6 +60,11 @@ describe('fubGetUrl — credential containment', () => {
 });
 
 describe('pullPeople — cursor pagination', () => {
+  it('includes Trash in full and webhook reads so rejected leads cannot keep stale stages',async()=>{
+    stubFetch(url=>jsonResponse({people:new URL(url).searchParams.get('includeTrash')==='true'?[{id:42,stage:'Trash',assignedUserId:7}]:[]}));
+    expect(await pullPeople(KEY)).toEqual([{id:42,stage:'Trash',assignedUserId:7}]);
+    expect(await getPeopleByIds(KEY,'42')).toEqual([{id:42,stage:'Trash',assignedUserId:7}]);
+  });
   it('walks nextLink across pages and returns every person', async () => {
     const page = (ids: number[], next?: string) => jsonResponse({
       people: ids.map((id) => ({ id, created: '2026-08-01T00:00:00Z' })),

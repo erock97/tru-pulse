@@ -112,6 +112,12 @@ describe('pipeline route isolation and consistency',()=>{
  it('excludes disabled sources without broadening the historical denominator',async()=>{
   expect((await loadPipeline(env,client({org_settings:[{sources:['Facebook']}]}),filters)).totals.total).toBe(0);
  });
+ it('keeps historical-only tracked sources when settings use family names',async()=>{
+  mocks.history.mockResolvedValue({snapshot:{orgId:org,teamId:team,leads:[{...lead,source_family:'Zillow Preferred',stage:'Trash'}],sourceStarts:{'Zillow Preferred':'2026-01-01'},through:'2026-09-05'},coverage:{state:'partial'}});
+  const r=await loadPipeline(env,client({leads:[],org_settings:[{sources:['Zillow']}]}),filters);
+  expect(r.totals.total).toBe(1);expect(r.totals.rejected).toBe(1);expect(r.coverage.historicalOnly).toBe(1);
+  expect((await loadPipeline(env,client({leads:[],org_settings:[{sources:['Facebook']}]}),filters)).totals.total).toBe(0);
+ });
  it('binds inquiry checks to authorized snapshots and rejects stale requests',async()=>{
   const db=client(),report=await loadPipeline(env,db,filters);
   expect((await call(db,'/data/pipeline/property-values','POST',{snapshotId:'old',leadKeys:[team+':1']})).status).toBe(409);

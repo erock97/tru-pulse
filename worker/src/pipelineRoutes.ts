@@ -8,6 +8,7 @@ import { pipelineInsights } from './pipelineInsights.js';
 import { checkPipelineValues } from './pipelineValue.js';
 import { VALUE_POLICY, type InquiryValue } from '../../shared/pipelineValue.js';
 import type { ProgressEvent } from '../../shared/pipelineProgress.js';
+import { sourceFamily } from '../../shared/flags.js';
 import { PipelineError, digest } from './pipelineSupport.js';
 export { PipelineError, digest } from './pipelineSupport.js';
 
@@ -48,7 +49,7 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   const ids=teams.map(t=>t.id);
   if(ids.some(id=>!UUID.test(id)))throw new PipelineError('Invalid team configuration.',502);
   const [raw,roster,settings]=await Promise.all([
-    all<PipelineLead & {pipeline_inquiry_value?:InquiryValue}>(db,'leads','select=*&team_id=in.('+ids.join(',')+')&order=team_id.asc,fub_person_id.asc'),
+    all<PipelineLead & {pipeline_inquiry_value?:InquiryValue;pipeline_observed_stages?:Record<string,string>}>(db,'leads','select=*&team_id=in.('+ids.join(',')+')&order=team_id.asc,fub_person_id.asc'),
     all<PipelineAgent>(db,'agents','select=id,team_id,name,fub_user_id,excluded,role&team_id=in.('+ids.join(',')+')&order=id.asc'),
     db.select<{sources:string[]|null}>('org_settings','select=sources&org_id=eq.'+filters.orgId,{strict:true}),
   ]);
@@ -56,7 +57,7 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   // Allowlist response fields; select=* supports a schema rolling out separately.
   let leads:PipelineLead[]=raw.map(l=>({team_id:l.team_id,fub_person_id:l.fub_person_id,name:l.name,stage:l.stage,
     stage_id:l.stage_id,assigned_to:l.assigned_to,assigned_user_id:l.assigned_user_id,assigned_pond_id:l.assigned_pond_id,
-    pond:l.pond,source:l.source,source_family:l.source_family,fub_created:l.fub_created,synced_at:l.synced_at}));
+    pond:l.pond,source:l.source,source_family:l.source_family,fub_created:l.fub_created,synced_at:l.synced_at,observedStages:l.pipeline_observed_stages}));
   let historyState='not_available',historyThrough:string|null=null;
   const legacy=await env.SESSIONS.get('pulse-history:v1:'+filters.orgId,'json') as {orgId:string;teamId?:string}|null;
   let history;
@@ -80,7 +81,7 @@ export async function loadPipeline(env:Env,db:UserClient,filters:PipelineFilters
   const enabled=settings[0]?.sources;
   if(enabled?.length){
     const currentFamilies=new Map(raw.map(l=>[l.team_id+':'+l.fub_person_id,l.source_family]));
-    leads=leads.filter(l=>enabled.includes(l.source_family || '') || enabled.includes(currentFamilies.get(l.team_id+':'+l.fub_person_id) || ''));
+    leads=leads.filter(l=>enabled.includes(l.source_family || '') || enabled.includes(sourceFamily(l.source_family) || '') || enabled.includes(currentFamilies.get(l.team_id+':'+l.fub_person_id) || ''));
   }
   const cohort=leads.filter(l=>Number.isFinite(Date.parse(l.fub_created || ''))&&
     (!filters.from||Date.parse(l.fub_created!)>=Date.parse(filters.from))&&Date.parse(l.fub_created!)<Date.parse(filters.through)&&
