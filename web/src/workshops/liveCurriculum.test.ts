@@ -11,7 +11,7 @@ describe('versioned live curriculum', () => {
     const slideIds: string[] = [];
     const activityIds: string[] = [];
     for (const definition of Object.values(workshopCatalog)) {
-      expect(definition.version).toBe(definition.day===4?'2026-09-17-day4-two-sections-v10':`2026-09-16-day${definition.day}-quadrants-v${definition.day===3?4:2}`);
+      expect(definition.version).toBe(definition.day===4?'2026-09-17-day4-two-sections-v11':`2026-09-16-day${definition.day}-quadrants-v${definition.day===3?4:2}`);
       expect(definition.duration).toBe(definition.slides.reduce((sum, slide) => sum + slide.time, 0));
       slideIds.push(...definition.slides.map(slide => slide.id));
       activityIds.push(...definition.activities.map(activity => activity.id));
