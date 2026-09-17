@@ -68,7 +68,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
         }
         if(version!==requestVersion.current)return;
         setReport(data);setTeams(old=>!filters.teamId?data.teams:old.length?old:data.teams);
-        setMapping(data.teams.find(t=>t.id===filters.teamId)?.pipeline_stage_mappings || {});
+        setMapping(data.teams.find(t=>t.id===filters.teamId||data.teams.length===1)?.pipeline_stage_mappings || {});
         setMapMessage('');
       }catch(e){if(version===requestVersion.current){setReport(null);setError((e as Error).message);}}
       finally{if(version===requestVersion.current)setBusy(false);}
@@ -102,12 +102,12 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
     finally{if(version===insightVersion.current)setAiBusy(false);}
   }
   async function saveMappings(){
-    if(!report||!filters||!teamId)return;setMapBusy(true);setMapMessage('');
+    if(!report||!filters||!teamId&&report.teams.length!==1)return;const mappingTeamId=teamId||report.teams[0].id;setMapBusy(true);setMapMessage('');
     try{
-      const prior=report.teams.find(t=>t.id===teamId)?.pipeline_stage_mappings || {};
+      const prior=report.teams.find(t=>t.id===mappingTeamId)?.pipeline_stage_mappings || {};
       const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(prior)));
       const mappingVersion=[...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('');
-      await result(await workerFetch('/data/pipeline/mappings',{method:'PUT',body:JSON.stringify({...filters,mappings:mapping,mappingVersion})}));
+      await result(await workerFetch('/data/pipeline/mappings',{method:'PUT',body:JSON.stringify({...filters,teamId:mappingTeamId,mappings:mapping,mappingVersion})}));
       setRefresh(v=>v+1);
     }catch(e){setMapMessage((e as Error).message);}finally{setMapBusy(false);}
   }
@@ -120,7 +120,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
       <label>Leads received<select value={custom?'custom':String(selectedPeriod)} onChange={e=>{setCustom(e.target.value==='custom');if(e.target.value!=='custom'){const p=WINDOWS.find(w=>String(w.days)===e.target.value);setSelectedPeriod(p?.days??null);}}}>
         <optgroup label="Calendar periods">{receivedWindows.filter(w=>w.days==='mtd'||w.days==='ytd').map(w=><option key={w.key} value={String(w.days)}>{periodLabel(w)}</option>)}</optgroup><optgroup label="Rolling windows">{receivedWindows.filter(w=>w.days!=='mtd'&&w.days!=='ytd').map(w=><option key={w.key} value={String(w.days)}>{periodLabel(w)}</option>)}</optgroup><option value="custom">Custom dates</option></select></label>
       {custom&&<><label>From<input type="date" value={start} max={end} onChange={e=>setStart(e.target.value)}/></label><label>Through<input type="date" value={end} min={start} max={localDay(new Date())} onChange={e=>setEnd(e.target.value)}/></label></>}
-      <label>Team<select value={teamId} onChange={e=>{setTeamId(e.target.value);setSource('');}}><option value="">All available teams</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+      <label>Team{teams.length===1?<input readOnly value={teams[0].name} aria-label="Team"/>:<select value={teamId} onChange={e=>{setTeamId(e.target.value);setSource('');}}><option value="">All available teams</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}</label>
       <label>Agent<select aria-label="Pipeline agent" value={agent?.key || ''} disabled={busy} onChange={e=>chooseAgent(e.target.value)}><option value="">All agents / team view</option>{[...(report?.agents || [])].sort((a,b)=>a.name.localeCompare(b.name)).map(a=><option key={a.key} value={a.key}>{a.name} · {a.total} leads</option>)}</select></label>
       <label>Source<select value={source} onChange={e=>setSource(e.target.value)}><option value="">All enabled sources</option>{(report?.sources || []).map(s=><option key={s}>{s}</option>)}</select></label>
     </div>
@@ -230,7 +230,7 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
         {!proof.keys.length&&<p>No leads match this count.</p>}
       </section>}
       {report.canMapStages&&<details className="pipeline-card pipeline-mappings"><summary>Stage reporting settings</summary><p>Map your team’s FUB stages into reporting categories. Raw FUB names stay visible and are never changed in Follow Up Boss.</p>
-        {!teamId?<p>Select one team above to edit its mappings.</p>:<><div className="pipeline-mapping-grid">{report.stages.map(s=>{const record=report.leads.find(l=>l.stageKey===s.key)!;const key=stageKey(record);return <label key={s.key}>{s.rawName}<select value={mapping[key]?.category || s.category} onChange={e=>setMapping(old=>({...old,[key]:{category:e.target.value as StageMapping['category'],order:PIPELINE_CATEGORIES.indexOf(e.target.value as StageMapping['category'])*20}}))}>{PIPELINE_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel[c]}</option>)}</select></label>;})}</div><button className="pipeline-button" disabled={mapBusy} onClick={()=>void saveMappings()}>{mapBusy?'Saving…':'Save reporting mappings'}</button>{mapMessage&&<p role="alert">{mapMessage}</p>}</>}
+        {!teamId&&report.teams.length!==1?<p>Select one team above to edit its mappings.</p>:<><div className="pipeline-mapping-grid">{report.stages.map(s=>{const record=report.leads.find(l=>l.stageKey===s.key)!;const key=stageKey(record);return <label key={s.key}>{s.rawName}<select value={mapping[key]?.category || s.category} onChange={e=>setMapping(old=>({...old,[key]:{category:e.target.value as StageMapping['category'],order:PIPELINE_CATEGORIES.indexOf(e.target.value as StageMapping['category'])*20}}))}>{PIPELINE_CATEGORIES.map(c=><option key={c} value={c}>{categoryLabel[c]}</option>)}</select></label>;})}</div><button className="pipeline-button" disabled={mapBusy} onClick={()=>void saveMappings()}>{mapBusy?'Saving…':'Save reporting mappings'}</button>{mapMessage&&<p role="alert">{mapMessage}</p>}</>}
       </details>}
     </>}
   </section>;
