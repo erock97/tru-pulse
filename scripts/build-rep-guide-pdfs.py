@@ -43,6 +43,31 @@ def inline(node):
 
 def flow(node):
     if isinstance(node,NavigableString) or node.name == 'nav': return []
+    if any(c in node.get('class',[]) for c in ('buyability-screens','fub-visuals','fub-letter-stage')):
+        result = []
+        for figure in node.find_all('figure'):
+            for tag in figure.find_all('img'):
+                asset = (DIRECTORY / tag['src'].removeprefix('/workshops/')).resolve()
+                if not asset.is_relative_to(DIRECTORY.resolve()) or not asset.exists():
+                    raise ValueError('Official source image missing')
+                picture = Image(str(asset))
+                factor = min(500 / picture.imageWidth, 350 / picture.imageHeight)
+                picture.drawWidth = picture.imageWidth * factor
+                picture.drawHeight = picture.imageHeight * factor
+                result.extend([picture, Spacer(1,8)])
+            result.extend(flow(figure.find('figcaption')))
+        return result
+    if 'real-mls-sheet' in node.get('class',[]):
+        tag = node.find('img')
+        asset = (DIRECTORY / tag['src'].removeprefix('/workshops/')).resolve()
+        if not asset.is_relative_to(DIRECTORY.resolve()) or not asset.exists():
+            raise ValueError('MLS example image is missing or outside the workshop directory')
+        image = Image(str(asset))
+        factor = min(528 / image.imageWidth, 220 / image.imageHeight)
+        image.drawWidth = image.imageWidth * factor
+        image.drawHeight = image.imageHeight * factor
+        caption = Paragraph(inline(node.find('figcaption')), styles['p'])
+        return [KeepTogether([image, Spacer(1,6), caption]), Spacer(1,8)]
     if 'lesson-phones' in node.get('class',[]):
         images = []
         for tag in node.find_all('img'):
@@ -93,7 +118,7 @@ for day in range(1,5):
     for kind in ('guide','resources'):
         source = DIRECTORY / f'day{day}-{kind}.html'
         soup = BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')
-        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent reference and practice notes' if day == 2 else 'agent worksheet')
+        title = f'Day {day} ' + ('facilitator guide' if kind == 'guide' else 'agent reference and practice notes')
         output = source.with_suffix('.pdf')
         def footer(canvas,doc):
             canvas.saveState()

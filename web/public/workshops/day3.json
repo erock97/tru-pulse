@@ -1,122 +1,219 @@
 {
   "day": 3,
-  "title": "Show like a pro",
+  "title": "Prepare for the showing and help the buyer decide",
   "slides": [
     {
       "id": "day3-welcome",
       "chapter": "Welcome",
-      "title": "Show like a pro",
-      "lead": "Day 3 · A 75-minute live workshop",
+      "title": "Prepare for a successful showing",
+      "lead": "Day 3 · 74 minutes including discussion and practice",
       "body": "<blockquote class=\"lesson-example\">Help the buyer understand what works, what does not, and what to do next.</blockquote>",
       "time": 1,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-property",
-      "notes": "Today we are going to work on the first showing. Success is not whether they buy the house we open. Success is whether we understand them better and they leave knowing how we will help them move forward. Introduce yourself and connect today to the first-call work in Day 2.\nHandoff: Let’s walk through the visit in the same order you will experience it with a buyer.\nSources: INT-005–007; Eric’s Day 3 objective. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Let’s walk through the visit in the same order you will experience it with a buyer."
+      "theme": "tru alms alms-cover training-depth",
+      "notes": "Today we are going to work on the first showing. Success is not whether they buy the house we open. Success is whether we understand them better and they leave knowing how we will help them move forward. Introduce yourself and connect today to the first-call work in Day 2.\n\nSources: INT-005–007; Eric’s Day 3 objective. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: What you will learn and practice. Connect it to the action you just practiced.",
+      "cue": "Next: What you will learn and practice. Connect it to the action you just practiced."
     },
     {
       "id": "day3-agenda",
       "chapter": "Welcome",
-      "title": "From a first meeting to a useful plan",
-      "lead": "We will learn the approach, discuss the difficult moments, then practice the full conversation.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Before the visit</h3><p>Prepare useful comparisons and set expectations.</p></div><div class=\"row\"><h3>At the home</h3><p>Give the buyer room to react, then understand those reactions.</p></div><div class=\"row\"><h3>Before you leave</h3><p>Connect priorities, concerns, and timing to an agreed plan.</p></div><div class=\"row\"><h3>Practice together</h3><p>Take turns as agent, buyer, and observer. Give feedback and retry.</p></div></div>",
-      "time": 2,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Explain that discussion is part of the lesson. Ask for the reasoning behind answers, including what information would change someone’s recommendation. People with HQ submit on the question slide. People without HQ can answer aloud; choose the group’s multiple-choice answer in your presenter window and submit it to discuss. Open private presenter notes in their own tab and share only the presentation window.\nHandoff: The plan starts before we arrive: why are we showing these particular homes?\nSources: INT-015; INT-037–039; user training preferences. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "The plan starts before we arrive: why are we showing these particular homes?"
+      "title": "What you will learn and practice",
+      "lead": "For each topic, share your thinking first. Then study the explanation and practice the approach.",
+      "body": "<ol class=\"quadrant-agenda\"><li><span>01</span><div><h3>Prepare before you arrive</h3><p>Research the homes and build a tour that serves this buyer.</p></div></li><li><span>02</span><div><h3>Conduct the showing</h3><p>Welcome honest reactions and learn what the home needs to do for the buyer.</p></div></li><li><span>03</span><div><h3>Lead the post-tour conversation</h3><p>Ask about an offer, then follow the buyer’s answer.</p></div></li><li><span>04</span><div><h3>Understand concerns and agree on a plan</h3><p>Connect useful help to the buyer’s reason and follow through.</p></div></li></ol>",
+      "time": 1,
+      "theme": "tru alms lesson training-depth",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Prepare before you arrive. Connect it to the action you just practiced.",
+      "cue": "Next: Prepare before you arrive. Connect it to the action you just practiced."
+    },
+    {
+      "id": "day3-quadrant-1",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Prepare before you arrive",
+      "lead": "Research the homes and build a tour that serves this buyer.",
+      "body": "<p class=\"quadrant-number\">01</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
+      "time": 0,
+      "theme": "tru alms lesson training-depth quadrant-cover section-1",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What should be ready before tomorrow’s showing?. Connect it to the action you just practiced.",
+      "cue": "Next: What should be ready before tomorrow’s showing?. Connect it to the action you just practiced.",
+      "quadrant": 1
+    },
+    {
+      "id": "day3-discuss-preparation",
+      "chapter": "1. Prepare before you arrive",
+      "title": "What should be ready before tomorrow’s showing?",
+      "lead": "You are meeting a buyer tomorrow. They want a quiet office and a usable yard. They have an afternoon available for the tour.",
+      "body": "<ol class=\"discussion-questions\"><li>What would you research about each home?</li><li>How many homes would you propose, and why?</li><li>What would you ask the listing agent and confirm with the buyer?</li></ol><label class=\"field\">What would you do, and why? What information would change your answer?<textarea data-save=\"thinking\"></textarea></label><details class=\"reveal\"><summary>After your answer: review the explanation</summary><div>Prepare two to four relevant homes when the buyer’s time, preferences and access allow. Review available property information and comparisons, call the listing agent, explain tradeoffs, confirm access and bring a useful packet. The number supports a thoughtful tour; it does not override the buyer’s needs.</div></details>",
+      "time": 4,
+      "theme": "tru alms lesson training-depth lesson-question",
+      "notes": "Present the situation without giving the answer. Allow a quiet first response, then hear two different approaches. Recognize sound reasoning and identify gaps before moving to the teaching slides. This discussion is ungraded.\n\nSources: Eric’s September 16 teaching format; existing TRU curriculum.\nHandoff: Next: Review the property information before the showing. Connect it to the action you just practiced.",
+      "cue": "Next: Review the property information before the showing. Connect it to the action you just practiced.",
+      "activity": {
+        "id": "day3-discuss-preparation",
+        "kind": "discussion",
+        "prompt": "You are meeting a buyer tomorrow. They want a quiet office and a usable yard. They have an afternoon available for the tour.",
+        "fields": [
+          {
+            "id": "thinking",
+            "label": "What would you do, and why? What information would change your answer?"
+          }
+        ],
+        "model": "Prepare two to four relevant homes when the buyer’s time, preferences and access allow. Review available property information and comparisons, call the listing agent, explain tradeoffs, confirm access and bring a useful packet. The number supports a thoughtful tour; it does not override the buyer’s needs."
+      },
+      "quadrant": 1
+    },
+    {
+      "id": "day3-property-research",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Review the property information before the showing",
+      "lead": "Know what the available records say and which questions remain unanswered.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Read the available documents</h3><p>Review the listing and seller disclosures. Identify facts that affect the buyer’s stated needs and flag missing information.</p></div><div class=\"row\"><h3>Prepare useful comparisons</h3><p>Review three relevant comparable sales where available. Note the differences that make each comparison useful rather than assuming the prices are directly interchangeable.</p></div><div class=\"row\"><h3>Check practical details</h3><p>Review property taxes and school district information. Record the source and any question that needs confirmation. Explain the information without guessing.</p></div></div>",
+      "time": 3,
+      "theme": "tru alms lesson training-depth lesson-photo photo-property",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Call the listing agent with specific questions. Connect it to the action you just practiced.",
+      "cue": "Next: Call the listing agent with specific questions. Connect it to the action you just practiced.",
+      "quadrant": 1
+    },
+    {
+      "id": "day3-listing-agent-call",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Call the listing agent with specific questions",
+      "lead": "Use the call to prepare accurate information and confirm the visit.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Ask about the listing</h3><p>“Is there an offer deadline or offer activity we should know about?” Ask about seller timing and any rent-back request.</p></div><div class=\"row\"><h3>Ask about unresolved facts</h3><p>“The available materials do not state the roof age. Is there documentation you can share?” Keep reported information separate from verified documents.</p></div><div class=\"row\"><h3>Confirm access</h3><p>Check appointment approval and showing instructions. A buyer’s preferred time does not establish access. If an answer is pending, record it and plan the update.</p></div></div>",
+      "time": 3,
+      "theme": "tru alms lesson training-depth lesson-photo photo-follow-up",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Choose two to four homes for a useful comparison. Connect it to the action you just practiced.",
+      "cue": "Next: Choose two to four homes for a useful comparison. Connect it to the action you just practiced.",
+      "quadrant": 1
     },
     {
       "id": "day3-prepare",
-      "chapter": "Prepare the outing",
-      "title": "Give each home a reason to be on the tour",
-      "lead": "Use what the buyer told you to propose two or three useful comparisons.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Connect to a need</h3><p>“You wanted room to work from home. This one has an enclosed office.”</p></div><div class=\"row\"><h3>Name the tradeoff</h3><p>“The yard is smaller than you asked for. Would comparing the layout still be useful?”</p></div><div class=\"row\"><h3>Confirm the visit</h3><p>Check access, showing instructions, the meeting plan, and the applicable brokerage-approved agreement.</p></div></div>",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Choose two to four homes for a useful comparison",
+      "lead": "Use the buyer’s priorities, available time and confirmed access to shape the tour.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Explain why each home belongs</h3><p>“This home has the enclosed office you wanted. The yard is smaller. Would comparing the layout still be useful?”</p></div><div class=\"row\"><h3>Respect firm requirements</h3><p>If the yard is nonnegotiable, revise the options. More homes are useful only when the comparisons help the buyer decide.</p></div><div class=\"row\"><h3>Confirm the tour plan</h3><p>Agree on the meeting place, sequence and timing. Review access instructions and the applicable brokerage-approved agreement before the visit.</p></div></div>",
       "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-home",
-      "notes": "Explain why multiple homes help: the buyer can compare, priorities become clearer, and one unavailable home need not end the outing. A comparison is not permission to ignore criteria. Tell them where it differs and why you are suggesting it. Respect their time and decision. Confirm the actual form and access; do not promise universal agreement terms or treat a requested time as confirmed access.\nHandoff: Once the plan is clear, the way we welcome them determines how comfortable they feel being honest.\nSources: R012; R016; R018; R021; INT-015,037–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Once the plan is clear, the way we welcome them determines how comfortable they feel being honest."
+      "theme": "tru alms lesson training-depth lesson-photo photo-home tour-comparison",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Bring information the buyer can use during the tour. Connect it to the action you just practiced.",
+      "cue": "Next: Bring information the buyer can use during the tour. Connect it to the action you just practiced.",
+      "quadrant": 1
     },
     {
-      "id": "day3-drop-the-rope",
-      "chapter": "Arrive and set expectations",
-      "title": "Make it safe to dislike the home",
-      "lead": "“Drop the rope” means the buyer can be honest without having to defend their reaction.",
-      "body": "<blockquote class=\"lesson-example\">“I’m excited to show you around. You do not have to make this home work. Tell me what you like and what you would change. That helps us figure out what to look for next.”</blockquote>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-arrival",
-      "notes": "Demonstrate this as a normal welcome, not a memorized speech. Explain that the goal is to help them find the right fit, whether this home works or the search takes longer. Follow through: if they criticize the kitchen, get curious instead of defending it. Invite someone to describe what an agent could do later that would contradict this welcome.\nHandoff: Let’s put that promise to a test: what happens when your suggested comparison feels wrong to the buyer?\nSources: Repository SALES_DOCTRINE: Drop the rope; R021; INT-038–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Let’s put that promise to a test: what happens when your suggested comparison feels wrong to the buyer?"
+      "id": "day3-buyer-packet",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Bring information the buyer can use during the tour",
+      "lead": "Print a buyer copy for each home. Keep your research notes with you so you can answer questions during the tour.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Documents for the buyer</h3><p>Use the customer-facing report from your MLS. Check the address, current status, price and report date. Include relevant comparable sales and identify the source and date of any neighborhood information.</p></div><div class=\"row\"><h3>Notes for you</h3><p>Highlight features the buyer asked for. List unanswered questions, who you have asked, and when you will follow up. Keep agent-only remarks and access instructions out of the buyer’s packet.</p></div><div class=\"row\"><h3>Before leaving</h3><p>Confirm every appointment, check showing instructions, and send the buyer the meeting address and time. Bring the printed packet and your notes.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson training-depth lesson-photo photo-questions",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
+      "cue": "Next: Practice preparing tomorrow’s tour. Connect it to the action you just practiced.",
+      "quadrant": 1
     },
     {
       "id": "day3-comparison-discussion",
-      "chapter": "Discuss · choose and explain",
-      "title": "What would you do?",
-      "lead": "A buyer wants a home office and a large yard. Your suggested home has an office but a small yard. They say, “You are not listening.” What is your best next move? Explain why.",
-      "body": "<div class=\"choices\" data-quiz=\"day3-comparison-discussion\"><button data-option-id=\"tour\" data-correct=\"false\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Explain why the office makes this home worth seeing and finish the tour.</button><button data-option-id=\"clarify\" data-correct=\"true\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Acknowledge the mismatch and ask what they need from the yard before revising the plan.</button><button data-option-id=\"replace\" data-correct=\"false\" data-feedback=\"Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.\">Replace it with the largest-yard home in the search and keep the appointment time.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would change if the yard were nonnegotiable?<textarea data-save=\"reason\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.</div></details>",
+      "chapter": "1. Prepare before you arrive",
+      "title": "Practice preparing tomorrow’s tour",
+      "lead": "Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.",
+      "body": "<ol class=\"discussion-questions\"><li>Choose two to four homes and explain why each belongs on this buyer’s tour.</li><li>Name the information you would research and the questions you would ask the listing agents.</li><li>Explain what you would confirm with the buyer and bring to the appointment.</li></ol><label class=\"field\">What would you do, and why? What information would change your answer?<textarea data-save=\"thinking\"></textarea></label><details class=\"reveal\"><summary>After your answer: review the explanation</summary><div>A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met.</div></details>",
       "time": 4,
-      "theme": "tru alms day3-polish lesson lesson-question",
-      "notes": "Give everyone thirty seconds to choose and submit. Hear two different reasons before sharing the example. Ask: What could you have said before adding this home to the tour? What changes if the buyer has already said the yard is nonnegotiable? The point is to understand their priority, not win approval for your pick.\nHandoff: Now we have a useful tour plan. Inside the home, the challenge is knowing when to speak and when to give them space.\nSources: R021; INT-038–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Now we have a useful tour plan. Inside the home, the challenge is knowing when to speak and when to give them space.",
+      "theme": "tru alms lesson training-depth lesson-question preparation-practice",
+      "notes": "Present the situation without giving the answer. Allow a quiet first response, then hear two different approaches. Recognize sound reasoning and identify gaps before moving to the teaching slides. This discussion is ungraded.\n\nSources: Eric’s September 16 teaching format; existing TRU curriculum.\nHandoff: Next: Conduct the showing. Connect it to the action you just practiced.",
+      "cue": "Next: Conduct the showing. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-comparison-discussion",
-        "kind": "choice",
-        "prompt": "A buyer wants a home office and a large yard. Your suggested home has an office but a small yard. They say, “You are not listening.” What is your best next move? Explain why.",
+        "kind": "discussion",
+        "prompt": "Use the same buyer: a quiet office, a usable yard and one afternoon to see homes. Before we move to the showing, put the preparation together.",
         "fields": [
           {
-            "id": "reason",
-            "label": "Explain your choice. What would change if the yard were nonnegotiable?"
+            "id": "thinking",
+            "label": "What would you do, and why? What information would change your answer?"
           }
         ],
-        "model": "Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction.",
-        "choices": [
+        "model": "A complete plan connects each home to the buyer’s needs, identifies missing property information, confirms access and timing, and includes useful documents. Explain any tradeoff before the visit. Adjust the selection when a firm requirement is not met."
+      },
+      "quadrant": 1
+    },
+    {
+      "id": "day3-quadrant-2",
+      "chapter": "2. Conduct the showing",
+      "title": "Conduct the showing",
+      "lead": "Welcome honest reactions and learn what the home needs to do for the buyer.",
+      "body": "<p class=\"quadrant-number\">02</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
+      "time": 0,
+      "theme": "tru alms lesson training-depth quadrant-cover section-2",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: How would you respond when buyers react differently?. Connect it to the action you just practiced.",
+      "cue": "Next: How would you respond when buyers react differently?. Connect it to the action you just practiced.",
+      "quadrant": 2
+    },
+    {
+      "id": "day3-discuss-showing",
+      "chapter": "2. Conduct the showing",
+      "title": "How would you respond when buyers react differently?",
+      "lead": "During the first tour, one buyer loves the open living area. Their partner says, “I could never work from home here.”",
+      "body": "<ol class=\"discussion-questions\"><li>What would you say first?</li><li>What do you need to understand before suggesting a solution?</li></ol><label class=\"field\">What would you do, and why? What information would change your answer?<textarea data-save=\"thinking\"></textarea></label><details class=\"reveal\"><summary>After your answer: review the explanation</summary><div>Invite each buyer to explain how they would use the home. Learn what work calls require before suggesting a room change. Make honest reactions welcome and avoid choosing a priority on their behalf.</div></details>",
+      "time": 3,
+      "theme": "tru alms lesson training-depth lesson-question",
+      "notes": "Present the situation without giving the answer. Allow a quiet first response, then hear two different approaches. Recognize sound reasoning and identify gaps before moving to the teaching slides. This discussion is ungraded.\n\nSources: Eric’s September 16 teaching format; existing TRU curriculum.\nHandoff: Next: Make it safe to dislike the home. Connect it to the action you just practiced.",
+      "cue": "Next: Make it safe to dislike the home. Connect it to the action you just practiced.",
+      "activity": {
+        "id": "day3-discuss-showing",
+        "kind": "discussion",
+        "prompt": "During the first tour, one buyer loves the open living area. Their partner says, “I could never work from home here.”",
+        "fields": [
           {
-            "id": "tour",
-            "text": "Explain why the office makes this home worth seeing and finish the tour."
-          },
-          {
-            "id": "clarify",
-            "text": "Acknowledge the mismatch and ask what they need from the yard before revising the plan."
-          },
-          {
-            "id": "replace",
-            "text": "Replace it with the largest-yard home in the search and keep the appointment time."
+            "id": "thinking",
+            "label": "What would you do, and why? What information would change your answer?"
           }
         ],
-        "correctChoiceId": "clarify",
-        "explanation": "Start with B. Acknowledge the mismatch and learn what the yard needs to do for them. Explain the comparison only if it is useful, then narrow the search if that is their preference. A and C may eventually help, but each assumes the solution before understanding the reaction."
-      }
+        "model": "Invite each buyer to explain how they would use the home. Learn what work calls require before suggesting a room change. Make honest reactions welcome and avoid choosing a priority on their behalf."
+      },
+      "quadrant": 2
+    },
+    {
+      "id": "day3-drop-the-rope",
+      "chapter": "2. Conduct the showing",
+      "title": "Make it safe to dislike the home",
+      "lead": "Tell buyers at the start that honest feedback helps you choose homes for them.",
+      "body": "<blockquote class=\"lesson-example\">“Take your time looking around. Tell me what you like and what doesn’t work for you—you won’t hurt my feelings. That helps me narrow down what we look at next.”</blockquote>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-photo photo-arrival training-depth welcome-quote",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Let them experience the home. Connect it to the action you just practiced.",
+      "cue": "Next: Let them experience the home. Connect it to the action you just practiced.",
+      "quadrant": 2
     },
     {
       "id": "day3-during-the-visit",
-      "chapter": "At the home",
+      "chapter": "2. Conduct the showing",
       "title": "Let them experience the home",
-      "lead": "Stay available, notice their reactions, and contribute information that helps them decide.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Give them room</h3><p>Let the buyer look and talk. You do not need to narrate every room.</p></div><div class=\"row\"><h3>Follow their reaction</h3><p>“You paused in the office. What were you picturing using it for?”</p></div><div class=\"row\"><h3>Separate fact from guess</h3><p>If a property question is unresolved, say so and explain how you will seek the answer.</p></div></div>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-conversation",
-      "notes": "Demonstrate a short silence while the buyer looks around, then a question based on something they actually said. Do not read a facial expression as a conclusion. Being quiet is not disappearing: be available and answer useful questions. Preserve the existing showing teaching about giving space. Tie factual uncertainty to Eric’s problem-solving rule: prepare a useful next step, not a guessed answer.\nHandoff: Being helpful gets harder when two buyers react differently to the same space.\nSources: Existing Day 3 showing conduct; R002; R025. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Being helpful gets harder when two buyers react differently to the same space."
+      "lead": "Let buyers look around and talk to each other before you ask for their reaction.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Give them room</h3><p>Stay nearby so they can ask questions. Let them finish looking through a room before you speak; a quiet moment does not need to be filled.</p></div><div class=\"row\"><h3>Follow what they say</h3><p>If they say the office feels small, ask: “What would you need to fit in here?” Listen before suggesting another use for the room.</p></div><div class=\"row\"><h3>Say when you do not know</h3><p>“I don’t have the roof replacement date. I’ll ask the listing agent for documentation and update you by five.” Record the question and send the update even if the answer is still pending.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-photo photo-conversation training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Let the buyer’s reaction lead to one useful question. Connect it to the action you just practiced.",
+      "cue": "Next: Let the buyer’s reaction lead to one useful question. Connect it to the action you just practiced.",
+      "quadrant": 2
     },
     {
       "id": "day3-question-bank",
-      "chapter": "At the home",
-      "title": "Questions that make the next home a better fit",
-      "lead": "Choose a question that follows the buyer’s answer. You do not need to ask the whole list.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Understand the use</h3><p>“How would you use this space?” · “What is difficult about your current setup?”</p></div><div class=\"row\"><h3>Find the difference</h3><p>“What worked better in the other home?” · “What made this one feel different in person?”</p></div><div class=\"row\"><h3>Explore priorities</h3><p>“Which part would you miss most?” · “What would make that tradeoff worth considering?”</p></div><div class=\"row\"><h3>Check your understanding</h3><p>“So a separate workspace matters more than an extra bedroom—is that right?”</p></div></div>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Give agents this as a working question bank, not a checklist. Model asking one question, listening, and building the next question from the answer. “A bigger house” becomes useful when we learn why the current space fails. A summary is a check with the buyer, not an agent deciding their priorities for them.\nHandoff: Use those questions in this situation. We need to understand both buyers before suggesting a compromise.\nSources: R005; R021; INT-005–007,038. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Use those questions in this situation. We need to understand both buyers before suggesting a compromise."
+      "chapter": "2. Conduct the showing",
+      "title": "Let the buyer’s reaction lead to one useful question",
+      "lead": "Give them time to experience the room. When they share a reaction, follow that thought instead of starting a list of questions.",
+      "body": "<div class=\"conversation-sequence\"><div class=\"conversation-turn\"><span>Buyer</span><blockquote>“This office could work.”</blockquote><p>Let them look around and finish their thought.</p></div><div class=\"conversation-turn\"><span>Agent</span><blockquote>“What would work better here than in your current setup?”</blockquote><p>Ask one question tied to what they just said. Then listen.</p></div><div class=\"conversation-turn\"><span>Buyer</span><blockquote>“I could close the door during calls.”</blockquote><p>Now you know why the room matters. Check your understanding before changing the search.</p></div></div><p class=\"conversation-close\">“So you need a room where you can close the door for calls. Is that right?”</p>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish training-depth conversation-example",
+      "notes": "Give agents this as a working question bank, not a checklist. Model asking one question, listening, and building the next question from the answer. “A bigger house” becomes useful when we learn why the current space fails. A summary is a check with the buyer, not an agent deciding their priorities for them.\n\nSources: R005; R021; INT-005–007,038. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Ask what each buyer needs from the home. Connect it to the action you just practiced.",
+      "cue": "Next: Ask what each buyer needs from the home. Connect it to the action you just practiced.",
+      "quadrant": 2
     },
     {
       "id": "day3-different-priorities",
-      "chapter": "Discuss · choose and explain",
-      "title": "What would you do?",
+      "chapter": "2. Conduct the showing",
+      "title": "Ask what each buyer needs from the home",
       "lead": "During a first tour, one buyer loves the open living area. Their partner says, “I could never work from home here.” What would you do first, and why?",
       "body": "<div class=\"choices\" data-quiz=\"day3-different-priorities\"><button data-option-id=\"adapt\" data-correct=\"false\" data-feedback=\"B gives both people room to explain. Learn what “work from home” requires before proposing a physical fix or changing the search. A might become useful after verification and buyer interest; C might fit after both buyers agree on the priority.\">Explore whether the dining area could become a workspace.</button><button data-option-id=\"understand\" data-correct=\"true\" data-feedback=\"B gives both people room to explain. Learn what “work from home” requires before proposing a physical fix or changing the search. A might become useful after verification and buyer interest; C might fit after both buyers agree on the priority.\">Ask each buyer how they would use the home during a normal day.</button><button data-option-id=\"filter\" data-correct=\"false\" data-feedback=\"B gives both people room to explain. Learn what “work from home” requires before proposing a physical fix or changing the search. A might become useful after verification and buyer interest; C might fit after both buyers agree on the priority.\">Suggest making an enclosed office a required search filter.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What would you need to hear from each buyer?<textarea data-save=\"reason\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>B gives both people room to explain. Learn what “work from home” requires before proposing a physical fix or changing the search. A might become useful after verification and buyer interest; C might fit after both buyers agree on the priority.</div></details>",
-      "time": 4,
-      "theme": "tru alms day3-polish lesson lesson-question",
-      "notes": "Ask agents to choose, then explain what each answer would help them learn and what it could miss. After reveal, invite two volunteers to play the buyers. Give them one sentence each about a workday and have an agent ask a responsive follow-up. Do not turn this into settling a disagreement for the couple.\nHandoff: Those observations give us something useful to talk about when the tour ends. Here is how to open that conversation.\nSources: R005; R021; derived practice case. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Those observations give us something useful to talk about when the tour ends. Here is how to open that conversation.",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-question training-depth",
+      "notes": "Ask agents to choose, then explain what each answer would help them learn and what it could miss. After reveal, invite two volunteers to play the buyers. Give them one sentence each about a workday and have an agent ask a responsive follow-up. Do not turn this into settling a disagreement for the couple.\n\nSources: R005; R021; derived practice case. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Lead the post-tour conversation. Connect it to the action you just practiced.",
+      "cue": "Next: Lead the post-tour conversation. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-different-priorities",
         "kind": "choice",
@@ -144,62 +241,103 @@
         ],
         "correctChoiceId": "understand",
         "explanation": "B gives both people room to explain. Learn what “work from home” requires before proposing a physical fix or changing the search. A might become useful after verification and buyer interest; C might fit after both buyers agree on the priority."
-      }
+      },
+      "quadrant": 2
+    },
+    {
+      "id": "day3-quadrant-3",
+      "chapter": "3. Lead the post-tour conversation",
+      "title": "Lead the post-tour conversation",
+      "lead": "Ask about an offer, then follow the buyer’s answer.",
+      "body": "<p class=\"quadrant-number\">03</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
+      "time": 0,
+      "theme": "tru alms lesson training-depth quadrant-cover section-3",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: What would you ask before the buyer leaves?. Connect it to the action you just practiced.",
+      "cue": "Next: What would you ask before the buyer leaves?. Connect it to the action you just practiced.",
+      "quadrant": 3
+    },
+    {
+      "id": "day3-discuss-post-tour",
+      "chapter": "3. Lead the post-tour conversation",
+      "title": "What would you ask before the buyer leaves?",
+      "lead": "The tour has finished. The buyer has mentioned things they liked and things that did not work.",
+      "body": "<ol class=\"discussion-questions\"><li>How would you ask for a few minutes?</li><li>What would your first question be?</li><li>What changes if they say yes, no or unsure?</li></ol><label class=\"field\">What would you do, and why? What information would change your answer?<textarea data-save=\"thinking\"></textarea></label><details class=\"reveal\"><summary>After your answer: review the explanation</summary><div>Ask for a few minutes and explain the purpose. Start with “Did we see any homes we want to write an offer on?” Then follow the answer. Do not infer a decision from silence, criticism or a rating.</div></details>",
+      "time": 3,
+      "theme": "tru alms lesson training-depth lesson-question",
+      "notes": "Present the situation without giving the answer. Allow a quiet first response, then hear two different approaches. Recognize sound reasoning and identify gaps before moving to the teaching slides. This discussion is ungraded.\n\nSources: Eric’s September 16 teaching format; existing TRU curriculum.\nHandoff: Next: Take five minutes to review the tour and ask about an offer. Connect it to the action you just practiced.",
+      "cue": "Next: Take five minutes to review the tour and ask about an offer. Connect it to the action you just practiced.",
+      "activity": {
+        "id": "day3-discuss-post-tour",
+        "kind": "discussion",
+        "prompt": "The tour has finished. The buyer has mentioned things they liked and things that did not work.",
+        "fields": [
+          {
+            "id": "thinking",
+            "label": "What would you do, and why? What information would change your answer?"
+          }
+        ],
+        "model": "Ask for a few minutes and explain the purpose. Start with “Did we see any homes we want to write an offer on?” Then follow the answer. Do not infer a decision from silence, criticism or a rating."
+      },
+      "quadrant": 3
     },
     {
       "id": "day3-after-the-tour",
-      "chapter": "After the tour",
-      "title": "Ask for a few minutes before they leave the house",
-      "lead": "Make the purpose clear: use today’s reactions to decide what would help next.",
-      "body": "<blockquote class=\"lesson-example\">“Thanks for being honest about the house. Do you have a couple of minutes? I’d like to understand what worked and what didn’t so we can make the next step useful for you.”</blockquote>",
+      "chapter": "3. Lead the post-tour conversation",
+      "title": "Take five minutes to review the tour and ask about an offer",
+      "lead": "Before everyone leaves the last home, ask the buyers to stay for a short conversation.",
+      "body": "<div class=\"conversation-sequence\"><div class=\"conversation-turn\"><span>Invite the conversation</span><blockquote>“We’ve looked at several houses today. Before we wrap up, I like to take five minutes with my clients to talk through what we saw. Do you have a few minutes now?”</blockquote><p>If you toured one home, say “this house.” If they need to leave, agree on a specific time to talk.</p></div><div class=\"conversation-turn\"><span>Ask the first question</span><blockquote>“Did we see any homes we want to write an offer on?”</blockquote><p>Pause and let them answer. Give each buyer time to speak before you recommend a next step.</p></div></div><p class=\"conversation-close\">Use their answer to choose your next question: which home, what did not work, or what they still need to know.</p>",
       "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-coaching",
-      "notes": "This adapts Eric’s opening in INT-005. He asks for time and explains the purpose before asking questions. Then ask the required offer question on the next slide. Follow their answer without assuming a negative reaction. If they are rushed, agree on another useful time rather than force a parking-lot consultation. Demonstrate a calm transition from the tour to this conversation.\nHandoff: Start with the offer question, then let their answer guide the conversation.\nSources: R005; INT-005. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Start with the offer question, then let their answer guide the conversation."
+      "theme": "tru alms lesson training-depth conversation-example post-tour-opening",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Let the offer answer guide your next question. Connect it to the action you just practiced.",
+      "cue": "Next: Let the offer answer guide your next question. Connect it to the action you just practiced.",
+      "quadrant": 3
     },
     {
-      "id": "day3-feedback-demo",
-      "chapter": "After the tour · conversation openers",
-      "title": "Start by asking about an offer",
-      "lead": "First ask: “Did we see any homes we want to write an offer on?”",
-      "body": "<p class=\"lesson-explanation\">Then follow their answer. Choose a question that helps you understand their reaction:</p><div class=\"rows\"><div class=\"row\"><h3>What stood out?</h3><p>“What did you like most about the homes we saw? What did not work for you?”</p></div><div class=\"row\"><h3>How would you rate them?</h3><p>“On a scale of one to ten, how would you rate each home? What makes it that number?”</p></div><div class=\"row\"><h3>What would help next?</h3><p>“Which home came closest to what you want? What would you need to know or see next?”</p></div></div>",
-      "time": 4,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Begin the post-tour conversation with Eric’s required first question, exactly: “Did we see any homes we want to write an offer on?” Ask it every time; do not replace it with a rating or assume they disliked the homes. Pause and listen. If yes, clarify which home and discuss what they need to move into the offer conversation. If no or unsure, use a relevant follow-up from this slide. These are options, not a checklist to ask in order. Ask what stood out positively as well as what did not fit. When using a one-to-ten rating, ask why and what would make it a better fit; a high rating alone is not permission to write an offer. Invite a volunteer to answer the opening question and demonstrate choosing a follow-up from their answer. End by agreeing on a useful next step.\nHandoff: Their answer may point to a home they want, a different search, or a concern we need to understand. Let’s look at some concerns buyers may raise.\nSources: Eric’s September 16 correction; R002; R005; INT-005–006. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Their answer may point to a home they want, a different search, or a concern we need to understand. Let’s look at some concerns buyers may raise."
+      "id": "day3-offer-answer",
+      "chapter": "3. Lead the post-tour conversation",
+      "title": "Let the offer answer guide your next question",
+      "lead": "Ask the follow-up that matches their answer. You do not need to ask every question on this slide.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Yes: identify the home and questions</h3><p>“Which home would you like to make an offer on? Is there anything you need answered before we talk through the offer?” Write down those questions and arrange the offer conversation.</p></div><div class=\"row\"><h3>No: find out what to change</h3><p>“Which home came closest? What was missing?” If comparing homes is difficult, ask for a one-to-ten rating and what would raise it. Confirm which search criteria to change.</p></div><div class=\"row\"><h3>Unsure: name what is holding them back</h3><p>“What are you still thinking through?” Listen first. Then ask what information would help them decide and agree who will get it and when you will talk again.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Understand concerns and agree on a plan. Connect it to the action you just practiced.",
+      "cue": "Next: Understand concerns and agree on a plan. Connect it to the action you just practiced.",
+      "quadrant": 3
+    },
+    {
+      "id": "day3-quadrant-4",
+      "chapter": "4. Understand concerns and agree on a plan",
+      "title": "Understand concerns and agree on a plan",
+      "lead": "Connect useful help to the buyer’s reason and follow through.",
+      "body": "<p class=\"quadrant-number\">04</p><div class=\"section-flow\"><div><span>01</span><p>Discuss your approach</p></div><div><span>02</span><p>Learn the steps</p></div><div><span>03</span><p>Put it into practice</p></div></div>",
+      "time": 0,
+      "theme": "tru alms lesson training-depth quadrant-cover section-4",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Next: Reasons buyers may hesitate after a showing. Connect it to the action you just practiced.",
+      "cue": "Next: Reasons buyers may hesitate after a showing. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-buyer-concerns",
-      "chapter": "Understand the buyer",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "Reasons buyers may hesitate after a showing",
       "lead": "These statements begin a conversation. Learn what is behind them before deciding how to help.",
       "body": "<ul class=\"buyer-concern-list\"><li>“We would rather keep renting.”</li><li>“We are about six months out.”</li><li>“I am unsure about interest rates.”</li><li>“I do not know what payment we can afford.”</li><li>“We may need to relocate for work.”</li><li>“We need to sell our current home first.”</li></ul>",
-      "time": 2,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Read a few examples and ask what else agents have heard. Keep this as one overview, not six objection scripts. Some statements describe a real need or a firm constraint. Six months might be a lease, a work decision, preparation they need, or simply an estimate. We do not know until we ask. The objective is to build a plan for when it is right for this buyer, not convince them to buy today.\nHandoff: We do not need a clever answer to every statement. We need a process for understanding the person and helping them prepare.\nSources: Eric’s current correction; R006, R020, R024; INT-045–050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "We do not need a clever answer to every statement. We need a process for understanding the person and helping them prepare."
-    },
-    {
-      "id": "day3-concern-framework",
-      "chapter": "Help the buyer solve the problem",
-      "title": "Understand the concern before proposing a solution",
-      "lead": "Work with the buyer toward a useful plan at their pace.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Acknowledge the concern</h3><p>Recognize what matters to them: “I understand wanting to feel prepared before taking that step.”</p></div><div class=\"row\"><h3>Ask questions to understand</h3><p>“What is driving that timing?” · “What would you need to know?” · “How important is moving before your lease ends?”</p></div><div class=\"row\"><h3>Offer help and agree on a plan</h3><p>Connect help to their answer. That may mean lender input, research, a home-sale plan, or preparing over the next six months.</p></div></div>",
-      "time": 4,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-concern",
-      "notes": "Demonstrate the sequence in plain English. Acknowledge their concern without immediately agreeing with an assumption or trying to defeat it. Ask a question, listen, and follow their answer. A lender can help clarify financing questions, but an introduction is useful only when connected to the buyer’s need and accepted by them. Respect an existing lender relationship. If a six-month timeframe is firm, ask what needs to happen and build preparation around it. If it is an estimate, understand what would make the timing clearer. Never treat a long timeline as proof they are unserious. Helpful guidance can end in an informed decision to wait.\nHandoff: Let’s practice the method. The same first statement can lead to different plans once we understand the reason.\nSources: Eric’s current correction; R001–006, R020, R024; INT-003–007,035–036,045–050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Let’s practice the method. The same first statement can lead to different plans once we understand the reason."
+      "time": 1,
+      "theme": "tru alms lesson day3-polish training-depth",
+      "notes": "Read a few examples and ask what else agents have heard. Keep this as one overview, not six objection scripts. Some statements describe a real need or a firm constraint. Six months might be a lease, a work decision, preparation they need, or simply an estimate. We do not know until we ask. The objective is to build a plan for when it is right for this buyer, not convince them to buy today.\n\nSources: Eric’s current correction; R006, R020, R024; INT-045–050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: What would you ask to understand the buyer?. Connect it to the action you just practiced.",
+      "cue": "Next: What would you ask to understand the buyer?. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-problem-solving-discussion",
-      "chapter": "Open discussion",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "What would you ask to understand the buyer?",
       "lead": "Choose a statement from the list below. Explain what you would ask, what you might learn, and how that would change the plan.",
       "body": "<ul class=\"buyer-discussion-prompts\"><li>“We would rather keep renting.”</li><li>“We are about six months out.”</li><li>“I am unsure about interest rates.”</li></ul><label class=\"field\">Which statement did you choose? Write your acknowledgment and first question.<textarea data-save=\"question\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><label class=\"field\">Give two possible buyer answers. What preparation or next step would fit each answer?<textarea data-save=\"branches\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>Start by understanding the reason. A firm six-month constraint calls for a preparation plan around that date; an uncertain payment may call for an agreed lender conversation to explore options. Neither answer means the buyer must purchase now. Explain why your suggested help matters, ask whether it would be useful, and agree on actions and the next contact.</div></details>",
-      "time": 5,
-      "theme": "tru alms day3-polish lesson lesson-question",
-      "notes": "Let the room choose which concern to explore rather than assigning a rebuttal to each one. Give thirty seconds to write an acknowledgment and question. Invite someone to play the buyer and answer it. Ask another agent to propose help based on that answer. Then change the buyer’s reason and ask how the plan changes. For six months, contrast a firm work-related constraint with an estimate based on uncertainty about payment. Ask: What can we help them prepare now? What should wait? For rates, learn what the uncertainty means before offering lender input. The test is whether the recommendation serves the buyer’s actual need, not whether they agree to buy sooner.\nHandoff: Now let’s see how to offer help and agree on a next step without asking the buyer to commit to purchasing.\nSources: Eric’s current correction; R006, R020, R024; INT-045–050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Now let’s see how to offer help and agree on a next step without asking the buyer to commit to purchasing.",
+      "time": 3,
+      "theme": "tru alms lesson day3-polish lesson-question training-depth",
+      "notes": "Let the room choose which concern to explore rather than assigning a rebuttal to each one. Give thirty seconds to write an acknowledgment and question. Invite someone to play the buyer and answer it. Ask another agent to propose help based on that answer. Then change the buyer’s reason and ask how the plan changes. For six months, contrast a firm work-related constraint with an estimate based on uncertainty about payment. Ask: What can we help them prepare now? What should wait? For rates, learn what the uncertainty means before offering lender input. The test is whether the recommendation serves the buyer’s actual need, not whether they agree to buy sooner.\n\nSources: Eric’s current correction; R006, R020, R024; INT-045–050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Understand the concern before proposing a solution. Connect it to the action you just practiced.",
+      "cue": "Next: Understand the concern before proposing a solution. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-problem-solving-discussion",
         "kind": "discussion",
@@ -215,29 +353,43 @@
           }
         ],
         "model": "Start by understanding the reason. A firm six-month constraint calls for a preparation plan around that date; an uncertain payment may call for an agreed lender conversation to explore options. Neither answer means the buyer must purchase now. Explain why your suggested help matters, ask whether it would be useful, and agree on actions and the next contact."
-      }
+      },
+      "quadrant": 4
+    },
+    {
+      "id": "day3-concern-framework",
+      "chapter": "4. Understand concerns and agree on a plan",
+      "title": "Understand the concern before proposing a solution",
+      "lead": "Ask what the buyer means before suggesting a lender call, another tour or a different timeline.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Repeat the concern in their words</h3><p>If they say they want to wait six months: “Okay, you’re thinking about six months from now.” Avoid telling them you understand a reason they have not explained.</p></div><div class=\"row\"><h3>Ask about the reason</h3><p>“What’s happening in six months?” Let them answer. A lease ending, a work move and saving for a down payment call for different plans.</p></div><div class=\"row\"><h3>Offer one step that addresses the answer</h3><p>For a payment question, offer a lender conversation. For a home they must sell first, offer to discuss the sale timeline. Ask whether that would help, then agree on an action and a follow-up time.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-photo photo-concern training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Connect the next step to the buyer’s goal. Connect it to the action you just practiced.",
+      "cue": "Next: Connect the next step to the buyer’s goal. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-plan-demo",
-      "chapter": "Demonstrate",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "Connect the next step to the buyer’s goal",
       "lead": "Fictional example: the buyer wants to move before their lease ends in six months, but is unsure what interest rates would mean for their payment.",
-      "body": "<blockquote class=\"lesson-example\">“You said moving before your lease ends matters to you. Would it help to talk with a lender about the payment and options? We may learn something neither of us knew to consider. If you would like an introduction, I can arrange it, and we can reconnect afterward to decide what makes sense for you.”</blockquote>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-questions",
-      "notes": "First demonstrate the question that earns this recommendation: How important is moving before your lease ends, and what part of the payment concerns you? The goal and timing must come from the buyer. The usual time to introduce financing is when they raise it or at the end of the first showing. Ask about an existing lender before offering someone you work with. Do not promise a lower rate, approval, savings, or a particular product. A lender conversation gathers information; it is not an agreement to buy. If they accept, agree on who makes the introduction and a specific next contact that works for them. If they are not ready, ask what preparation would help over their actual timeframe.\nHandoff: The same method applies when a property question holds up the buyer’s decision: understand what they need, seek useful help, and agree on an update.\nSources: Eric’s current lender example; R001–005, R020, R024. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "The same method applies when a property question holds up the buyer’s decision: understand what they need, seek useful help, and agree on an update."
+      "body": "<blockquote class=\"lesson-example\">“Your lease ends in six months, and you want to know what the monthly payment would be before you decide. Would you like me to introduce you to a lender to go through the numbers? Or do you already have someone you’d like to call?”</blockquote><div class=\"rows\"><div class=\"row\"><h3>If they want the introduction</h3><p>Confirm how and when they want to connect. After the lender call is scheduled, ask: “When would be a good time for us to talk through what you learned?” Save that follow-up.</p></div><div class=\"row\"><h3>If they decline</h3><p>“Okay. What would you like to do from here?” Listen and agree on whether and when they want you to contact them again.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-photo photo-questions training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Update the buyer when a property answer is still pending. Connect it to the action you just practiced.",
+      "cue": "Next: Update the buyer when a property answer is still pending. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-pending-answer",
-      "chapter": "Discuss · choose and explain",
-      "title": "What would you do?",
+      "chapter": "4. Understand concerns and agree on a plan",
+      "title": "Update the buyer when a property answer is still pending",
       "lead": "After a showing, a buyer says they may want to make an offer, but need the roof age first. You promised an update by 5. It is 4:45, and the listing agent has not replied. What would you do next?",
       "body": "<div class=\"choices\" data-quiz=\"day3-pending-answer\"><button data-option-id=\"tomorrow\" data-correct=\"false\" data-feedback=\"B fits the uncertainty. Keep the buyer informed before five, clarify how the answer affects their decision, and seek team-lead advice if it is urgent. Propose a next update you control. Do not guarantee a third-party answer. A may become appropriate after agreement and understanding urgency; C assumes enough information to set an offer plan.\">Propose talking tomorrow morning so the listing agent has more time.</button><button data-option-id=\"urgency\" data-correct=\"true\" data-feedback=\"B fits the uncertainty. Keep the buyer informed before five, clarify how the answer affects their decision, and seek team-lead advice if it is urgent. Propose a next update you control. Do not guarantee a third-party answer. A may become appropriate after agreement and understanding urgency; C assumes enough information to set an offer plan.\">Update the buyer, clarify the decision timing, and get team-lead help if the answer is urgent.</button><button data-option-id=\"prepare\" data-correct=\"false\" data-feedback=\"B fits the uncertainty. Keep the buyer informed before five, clarify how the answer affects their decision, and seek team-lead advice if it is urgent. Propose a next update you control. Do not guarantee a third-party answer. A may become appropriate after agreement and understanding urgency; C assumes enough information to set an offer plan.\">Arrange an offer conversation for 5 and work around the missing roof information.</button></div><p class=\"feedback\" aria-live=\"polite\"></p><label class=\"field\">Explain your choice. What changes if the buyer needs the answer immediately to decide on an offer?<textarea data-save=\"reason\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>B fits the uncertainty. Keep the buyer informed before five, clarify how the answer affects their decision, and seek team-lead advice if it is urgent. Propose a next update you control. Do not guarantee a third-party answer. A may become appropriate after agreement and understanding urgency; C assumes enough information to set an offer plan.</div></details>",
-      "time": 5,
-      "theme": "tru alms day3-polish lesson lesson-question",
-      "notes": "Ask for a choice and the information that could change it. Discuss the difference between “I may want to offer” and “I need this now to decide on an offer.” Ask: What can you commit to when you cannot control the listing agent? What should the buyer hear by five? Have an agent speak the update. Reveal the example after the room has worked through the tradeoff.\nHandoff: Whether we are waiting on an answer or planning another tour, the buyer should know what happens next.\nSources: R025; INT-051. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Whether we are waiting on an answer or planning another tour, the buyer should know what happens next.",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-question training-depth",
+      "notes": "Ask for a choice and the information that could change it. Discuss the difference between “I may want to offer” and “I need this now to decide on an offer.” Ask: What can you commit to when you cannot control the listing agent? What should the buyer hear by five? Have an agent speak the update. Reveal the example after the room has worked through the tradeoff.\n\nSources: R025; INT-051. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Confirm the action and the next contact before you leave. Connect it to the action you just practiced.",
+      "cue": "Next: Confirm the action and the next contact before you leave. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-pending-answer",
         "kind": "choice",
@@ -265,40 +417,43 @@
         ],
         "correctChoiceId": "urgency",
         "explanation": "B fits the uncertainty. Keep the buyer informed before five, clarify how the answer affects their decision, and seek team-lead advice if it is urgent. Propose a next update you control. Do not guarantee a third-party answer. A may become appropriate after agreement and understanding urgency; C assumes enough information to set an offer plan."
-      }
+      },
+      "quadrant": 4
     },
     {
       "id": "day3-plan-check",
-      "chapter": "Before you leave",
-      "title": "Can the buyer explain the plan back to you?",
-      "lead": "A useful next step answers these questions in plain English.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Why this step?</h3><p>What did we learn today, and what question or need does this address?</p></div><div class=\"row\"><h3>Who does what?</h3><p>What will you do? What has the buyer agreed to do? What remains unresolved?</p></div><div class=\"row\"><h3>When do we reconnect?</h3><p>Agree on a time or a clear trigger and a useful way to communicate.</p></div></div>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Compare “I will send you listings” with “I will send two options with enclosed offices tonight; we will talk Wednesday at six about whether either is worth touring.” The exact plan depends on the buyer. For someone waiting, agree on what information would help and how to stay in touch. Ask them to confirm or adjust the plan. Respect a decision not to continue. Do not manufacture a date just to fill a field.\nHandoff: Your record should preserve the same plan, so follow-through does not depend on memory.\nSources: R020–021; R024; INT-035–039,050. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Your record should preserve the same plan, so follow-through does not depend on memory."
+      "chapter": "4. Understand concerns and agree on a plan",
+      "title": "Confirm the action and the next contact before you leave",
+      "lead": "Summarize the agreement out loud, then ask whether it works for the buyer.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Say what you will do</h3><p>“I’ll ask the listing agent for the roof documentation.” Name the action instead of saying you will look into things.</p></div><div class=\"row\"><h3>Confirm what the buyer agreed to do</h3><p>Only include actions they accepted. If they agreed to contact their lender, confirm what they want to ask and when they expect to have the conversation.</p></div><div class=\"row\"><h3>Set the next contact</h3><p>“I’ll call you by five today, even if I’m still waiting for the document. Does that work for you?” Save a task for the time you agreed on.</p></div></div>",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Save what changed and what you promised. Connect it to the action you just practiced.",
+      "cue": "Next: Save what changed and what you promised. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-record-the-plan",
-      "chapter": "Follow through",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "Save what changed and what you promised",
-      "lead": "The next contact should have a valid business reason connected to this buyer.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Factual note</h3><p>Record what worked, what did not, the reason for timing, and the agreed plan. Keep unknowns unknown.</p></div><div class=\"row\"><h3>Correct stage</h3><p>Use Met with customer after the first appointment; Showing homes after the second.</p></div><div class=\"row\"><h3>Follow-through</h3><p>Use a dated FUB task to support the agreed action. Deliver the update even if an outside answer is still pending.</p></div></div>",
-      "time": 2,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-follow-up",
-      "notes": "Connect this to Day 1 without reteaching the whole record. An honest comparison update can be useful even when no home matches perfectly. Explain why it is relevant and honor the communication preference. A task is a reminder; completing it is not evidence that the buyer accepted a new plan. Next we practice the whole conversation and then write the record from what was actually said.\nHandoff: You now have the pieces. Let’s put them together with a buyer who can answer back.\nSources: R021; R025; existing Day 1 stage definitions. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "You now have the pieces. Let’s put them together with a buyer who can answer back."
+      "lead": "Before your next appointment, save the conversation and follow-up in Follow Up Boss.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Write the note</h3><p>Record the homes discussed, what the buyer liked or ruled out, and why. Add unanswered questions, promised actions and the agreed contact time. Do not record an assumption as a buyer decision.</p></div><div class=\"row\"><h3>Update the stage</h3><p>Use Met with customer after the first appointment; Showing homes after the second.</p></div><div class=\"row\"><h3>Create the task</h3><p>Assign yourself the promised action with a due date and time. A note alone will not remind you to call. Send the update on time even if you are still waiting for someone else.</p></div></div>",
+      "time": 1,
+      "theme": "tru alms lesson day3-polish lesson-photo photo-follow-up training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Practice the showing and agree on a plan. Connect it to the action you just practiced.",
+      "cue": "Next: Practice the showing and agree on a plan. Connect it to the action you just practiced.",
+      "quadrant": 4
     },
     {
       "id": "day3-full-showing-practice",
-      "chapter": "Breakout practice",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "Practice the showing and agree on a plan",
       "lead": "Work in pairs or trios. Everyone takes an agent turn and responds to what the buyer actually says.",
       "body": "<div class=\"rows\"><div class=\"row\"><h3>Set up · 1 minute</h3><p>Choose the assigned buyer card. Use the meeting platform for breakout rooms.</p></div><div class=\"row\"><h3>Three rounds · 4 minutes each</h3><p>Agent: welcome and discovery for 2 minutes. Observer: one specific correction for 1 minute. Agent: retry for 1 minute. Rotate roles.</p></div><div class=\"row\"><h3>Debrief · 3 minutes</h3><p>What answer changed your plan? What did your partner improve on the retry?</p></div></div><label class=\"field\">What did your buyer actually say that changed your approach?<textarea data-save=\"buyer-answer\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><label class=\"field\">What plan did you agree on: purpose, actions, and next contact?<textarea data-save=\"plan-change\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><label class=\"field\">What did you improve after the observer’s feedback?<textarea data-save=\"retry\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>Look for a welcome that invites honest reactions, a follow-up that uses the buyer’s answer, and a specific agreed plan. Feedback names an observed moment; the retry improves that moment. A decision to wait can be sound when the plan fits the reason.</div></details>",
       "time": 16,
-      "theme": "tru alms day3-polish lesson lesson-photo photo-practice",
-      "notes": "Use rotating trios with agent, buyer, and observer, or pairs where the buyer gives feedback. In pairs, both take an agent turn and use the third round to retry the harder moment. In each turn briefly welcome the buyer, then move to the end of the fictional tour and build a plan from the card. Buyer: supply the card facts naturally when asked, and do not agree automatically. Observer: name one actual moment and one correction. Do not label a peer or self-check as coach sign-off. Submit the buyer answer and plan after the conversation, not before the buyer has spoken. If testing solo, set up solo speaking practice and record test observations. A solo run cannot verify a live peer’s performance.\nHandoff: Bring back the plan your buyer actually agreed to. We’ll use that to check the follow-through.\nSources: R005–006; R020–025; INT-005–007,035–039,048–051. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Bring back the plan your buyer actually agreed to. We’ll use that to check the follow-through.",
+      "theme": "tru alms lesson day3-polish lesson-photo photo-practice training-depth lesson-question",
+      "notes": "Use rotating trios with agent, buyer, and observer, or pairs where the buyer gives feedback. In pairs, both take an agent turn and use the third round to retry the harder moment. In each turn briefly welcome the buyer, then move to the end of the fictional tour and build a plan from the card. Buyer: supply the card facts naturally when asked, and do not agree automatically. Observer: name one actual moment and one correction. Do not label a peer or self-check as coach sign-off. Submit the buyer answer and plan after the conversation, not before the buyer has spoken. If testing solo, set up solo speaking practice and record test observations. A solo run cannot verify a live peer’s performance.\n\nSources: R005–006; R020–025; INT-005–007,035–039,048–051. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Would your next contact move the plan forward?. Connect it to the action you just practiced.",
+      "cue": "Next: Would your next contact move the plan forward?. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-full-showing-practice",
         "kind": "roleplay",
@@ -337,18 +492,19 @@
             "label": "Checks agreement on actions and next contact"
           }
         ]
-      }
+      },
+      "quadrant": 4
     },
     {
       "id": "day3-write-the-follow-up-record",
-      "chapter": "Debrief and submit",
+      "chapter": "4. Understand concerns and agree on a plan",
       "title": "Would your next contact move the plan forward?",
       "lead": "Use the buyer conversation you just practiced. Write the note and next task you would save, then explain the purpose of your next contact.",
       "body": "<p class=\"lesson-explanation\">Partner check: Is the plan based on what the buyer said? Can someone tell who does what and when?</p><label class=\"field\">Write the factual note, correct stage, and next task. Include the reason for the next contact.<textarea data-save=\"record\" placeholder=\"Use your fictional practice conversation.\"></textarea></label><details class=\"reveal\"><summary>Compare with the teaching example</summary><div>The note reflects the conversation, separates unknowns from facts, and records the agreed action. The stage matches the completed appointment. The task supports a useful next contact at the agreed time or trigger.</div></details>",
-      "time": 3,
-      "theme": "tru alms day3-polish lesson lesson-question",
-      "notes": "Give a minute to write and submit. Read two contrasting plans with permission. Ask the room what each next contact will accomplish. Correct invented facts, missing agreement, or a generic “checking in.” Have the agent revise that part. This is a written practice record, not a change to a real FUB contact. Review the real submitted answers in the presenter panel.\nHandoff: To close, let’s name what you should now be able to do at your next showing.\nSources: R021; INT-037–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "To close, let’s name what you should now be able to do at your next showing.",
+      "time": 2,
+      "theme": "tru alms lesson day3-polish lesson-question training-depth",
+      "notes": "Give a minute to write and submit. Read two contrasting plans with permission. Ask the room what each next contact will accomplish. Correct invented facts, missing agreement, or a generic “checking in.” Have the agent revise that part. This is a written practice record, not a change to a real FUB contact. Review the real submitted answers in the presenter panel.\n\nSources: R021; INT-037–039. Buyer examples are fictional teaching scenarios adapted from Eric’s process.\nHandoff: Next: Your next showing should end with a plan. Connect it to the action you just practiced.",
+      "cue": "Next: Your next showing should end with a plan. Connect it to the action you just practiced.",
       "activity": {
         "id": "day3-write-the-follow-up-record",
         "kind": "written",
@@ -360,18 +516,30 @@
           }
         ],
         "model": "The note reflects the conversation, separates unknowns from facts, and records the agreed action. The stage matches the completed appointment. The task supports a useful next contact at the agreed time or trigger."
-      }
+      },
+      "quadrant": 4
     },
     {
       "id": "day3-wrap",
-      "chapter": "Wrap-up",
+      "chapter": "Review and reference",
       "title": "Your next showing should end with a plan",
-      "lead": "You should now be able to guide the visit from the first welcome through the next agreed step.",
-      "body": "<div class=\"rows\"><div class=\"row\"><h3>Conduct the showing</h3><p>Prepare useful comparisons and make honest reactions welcome.</p></div><div class=\"row\"><h3>Understand the buyer</h3><p>Follow their answers into priorities, concerns, and timing.</p></div><div class=\"row\"><h3>Build momentum</h3><p>Recommend a useful next step, confirm the plan, and follow through.</p></div></div>",
+      "lead": "Use these steps on your next tour, then save the agreement in Follow Up Boss.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Before the tour</h3><p>Research the selected homes, list unanswered questions and confirm access, timing and your buyer packet.</p></div><div class=\"row\"><h3>During the tour</h3><p>Let buyers look around. Listen to their reactions and ask a follow-up about what matters to them.</p></div><div class=\"row\"><h3>Before leaving</h3><p>Ask about an offer. Follow their answer, agree on who will do what and when, then save the note and follow-up task.</p></div></div>",
       "time": 2,
-      "theme": "tru alms day3-polish lesson",
-      "notes": "Ask two agents to name a behavior they will use at their next showing and why. Remind them that helping the buyer can include a better search, a lender conversation, getting an answer, or a thoughtful plan to wait. The worksheet has the question bank and practice cards. End the live session when ready; normal sessions create follow-up practice, while solo rehearsals create no real-agent assignments. Day 4 can build on the financing questions that surfaced today.\nHandoff: Before your next showing, review the questions and choose one thing to practice. Afterward, check whether your buyer left with a plan they understood.\nSources: Eric’s Day 3 objective; R005; R020–025. Buyer examples are fictional teaching scenarios adapted from Eric’s process.",
-      "cue": "Before your next showing, review the questions and choose one thing to practice. Afterward, check whether your buyer left with a plan they understood."
+      "theme": "tru alms lesson day3-polish training-depth",
+      "notes": "Teach from the visible steps and sample wording. Adapt the words to the actual conversation; do not present sample dialogue as a real client transcript. Ask the agent to name the action, who will do it, and when. Source: Eric’s Day Three language and consolidation feedback.\nHandoff: Next: Use this training after the session. Connect it to the action you just practiced.",
+      "cue": "Next: Use this training after the session. Connect it to the action you just practiced."
+    },
+    {
+      "id": "day3-independent-review",
+      "chapter": "Review and reference",
+      "title": "Use this training after the session",
+      "lead": "Revisit the explanation, try the exercise, then compare your work.",
+      "body": "<div class=\"rows\"><div class=\"row\"><h3>Find the topic</h3><p>Use the four sections to return to the action you need. Read the example and the reason for the next step.</p></div><div class=\"row\"><h3>Practice again</h3><p>Answer the scenario before opening its explanation. For a conversation exercise, use the buyer card with a partner, get one specific correction, and retry.</p></div><div class=\"row\"><h3>Keep a reference</h3><p>Download the agent reference for the teaching and examples. Keep practice notes separate from real customer records.</p></div></div>",
+      "time": 1,
+      "theme": "tru alms lesson training-depth",
+      "notes": "Use the visible explanation as the teaching reference. Ask what the agent would do, hear the reason, then demonstrate the steps. Fictional examples illustrate the existing TRU process.\nSources: existing day curriculum; Eric’s September 16 quadrant and independent-review requirements.\nHandoff: Return to the relevant quadrant when you need the steps, then practice again.",
+      "cue": "Return to the relevant quadrant when you need the steps, then practice again."
     }
   ],
   "cases": [
@@ -393,6 +561,28 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<p class=\"lesson-explanation\">Use the question bank and buyer cards to practice again. In a live session, submit your responses through your learner screen. The printed worksheet does not submit answers. Keep practice evidence separate from observed work with an actual client.</p>",
-  "version": "2026-09-16-day3-showing-v5",
-  "duration": 75
+  "version": "2026-09-16-day3-quadrants-v4",
+  "duration": 74,
+  "quadrants": [
+    {
+      "number": 1,
+      "title": "Prepare before you arrive",
+      "purpose": "Research the homes and build a tour that serves this buyer."
+    },
+    {
+      "number": 2,
+      "title": "Conduct the showing",
+      "purpose": "Welcome honest reactions and learn what the home needs to do for the buyer."
+    },
+    {
+      "number": 3,
+      "title": "Lead the post-tour conversation",
+      "purpose": "Ask about an offer, then follow the buyer’s answer."
+    },
+    {
+      "number": 4,
+      "title": "Understand concerns and agree on a plan",
+      "purpose": "Connect useful help to the buyer’s reason and follow through."
+    }
+  ]
 }

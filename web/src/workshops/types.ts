@@ -1,3 +1,4 @@
+import { workshopCatalog } from '../../../shared/workshopCatalog';
 import type { WorkshopActivity } from '../../../shared/workshopCatalog';
 export type WorkshopSlide = {
   id?: string; activity?: WorkshopActivity;
@@ -8,12 +9,15 @@ export type WorkshopData = {
   day: number; version?: string; title: string; hero: string; slides: WorkshopSlide[]; resources: string;
   cases: {name: string; quote: string; goal: string}[] | null;
 };
-export const workshopMeta: Record<number,{title:string;summary:string;minutes:number;screens:number}> = {
-  1:{title:'Welcome to Zillow Preferred',summary:'Understand Preferred onboarding and standards, explore Follow Up Boss, and practice five contact-record scenarios, Smart Actions, and nurture decisions.',minutes:57,screens:33},
-  2:{title:'Winning the First Conversation',summary:'Practice an opening in the first ten minutes, then use LEAD, buyer cases, feedback, and a targeted retry.',minutes:67,screens:16},
-  3:{title:'Show Like a Pro',summary:'Learn what was missing, revise the plan, and practice the complete showing conversation with attributable partner feedback.',minutes:75,screens:19},
-  4:{title:'Zillow Home Loans',summary:'Practice a relevant lender introduction, genuine permission, and a useful next action.',minutes:54,screens:16},
+const summaries: Record<number,string> = {
+  1:'Watch the steps, practice five Follow Up Boss record scenarios, and verify saved actions.',
+  2:'Discuss and practice lead response, LEAD, discovery, and an agreed next step.',
+  3:'Prepare the tour, conduct the showing, ask about an offer, and agree on a useful plan.',
+  4:'Discuss ZHL services, learn when to introduce a buyer, and practice the connection in breakout rooms.',
 };
+export const workshopMeta: Record<number,{title:string;summary:string;minutes:number;screens:number}> = Object.fromEntries(
+  Object.values(workshopCatalog).map(day => [day.day,{title:day.title,summary:summaries[day.day],minutes:day.duration,screens:day.slides.length}])
+);
 export function workshopDay(module: {id: string; cards?: {deck?: string}[] | null}): number | null {
   const ids: Record<string,number> = {
     'a6666666-6666-6666-6666-666666666666': 1,
