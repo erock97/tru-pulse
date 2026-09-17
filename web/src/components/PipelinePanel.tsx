@@ -147,10 +147,11 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
           <p>{report.leads.filter(l=>['nurture','rejected','unmapped'].includes(l.category)&&Object.keys(l.progress).length===1).length} leads outside the known progression have no earlier progress available in this report. Missing history is not evidence of missing work.</p>
         </details>
       </div>
-      <div className="pipeline-workspace">
+      <div className={agent?"pipeline-workspace pipeline-workspace-agent":"pipeline-workspace"}>
         <section ref={detailRef} tabIndex={-1} className="pipeline-card pipeline-detail" aria-label="Stage breakdown">
           <div className="pipeline-card-head"><div><span className="pipeline-eyebrow">{agent?'Agent pipeline':'Team pipeline'}</span><h3>{agent?.name || 'Where your leads are now'}</h3></div>{agent&&<button className="pipeline-button" onClick={()=>chooseAgent('')}>Team view</button>}</div>
           <p className="pipeline-caption">{counts.total} leads · {percent(counts.conversionRate)} current conversion rate{agent?' · '+percent(agent.leadShare)+' of team leads · '+percent(agent.conversionShare)+' of team current conversions':''}</p>
+          <div className={agent?"pipeline-agent-overview":"pipeline-team-overview"}>
           <div className="pipeline-current-stages" aria-label="Current stage distribution"><h4>Where leads sit now</h4><p className="pipeline-caption">Each lead appears once. Bars show the share of {agent?'this agent’s':'the team’s'} leads in each current stage.{agent?' The marker shows the team share.':''}</p>
           {PIPELINE_CATEGORIES.map(category=>{
             if(category==='nurture'||category==='rejected'){
@@ -170,7 +171,8 @@ export function PipelinePanel({orgId,period}:{orgId:string;period:PulsePeriod}){
               </button>;})}</div>;
           })}
           </div>
-          {agent&&<PipelineValue report={report} agentKey={agent.key}/>}
+          {agent&&<PipelineValue key={agent.key} report={report} agentKey={agent.key}/>}
+          </div>
           <details className="pipeline-progression"><summary>Completed stage progression · earlier work retained</summary>
           <p className="pipeline-caption">Reaching a stage includes the steps before it. Moving to Nurture or Rejected keeps that progress. Agents do not need to enter each intermediate stage. A lead can count at multiple steps.</p>
           <div className="pipeline-stage-legend"><span>Stage</span><span>{agent?'Agent / team':'Team'} share</span></div>

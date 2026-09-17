@@ -60,3 +60,14 @@
 @keyframes pipeline-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pipeline-spinner{animation:none}}
 @media(max-width:650px){.pipeline-current-stages .pipeline-stage{grid-template-columns:minmax(90px,1.2fr) minmax(40px,1fr) 90px;gap:8px}.pipeline-current-stages .pipeline-track{height:12px}}
+
+/* Keep the selected agent’s distribution and personal value together. */
+.pipeline-agent-overview{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);gap:24px;align-items:start}
+.pipeline-agent-overview .pipeline-value{margin:0}
+.pipeline-current-stages>h4{margin-top:0}
+.pipeline-current-stages .pipeline-stage{grid-template-columns:minmax(100px,1fr) minmax(70px,2fr) 100px;padding:8px 0}
+.pipeline-current-stages .pipeline-stage-group h4{margin:16px 0 6px}
+.pipeline-agent-overview .pipeline-value-summary{gap:12px}
+.pipeline-agent-overview .pipeline-value-amount{font-size:clamp(28px,3vw,36px)}
+@media(min-width:1400px){.pipeline-workspace:not(.pipeline-workspace-agent){grid-template-columns:minmax(0,1fr) minmax(0,1.14fr)}}
+@media(max-width:1000px){.pipeline-agent-overview{grid-template-columns:minmax(0,1fr)}.pipeline-agent-overview .pipeline-value{margin:0}}
