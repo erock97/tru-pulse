@@ -46,6 +46,9 @@ export function progressForLead(lead: PipelineLead, events: ProgressEvent[], now
   const knownDate = (date: string | null | undefined) => date && Number.isFinite(Date.parse(date)) && Date.parse(date) <= now ? date : null;
   grant('lead', 'received', knownDate(lead.fub_created), null);
   grant(lead.stage, lead.historicalOnly ? 'historical snapshot' : 'current stage', null, null);
+  for(const [stage,observedAt] of Object.entries(lead.observedStages || {})){
+    if(knownDate(observedAt))grant(stage,'previous FUB observation',null,null);
+  }
   if (progressionRank(lead.stage) < 0 && ['under_contract', 'closed'].includes(currentCategory || '')) {
     grant(currentCategory === 'closed' ? 'closed' : 'uc', 'team reporting mapping', null, null);
   }

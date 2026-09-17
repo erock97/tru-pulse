@@ -12,6 +12,12 @@ it('applies the additive migration twice without changing data or existing RLS',
   const values=readFileSync(new URL('../../supabase/migrations/20260916230059_pipeline_inquiry_values.sql',import.meta.url),'utf8');
   await db.exec(values);await db.exec(values);
   expect((await db.query('select pipeline_inquiry_value from leads')).rows).toEqual([{pipeline_inquiry_value:null}]);
+  await db.exec("alter table leads add column synced_at timestamptz; update leads set stage='Met with customer',synced_at='2026-08-01T12:00:00Z';");
+  const observations=readFileSync(new URL('../../supabase/migrations/20260917001151_pipeline_observed_stages.sql',import.meta.url),'utf8');
+  await db.exec(observations);await db.exec(observations);
+  await db.exec("update leads set stage='Trash',synced_at='2026-09-16T12:00:00Z'; update leads set stage='Met with customer',synced_at='2026-09-17T12:00:00Z'; update leads set stage='Nurture',synced_at='2026-09-18T12:00:00Z';");
+  const retained=(await db.query<{pipeline_observed_stages:Record<string,string>}>('select pipeline_observed_stages from leads')).rows[0].pipeline_observed_stages;
+  expect(new Date(retained['Met with customer']).toISOString()).toBe('2026-08-01T12:00:00.000Z');
   expect((await db.query("select relrowsecurity from pg_class where relname in ('teams','leads')")).rows).toEqual([{relrowsecurity:true},{relrowsecurity:true}]);
  }finally{await db.close();}
 },20000);

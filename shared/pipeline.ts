@@ -10,6 +10,7 @@ export interface PipelineLead {
   source?: string | null; source_family: string | null; fub_created: string | null;
   synced_at?: string | null; historicalOnly?: boolean;
   history?: Record<string, {date?: string | null; eventId?: string} | null>;
+  observedStages?: Record<string,string>;
 }
 export interface PipelineAgent {
   id: string; team_id: string; name: string; fub_user_id: number | null; excluded?: boolean; role?: string | null;
@@ -63,7 +64,7 @@ const defaults: Array<[string[], PipelineCategory, number]> = [
   [['under contract', 'pending', 'escrow'], 'under_contract', 70],
   [['sale closed', 'closed'], 'closed', 80],
   [['nurture'], 'nurture', 90],
-  [['rejected'], 'rejected', 100],
+  [['rejected', 'trash'], 'rejected', 100],
 ];
 export function classifyPipelineStage(lead: PipelineLead, mappings: Record<string, StageMapping> = {}): StageMapping {
   const mapped = mappings[stageKey(lead)] ?? mappings['name:' + normalize(lead.stage)];

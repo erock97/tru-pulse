@@ -89,7 +89,7 @@ export async function fubGetUrl(key: string, fullUrl: string): Promise<FubResult
 export async function pullPeople(key: string, sinceMs = Date.now() - 400 * 86400_000): Promise<any[]> {
   const leads: any[] = [];
   const HARD_CAP = 3000; // runaway guard only (~300k people)
-  let result = await fubGet(key, '/people', { limit: 100, sort: '-created' });
+  let result = await fubGet(key, '/people', { limit: 100, sort: '-created', includeTrash: 'true' });
   for (let page = 0; page < HARD_CAP; page++) {
     if (result.status !== 200 || !Array.isArray(result.body?.people)) throw new Error('FUB people collection incomplete');
     const people: any[] = result.body.people;
@@ -108,7 +108,7 @@ export async function pullPeople(key: string, sinceMs = Date.now() - 400 * 86400
 
 /** Fetch specific people by comma-separated FUB ids — the webhook stage-log path. */
 export async function getPeopleByIds(key: string, ids: string): Promise<any[]> {
-  const { status, body } = await fubGet(key, '/people', { id: ids, limit: 100 });
+  const { status, body } = await fubGet(key, '/people', { id: ids, limit: 100, includeTrash: 'true' });
   if (status !== 200 || !Array.isArray(body?.people)) throw new Error('FUB targeted collection failed');
   return body.people;
 }
