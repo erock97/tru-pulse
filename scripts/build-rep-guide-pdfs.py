@@ -43,19 +43,19 @@ def inline(node):
 
 def flow(node):
     if isinstance(node,NavigableString) or node.name == 'nav': return []
-    if 'buyability-screens' in node.get('class',[]):
+    if any(c in node.get('class',[]) for c in ('buyability-screens','fub-visuals','fub-letter-stage')):
         result = []
         for figure in node.find_all('figure'):
-            tag = figure.find('img')
-            asset = (DIRECTORY / tag['src'].removeprefix('/workshops/')).resolve()
-            if not asset.is_relative_to(DIRECTORY.resolve()) or not asset.exists():
-                raise ValueError('BuyAbility source image missing')
-            picture = Image(str(asset))
-            factor = min(500 / picture.imageWidth, 350 / picture.imageHeight)
-            picture.drawWidth = picture.imageWidth * factor
-            picture.drawHeight = picture.imageHeight * factor
-            caption = flow(figure.find('figcaption'))
-            result.append(KeepTogether([picture, Spacer(1,8)] + caption))
+            for tag in figure.find_all('img'):
+                asset = (DIRECTORY / tag['src'].removeprefix('/workshops/')).resolve()
+                if not asset.is_relative_to(DIRECTORY.resolve()) or not asset.exists():
+                    raise ValueError('Official source image missing')
+                picture = Image(str(asset))
+                factor = min(500 / picture.imageWidth, 350 / picture.imageHeight)
+                picture.drawWidth = picture.imageWidth * factor
+                picture.drawHeight = picture.imageHeight * factor
+                result.extend([picture, Spacer(1,8)])
+            result.extend(flow(figure.find('figcaption')))
         return result
     if 'real-mls-sheet' in node.get('class',[]):
         tag = node.find('img')

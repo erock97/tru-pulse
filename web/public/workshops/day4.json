@@ -5,7 +5,7 @@
     {
       "id": "day4-welcome",
       "title": "Zillow Home Loans and the buyer introduction",
-      "lead": "Day Four · 57 minutes including discussion and breakout practice",
+      "lead": "Day Four · 59 minutes including discussion and breakout practice",
       "body": "<p class=\"lesson-explanation\">Understand what ZHL offers. Learn when an introduction fits the buyer’s plans, then practice connecting the buyer and loan officer at the end of the first appointment.</p>",
       "time": 1,
       "chapter": "Welcome",
@@ -117,18 +117,30 @@
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
       "theme": "tru alms lesson training-depth zhl-lesson ",
-      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Know what ZHL offers for communication and coordination",
-      "cue": "Next: Know what ZHL offers for communication and coordination"
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Check financing progress in Follow Up Boss",
+      "cue": "Next: Check financing progress in Follow Up Boss"
     },
     {
       "id": "day4-lender-collaboration",
-      "title": "Know what ZHL offers for communication and coordination",
-      "lead": "Connect these tools to the lender qualities the group discussed.",
-      "body": "<div class=\"zhl-columns\"><div><span class=\"zhl-step\">01</span><h3>Access to a loan officer</h3><p>ZHL advertises loan officer availability seven days a week. Confirm your assigned officer’s availability and backup contact.</p></div><div><span class=\"zhl-step\">02</span><h3>Financing updates</h3><p>The ZHL connection in Follow Up Boss provides loan status and access to pre-approval information. Check the date of the update before repeating it.</p></div><div><span class=\"zhl-step\">03</span><h3>Approval review</h3><p>ZHL offers verified and fully underwritten pre-approvals. Ask which review is complete and what documents are still needed.</p></div></div><p class=\"lesson-source\"><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL support and collaboration tools ↗</a> · Reviewed September 17, 2026</p>",
+      "title": "Check financing progress in Follow Up Boss",
+      "lead": "Open the buyer’s profile. Find Financing on the left side.",
+      "body": "<div class=\"fub-visuals\"><figure><a class=\"fub-shot fub-shot-status\" href=\"https://help.followupboss.com/hc/article_attachments/40212530101655\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/assets/zhl-fub-status.png\" alt=\"Follow Up Boss published example: Financing panel with Pre-approved status and Get the letter\" /></a><figcaption><h3>Read the status and approval details</h3><p>Check the financing status and last update. When pre-approved, review the amount and expiration date. Select <strong>Get the letter</strong> to access the latest letter.</p></figcaption></figure><figure><a class=\"fub-shot fub-shot-progress\" href=\"https://help.followupboss.com/hc/article_attachments/42143994747671\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/assets/zhl-fub-progress.png\" alt=\"Follow Up Boss published example: Buyer unresponsive status and Contact Beth link\" /></a><figcaption><h3>Notice when the buyer needs follow-up</h3><p>FUB can show loan officer outreach and an unresponsive-buyer status. Use the contact link to review the suggested message and help the buyer reconnect.</p></figcaption></figure></div><p class=\"zhl-note\">The Zillow two-way integration and your linked Zillow profile are required. After the lender is assigned, status updates help you follow progress from initial contact through funding. If the information is unclear, contact the loan officer.</p><p class=\"lesson-source\">Official Follow Up Boss examples; names, amounts and dates are sample content from the source. <a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">View instructions ↗</a></p>",
       "time": 2,
       "chapter": "1. Zillow Home Loans overview",
       "quadrant": 1,
-      "theme": "tru alms lesson training-depth zhl-lesson ",
+      "theme": "tru alms lesson training-depth zhl-lesson fub-visual-lesson",
+      "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Find and download the verified pre-approval",
+      "cue": "Next: Find and download the verified pre-approval"
+    },
+    {
+      "id": "day4-preapproval-letter-in-fub",
+      "title": "Find and download the verified pre-approval",
+      "lead": "A notification opens the buyer’s profile. The letter is also available from Financing or the timeline.",
+      "body": "<div class=\"fub-letter-stage\"><figure><div class=\"fub-notification\"><a class=\"fub-shot fub-shot-notification\" href=\"https://help.followupboss.com/hc/article_attachments/35642354815895\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/assets/zhl-fub-notification.png\" alt=\"Follow Up Boss published example: Pre-approval notification\" /></a></div><a class=\"fub-shot fub-shot-timeline\" href=\"https://help.followupboss.com/hc/article_attachments/35642354816279\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/assets/zhl-fub-timeline.png\" alt=\"Follow Up Boss published example: Timeline note with pre-approval and download links\" /></a><figcaption><h3>Find the notification or timeline note</h3><p>Alerts follow your notification settings. On desktop, use <strong>Get the letter</strong> in Financing or the download link in the timeline. On mobile, find the link in <strong>Notes</strong>.</p></figcaption></figure><figure><a class=\"fub-shot fub-shot-download\" href=\"https://help.followupboss.com/hc/article_attachments/35642357698583\" target=\"_blank\" rel=\"noopener\"><img src=\"/workshops/assets/zhl-fub-download.png\" alt=\"Follow Up Boss published example: Customize price and Download letter dialog\" /></a><figcaption><h3>Review and download</h3><p>On eligible desktop letters, enter a price within the permitted range and select <strong>Download letter</strong>. Check the downloaded letter before using it.</p></figcaption></figure></div><p class=\"zhl-note\">Only the assigned agent can download; this feature requires a Zillow-connected lead. If the letter has expired or customization is unavailable, contact the loan officer.</p><p class=\"lesson-source\">Official Follow Up Boss examples; names, amounts and dates are sample content from the source. <a href=\"https://help.followupboss.com/hc/en-us/articles/34273538945303-Customize-Download-ZHL-Pre-Approval-Letters\" target=\"_blank\" rel=\"noopener\">View instructions ↗</a></p>",
+      "time": 2,
+      "chapter": "1. Zillow Home Loans overview",
+      "quadrant": 1,
+      "theme": "tru alms lesson training-depth zhl-lesson fub-visual-lesson",
       "notes": "Teach from the visible explanation. Use the buyer’s own goal and timing. Sample wording and roleplay cases are practice material, not reports of actual clients. Sources: Eric’s September 17 brief; official linked ZHL and Follow Up Boss references reviewed September 17, 2026.\nHandoff: Next: Confirm these details before relying on financing",
       "cue": "Next: Confirm these details before relying on financing"
     },
@@ -383,8 +395,8 @@
   ],
   "hero": "/workshops/house.jpg",
   "resources": "<h3>Day Four reference</h3><p>Two sections: ZHL overview, then buyer introductions and breakout practice. Use the downloadable agent reference for the knowledge, timing guidance and sample wording.</p><p><a href=\"/workshops/day4-resources.pdf\">Download agent reference</a></p><p><a href=\"https://www.zillow.com/learn/types-of-mortgages/\" target=\"_blank\" rel=\"noopener\">Loan type definitions ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/\" target=\"_blank\" rel=\"noopener\">ZHL overview ↗</a></p><p><a href=\"https://www.zillow.com/homeloans/zillow-home-loans-faqs/\" target=\"_blank\" rel=\"noopener\">ZHL FAQ ↗</a></p><p><a href=\"https://www.zillow.com/preferred/zillow-home-loans/\" target=\"_blank\" rel=\"noopener\">ZHL agent tools ↗</a></p><p><a href=\"https://help.followupboss.com/hc/en-us/articles/26625071505431-How-to-assign-clients-to-Zillow-Home-Loans-in-FUB\" target=\"_blank\" rel=\"noopener\">Follow Up Boss transfer instructions ↗</a></p>",
-  "version": "2026-09-17-day4-two-sections-v8",
-  "duration": 57,
+  "version": "2026-09-17-day4-two-sections-v9",
+  "duration": 59,
   "quadrants": [
     {
       "number": 1,
