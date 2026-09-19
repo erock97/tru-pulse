@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   var SUPABASE = "https://yeyoteredgunhvhqmais.supabase.co";
+  var CLOUD = "https://api.truhq.co/calendar-public";
   var KEY = "sb_publishable_y6H7cAEoc-OElwqt-ewLag_g29d4evk";
   var view = document.getElementById("view");
   var title = document.getElementById("title");
@@ -116,50 +117,32 @@
 
   /* ---------------- asking for times ---------------- */
 
-  function loadSlots() {
-    busy("Finding open times…");
-    fetch(SUPABASE + "/functions/v1/jarvis-slot-ask", {
+  function requestSlots() {
+    return fetch(CLOUD + "/slots", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meeting_type_slug: state.type.slug, days: 21,
-                             visitor_timezone: zone })
-    })
-      .then(function (r) {
-        if (r.status === 429) throw new Error("Too many requests just now. Give it a minute.");
-        if (!r.ok) throw new Error("Could not look up open times.");
-        return r.json();
-      })
-      .then(function (asked) { return pollSlots(asked.token, 0); })
-      .catch(function (e) { problem(e.message || "Could not look up open times."); });
+      body: JSON.stringify({ meeting_type_slug: state.type.slug, days: 21 })
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) throw new Error(body.error || "Could not look up open times.");
+        state.slots = body.slots || [];
+      });
+    });
   }
 
-  // The answer comes from a laptop, not from this database, so it takes a
-  // moment. Polling rather than waiting on one long request keeps the page
-  // responsive and lets it say something honest if the answer never arrives.
-  function pollSlots(token, attempt) {
-    if (attempt > 40) {
-      problem("We couldn't reach the calendar just now. Please try again shortly.");
+  function loadSlots() {
+    state.slots = [];
+    busy("Finding open times…");
+    requestSlots().then(function () {
+      if (!state.slots.length) { problem("There are no open times at the moment. Please check back later."); return; }
+      renderSlots();
+    }).catch(function (e) {
+      problem(e.message || "Could not look up open times.");
       var retry = document.createElement("button");
       retry.className = "primary";
       retry.textContent = "Try again";
       retry.addEventListener("click", loadSlots);
       view.appendChild(retry);
-      return;
-    }
-    return api("/rest/v1/slot_requests?select=answer_status,slots",
-               { headers: { "x-slot-token": token } })
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (rows) {
-        var row = rows[0];
-        if (!row || !row.answer_status) {
-          return sleep(500).then(function () { return pollSlots(token, attempt + 1); });
-        }
-        if (row.answer_status !== "ok" || !row.slots || !row.slots.length) {
-          problem("There are no open times at the moment. Please check back later.");
-          return;
-        }
-        state.slots = row.slots;
-        renderSlots();
-      });
+    });
   }
 
   function renderSlots() {
@@ -227,7 +210,7 @@
     go.disabled = true;
     msg.className = "note"; msg.innerHTML = '<span class="spin"></span>Holding that time…';
 
-    fetch(SUPABASE + "/functions/v1/jarvis-book", {
+    fetch(CLOUD + "/book", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         meeting_type_slug: state.type.slug,
@@ -273,7 +256,7 @@
     }
     // Through the endpoint, not the table: the token is stored hashed, so a
     // direct row lookup by raw token can never match.
-    return fetch(SUPABASE + "/functions/v1/jarvis-booking-status", {
+    return fetch(CLOUD + "/status", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token })
     })
@@ -335,7 +318,7 @@
       var msg = document.getElementById("msg");
       drop.disabled = true;
       msg.innerHTML = '<span class="spin"></span>Cancelling…';
-      fetch(SUPABASE + "/functions/v1/jarvis-cancel", {
+      fetch(CLOUD + "/cancel", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: token })
       })
@@ -364,7 +347,7 @@
   // times a new visitor would — the same rules, the same live calendar.
   function startReschedule(token) {
     busy("Finding open times…");
-    fetch(SUPABASE + "/functions/v1/jarvis-booking-status", {
+    fetch(CLOUD + "/status", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token })
     })
@@ -378,17 +361,9 @@
       .then(function (rows) {
         if (!rows.length) throw new Error("That meeting type is no longer available.");
         state.type = rows[0];
-        return fetch(SUPABASE + "/functions/v1/jarvis-slot-ask", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ meeting_type_slug: state.type.slug, days: 21,
-                                 visitor_timezone: zone })
-        });
+        state.slots = [];
+        return requestSlots();
       })
-      .then(function (r) {
-        if (!r.ok) throw new Error("Could not look up open times.");
-        return r.json();
-      })
-      .then(function (asked) { return pollSlots(asked.token, 0); })
       .then(function () {
         if (!state.slots.length) return;
         renderRescheduleSlots(token);
@@ -414,7 +389,7 @@
 
   function moveTo(token, start, end) {
     busy("Holding the new time…");
-    fetch(SUPABASE + "/functions/v1/jarvis-reschedule", {
+    fetch(CLOUD + "/reschedule", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token, starts_at: start, ends_at: end })
     })

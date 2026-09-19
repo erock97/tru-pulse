@@ -137,6 +137,9 @@ describe('updateType publish gate', () => {
     await updateType(db(env), ADMIN, { id: TYPE, published: true });
     expect(patches).toHaveLength(1);
     expect(patches[0]).toContain(`user_id=eq.${OWNER}`);
+    const calls = vi.mocked(fetch).mock.calls;
+    const write = calls.find(([, init]) => init?.method === 'PATCH');
+    expect(JSON.parse(write![1]!.body as string)).toMatchObject({ published: true, is_public: true });
   });
 
   it('a live worker-captured Google link is still refused — the desk engine cannot serve it yet', async () => {
