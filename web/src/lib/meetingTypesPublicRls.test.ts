@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import bookScript from '../../public/book/book.js?raw';
+import bookScript from '../../public/book/book-v2.js?raw';
 import sql from '../../../db/meeting_types_public_read.sql?raw';
 
 const PUBLIC_SLUG = 'client-consultation-call';

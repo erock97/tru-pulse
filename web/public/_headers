@@ -69,3 +69,6 @@
 # always use CORS mode, even without a crossorigin attribute in the HTML.
 /assets/*
   Access-Control-Allow-Origin: *
+
+/book/*
+  Cache-Control: no-cache
