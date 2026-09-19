@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import bookPage from '../../public/book/index.html?raw';
-import bookScript from '../../public/book/book.js?raw';
+import bookScript from '../../public/book/book-v2.js?raw';
 import headers from '../../public/_headers?raw';
 
 const INTERNAL_SLUGS = [
@@ -12,7 +12,7 @@ const INTERNAL_SLUGS = [
 
 describe('public book page meeting-type visibility', () => {
   it('loads the bootstrap from a same-origin file, not an inline script', () => {
-    expect(bookPage).toMatch(/<script src="book\.js"><\/script>/);
+    expect(bookPage).toMatch(/<script src="book-v2\.js"><\/script>/);
     expect(bookPage).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     expect(bookPage).not.toMatch(/\son\w+\s*=/);
     expect(headers).toMatch(/script-src 'self'/);

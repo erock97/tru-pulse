@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import script from '../../public/book/book.js?raw';
+import script from '../../public/book/book-v2.js?raw';
 
 async function load(query: string, rows: unknown[], ok = true) {
   const dom = new JSDOM('<h1 id="title">Book a time</h1><p id="sub"></p><main id="view"></main>', {
