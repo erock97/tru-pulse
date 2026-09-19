@@ -423,7 +423,12 @@ export async function updateType(
   for (const f of ['slug', 'name', 'description', 'duration_minutes', 'buffer_minutes', 'lead_minutes', 'horizon_days', 'sort_order']) {
     if (body[f] !== undefined) patch[f] = body[f];
   }
-  if (typeof body.published === 'boolean') patch.published = body.published;
+  if (typeof body.published === 'boolean') {
+    patch.published = body.published;
+    // Explicit Publish makes the copied booking link readable by invitees.
+    // Existing private types are untouched until the owner publishes them.
+    patch.is_public = body.published;
+  }
 
   // eq('user_id') as well as eq('id'): with a service key nothing else stops
   // this touching another account's row.

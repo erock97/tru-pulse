@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import script from '../../public/book/book-v2.js?raw';
+import script from '../../public/book/book-v3.js?raw';
 
 async function load(query: string, rows: unknown[], ok = true) {
   const dom = new JSDOM('<h1 id="title">Book a time</h1><p id="sub"></p><main id="view"></main>', {
@@ -8,7 +8,7 @@ async function load(query: string, rows: unknown[], ok = true) {
   });
   const fetch = vi.fn(async (url: string) => {
     if (url.includes('/meeting_types?')) return { ok, json: async () => rows };
-    if (url.includes('/jarvis-slot-ask')) return { ok: true, json: async () => ({ token: 'test' }) };
+    if (url.includes('/calendar-public/slots')) return { ok: true, json: async () => ({ slots: [{ start: '2026-09-22T17:00:00Z', end: '2026-09-22T17:30:00Z' }] }) };
     return { ok: true, json: async () => [{ answer_status: 'ok', slots: [{ start: '2026-09-22T17:00:00Z', end: '2026-09-22T17:30:00Z' }] }] };
   });
   dom.window.fetch = fetch as any;

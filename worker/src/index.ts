@@ -1,4 +1,6 @@
 export {FubSyncQueue} from './syncQueue.js';
+export { BookingCalendar } from './bookingCalendar.js';
+import { handleCloudBooking } from './bookingCalendar.js';
 export {PipelineValueCollector} from './pipelineValueCollector.js';
 import {queueActivePipelineValues} from './pipelineValueCollector.js';
 import {queueActiveTeams} from './syncQueue.js';
@@ -197,6 +199,9 @@ export default {
     const json = (obj: unknown, status = 200) => jsonWithCors(obj, status, cors);
 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+
+    const cloudBooking = await handleCloudBooking(req, env, ctx, cors);
+    if (cloudBooking) return cloudBooking;
 
     // Cookie-based auth (Phase 3). Purely additive — the browser-side Supabase auth
     // keeps working until the web app is switched over with VITE_AUTH_MODE.

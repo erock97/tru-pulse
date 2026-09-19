@@ -1,4 +1,5 @@
 export interface Env {
+  BOOKING_CALENDAR?: DurableObjectNamespace;
   PIPELINE_VALUES?: DurableObjectNamespace;
   /** Enable identity capture only after the reviewed additive migration. */
   PIPELINE_IDENTITY_ENABLED?: string;
