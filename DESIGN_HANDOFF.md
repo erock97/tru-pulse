@@ -2,9 +2,13 @@
 
 ## Current visual foundation
 
-The app uses warm stone surfaces, a slate navigation bar, serif headings, and restrained gold accents. `web/src/premiumInterior.css` is the current app presentation layer; `truHqDark.css` supplies inherited component styles and `truHqFonts.css` supplies fonts. The `.tru-dark` class is a legacy component scope, not an instruction to restore a dark canvas.
+**Eric's current direction (September 19, 2026): `https://truhq.co/` is the visual source of truth.** Amber, brown-and-gold, and forest-green-and-gold themes are retired throughout TrueHQ. Do not restore them from older CSS or documentation.
 
-Edit the existing relevant rules. Do not append a competing theme or restore the obsolete cinematic redesign. Keep the public site's established identity and founder photography. Public pages share `site/SiteHeader.tsx`, `site/SiteFooter.tsx`, and their common styles.
+The live homepage's `cinema.css` defines charcoal `#171D22`, ivory `#F2F0E9`, stone `#D6D2C7`, pale blue `#B9D1FD`, and borders `#C9C9BE`, with Manrope headings and DM Sans body text. Verify the current live reference before further visual changes. Photography may naturally contain warm tones; those are not brand-color tokens.
+
+`premiumInterior.css`, `truHqDark.css`, `site/forest.css`, and `pages/Landing.css` still contain obsolete brand styles. Their presence is technical debt, not design authority. The app's `.tru-dark` class is a legacy component scope. Existing typography and palette instructions elsewhere are superseded where they conflict with this direction.
+
+Edit existing relevant rules rather than appending competing themes. Preserve page behavior, founder photography, and semantic error/success clarity. The booking page is corrected in PR #269; the broader source and live-page audit is recorded in `docs/PALETTE_AUDIT_20260919.md`.
 
 ## Working screens
 
