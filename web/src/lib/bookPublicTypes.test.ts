@@ -41,10 +41,10 @@ describe('public book page meeting-type visibility', () => {
     );
   });
 
-  it('refuses unknown or internal ?t= instead of falling back to all published types', () => {
+  it('resolves shared links exactly without changing the curated directory', () => {
     const entry = bookScript.slice(bookScript.indexOf('/* ---------------- entry ---------------- */'));
-    expect(entry).toContain('isPublicSlug(path)');
-    expect(entry).toContain('isPublicSlug(row.slug)');
+    expect(entry).toContain('row.slug === path');
+    expect(entry).toContain('published=eq.true&slug=eq.');
     expect(entry).toContain('slug=eq.');
     expect(entry).not.toMatch(/\.catch\(showTypes\)/);
   });

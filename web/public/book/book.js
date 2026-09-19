@@ -71,6 +71,8 @@
   }
 
   function showTypes() {
+    var meta = document.getElementById("meeting-meta");
+    if (meta) meta.textContent = "";
     busy("Loading…");
     api("/rest/v1/meeting_types?select=slug,name,description,duration_minutes" +
         "&user_id=eq." + OWNER +
@@ -106,7 +108,9 @@
   function pickType(type) {
     state.type = type;
     title.textContent = type.name;
-    sub.textContent = "Times are shown in your own timezone.";
+    sub.textContent = type.description || "Choose a time that works for you. We look forward to connecting.";
+    var meta = document.getElementById("meeting-meta");
+    if (meta) meta.innerHTML = '<span>' + esc(type.duration_minutes) + ' minutes</span><span>' + esc(zone) + '</span>';
     loadSlots();
   }
 
@@ -133,7 +137,12 @@
   // responsive and lets it say something honest if the answer never arrives.
   function pollSlots(token, attempt) {
     if (attempt > 40) {
-      problem("Couldn't reach the calendar just now. Please try again shortly.");
+      problem("We couldn't reach the calendar just now. Please try again shortly.");
+      var retry = document.createElement("button");
+      retry.className = "primary";
+      retry.textContent = "Try again";
+      retry.addEventListener("click", loadSlots);
+      view.appendChild(retry);
       return;
     }
     return api("/rest/v1/slot_requests?select=answer_status,slots",
@@ -163,13 +172,14 @@
     });
     view.innerHTML =
       '<button class="ghost" id="back">← All meeting types</button>' +
+      '<h2 class="picker-title">Choose your time</h2><p class="picker-note">Available times in ' + esc(zone.replace(/_/g, ' ')) + '</p><div class="date-list">' +
       byDay.map(function (g) {
-        return '<div class="day">' + esc(g.label) + "</div><div class=\"slots\">" +
+        return '<section class="date-card"><div class="day">' + esc(g.label) + "</div><div class=\"slots\">" +
           g.slots.map(function (s) {
             return '<button class="slot" data-start="' + esc(s.start) +
               '" data-end="' + esc(s.end) + '">' + esc(timeLabel(s.start)) + "</button>";
-          }).join("") + "</div>";
-      }).join("");
+          }).join("") + "</div></section>";
+      }).join("") + "</div>";
     var back = document.getElementById("back");
     if (back) back.addEventListener("click", function () {
       title.textContent = "Book a time";
@@ -446,21 +456,26 @@
     // _redirects rule, so a path segment reached Eric's logged-in app instead
     // of a list of times. A query parameter needs no routing to work at all.
     var path = params.get("t") || "";
-    // Unknown or internal slugs must not list every published type. showTypes
-    // itself is allowlisted; skip the lookup entirely when t is not public.
-    if (/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/.test(path) && isPublicSlug(path)) {
+    // Shared links resolve their exact published type for this owner. The
+    // directory stays curated; draft/missing links never substitute a meeting.
+    if (!path) {
+      showTypes();
+    } else if (/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/.test(path)) {
       api("/rest/v1/meeting_types?select=slug,name,description,duration_minutes" +
           "&user_id=eq." + OWNER +
           "&published=eq.true&slug=eq." + encodeURIComponent(path) + "&limit=1")
-        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (r) {
+          if (!r.ok) throw new Error("Could not load booking link");
+          return r.json();
+        })
         .then(function (rows) {
           var row = rows[0];
-          if (row && isPublicSlug(row.slug)) pickType(row);
-          else showTypes();
+          if (row && row.slug === path) pickType(row);
+          else problem("This booking link is not available. It may still be a draft or no longer be published.");
         })
-        .catch(function () { showTypes(); });
+        .catch(function () { problem("Could not load this booking link. Please try again."); });
     } else {
-      showTypes();
+      problem("This booking link is not valid. Please check the link with the organizer.");
     }
   }
 })();
