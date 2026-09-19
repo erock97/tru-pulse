@@ -7,34 +7,25 @@
 <meta name="description" content="Choose a time that suits you." />
 <meta name="robots" content="noindex" />
 <style>
-/*
-  TruHQ's palette, written out rather than inherited: this page is served to
-  strangers without the app bundle, so its CSS variables do not exist here.
-  The values are copied from the app's own tokens so the two match, and dark
-  mode mirrors the app's dark set.
-*/
+/* Match the forest palette in truHqDark.css and site/forest.css. */
 :root{
-  --base:#fbf7f0; --card:#ffffff; --panel:#f4eee3; --text:#33281a;
-  --muted:rgba(51,40,26,.62); --accent:#E9A23B; --gold-dk:#C77E1F;
-  --border:#e0d3bd; --line:#ece2d2; --soft:rgba(233,162,59,.15);
-  --sea:#4a7c6f; --terra:#c06b4f;
+  color-scheme:dark;
+  --base:#050B08; --card:#101D15; --panel:#0C1610; --text:#EDF2EC;
+  --muted:#A9B5AC; --accent:#FFDC93; --gold-dk:#F2B23C;
+  --border:rgba(214,232,218,.14); --line:rgba(214,232,218,.075);
+  --soft:rgba(242,178,60,.16); --sea:#8FB0A2; --terra:#FF8B62;
   --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --serif:"Playfair Display",Georgia,"Times New Roman",serif;
+  --serif:"Fraunces","Playfair Display",Georgia,serif;
   --r-card:14px; --r-btn:10px;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --base:#0C0A08; --card:#1B150D; --panel:#141009; --text:#F3ECE0;
-    --muted:rgba(243,236,224,.6); --accent:#F2C079; --gold-dk:#E9A23B;
-    --border:rgba(243,236,224,.14); --line:rgba(243,236,224,.07);
-    --soft:rgba(233,162,59,.15);
-  }
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--base);color:var(--text);font:16px/1.55 var(--sans);
   -webkit-font-smoothing:antialiased}
 .wrap{max-width:640px;margin:0 auto;padding:44px 20px 80px}
 header{margin-bottom:28px}
+.brand{display:inline-block;color:var(--text);text-decoration:none;font-weight:800;letter-spacing:.08em;margin-bottom:28px}
+.brand span{color:var(--gold-dk)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 h1{font-family:var(--serif);font-weight:600;font-size:2rem;margin:0 0 6px;letter-spacing:.005em}
 .sub{color:var(--muted);margin:0;font-size:.95rem}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
@@ -54,13 +45,13 @@ button{font:inherit;cursor:pointer}
 .slot{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-btn);
   padding:11px 8px;color:var(--text);text-align:center;font-variant-numeric:tabular-nums}
 .slot:hover{border-color:var(--accent);background:var(--soft)}
-.slot[aria-pressed=true]{background:var(--gold-dk);border-color:var(--gold-dk);color:#fffdf8}
+.slot[aria-pressed=true]{background:var(--gold-dk);border-color:var(--gold-dk);color:#050B08}
 label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 5px}
 input,textarea{width:100%;background:var(--panel);border:1px solid var(--border);
   border-radius:var(--r-btn);padding:11px 12px;color:var(--text);font:inherit}
 input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
 textarea{min-height:82px;resize:vertical}
-.primary{background:var(--gold-dk);color:#fffdf8;border:0;border-radius:var(--r-btn);
+.primary{background:var(--gold-dk);color:#050B08;border:0;border-radius:var(--r-btn);
   padding:13px 24px;font-weight:600;margin-top:18px;width:100%}
 .primary:hover:not(:disabled){background:var(--accent)}
 .primary:disabled{opacity:.5;cursor:default}
@@ -76,15 +67,46 @@ textarea{min-height:82px;resize:vertical}
   vertical-align:-2px;margin-right:7px}
 @keyframes t{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}.type:hover{transform:none}}
+/* Public booking uses the same forest surfaces and amber actions as HQ. */
+body{min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#14301f 0,transparent 55%),var(--base)}
+.wrap{max-width:1080px;padding:56px 28px 48px}
+.booking-shell{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(0,1.2fr);border:1px solid var(--border);border-radius:24px;background:rgba(12,22,16,.94);overflow:hidden;box-shadow:0 28px 90px #0005}
+header{padding:36px 32px;margin:0;border-right:1px solid var(--border)}
+.brand{margin-bottom:54px;font-size:18px}
+.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:.16em;font-weight:700;color:var(--gold-dk);margin:0 0 14px}
+h1{font-size:clamp(2rem,4vw,2.8rem);line-height:1.15;letter-spacing:-.025em;margin-bottom:18px}
+.sub{line-height:1.7}
+.meeting-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.meeting-meta span{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
+main{min-height:360px;padding:36px 32px}
+.card{padding:22px;background:var(--card);box-shadow:none}
+.day{font-family:var(--sans);font-size:14px;margin-top:28px}
+.slot{background:transparent;border-color:rgba(242,178,60,.32);color:var(--accent);font-weight:600;min-height:46px;transition:background .15s,border-color .15s}
+.slot:hover{background:var(--soft);border-color:var(--gold-dk)}
+.primary{background:linear-gradient(135deg,#FFDC93,#F2B23C);color:var(--base);min-height:48px}
+.footer{color:var(--muted);font-size:12px;text-align:center;margin:24px 0 0}
+@media(max-width:680px){.wrap{padding:20px 14px}.booking-shell{grid-template-columns:1fr;border-radius:18px}header{padding:24px;border-right:0;border-bottom:1px solid var(--border)}.brand{margin-bottom:28px}main{padding:24px;min-height:220px}h1{font-size:2rem}}
+.picker-title{font:600 1.4rem var(--serif);margin:0 0 8px}.picker-note{font-size:12px;color:var(--muted);margin:0 0 24px}
+.date-list{max-height:490px;overflow-y:auto;padding-right:10px;scrollbar-color:var(--border) transparent;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+.date-card{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--card)}
+.date-card .day{margin:0 0 12px;font-size:12px;color:var(--muted)}
+.date-card .slots{grid-template-columns:1fr}.date-card .slot{padding:8px;min-height:40px}
+@media(max-width:380px){.date-list{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="booking-shell">
   <header>
+    <a href="/" class="brand" aria-label="TRU HQ home">TRU <span>HQ</span></a>
+    <p class="eyebrow">A conversation that moves you forward</p>
     <h1 id="title">Book a time</h1>
     <p class="sub" id="sub">Pick whichever suits you.</p>
+    <div class="meeting-meta" id="meeting-meta"></div>
   </header>
   <main id="view" aria-live="polite"></main>
+  </div>
+  <p class="footer">TRU HQ · Built around your time.</p>
 </div>
 
 <script src="book.js"></script>
